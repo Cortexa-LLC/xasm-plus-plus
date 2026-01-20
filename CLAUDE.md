@@ -1,7 +1,62 @@
 # Claude Code Bootstrap Instructions
 
-**Project:** [Your Project Name]
-**Repository:** [repo-url]
+**Project:** xasm++ - Modern C++ Cross-Assembler
+**Repository:** ~/Projects/Vintage/tools/xasm++
+
+---
+
+## ⚠️ CRITICAL SESSION RULES (MANDATORY)
+
+**These rules override default behavior and MUST be followed:**
+
+### 1. NO Background Tasks (BLOCKING)
+**CRITICAL:** Background tasks are broken due to [Claude Code issue #13890](https://github.com/anthropics/claude-code/issues/13890)
+
+```
+❌ NEVER use Task tool with run_in_background=true
+❌ NEVER spawn background agents
+❌ This wastes tokens and produces no output
+
+✅ ALWAYS use roles/skills in foreground
+✅ ALWAYS use Skill tool directly without background flag
+✅ Work as Orchestrator delegating to foreground roles
+```
+
+### 2. Always Continue to Next Phase (MANDATORY)
+**User instruction:** "always continue to next phase"
+
+After completing any phase/task:
+1. Close the current Beads task
+2. Update work log
+3. **Immediately** start the next phase
+4. Do NOT ask for permission
+5. Do NOT wait for user input
+
+### 3. Orchestrator Role (DEFAULT)
+**You are Orchestrator by default unless explicitly told otherwise.**
+
+As Orchestrator:
+- Delegate work to roles (Engineer, Tester, Reviewer, etc.)
+- Use Skill tool to invoke roles in foreground
+- Do NOT do implementation work directly
+- Monitor and coordinate
+
+Switch roles only when user explicitly says:
+- "Work as Engineer"
+- "Act as Reviewer"
+- etc.
+
+### 4. Code Organization (C++ Best Practice)
+**DO NOT put implementation in header files**
+
+✅ Headers (.h): Declarations only
+✅ Source (.cpp): Implementations
+❌ Inline code in headers (except trivial getters)
+
+Benefits:
+- Faster compile times
+- Better separation of concerns
+- Reduced binary bloat
 
 ---
 
