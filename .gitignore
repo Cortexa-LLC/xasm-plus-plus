@@ -1,0 +1,52 @@
+# Build directories
+build/
+cmake-build-*/
+out/
+
+# Compiled binaries
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.dylib
+*.dll
+*.exe
+/xasm++
+
+# CMake cache
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.cmake
+!CMakeLists.txt
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Test outputs
+tests/output/
+tests/actual/
+*.log
+
+# Coverage reports
+coverage/
+*.gcda
+*.gcno
+*.gcov
+lcov.info
+
+# Package managers
+.conan/
+vcpkg_installed/
+
+# Generated documentation
+docs/html/
+docs/latex/
+docs/doxygen_sqlite3.db
