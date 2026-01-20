@@ -2,10 +2,9 @@
 add_library(xasm_core STATIC
     core/atom.cpp
     core/expression.cpp
-    # Phase 1 TODO:
-    # core/symbol.cpp
-    # core/section.cpp
-    # core/assembler.cpp
+    core/symbol.cpp
+    core/section.cpp
+    core/assembler.cpp
 )
 
 target_include_directories(xasm_core PUBLIC

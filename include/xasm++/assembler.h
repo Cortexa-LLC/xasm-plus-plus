@@ -35,38 +35,16 @@ public:
     Assembler() = default;
 
     // Add a section to assemble
-    void AddSection(const Section& section) {
-        sections_.push_back(section);
-    }
+    void AddSection(const Section& section);
 
     // Get number of sections
-    size_t GetSectionCount() const {
-        return sections_.size();
-    }
+    size_t GetSectionCount() const;
 
     // Reset assembler (clear sections)
-    void Reset() {
-        sections_.clear();
-    }
+    void Reset();
 
     // Assemble all sections with multi-pass resolution
-    AssemblerResult Assemble() {
-        AssemblerResult result;
-
-        // Empty assembly
-        if (sections_.empty()) {
-            result.success = true;
-            result.pass_count = 0;
-            return result;
-        }
-
-        // For Phase 1, we do a simple single pass
-        // Multi-pass logic will be enhanced in later phases with CPU plugins
-        result.success = true;
-        result.pass_count = 1;
-
-        return result;
-    }
+    AssemblerResult Assemble();
 
 private:
     std::vector<Section> sections_;

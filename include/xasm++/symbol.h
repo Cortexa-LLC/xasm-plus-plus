@@ -51,52 +51,25 @@ public:
     ConcreteSymbolTable() = default;
 
     // Define a symbol
-    void Define(const std::string& name, SymbolType type, std::shared_ptr<Expression> value) {
-        symbols_[name] = Symbol(name, type, value);
-    }
+    void Define(const std::string& name, SymbolType type, std::shared_ptr<Expression> value);
 
     // Lookup a symbol value
-    bool Lookup(const std::string& name, int64_t& value) const override {
-        auto it = symbols_.find(name);
-        if (it != symbols_.end()) {
-            value = it->second.value->Evaluate(*this);
-            return true;
-        }
-        return false;
-    }
+    bool Lookup(const std::string& name, int64_t& value) const override;
 
     // Get symbol by name (returns nullptr if not found)
-    const Symbol* GetSymbol(const std::string& name) const {
-        auto it = symbols_.find(name);
-        if (it != symbols_.end()) {
-            return &it->second;
-        }
-        return nullptr;
-    }
+    const Symbol* GetSymbol(const std::string& name) const;
 
     // Get symbol by name (mutable version)
-    Symbol* GetSymbol(const std::string& name) {
-        auto it = symbols_.find(name);
-        if (it != symbols_.end()) {
-            return &it->second;
-        }
-        return nullptr;
-    }
+    Symbol* GetSymbol(const std::string& name);
 
     // Check if symbol exists
-    bool IsDefined(const std::string& name) const {
-        return symbols_.find(name) != symbols_.end();
-    }
+    bool IsDefined(const std::string& name) const;
 
     // Get all symbols (for iteration/listing)
-    const std::unordered_map<std::string, Symbol>& GetAllSymbols() const {
-        return symbols_;
-    }
+    const std::unordered_map<std::string, Symbol>& GetAllSymbols() const;
 
     // Clear all symbols
-    void Clear() {
-        symbols_.clear();
-    }
+    void Clear();
 
 private:
     std::unordered_map<std::string, Symbol> symbols_;

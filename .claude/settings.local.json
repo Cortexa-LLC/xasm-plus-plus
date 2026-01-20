@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(bd create:*)",
+      "Bash(bd dep add:*)",
+      "Bash(bd list:*)",
+      "Bash(bd dep rm xasm++-hxl xasm++-8n4)",
+      "Bash(bd dep rm xasm++-bdf xasm++-8n4)",
+      "Bash(bd dep rm xasm++-hq3 xasm++-8n4)",
+      "Bash(bd dep rm xasm++-uqe xasm++-8n4)",
+      "Bash(bd ready:*)",
+      "Bash(bd update:*)",
+      "Bash(tree:*)",
+      "Bash(bd close:*)",
+      "Bash(bd start:*)"
+    ]
+  }
+}
