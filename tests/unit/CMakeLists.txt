@@ -52,4 +52,17 @@ target_link_libraries(test_section
 
 gtest_discover_tests(test_section)
 
+# Assembler tests
+add_executable(test_assembler
+    test_assembler.cpp
+)
+
+target_link_libraries(test_assembler
+    xasm_core
+    gtest_main
+    gtest
+)
+
+gtest_discover_tests(test_assembler)
+
 # Future tests (Phase 1):
