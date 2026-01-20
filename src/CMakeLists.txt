@@ -12,25 +12,26 @@ target_include_directories(xasm_core PUBLIC
 )
 
 # CPU plugins library (Phase 1+)
-# add_library(xasm_cpu STATIC
-#     cpu/m6502/cpu_6502.cpp
-#     cpu/m6502/cpu_65c02.cpp
-#     cpu/m6502/cpu_65816.cpp
-#     cpu/m6809/cpu_6809.cpp
-#     cpu/m68k/cpu_68000.cpp
-#     cpu/z80/cpu_z80.cpp
-#     cpu/intel/cpu_8080.cpp
-#     cpu/intel/cpu_8085.cpp
-#     cpu/m6800/cpu_6800.cpp
-# )
-#
-# target_include_directories(xasm_cpu PUBLIC
-#     ${CMAKE_SOURCE_DIR}/include
-# )
-#
-# target_link_libraries(xasm_cpu PUBLIC
-#     xasm_core
-# )
+add_library(xasm_cpu STATIC
+    cpu/m6502/cpu_6502.cpp
+    # Future CPUs:
+    # cpu/m6502/cpu_65c02.cpp
+    # cpu/m6502/cpu_65816.cpp
+    # cpu/m6809/cpu_6809.cpp
+    # cpu/m68k/cpu_68000.cpp
+    # cpu/z80/cpu_z80.cpp
+    # cpu/intel/cpu_8080.cpp
+    # cpu/intel/cpu_8085.cpp
+    # cpu/m6800/cpu_6800.cpp
+)
+
+target_include_directories(xasm_cpu PUBLIC
+    ${CMAKE_SOURCE_DIR}/include
+)
+
+target_link_libraries(xasm_cpu PUBLIC
+    xasm_core
+)
 
 # Syntax plugins library (Phase 1+)
 # add_library(xasm_syntax STATIC

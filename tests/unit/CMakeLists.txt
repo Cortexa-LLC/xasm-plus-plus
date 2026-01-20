@@ -65,4 +65,18 @@ target_link_libraries(test_assembler
 
 gtest_discover_tests(test_assembler)
 
+# CPU 6502 tests
+add_executable(test_cpu6502
+    test_cpu6502.cpp
+)
+
+target_link_libraries(test_cpu6502
+    xasm_cpu
+    xasm_core
+    gtest_main
+    gtest
+)
+
+gtest_discover_tests(test_cpu6502)
+
 # Future tests (Phase 1):
