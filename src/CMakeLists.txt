@@ -1,8 +1,8 @@
 # Core library (Phase 1 - in progress)
 add_library(xasm_core STATIC
     core/atom.cpp
+    core/expression.cpp
     # Phase 1 TODO:
-    # core/expression.cpp
     # core/symbol.cpp
     # core/section.cpp
     # core/assembler.cpp
