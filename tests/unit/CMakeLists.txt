@@ -79,4 +79,48 @@ target_link_libraries(test_cpu6502
 
 gtest_discover_tests(test_cpu6502)
 
-# Future tests (Phase 1):
+# SimpleSyntax tests
+add_executable(test_simple_syntax
+    test_simple_syntax.cpp
+)
+
+target_link_libraries(test_simple_syntax
+    xasm_syntax
+    xasm_core
+    gtest_main
+    gtest
+)
+
+gtest_discover_tests(test_simple_syntax)
+
+# BinaryOutput tests
+add_executable(test_binary_output
+  test_binary_output.cpp
+)
+
+target_link_libraries(test_binary_output
+  xasm_output
+  xasm_core
+  gtest_main
+  gtest
+)
+
+gtest_discover_tests(test_binary_output)
+
+# CLI tests
+add_executable(test_cli
+  test_cli.cpp
+  ../../src/cli_parser.cpp
+)
+
+target_link_libraries(test_cli
+  CLI11::CLI11
+  gtest_main
+  gtest
+)
+
+target_include_directories(test_cli PRIVATE
+  ${PROJECT_SOURCE_DIR}/include
+)
+
+gtest_discover_tests(test_cli)
