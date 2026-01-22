@@ -495,6 +495,74 @@ std::vector<uint8_t> Cpu6502::EncodeBVS(uint16_t operand, AddressingMode mode) c
     return bytes;
 }
 
+// Phase 2.2: Inc/Dec Instructions
+
+// INX - Increment X Register
+std::vector<uint8_t> Cpu6502::EncodeINX() const {
+    return {0xE8};
+}
+
+// INY - Increment Y Register
+std::vector<uint8_t> Cpu6502::EncodeINY() const {
+    return {0xC8};
+}
+
+// DEX - Decrement X Register
+std::vector<uint8_t> Cpu6502::EncodeDEX() const {
+    return {0xCA};
+}
+
+// DEY - Decrement Y Register
+std::vector<uint8_t> Cpu6502::EncodeDEY() const {
+    return {0x88};
+}
+
+// INC - Increment Memory
+std::vector<uint8_t> Cpu6502::EncodeINC(uint16_t operand, AddressingMode mode) const {
+    std::vector<uint8_t> bytes;
+
+    switch (mode) {
+        case AddressingMode::ZeroPage:
+            bytes.push_back(0xE6);  // INC zp
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+            break;
+
+        case AddressingMode::Absolute:
+            bytes.push_back(0xEE);  // INC abs
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
+            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
+            break;
+
+        default:
+            break;
+    }
+
+    return bytes;
+}
+
+// DEC - Decrement Memory
+std::vector<uint8_t> Cpu6502::EncodeDEC(uint16_t operand, AddressingMode mode) const {
+    std::vector<uint8_t> bytes;
+
+    switch (mode) {
+        case AddressingMode::ZeroPage:
+            bytes.push_back(0xC6);  // DEC zp
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+            break;
+
+        case AddressingMode::Absolute:
+            bytes.push_back(0xCE);  // DEC abs
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
+            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
+            break;
+
+        default:
+            break;
+    }
+
+    return bytes;
+}
+
 // Calculate instruction size based on addressing mode
 size_t Cpu6502::CalculateInstructionSize(AddressingMode mode) const {
     switch (mode) {

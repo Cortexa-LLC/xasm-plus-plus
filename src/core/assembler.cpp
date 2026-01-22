@@ -197,6 +197,18 @@ AssemblerResult Assembler::Assemble() {
                                     inst->encoded_bytes = cpu_->EncodeBVC(value, mode);
                                 } else if (mnemonic == "BVS") {
                                     inst->encoded_bytes = cpu_->EncodeBVS(value, mode);
+                                } else if (mnemonic == "INX") {
+                                    inst->encoded_bytes = cpu_->EncodeINX();
+                                } else if (mnemonic == "INY") {
+                                    inst->encoded_bytes = cpu_->EncodeINY();
+                                } else if (mnemonic == "DEX") {
+                                    inst->encoded_bytes = cpu_->EncodeDEX();
+                                } else if (mnemonic == "DEY") {
+                                    inst->encoded_bytes = cpu_->EncodeDEY();
+                                } else if (mnemonic == "INC") {
+                                    inst->encoded_bytes = cpu_->EncodeINC(value, mode);
+                                } else if (mnemonic == "DEC") {
+                                    inst->encoded_bytes = cpu_->EncodeDEC(value, mode);
                                 } else {
                                     // Unknown instruction
                                     AssemblerError error;

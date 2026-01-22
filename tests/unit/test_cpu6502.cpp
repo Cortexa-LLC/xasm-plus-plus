@@ -547,3 +547,75 @@ TEST(Cpu6502Test, BVS_Relative) {
     EXPECT_EQ(result[0], 0x70);  // BVS opcode
     EXPECT_EQ(result[1], 0x10);  // Relative offset
 }
+
+// Group 6: Inc/Dec Instructions
+
+// Test 55: INX implied
+TEST(Cpu6502Test, INX_Implied) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeINX();
+    EXPECT_EQ(result.size(), 1);
+    EXPECT_EQ(result[0], 0xE8);  // INX opcode
+}
+
+// Test 56: INY implied
+TEST(Cpu6502Test, INY_Implied) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeINY();
+    EXPECT_EQ(result.size(), 1);
+    EXPECT_EQ(result[0], 0xC8);  // INY opcode
+}
+
+// Test 57: DEX implied
+TEST(Cpu6502Test, DEX_Implied) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeDEX();
+    EXPECT_EQ(result.size(), 1);
+    EXPECT_EQ(result[0], 0xCA);  // DEX opcode
+}
+
+// Test 58: DEY implied
+TEST(Cpu6502Test, DEY_Implied) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeDEY();
+    EXPECT_EQ(result.size(), 1);
+    EXPECT_EQ(result[0], 0x88);  // DEY opcode
+}
+
+// Test 59: INC zero page
+TEST(Cpu6502Test, INC_ZeroPage) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeINC(0x80, AddressingMode::ZeroPage);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0xE6);  // INC zero page opcode
+    EXPECT_EQ(result[1], 0x80);  // Address
+}
+
+// Test 60: INC absolute
+TEST(Cpu6502Test, INC_Absolute) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeINC(0x1234, AddressingMode::Absolute);
+    EXPECT_EQ(result.size(), 3);
+    EXPECT_EQ(result[0], 0xEE);  // INC absolute opcode
+    EXPECT_EQ(result[1], 0x34);  // Low byte
+    EXPECT_EQ(result[2], 0x12);  // High byte
+}
+
+// Test 61: DEC zero page
+TEST(Cpu6502Test, DEC_ZeroPage) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeDEC(0x80, AddressingMode::ZeroPage);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0xC6);  // DEC zero page opcode
+    EXPECT_EQ(result[1], 0x80);  // Address
+}
+
+// Test 62: DEC absolute
+TEST(Cpu6502Test, DEC_Absolute) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeDEC(0x1234, AddressingMode::Absolute);
+    EXPECT_EQ(result.size(), 3);
+    EXPECT_EQ(result[0], 0xCE);  // DEC absolute opcode
+    EXPECT_EQ(result[1], 0x34);  // Low byte
+    EXPECT_EQ(result[2], 0x12);  // High byte
+}

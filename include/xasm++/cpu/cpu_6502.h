@@ -70,6 +70,14 @@ public:
     std::vector<uint8_t> EncodeBVC(uint16_t operand, AddressingMode mode) const;
     std::vector<uint8_t> EncodeBVS(uint16_t operand, AddressingMode mode) const;
 
+    // Phase 2.2: Inc/Dec instructions
+    std::vector<uint8_t> EncodeINX() const;
+    std::vector<uint8_t> EncodeINY() const;
+    std::vector<uint8_t> EncodeDEX() const;
+    std::vector<uint8_t> EncodeDEY() const;
+    std::vector<uint8_t> EncodeINC(uint16_t operand, AddressingMode mode) const;
+    std::vector<uint8_t> EncodeDEC(uint16_t operand, AddressingMode mode) const;
+
     // Calculate instruction size
     size_t CalculateInstructionSize(AddressingMode mode) const;
 };
