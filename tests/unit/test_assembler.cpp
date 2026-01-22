@@ -5,6 +5,7 @@
 #include "xasm++/section.h"
 #include "xasm++/atom.h"
 #include "xasm++/cpu/cpu_6502.h"
+#include "xasm++/symbol.h"
 #include <gtest/gtest.h>
 
 using namespace xasm;
@@ -222,4 +223,31 @@ TEST(AssemblerTest, STAAbsoluteEncoding) {
     EXPECT_EQ(sta->encoded_bytes[0], 0x8D);  // STA absolute opcode
     EXPECT_EQ(sta->encoded_bytes[1], 0x34);  // Low byte
     EXPECT_EQ(sta->encoded_bytes[2], 0x12);  // High byte
+}
+
+// Test 16: Symbol resolution - label as operand
+TEST(AssemblerTest, LabelAsOperand) {
+    Assembler assembler;
+    Cpu6502 cpu;
+    assembler.SetCpuPlugin(&cpu);
+
+    Section section(".text", static_cast<uint32_t>(SectionAttributes::Code), 0x8000);
+    ConcreteSymbolTable symbols;
+
+    // Define a label at address $8005
+    symbols.Define("target", SymbolType::Label, std::make_shared<LiteralExpr>(0x8005));
+
+    // JMP target (should resolve to JMP $8005)
+    auto jmp = std::make_shared<InstructionAtom>("JMP", "target");
+    section.atoms.push_back(jmp);
+
+    assembler.AddSection(section);
+    assembler.SetSymbolTable(&symbols);
+    AssemblerResult result = assembler.Assemble();
+
+    EXPECT_TRUE(result.success);
+    EXPECT_EQ(jmp->encoded_bytes.size(), 3);
+    EXPECT_EQ(jmp->encoded_bytes[0], 0x4C);  // JMP absolute opcode
+    EXPECT_EQ(jmp->encoded_bytes[1], 0x05);  // Low byte of $8005
+    EXPECT_EQ(jmp->encoded_bytes[2], 0x80);  // High byte of $8005
 }

@@ -2,6 +2,7 @@
 
 #include "xasm++/assembler.h"
 #include "xasm++/cpu/cpu_6502.h"
+#include "xasm++/symbol.h"
 #include <string>
 #include <sstream>
 #include <algorithm>
@@ -57,6 +58,10 @@ void Assembler::SetCpuPlugin(Cpu6502* cpu) {
     cpu_ = cpu;
 }
 
+void Assembler::SetSymbolTable(SymbolTable* symbols) {
+    symbols_ = symbols;
+}
+
 void Assembler::AddSection(const Section& section) {
     sections_.push_back(section);
 }
@@ -103,6 +108,14 @@ AssemblerResult Assembler::Assemble() {
                             } else if (trimmed[0] == '$') {
                                 // Absolute/Zero Page: $1234
                                 value = static_cast<uint16_t>(ParseHex(trimmed));
+                            } else {
+                                // Label reference - look up in symbol table
+                                if (symbols_ != nullptr) {
+                                    int64_t symbol_value;
+                                    if (symbols_->Lookup(trimmed, symbol_value)) {
+                                        value = static_cast<uint16_t>(symbol_value);
+                                    }
+                                }
                             }
                         }
 

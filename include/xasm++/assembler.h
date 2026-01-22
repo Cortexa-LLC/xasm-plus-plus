@@ -12,8 +12,9 @@
 
 namespace xasm {
 
-// Forward declaration
+// Forward declarations
 class Cpu6502;
+class SymbolTable;
 
 // Assembler error
 struct AssemblerError {
@@ -40,6 +41,9 @@ public:
     // Set CPU plugin for instruction encoding
     void SetCpuPlugin(Cpu6502* cpu);
 
+    // Set symbol table for symbol resolution
+    void SetSymbolTable(SymbolTable* symbols);
+
     // Add a section to assemble
     void AddSection(const Section& section);
 
@@ -55,6 +59,7 @@ public:
 private:
     std::vector<Section> sections_;
     Cpu6502* cpu_ = nullptr;
+    SymbolTable* symbols_ = nullptr;
 };
 
 } // namespace xasm
