@@ -12,6 +12,7 @@ namespace xasm {
 // Addressing modes for 6502
 enum class AddressingMode {
     Implied,        // RTS, NOP
+    Accumulator,    // ASL A, LSR A, ROL A, ROR A
     Immediate,      // LDA #$42
     ZeroPage,       // LDA $80
     ZeroPageX,      // LDA $80,X
@@ -90,6 +91,10 @@ public:
     // Phase 2.3: Complete 6502 Instruction Set
     // Group 1: BIT - Test Bits
     std::vector<uint8_t> EncodeBIT(uint16_t operand, AddressingMode mode) const;
+
+    // Group 2: Shift Instructions
+    std::vector<uint8_t> EncodeASL(uint16_t operand, AddressingMode mode) const;
+    std::vector<uint8_t> EncodeLSR(uint16_t operand, AddressingMode mode) const;
 
     // Calculate instruction size
     size_t CalculateInstructionSize(AddressingMode mode) const;

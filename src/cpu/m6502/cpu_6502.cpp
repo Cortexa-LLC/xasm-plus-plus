@@ -627,6 +627,84 @@ std::vector<uint8_t> Cpu6502::EncodeBIT(uint16_t operand, AddressingMode mode) c
     return bytes;
 }
 
+// Group 2: Shift Instructions
+
+// ASL - Arithmetic Shift Left
+std::vector<uint8_t> Cpu6502::EncodeASL(uint16_t operand, AddressingMode mode) const {
+    std::vector<uint8_t> bytes;
+
+    switch (mode) {
+        case AddressingMode::Accumulator:
+            bytes.push_back(0x0A);  // ASL A
+            break;
+
+        case AddressingMode::ZeroPage:
+            bytes.push_back(0x06);  // ASL zp
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+            break;
+
+        case AddressingMode::ZeroPageX:
+            bytes.push_back(0x16);  // ASL zp,X
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+            break;
+
+        case AddressingMode::Absolute:
+            bytes.push_back(0x0E);  // ASL abs
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
+            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
+            break;
+
+        case AddressingMode::AbsoluteX:
+            bytes.push_back(0x1E);  // ASL abs,X
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
+            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
+            break;
+
+        default:
+            break;
+    }
+
+    return bytes;
+}
+
+// LSR - Logical Shift Right
+std::vector<uint8_t> Cpu6502::EncodeLSR(uint16_t operand, AddressingMode mode) const {
+    std::vector<uint8_t> bytes;
+
+    switch (mode) {
+        case AddressingMode::Accumulator:
+            bytes.push_back(0x4A);  // LSR A
+            break;
+
+        case AddressingMode::ZeroPage:
+            bytes.push_back(0x46);  // LSR zp
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+            break;
+
+        case AddressingMode::ZeroPageX:
+            bytes.push_back(0x56);  // LSR zp,X
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+            break;
+
+        case AddressingMode::Absolute:
+            bytes.push_back(0x4E);  // LSR abs
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
+            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
+            break;
+
+        case AddressingMode::AbsoluteX:
+            bytes.push_back(0x5E);  // LSR abs,X
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
+            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
+            break;
+
+        default:
+            break;
+    }
+
+    return bytes;
+}
+
 // Calculate instruction size based on addressing mode
 size_t Cpu6502::CalculateInstructionSize(AddressingMode mode) const {
     switch (mode) {

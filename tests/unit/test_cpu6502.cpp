@@ -690,3 +690,97 @@ TEST(Cpu6502Test, BIT_Absolute) {
     EXPECT_EQ(result[1], 0x34);  // Low byte
     EXPECT_EQ(result[2], 0x12);  // High byte
 }
+
+// Group 2: Shift Instructions - ASL, LSR
+
+// Test 70: ASL accumulator
+TEST(Cpu6502Test, ASL_Accumulator) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeASL(0, AddressingMode::Accumulator);
+    EXPECT_EQ(result.size(), 1);
+    EXPECT_EQ(result[0], 0x0A);  // ASL A opcode
+}
+
+// Test 71: ASL zero page
+TEST(Cpu6502Test, ASL_ZeroPage) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeASL(0x80, AddressingMode::ZeroPage);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0x06);  // ASL zp opcode
+    EXPECT_EQ(result[1], 0x80);  // Zero page address
+}
+
+// Test 72: ASL zero page,X
+TEST(Cpu6502Test, ASL_ZeroPageX) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeASL(0x80, AddressingMode::ZeroPageX);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0x16);  // ASL zp,X opcode
+    EXPECT_EQ(result[1], 0x80);  // Zero page address
+}
+
+// Test 73: ASL absolute
+TEST(Cpu6502Test, ASL_Absolute) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeASL(0x1234, AddressingMode::Absolute);
+    EXPECT_EQ(result.size(), 3);
+    EXPECT_EQ(result[0], 0x0E);  // ASL abs opcode
+    EXPECT_EQ(result[1], 0x34);  // Low byte
+    EXPECT_EQ(result[2], 0x12);  // High byte
+}
+
+// Test 74: ASL absolute,X
+TEST(Cpu6502Test, ASL_AbsoluteX) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeASL(0x1234, AddressingMode::AbsoluteX);
+    EXPECT_EQ(result.size(), 3);
+    EXPECT_EQ(result[0], 0x1E);  // ASL abs,X opcode
+    EXPECT_EQ(result[1], 0x34);  // Low byte
+    EXPECT_EQ(result[2], 0x12);  // High byte
+}
+
+// Test 75: LSR accumulator
+TEST(Cpu6502Test, LSR_Accumulator) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeLSR(0, AddressingMode::Accumulator);
+    EXPECT_EQ(result.size(), 1);
+    EXPECT_EQ(result[0], 0x4A);  // LSR A opcode
+}
+
+// Test 76: LSR zero page
+TEST(Cpu6502Test, LSR_ZeroPage) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeLSR(0x80, AddressingMode::ZeroPage);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0x46);  // LSR zp opcode
+    EXPECT_EQ(result[1], 0x80);  // Zero page address
+}
+
+// Test 77: LSR zero page,X
+TEST(Cpu6502Test, LSR_ZeroPageX) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeLSR(0x80, AddressingMode::ZeroPageX);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0x56);  // LSR zp,X opcode
+    EXPECT_EQ(result[1], 0x80);  // Zero page address
+}
+
+// Test 78: LSR absolute
+TEST(Cpu6502Test, LSR_Absolute) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeLSR(0x1234, AddressingMode::Absolute);
+    EXPECT_EQ(result.size(), 3);
+    EXPECT_EQ(result[0], 0x4E);  // LSR abs opcode
+    EXPECT_EQ(result[1], 0x34);  // Low byte
+    EXPECT_EQ(result[2], 0x12);  // High byte
+}
+
+// Test 79: LSR absolute,X
+TEST(Cpu6502Test, LSR_AbsoluteX) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeLSR(0x1234, AddressingMode::AbsoluteX);
+    EXPECT_EQ(result.size(), 3);
+    EXPECT_EQ(result[0], 0x5E);  // LSR abs,X opcode
+    EXPECT_EQ(result[1], 0x34);  // Low byte
+    EXPECT_EQ(result[2], 0x12);  // High byte
+}

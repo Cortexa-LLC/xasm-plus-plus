@@ -221,6 +221,10 @@ AssemblerResult Assembler::Assemble() {
                                     inst->encoded_bytes = cpu_->EncodeJSR(value, mode);
                                 } else if (mnemonic == "BIT") {
                                     inst->encoded_bytes = cpu_->EncodeBIT(value, mode);
+                                } else if (mnemonic == "ASL") {
+                                    inst->encoded_bytes = cpu_->EncodeASL(value, mode);
+                                } else if (mnemonic == "LSR") {
+                                    inst->encoded_bytes = cpu_->EncodeLSR(value, mode);
                                 } else {
                                     // Unknown instruction
                                     AssemblerError error;
