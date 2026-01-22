@@ -157,6 +157,10 @@ AssemblerResult Assembler::Assemble() {
                                     inst->encoded_bytes = cpu_->EncodeSTA(value, mode);
                                 } else if (mnemonic == "JMP") {
                                     inst->encoded_bytes = cpu_->EncodeJMP(value, mode);
+                                } else if (mnemonic == "ADC") {
+                                    inst->encoded_bytes = cpu_->EncodeADC(value, mode);
+                                } else if (mnemonic == "SBC") {
+                                    inst->encoded_bytes = cpu_->EncodeSBC(value, mode);
                                 } else {
                                     // Unknown instruction
                                     AssemblerError error;

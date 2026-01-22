@@ -79,6 +79,64 @@ std::vector<uint8_t> Cpu6502::EncodeRTS() const {
     return {0x60};
 }
 
+// Phase 2.2: Arithmetic Instructions
+
+// ADC - Add with Carry
+std::vector<uint8_t> Cpu6502::EncodeADC(uint16_t operand, AddressingMode mode) const {
+    std::vector<uint8_t> bytes;
+
+    switch (mode) {
+        case AddressingMode::Immediate:
+            bytes.push_back(0x69);  // ADC #imm
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+            break;
+
+        case AddressingMode::ZeroPage:
+            bytes.push_back(0x65);  // ADC zp
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+            break;
+
+        case AddressingMode::Absolute:
+            bytes.push_back(0x6D);  // ADC abs
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
+            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
+            break;
+
+        default:
+            break;
+    }
+
+    return bytes;
+}
+
+// SBC - Subtract with Carry
+std::vector<uint8_t> Cpu6502::EncodeSBC(uint16_t operand, AddressingMode mode) const {
+    std::vector<uint8_t> bytes;
+
+    switch (mode) {
+        case AddressingMode::Immediate:
+            bytes.push_back(0xE9);  // SBC #imm
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+            break;
+
+        case AddressingMode::ZeroPage:
+            bytes.push_back(0xE5);  // SBC zp
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+            break;
+
+        case AddressingMode::Absolute:
+            bytes.push_back(0xED);  // SBC abs
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
+            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
+            break;
+
+        default:
+            break;
+    }
+
+    return bytes;
+}
+
 // Calculate instruction size based on addressing mode
 size_t Cpu6502::CalculateInstructionSize(AddressingMode mode) const {
     switch (mode) {

@@ -147,3 +147,61 @@ TEST(Cpu6502Test, MultipleInstructions) {
     EXPECT_EQ(nop[0], 0xEA);
     EXPECT_EQ(rts[0], 0x60);
 }
+
+// Group 1: Arithmetic Instructions
+
+// Test 13: ADC immediate
+TEST(Cpu6502Test, ADC_Immediate) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeADC(0x42, AddressingMode::Immediate);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0x69);  // ADC immediate opcode
+    EXPECT_EQ(result[1], 0x42);  // Operand
+}
+
+// Test 14: ADC zero page
+TEST(Cpu6502Test, ADC_ZeroPage) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeADC(0x80, AddressingMode::ZeroPage);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0x65);  // ADC zero page opcode
+    EXPECT_EQ(result[1], 0x80);  // Address
+}
+
+// Test 15: ADC absolute
+TEST(Cpu6502Test, ADC_Absolute) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeADC(0x1234, AddressingMode::Absolute);
+    EXPECT_EQ(result.size(), 3);
+    EXPECT_EQ(result[0], 0x6D);  // ADC absolute opcode
+    EXPECT_EQ(result[1], 0x34);  // Low byte
+    EXPECT_EQ(result[2], 0x12);  // High byte
+}
+
+// Test 16: SBC immediate
+TEST(Cpu6502Test, SBC_Immediate) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeSBC(0x42, AddressingMode::Immediate);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0xE9);  // SBC immediate opcode
+    EXPECT_EQ(result[1], 0x42);  // Operand
+}
+
+// Test 17: SBC zero page
+TEST(Cpu6502Test, SBC_ZeroPage) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeSBC(0x80, AddressingMode::ZeroPage);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0xE5);  // SBC zero page opcode
+    EXPECT_EQ(result[1], 0x80);  // Address
+}
+
+// Test 18: SBC absolute
+TEST(Cpu6502Test, SBC_Absolute) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeSBC(0x1234, AddressingMode::Absolute);
+    EXPECT_EQ(result.size(), 3);
+    EXPECT_EQ(result[0], 0xED);  // SBC absolute opcode
+    EXPECT_EQ(result[1], 0x34);  // Low byte
+    EXPECT_EQ(result[2], 0x12);  // High byte
+}
