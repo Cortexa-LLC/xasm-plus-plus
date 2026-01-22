@@ -205,3 +205,89 @@ TEST(Cpu6502Test, SBC_Absolute) {
     EXPECT_EQ(result[1], 0x34);  // Low byte
     EXPECT_EQ(result[2], 0x12);  // High byte
 }
+
+// Group 2: Logic Instructions
+
+// Test 19: AND immediate
+TEST(Cpu6502Test, AND_Immediate) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeAND(0x42, AddressingMode::Immediate);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0x29);  // AND immediate opcode
+    EXPECT_EQ(result[1], 0x42);  // Operand
+}
+
+// Test 20: AND zero page
+TEST(Cpu6502Test, AND_ZeroPage) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeAND(0x80, AddressingMode::ZeroPage);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0x25);  // AND zero page opcode
+    EXPECT_EQ(result[1], 0x80);  // Address
+}
+
+// Test 21: AND absolute
+TEST(Cpu6502Test, AND_Absolute) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeAND(0x1234, AddressingMode::Absolute);
+    EXPECT_EQ(result.size(), 3);
+    EXPECT_EQ(result[0], 0x2D);  // AND absolute opcode
+    EXPECT_EQ(result[1], 0x34);  // Low byte
+    EXPECT_EQ(result[2], 0x12);  // High byte
+}
+
+// Test 22: ORA immediate
+TEST(Cpu6502Test, ORA_Immediate) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeORA(0x42, AddressingMode::Immediate);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0x09);  // ORA immediate opcode
+    EXPECT_EQ(result[1], 0x42);  // Operand
+}
+
+// Test 23: ORA zero page
+TEST(Cpu6502Test, ORA_ZeroPage) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeORA(0x80, AddressingMode::ZeroPage);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0x05);  // ORA zero page opcode
+    EXPECT_EQ(result[1], 0x80);  // Address
+}
+
+// Test 24: ORA absolute
+TEST(Cpu6502Test, ORA_Absolute) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeORA(0x1234, AddressingMode::Absolute);
+    EXPECT_EQ(result.size(), 3);
+    EXPECT_EQ(result[0], 0x0D);  // ORA absolute opcode
+    EXPECT_EQ(result[1], 0x34);  // Low byte
+    EXPECT_EQ(result[2], 0x12);  // High byte
+}
+
+// Test 25: EOR immediate
+TEST(Cpu6502Test, EOR_Immediate) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeEOR(0x42, AddressingMode::Immediate);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0x49);  // EOR immediate opcode
+    EXPECT_EQ(result[1], 0x42);  // Operand
+}
+
+// Test 26: EOR zero page
+TEST(Cpu6502Test, EOR_ZeroPage) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeEOR(0x80, AddressingMode::ZeroPage);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0x45);  // EOR zero page opcode
+    EXPECT_EQ(result[1], 0x80);  // Address
+}
+
+// Test 27: EOR absolute
+TEST(Cpu6502Test, EOR_Absolute) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeEOR(0x1234, AddressingMode::Absolute);
+    EXPECT_EQ(result.size(), 3);
+    EXPECT_EQ(result[0], 0x4D);  // EOR absolute opcode
+    EXPECT_EQ(result[1], 0x34);  // Low byte
+    EXPECT_EQ(result[2], 0x12);  // High byte
+}

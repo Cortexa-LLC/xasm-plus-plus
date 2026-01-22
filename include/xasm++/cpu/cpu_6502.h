@@ -44,6 +44,11 @@ public:
     std::vector<uint8_t> EncodeADC(uint16_t operand, AddressingMode mode) const;
     std::vector<uint8_t> EncodeSBC(uint16_t operand, AddressingMode mode) const;
 
+    // Phase 2.2: Logic instructions
+    std::vector<uint8_t> EncodeAND(uint16_t operand, AddressingMode mode) const;
+    std::vector<uint8_t> EncodeORA(uint16_t operand, AddressingMode mode) const;
+    std::vector<uint8_t> EncodeEOR(uint16_t operand, AddressingMode mode) const;
+
     // Calculate instruction size
     size_t CalculateInstructionSize(AddressingMode mode) const;
 };

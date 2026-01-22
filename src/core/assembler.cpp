@@ -161,6 +161,12 @@ AssemblerResult Assembler::Assemble() {
                                     inst->encoded_bytes = cpu_->EncodeADC(value, mode);
                                 } else if (mnemonic == "SBC") {
                                     inst->encoded_bytes = cpu_->EncodeSBC(value, mode);
+                                } else if (mnemonic == "AND") {
+                                    inst->encoded_bytes = cpu_->EncodeAND(value, mode);
+                                } else if (mnemonic == "ORA") {
+                                    inst->encoded_bytes = cpu_->EncodeORA(value, mode);
+                                } else if (mnemonic == "EOR") {
+                                    inst->encoded_bytes = cpu_->EncodeEOR(value, mode);
                                 } else {
                                     // Unknown instruction
                                     AssemblerError error;

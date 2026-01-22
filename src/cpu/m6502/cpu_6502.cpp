@@ -137,6 +137,92 @@ std::vector<uint8_t> Cpu6502::EncodeSBC(uint16_t operand, AddressingMode mode) c
     return bytes;
 }
 
+// Phase 2.2: Logic Instructions
+
+// AND - Logical AND
+std::vector<uint8_t> Cpu6502::EncodeAND(uint16_t operand, AddressingMode mode) const {
+    std::vector<uint8_t> bytes;
+
+    switch (mode) {
+        case AddressingMode::Immediate:
+            bytes.push_back(0x29);  // AND #imm
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+            break;
+
+        case AddressingMode::ZeroPage:
+            bytes.push_back(0x25);  // AND zp
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+            break;
+
+        case AddressingMode::Absolute:
+            bytes.push_back(0x2D);  // AND abs
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
+            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
+            break;
+
+        default:
+            break;
+    }
+
+    return bytes;
+}
+
+// ORA - Logical OR
+std::vector<uint8_t> Cpu6502::EncodeORA(uint16_t operand, AddressingMode mode) const {
+    std::vector<uint8_t> bytes;
+
+    switch (mode) {
+        case AddressingMode::Immediate:
+            bytes.push_back(0x09);  // ORA #imm
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+            break;
+
+        case AddressingMode::ZeroPage:
+            bytes.push_back(0x05);  // ORA zp
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+            break;
+
+        case AddressingMode::Absolute:
+            bytes.push_back(0x0D);  // ORA abs
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
+            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
+            break;
+
+        default:
+            break;
+    }
+
+    return bytes;
+}
+
+// EOR - Exclusive OR
+std::vector<uint8_t> Cpu6502::EncodeEOR(uint16_t operand, AddressingMode mode) const {
+    std::vector<uint8_t> bytes;
+
+    switch (mode) {
+        case AddressingMode::Immediate:
+            bytes.push_back(0x49);  // EOR #imm
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+            break;
+
+        case AddressingMode::ZeroPage:
+            bytes.push_back(0x45);  // EOR zp
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+            break;
+
+        case AddressingMode::Absolute:
+            bytes.push_back(0x4D);  // EOR abs
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
+            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
+            break;
+
+        default:
+            break;
+    }
+
+    return bytes;
+}
+
 // Calculate instruction size based on addressing mode
 size_t Cpu6502::CalculateInstructionSize(AddressingMode mode) const {
     switch (mode) {
