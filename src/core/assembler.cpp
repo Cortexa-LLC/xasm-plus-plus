@@ -84,77 +84,128 @@ AssemblerResult Assembler::Assemble() {
         return result;
     }
 
-    // Encode instructions using CPU plugin
-    if (cpu_ != nullptr) {
-        for (auto& section : sections_) {
-            for (auto& atom : section.atoms) {
-                if (atom->type == AtomType::Instruction) {
-                    auto inst = std::dynamic_pointer_cast<InstructionAtom>(atom);
-                    if (inst && inst->encoded_bytes.empty()) {
-                        // Encode the instruction
-                        std::string mnemonic = inst->mnemonic;
-                        std::string operand = inst->operand;
+    // Create internal symbol table if needed for label extraction
+    ConcreteSymbolTable internal_symbols;
+    ConcreteSymbolTable* internal_table_ptr = symbols_ ? nullptr : &internal_symbols;
 
-                        // Parse operand to get addressing mode and value
-                        AddressingMode mode = DetermineAddressingMode(operand);
-                        uint16_t value = 0;
+    // Multi-pass assembly loop
+    bool converged = false;
+    int pass = 0;
+    std::vector<size_t> previous_sizes;
 
-                        // Extract operand value
-                        if (!operand.empty()) {
-                            std::string trimmed = Trim(operand);
-                            if (trimmed[0] == '#') {
-                                // Immediate: #$42
-                                value = static_cast<uint16_t>(ParseHex(trimmed.substr(1)));
-                            } else if (trimmed[0] == '$') {
-                                // Absolute/Zero Page: $1234
-                                value = static_cast<uint16_t>(ParseHex(trimmed));
-                            } else {
-                                // Label reference - look up in symbol table
-                                if (symbols_ != nullptr) {
-                                    int64_t symbol_value;
-                                    if (symbols_->Lookup(trimmed, symbol_value)) {
-                                        value = static_cast<uint16_t>(symbol_value);
-                                    }
-                                }
+    while (!converged && pass < MAX_PASSES) {
+        pass++;
+
+        // Pass 1: Extract labels from LabelAtoms if using internal symbol table
+        if (internal_table_ptr != nullptr) {
+            uint32_t current_address = 0;
+            for (auto& section : sections_) {
+                current_address = section.org;
+                for (auto& atom : section.atoms) {
+                    if (atom->type == AtomType::Label) {
+                        auto label = std::dynamic_pointer_cast<LabelAtom>(atom);
+                        if (label) {
+                            // Define or update label in symbol table
+                            label->address = current_address;
+                            if (!internal_table_ptr->IsDefined(label->name)) {
+                                internal_table_ptr->Define(label->name, SymbolType::Label,
+                                                          std::make_shared<LiteralExpr>(current_address));
                             }
                         }
-
-                        // Call appropriate CPU encoding method
-                        try {
-                            if (mnemonic == "NOP") {
-                                inst->encoded_bytes = cpu_->EncodeNOP();
-                            } else if (mnemonic == "RTS") {
-                                inst->encoded_bytes = cpu_->EncodeRTS();
-                            } else if (mnemonic == "LDA") {
-                                inst->encoded_bytes = cpu_->EncodeLDA(value, mode);
-                            } else if (mnemonic == "STA") {
-                                inst->encoded_bytes = cpu_->EncodeSTA(value, mode);
-                            } else if (mnemonic == "JMP") {
-                                inst->encoded_bytes = cpu_->EncodeJMP(value, mode);
-                            } else {
-                                // Unknown instruction
-                                AssemblerError error;
-                                error.message = "Unknown instruction: " + mnemonic;
-                                result.errors.push_back(error);
-                                result.success = false;
-                            }
-                        } catch (const std::exception& e) {
-                            // Encoding error
-                            AssemblerError error;
-                            error.message = "Encoding error for " + mnemonic + ": " + e.what();
-                            result.errors.push_back(error);
-                            result.success = false;
+                    } else if (atom->type == AtomType::Instruction) {
+                        // Instructions consume bytes
+                        auto inst = std::dynamic_pointer_cast<InstructionAtom>(atom);
+                        if (inst) {
+                            current_address += inst->encoded_bytes.size();
                         }
                     }
                 }
             }
         }
+
+        // Pass 2: Encode instructions using CPU plugin
+        std::vector<size_t> current_sizes;
+        if (cpu_ != nullptr) {
+            for (auto& section : sections_) {
+                for (auto& atom : section.atoms) {
+                    if (atom->type == AtomType::Instruction) {
+                        auto inst = std::dynamic_pointer_cast<InstructionAtom>(atom);
+                        if (inst) {
+                            // Clear previous encoding
+                            inst->encoded_bytes.clear();
+
+                            // Encode the instruction
+                            std::string mnemonic = inst->mnemonic;
+                            std::string operand = inst->operand;
+
+                            // Parse operand to get addressing mode and value
+                            AddressingMode mode = DetermineAddressingMode(operand);
+                            uint16_t value = 0;
+
+                            // Extract operand value
+                            if (!operand.empty()) {
+                                std::string trimmed = Trim(operand);
+                                if (trimmed[0] == '#') {
+                                    // Immediate: #$42
+                                    value = static_cast<uint16_t>(ParseHex(trimmed.substr(1)));
+                                } else if (trimmed[0] == '$') {
+                                    // Absolute/Zero Page: $1234
+                                    value = static_cast<uint16_t>(ParseHex(trimmed));
+                                } else {
+                                    // Label reference - look up in symbol table
+                                    SymbolTable* lookup_table = symbols_ ? symbols_ : internal_table_ptr;
+                                    if (lookup_table != nullptr) {
+                                        int64_t symbol_value;
+                                        if (lookup_table->Lookup(trimmed, symbol_value)) {
+                                            value = static_cast<uint16_t>(symbol_value);
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Call appropriate CPU encoding method
+                            try {
+                                if (mnemonic == "NOP") {
+                                    inst->encoded_bytes = cpu_->EncodeNOP();
+                                } else if (mnemonic == "RTS") {
+                                    inst->encoded_bytes = cpu_->EncodeRTS();
+                                } else if (mnemonic == "LDA") {
+                                    inst->encoded_bytes = cpu_->EncodeLDA(value, mode);
+                                } else if (mnemonic == "STA") {
+                                    inst->encoded_bytes = cpu_->EncodeSTA(value, mode);
+                                } else if (mnemonic == "JMP") {
+                                    inst->encoded_bytes = cpu_->EncodeJMP(value, mode);
+                                } else {
+                                    // Unknown instruction
+                                    AssemblerError error;
+                                    error.message = "Unknown instruction: " + mnemonic;
+                                    result.errors.push_back(error);
+                                    result.success = false;
+                                }
+                            } catch (const std::exception& e) {
+                                // Encoding error
+                                AssemblerError error;
+                                error.message = "Encoding error for " + mnemonic + ": " + e.what();
+                                result.errors.push_back(error);
+                                result.success = false;
+                            }
+
+                            // Record size for convergence check
+                            current_sizes.push_back(inst->encoded_bytes.size());
+                        }
+                    }
+                }
+            }
+        }
+
+        // Check for convergence (sizes didn't change)
+        if (pass > 1 && current_sizes == previous_sizes) {
+            converged = true;
+        }
+        previous_sizes = current_sizes;
     }
 
-    // For Phase 1, we do a simple single pass
-    // Multi-pass logic will be enhanced in later phases
-    result.pass_count = 1;
-
+    result.pass_count = pass;
     return result;
 }
 

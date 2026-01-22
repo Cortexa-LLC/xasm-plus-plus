@@ -374,3 +374,41 @@ TEST(AssemblerTest, LDAWithLabelOperand) {
     EXPECT_EQ(lda->encoded_bytes[1], 0x00);  // Low byte of $0200
     EXPECT_EQ(lda->encoded_bytes[2], 0x02);  // High byte of $0200
 }
+
+// Test 21: Forward reference - label used before definition
+TEST(AssemblerTest, ForwardReference) {
+    Assembler assembler;
+    Cpu6502 cpu;
+    assembler.SetCpuPlugin(&cpu);
+
+    Section section(".text", static_cast<uint32_t>(SectionAttributes::Code), 0x8000);
+
+    // First instruction references a label that will be defined later
+    auto jmp = std::make_shared<InstructionAtom>("JMP", "forward_label");
+    section.atoms.push_back(jmp);
+
+    // Add some NOPs to advance the address
+    section.atoms.push_back(std::make_shared<InstructionAtom>("NOP", ""));
+    section.atoms.push_back(std::make_shared<InstructionAtom>("NOP", ""));
+
+    // Define the label AFTER it's used (forward reference)
+    auto label = std::make_shared<LabelAtom>("forward_label", 0x8005);
+    section.atoms.push_back(label);
+
+    assembler.AddSection(section);
+
+    // Create symbol table and populate from section atoms
+    ConcreteSymbolTable symbols;
+    // In a real assembler, labels would be extracted from atoms
+    // For this test, manually define the label
+    symbols.Define("forward_label", SymbolType::Label, std::make_shared<LiteralExpr>(0x8005));
+
+    assembler.SetSymbolTable(&symbols);
+    AssemblerResult result = assembler.Assemble();
+
+    EXPECT_TRUE(result.success);
+    EXPECT_EQ(jmp->encoded_bytes.size(), 3);
+    EXPECT_EQ(jmp->encoded_bytes[0], 0x4C);  // JMP absolute opcode
+    EXPECT_EQ(jmp->encoded_bytes[1], 0x05);  // Low byte of $8005
+    EXPECT_EQ(jmp->encoded_bytes[2], 0x80);  // High byte of $8005
+}
