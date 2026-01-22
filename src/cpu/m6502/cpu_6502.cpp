@@ -705,6 +705,84 @@ std::vector<uint8_t> Cpu6502::EncodeLSR(uint16_t operand, AddressingMode mode) c
     return bytes;
 }
 
+// Group 3: Rotate Instructions
+
+// ROL - Rotate Left
+std::vector<uint8_t> Cpu6502::EncodeROL(uint16_t operand, AddressingMode mode) const {
+    std::vector<uint8_t> bytes;
+
+    switch (mode) {
+        case AddressingMode::Accumulator:
+            bytes.push_back(0x2A);  // ROL A
+            break;
+
+        case AddressingMode::ZeroPage:
+            bytes.push_back(0x26);  // ROL zp
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+            break;
+
+        case AddressingMode::ZeroPageX:
+            bytes.push_back(0x36);  // ROL zp,X
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+            break;
+
+        case AddressingMode::Absolute:
+            bytes.push_back(0x2E);  // ROL abs
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
+            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
+            break;
+
+        case AddressingMode::AbsoluteX:
+            bytes.push_back(0x3E);  // ROL abs,X
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
+            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
+            break;
+
+        default:
+            break;
+    }
+
+    return bytes;
+}
+
+// ROR - Rotate Right
+std::vector<uint8_t> Cpu6502::EncodeROR(uint16_t operand, AddressingMode mode) const {
+    std::vector<uint8_t> bytes;
+
+    switch (mode) {
+        case AddressingMode::Accumulator:
+            bytes.push_back(0x6A);  // ROR A
+            break;
+
+        case AddressingMode::ZeroPage:
+            bytes.push_back(0x66);  // ROR zp
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+            break;
+
+        case AddressingMode::ZeroPageX:
+            bytes.push_back(0x76);  // ROR zp,X
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+            break;
+
+        case AddressingMode::Absolute:
+            bytes.push_back(0x6E);  // ROR abs
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
+            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
+            break;
+
+        case AddressingMode::AbsoluteX:
+            bytes.push_back(0x7E);  // ROR abs,X
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
+            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
+            break;
+
+        default:
+            break;
+    }
+
+    return bytes;
+}
+
 // Calculate instruction size based on addressing mode
 size_t Cpu6502::CalculateInstructionSize(AddressingMode mode) const {
     switch (mode) {

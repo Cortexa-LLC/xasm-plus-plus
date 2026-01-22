@@ -225,6 +225,10 @@ AssemblerResult Assembler::Assemble() {
                                     inst->encoded_bytes = cpu_->EncodeASL(value, mode);
                                 } else if (mnemonic == "LSR") {
                                     inst->encoded_bytes = cpu_->EncodeLSR(value, mode);
+                                } else if (mnemonic == "ROL") {
+                                    inst->encoded_bytes = cpu_->EncodeROL(value, mode);
+                                } else if (mnemonic == "ROR") {
+                                    inst->encoded_bytes = cpu_->EncodeROR(value, mode);
                                 } else {
                                     // Unknown instruction
                                     AssemblerError error;

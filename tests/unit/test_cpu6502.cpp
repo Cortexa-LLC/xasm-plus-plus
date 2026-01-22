@@ -784,3 +784,97 @@ TEST(Cpu6502Test, LSR_AbsoluteX) {
     EXPECT_EQ(result[1], 0x34);  // Low byte
     EXPECT_EQ(result[2], 0x12);  // High byte
 }
+
+// Group 3: Rotate Instructions - ROL, ROR
+
+// Test 80: ROL accumulator
+TEST(Cpu6502Test, ROL_Accumulator) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeROL(0, AddressingMode::Accumulator);
+    EXPECT_EQ(result.size(), 1);
+    EXPECT_EQ(result[0], 0x2A);  // ROL A opcode
+}
+
+// Test 81: ROL zero page
+TEST(Cpu6502Test, ROL_ZeroPage) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeROL(0x80, AddressingMode::ZeroPage);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0x26);  // ROL zp opcode
+    EXPECT_EQ(result[1], 0x80);  // Zero page address
+}
+
+// Test 82: ROL zero page,X
+TEST(Cpu6502Test, ROL_ZeroPageX) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeROL(0x80, AddressingMode::ZeroPageX);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0x36);  // ROL zp,X opcode
+    EXPECT_EQ(result[1], 0x80);  // Zero page address
+}
+
+// Test 83: ROL absolute
+TEST(Cpu6502Test, ROL_Absolute) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeROL(0x1234, AddressingMode::Absolute);
+    EXPECT_EQ(result.size(), 3);
+    EXPECT_EQ(result[0], 0x2E);  // ROL abs opcode
+    EXPECT_EQ(result[1], 0x34);  // Low byte
+    EXPECT_EQ(result[2], 0x12);  // High byte
+}
+
+// Test 84: ROL absolute,X
+TEST(Cpu6502Test, ROL_AbsoluteX) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeROL(0x1234, AddressingMode::AbsoluteX);
+    EXPECT_EQ(result.size(), 3);
+    EXPECT_EQ(result[0], 0x3E);  // ROL abs,X opcode
+    EXPECT_EQ(result[1], 0x34);  // Low byte
+    EXPECT_EQ(result[2], 0x12);  // High byte
+}
+
+// Test 85: ROR accumulator
+TEST(Cpu6502Test, ROR_Accumulator) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeROR(0, AddressingMode::Accumulator);
+    EXPECT_EQ(result.size(), 1);
+    EXPECT_EQ(result[0], 0x6A);  // ROR A opcode
+}
+
+// Test 86: ROR zero page
+TEST(Cpu6502Test, ROR_ZeroPage) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeROR(0x80, AddressingMode::ZeroPage);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0x66);  // ROR zp opcode
+    EXPECT_EQ(result[1], 0x80);  // Zero page address
+}
+
+// Test 87: ROR zero page,X
+TEST(Cpu6502Test, ROR_ZeroPageX) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeROR(0x80, AddressingMode::ZeroPageX);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0x76);  // ROR zp,X opcode
+    EXPECT_EQ(result[1], 0x80);  // Zero page address
+}
+
+// Test 88: ROR absolute
+TEST(Cpu6502Test, ROR_Absolute) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeROR(0x1234, AddressingMode::Absolute);
+    EXPECT_EQ(result.size(), 3);
+    EXPECT_EQ(result[0], 0x6E);  // ROR abs opcode
+    EXPECT_EQ(result[1], 0x34);  // Low byte
+    EXPECT_EQ(result[2], 0x12);  // High byte
+}
+
+// Test 89: ROR absolute,X
+TEST(Cpu6502Test, ROR_AbsoluteX) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeROR(0x1234, AddressingMode::AbsoluteX);
+    EXPECT_EQ(result.size(), 3);
+    EXPECT_EQ(result[0], 0x7E);  // ROR abs,X opcode
+    EXPECT_EQ(result[1], 0x34);  // Low byte
+    EXPECT_EQ(result[2], 0x12);  // High byte
+}

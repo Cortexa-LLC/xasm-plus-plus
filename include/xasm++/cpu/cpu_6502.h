@@ -96,6 +96,10 @@ public:
     std::vector<uint8_t> EncodeASL(uint16_t operand, AddressingMode mode) const;
     std::vector<uint8_t> EncodeLSR(uint16_t operand, AddressingMode mode) const;
 
+    // Group 3: Rotate Instructions
+    std::vector<uint8_t> EncodeROL(uint16_t operand, AddressingMode mode) const;
+    std::vector<uint8_t> EncodeROR(uint16_t operand, AddressingMode mode) const;
+
     // Calculate instruction size
     size_t CalculateInstructionSize(AddressingMode mode) const;
 };
