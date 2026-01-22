@@ -251,3 +251,126 @@ TEST(AssemblerTest, LabelAsOperand) {
     EXPECT_EQ(jmp->encoded_bytes[1], 0x05);  // Low byte of $8005
     EXPECT_EQ(jmp->encoded_bytes[2], 0x80);  // High byte of $8005
 }
+
+// Test 17: Backward reference - label defined before use
+TEST(AssemblerTest, BackwardReference) {
+    Assembler assembler;
+    Cpu6502 cpu;
+    assembler.SetCpuPlugin(&cpu);
+
+    Section section(".text", static_cast<uint32_t>(SectionAttributes::Code), 0x8000);
+    ConcreteSymbolTable symbols;
+
+    // Define label first at $8000
+    symbols.Define("loop", SymbolType::Label, std::make_shared<LiteralExpr>(0x8000));
+
+    // Then reference it later (backward reference)
+    auto jmp = std::make_shared<InstructionAtom>("JMP", "loop");
+    section.atoms.push_back(jmp);
+
+    assembler.AddSection(section);
+    assembler.SetSymbolTable(&symbols);
+    AssemblerResult result = assembler.Assemble();
+
+    EXPECT_TRUE(result.success);
+    EXPECT_EQ(jmp->encoded_bytes.size(), 3);
+    EXPECT_EQ(jmp->encoded_bytes[0], 0x4C);  // JMP absolute opcode
+    EXPECT_EQ(jmp->encoded_bytes[1], 0x00);  // Low byte of $8000
+    EXPECT_EQ(jmp->encoded_bytes[2], 0x80);  // High byte of $8000
+}
+
+// Test 18: Multiple label references
+TEST(AssemblerTest, MultipleLabelReferences) {
+    Assembler assembler;
+    Cpu6502 cpu;
+    assembler.SetCpuPlugin(&cpu);
+
+    Section section(".text", static_cast<uint32_t>(SectionAttributes::Code), 0x8000);
+    ConcreteSymbolTable symbols;
+
+    // Define multiple labels
+    symbols.Define("start", SymbolType::Label, std::make_shared<LiteralExpr>(0x8000));
+    symbols.Define("loop", SymbolType::Label, std::make_shared<LiteralExpr>(0x8010));
+    symbols.Define("end", SymbolType::Label, std::make_shared<LiteralExpr>(0x8020));
+
+    // Reference them in instructions
+    auto jmp1 = std::make_shared<InstructionAtom>("JMP", "start");
+    auto jmp2 = std::make_shared<InstructionAtom>("JMP", "loop");
+    auto jmp3 = std::make_shared<InstructionAtom>("JMP", "end");
+    section.atoms.push_back(jmp1);
+    section.atoms.push_back(jmp2);
+    section.atoms.push_back(jmp3);
+
+    assembler.AddSection(section);
+    assembler.SetSymbolTable(&symbols);
+    AssemblerResult result = assembler.Assemble();
+
+    EXPECT_TRUE(result.success);
+
+    // Verify first JMP to "start" ($8000)
+    EXPECT_EQ(jmp1->encoded_bytes[0], 0x4C);
+    EXPECT_EQ(jmp1->encoded_bytes[1], 0x00);
+    EXPECT_EQ(jmp1->encoded_bytes[2], 0x80);
+
+    // Verify second JMP to "loop" ($8010)
+    EXPECT_EQ(jmp2->encoded_bytes[0], 0x4C);
+    EXPECT_EQ(jmp2->encoded_bytes[1], 0x10);
+    EXPECT_EQ(jmp2->encoded_bytes[2], 0x80);
+
+    // Verify third JMP to "end" ($8020)
+    EXPECT_EQ(jmp3->encoded_bytes[0], 0x4C);
+    EXPECT_EQ(jmp3->encoded_bytes[1], 0x20);
+    EXPECT_EQ(jmp3->encoded_bytes[2], 0x80);
+}
+
+// Test 19: Undefined label - should encode with address 0
+TEST(AssemblerTest, UndefinedLabel) {
+    Assembler assembler;
+    Cpu6502 cpu;
+    assembler.SetCpuPlugin(&cpu);
+
+    Section section(".text", static_cast<uint32_t>(SectionAttributes::Code), 0x8000);
+    ConcreteSymbolTable symbols;
+
+    // Don't define the label, just reference it
+    auto jmp = std::make_shared<InstructionAtom>("JMP", "undefined_label");
+    section.atoms.push_back(jmp);
+
+    assembler.AddSection(section);
+    assembler.SetSymbolTable(&symbols);
+    AssemblerResult result = assembler.Assemble();
+
+    // Should succeed (single pass, undefined label gets value 0)
+    EXPECT_TRUE(result.success);
+    EXPECT_EQ(jmp->encoded_bytes.size(), 3);
+    EXPECT_EQ(jmp->encoded_bytes[0], 0x4C);  // JMP absolute opcode
+    EXPECT_EQ(jmp->encoded_bytes[1], 0x00);  // Low byte of $0000
+    EXPECT_EQ(jmp->encoded_bytes[2], 0x00);  // High byte of $0000
+}
+
+// Test 20: LDA with label operand
+TEST(AssemblerTest, LDAWithLabelOperand) {
+    Assembler assembler;
+    Cpu6502 cpu;
+    assembler.SetCpuPlugin(&cpu);
+
+    Section section(".text", static_cast<uint32_t>(SectionAttributes::Code), 0x8000);
+    ConcreteSymbolTable symbols;
+
+    // Define a data label
+    symbols.Define("data_addr", SymbolType::Label, std::make_shared<LiteralExpr>(0x0200));
+
+    // LDA data_addr (should resolve to LDA $0200)
+    auto lda = std::make_shared<InstructionAtom>("LDA", "data_addr");
+    section.atoms.push_back(lda);
+
+    assembler.AddSection(section);
+    assembler.SetSymbolTable(&symbols);
+    AssemblerResult result = assembler.Assemble();
+
+    EXPECT_TRUE(result.success);
+    EXPECT_EQ(lda->encoded_bytes.size(), 3);
+    EXPECT_EQ(lda->encoded_bytes[0], 0xAD);  // LDA absolute opcode
+    EXPECT_EQ(lda->encoded_bytes[1], 0x00);  // Low byte of $0200
+    EXPECT_EQ(lda->encoded_bytes[2], 0x02);  // High byte of $0200
+}
