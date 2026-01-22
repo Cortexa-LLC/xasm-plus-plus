@@ -19,14 +19,30 @@ std::vector<uint8_t> Cpu6502::EncodeLDA(uint16_t operand, AddressingMode mode) c
             bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
             break;
 
+        case AddressingMode::ZeroPageX:
+            bytes.push_back(0xB5);  // LDA zp,X
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+            break;
+
         case AddressingMode::Absolute:
             bytes.push_back(0xAD);  // LDA abs
             bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
             bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
             break;
 
+        case AddressingMode::AbsoluteX:
+            bytes.push_back(0xBD);  // LDA abs,X
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
+            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
+            break;
+
+        case AddressingMode::AbsoluteY:
+            bytes.push_back(0xB9);  // LDA abs,Y
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
+            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
+            break;
+
         default:
-            // For Phase 1, only support these modes
             break;
     }
 
@@ -43,8 +59,25 @@ std::vector<uint8_t> Cpu6502::EncodeSTA(uint16_t operand, AddressingMode mode) c
             bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
             break;
 
+        case AddressingMode::ZeroPageX:
+            bytes.push_back(0x95);  // STA zp,X
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+            break;
+
         case AddressingMode::Absolute:
             bytes.push_back(0x8D);  // STA abs
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF));
+            break;
+
+        case AddressingMode::AbsoluteX:
+            bytes.push_back(0x9D);  // STA abs,X
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF));
+            break;
+
+        case AddressingMode::AbsoluteY:
+            bytes.push_back(0x99);  // STA abs,Y
             bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
             bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF));
             break;
@@ -96,8 +129,25 @@ std::vector<uint8_t> Cpu6502::EncodeADC(uint16_t operand, AddressingMode mode) c
             bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
             break;
 
+        case AddressingMode::ZeroPageX:
+            bytes.push_back(0x75);  // ADC zp,X
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+            break;
+
         case AddressingMode::Absolute:
             bytes.push_back(0x6D);  // ADC abs
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
+            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
+            break;
+
+        case AddressingMode::AbsoluteX:
+            bytes.push_back(0x7D);  // ADC abs,X
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
+            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
+            break;
+
+        case AddressingMode::AbsoluteY:
+            bytes.push_back(0x79);  // ADC abs,Y
             bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
             bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
             break;
@@ -124,8 +174,25 @@ std::vector<uint8_t> Cpu6502::EncodeSBC(uint16_t operand, AddressingMode mode) c
             bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
             break;
 
+        case AddressingMode::ZeroPageX:
+            bytes.push_back(0xF5);  // SBC zp,X
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+            break;
+
         case AddressingMode::Absolute:
             bytes.push_back(0xED);  // SBC abs
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
+            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
+            break;
+
+        case AddressingMode::AbsoluteX:
+            bytes.push_back(0xFD);  // SBC abs,X
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
+            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
+            break;
+
+        case AddressingMode::AbsoluteY:
+            bytes.push_back(0xF9);  // SBC abs,Y
             bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
             bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
             break;
@@ -154,8 +221,25 @@ std::vector<uint8_t> Cpu6502::EncodeAND(uint16_t operand, AddressingMode mode) c
             bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
             break;
 
+        case AddressingMode::ZeroPageX:
+            bytes.push_back(0x35);  // AND zp,X
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+            break;
+
         case AddressingMode::Absolute:
             bytes.push_back(0x2D);  // AND abs
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
+            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
+            break;
+
+        case AddressingMode::AbsoluteX:
+            bytes.push_back(0x3D);  // AND abs,X
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
+            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
+            break;
+
+        case AddressingMode::AbsoluteY:
+            bytes.push_back(0x39);  // AND abs,Y
             bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
             bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
             break;
@@ -182,8 +266,25 @@ std::vector<uint8_t> Cpu6502::EncodeORA(uint16_t operand, AddressingMode mode) c
             bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
             break;
 
+        case AddressingMode::ZeroPageX:
+            bytes.push_back(0x15);  // ORA zp,X
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+            break;
+
         case AddressingMode::Absolute:
             bytes.push_back(0x0D);  // ORA abs
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
+            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
+            break;
+
+        case AddressingMode::AbsoluteX:
+            bytes.push_back(0x1D);  // ORA abs,X
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
+            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
+            break;
+
+        case AddressingMode::AbsoluteY:
+            bytes.push_back(0x19);  // ORA abs,Y
             bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
             bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
             break;
@@ -210,8 +311,25 @@ std::vector<uint8_t> Cpu6502::EncodeEOR(uint16_t operand, AddressingMode mode) c
             bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
             break;
 
+        case AddressingMode::ZeroPageX:
+            bytes.push_back(0x55);  // EOR zp,X
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+            break;
+
         case AddressingMode::Absolute:
             bytes.push_back(0x4D);  // EOR abs
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
+            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
+            break;
+
+        case AddressingMode::AbsoluteX:
+            bytes.push_back(0x5D);  // EOR abs,X
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
+            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
+            break;
+
+        case AddressingMode::AbsoluteY:
+            bytes.push_back(0x59);  // EOR abs,Y
             bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
             bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
             break;
@@ -240,8 +358,19 @@ std::vector<uint8_t> Cpu6502::EncodeLDX(uint16_t operand, AddressingMode mode) c
             bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
             break;
 
+        case AddressingMode::ZeroPageY:
+            bytes.push_back(0xB6);  // LDX zp,Y
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+            break;
+
         case AddressingMode::Absolute:
             bytes.push_back(0xAE);  // LDX abs
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
+            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
+            break;
+
+        case AddressingMode::AbsoluteY:
+            bytes.push_back(0xBE);  // LDX abs,Y
             bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
             bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
             break;
@@ -268,8 +397,19 @@ std::vector<uint8_t> Cpu6502::EncodeLDY(uint16_t operand, AddressingMode mode) c
             bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
             break;
 
+        case AddressingMode::ZeroPageX:
+            bytes.push_back(0xB4);  // LDY zp,X
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+            break;
+
         case AddressingMode::Absolute:
             bytes.push_back(0xAC);  // LDY abs
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
+            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
+            break;
+
+        case AddressingMode::AbsoluteX:
+            bytes.push_back(0xBC);  // LDY abs,X
             bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
             bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
             break;
@@ -288,6 +428,11 @@ std::vector<uint8_t> Cpu6502::EncodeSTX(uint16_t operand, AddressingMode mode) c
     switch (mode) {
         case AddressingMode::ZeroPage:
             bytes.push_back(0x86);  // STX zp
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+            break;
+
+        case AddressingMode::ZeroPageY:
+            bytes.push_back(0x96);  // STX zp,Y
             bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
             break;
 
@@ -311,6 +456,11 @@ std::vector<uint8_t> Cpu6502::EncodeSTY(uint16_t operand, AddressingMode mode) c
     switch (mode) {
         case AddressingMode::ZeroPage:
             bytes.push_back(0x84);  // STY zp
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+            break;
+
+        case AddressingMode::ZeroPageX:
+            bytes.push_back(0x94);  // STY zp,X
             bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
             break;
 
@@ -344,8 +494,25 @@ std::vector<uint8_t> Cpu6502::EncodeCMP(uint16_t operand, AddressingMode mode) c
             bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
             break;
 
+        case AddressingMode::ZeroPageX:
+            bytes.push_back(0xD5);  // CMP zp,X
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+            break;
+
         case AddressingMode::Absolute:
             bytes.push_back(0xCD);  // CMP abs
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
+            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
+            break;
+
+        case AddressingMode::AbsoluteX:
+            bytes.push_back(0xDD);  // CMP abs,X
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
+            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
+            break;
+
+        case AddressingMode::AbsoluteY:
+            bytes.push_back(0xD9);  // CMP abs,Y
             bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
             bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
             break;
@@ -527,8 +694,19 @@ std::vector<uint8_t> Cpu6502::EncodeINC(uint16_t operand, AddressingMode mode) c
             bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
             break;
 
+        case AddressingMode::ZeroPageX:
+            bytes.push_back(0xF6);  // INC zp,X
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+            break;
+
         case AddressingMode::Absolute:
             bytes.push_back(0xEE);  // INC abs
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
+            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
+            break;
+
+        case AddressingMode::AbsoluteX:
+            bytes.push_back(0xFE);  // INC abs,X
             bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
             bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
             break;
@@ -550,8 +728,19 @@ std::vector<uint8_t> Cpu6502::EncodeDEC(uint16_t operand, AddressingMode mode) c
             bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
             break;
 
+        case AddressingMode::ZeroPageX:
+            bytes.push_back(0xD6);  // DEC zp,X
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+            break;
+
         case AddressingMode::Absolute:
             bytes.push_back(0xCE);  // DEC abs
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
+            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
+            break;
+
+        case AddressingMode::AbsoluteX:
+            bytes.push_back(0xDE);  // DEC abs,X
             bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
             bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
             break;

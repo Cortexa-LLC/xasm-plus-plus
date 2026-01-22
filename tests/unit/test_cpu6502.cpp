@@ -1004,3 +1004,331 @@ TEST(Cpu6502Test, TYA_Implied) {
     EXPECT_EQ(result.size(), 1);
     EXPECT_EQ(result[0], 0x98);  // TYA opcode
 }
+
+// Group 7: Indexed Addressing Modes for Existing Instructions
+
+// Test 105: LDA zero page,X
+TEST(Cpu6502Test, LDA_ZeroPageX) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeLDA(0x80, AddressingMode::ZeroPageX);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0xB5);  // LDA zp,X opcode
+    EXPECT_EQ(result[1], 0x80);
+}
+
+// Test 106: LDA absolute,X
+TEST(Cpu6502Test, LDA_AbsoluteX) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeLDA(0x1234, AddressingMode::AbsoluteX);
+    EXPECT_EQ(result.size(), 3);
+    EXPECT_EQ(result[0], 0xBD);  // LDA abs,X opcode
+    EXPECT_EQ(result[1], 0x34);
+    EXPECT_EQ(result[2], 0x12);
+}
+
+// Test 107: LDA absolute,Y
+TEST(Cpu6502Test, LDA_AbsoluteY) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeLDA(0x1234, AddressingMode::AbsoluteY);
+    EXPECT_EQ(result.size(), 3);
+    EXPECT_EQ(result[0], 0xB9);  // LDA abs,Y opcode
+    EXPECT_EQ(result[1], 0x34);
+    EXPECT_EQ(result[2], 0x12);
+}
+
+// Test 108: STA zero page,X
+TEST(Cpu6502Test, STA_ZeroPageX) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeSTA(0x80, AddressingMode::ZeroPageX);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0x95);  // STA zp,X opcode
+    EXPECT_EQ(result[1], 0x80);
+}
+
+// Test 109: STA absolute,X
+TEST(Cpu6502Test, STA_AbsoluteX) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeSTA(0x1234, AddressingMode::AbsoluteX);
+    EXPECT_EQ(result.size(), 3);
+    EXPECT_EQ(result[0], 0x9D);  // STA abs,X opcode
+    EXPECT_EQ(result[1], 0x34);
+    EXPECT_EQ(result[2], 0x12);
+}
+
+// Test 110: STA absolute,Y
+TEST(Cpu6502Test, STA_AbsoluteY) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeSTA(0x1234, AddressingMode::AbsoluteY);
+    EXPECT_EQ(result.size(), 3);
+    EXPECT_EQ(result[0], 0x99);  // STA abs,Y opcode
+    EXPECT_EQ(result[1], 0x34);
+    EXPECT_EQ(result[2], 0x12);
+}
+
+// Test 111: LDX zero page,Y
+TEST(Cpu6502Test, LDX_ZeroPageY) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeLDX(0x80, AddressingMode::ZeroPageY);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0xB6);  // LDX zp,Y opcode
+    EXPECT_EQ(result[1], 0x80);
+}
+
+// Test 112: LDX absolute,Y
+TEST(Cpu6502Test, LDX_AbsoluteY) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeLDX(0x1234, AddressingMode::AbsoluteY);
+    EXPECT_EQ(result.size(), 3);
+    EXPECT_EQ(result[0], 0xBE);  // LDX abs,Y opcode
+    EXPECT_EQ(result[1], 0x34);
+    EXPECT_EQ(result[2], 0x12);
+}
+
+// Test 113: STX zero page,Y
+TEST(Cpu6502Test, STX_ZeroPageY) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeSTX(0x80, AddressingMode::ZeroPageY);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0x96);  // STX zp,Y opcode
+    EXPECT_EQ(result[1], 0x80);
+}
+
+// Test 114: LDY zero page,X
+TEST(Cpu6502Test, LDY_ZeroPageX) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeLDY(0x80, AddressingMode::ZeroPageX);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0xB4);  // LDY zp,X opcode
+    EXPECT_EQ(result[1], 0x80);
+}
+
+// Test 115: LDY absolute,X
+TEST(Cpu6502Test, LDY_AbsoluteX) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeLDY(0x1234, AddressingMode::AbsoluteX);
+    EXPECT_EQ(result.size(), 3);
+    EXPECT_EQ(result[0], 0xBC);  // LDY abs,X opcode
+    EXPECT_EQ(result[1], 0x34);
+    EXPECT_EQ(result[2], 0x12);
+}
+
+// Test 116: STY zero page,X
+TEST(Cpu6502Test, STY_ZeroPageX) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeSTY(0x80, AddressingMode::ZeroPageX);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0x94);  // STY zp,X opcode
+    EXPECT_EQ(result[1], 0x80);
+}
+
+// Test 117: AND zero page,X
+TEST(Cpu6502Test, AND_ZeroPageX) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeAND(0x80, AddressingMode::ZeroPageX);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0x35);  // AND zp,X opcode
+    EXPECT_EQ(result[1], 0x80);
+}
+
+// Test 118: AND absolute,X
+TEST(Cpu6502Test, AND_AbsoluteX) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeAND(0x1234, AddressingMode::AbsoluteX);
+    EXPECT_EQ(result.size(), 3);
+    EXPECT_EQ(result[0], 0x3D);  // AND abs,X opcode
+    EXPECT_EQ(result[1], 0x34);
+    EXPECT_EQ(result[2], 0x12);
+}
+
+// Test 119: AND absolute,Y
+TEST(Cpu6502Test, AND_AbsoluteY) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeAND(0x1234, AddressingMode::AbsoluteY);
+    EXPECT_EQ(result.size(), 3);
+    EXPECT_EQ(result[0], 0x39);  // AND abs,Y opcode
+    EXPECT_EQ(result[1], 0x34);
+    EXPECT_EQ(result[2], 0x12);
+}
+
+// Test 120: ORA zero page,X
+TEST(Cpu6502Test, ORA_ZeroPageX) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeORA(0x80, AddressingMode::ZeroPageX);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0x15);  // ORA zp,X opcode
+    EXPECT_EQ(result[1], 0x80);
+}
+
+// Test 121: ORA absolute,X
+TEST(Cpu6502Test, ORA_AbsoluteX) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeORA(0x1234, AddressingMode::AbsoluteX);
+    EXPECT_EQ(result.size(), 3);
+    EXPECT_EQ(result[0], 0x1D);  // ORA abs,X opcode
+    EXPECT_EQ(result[1], 0x34);
+    EXPECT_EQ(result[2], 0x12);
+}
+
+// Test 122: ORA absolute,Y
+TEST(Cpu6502Test, ORA_AbsoluteY) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeORA(0x1234, AddressingMode::AbsoluteY);
+    EXPECT_EQ(result.size(), 3);
+    EXPECT_EQ(result[0], 0x19);  // ORA abs,Y opcode
+    EXPECT_EQ(result[1], 0x34);
+    EXPECT_EQ(result[2], 0x12);
+}
+
+// Test 123: EOR zero page,X
+TEST(Cpu6502Test, EOR_ZeroPageX) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeEOR(0x80, AddressingMode::ZeroPageX);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0x55);  // EOR zp,X opcode
+    EXPECT_EQ(result[1], 0x80);
+}
+
+// Test 124: EOR absolute,X
+TEST(Cpu6502Test, EOR_AbsoluteX) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeEOR(0x1234, AddressingMode::AbsoluteX);
+    EXPECT_EQ(result.size(), 3);
+    EXPECT_EQ(result[0], 0x5D);  // EOR abs,X opcode
+    EXPECT_EQ(result[1], 0x34);
+    EXPECT_EQ(result[2], 0x12);
+}
+
+// Test 125: EOR absolute,Y
+TEST(Cpu6502Test, EOR_AbsoluteY) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeEOR(0x1234, AddressingMode::AbsoluteY);
+    EXPECT_EQ(result.size(), 3);
+    EXPECT_EQ(result[0], 0x59);  // EOR abs,Y opcode
+    EXPECT_EQ(result[1], 0x34);
+    EXPECT_EQ(result[2], 0x12);
+}
+
+// Test 126: ADC zero page,X
+TEST(Cpu6502Test, ADC_ZeroPageX) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeADC(0x80, AddressingMode::ZeroPageX);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0x75);  // ADC zp,X opcode
+    EXPECT_EQ(result[1], 0x80);
+}
+
+// Test 127: ADC absolute,X
+TEST(Cpu6502Test, ADC_AbsoluteX) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeADC(0x1234, AddressingMode::AbsoluteX);
+    EXPECT_EQ(result.size(), 3);
+    EXPECT_EQ(result[0], 0x7D);  // ADC abs,X opcode
+    EXPECT_EQ(result[1], 0x34);
+    EXPECT_EQ(result[2], 0x12);
+}
+
+// Test 128: ADC absolute,Y
+TEST(Cpu6502Test, ADC_AbsoluteY) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeADC(0x1234, AddressingMode::AbsoluteY);
+    EXPECT_EQ(result.size(), 3);
+    EXPECT_EQ(result[0], 0x79);  // ADC abs,Y opcode
+    EXPECT_EQ(result[1], 0x34);
+    EXPECT_EQ(result[2], 0x12);
+}
+
+// Test 129: SBC zero page,X
+TEST(Cpu6502Test, SBC_ZeroPageX) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeSBC(0x80, AddressingMode::ZeroPageX);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0xF5);  // SBC zp,X opcode
+    EXPECT_EQ(result[1], 0x80);
+}
+
+// Test 130: SBC absolute,X
+TEST(Cpu6502Test, SBC_AbsoluteX) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeSBC(0x1234, AddressingMode::AbsoluteX);
+    EXPECT_EQ(result.size(), 3);
+    EXPECT_EQ(result[0], 0xFD);  // SBC abs,X opcode
+    EXPECT_EQ(result[1], 0x34);
+    EXPECT_EQ(result[2], 0x12);
+}
+
+// Test 131: SBC absolute,Y
+TEST(Cpu6502Test, SBC_AbsoluteY) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeSBC(0x1234, AddressingMode::AbsoluteY);
+    EXPECT_EQ(result.size(), 3);
+    EXPECT_EQ(result[0], 0xF9);  // SBC abs,Y opcode
+    EXPECT_EQ(result[1], 0x34);
+    EXPECT_EQ(result[2], 0x12);
+}
+
+// Test 132: CMP zero page,X
+TEST(Cpu6502Test, CMP_ZeroPageX) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeCMP(0x80, AddressingMode::ZeroPageX);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0xD5);  // CMP zp,X opcode
+    EXPECT_EQ(result[1], 0x80);
+}
+
+// Test 133: CMP absolute,X
+TEST(Cpu6502Test, CMP_AbsoluteX) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeCMP(0x1234, AddressingMode::AbsoluteX);
+    EXPECT_EQ(result.size(), 3);
+    EXPECT_EQ(result[0], 0xDD);  // CMP abs,X opcode
+    EXPECT_EQ(result[1], 0x34);
+    EXPECT_EQ(result[2], 0x12);
+}
+
+// Test 134: CMP absolute,Y
+TEST(Cpu6502Test, CMP_AbsoluteY) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeCMP(0x1234, AddressingMode::AbsoluteY);
+    EXPECT_EQ(result.size(), 3);
+    EXPECT_EQ(result[0], 0xD9);  // CMP abs,Y opcode
+    EXPECT_EQ(result[1], 0x34);
+    EXPECT_EQ(result[2], 0x12);
+}
+
+// Test 135: INC zero page,X
+TEST(Cpu6502Test, INC_ZeroPageX) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeINC(0x80, AddressingMode::ZeroPageX);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0xF6);  // INC zp,X opcode
+    EXPECT_EQ(result[1], 0x80);
+}
+
+// Test 136: INC absolute,X
+TEST(Cpu6502Test, INC_AbsoluteX) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeINC(0x1234, AddressingMode::AbsoluteX);
+    EXPECT_EQ(result.size(), 3);
+    EXPECT_EQ(result[0], 0xFE);  // INC abs,X opcode
+    EXPECT_EQ(result[1], 0x34);
+    EXPECT_EQ(result[2], 0x12);
+}
+
+// Test 137: DEC zero page,X
+TEST(Cpu6502Test, DEC_ZeroPageX) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeDEC(0x80, AddressingMode::ZeroPageX);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0xD6);  // DEC zp,X opcode
+    EXPECT_EQ(result[1], 0x80);
+}
+
+// Test 138: DEC absolute,X
+TEST(Cpu6502Test, DEC_AbsoluteX) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeDEC(0x1234, AddressingMode::AbsoluteX);
+    EXPECT_EQ(result.size(), 3);
+    EXPECT_EQ(result[0], 0xDE);  // DEC abs,X opcode
+    EXPECT_EQ(result[1], 0x34);
+    EXPECT_EQ(result[2], 0x12);
+}
