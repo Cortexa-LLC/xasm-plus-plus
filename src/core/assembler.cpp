@@ -229,6 +229,36 @@ AssemblerResult Assembler::Assemble() {
                                     inst->encoded_bytes = cpu_->EncodeROL(value, mode);
                                 } else if (mnemonic == "ROR") {
                                     inst->encoded_bytes = cpu_->EncodeROR(value, mode);
+                                } else if (mnemonic == "RTI") {
+                                    inst->encoded_bytes = cpu_->EncodeRTI();
+                                } else if (mnemonic == "BRK") {
+                                    inst->encoded_bytes = cpu_->EncodeBRK();
+                                } else if (mnemonic == "CLC") {
+                                    inst->encoded_bytes = cpu_->EncodeCLC();
+                                } else if (mnemonic == "SEC") {
+                                    inst->encoded_bytes = cpu_->EncodeSEC();
+                                } else if (mnemonic == "CLD") {
+                                    inst->encoded_bytes = cpu_->EncodeCLD();
+                                } else if (mnemonic == "SED") {
+                                    inst->encoded_bytes = cpu_->EncodeSED();
+                                } else if (mnemonic == "CLI") {
+                                    inst->encoded_bytes = cpu_->EncodeCLI();
+                                } else if (mnemonic == "SEI") {
+                                    inst->encoded_bytes = cpu_->EncodeSEI();
+                                } else if (mnemonic == "CLV") {
+                                    inst->encoded_bytes = cpu_->EncodeCLV();
+                                } else if (mnemonic == "TSX") {
+                                    inst->encoded_bytes = cpu_->EncodeTSX();
+                                } else if (mnemonic == "TXS") {
+                                    inst->encoded_bytes = cpu_->EncodeTXS();
+                                } else if (mnemonic == "TAX") {
+                                    inst->encoded_bytes = cpu_->EncodeTAX();
+                                } else if (mnemonic == "TAY") {
+                                    inst->encoded_bytes = cpu_->EncodeTAY();
+                                } else if (mnemonic == "TXA") {
+                                    inst->encoded_bytes = cpu_->EncodeTXA();
+                                } else if (mnemonic == "TYA") {
+                                    inst->encoded_bytes = cpu_->EncodeTYA();
                                 } else {
                                     // Unknown instruction
                                     AssemblerError error;

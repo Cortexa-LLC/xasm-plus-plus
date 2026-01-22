@@ -100,6 +100,27 @@ public:
     std::vector<uint8_t> EncodeROL(uint16_t operand, AddressingMode mode) const;
     std::vector<uint8_t> EncodeROR(uint16_t operand, AddressingMode mode) const;
 
+    // Group 4: Interrupt Instructions
+    std::vector<uint8_t> EncodeRTI() const;
+    std::vector<uint8_t> EncodeBRK() const;
+
+    // Group 5: Flag Operations
+    std::vector<uint8_t> EncodeCLC() const;
+    std::vector<uint8_t> EncodeSEC() const;
+    std::vector<uint8_t> EncodeCLD() const;
+    std::vector<uint8_t> EncodeSED() const;
+    std::vector<uint8_t> EncodeCLI() const;
+    std::vector<uint8_t> EncodeSEI() const;
+    std::vector<uint8_t> EncodeCLV() const;
+
+    // Group 6: Transfer Instructions
+    std::vector<uint8_t> EncodeTSX() const;
+    std::vector<uint8_t> EncodeTXS() const;
+    std::vector<uint8_t> EncodeTAX() const;
+    std::vector<uint8_t> EncodeTAY() const;
+    std::vector<uint8_t> EncodeTXA() const;
+    std::vector<uint8_t> EncodeTYA() const;
+
     // Calculate instruction size
     size_t CalculateInstructionSize(AddressingMode mode) const;
 };

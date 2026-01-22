@@ -878,3 +878,129 @@ TEST(Cpu6502Test, ROR_AbsoluteX) {
     EXPECT_EQ(result[1], 0x34);  // Low byte
     EXPECT_EQ(result[2], 0x12);  // High byte
 }
+
+// Group 4: Interrupt Instructions - RTI, BRK
+
+// Test 90: RTI implied
+TEST(Cpu6502Test, RTI_Implied) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeRTI();
+    EXPECT_EQ(result.size(), 1);
+    EXPECT_EQ(result[0], 0x40);  // RTI opcode
+}
+
+// Test 91: BRK implied
+TEST(Cpu6502Test, BRK_Implied) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeBRK();
+    EXPECT_EQ(result.size(), 1);
+    EXPECT_EQ(result[0], 0x00);  // BRK opcode
+}
+
+// Group 5: Flag Operations
+
+// Test 92: CLC implied
+TEST(Cpu6502Test, CLC_Implied) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeCLC();
+    EXPECT_EQ(result.size(), 1);
+    EXPECT_EQ(result[0], 0x18);  // CLC opcode
+}
+
+// Test 93: SEC implied
+TEST(Cpu6502Test, SEC_Implied) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeSEC();
+    EXPECT_EQ(result.size(), 1);
+    EXPECT_EQ(result[0], 0x38);  // SEC opcode
+}
+
+// Test 94: CLD implied
+TEST(Cpu6502Test, CLD_Implied) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeCLD();
+    EXPECT_EQ(result.size(), 1);
+    EXPECT_EQ(result[0], 0xD8);  // CLD opcode
+}
+
+// Test 95: SED implied
+TEST(Cpu6502Test, SED_Implied) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeSED();
+    EXPECT_EQ(result.size(), 1);
+    EXPECT_EQ(result[0], 0xF8);  // SED opcode
+}
+
+// Test 96: CLI implied
+TEST(Cpu6502Test, CLI_Implied) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeCLI();
+    EXPECT_EQ(result.size(), 1);
+    EXPECT_EQ(result[0], 0x58);  // CLI opcode
+}
+
+// Test 97: SEI implied
+TEST(Cpu6502Test, SEI_Implied) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeSEI();
+    EXPECT_EQ(result.size(), 1);
+    EXPECT_EQ(result[0], 0x78);  // SEI opcode
+}
+
+// Test 98: CLV implied
+TEST(Cpu6502Test, CLV_Implied) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeCLV();
+    EXPECT_EQ(result.size(), 1);
+    EXPECT_EQ(result[0], 0xB8);  // CLV opcode
+}
+
+// Group 6: Transfer Instructions
+
+// Test 99: TSX implied
+TEST(Cpu6502Test, TSX_Implied) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeTSX();
+    EXPECT_EQ(result.size(), 1);
+    EXPECT_EQ(result[0], 0xBA);  // TSX opcode
+}
+
+// Test 100: TXS implied
+TEST(Cpu6502Test, TXS_Implied) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeTXS();
+    EXPECT_EQ(result.size(), 1);
+    EXPECT_EQ(result[0], 0x9A);  // TXS opcode
+}
+
+// Test 101: TAX implied
+TEST(Cpu6502Test, TAX_Implied) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeTAX();
+    EXPECT_EQ(result.size(), 1);
+    EXPECT_EQ(result[0], 0xAA);  // TAX opcode
+}
+
+// Test 102: TAY implied
+TEST(Cpu6502Test, TAY_Implied) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeTAY();
+    EXPECT_EQ(result.size(), 1);
+    EXPECT_EQ(result[0], 0xA8);  // TAY opcode
+}
+
+// Test 103: TXA implied
+TEST(Cpu6502Test, TXA_Implied) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeTXA();
+    EXPECT_EQ(result.size(), 1);
+    EXPECT_EQ(result[0], 0x8A);  // TXA opcode
+}
+
+// Test 104: TYA implied
+TEST(Cpu6502Test, TYA_Implied) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeTYA();
+    EXPECT_EQ(result.size(), 1);
+    EXPECT_EQ(result[0], 0x98);  // TYA opcode
+}

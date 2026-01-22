@@ -783,6 +783,87 @@ std::vector<uint8_t> Cpu6502::EncodeROR(uint16_t operand, AddressingMode mode) c
     return bytes;
 }
 
+// Group 4: Interrupt Instructions
+
+// RTI - Return from Interrupt
+std::vector<uint8_t> Cpu6502::EncodeRTI() const {
+    return {0x40};
+}
+
+// BRK - Break
+std::vector<uint8_t> Cpu6502::EncodeBRK() const {
+    return {0x00};
+}
+
+// Group 5: Flag Operations
+
+// CLC - Clear Carry
+std::vector<uint8_t> Cpu6502::EncodeCLC() const {
+    return {0x18};
+}
+
+// SEC - Set Carry
+std::vector<uint8_t> Cpu6502::EncodeSEC() const {
+    return {0x38};
+}
+
+// CLD - Clear Decimal
+std::vector<uint8_t> Cpu6502::EncodeCLD() const {
+    return {0xD8};
+}
+
+// SED - Set Decimal
+std::vector<uint8_t> Cpu6502::EncodeSED() const {
+    return {0xF8};
+}
+
+// CLI - Clear Interrupt Disable
+std::vector<uint8_t> Cpu6502::EncodeCLI() const {
+    return {0x58};
+}
+
+// SEI - Set Interrupt Disable
+std::vector<uint8_t> Cpu6502::EncodeSEI() const {
+    return {0x78};
+}
+
+// CLV - Clear Overflow
+std::vector<uint8_t> Cpu6502::EncodeCLV() const {
+    return {0xB8};
+}
+
+// Group 6: Transfer Instructions
+
+// TSX - Transfer SP to X
+std::vector<uint8_t> Cpu6502::EncodeTSX() const {
+    return {0xBA};
+}
+
+// TXS - Transfer X to SP
+std::vector<uint8_t> Cpu6502::EncodeTXS() const {
+    return {0x9A};
+}
+
+// TAX - Transfer A to X
+std::vector<uint8_t> Cpu6502::EncodeTAX() const {
+    return {0xAA};
+}
+
+// TAY - Transfer A to Y
+std::vector<uint8_t> Cpu6502::EncodeTAY() const {
+    return {0xA8};
+}
+
+// TXA - Transfer X to A
+std::vector<uint8_t> Cpu6502::EncodeTXA() const {
+    return {0x8A};
+}
+
+// TYA - Transfer Y to A
+std::vector<uint8_t> Cpu6502::EncodeTYA() const {
+    return {0x98};
+}
+
 // Calculate instruction size based on addressing mode
 size_t Cpu6502::CalculateInstructionSize(AddressingMode mode) const {
     switch (mode) {
