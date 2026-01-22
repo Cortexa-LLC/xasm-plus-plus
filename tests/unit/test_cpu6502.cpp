@@ -387,3 +387,89 @@ TEST(Cpu6502Test, STY_Absolute) {
     EXPECT_EQ(result[1], 0x34);  // Low byte
     EXPECT_EQ(result[2], 0x12);  // High byte
 }
+
+// Group 4: Comparisons
+
+// Test 38: CMP immediate
+TEST(Cpu6502Test, CMP_Immediate) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeCMP(0x42, AddressingMode::Immediate);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0xC9);  // CMP immediate opcode
+    EXPECT_EQ(result[1], 0x42);  // Operand
+}
+
+// Test 39: CMP zero page
+TEST(Cpu6502Test, CMP_ZeroPage) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeCMP(0x80, AddressingMode::ZeroPage);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0xC5);  // CMP zero page opcode
+    EXPECT_EQ(result[1], 0x80);  // Address
+}
+
+// Test 40: CMP absolute
+TEST(Cpu6502Test, CMP_Absolute) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeCMP(0x1234, AddressingMode::Absolute);
+    EXPECT_EQ(result.size(), 3);
+    EXPECT_EQ(result[0], 0xCD);  // CMP absolute opcode
+    EXPECT_EQ(result[1], 0x34);  // Low byte
+    EXPECT_EQ(result[2], 0x12);  // High byte
+}
+
+// Test 41: CPX immediate
+TEST(Cpu6502Test, CPX_Immediate) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeCPX(0x42, AddressingMode::Immediate);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0xE0);  // CPX immediate opcode
+    EXPECT_EQ(result[1], 0x42);  // Operand
+}
+
+// Test 42: CPX zero page
+TEST(Cpu6502Test, CPX_ZeroPage) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeCPX(0x80, AddressingMode::ZeroPage);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0xE4);  // CPX zero page opcode
+    EXPECT_EQ(result[1], 0x80);  // Address
+}
+
+// Test 43: CPX absolute
+TEST(Cpu6502Test, CPX_Absolute) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeCPX(0x1234, AddressingMode::Absolute);
+    EXPECT_EQ(result.size(), 3);
+    EXPECT_EQ(result[0], 0xEC);  // CPX absolute opcode
+    EXPECT_EQ(result[1], 0x34);  // Low byte
+    EXPECT_EQ(result[2], 0x12);  // High byte
+}
+
+// Test 44: CPY immediate
+TEST(Cpu6502Test, CPY_Immediate) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeCPY(0x42, AddressingMode::Immediate);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0xC0);  // CPY immediate opcode
+    EXPECT_EQ(result[1], 0x42);  // Operand
+}
+
+// Test 45: CPY zero page
+TEST(Cpu6502Test, CPY_ZeroPage) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeCPY(0x80, AddressingMode::ZeroPage);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0xC4);  // CPY zero page opcode
+    EXPECT_EQ(result[1], 0x80);  // Address
+}
+
+// Test 46: CPY absolute
+TEST(Cpu6502Test, CPY_Absolute) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeCPY(0x1234, AddressingMode::Absolute);
+    EXPECT_EQ(result.size(), 3);
+    EXPECT_EQ(result[0], 0xCC);  // CPY absolute opcode
+    EXPECT_EQ(result[1], 0x34);  // Low byte
+    EXPECT_EQ(result[2], 0x12);  // High byte
+}

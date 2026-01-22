@@ -55,6 +55,11 @@ public:
     std::vector<uint8_t> EncodeSTX(uint16_t operand, AddressingMode mode) const;
     std::vector<uint8_t> EncodeSTY(uint16_t operand, AddressingMode mode) const;
 
+    // Phase 2.2: Comparisons
+    std::vector<uint8_t> EncodeCMP(uint16_t operand, AddressingMode mode) const;
+    std::vector<uint8_t> EncodeCPX(uint16_t operand, AddressingMode mode) const;
+    std::vector<uint8_t> EncodeCPY(uint16_t operand, AddressingMode mode) const;
+
     // Calculate instruction size
     size_t CalculateInstructionSize(AddressingMode mode) const;
 };

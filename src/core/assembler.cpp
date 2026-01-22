@@ -175,6 +175,12 @@ AssemblerResult Assembler::Assemble() {
                                     inst->encoded_bytes = cpu_->EncodeSTX(value, mode);
                                 } else if (mnemonic == "STY") {
                                     inst->encoded_bytes = cpu_->EncodeSTY(value, mode);
+                                } else if (mnemonic == "CMP") {
+                                    inst->encoded_bytes = cpu_->EncodeCMP(value, mode);
+                                } else if (mnemonic == "CPX") {
+                                    inst->encoded_bytes = cpu_->EncodeCPX(value, mode);
+                                } else if (mnemonic == "CPY") {
+                                    inst->encoded_bytes = cpu_->EncodeCPY(value, mode);
                                 } else {
                                     // Unknown instruction
                                     AssemblerError error;
