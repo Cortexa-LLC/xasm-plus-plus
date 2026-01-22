@@ -49,6 +49,12 @@ public:
     std::vector<uint8_t> EncodeORA(uint16_t operand, AddressingMode mode) const;
     std::vector<uint8_t> EncodeEOR(uint16_t operand, AddressingMode mode) const;
 
+    // Phase 2.2: Additional loads/stores
+    std::vector<uint8_t> EncodeLDX(uint16_t operand, AddressingMode mode) const;
+    std::vector<uint8_t> EncodeLDY(uint16_t operand, AddressingMode mode) const;
+    std::vector<uint8_t> EncodeSTX(uint16_t operand, AddressingMode mode) const;
+    std::vector<uint8_t> EncodeSTY(uint16_t operand, AddressingMode mode) const;
+
     // Calculate instruction size
     size_t CalculateInstructionSize(AddressingMode mode) const;
 };

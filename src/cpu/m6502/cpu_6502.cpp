@@ -223,6 +223,110 @@ std::vector<uint8_t> Cpu6502::EncodeEOR(uint16_t operand, AddressingMode mode) c
     return bytes;
 }
 
+// Phase 2.2: Additional Loads/Stores
+
+// LDX - Load X Register
+std::vector<uint8_t> Cpu6502::EncodeLDX(uint16_t operand, AddressingMode mode) const {
+    std::vector<uint8_t> bytes;
+
+    switch (mode) {
+        case AddressingMode::Immediate:
+            bytes.push_back(0xA2);  // LDX #imm
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+            break;
+
+        case AddressingMode::ZeroPage:
+            bytes.push_back(0xA6);  // LDX zp
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+            break;
+
+        case AddressingMode::Absolute:
+            bytes.push_back(0xAE);  // LDX abs
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
+            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
+            break;
+
+        default:
+            break;
+    }
+
+    return bytes;
+}
+
+// LDY - Load Y Register
+std::vector<uint8_t> Cpu6502::EncodeLDY(uint16_t operand, AddressingMode mode) const {
+    std::vector<uint8_t> bytes;
+
+    switch (mode) {
+        case AddressingMode::Immediate:
+            bytes.push_back(0xA0);  // LDY #imm
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+            break;
+
+        case AddressingMode::ZeroPage:
+            bytes.push_back(0xA4);  // LDY zp
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+            break;
+
+        case AddressingMode::Absolute:
+            bytes.push_back(0xAC);  // LDY abs
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
+            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
+            break;
+
+        default:
+            break;
+    }
+
+    return bytes;
+}
+
+// STX - Store X Register
+std::vector<uint8_t> Cpu6502::EncodeSTX(uint16_t operand, AddressingMode mode) const {
+    std::vector<uint8_t> bytes;
+
+    switch (mode) {
+        case AddressingMode::ZeroPage:
+            bytes.push_back(0x86);  // STX zp
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+            break;
+
+        case AddressingMode::Absolute:
+            bytes.push_back(0x8E);  // STX abs
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
+            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
+            break;
+
+        default:
+            break;
+    }
+
+    return bytes;
+}
+
+// STY - Store Y Register
+std::vector<uint8_t> Cpu6502::EncodeSTY(uint16_t operand, AddressingMode mode) const {
+    std::vector<uint8_t> bytes;
+
+    switch (mode) {
+        case AddressingMode::ZeroPage:
+            bytes.push_back(0x84);  // STY zp
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+            break;
+
+        case AddressingMode::Absolute:
+            bytes.push_back(0x8C);  // STY abs
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
+            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
+            break;
+
+        default:
+            break;
+    }
+
+    return bytes;
+}
+
 // Calculate instruction size based on addressing mode
 size_t Cpu6502::CalculateInstructionSize(AddressingMode mode) const {
     switch (mode) {

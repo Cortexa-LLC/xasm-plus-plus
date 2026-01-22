@@ -291,3 +291,99 @@ TEST(Cpu6502Test, EOR_Absolute) {
     EXPECT_EQ(result[1], 0x34);  // Low byte
     EXPECT_EQ(result[2], 0x12);  // High byte
 }
+
+// Group 3: Additional Loads/Stores
+
+// Test 28: LDX immediate
+TEST(Cpu6502Test, LDX_Immediate) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeLDX(0x42, AddressingMode::Immediate);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0xA2);  // LDX immediate opcode
+    EXPECT_EQ(result[1], 0x42);  // Operand
+}
+
+// Test 29: LDX zero page
+TEST(Cpu6502Test, LDX_ZeroPage) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeLDX(0x80, AddressingMode::ZeroPage);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0xA6);  // LDX zero page opcode
+    EXPECT_EQ(result[1], 0x80);  // Address
+}
+
+// Test 30: LDX absolute
+TEST(Cpu6502Test, LDX_Absolute) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeLDX(0x1234, AddressingMode::Absolute);
+    EXPECT_EQ(result.size(), 3);
+    EXPECT_EQ(result[0], 0xAE);  // LDX absolute opcode
+    EXPECT_EQ(result[1], 0x34);  // Low byte
+    EXPECT_EQ(result[2], 0x12);  // High byte
+}
+
+// Test 31: LDY immediate
+TEST(Cpu6502Test, LDY_Immediate) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeLDY(0x42, AddressingMode::Immediate);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0xA0);  // LDY immediate opcode
+    EXPECT_EQ(result[1], 0x42);  // Operand
+}
+
+// Test 32: LDY zero page
+TEST(Cpu6502Test, LDY_ZeroPage) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeLDY(0x80, AddressingMode::ZeroPage);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0xA4);  // LDY zero page opcode
+    EXPECT_EQ(result[1], 0x80);  // Address
+}
+
+// Test 33: LDY absolute
+TEST(Cpu6502Test, LDY_Absolute) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeLDY(0x1234, AddressingMode::Absolute);
+    EXPECT_EQ(result.size(), 3);
+    EXPECT_EQ(result[0], 0xAC);  // LDY absolute opcode
+    EXPECT_EQ(result[1], 0x34);  // Low byte
+    EXPECT_EQ(result[2], 0x12);  // High byte
+}
+
+// Test 34: STX zero page
+TEST(Cpu6502Test, STX_ZeroPage) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeSTX(0x80, AddressingMode::ZeroPage);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0x86);  // STX zero page opcode
+    EXPECT_EQ(result[1], 0x80);  // Address
+}
+
+// Test 35: STX absolute
+TEST(Cpu6502Test, STX_Absolute) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeSTX(0x1234, AddressingMode::Absolute);
+    EXPECT_EQ(result.size(), 3);
+    EXPECT_EQ(result[0], 0x8E);  // STX absolute opcode
+    EXPECT_EQ(result[1], 0x34);  // Low byte
+    EXPECT_EQ(result[2], 0x12);  // High byte
+}
+
+// Test 36: STY zero page
+TEST(Cpu6502Test, STY_ZeroPage) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeSTY(0x80, AddressingMode::ZeroPage);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0x84);  // STY zero page opcode
+    EXPECT_EQ(result[1], 0x80);  // Address
+}
+
+// Test 37: STY absolute
+TEST(Cpu6502Test, STY_Absolute) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeSTY(0x1234, AddressingMode::Absolute);
+    EXPECT_EQ(result.size(), 3);
+    EXPECT_EQ(result[0], 0x8C);  // STY absolute opcode
+    EXPECT_EQ(result[1], 0x34);  // Low byte
+    EXPECT_EQ(result[2], 0x12);  // High byte
+}

@@ -167,6 +167,14 @@ AssemblerResult Assembler::Assemble() {
                                     inst->encoded_bytes = cpu_->EncodeORA(value, mode);
                                 } else if (mnemonic == "EOR") {
                                     inst->encoded_bytes = cpu_->EncodeEOR(value, mode);
+                                } else if (mnemonic == "LDX") {
+                                    inst->encoded_bytes = cpu_->EncodeLDX(value, mode);
+                                } else if (mnemonic == "LDY") {
+                                    inst->encoded_bytes = cpu_->EncodeLDY(value, mode);
+                                } else if (mnemonic == "STX") {
+                                    inst->encoded_bytes = cpu_->EncodeSTX(value, mode);
+                                } else if (mnemonic == "STY") {
+                                    inst->encoded_bytes = cpu_->EncodeSTY(value, mode);
                                 } else {
                                     // Unknown instruction
                                     AssemblerError error;
