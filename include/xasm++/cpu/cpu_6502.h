@@ -78,6 +78,12 @@ public:
     std::vector<uint8_t> EncodeINC(uint16_t operand, AddressingMode mode) const;
     std::vector<uint8_t> EncodeDEC(uint16_t operand, AddressingMode mode) const;
 
+    // Phase 2.2: Stack operations
+    std::vector<uint8_t> EncodePHA() const;
+    std::vector<uint8_t> EncodePLA() const;
+    std::vector<uint8_t> EncodePHP() const;
+    std::vector<uint8_t> EncodePLP() const;
+
     // Calculate instruction size
     size_t CalculateInstructionSize(AddressingMode mode) const;
 };

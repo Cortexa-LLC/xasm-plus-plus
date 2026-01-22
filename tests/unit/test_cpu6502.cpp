@@ -619,3 +619,37 @@ TEST(Cpu6502Test, DEC_Absolute) {
     EXPECT_EQ(result[1], 0x34);  // Low byte
     EXPECT_EQ(result[2], 0x12);  // High byte
 }
+
+// Group 7: Stack Operations
+
+// Test 63: PHA implied
+TEST(Cpu6502Test, PHA_Implied) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodePHA();
+    EXPECT_EQ(result.size(), 1);
+    EXPECT_EQ(result[0], 0x48);  // PHA opcode
+}
+
+// Test 64: PLA implied
+TEST(Cpu6502Test, PLA_Implied) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodePLA();
+    EXPECT_EQ(result.size(), 1);
+    EXPECT_EQ(result[0], 0x68);  // PLA opcode
+}
+
+// Test 65: PHP implied
+TEST(Cpu6502Test, PHP_Implied) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodePHP();
+    EXPECT_EQ(result.size(), 1);
+    EXPECT_EQ(result[0], 0x08);  // PHP opcode
+}
+
+// Test 66: PLP implied
+TEST(Cpu6502Test, PLP_Implied) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodePLP();
+    EXPECT_EQ(result.size(), 1);
+    EXPECT_EQ(result[0], 0x28);  // PLP opcode
+}

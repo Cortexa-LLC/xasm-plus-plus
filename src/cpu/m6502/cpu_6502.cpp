@@ -563,6 +563,28 @@ std::vector<uint8_t> Cpu6502::EncodeDEC(uint16_t operand, AddressingMode mode) c
     return bytes;
 }
 
+// Phase 2.2: Stack Operations
+
+// PHA - Push Accumulator
+std::vector<uint8_t> Cpu6502::EncodePHA() const {
+    return {0x48};
+}
+
+// PLA - Pull Accumulator
+std::vector<uint8_t> Cpu6502::EncodePLA() const {
+    return {0x68};
+}
+
+// PHP - Push Processor Status
+std::vector<uint8_t> Cpu6502::EncodePHP() const {
+    return {0x08};
+}
+
+// PLP - Pull Processor Status
+std::vector<uint8_t> Cpu6502::EncodePLP() const {
+    return {0x28};
+}
+
 // Calculate instruction size based on addressing mode
 size_t Cpu6502::CalculateInstructionSize(AddressingMode mode) const {
     switch (mode) {

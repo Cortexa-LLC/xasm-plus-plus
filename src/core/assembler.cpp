@@ -209,6 +209,14 @@ AssemblerResult Assembler::Assemble() {
                                     inst->encoded_bytes = cpu_->EncodeINC(value, mode);
                                 } else if (mnemonic == "DEC") {
                                     inst->encoded_bytes = cpu_->EncodeDEC(value, mode);
+                                } else if (mnemonic == "PHA") {
+                                    inst->encoded_bytes = cpu_->EncodePHA();
+                                } else if (mnemonic == "PLA") {
+                                    inst->encoded_bytes = cpu_->EncodePLA();
+                                } else if (mnemonic == "PHP") {
+                                    inst->encoded_bytes = cpu_->EncodePHP();
+                                } else if (mnemonic == "PLP") {
+                                    inst->encoded_bytes = cpu_->EncodePLP();
                                 } else {
                                     // Unknown instruction
                                     AssemblerError error;
