@@ -64,6 +64,7 @@ class InstructionAtom : public Atom {
 public:
     std::string mnemonic;
     std::string operand;
+    std::vector<uint8_t> encoded_bytes;  // Encoded instruction bytes (set by CPU plugin)
     // Will be enhanced with opcode info later
 
     InstructionAtom(const std::string& mnem, const std::string& oper)

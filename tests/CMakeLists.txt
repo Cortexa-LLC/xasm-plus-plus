@@ -4,8 +4,8 @@ include(GoogleTest)
 # Unit tests subdirectory (Phase 1 - in progress)
 add_subdirectory(unit)
 
-# Integration tests subdirectory (Phase 2+)
-# add_subdirectory(integration)
+# Integration tests subdirectory (Phase 1.7+)
+add_subdirectory(integration)
 
 # Placeholder test to verify testing infrastructure
 add_executable(placeholder_test

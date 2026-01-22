@@ -4,6 +4,7 @@
 #include "xasm++/assembler.h"
 #include "xasm++/section.h"
 #include "xasm++/atom.h"
+#include "xasm++/cpu/cpu_6502.h"
 #include <gtest/gtest.h>
 
 using namespace xasm;
@@ -156,4 +157,69 @@ TEST(AssemblerTest, MultipleAssembleCalls) {
     EXPECT_TRUE(result2.success);
     // Should give same results
     EXPECT_EQ(result1.pass_count, result2.pass_count);
+}
+
+// Test 13: Instruction encoding with CPU plugin
+TEST(AssemblerTest, InstructionEncoding) {
+    Assembler assembler;
+    Cpu6502 cpu;
+    assembler.SetCpuPlugin(&cpu);
+
+    Section section(".text", static_cast<uint32_t>(SectionAttributes::Code), 0x8000);
+
+    // Add NOP instruction (implied addressing, 1 byte: EA)
+    auto nop = std::make_shared<InstructionAtom>("NOP", "");
+    section.atoms.push_back(nop);
+
+    assembler.AddSection(section);
+    AssemblerResult result = assembler.Assemble();
+
+    EXPECT_TRUE(result.success);
+    // Verify encoded_bytes was populated
+    EXPECT_FALSE(nop->encoded_bytes.empty());
+    EXPECT_EQ(nop->encoded_bytes.size(), 1);
+    EXPECT_EQ(nop->encoded_bytes[0], 0xEA);  // NOP opcode
+}
+
+// Test 14: LDA immediate encoding
+TEST(AssemblerTest, LDAImmediateEncoding) {
+    Assembler assembler;
+    Cpu6502 cpu;
+    assembler.SetCpuPlugin(&cpu);
+
+    Section section(".text", static_cast<uint32_t>(SectionAttributes::Code), 0x8000);
+
+    // LDA #$42 (immediate addressing, 2 bytes: A9 42)
+    auto lda = std::make_shared<InstructionAtom>("LDA", "#$42");
+    section.atoms.push_back(lda);
+
+    assembler.AddSection(section);
+    AssemblerResult result = assembler.Assemble();
+
+    EXPECT_TRUE(result.success);
+    EXPECT_EQ(lda->encoded_bytes.size(), 2);
+    EXPECT_EQ(lda->encoded_bytes[0], 0xA9);  // LDA immediate opcode
+    EXPECT_EQ(lda->encoded_bytes[1], 0x42);  // Operand
+}
+
+// Test 15: STA absolute encoding
+TEST(AssemblerTest, STAAbsoluteEncoding) {
+    Assembler assembler;
+    Cpu6502 cpu;
+    assembler.SetCpuPlugin(&cpu);
+
+    Section section(".text", static_cast<uint32_t>(SectionAttributes::Code), 0x8000);
+
+    // STA $1234 (absolute addressing, 3 bytes: 8D 34 12)
+    auto sta = std::make_shared<InstructionAtom>("STA", "$1234");
+    section.atoms.push_back(sta);
+
+    assembler.AddSection(section);
+    AssemblerResult result = assembler.Assemble();
+
+    EXPECT_TRUE(result.success);
+    EXPECT_EQ(sta->encoded_bytes.size(), 3);
+    EXPECT_EQ(sta->encoded_bytes[0], 0x8D);  // STA absolute opcode
+    EXPECT_EQ(sta->encoded_bytes[1], 0x34);  // Low byte
+    EXPECT_EQ(sta->encoded_bytes[2], 0x12);  // High byte
 }

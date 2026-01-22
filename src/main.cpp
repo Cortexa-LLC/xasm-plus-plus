@@ -59,11 +59,13 @@ int main(int argc, char** argv) {
       return 1;
     }
 
-    // Step 4: Create assembler and add section
+    // Step 4: Create CPU plugin and assembler
+    Cpu6502 cpu;
     Assembler assembler;
+    assembler.SetCpuPlugin(&cpu);
     assembler.AddSection(section);
 
-    // Step 5: Assemble (resolve symbols, finalize code)
+    // Step 5: Assemble (encode instructions, resolve symbols)
     AssemblerResult result = assembler.Assemble();
     if (!result.success) {
       std::cerr << "Assembly failed:\n";

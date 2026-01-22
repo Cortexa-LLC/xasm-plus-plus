@@ -29,8 +29,9 @@ target_include_directories(xasm_cpu PUBLIC
     ${CMAKE_SOURCE_DIR}/include
 )
 
-target_link_libraries(xasm_cpu PUBLIC
-    xasm_core
+# Link core with CPU plugin
+target_link_libraries(xasm_core PUBLIC
+    xasm_cpu
 )
 
 # Syntax plugins library (Phase 1+)

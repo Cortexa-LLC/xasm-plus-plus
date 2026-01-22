@@ -12,6 +12,9 @@
 
 namespace xasm {
 
+// Forward declaration
+class Cpu6502;
+
 // Assembler error
 struct AssemblerError {
     std::string message;
@@ -34,6 +37,9 @@ public:
 
     Assembler() = default;
 
+    // Set CPU plugin for instruction encoding
+    void SetCpuPlugin(Cpu6502* cpu);
+
     // Add a section to assemble
     void AddSection(const Section& section);
 
@@ -48,6 +54,7 @@ public:
 
 private:
     std::vector<Section> sections_;
+    Cpu6502* cpu_ = nullptr;
 };
 
 } // namespace xasm
