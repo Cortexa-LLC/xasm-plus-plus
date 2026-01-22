@@ -219,6 +219,8 @@ AssemblerResult Assembler::Assemble() {
                                     inst->encoded_bytes = cpu_->EncodePLP();
                                 } else if (mnemonic == "JSR") {
                                     inst->encoded_bytes = cpu_->EncodeJSR(value, mode);
+                                } else if (mnemonic == "BIT") {
+                                    inst->encoded_bytes = cpu_->EncodeBIT(value, mode);
                                 } else {
                                     // Unknown instruction
                                     AssemblerError error;

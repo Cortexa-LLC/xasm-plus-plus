@@ -665,3 +665,28 @@ TEST(Cpu6502Test, JSR_Absolute) {
     EXPECT_EQ(result[1], 0x34);  // Low byte
     EXPECT_EQ(result[2], 0x12);  // High byte
 }
+
+// ============================================================================
+// Phase 2.3: Complete 6502 Instruction Set
+// ============================================================================
+
+// Group 1: BIT - Test Bits
+
+// Test 68: BIT zero page
+TEST(Cpu6502Test, BIT_ZeroPage) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeBIT(0x80, AddressingMode::ZeroPage);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0x24);  // BIT zero page opcode
+    EXPECT_EQ(result[1], 0x80);  // Zero page address
+}
+
+// Test 69: BIT absolute
+TEST(Cpu6502Test, BIT_Absolute) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeBIT(0x1234, AddressingMode::Absolute);
+    EXPECT_EQ(result.size(), 3);
+    EXPECT_EQ(result[0], 0x2C);  // BIT absolute opcode
+    EXPECT_EQ(result[1], 0x34);  // Low byte
+    EXPECT_EQ(result[2], 0x12);  // High byte
+}

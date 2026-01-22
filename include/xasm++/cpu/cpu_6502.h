@@ -87,6 +87,10 @@ public:
     // Phase 2.2: Subroutine
     std::vector<uint8_t> EncodeJSR(uint16_t operand, AddressingMode mode) const;
 
+    // Phase 2.3: Complete 6502 Instruction Set
+    // Group 1: BIT - Test Bits
+    std::vector<uint8_t> EncodeBIT(uint16_t operand, AddressingMode mode) const;
+
     // Calculate instruction size
     size_t CalculateInstructionSize(AddressingMode mode) const;
 };
