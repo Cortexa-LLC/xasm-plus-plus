@@ -1332,3 +1332,159 @@ TEST(Cpu6502Test, DEC_AbsoluteX) {
     EXPECT_EQ(result[1], 0x34);
     EXPECT_EQ(result[2], 0x12);
 }
+
+// Group 8: Indirect Addressing Modes
+
+// Test 139: JMP indirect
+TEST(Cpu6502Test, JMP_Indirect) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeJMP(0x1234, AddressingMode::Indirect);
+    EXPECT_EQ(result.size(), 3);
+    EXPECT_EQ(result[0], 0x6C);  // JMP (ind) opcode
+    EXPECT_EQ(result[1], 0x34);
+    EXPECT_EQ(result[2], 0x12);
+}
+
+// Test 140: LDA indexed indirect (zp,X)
+TEST(Cpu6502Test, LDA_IndirectX) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeLDA(0x80, AddressingMode::IndirectX);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0xA1);  // LDA (zp,X) opcode
+    EXPECT_EQ(result[1], 0x80);
+}
+
+// Test 141: LDA indirect indexed (zp),Y
+TEST(Cpu6502Test, LDA_IndirectY) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeLDA(0x80, AddressingMode::IndirectY);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0xB1);  // LDA (zp),Y opcode
+    EXPECT_EQ(result[1], 0x80);
+}
+
+// Test 142: STA indexed indirect (zp,X)
+TEST(Cpu6502Test, STA_IndirectX) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeSTA(0x80, AddressingMode::IndirectX);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0x81);  // STA (zp,X) opcode
+    EXPECT_EQ(result[1], 0x80);
+}
+
+// Test 143: STA indirect indexed (zp),Y
+TEST(Cpu6502Test, STA_IndirectY) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeSTA(0x80, AddressingMode::IndirectY);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0x91);  // STA (zp),Y opcode
+    EXPECT_EQ(result[1], 0x80);
+}
+
+// Test 144: CMP indexed indirect (zp,X)
+TEST(Cpu6502Test, CMP_IndirectX) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeCMP(0x80, AddressingMode::IndirectX);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0xC1);  // CMP (zp,X) opcode
+    EXPECT_EQ(result[1], 0x80);
+}
+
+// Test 145: CMP indirect indexed (zp),Y
+TEST(Cpu6502Test, CMP_IndirectY) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeCMP(0x80, AddressingMode::IndirectY);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0xD1);  // CMP (zp),Y opcode
+    EXPECT_EQ(result[1], 0x80);
+}
+
+// Test 146: AND indexed indirect (zp,X)
+TEST(Cpu6502Test, AND_IndirectX) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeAND(0x80, AddressingMode::IndirectX);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0x21);  // AND (zp,X) opcode
+    EXPECT_EQ(result[1], 0x80);
+}
+
+// Test 147: AND indirect indexed (zp),Y
+TEST(Cpu6502Test, AND_IndirectY) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeAND(0x80, AddressingMode::IndirectY);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0x31);  // AND (zp),Y opcode
+    EXPECT_EQ(result[1], 0x80);
+}
+
+// Test 148: ORA indexed indirect (zp,X)
+TEST(Cpu6502Test, ORA_IndirectX) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeORA(0x80, AddressingMode::IndirectX);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0x01);  // ORA (zp,X) opcode
+    EXPECT_EQ(result[1], 0x80);
+}
+
+// Test 149: ORA indirect indexed (zp),Y
+TEST(Cpu6502Test, ORA_IndirectY) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeORA(0x80, AddressingMode::IndirectY);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0x11);  // ORA (zp),Y opcode
+    EXPECT_EQ(result[1], 0x80);
+}
+
+// Test 150: EOR indexed indirect (zp,X)
+TEST(Cpu6502Test, EOR_IndirectX) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeEOR(0x80, AddressingMode::IndirectX);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0x41);  // EOR (zp,X) opcode
+    EXPECT_EQ(result[1], 0x80);
+}
+
+// Test 151: EOR indirect indexed (zp),Y
+TEST(Cpu6502Test, EOR_IndirectY) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeEOR(0x80, AddressingMode::IndirectY);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0x51);  // EOR (zp),Y opcode
+    EXPECT_EQ(result[1], 0x80);
+}
+
+// Test 152: ADC indexed indirect (zp,X)
+TEST(Cpu6502Test, ADC_IndirectX) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeADC(0x80, AddressingMode::IndirectX);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0x61);  // ADC (zp,X) opcode
+    EXPECT_EQ(result[1], 0x80);
+}
+
+// Test 153: ADC indirect indexed (zp),Y
+TEST(Cpu6502Test, ADC_IndirectY) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeADC(0x80, AddressingMode::IndirectY);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0x71);  // ADC (zp),Y opcode
+    EXPECT_EQ(result[1], 0x80);
+}
+
+// Test 154: SBC indexed indirect (zp,X)
+TEST(Cpu6502Test, SBC_IndirectX) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeSBC(0x80, AddressingMode::IndirectX);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0xE1);  // SBC (zp,X) opcode
+    EXPECT_EQ(result[1], 0x80);
+}
+
+// Test 155: SBC indirect indexed (zp),Y
+TEST(Cpu6502Test, SBC_IndirectY) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeSBC(0x80, AddressingMode::IndirectY);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0xF1);  // SBC (zp),Y opcode
+    EXPECT_EQ(result[1], 0x80);
+}
