@@ -50,3 +50,15 @@ vcpkg_installed/
 docs/html/
 docs/latex/
 docs/doxygen_sqlite3.db
+
+# AI/LLM transient working files (not for version control)
+.ai/tasks/
+.beads/
+.claude/.coordination-checkpoint
+.claude/.watchdog-checkpoint
+
+# Temporary test files
+test.asm
+test.bin
+a.out
+AGENTS.md
