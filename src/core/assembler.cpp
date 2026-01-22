@@ -84,9 +84,18 @@ AssemblerResult Assembler::Assemble() {
         return result;
     }
 
-    // Create internal symbol table if needed for label extraction
+    // Create internal symbol table if needed
+    // Always extract labels from atoms to get correct addresses
     ConcreteSymbolTable internal_symbols;
-    ConcreteSymbolTable* internal_table_ptr = symbols_ ? nullptr : &internal_symbols;
+    ConcreteSymbolTable* label_table_ptr = nullptr;
+
+    if (symbols_ != nullptr) {
+        // If external symbol table is ConcreteSymbolTable, use it for label updates
+        label_table_ptr = dynamic_cast<ConcreteSymbolTable*>(symbols_);
+    } else {
+        // Otherwise use internal table
+        label_table_ptr = &internal_symbols;
+    }
 
     // Multi-pass assembly loop
     bool converged = false;
@@ -96,34 +105,7 @@ AssemblerResult Assembler::Assemble() {
     while (!converged && pass < MAX_PASSES) {
         pass++;
 
-        // Pass 1: Extract labels from LabelAtoms if using internal symbol table
-        if (internal_table_ptr != nullptr) {
-            uint32_t current_address = 0;
-            for (auto& section : sections_) {
-                current_address = section.org;
-                for (auto& atom : section.atoms) {
-                    if (atom->type == AtomType::Label) {
-                        auto label = std::dynamic_pointer_cast<LabelAtom>(atom);
-                        if (label) {
-                            // Define or update label in symbol table
-                            label->address = current_address;
-                            if (!internal_table_ptr->IsDefined(label->name)) {
-                                internal_table_ptr->Define(label->name, SymbolType::Label,
-                                                          std::make_shared<LiteralExpr>(current_address));
-                            }
-                        }
-                    } else if (atom->type == AtomType::Instruction) {
-                        // Instructions consume bytes
-                        auto inst = std::dynamic_pointer_cast<InstructionAtom>(atom);
-                        if (inst) {
-                            current_address += inst->encoded_bytes.size();
-                        }
-                    }
-                }
-            }
-        }
-
-        // Pass 2: Encode instructions using CPU plugin
+        // Pass 1: Encode instructions using CPU plugin
         std::vector<size_t> current_sizes;
         if (cpu_ != nullptr) {
             for (auto& section : sections_) {
@@ -153,7 +135,7 @@ AssemblerResult Assembler::Assemble() {
                                     value = static_cast<uint16_t>(ParseHex(trimmed));
                                 } else {
                                     // Label reference - look up in symbol table
-                                    SymbolTable* lookup_table = symbols_ ? symbols_ : internal_table_ptr;
+                                    SymbolTable* lookup_table = symbols_ ? symbols_ : label_table_ptr;
                                     if (lookup_table != nullptr) {
                                         int64_t symbol_value;
                                         if (lookup_table->Lookup(trimmed, symbol_value)) {
@@ -192,6 +174,42 @@ AssemblerResult Assembler::Assemble() {
 
                             // Record size for convergence check
                             current_sizes.push_back(inst->encoded_bytes.size());
+                        }
+                    }
+                }
+            }
+        }
+
+        // Pass 2: Extract labels from LabelAtoms
+        // (Must happen AFTER encoding so encoded_bytes.size() is correct)
+        // ALWAYS do this to ensure correct addresses, even with external symbol tables
+        if (label_table_ptr != nullptr) {
+            // Clear only labels (preserve other symbols like EQU/SET)
+            // For now, just redefine - this will overwrite parser's placeholder addresses
+            uint32_t current_address = 0;
+            for (auto& section : sections_) {
+                current_address = section.org;
+                for (auto& atom : section.atoms) {
+                    if (atom->type == AtomType::Org) {
+                        // Handle .org directive - updates current address
+                        auto org = std::dynamic_pointer_cast<OrgAtom>(atom);
+                        if (org) {
+                            current_address = org->address;
+                        }
+                    } else if (atom->type == AtomType::Label) {
+                        auto label = std::dynamic_pointer_cast<LabelAtom>(atom);
+                        if (label) {
+                            // Update label address
+                            label->address = current_address;
+                            // Define or redefine label in symbol table
+                            label_table_ptr->Define(label->name, SymbolType::Label,
+                                                   std::make_shared<LiteralExpr>(current_address));
+                        }
+                    } else if (atom->type == AtomType::Instruction) {
+                        // Instructions consume bytes
+                        auto inst = std::dynamic_pointer_cast<InstructionAtom>(atom);
+                        if (inst) {
+                            current_address += inst->encoded_bytes.size();
                         }
                     }
                 }

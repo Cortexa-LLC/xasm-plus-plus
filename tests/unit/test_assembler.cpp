@@ -375,7 +375,55 @@ TEST(AssemblerTest, LDAWithLabelOperand) {
     EXPECT_EQ(lda->encoded_bytes[2], 0x02);  // High byte of $0200
 }
 
-// Test 21: Forward reference - label used before definition
+// Test 21: Internal label extraction
+TEST(AssemblerTest, InternalLabelExtraction) {
+    Assembler assembler;
+    Cpu6502 cpu;
+    assembler.SetCpuPlugin(&cpu);
+
+    Section section(".text", static_cast<uint32_t>(SectionAttributes::Code), 0x8000);
+
+    // Add instructions and labels (simulating parsed assembly)
+    auto start_label = std::make_shared<LabelAtom>("start", 0);  // Address will be calculated
+    auto jmp1 = std::make_shared<InstructionAtom>("JMP", "forward");
+    auto backward_label = std::make_shared<LabelAtom>("backward", 0);
+    auto nop = std::make_shared<InstructionAtom>("NOP", "");
+    auto rts = std::make_shared<InstructionAtom>("RTS", "");
+    auto forward_label = std::make_shared<LabelAtom>("forward", 0);
+    auto jmp2 = std::make_shared<InstructionAtom>("JMP", "backward");
+
+    section.atoms.push_back(start_label);
+    section.atoms.push_back(jmp1);
+    section.atoms.push_back(backward_label);
+    section.atoms.push_back(nop);
+    section.atoms.push_back(rts);
+    section.atoms.push_back(forward_label);
+    section.atoms.push_back(jmp2);
+
+    assembler.AddSection(section);
+    // Note: Not calling SetSymbolTable - assembler should extract labels internally
+    AssemblerResult result = assembler.Assemble();
+
+    EXPECT_TRUE(result.success);
+
+    // Verify label addresses were calculated correctly
+    EXPECT_EQ(start_label->address, 0x8000);
+    EXPECT_EQ(backward_label->address, 0x8003);
+    EXPECT_EQ(forward_label->address, 0x8005);
+
+    // Verify instructions encoded with correct addresses
+    EXPECT_EQ(jmp1->encoded_bytes.size(), 3);
+    EXPECT_EQ(jmp1->encoded_bytes[0], 0x4C);  // JMP opcode
+    EXPECT_EQ(jmp1->encoded_bytes[1], 0x05);  // Low byte of $8005
+    EXPECT_EQ(jmp1->encoded_bytes[2], 0x80);  // High byte of $8005
+
+    EXPECT_EQ(jmp2->encoded_bytes.size(), 3);
+    EXPECT_EQ(jmp2->encoded_bytes[0], 0x4C);  // JMP opcode
+    EXPECT_EQ(jmp2->encoded_bytes[1], 0x03);  // Low byte of $8003
+    EXPECT_EQ(jmp2->encoded_bytes[2], 0x80);  // High byte of $8003
+}
+
+// Test 22: Forward reference - label used before definition
 TEST(AssemblerTest, ForwardReference) {
     Assembler assembler;
     Cpu6502 cpu;
