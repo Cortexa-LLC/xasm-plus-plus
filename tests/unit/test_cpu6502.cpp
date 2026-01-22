@@ -473,3 +473,77 @@ TEST(Cpu6502Test, CPY_Absolute) {
     EXPECT_EQ(result[1], 0x34);  // Low byte
     EXPECT_EQ(result[2], 0x12);  // High byte
 }
+
+// Group 5: Branch Instructions
+
+// Test 47: BEQ relative
+TEST(Cpu6502Test, BEQ_Relative) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeBEQ(0x10, AddressingMode::Relative);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0xF0);  // BEQ opcode
+    EXPECT_EQ(result[1], 0x10);  // Relative offset
+}
+
+// Test 48: BNE relative
+TEST(Cpu6502Test, BNE_Relative) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeBNE(0x10, AddressingMode::Relative);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0xD0);  // BNE opcode
+    EXPECT_EQ(result[1], 0x10);  // Relative offset
+}
+
+// Test 49: BCC relative
+TEST(Cpu6502Test, BCC_Relative) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeBCC(0x10, AddressingMode::Relative);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0x90);  // BCC opcode
+    EXPECT_EQ(result[1], 0x10);  // Relative offset
+}
+
+// Test 50: BCS relative
+TEST(Cpu6502Test, BCS_Relative) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeBCS(0x10, AddressingMode::Relative);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0xB0);  // BCS opcode
+    EXPECT_EQ(result[1], 0x10);  // Relative offset
+}
+
+// Test 51: BMI relative
+TEST(Cpu6502Test, BMI_Relative) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeBMI(0x10, AddressingMode::Relative);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0x30);  // BMI opcode
+    EXPECT_EQ(result[1], 0x10);  // Relative offset
+}
+
+// Test 52: BPL relative
+TEST(Cpu6502Test, BPL_Relative) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeBPL(0x10, AddressingMode::Relative);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0x10);  // BPL opcode
+    EXPECT_EQ(result[1], 0x10);  // Relative offset
+}
+
+// Test 53: BVC relative
+TEST(Cpu6502Test, BVC_Relative) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeBVC(0x10, AddressingMode::Relative);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0x50);  // BVC opcode
+    EXPECT_EQ(result[1], 0x10);  // Relative offset
+}
+
+// Test 54: BVS relative
+TEST(Cpu6502Test, BVS_Relative) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeBVS(0x10, AddressingMode::Relative);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], 0x70);  // BVS opcode
+    EXPECT_EQ(result[1], 0x10);  // Relative offset
+}

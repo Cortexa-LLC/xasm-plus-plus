@@ -413,6 +413,88 @@ std::vector<uint8_t> Cpu6502::EncodeCPY(uint16_t operand, AddressingMode mode) c
     return bytes;
 }
 
+// Phase 2.2: Branch Instructions
+
+// BEQ - Branch if Equal
+std::vector<uint8_t> Cpu6502::EncodeBEQ(uint16_t operand, AddressingMode mode) const {
+    std::vector<uint8_t> bytes;
+    if (mode == AddressingMode::Relative) {
+        bytes.push_back(0xF0);  // BEQ opcode
+        bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+    }
+    return bytes;
+}
+
+// BNE - Branch if Not Equal
+std::vector<uint8_t> Cpu6502::EncodeBNE(uint16_t operand, AddressingMode mode) const {
+    std::vector<uint8_t> bytes;
+    if (mode == AddressingMode::Relative) {
+        bytes.push_back(0xD0);  // BNE opcode
+        bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+    }
+    return bytes;
+}
+
+// BCC - Branch if Carry Clear
+std::vector<uint8_t> Cpu6502::EncodeBCC(uint16_t operand, AddressingMode mode) const {
+    std::vector<uint8_t> bytes;
+    if (mode == AddressingMode::Relative) {
+        bytes.push_back(0x90);  // BCC opcode
+        bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+    }
+    return bytes;
+}
+
+// BCS - Branch if Carry Set
+std::vector<uint8_t> Cpu6502::EncodeBCS(uint16_t operand, AddressingMode mode) const {
+    std::vector<uint8_t> bytes;
+    if (mode == AddressingMode::Relative) {
+        bytes.push_back(0xB0);  // BCS opcode
+        bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+    }
+    return bytes;
+}
+
+// BMI - Branch if Minus
+std::vector<uint8_t> Cpu6502::EncodeBMI(uint16_t operand, AddressingMode mode) const {
+    std::vector<uint8_t> bytes;
+    if (mode == AddressingMode::Relative) {
+        bytes.push_back(0x30);  // BMI opcode
+        bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+    }
+    return bytes;
+}
+
+// BPL - Branch if Plus
+std::vector<uint8_t> Cpu6502::EncodeBPL(uint16_t operand, AddressingMode mode) const {
+    std::vector<uint8_t> bytes;
+    if (mode == AddressingMode::Relative) {
+        bytes.push_back(0x10);  // BPL opcode
+        bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+    }
+    return bytes;
+}
+
+// BVC - Branch if Overflow Clear
+std::vector<uint8_t> Cpu6502::EncodeBVC(uint16_t operand, AddressingMode mode) const {
+    std::vector<uint8_t> bytes;
+    if (mode == AddressingMode::Relative) {
+        bytes.push_back(0x50);  // BVC opcode
+        bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+    }
+    return bytes;
+}
+
+// BVS - Branch if Overflow Set
+std::vector<uint8_t> Cpu6502::EncodeBVS(uint16_t operand, AddressingMode mode) const {
+    std::vector<uint8_t> bytes;
+    if (mode == AddressingMode::Relative) {
+        bytes.push_back(0x70);  // BVS opcode
+        bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+    }
+    return bytes;
+}
+
 // Calculate instruction size based on addressing mode
 size_t Cpu6502::CalculateInstructionSize(AddressingMode mode) const {
     switch (mode) {

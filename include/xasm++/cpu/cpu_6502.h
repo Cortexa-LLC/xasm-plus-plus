@@ -60,6 +60,16 @@ public:
     std::vector<uint8_t> EncodeCPX(uint16_t operand, AddressingMode mode) const;
     std::vector<uint8_t> EncodeCPY(uint16_t operand, AddressingMode mode) const;
 
+    // Phase 2.2: Branch instructions
+    std::vector<uint8_t> EncodeBEQ(uint16_t operand, AddressingMode mode) const;
+    std::vector<uint8_t> EncodeBNE(uint16_t operand, AddressingMode mode) const;
+    std::vector<uint8_t> EncodeBCC(uint16_t operand, AddressingMode mode) const;
+    std::vector<uint8_t> EncodeBCS(uint16_t operand, AddressingMode mode) const;
+    std::vector<uint8_t> EncodeBMI(uint16_t operand, AddressingMode mode) const;
+    std::vector<uint8_t> EncodeBPL(uint16_t operand, AddressingMode mode) const;
+    std::vector<uint8_t> EncodeBVC(uint16_t operand, AddressingMode mode) const;
+    std::vector<uint8_t> EncodeBVS(uint16_t operand, AddressingMode mode) const;
+
     // Calculate instruction size
     size_t CalculateInstructionSize(AddressingMode mode) const;
 };
