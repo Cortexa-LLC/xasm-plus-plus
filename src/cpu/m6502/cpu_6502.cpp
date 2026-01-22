@@ -585,6 +585,21 @@ std::vector<uint8_t> Cpu6502::EncodePLP() const {
     return {0x28};
 }
 
+// Phase 2.2: Subroutine
+
+// JSR - Jump to Subroutine
+std::vector<uint8_t> Cpu6502::EncodeJSR(uint16_t operand, AddressingMode mode) const {
+    std::vector<uint8_t> bytes;
+
+    if (mode == AddressingMode::Absolute) {
+        bytes.push_back(0x20);  // JSR abs
+        bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
+        bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
+    }
+
+    return bytes;
+}
+
 // Calculate instruction size based on addressing mode
 size_t Cpu6502::CalculateInstructionSize(AddressingMode mode) const {
     switch (mode) {

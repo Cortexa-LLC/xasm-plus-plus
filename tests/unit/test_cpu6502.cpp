@@ -653,3 +653,15 @@ TEST(Cpu6502Test, PLP_Implied) {
     EXPECT_EQ(result.size(), 1);
     EXPECT_EQ(result[0], 0x28);  // PLP opcode
 }
+
+// Group 8: Subroutine
+
+// Test 67: JSR absolute
+TEST(Cpu6502Test, JSR_Absolute) {
+    Cpu6502 cpu;
+    auto result = cpu.EncodeJSR(0x1234, AddressingMode::Absolute);
+    EXPECT_EQ(result.size(), 3);
+    EXPECT_EQ(result[0], 0x20);  // JSR absolute opcode
+    EXPECT_EQ(result[1], 0x34);  // Low byte
+    EXPECT_EQ(result[2], 0x12);  // High byte
+}

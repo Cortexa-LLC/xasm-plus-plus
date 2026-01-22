@@ -84,6 +84,9 @@ public:
     std::vector<uint8_t> EncodePHP() const;
     std::vector<uint8_t> EncodePLP() const;
 
+    // Phase 2.2: Subroutine
+    std::vector<uint8_t> EncodeJSR(uint16_t operand, AddressingMode mode) const;
+
     // Calculate instruction size
     size_t CalculateInstructionSize(AddressingMode mode) const;
 };
