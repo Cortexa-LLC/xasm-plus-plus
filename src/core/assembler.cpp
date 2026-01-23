@@ -36,6 +36,12 @@ static AddressingMode DetermineAddressingMode(const std::string& operands) {
 
     std::string trimmed = Trim(operands);
 
+    // Group 1: Accumulator addressing mode
+    // ASL A, LSR A, ROL A, ROR A
+    if (trimmed == "A") {
+        return AddressingMode::Accumulator;
+    }
+
     // Immediate: #$42
     if (trimmed[0] == '#') {
         return AddressingMode::Immediate;

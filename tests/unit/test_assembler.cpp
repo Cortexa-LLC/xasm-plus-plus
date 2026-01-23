@@ -460,3 +460,46 @@ TEST(AssemblerTest, ForwardReference) {
     EXPECT_EQ(jmp->encoded_bytes[1], 0x05);  // Low byte of $8005
     EXPECT_EQ(jmp->encoded_bytes[2], 0x80);  // High byte of $8005
 }
+// ============================================================================
+// Group 1: Accumulator Addressing Mode Tests
+// ============================================================================
+
+// Test 23: ASL with accumulator addressing mode
+TEST(AssemblerTest, ASLAccumulatorMode) {
+    Assembler assembler;
+    Cpu6502 cpu;
+    assembler.SetCpuPlugin(&cpu);
+
+    Section section(".text", static_cast<uint32_t>(SectionAttributes::Code), 0x8000);
+
+    // ASL A (accumulator addressing, 1 byte: 0A)
+    auto asl = std::make_shared<InstructionAtom>("ASL", "A");
+    section.atoms.push_back(asl);
+
+    assembler.AddSection(section);
+    AssemblerResult result = assembler.Assemble();
+
+    EXPECT_TRUE(result.success);
+    EXPECT_EQ(asl->encoded_bytes.size(), 1);
+    EXPECT_EQ(asl->encoded_bytes[0], 0x0A);  // ASL accumulator opcode
+}
+
+// Test 24: LSR with accumulator addressing mode
+TEST(AssemblerTest, LSRAccumulatorMode) {
+    Assembler assembler;
+    Cpu6502 cpu;
+    assembler.SetCpuPlugin(&cpu);
+
+    Section section(".text", static_cast<uint32_t>(SectionAttributes::Code), 0x8000);
+
+    // LSR A (accumulator addressing, 1 byte: 4A)
+    auto lsr = std::make_shared<InstructionAtom>("LSR", "A");
+    section.atoms.push_back(lsr);
+
+    assembler.AddSection(section);
+    AssemblerResult result = assembler.Assemble();
+
+    EXPECT_TRUE(result.success);
+    EXPECT_EQ(lsr->encoded_bytes.size(), 1);
+    EXPECT_EQ(lsr->encoded_bytes[0], 0x4A);  // LSR accumulator opcode
+}
