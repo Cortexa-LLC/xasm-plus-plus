@@ -42,6 +42,51 @@ static AddressingMode DetermineAddressingMode(const std::string& operands) {
         return AddressingMode::Accumulator;
     }
 
+    // Group 2: Check for indexed addressing modes (,X or ,Y)
+    // Need to check this before parsing hex values
+    size_t comma_x = trimmed.find(",X");
+    size_t comma_x_space = trimmed.find(", X");
+    size_t comma_y = trimmed.find(",Y");
+    size_t comma_y_space = trimmed.find(", Y");
+
+    if (comma_x != std::string::npos || comma_x_space != std::string::npos) {
+        // Extract address part (before comma)
+        size_t comma_pos = (comma_x != std::string::npos) ? comma_x : comma_x_space;
+        std::string addr_part = trimmed.substr(0, comma_pos);
+        addr_part = Trim(addr_part);
+
+        // Check if it's a hex address or label
+        if (addr_part[0] == '$') {
+            uint32_t value = ParseHex(addr_part);
+            if (value <= 0xFF) {
+                return AddressingMode::ZeroPageX;
+            }
+            return AddressingMode::AbsoluteX;
+        } else {
+            // Label with ,X indexing
+            return AddressingMode::AbsoluteX;
+        }
+    }
+
+    if (comma_y != std::string::npos || comma_y_space != std::string::npos) {
+        // Extract address part (before comma)
+        size_t comma_pos = (comma_y != std::string::npos) ? comma_y : comma_y_space;
+        std::string addr_part = trimmed.substr(0, comma_pos);
+        addr_part = Trim(addr_part);
+
+        // Check if it's a hex address or label
+        if (addr_part[0] == '$') {
+            uint32_t value = ParseHex(addr_part);
+            if (value <= 0xFF) {
+                return AddressingMode::ZeroPageY;
+            }
+            return AddressingMode::AbsoluteY;
+        } else {
+            // Label with ,Y indexing
+            return AddressingMode::AbsoluteY;
+        }
+    }
+
     // Immediate: #$42
     if (trimmed[0] == '#') {
         return AddressingMode::Immediate;
@@ -133,18 +178,26 @@ AssemblerResult Assembler::Assemble() {
                             // Extract operand value
                             if (!operand.empty()) {
                                 std::string trimmed = Trim(operand);
-                                if (trimmed[0] == '#') {
+
+                                // Strip index registers (,X or ,Y) for value extraction
+                                std::string value_str = trimmed;
+                                size_t comma_pos = trimmed.find(',');
+                                if (comma_pos != std::string::npos) {
+                                    value_str = Trim(trimmed.substr(0, comma_pos));
+                                }
+
+                                if (value_str[0] == '#') {
                                     // Immediate: #$42
-                                    value = static_cast<uint16_t>(ParseHex(trimmed.substr(1)));
-                                } else if (trimmed[0] == '$') {
-                                    // Absolute/Zero Page: $1234
-                                    value = static_cast<uint16_t>(ParseHex(trimmed));
-                                } else {
-                                    // Label reference - look up in symbol table
+                                    value = static_cast<uint16_t>(ParseHex(value_str.substr(1)));
+                                } else if (value_str[0] == '$') {
+                                    // Absolute/Zero Page: $1234 (or $1234,X after stripping)
+                                    value = static_cast<uint16_t>(ParseHex(value_str));
+                                } else if (value_str != "A") {
+                                    // Label reference - look up in symbol table (skip if accumulator "A")
                                     SymbolTable* lookup_table = symbols_ ? symbols_ : label_table_ptr;
                                     if (lookup_table != nullptr) {
                                         int64_t symbol_value;
-                                        if (lookup_table->Lookup(trimmed, symbol_value)) {
+                                        if (lookup_table->Lookup(value_str, symbol_value)) {
                                             value = static_cast<uint16_t>(symbol_value);
                                         }
                                     }

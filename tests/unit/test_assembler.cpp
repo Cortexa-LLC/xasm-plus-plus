@@ -503,3 +503,113 @@ TEST(AssemblerTest, LSRAccumulatorMode) {
     EXPECT_EQ(lsr->encoded_bytes.size(), 1);
     EXPECT_EQ(lsr->encoded_bytes[0], 0x4A);  // LSR accumulator opcode
 }
+// ============================================================================
+// Group 2: Indexed Addressing Modes Tests (,X and ,Y)
+// ============================================================================
+
+// Test 25: LDA with ZeroPageX addressing
+TEST(AssemblerTest, LDAZeroPageX) {
+    Assembler assembler;
+    Cpu6502 cpu;
+    assembler.SetCpuPlugin(&cpu);
+
+    Section section(".text", static_cast<uint32_t>(SectionAttributes::Code), 0x8000);
+
+    // LDA $80,X (ZeroPageX addressing, 2 bytes: B5 80)
+    auto lda = std::make_shared<InstructionAtom>("LDA", "$80,X");
+    section.atoms.push_back(lda);
+
+    assembler.AddSection(section);
+    AssemblerResult result = assembler.Assemble();
+
+    EXPECT_TRUE(result.success);
+    EXPECT_EQ(lda->encoded_bytes.size(), 2);
+    EXPECT_EQ(lda->encoded_bytes[0], 0xB5);  // LDA zero page,X opcode
+    EXPECT_EQ(lda->encoded_bytes[1], 0x80);  // Zero page address
+}
+
+// Test 26: STA with AbsoluteX addressing
+TEST(AssemblerTest, STAAbsoluteX) {
+    Assembler assembler;
+    Cpu6502 cpu;
+    assembler.SetCpuPlugin(&cpu);
+
+    Section section(".text", static_cast<uint32_t>(SectionAttributes::Code), 0x8000);
+
+    // STA $1234,X (AbsoluteX addressing, 3 bytes: 9D 34 12)
+    auto sta = std::make_shared<InstructionAtom>("STA", "$1234,X");
+    section.atoms.push_back(sta);
+
+    assembler.AddSection(section);
+    AssemblerResult result = assembler.Assemble();
+
+    EXPECT_TRUE(result.success);
+    EXPECT_EQ(sta->encoded_bytes.size(), 3);
+    EXPECT_EQ(sta->encoded_bytes[0], 0x9D);  // STA absolute,X opcode
+    EXPECT_EQ(sta->encoded_bytes[1], 0x34);  // Low byte
+    EXPECT_EQ(sta->encoded_bytes[2], 0x12);  // High byte
+}
+
+// Test 27: LDX with ZeroPageY addressing
+TEST(AssemblerTest, LDXZeroPageY) {
+    Assembler assembler;
+    Cpu6502 cpu;
+    assembler.SetCpuPlugin(&cpu);
+
+    Section section(".text", static_cast<uint32_t>(SectionAttributes::Code), 0x8000);
+
+    // LDX $80,Y (ZeroPageY addressing, 2 bytes: B6 80)
+    auto ldx = std::make_shared<InstructionAtom>("LDX", "$80,Y");
+    section.atoms.push_back(ldx);
+
+    assembler.AddSection(section);
+    AssemblerResult result = assembler.Assemble();
+
+    EXPECT_TRUE(result.success);
+    EXPECT_EQ(ldx->encoded_bytes.size(), 2);
+    EXPECT_EQ(ldx->encoded_bytes[0], 0xB6);  // LDX zero page,Y opcode
+    EXPECT_EQ(ldx->encoded_bytes[1], 0x80);  // Zero page address
+}
+
+// Test 28: LDA with AbsoluteY addressing
+TEST(AssemblerTest, LDAAbsoluteY) {
+    Assembler assembler;
+    Cpu6502 cpu;
+    assembler.SetCpuPlugin(&cpu);
+
+    Section section(".text", static_cast<uint32_t>(SectionAttributes::Code), 0x8000);
+
+    // LDA $1234,Y (AbsoluteY addressing, 3 bytes: B9 34 12)
+    auto lda = std::make_shared<InstructionAtom>("LDA", "$1234,Y");
+    section.atoms.push_back(lda);
+
+    assembler.AddSection(section);
+    AssemblerResult result = assembler.Assemble();
+
+    EXPECT_TRUE(result.success);
+    EXPECT_EQ(lda->encoded_bytes.size(), 3);
+    EXPECT_EQ(lda->encoded_bytes[0], 0xB9);  // LDA absolute,Y opcode
+    EXPECT_EQ(lda->encoded_bytes[1], 0x34);  // Low byte
+    EXPECT_EQ(lda->encoded_bytes[2], 0x12);  // High byte
+}
+
+// Test 29: LDA with whitespace in indexed mode
+TEST(AssemblerTest, LDAIndexedWithWhitespace) {
+    Assembler assembler;
+    Cpu6502 cpu;
+    assembler.SetCpuPlugin(&cpu);
+
+    Section section(".text", static_cast<uint32_t>(SectionAttributes::Code), 0x8000);
+
+    // LDA $80, X (whitespace tolerance, should work like $80,X)
+    auto lda = std::make_shared<InstructionAtom>("LDA", "$80, X");
+    section.atoms.push_back(lda);
+
+    assembler.AddSection(section);
+    AssemblerResult result = assembler.Assemble();
+
+    EXPECT_TRUE(result.success);
+    EXPECT_EQ(lda->encoded_bytes.size(), 2);
+    EXPECT_EQ(lda->encoded_bytes[0], 0xB5);  // LDA zero page,X opcode
+    EXPECT_EQ(lda->encoded_bytes[1], 0x80);  // Zero page address
+}
