@@ -1294,6 +1294,27 @@ std::vector<uint8_t> Cpu6502::EncodeTSB(uint16_t operand, AddressingMode mode) c
     return bytes;
 }
 
+// ============================================================================
+// Group 5: 65C02 Branch Always
+// ============================================================================
+
+// BRA - Branch Always (65C02+)
+std::vector<uint8_t> Cpu6502::EncodeBRA(uint16_t operand, AddressingMode mode) const {
+    // Only available in 65C02 and later
+    if (cpu_mode_ == CpuMode::Cpu6502) {
+        return {};  // Not supported in 6502 mode
+    }
+
+    std::vector<uint8_t> bytes;
+
+    if (mode == AddressingMode::Relative) {
+        bytes.push_back(0x80);  // BRA opcode
+        bytes.push_back(static_cast<uint8_t>(operand & 0xFF));  // Relative offset
+    }
+
+    return bytes;
+}
+
 // Calculate instruction size based on addressing mode
 size_t Cpu6502::CalculateInstructionSize(AddressingMode mode) const {
     switch (mode) {

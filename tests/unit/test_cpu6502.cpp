@@ -1729,3 +1729,42 @@ TEST(Cpu6502Test, TRB_NotAvailableIn6502Mode) {
     auto bytes = cpu.EncodeTRB(0x80, AddressingMode::ZeroPage);
     EXPECT_EQ(bytes.size(), 0);  // Empty = not supported in this mode
 }
+
+// ============================================================================
+// Group 5: 65C02 Branch Always (BRA)
+// ============================================================================
+
+// Test 176: BRA forward branch - 65C02
+TEST(Cpu6502Test, BRA_ForwardBranch_65C02) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65C02);
+
+    // BRA +10 -> 80 0A (forward branch of 10 bytes)
+    auto bytes = cpu.EncodeBRA(0x0A, AddressingMode::Relative);
+    ASSERT_EQ(bytes.size(), 2);
+    EXPECT_EQ(bytes[0], 0x80);  // BRA opcode
+    EXPECT_EQ(bytes[1], 0x0A);  // Relative offset
+}
+
+// Test 177: BRA backward branch - 65C02
+TEST(Cpu6502Test, BRA_BackwardBranch_65C02) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65C02);
+
+    // BRA -10 -> 80 F6 (backward branch, two's complement)
+    auto bytes = cpu.EncodeBRA(0xF6, AddressingMode::Relative);
+    ASSERT_EQ(bytes.size(), 2);
+    EXPECT_EQ(bytes[0], 0x80);  // BRA opcode
+    EXPECT_EQ(bytes[1], 0xF6);  // Relative offset (negative)
+}
+
+// Test 178: BRA should return empty in 6502 mode (not available)
+TEST(Cpu6502Test, BRA_NotAvailableIn6502Mode) {
+    Cpu6502 cpu;
+    // Default mode is 6502
+    EXPECT_EQ(cpu.GetCpuMode(), CpuMode::Cpu6502);
+
+    // BRA not available in 6502 mode - should return empty
+    auto bytes = cpu.EncodeBRA(0x0A, AddressingMode::Relative);
+    EXPECT_EQ(bytes.size(), 0);  // Empty = not supported in this mode
+}
