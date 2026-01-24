@@ -613,3 +613,50 @@ TEST(AssemblerTest, LDAIndexedWithWhitespace) {
     EXPECT_EQ(lda->encoded_bytes[0], 0xB5);  // LDA zero page,X opcode
     EXPECT_EQ(lda->encoded_bytes[1], 0x80);  // Zero page address
 }
+// ============================================================================
+// Group 3: Indirect Addressing Mode Tests
+// ============================================================================
+
+// Test 30: JMP with Indirect addressing
+TEST(AssemblerTest, JMPIndirect) {
+    Assembler assembler;
+    Cpu6502 cpu;
+    assembler.SetCpuPlugin(&cpu);
+
+    Section section(".text", static_cast<uint32_t>(SectionAttributes::Code), 0x8000);
+
+    // JMP ($1234) (Indirect addressing, 3 bytes: 6C 34 12)
+    auto jmp = std::make_shared<InstructionAtom>("JMP", "($1234)");
+    section.atoms.push_back(jmp);
+
+    assembler.AddSection(section);
+    AssemblerResult result = assembler.Assemble();
+
+    EXPECT_TRUE(result.success);
+    EXPECT_EQ(jmp->encoded_bytes.size(), 3);
+    EXPECT_EQ(jmp->encoded_bytes[0], 0x6C);  // JMP indirect opcode
+    EXPECT_EQ(jmp->encoded_bytes[1], 0x34);  // Low byte
+    EXPECT_EQ(jmp->encoded_bytes[2], 0x12);  // High byte
+}
+
+// Test 31: JMP Indirect with whitespace
+TEST(AssemblerTest, JMPIndirectWithWhitespace) {
+    Assembler assembler;
+    Cpu6502 cpu;
+    assembler.SetCpuPlugin(&cpu);
+
+    Section section(".text", static_cast<uint32_t>(SectionAttributes::Code), 0x8000);
+
+    // JMP ( $1234 ) (whitespace tolerance)
+    auto jmp = std::make_shared<InstructionAtom>("JMP", "( $1234 )");
+    section.atoms.push_back(jmp);
+
+    assembler.AddSection(section);
+    AssemblerResult result = assembler.Assemble();
+
+    EXPECT_TRUE(result.success);
+    EXPECT_EQ(jmp->encoded_bytes.size(), 3);
+    EXPECT_EQ(jmp->encoded_bytes[0], 0x6C);  // JMP indirect opcode
+    EXPECT_EQ(jmp->encoded_bytes[1], 0x34);  // Low byte
+    EXPECT_EQ(jmp->encoded_bytes[2], 0x12);  // High byte
+}

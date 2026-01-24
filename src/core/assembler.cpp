@@ -42,6 +42,37 @@ static AddressingMode DetermineAddressingMode(const std::string& operands) {
         return AddressingMode::Accumulator;
     }
 
+    // Group 3: Check for indirect addressing modes (parentheses)
+    // Must check before indexed modes since IndexedIndirect also has parens
+    if (trimmed[0] == '(' && trimmed[trimmed.length() - 1] == ')') {
+        // Check if it's simple Indirect: ($1234)
+        // vs IndexedIndirect: ($80,X) or IndirectIndexed: ($80),Y
+
+        // If there's a comma inside the parens, it's IndexedIndirect
+        size_t open_paren = trimmed.find('(');
+        size_t close_paren = trimmed.find(')');
+        std::string inside_parens = trimmed.substr(open_paren + 1, close_paren - open_paren - 1);
+
+        if (inside_parens.find(',') != std::string::npos) {
+            // Has comma inside parens: ($80,X) - IndexedIndirect
+            // Will be handled in Group 4
+            return AddressingMode::IndirectX;  // Placeholder for now
+        }
+
+        // Check if there's content after closing paren (IndirectIndexed: ($80),Y)
+        if (close_paren < trimmed.length() - 1) {
+            std::string after_parens = Trim(trimmed.substr(close_paren + 1));
+            if (!after_parens.empty()) {
+                // Has content after parens: ($80),Y - IndirectIndexed
+                // Will be handled in Group 4
+                return AddressingMode::IndirectY;  // Placeholder for now
+            }
+        }
+
+        // Simple Indirect: ($1234) - only for JMP
+        return AddressingMode::Indirect;
+    }
+
     // Group 2: Check for indexed addressing modes (,X or ,Y)
     // Need to check this before parsing hex values
     size_t comma_x = trimmed.find(",X");
@@ -179,11 +210,20 @@ AssemblerResult Assembler::Assemble() {
                             if (!operand.empty()) {
                                 std::string trimmed = Trim(operand);
 
-                                // Strip index registers (,X or ,Y) for value extraction
+                                // Strip parentheses for indirect modes: ($1234) or ($80,X) or ($80),Y
                                 std::string value_str = trimmed;
-                                size_t comma_pos = trimmed.find(',');
+                                if (value_str[0] == '(') {
+                                    size_t close_paren = value_str.find(')');
+                                    if (close_paren != std::string::npos) {
+                                        value_str = value_str.substr(1, close_paren - 1);
+                                        value_str = Trim(value_str);
+                                    }
+                                }
+
+                                // Strip index registers (,X or ,Y) for value extraction
+                                size_t comma_pos = value_str.find(',');
                                 if (comma_pos != std::string::npos) {
-                                    value_str = Trim(trimmed.substr(0, comma_pos));
+                                    value_str = Trim(value_str.substr(0, comma_pos));
                                 }
 
                                 if (value_str[0] == '#') {
