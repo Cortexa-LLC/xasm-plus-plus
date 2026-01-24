@@ -660,3 +660,132 @@ TEST(AssemblerTest, JMPIndirectWithWhitespace) {
     EXPECT_EQ(jmp->encoded_bytes[1], 0x34);  // Low byte
     EXPECT_EQ(jmp->encoded_bytes[2], 0x12);  // High byte
 }
+// ============================================================================
+// Group 4: Complex Indirect Addressing Modes (IndexedIndirect and IndirectIndexed)
+// ============================================================================
+
+// Test 32: LDA with IndexedIndirect (pre-indexed)
+TEST(AssemblerTest, LDAIndexedIndirect) {
+    Assembler assembler;
+    Cpu6502 cpu;
+    assembler.SetCpuPlugin(&cpu);
+
+    Section section(".text", static_cast<uint32_t>(SectionAttributes::Code), 0x8000);
+
+    // LDA ($80,X) (IndexedIndirect, 2 bytes: A1 80)
+    auto lda = std::make_shared<InstructionAtom>("LDA", "($80,X)");
+    section.atoms.push_back(lda);
+
+    assembler.AddSection(section);
+    AssemblerResult result = assembler.Assemble();
+
+    EXPECT_TRUE(result.success);
+    EXPECT_EQ(lda->encoded_bytes.size(), 2);
+    EXPECT_EQ(lda->encoded_bytes[0], 0xA1);  // LDA indexed indirect opcode
+    EXPECT_EQ(lda->encoded_bytes[1], 0x80);  // Zero page address
+}
+
+// Test 33: STA with IndexedIndirect
+TEST(AssemblerTest, STAIndexedIndirect) {
+    Assembler assembler;
+    Cpu6502 cpu;
+    assembler.SetCpuPlugin(&cpu);
+
+    Section section(".text", static_cast<uint32_t>(SectionAttributes::Code), 0x8000);
+
+    // STA ($40,X) (IndexedIndirect, 2 bytes: 81 40)
+    auto sta = std::make_shared<InstructionAtom>("STA", "($40,X)");
+    section.atoms.push_back(sta);
+
+    assembler.AddSection(section);
+    AssemblerResult result = assembler.Assemble();
+
+    EXPECT_TRUE(result.success);
+    EXPECT_EQ(sta->encoded_bytes.size(), 2);
+    EXPECT_EQ(sta->encoded_bytes[0], 0x81);  // STA indexed indirect opcode
+    EXPECT_EQ(sta->encoded_bytes[1], 0x40);  // Zero page address
+}
+
+// Test 34: LDA with IndirectIndexed (post-indexed)
+TEST(AssemblerTest, LDAIndirectIndexed) {
+    Assembler assembler;
+    Cpu6502 cpu;
+    assembler.SetCpuPlugin(&cpu);
+
+    Section section(".text", static_cast<uint32_t>(SectionAttributes::Code), 0x8000);
+
+    // LDA ($80),Y (IndirectIndexed, 2 bytes: B1 80)
+    auto lda = std::make_shared<InstructionAtom>("LDA", "($80),Y");
+    section.atoms.push_back(lda);
+
+    assembler.AddSection(section);
+    AssemblerResult result = assembler.Assemble();
+
+    EXPECT_TRUE(result.success);
+    EXPECT_EQ(lda->encoded_bytes.size(), 2);
+    EXPECT_EQ(lda->encoded_bytes[0], 0xB1);  // LDA indirect indexed opcode
+    EXPECT_EQ(lda->encoded_bytes[1], 0x80);  // Zero page address
+}
+
+// Test 35: STA with IndirectIndexed
+TEST(AssemblerTest, STAIndirectIndexed) {
+    Assembler assembler;
+    Cpu6502 cpu;
+    assembler.SetCpuPlugin(&cpu);
+
+    Section section(".text", static_cast<uint32_t>(SectionAttributes::Code), 0x8000);
+
+    // STA ($40),Y (IndirectIndexed, 2 bytes: 91 40)
+    auto sta = std::make_shared<InstructionAtom>("STA", "($40),Y");
+    section.atoms.push_back(sta);
+
+    assembler.AddSection(section);
+    AssemblerResult result = assembler.Assemble();
+
+    EXPECT_TRUE(result.success);
+    EXPECT_EQ(sta->encoded_bytes.size(), 2);
+    EXPECT_EQ(sta->encoded_bytes[0], 0x91);  // STA indirect indexed opcode
+    EXPECT_EQ(sta->encoded_bytes[1], 0x40);  // Zero page address
+}
+
+// Test 36: IndexedIndirect with whitespace
+TEST(AssemblerTest, IndexedIndirectWithWhitespace) {
+    Assembler assembler;
+    Cpu6502 cpu;
+    assembler.SetCpuPlugin(&cpu);
+
+    Section section(".text", static_cast<uint32_t>(SectionAttributes::Code), 0x8000);
+
+    // LDA ( $80 , X ) (whitespace tolerance)
+    auto lda = std::make_shared<InstructionAtom>("LDA", "( $80 , X )");
+    section.atoms.push_back(lda);
+
+    assembler.AddSection(section);
+    AssemblerResult result = assembler.Assemble();
+
+    EXPECT_TRUE(result.success);
+    EXPECT_EQ(lda->encoded_bytes.size(), 2);
+    EXPECT_EQ(lda->encoded_bytes[0], 0xA1);  // LDA indexed indirect opcode
+    EXPECT_EQ(lda->encoded_bytes[1], 0x80);  // Zero page address
+}
+
+// Test 37: IndirectIndexed with whitespace
+TEST(AssemblerTest, IndirectIndexedWithWhitespace) {
+    Assembler assembler;
+    Cpu6502 cpu;
+    assembler.SetCpuPlugin(&cpu);
+
+    Section section(".text", static_cast<uint32_t>(SectionAttributes::Code), 0x8000);
+
+    // LDA ( $80 ) , Y (whitespace tolerance)
+    auto lda = std::make_shared<InstructionAtom>("LDA", "( $80 ) , Y");
+    section.atoms.push_back(lda);
+
+    assembler.AddSection(section);
+    AssemblerResult result = assembler.Assemble();
+
+    EXPECT_TRUE(result.success);
+    EXPECT_EQ(lda->encoded_bytes.size(), 2);
+    EXPECT_EQ(lda->encoded_bytes[0], 0xB1);  // LDA indirect indexed opcode
+    EXPECT_EQ(lda->encoded_bytes[1], 0x80);  // Zero page address
+}
