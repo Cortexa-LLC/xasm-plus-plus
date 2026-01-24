@@ -1599,3 +1599,68 @@ TEST(Cpu6502Test, PHX_NotAvailableIn6502Mode) {
     auto bytes = cpu.EncodePHX();
     EXPECT_EQ(bytes.size(), 0);  // Empty = not supported in this mode
 }
+
+// ============================================================================
+// Group 3: 65C02 Store Zero (STZ)
+// ============================================================================
+
+// Test 166: STZ zero page - 65C02
+TEST(Cpu6502Test, STZ_ZeroPage_65C02) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65C02);
+
+    // STZ $80 -> 64 80
+    auto bytes = cpu.EncodeSTZ(0x80, AddressingMode::ZeroPage);
+    ASSERT_EQ(bytes.size(), 2);
+    EXPECT_EQ(bytes[0], 0x64);  // STZ zp opcode
+    EXPECT_EQ(bytes[1], 0x80);
+}
+
+// Test 167: STZ zero page,X - 65C02
+TEST(Cpu6502Test, STZ_ZeroPageX_65C02) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65C02);
+
+    // STZ $80,X -> 74 80
+    auto bytes = cpu.EncodeSTZ(0x80, AddressingMode::ZeroPageX);
+    ASSERT_EQ(bytes.size(), 2);
+    EXPECT_EQ(bytes[0], 0x74);  // STZ zp,X opcode
+    EXPECT_EQ(bytes[1], 0x80);
+}
+
+// Test 168: STZ absolute - 65C02
+TEST(Cpu6502Test, STZ_Absolute_65C02) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65C02);
+
+    // STZ $1234 -> 9C 34 12
+    auto bytes = cpu.EncodeSTZ(0x1234, AddressingMode::Absolute);
+    ASSERT_EQ(bytes.size(), 3);
+    EXPECT_EQ(bytes[0], 0x9C);  // STZ abs opcode
+    EXPECT_EQ(bytes[1], 0x34);  // Low byte
+    EXPECT_EQ(bytes[2], 0x12);  // High byte
+}
+
+// Test 169: STZ absolute,X - 65C02
+TEST(Cpu6502Test, STZ_AbsoluteX_65C02) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65C02);
+
+    // STZ $1234,X -> 9E 34 12
+    auto bytes = cpu.EncodeSTZ(0x1234, AddressingMode::AbsoluteX);
+    ASSERT_EQ(bytes.size(), 3);
+    EXPECT_EQ(bytes[0], 0x9E);  // STZ abs,X opcode
+    EXPECT_EQ(bytes[1], 0x34);  // Low byte
+    EXPECT_EQ(bytes[2], 0x12);  // High byte
+}
+
+// Test 170: STZ should return empty in 6502 mode (not available)
+TEST(Cpu6502Test, STZ_NotAvailableIn6502Mode) {
+    Cpu6502 cpu;
+    // Default mode is 6502
+    EXPECT_EQ(cpu.GetCpuMode(), CpuMode::Cpu6502);
+
+    // STZ not available in 6502 mode - should return empty
+    auto bytes = cpu.EncodeSTZ(0x80, AddressingMode::ZeroPage);
+    EXPECT_EQ(bytes.size(), 0);  // Empty = not supported in this mode
+}

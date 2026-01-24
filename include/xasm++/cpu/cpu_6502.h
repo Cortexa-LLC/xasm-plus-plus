@@ -103,6 +103,9 @@ public:
     std::vector<uint8_t> EncodePHY() const;  // Push Y (65C02+)
     std::vector<uint8_t> EncodePLY() const;  // Pull Y (65C02+)
 
+    // Phase 2.5 - Group 3: 65C02 Store Zero
+    std::vector<uint8_t> EncodeSTZ(uint16_t operand, AddressingMode mode) const;  // Store Zero (65C02+)
+
     // Phase 2.2: Subroutine
     std::vector<uint8_t> EncodeJSR(uint16_t operand, AddressingMode mode) const;
 

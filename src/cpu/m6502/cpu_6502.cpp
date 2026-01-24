@@ -1191,6 +1191,49 @@ std::vector<uint8_t> Cpu6502::EncodePLY() const {
     return {0x7A};
 }
 
+// ============================================================================
+// Group 3: 65C02 Store Zero
+// ============================================================================
+
+// STZ - Store Zero (65C02+)
+std::vector<uint8_t> Cpu6502::EncodeSTZ(uint16_t operand, AddressingMode mode) const {
+    // Only available in 65C02 and later
+    if (cpu_mode_ == CpuMode::Cpu6502) {
+        return {};  // Not supported in 6502 mode
+    }
+
+    std::vector<uint8_t> bytes;
+
+    switch (mode) {
+        case AddressingMode::ZeroPage:
+            bytes.push_back(0x64);  // STZ zp
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+            break;
+
+        case AddressingMode::ZeroPageX:
+            bytes.push_back(0x74);  // STZ zp,X
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+            break;
+
+        case AddressingMode::Absolute:
+            bytes.push_back(0x9C);  // STZ abs
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
+            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
+            break;
+
+        case AddressingMode::AbsoluteX:
+            bytes.push_back(0x9E);  // STZ abs,X
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
+            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
+            break;
+
+        default:
+            break;
+    }
+
+    return bytes;
+}
+
 // Calculate instruction size based on addressing mode
 size_t Cpu6502::CalculateInstructionSize(AddressingMode mode) const {
     switch (mode) {
