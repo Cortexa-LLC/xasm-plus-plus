@@ -789,3 +789,185 @@ TEST(AssemblerTest, IndirectIndexedWithWhitespace) {
     EXPECT_EQ(lda->encoded_bytes[0], 0xB1);  // LDA indirect indexed opcode
     EXPECT_EQ(lda->encoded_bytes[1], 0x80);  // Zero page address
 }
+// ============================================================================
+// Group 5: Integration Tests - Complete Assembly Programs
+// ============================================================================
+
+// Test 38: Zero-page indexed loop
+TEST(AssemblerTest, IntegrationZeroPageIndexedLoop) {
+    Assembler assembler;
+    Cpu6502 cpu;
+    assembler.SetCpuPlugin(&cpu);
+
+    Section section(".text", static_cast<uint32_t>(SectionAttributes::Code), 0x8000);
+
+    // Simple loop using zero-page indexed
+    // LDX #$00
+    // loop: LDA $80,X
+    //       INX
+    //       BNE loop
+    auto ldx = std::make_shared<InstructionAtom>("LDX", "#$00");
+    auto loop_label = std::make_shared<LabelAtom>("loop", 0);
+    auto lda = std::make_shared<InstructionAtom>("LDA", "$80,X");
+    auto inx = std::make_shared<InstructionAtom>("INX", "");
+    auto bne = std::make_shared<InstructionAtom>("BNE", "loop");
+
+    section.atoms.push_back(ldx);
+    section.atoms.push_back(loop_label);
+    section.atoms.push_back(lda);
+    section.atoms.push_back(inx);
+    section.atoms.push_back(bne);
+
+    assembler.AddSection(section);
+    AssemblerResult result = assembler.Assemble();
+
+    EXPECT_TRUE(result.success);
+    EXPECT_EQ(ldx->encoded_bytes[0], 0xA2);  // LDX immediate
+    EXPECT_EQ(lda->encoded_bytes[0], 0xB5);  // LDA zero page,X
+    EXPECT_EQ(inx->encoded_bytes[0], 0xE8);  // INX
+    EXPECT_EQ(bne->encoded_bytes[0], 0xD0);  // BNE
+}
+
+// Test 39: Accumulator shifts
+TEST(AssemblerTest, IntegrationAccumulatorShifts) {
+    Assembler assembler;
+    Cpu6502 cpu;
+    assembler.SetCpuPlugin(&cpu);
+
+    Section section(".text", static_cast<uint32_t>(SectionAttributes::Code), 0x8000);
+
+    // LDA #$42
+    // ASL A
+    // ROL A
+    // LSR A
+    // ROR A
+    auto lda = std::make_shared<InstructionAtom>("LDA", "#$42");
+    auto asl = std::make_shared<InstructionAtom>("ASL", "A");
+    auto rol = std::make_shared<InstructionAtom>("ROL", "A");
+    auto lsr = std::make_shared<InstructionAtom>("LSR", "A");
+    auto ror = std::make_shared<InstructionAtom>("ROR", "A");
+
+    section.atoms.push_back(lda);
+    section.atoms.push_back(asl);
+    section.atoms.push_back(rol);
+    section.atoms.push_back(lsr);
+    section.atoms.push_back(ror);
+
+    assembler.AddSection(section);
+    AssemblerResult result = assembler.Assemble();
+
+    EXPECT_TRUE(result.success);
+    EXPECT_EQ(lda->encoded_bytes[0], 0xA9);  // LDA immediate
+    EXPECT_EQ(asl->encoded_bytes[0], 0x0A);  // ASL accumulator
+    EXPECT_EQ(rol->encoded_bytes[0], 0x2A);  // ROL accumulator
+    EXPECT_EQ(lsr->encoded_bytes[0], 0x4A);  // LSR accumulator
+    EXPECT_EQ(ror->encoded_bytes[0], 0x6A);  // ROR accumulator
+}
+
+// Test 40: Indirect jump table
+TEST(AssemblerTest, IntegrationIndirectJump) {
+    Assembler assembler;
+    Cpu6502 cpu;
+    assembler.SetCpuPlugin(&cpu);
+
+    Section section(".text", static_cast<uint32_t>(SectionAttributes::Code), 0x8000);
+
+    // JMP ($1234)  ; Indirect jump through vector
+    auto jmp = std::make_shared<InstructionAtom>("JMP", "($1234)");
+
+    section.atoms.push_back(jmp);
+
+    assembler.AddSection(section);
+    AssemblerResult result = assembler.Assemble();
+
+    EXPECT_TRUE(result.success);
+    EXPECT_EQ(jmp->encoded_bytes[0], 0x6C);  // JMP indirect
+    EXPECT_EQ(jmp->encoded_bytes[1], 0x34);
+    EXPECT_EQ(jmp->encoded_bytes[2], 0x12);
+}
+
+// Test 41: IndexedIndirect addressing (sprite rendering)
+TEST(AssemblerTest, IntegrationIndexedIndirect) {
+    Assembler assembler;
+    Cpu6502 cpu;
+    assembler.SetCpuPlugin(&cpu);
+
+    Section section(".text", static_cast<uint32_t>(SectionAttributes::Code), 0x8000);
+
+    // Typical sprite rendering pattern
+    // LDY #$00
+    // loop: LDA ($40,X)
+    //       STA ($80),Y
+    //       INY
+    //       BNE loop
+    auto ldy = std::make_shared<InstructionAtom>("LDY", "#$00");
+    auto loop_label = std::make_shared<LabelAtom>("loop", 0);
+    auto lda = std::make_shared<InstructionAtom>("LDA", "($40,X)");
+    auto sta = std::make_shared<InstructionAtom>("STA", "($80),Y");
+    auto iny = std::make_shared<InstructionAtom>("INY", "");
+    auto bne = std::make_shared<InstructionAtom>("BNE", "loop");
+
+    section.atoms.push_back(ldy);
+    section.atoms.push_back(loop_label);
+    section.atoms.push_back(lda);
+    section.atoms.push_back(sta);
+    section.atoms.push_back(iny);
+    section.atoms.push_back(bne);
+
+    assembler.AddSection(section);
+    AssemblerResult result = assembler.Assemble();
+
+    EXPECT_TRUE(result.success);
+    EXPECT_EQ(ldy->encoded_bytes[0], 0xA0);  // LDY immediate
+    EXPECT_EQ(lda->encoded_bytes[0], 0xA1);  // LDA indexed indirect
+    EXPECT_EQ(sta->encoded_bytes[0], 0x91);  // STA indirect indexed
+    EXPECT_EQ(iny->encoded_bytes[0], 0xC8);  // INY
+    EXPECT_EQ(bne->encoded_bytes[0], 0xD0);  // BNE
+}
+
+// Test 42: Mixed addressing modes
+TEST(AssemblerTest, IntegrationMixedAddressingModes) {
+    Assembler assembler;
+    Cpu6502 cpu;
+    assembler.SetCpuPlugin(&cpu);
+
+    Section section(".text", static_cast<uint32_t>(SectionAttributes::Code), 0x8000);
+
+    // Demonstrate all major addressing modes in one program
+    auto lda_imm = std::make_shared<InstructionAtom>("LDA", "#$42");      // Immediate
+    auto sta_zp = std::make_shared<InstructionAtom>("STA", "$80");        // ZeroPage
+    auto lda_zpx = std::make_shared<InstructionAtom>("LDA", "$80,X");     // ZeroPageX
+    auto sta_abs = std::make_shared<InstructionAtom>("STA", "$1234");     // Absolute
+    auto lda_absx = std::make_shared<InstructionAtom>("LDA", "$1234,X");  // AbsoluteX
+    auto lda_absy = std::make_shared<InstructionAtom>("LDA", "$1234,Y");  // AbsoluteY
+    auto asl_a = std::make_shared<InstructionAtom>("ASL", "A");           // Accumulator
+    auto lda_indx = std::make_shared<InstructionAtom>("LDA", "($40,X)");  // IndexedIndirect
+    auto sta_indy = std::make_shared<InstructionAtom>("STA", "($50),Y");  // IndirectIndexed
+    auto jmp_ind = std::make_shared<InstructionAtom>("JMP", "($FFFC)");   // Indirect
+
+    section.atoms.push_back(lda_imm);
+    section.atoms.push_back(sta_zp);
+    section.atoms.push_back(lda_zpx);
+    section.atoms.push_back(sta_abs);
+    section.atoms.push_back(lda_absx);
+    section.atoms.push_back(lda_absy);
+    section.atoms.push_back(asl_a);
+    section.atoms.push_back(lda_indx);
+    section.atoms.push_back(sta_indy);
+    section.atoms.push_back(jmp_ind);
+
+    assembler.AddSection(section);
+    AssemblerResult result = assembler.Assemble();
+
+    EXPECT_TRUE(result.success);
+    EXPECT_EQ(lda_imm->encoded_bytes[0], 0xA9);   // LDA immediate
+    EXPECT_EQ(sta_zp->encoded_bytes[0], 0x85);    // STA zero page
+    EXPECT_EQ(lda_zpx->encoded_bytes[0], 0xB5);   // LDA zero page,X
+    EXPECT_EQ(sta_abs->encoded_bytes[0], 0x8D);   // STA absolute
+    EXPECT_EQ(lda_absx->encoded_bytes[0], 0xBD);  // LDA absolute,X
+    EXPECT_EQ(lda_absy->encoded_bytes[0], 0xB9);  // LDA absolute,Y
+    EXPECT_EQ(asl_a->encoded_bytes[0], 0x0A);     // ASL accumulator
+    EXPECT_EQ(lda_indx->encoded_bytes[0], 0xA1);  // LDA indexed indirect
+    EXPECT_EQ(sta_indy->encoded_bytes[0], 0x91);  // STA indirect indexed
+    EXPECT_EQ(jmp_ind->encoded_bytes[0], 0x6C);   // JMP indirect
+}

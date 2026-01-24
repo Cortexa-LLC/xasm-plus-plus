@@ -190,8 +190,20 @@ AssemblerResult Assembler::Assemble() {
         std::vector<size_t> current_sizes;
         if (cpu_ != nullptr) {
             for (auto& section : sections_) {
+                // Track current address during encoding
+                uint32_t current_address = section.org;
+
                 for (auto& atom : section.atoms) {
-                    if (atom->type == AtomType::Instruction) {
+                    if (atom->type == AtomType::Org) {
+                        // Handle .org directive
+                        auto org = std::dynamic_pointer_cast<OrgAtom>(atom);
+                        if (org) {
+                            current_address = org->address;
+                        }
+                    } else if (atom->type == AtomType::Label) {
+                        // Labels don't advance address yet, but we track them
+                        // (address will be finalized in Pass 2)
+                    } else if (atom->type == AtomType::Instruction) {
                         auto inst = std::dynamic_pointer_cast<InstructionAtom>(atom);
                         if (inst) {
                             // Clear previous encoding
@@ -241,6 +253,35 @@ AssemblerResult Assembler::Assemble() {
                                         }
                                     }
                                 }
+                            }
+
+                            // Special handling for branch instructions (relative addressing)
+                            bool is_branch = (mnemonic == "BEQ" || mnemonic == "BNE" ||
+                                            mnemonic == "BCC" || mnemonic == "BCS" ||
+                                            mnemonic == "BMI" || mnemonic == "BPL" ||
+                                            mnemonic == "BVC" || mnemonic == "BVS");
+
+                            if (is_branch && mode == AddressingMode::Absolute) {
+                                // Branch instructions use relative addressing
+                                // On first pass, label might not be defined yet (value == 0)
+                                // In that case, encode a temporary 0 offset
+                                // On subsequent passes, the correct offset will be calculated
+                                int16_t offset = 0;
+                                if (value != 0) {
+                                    // Calculate offset: target - (PC + 2)
+                                    // PC = current instruction address, +2 because PC advances past opcode and operand
+                                    offset = static_cast<int16_t>(value) - static_cast<int16_t>(current_address + 2);
+
+                                    // Check if offset fits in signed byte (-128 to +127)
+                                    if (offset < -128 || offset > 127) {
+                                        throw std::runtime_error("Branch target out of range: offset " +
+                                                               std::to_string(offset) + " (must be -128 to +127)");
+                                    }
+                                }
+
+                                // Convert to unsigned byte for encoding
+                                value = static_cast<uint16_t>(static_cast<uint8_t>(offset & 0xFF));
+                                mode = AddressingMode::Relative;
                             }
 
                             // Call appropriate CPU encoding method
@@ -374,6 +415,9 @@ AssemblerResult Assembler::Assemble() {
 
                             // Record size for convergence check
                             current_sizes.push_back(inst->encoded_bytes.size());
+
+                            // Advance current address past this instruction
+                            current_address += inst->encoded_bytes.size();
                         }
                     }
                 }
