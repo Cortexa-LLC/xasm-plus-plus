@@ -1768,3 +1768,91 @@ TEST(Cpu6502Test, BRA_NotAvailableIn6502Mode) {
     auto bytes = cpu.EncodeBRA(0x0A, AddressingMode::Relative);
     EXPECT_EQ(bytes.size(), 0);  // Empty = not supported in this mode
 }
+
+// ============================================================================
+// Group 6: 65C02 Enhanced Addressing Modes
+// ============================================================================
+
+// Test 179: LDA indirect (no Y) - 65C02 enhancement
+// Note: Original 6502 only has ($80),Y. 65C02 adds ($80) without Y index.
+TEST(Cpu6502Test, LDA_Indirect_NoY_65C02) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65C02);
+
+    // LDA ($80) -> B2 80 (65C02 new addressing mode)
+    auto bytes = cpu.EncodeLDA(0x80, AddressingMode::IndirectZeroPage);
+    ASSERT_EQ(bytes.size(), 2);
+    EXPECT_EQ(bytes[0], 0xB2);  // LDA (zp) opcode
+    EXPECT_EQ(bytes[1], 0x80);
+}
+
+// Test 180: JMP indexed indirect - 65C02 enhancement
+// Note: Original 6502 only has JMP ($1234). 65C02 adds JMP ($1234,X).
+TEST(Cpu6502Test, JMP_IndexedIndirect_65C02) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65C02);
+
+    // JMP ($1234,X) -> 7C 34 12 (65C02 new addressing mode)
+    auto bytes = cpu.EncodeJMP(0x1234, AddressingMode::AbsoluteIndexedIndirect);
+    ASSERT_EQ(bytes.size(), 3);
+    EXPECT_EQ(bytes[0], 0x7C);  // JMP (abs,X) opcode
+    EXPECT_EQ(bytes[1], 0x34);  // Low byte
+    EXPECT_EQ(bytes[2], 0x12);  // High byte
+}
+
+// Test 181: BIT immediate - 65C02 enhancement
+// Note: Original 6502 only has BIT zp and BIT abs. 65C02 adds BIT #$80.
+TEST(Cpu6502Test, BIT_Immediate_65C02) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65C02);
+
+    // BIT #$80 -> 89 80 (65C02 new addressing mode)
+    auto bytes = cpu.EncodeBIT(0x80, AddressingMode::Immediate);
+    ASSERT_EQ(bytes.size(), 2);
+    EXPECT_EQ(bytes[0], 0x89);  // BIT imm opcode
+    EXPECT_EQ(bytes[1], 0x80);
+}
+
+// Test 182: BIT zero page,X - 65C02 enhancement
+TEST(Cpu6502Test, BIT_ZeroPageX_65C02) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65C02);
+
+    // BIT $80,X -> 34 80 (65C02 new addressing mode)
+    auto bytes = cpu.EncodeBIT(0x80, AddressingMode::ZeroPageX);
+    ASSERT_EQ(bytes.size(), 2);
+    EXPECT_EQ(bytes[0], 0x34);  // BIT zp,X opcode
+    EXPECT_EQ(bytes[1], 0x80);
+}
+
+// Test 183: BIT absolute,X - 65C02 enhancement
+TEST(Cpu6502Test, BIT_AbsoluteX_65C02) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65C02);
+
+    // BIT $1234,X -> 3C 34 12 (65C02 new addressing mode)
+    auto bytes = cpu.EncodeBIT(0x1234, AddressingMode::AbsoluteX);
+    ASSERT_EQ(bytes.size(), 3);
+    EXPECT_EQ(bytes[0], 0x3C);  // BIT abs,X opcode
+    EXPECT_EQ(bytes[1], 0x34);  // Low byte
+    EXPECT_EQ(bytes[2], 0x12);  // High byte
+}
+
+// Test 184: Enhanced addressing modes should fail in 6502 mode
+TEST(Cpu6502Test, EnhancedModes_NotAvailableIn6502Mode) {
+    Cpu6502 cpu;
+    // Default mode is 6502
+    EXPECT_EQ(cpu.GetCpuMode(), CpuMode::Cpu6502);
+
+    // LDA (zp) - not available in 6502 mode
+    auto bytes1 = cpu.EncodeLDA(0x80, AddressingMode::IndirectZeroPage);
+    EXPECT_EQ(bytes1.size(), 0);  // Empty = not supported
+
+    // JMP (abs,X) - not available in 6502 mode
+    auto bytes2 = cpu.EncodeJMP(0x1234, AddressingMode::AbsoluteIndexedIndirect);
+    EXPECT_EQ(bytes2.size(), 0);  // Empty = not supported
+
+    // BIT immediate - not available in 6502 mode
+    auto bytes3 = cpu.EncodeBIT(0x80, AddressingMode::Immediate);
+    EXPECT_EQ(bytes3.size(), 0);  // Empty = not supported
+}

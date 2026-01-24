@@ -52,6 +52,15 @@ std::vector<uint8_t> Cpu6502::EncodeLDA(uint16_t operand, AddressingMode mode) c
             bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
             break;
 
+        // Phase 2.5 - Group 6: 65C02 Enhanced Addressing Modes
+        case AddressingMode::IndirectZeroPage:
+            // Only available in 65C02 and later
+            if (cpu_mode_ != CpuMode::Cpu6502) {
+                bytes.push_back(0xB2);  // LDA (zp) - 65C02+
+                bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+            }
+            break;
+
         default:
             break;
     }
@@ -121,6 +130,14 @@ std::vector<uint8_t> Cpu6502::EncodeJMP(uint16_t operand, AddressingMode mode) c
         bytes.push_back(0x6C);  // JMP (ind)
         bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
         bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF));
+    } else if (mode == AddressingMode::AbsoluteIndexedIndirect) {
+        // Phase 2.5 - Group 6: 65C02 Enhanced Addressing Mode
+        // Only available in 65C02 and later
+        if (cpu_mode_ != CpuMode::Cpu6502) {
+            bytes.push_back(0x7C);  // JMP (abs,X) - 65C02+
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF));
+        }
     }
 
     return bytes;
@@ -893,6 +910,32 @@ std::vector<uint8_t> Cpu6502::EncodeBIT(uint16_t operand, AddressingMode mode) c
             bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
             break;
 
+        // Phase 2.5 - Group 6: 65C02 Enhanced Addressing Modes for BIT
+        case AddressingMode::Immediate:
+            // Only available in 65C02 and later
+            if (cpu_mode_ != CpuMode::Cpu6502) {
+                bytes.push_back(0x89);  // BIT #imm - 65C02+
+                bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+            }
+            break;
+
+        case AddressingMode::ZeroPageX:
+            // Only available in 65C02 and later
+            if (cpu_mode_ != CpuMode::Cpu6502) {
+                bytes.push_back(0x34);  // BIT zp,X - 65C02+
+                bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+            }
+            break;
+
+        case AddressingMode::AbsoluteX:
+            // Only available in 65C02 and later
+            if (cpu_mode_ != CpuMode::Cpu6502) {
+                bytes.push_back(0x3C);  // BIT abs,X - 65C02+
+                bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
+                bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
+            }
+            break;
+
         default:
             break;
     }
@@ -1328,12 +1371,14 @@ size_t Cpu6502::CalculateInstructionSize(AddressingMode mode) const {
         case AddressingMode::IndirectX:
         case AddressingMode::IndirectY:
         case AddressingMode::Relative:
+        case AddressingMode::IndirectZeroPage:  // Phase 2.5 - Group 6: 65C02
             return 2;
 
         case AddressingMode::Absolute:
         case AddressingMode::AbsoluteX:
         case AddressingMode::AbsoluteY:
         case AddressingMode::Indirect:
+        case AddressingMode::AbsoluteIndexedIndirect:  // Phase 2.5 - Group 6: 65C02
             return 3;
 
         default:

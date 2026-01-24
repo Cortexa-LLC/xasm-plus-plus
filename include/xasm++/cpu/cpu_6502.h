@@ -24,6 +24,10 @@ enum class AddressingMode {
     IndirectX,      // LDA ($80,X)
     IndirectY,      // LDA ($80),Y
     Relative,       // BEQ label
+
+    // Phase 2.5 - Group 6: 65C02 Enhanced Addressing Modes
+    IndirectZeroPage,         // LDA ($80) - 65C02+ only (indirect without Y)
+    AbsoluteIndexedIndirect,  // JMP ($1234,X) - 65C02+ only
 };
 
 // CPU modes for 6502 family (Phase 2.5)
