@@ -1151,6 +1151,46 @@ CpuMode Cpu6502::GetCpuMode() const {
     return cpu_mode_;
 }
 
+// ============================================================================
+// Group 2: 65C02 Stack Operations
+// ============================================================================
+
+// PHX - Push X to stack (65C02+)
+std::vector<uint8_t> Cpu6502::EncodePHX() const {
+    // Only available in 65C02 and later
+    if (cpu_mode_ == CpuMode::Cpu6502) {
+        return {};  // Not supported in 6502 mode
+    }
+    return {0xDA};
+}
+
+// PLX - Pull X from stack (65C02+)
+std::vector<uint8_t> Cpu6502::EncodePLX() const {
+    // Only available in 65C02 and later
+    if (cpu_mode_ == CpuMode::Cpu6502) {
+        return {};  // Not supported in 6502 mode
+    }
+    return {0xFA};
+}
+
+// PHY - Push Y to stack (65C02+)
+std::vector<uint8_t> Cpu6502::EncodePHY() const {
+    // Only available in 65C02 and later
+    if (cpu_mode_ == CpuMode::Cpu6502) {
+        return {};  // Not supported in 6502 mode
+    }
+    return {0x5A};
+}
+
+// PLY - Pull Y from stack (65C02+)
+std::vector<uint8_t> Cpu6502::EncodePLY() const {
+    // Only available in 65C02 and later
+    if (cpu_mode_ == CpuMode::Cpu6502) {
+        return {};  // Not supported in 6502 mode
+    }
+    return {0x7A};
+}
+
 // Calculate instruction size based on addressing mode
 size_t Cpu6502::CalculateInstructionSize(AddressingMode mode) const {
     switch (mode) {

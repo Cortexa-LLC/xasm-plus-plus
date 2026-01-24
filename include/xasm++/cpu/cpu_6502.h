@@ -97,6 +97,12 @@ public:
     std::vector<uint8_t> EncodePHP() const;
     std::vector<uint8_t> EncodePLP() const;
 
+    // Phase 2.5 - Group 2: 65C02 Stack operations
+    std::vector<uint8_t> EncodePHX() const;  // Push X (65C02+)
+    std::vector<uint8_t> EncodePLX() const;  // Pull X (65C02+)
+    std::vector<uint8_t> EncodePHY() const;  // Push Y (65C02+)
+    std::vector<uint8_t> EncodePLY() const;  // Pull Y (65C02+)
+
     // Phase 2.2: Subroutine
     std::vector<uint8_t> EncodeJSR(uint16_t operand, AddressingMode mode) const;
 

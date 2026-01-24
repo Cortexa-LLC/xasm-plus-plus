@@ -1540,3 +1540,62 @@ TEST(Cpu6502Test, CpuModeCanBeChangedMultipleTimes) {
     cpu.SetCpuMode(CpuMode::Cpu6502);
     EXPECT_EQ(cpu.GetCpuMode(), CpuMode::Cpu6502);
 }
+
+// ============================================================================
+// Group 2: 65C02 Stack Operations
+// ============================================================================
+
+// Test 161: PHX (Push X to stack) - 65C02
+TEST(Cpu6502Test, PHX_65C02) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65C02);
+
+    // PHX -> DA
+    auto bytes = cpu.EncodePHX();
+    ASSERT_EQ(bytes.size(), 1);
+    EXPECT_EQ(bytes[0], 0xDA);  // PHX opcode
+}
+
+// Test 162: PLX (Pull X from stack) - 65C02
+TEST(Cpu6502Test, PLX_65C02) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65C02);
+
+    // PLX -> FA
+    auto bytes = cpu.EncodePLX();
+    ASSERT_EQ(bytes.size(), 1);
+    EXPECT_EQ(bytes[0], 0xFA);  // PLX opcode
+}
+
+// Test 163: PHY (Push Y to stack) - 65C02
+TEST(Cpu6502Test, PHY_65C02) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65C02);
+
+    // PHY -> 5A
+    auto bytes = cpu.EncodePHY();
+    ASSERT_EQ(bytes.size(), 1);
+    EXPECT_EQ(bytes[0], 0x5A);  // PHY opcode
+}
+
+// Test 164: PLY (Pull Y from stack) - 65C02
+TEST(Cpu6502Test, PLY_65C02) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65C02);
+
+    // PLY -> 7A
+    auto bytes = cpu.EncodePLY();
+    ASSERT_EQ(bytes.size(), 1);
+    EXPECT_EQ(bytes[0], 0x7A);  // PLY opcode
+}
+
+// Test 165: PHX should return empty in 6502 mode (not available)
+TEST(Cpu6502Test, PHX_NotAvailableIn6502Mode) {
+    Cpu6502 cpu;
+    // Default mode is 6502
+    EXPECT_EQ(cpu.GetCpuMode(), CpuMode::Cpu6502);
+
+    // PHX not available in 6502 mode - should return empty
+    auto bytes = cpu.EncodePHX();
+    EXPECT_EQ(bytes.size(), 0);  // Empty = not supported in this mode
+}
