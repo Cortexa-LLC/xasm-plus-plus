@@ -26,6 +26,14 @@ enum class AddressingMode {
     Relative,       // BEQ label
 };
 
+// CPU modes for 6502 family (Phase 2.5)
+enum class CpuMode {
+    Cpu6502,        // Original 6502 (default)
+    Cpu65C02,       // 65C02 with enhanced opcodes
+    Cpu65C02Rock,   // 65C02 with Rockwell extensions
+    Cpu65816        // 65816 with 16-bit support
+};
+
 // 6502 CPU Plugin
 class Cpu6502 {
 public:
@@ -33,6 +41,10 @@ public:
 
     // Metadata
     std::string GetName() const { return "6502"; }
+
+    // CPU mode switching (Phase 2.5)
+    void SetCpuMode(CpuMode mode);
+    CpuMode GetCpuMode() const;
 
     // Instruction encoding methods (Phase 1 subset)
     std::vector<uint8_t> EncodeLDA(uint16_t operand, AddressingMode mode) const;
@@ -123,6 +135,10 @@ public:
 
     // Calculate instruction size
     size_t CalculateInstructionSize(AddressingMode mode) const;
+
+private:
+    // Phase 2.5: CPU mode state
+    CpuMode cpu_mode_ = CpuMode::Cpu6502;  // Default to 6502
 };
 
 } // namespace xasm

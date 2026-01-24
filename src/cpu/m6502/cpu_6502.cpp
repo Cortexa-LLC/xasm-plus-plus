@@ -1137,6 +1137,20 @@ std::vector<uint8_t> Cpu6502::EncodeTYA() const {
     return {0x98};
 }
 
+// ============================================================================
+// Phase 2.5: CPU Mode Switching
+// ============================================================================
+
+// Set CPU mode (6502, 65C02, 65C02-Rockwell, 65816)
+void Cpu6502::SetCpuMode(CpuMode mode) {
+    cpu_mode_ = mode;
+}
+
+// Get current CPU mode
+CpuMode Cpu6502::GetCpuMode() const {
+    return cpu_mode_;
+}
+
 // Calculate instruction size based on addressing mode
 size_t Cpu6502::CalculateInstructionSize(AddressingMode mode) const {
     switch (mode) {

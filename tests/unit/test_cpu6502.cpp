@@ -1488,3 +1488,55 @@ TEST(Cpu6502Test, SBC_IndirectY) {
     EXPECT_EQ(result[0], 0xF1);  // SBC (zp),Y opcode
     EXPECT_EQ(result[1], 0x80);
 }
+
+// ============================================================================
+// Phase 2.5: 65C02 and 65816 Support
+// Group 1: CPU Mode Infrastructure
+// ============================================================================
+
+// Test 156: Default CPU mode is 6502
+TEST(Cpu6502Test, DefaultCpuModeIs6502) {
+    Cpu6502 cpu;
+    EXPECT_EQ(cpu.GetCpuMode(), CpuMode::Cpu6502);
+}
+
+// Test 157: Set CPU mode to 65C02
+TEST(Cpu6502Test, SetCpuModeTo65C02) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65C02);
+    EXPECT_EQ(cpu.GetCpuMode(), CpuMode::Cpu65C02);
+}
+
+// Test 158: Set CPU mode to 65C02-Rockwell
+TEST(Cpu6502Test, SetCpuModeTo65C02Rockwell) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
+    EXPECT_EQ(cpu.GetCpuMode(), CpuMode::Cpu65C02Rock);
+}
+
+// Test 159: Set CPU mode to 65816
+TEST(Cpu6502Test, SetCpuModeTo65816) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65816);
+    EXPECT_EQ(cpu.GetCpuMode(), CpuMode::Cpu65816);
+}
+
+// Test 160: CPU mode can be changed multiple times
+TEST(Cpu6502Test, CpuModeCanBeChangedMultipleTimes) {
+    Cpu6502 cpu;
+
+    // Start with default (6502)
+    EXPECT_EQ(cpu.GetCpuMode(), CpuMode::Cpu6502);
+
+    // Switch to 65C02
+    cpu.SetCpuMode(CpuMode::Cpu65C02);
+    EXPECT_EQ(cpu.GetCpuMode(), CpuMode::Cpu65C02);
+
+    // Switch to 65816
+    cpu.SetCpuMode(CpuMode::Cpu65816);
+    EXPECT_EQ(cpu.GetCpuMode(), CpuMode::Cpu65816);
+
+    // Switch back to 6502
+    cpu.SetCpuMode(CpuMode::Cpu6502);
+    EXPECT_EQ(cpu.GetCpuMode(), CpuMode::Cpu6502);
+}
