@@ -1664,3 +1664,68 @@ TEST(Cpu6502Test, STZ_NotAvailableIn6502Mode) {
     auto bytes = cpu.EncodeSTZ(0x80, AddressingMode::ZeroPage);
     EXPECT_EQ(bytes.size(), 0);  // Empty = not supported in this mode
 }
+
+// ============================================================================
+// Group 4: 65C02 Bit Test (TRB/TSB)
+// ============================================================================
+
+// Test 171: TRB zero page - 65C02
+TEST(Cpu6502Test, TRB_ZeroPage_65C02) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65C02);
+
+    // TRB $80 -> 14 80
+    auto bytes = cpu.EncodeTRB(0x80, AddressingMode::ZeroPage);
+    ASSERT_EQ(bytes.size(), 2);
+    EXPECT_EQ(bytes[0], 0x14);  // TRB zp opcode
+    EXPECT_EQ(bytes[1], 0x80);
+}
+
+// Test 172: TRB absolute - 65C02
+TEST(Cpu6502Test, TRB_Absolute_65C02) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65C02);
+
+    // TRB $1234 -> 1C 34 12
+    auto bytes = cpu.EncodeTRB(0x1234, AddressingMode::Absolute);
+    ASSERT_EQ(bytes.size(), 3);
+    EXPECT_EQ(bytes[0], 0x1C);  // TRB abs opcode
+    EXPECT_EQ(bytes[1], 0x34);  // Low byte
+    EXPECT_EQ(bytes[2], 0x12);  // High byte
+}
+
+// Test 173: TSB zero page - 65C02
+TEST(Cpu6502Test, TSB_ZeroPage_65C02) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65C02);
+
+    // TSB $80 -> 04 80
+    auto bytes = cpu.EncodeTSB(0x80, AddressingMode::ZeroPage);
+    ASSERT_EQ(bytes.size(), 2);
+    EXPECT_EQ(bytes[0], 0x04);  // TSB zp opcode
+    EXPECT_EQ(bytes[1], 0x80);
+}
+
+// Test 174: TSB absolute - 65C02
+TEST(Cpu6502Test, TSB_Absolute_65C02) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65C02);
+
+    // TSB $1234 -> 0C 34 12
+    auto bytes = cpu.EncodeTSB(0x1234, AddressingMode::Absolute);
+    ASSERT_EQ(bytes.size(), 3);
+    EXPECT_EQ(bytes[0], 0x0C);  // TSB abs opcode
+    EXPECT_EQ(bytes[1], 0x34);  // Low byte
+    EXPECT_EQ(bytes[2], 0x12);  // High byte
+}
+
+// Test 175: TRB should return empty in 6502 mode (not available)
+TEST(Cpu6502Test, TRB_NotAvailableIn6502Mode) {
+    Cpu6502 cpu;
+    // Default mode is 6502
+    EXPECT_EQ(cpu.GetCpuMode(), CpuMode::Cpu6502);
+
+    // TRB not available in 6502 mode - should return empty
+    auto bytes = cpu.EncodeTRB(0x80, AddressingMode::ZeroPage);
+    EXPECT_EQ(bytes.size(), 0);  // Empty = not supported in this mode
+}

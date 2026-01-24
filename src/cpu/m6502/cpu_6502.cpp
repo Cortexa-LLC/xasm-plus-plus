@@ -1234,6 +1234,66 @@ std::vector<uint8_t> Cpu6502::EncodeSTZ(uint16_t operand, AddressingMode mode) c
     return bytes;
 }
 
+// ============================================================================
+// Group 4: 65C02 Bit Test
+// ============================================================================
+
+// TRB - Test and Reset Bits (65C02+)
+std::vector<uint8_t> Cpu6502::EncodeTRB(uint16_t operand, AddressingMode mode) const {
+    // Only available in 65C02 and later
+    if (cpu_mode_ == CpuMode::Cpu6502) {
+        return {};  // Not supported in 6502 mode
+    }
+
+    std::vector<uint8_t> bytes;
+
+    switch (mode) {
+        case AddressingMode::ZeroPage:
+            bytes.push_back(0x14);  // TRB zp
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+            break;
+
+        case AddressingMode::Absolute:
+            bytes.push_back(0x1C);  // TRB abs
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
+            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
+            break;
+
+        default:
+            break;
+    }
+
+    return bytes;
+}
+
+// TSB - Test and Set Bits (65C02+)
+std::vector<uint8_t> Cpu6502::EncodeTSB(uint16_t operand, AddressingMode mode) const {
+    // Only available in 65C02 and later
+    if (cpu_mode_ == CpuMode::Cpu6502) {
+        return {};  // Not supported in 6502 mode
+    }
+
+    std::vector<uint8_t> bytes;
+
+    switch (mode) {
+        case AddressingMode::ZeroPage:
+            bytes.push_back(0x04);  // TSB zp
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+            break;
+
+        case AddressingMode::Absolute:
+            bytes.push_back(0x0C);  // TSB abs
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
+            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
+            break;
+
+        default:
+            break;
+    }
+
+    return bytes;
+}
+
 // Calculate instruction size based on addressing mode
 size_t Cpu6502::CalculateInstructionSize(AddressingMode mode) const {
     switch (mode) {

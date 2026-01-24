@@ -106,6 +106,10 @@ public:
     // Phase 2.5 - Group 3: 65C02 Store Zero
     std::vector<uint8_t> EncodeSTZ(uint16_t operand, AddressingMode mode) const;  // Store Zero (65C02+)
 
+    // Phase 2.5 - Group 4: 65C02 Bit Test
+    std::vector<uint8_t> EncodeTRB(uint16_t operand, AddressingMode mode) const;  // Test and Reset Bits (65C02+)
+    std::vector<uint8_t> EncodeTSB(uint16_t operand, AddressingMode mode) const;  // Test and Set Bits (65C02+)
+
     // Phase 2.2: Subroutine
     std::vector<uint8_t> EncodeJSR(uint16_t operand, AddressingMode mode) const;
 
