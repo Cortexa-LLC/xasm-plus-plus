@@ -1195,6 +1195,28 @@ CpuMode Cpu6502::GetCpuMode() const {
 }
 
 // ============================================================================
+// Group 8: 65816 MX Directive (Register Width Control)
+// ============================================================================
+
+// Set MX flags (register width control for 65816)
+// m_flag: true = 8-bit accumulator, false = 16-bit accumulator
+// x_flag: true = 8-bit index, false = 16-bit index
+void Cpu6502::SetMX(bool m_flag, bool x_flag) {
+    m_flag_ = m_flag;
+    x_flag_ = x_flag;
+}
+
+// Check if accumulator is 8-bit
+bool Cpu6502::IsAccumulator8Bit() const {
+    return m_flag_;  // true = 8-bit, false = 16-bit
+}
+
+// Check if index registers (X/Y) are 8-bit
+bool Cpu6502::IsIndex8Bit() const {
+    return x_flag_;  // true = 8-bit, false = 16-bit
+}
+
+// ============================================================================
 // Group 2: 65C02 Stack Operations
 // ============================================================================
 

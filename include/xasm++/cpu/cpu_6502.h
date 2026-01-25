@@ -50,6 +50,11 @@ public:
     void SetCpuMode(CpuMode mode);
     CpuMode GetCpuMode() const;
 
+    // Phase 2.5 - Group 8: 65816 MX directive (register width control)
+    void SetMX(bool m_flag, bool x_flag);  // Set m and x flags
+    bool IsAccumulator8Bit() const;         // True if accumulator is 8-bit
+    bool IsIndex8Bit() const;               // True if index registers are 8-bit
+
     // Instruction encoding methods (Phase 1 subset)
     std::vector<uint8_t> EncodeLDA(uint16_t operand, AddressingMode mode) const;
     std::vector<uint8_t> EncodeSTA(uint16_t operand, AddressingMode mode) const;
@@ -159,6 +164,12 @@ public:
 private:
     // Phase 2.5: CPU mode state
     CpuMode cpu_mode_ = CpuMode::Cpu6502;  // Default to 6502
+
+    // Phase 2.5 - Group 8: 65816 MX state (register width control)
+    // m flag: false = 16-bit accumulator, true = 8-bit accumulator
+    // x flag: false = 16-bit index registers, true = 8-bit index registers
+    bool m_flag_ = true;   // Default: 8-bit accumulator (emulation mode)
+    bool x_flag_ = true;   // Default: 8-bit index registers (emulation mode)
 };
 
 } // namespace xasm

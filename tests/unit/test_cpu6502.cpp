@@ -1856,3 +1856,90 @@ TEST(Cpu6502Test, EnhancedModes_NotAvailableIn6502Mode) {
     auto bytes3 = cpu.EncodeBIT(0x80, AddressingMode::Immediate);
     EXPECT_EQ(bytes3.size(), 0);  // Empty = not supported
 }
+
+// ============================================================================
+// Group 8: 65816 MX Directive Infrastructure
+// ============================================================================
+
+// Test 185: Default MX state in 65816 mode (emulation mode = 8-bit)
+TEST(Cpu6502Test, MX_DefaultStateIs8Bit) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65816);
+
+    // Default should be MX %11 (both 8-bit, emulation mode)
+    EXPECT_TRUE(cpu.IsAccumulator8Bit());
+    EXPECT_TRUE(cpu.IsIndex8Bit());
+}
+
+// Test 186: SetMX %00 - Both 16-bit
+TEST(Cpu6502Test, MX_SetBoth16Bit) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65816);
+
+    // MX %00 - A is 16-bit, X/Y are 16-bit
+    cpu.SetMX(false, false);  // m=0 (16-bit A), x=0 (16-bit X/Y)
+
+    EXPECT_FALSE(cpu.IsAccumulator8Bit());
+    EXPECT_FALSE(cpu.IsIndex8Bit());
+}
+
+// Test 187: SetMX %01 - A=16-bit, X/Y=8-bit
+TEST(Cpu6502Test, MX_SetA16Index8) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65816);
+
+    // MX %01 - A is 16-bit, X/Y are 8-bit
+    cpu.SetMX(false, true);  // m=0 (16-bit A), x=1 (8-bit X/Y)
+
+    EXPECT_FALSE(cpu.IsAccumulator8Bit());
+    EXPECT_TRUE(cpu.IsIndex8Bit());
+}
+
+// Test 188: SetMX %10 - A=8-bit, X/Y=16-bit
+TEST(Cpu6502Test, MX_SetA8Index16) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65816);
+
+    // MX %10 - A is 8-bit, X/Y are 16-bit
+    cpu.SetMX(true, false);  // m=1 (8-bit A), x=0 (16-bit X/Y)
+
+    EXPECT_TRUE(cpu.IsAccumulator8Bit());
+    EXPECT_FALSE(cpu.IsIndex8Bit());
+}
+
+// Test 189: SetMX %11 - Both 8-bit (emulation mode)
+TEST(Cpu6502Test, MX_SetBoth8Bit) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65816);
+
+    // MX %11 - A is 8-bit, X/Y are 8-bit (like 6502)
+    cpu.SetMX(true, true);  // m=1 (8-bit A), x=1 (8-bit X/Y)
+
+    EXPECT_TRUE(cpu.IsAccumulator8Bit());
+    EXPECT_TRUE(cpu.IsIndex8Bit());
+}
+
+// Test 190: MX state can be changed multiple times
+TEST(Cpu6502Test, MX_CanBeChangedMultipleTimes) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65816);
+
+    // Start with 8-bit (default)
+    EXPECT_TRUE(cpu.IsAccumulator8Bit());
+    EXPECT_TRUE(cpu.IsIndex8Bit());
+
+    // Switch to 16-bit
+    cpu.SetMX(false, false);
+    EXPECT_FALSE(cpu.IsAccumulator8Bit());
+    EXPECT_FALSE(cpu.IsIndex8Bit());
+
+    // Switch to mixed (A=16, X/Y=8)
+    cpu.SetMX(false, true);
+    EXPECT_FALSE(cpu.IsAccumulator8Bit());
+    EXPECT_TRUE(cpu.IsIndex8Bit());
+
+    // Switch back to 8-bit
+    cpu.SetMX(true, true);
+    EXPECT_TRUE(cpu.IsAccumulator8Bit());
+    EXPECT_TRUE(cpu.IsIndex8Bit());
+}
