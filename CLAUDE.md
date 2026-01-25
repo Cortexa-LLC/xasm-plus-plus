@@ -96,25 +96,46 @@ Benefits:
 
 ---
 
-## ⚠️ CRITICAL: Task Packet Requirement
+## ⚠️ CRITICAL: Task Packet Requirement with Beads Linking
 
-**BEFORE starting ANY non-trivial task, you MUST:**
+**BEFORE starting ANY non-trivial task, you MUST create Beads task FIRST, then link to task packet:**
 
 ```bash
-# Use the ai-pack command
-/ai-pack task-init <task-name>
+# STEP 1: MANDATORY - Create Beads task FIRST with working directory and task packet
+task_id=$(bd create "Task summary
+
+Working directory: /Users/bryanw/Projects/Vintage/tools/xasm++
+Task packet: .ai/tasks/YYYY-MM-DD_task-name/
+
+Detailed task description..." --priority high --json | jq -r '.id')
+# Returns task ID like: xasm++-vp5
+
+# STEP 2: Create task packet directory
+mkdir .ai/tasks/YYYY-MM-DD_task-name/
+
+# STEP 3: Copy templates
+cp .ai-pack/templates/task-packet/*.md .ai/tasks/YYYY-MM-DD_task-name/
+
+# STEP 4: Link Beads ID in contract (Contract → Beads)
+echo "" >> .ai/tasks/YYYY-MM-DD_task-name/00-contract.md
+echo "**Beads Task:** ${task_id}" >> .ai/tasks/YYYY-MM-DD_task-name/00-contract.md
+
+# STEP 5: Fill out contract and plan
+# Edit .ai/tasks/YYYY-MM-DD_task-name/00-contract.md
+# Edit .ai/tasks/YYYY-MM-DD_task-name/10-plan.md
 ```
 
-This will:
-1. Create task packet directory: `.ai/tasks/YYYY-MM-DD_task-name/`
-2. Copy ALL templates from `.ai-pack/templates/task-packet/`
-3. Set up contract, plan, work log, review, and acceptance documents
+**Bi-Directional Linking:**
 
-**Then fill out:**
-- `00-contract.md` - Requirements and acceptance criteria
-- `10-plan.md` - Implementation approach
+The linking process creates two critical connections:
+1. **Contract → Beads** (STEP 4): The task packet's `00-contract.md` references the Beads task ID
+2. **Beads → Task Packet** (STEP 5): The Beads task metadata stores the task packet path
 
-**ONLY THEN begin implementation.**
+This bi-directional linking ensures:
+- Orchestrators can navigate from task packet to Beads task status
+- **Agents spawned with Beads task IDs can find the implementation plan**
+- **A2A server can pass task packet location to agents automatically**
+- Full traceability between Beads tasks and implementation artifacts
 
 **Non-Trivial = Any task that:**
 - Requires >2 steps
@@ -123,6 +144,101 @@ This will:
 - Needs verification
 
 **This is MANDATORY and enforced by hooks.**
+
+---
+
+## ⚠️ CRITICAL: Beads Task Description Format (MANDATORY)
+
+**ALL Beads tasks MUST include working directory and task packet location in the description.**
+
+This is **REQUIRED** for A2A agents to execute in the correct project directory and find the implementation plan.
+
+### Required Format
+
+Beads task descriptions MUST include these exact patterns on their own lines:
+
+```bash
+bd create "Task summary
+
+Working directory: /Users/bryanw/Projects/Vintage/tools/xasm++
+Task packet: .ai/tasks/YYYY-MM-DD_task-name/
+
+Detailed task description..." --priority high
+```
+
+### Why Both Are Required
+
+1. **Working directory** (`/absolute/path/to/project`): Tells the A2A agent which project to execute in
+   - Critical for multi-project A2A servers
+   - Ensures agent executes in correct location
+   - Must be absolute path
+
+2. **Task packet** (`.ai/tasks/YYYY-MM-DD_task-name/`): Tells the agent where to find implementation plan
+   - Path is relative to working directory
+   - A2A server parses this and passes to agent
+   - Agent reads contract, plan, and updates work log
+
+**Without these, agents will execute in the wrong directory or fail to find the task packet.**
+
+### Example
+
+```bash
+# Good - includes both working directory and task packet
+bd create "Implement dark mode feature
+
+Working directory: /Users/bryanw/Projects/Vintage/tools/xasm++
+Task packet: .ai/tasks/2026-01-24_dark-mode/
+
+Add theme toggle, persist user preference, update all components to support dark theme." \
+  --priority high
+
+# Bad - missing working directory (agent won't know where to work)
+bd create "Implement dark mode feature
+
+Task packet: .ai/tasks/2026-01-24_dark-mode/
+
+Description..." --priority high
+
+# Bad - missing both (agent can't find anything)
+bd create "Implement dark mode feature" --priority high
+```
+
+### Updating Existing Tasks
+
+If a Beads task is missing working directory:
+
+```bash
+bd update xasm++-vp5 --description "Task summary
+
+Working directory: /Users/bryanw/Projects/Vintage/tools/xasm++
+Task packet: .ai/tasks/YYYY-MM-DD_task-name/
+
+Detailed description..."
+```
+
+### Multi-Project Support
+
+A single A2A server can handle agents for multiple projects:
+
+```bash
+# Project A task
+bd create "Feature A
+
+Working directory: /Users/yourname/Projects/project-a
+Task packet: .ai/tasks/2026-01-24_feature-a/
+
+Description..." --priority high
+
+# Project B task (different project, same A2A server)
+bd create "Feature B
+
+Working directory: /Users/yourname/Projects/project-b
+Task packet: .ai/tasks/2026-01-24_feature-b/
+
+Description..." --priority high
+```
+
+Each A2A agent will execute in its specified working directory.
 
 ---
 
