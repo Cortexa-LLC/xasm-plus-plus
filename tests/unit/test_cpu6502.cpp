@@ -2000,3 +2000,46 @@ TEST(Cpu6502Test, LongAddressing_NotAvailableIn6502Mode) {
     auto bytes2 = cpu.EncodeLDA(0x123456, AddressingMode::AbsoluteLong);
     EXPECT_EQ(bytes2.size(), 0);
 }
+
+// ============================================================================
+// Group 10: 65816 Stack Relative Addressing
+// ============================================================================
+
+// Test 195: LDA stack relative - 65816
+TEST(Cpu6502Test, LDA_StackRelative_65816) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65816);
+
+    // LDA $03,S -> A3 03 (access data relative to stack pointer)
+    auto bytes = cpu.EncodeLDA(0x03, AddressingMode::StackRelative);
+    ASSERT_EQ(bytes.size(), 2);
+    EXPECT_EQ(bytes[0], 0xA3);  // LDA sr opcode
+    EXPECT_EQ(bytes[1], 0x03);  // Stack offset
+}
+
+// Test 196: LDA stack relative indirect indexed - 65816
+TEST(Cpu6502Test, LDA_StackRelativeIndirectIndexedY_65816) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65816);
+
+    // LDA ($03,S),Y -> B3 03 (indirect through stack pointer, then Y)
+    auto bytes = cpu.EncodeLDA(0x03, AddressingMode::StackRelativeIndirectIndexedY);
+    ASSERT_EQ(bytes.size(), 2);
+    EXPECT_EQ(bytes[0], 0xB3);  // LDA (sr,S),Y opcode
+    EXPECT_EQ(bytes[1], 0x03);  // Stack offset
+}
+
+// Test 197: Stack relative modes not available in 6502/65C02
+TEST(Cpu6502Test, StackRelative_NotAvailableIn6502Mode) {
+    Cpu6502 cpu;
+    // Default mode is 6502
+
+    // Not available in 6502
+    auto bytes1 = cpu.EncodeLDA(0x03, AddressingMode::StackRelative);
+    EXPECT_EQ(bytes1.size(), 0);
+
+    // Not available in 65C02
+    cpu.SetCpuMode(CpuMode::Cpu65C02);
+    auto bytes2 = cpu.EncodeLDA(0x03, AddressingMode::StackRelative);
+    EXPECT_EQ(bytes2.size(), 0);
+}

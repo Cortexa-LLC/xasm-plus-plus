@@ -33,6 +33,10 @@ enum class AddressingMode {
     AbsoluteLong,             // LDA $123456 - 65816 only (24-bit address)
     IndirectLong,             // LDA [$80] - 65816 only (24-bit pointer)
     IndirectLongIndexedY,     // LDA [$80],Y - 65816 only (24-bit pointer + Y)
+
+    // Phase 2.5 - Group 10: 65816 Stack Relative Addressing
+    StackRelative,                    // LDA $03,S - 65816 only (stack relative)
+    StackRelativeIndirectIndexedY,    // LDA ($03,S),Y - 65816 only (stack relative indirect indexed)
 };
 
 // CPU modes for 6502 family (Phase 2.5)

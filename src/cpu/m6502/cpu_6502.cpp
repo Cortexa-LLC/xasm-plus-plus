@@ -89,6 +89,23 @@ std::vector<uint8_t> Cpu6502::EncodeLDA(uint32_t operand, AddressingMode mode) c
             }
             break;
 
+        // Phase 2.5 - Group 10: 65816 Stack Relative Addressing
+        case AddressingMode::StackRelative:
+            // Only available in 65816
+            if (cpu_mode_ == CpuMode::Cpu65816) {
+                bytes.push_back(0xA3);  // LDA sr,S
+                bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+            }
+            break;
+
+        case AddressingMode::StackRelativeIndirectIndexedY:
+            // Only available in 65816
+            if (cpu_mode_ == CpuMode::Cpu65816) {
+                bytes.push_back(0xB3);  // LDA (sr,S),Y
+                bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+            }
+            break;
+
         default:
             break;
     }
@@ -1421,7 +1438,11 @@ size_t Cpu6502::CalculateInstructionSize(AddressingMode mode) const {
         case AddressingMode::IndirectX:
         case AddressingMode::IndirectY:
         case AddressingMode::Relative:
-        case AddressingMode::IndirectZeroPage:  // Phase 2.5 - Group 6: 65C02
+        case AddressingMode::IndirectZeroPage:              // Phase 2.5 - Group 6: 65C02
+        case AddressingMode::IndirectLong:                  // Phase 2.5 - Group 9: 65816
+        case AddressingMode::IndirectLongIndexedY:          // Phase 2.5 - Group 9: 65816
+        case AddressingMode::StackRelative:                 // Phase 2.5 - Group 10: 65816
+        case AddressingMode::StackRelativeIndirectIndexedY: // Phase 2.5 - Group 10: 65816
             return 2;
 
         case AddressingMode::Absolute:
