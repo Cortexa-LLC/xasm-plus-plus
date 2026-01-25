@@ -28,6 +28,11 @@ enum class AddressingMode {
     // Phase 2.5 - Group 6: 65C02 Enhanced Addressing Modes
     IndirectZeroPage,         // LDA ($80) - 65C02+ only (indirect without Y)
     AbsoluteIndexedIndirect,  // JMP ($1234,X) - 65C02+ only
+
+    // Phase 2.5 - Group 9: 65816 Long Addressing Modes (24-bit)
+    AbsoluteLong,             // LDA $123456 - 65816 only (24-bit address)
+    IndirectLong,             // LDA [$80] - 65816 only (24-bit pointer)
+    IndirectLongIndexedY,     // LDA [$80],Y - 65816 only (24-bit pointer + Y)
 };
 
 // CPU modes for 6502 family (Phase 2.5)
@@ -56,7 +61,8 @@ public:
     bool IsIndex8Bit() const;               // True if index registers are 8-bit
 
     // Instruction encoding methods (Phase 1 subset)
-    std::vector<uint8_t> EncodeLDA(uint16_t operand, AddressingMode mode) const;
+    // Note: Changed to uint32_t for 65816 24-bit addressing support
+    std::vector<uint8_t> EncodeLDA(uint32_t operand, AddressingMode mode) const;
     std::vector<uint8_t> EncodeSTA(uint16_t operand, AddressingMode mode) const;
     std::vector<uint8_t> EncodeJMP(uint16_t operand, AddressingMode mode) const;
     std::vector<uint8_t> EncodeNOP() const;

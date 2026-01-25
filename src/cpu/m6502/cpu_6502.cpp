@@ -5,7 +5,8 @@
 namespace xasm {
 
 // LDA - Load Accumulator
-std::vector<uint8_t> Cpu6502::EncodeLDA(uint16_t operand, AddressingMode mode) const {
+// Note: Changed to uint32_t for 65816 24-bit addressing support
+std::vector<uint8_t> Cpu6502::EncodeLDA(uint32_t operand, AddressingMode mode) const {
     std::vector<uint8_t> bytes;
 
     switch (mode) {
@@ -57,6 +58,33 @@ std::vector<uint8_t> Cpu6502::EncodeLDA(uint16_t operand, AddressingMode mode) c
             // Only available in 65C02 and later
             if (cpu_mode_ != CpuMode::Cpu6502) {
                 bytes.push_back(0xB2);  // LDA (zp) - 65C02+
+                bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+            }
+            break;
+
+        // Phase 2.5 - Group 9: 65816 Long Addressing Modes
+        case AddressingMode::AbsoluteLong:
+            // Only available in 65816
+            if (cpu_mode_ == CpuMode::Cpu65816) {
+                bytes.push_back(0xAF);  // LDA long
+                bytes.push_back(static_cast<uint8_t>(operand & 0xFF));         // Low byte
+                bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF));  // Middle byte
+                bytes.push_back(static_cast<uint8_t>((operand >> 16) & 0xFF)); // High byte (bank)
+            }
+            break;
+
+        case AddressingMode::IndirectLong:
+            // Only available in 65816
+            if (cpu_mode_ == CpuMode::Cpu65816) {
+                bytes.push_back(0xA7);  // LDA [dp]
+                bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+            }
+            break;
+
+        case AddressingMode::IndirectLongIndexedY:
+            // Only available in 65816
+            if (cpu_mode_ == CpuMode::Cpu65816) {
+                bytes.push_back(0xB7);  // LDA [dp],Y
                 bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
             }
             break;
@@ -1402,6 +1430,9 @@ size_t Cpu6502::CalculateInstructionSize(AddressingMode mode) const {
         case AddressingMode::Indirect:
         case AddressingMode::AbsoluteIndexedIndirect:  // Phase 2.5 - Group 6: 65C02
             return 3;
+
+        case AddressingMode::AbsoluteLong:  // Phase 2.5 - Group 9: 65816 (24-bit address)
+            return 4;
 
         default:
             return 0;

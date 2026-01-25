@@ -1943,3 +1943,60 @@ TEST(Cpu6502Test, MX_CanBeChangedMultipleTimes) {
     EXPECT_TRUE(cpu.IsAccumulator8Bit());
     EXPECT_TRUE(cpu.IsIndex8Bit());
 }
+
+// ============================================================================
+// Group 9: 65816 Long Addressing Modes (24-bit)
+// ============================================================================
+
+// Test 191: LDA absolute long - 65816
+TEST(Cpu6502Test, LDA_AbsoluteLong_65816) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65816);
+
+    // LDA $123456 -> AF 56 34 12 (24-bit address, little-endian)
+    auto bytes = cpu.EncodeLDA(0x123456, AddressingMode::AbsoluteLong);
+    ASSERT_EQ(bytes.size(), 4);
+    EXPECT_EQ(bytes[0], 0xAF);  // LDA long opcode
+    EXPECT_EQ(bytes[1], 0x56);  // Low byte
+    EXPECT_EQ(bytes[2], 0x34);  // Middle byte
+    EXPECT_EQ(bytes[3], 0x12);  // High byte (bank)
+}
+
+// Test 192: LDA indirect long - 65816
+TEST(Cpu6502Test, LDA_IndirectLong_65816) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65816);
+
+    // LDA [$80] -> A7 80 (24-bit pointer at zero page $80)
+    auto bytes = cpu.EncodeLDA(0x80, AddressingMode::IndirectLong);
+    ASSERT_EQ(bytes.size(), 2);
+    EXPECT_EQ(bytes[0], 0xA7);  // LDA [dp] opcode
+    EXPECT_EQ(bytes[1], 0x80);  // Zero page address
+}
+
+// Test 193: LDA indirect long indexed Y - 65816
+TEST(Cpu6502Test, LDA_IndirectLongIndexedY_65816) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65816);
+
+    // LDA [$80],Y -> B7 80 (24-bit pointer + Y)
+    auto bytes = cpu.EncodeLDA(0x80, AddressingMode::IndirectLongIndexedY);
+    ASSERT_EQ(bytes.size(), 2);
+    EXPECT_EQ(bytes[0], 0xB7);  // LDA [dp],Y opcode
+    EXPECT_EQ(bytes[1], 0x80);  // Zero page address
+}
+
+// Test 194: Long addressing modes not available in 6502/65C02 mode
+TEST(Cpu6502Test, LongAddressing_NotAvailableIn6502Mode) {
+    Cpu6502 cpu;
+    // Default mode is 6502
+
+    // LDA long not available
+    auto bytes1 = cpu.EncodeLDA(0x123456, AddressingMode::AbsoluteLong);
+    EXPECT_EQ(bytes1.size(), 0);
+
+    // Switch to 65C02 - still not available
+    cpu.SetCpuMode(CpuMode::Cpu65C02);
+    auto bytes2 = cpu.EncodeLDA(0x123456, AddressingMode::AbsoluteLong);
+    EXPECT_EQ(bytes2.size(), 0);
+}
