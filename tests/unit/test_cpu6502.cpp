@@ -2043,3 +2043,75 @@ TEST(Cpu6502Test, StackRelative_NotAvailableIn6502Mode) {
     auto bytes2 = cpu.EncodeLDA(0x03, AddressingMode::StackRelative);
     EXPECT_EQ(bytes2.size(), 0);
 }
+
+// ============================================================================
+// Group 11: 65816 Bank Operations
+// ============================================================================
+
+// Test 198: PHB - Push Data Bank Register - 65816
+TEST(Cpu6502Test, PHB_65816) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65816);
+
+    // PHB -> 8B
+    auto bytes = cpu.EncodePHB();
+    ASSERT_EQ(bytes.size(), 1);
+    EXPECT_EQ(bytes[0], 0x8B);  // PHB opcode
+}
+
+// Test 199: PLB - Pull Data Bank Register - 65816
+TEST(Cpu6502Test, PLB_65816) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65816);
+
+    // PLB -> AB
+    auto bytes = cpu.EncodePLB();
+    ASSERT_EQ(bytes.size(), 1);
+    EXPECT_EQ(bytes[0], 0xAB);  // PLB opcode
+}
+
+// Test 200: PHK - Push Program Bank Register - 65816
+TEST(Cpu6502Test, PHK_65816) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65816);
+
+    // PHK -> 4B
+    auto bytes = cpu.EncodePHK();
+    ASSERT_EQ(bytes.size(), 1);
+    EXPECT_EQ(bytes[0], 0x4B);  // PHK opcode
+}
+
+// Test 201: PHD - Push Direct Page Register - 65816
+TEST(Cpu6502Test, PHD_65816) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65816);
+
+    // PHD -> 0B
+    auto bytes = cpu.EncodePHD();
+    ASSERT_EQ(bytes.size(), 1);
+    EXPECT_EQ(bytes[0], 0x0B);  // PHD opcode
+}
+
+// Test 202: PLD - Pull Direct Page Register - 65816
+TEST(Cpu6502Test, PLD_65816) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65816);
+
+    // PLD -> 2B
+    auto bytes = cpu.EncodePLD();
+    ASSERT_EQ(bytes.size(), 1);
+    EXPECT_EQ(bytes[0], 0x2B);  // PLD opcode
+}
+
+// Test 203: Bank operations not available in 6502/65C02
+TEST(Cpu6502Test, BankOps_NotAvailableIn6502Mode) {
+    Cpu6502 cpu;
+    // Default mode is 6502
+
+    auto bytes1 = cpu.EncodePHB();
+    EXPECT_EQ(bytes1.size(), 0);
+
+    cpu.SetCpuMode(CpuMode::Cpu65C02);
+    auto bytes2 = cpu.EncodePHB();
+    EXPECT_EQ(bytes2.size(), 0);
+}

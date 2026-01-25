@@ -132,6 +132,13 @@ public:
     // Phase 2.5 - Group 5: 65C02 Branch Always
     std::vector<uint8_t> EncodeBRA(uint16_t operand, AddressingMode mode) const;  // Branch Always (65C02+)
 
+    // Phase 2.5 - Group 11: 65816 Bank Operations
+    std::vector<uint8_t> EncodePHB() const;  // Push Data Bank Register (65816)
+    std::vector<uint8_t> EncodePLB() const;  // Pull Data Bank Register (65816)
+    std::vector<uint8_t> EncodePHK() const;  // Push Program Bank Register (65816)
+    std::vector<uint8_t> EncodePHD() const;  // Push Direct Page Register (65816)
+    std::vector<uint8_t> EncodePLD() const;  // Pull Direct Page Register (65816)
+
     // Phase 2.2: Subroutine
     std::vector<uint8_t> EncodeJSR(uint16_t operand, AddressingMode mode) const;
 

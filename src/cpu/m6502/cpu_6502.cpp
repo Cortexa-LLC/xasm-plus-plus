@@ -1240,6 +1240,55 @@ CpuMode Cpu6502::GetCpuMode() const {
 }
 
 // ============================================================================
+// Group 11: 65816 Bank Operations
+// ============================================================================
+
+// PHB - Push Data Bank Register (65816)
+std::vector<uint8_t> Cpu6502::EncodePHB() const {
+    // Only available in 65816
+    if (cpu_mode_ != CpuMode::Cpu65816) {
+        return {};  // Not supported in 6502/65C02 mode
+    }
+    return {0x8B};
+}
+
+// PLB - Pull Data Bank Register (65816)
+std::vector<uint8_t> Cpu6502::EncodePLB() const {
+    // Only available in 65816
+    if (cpu_mode_ != CpuMode::Cpu65816) {
+        return {};  // Not supported in 6502/65C02 mode
+    }
+    return {0xAB};
+}
+
+// PHK - Push Program Bank Register (65816)
+std::vector<uint8_t> Cpu6502::EncodePHK() const {
+    // Only available in 65816
+    if (cpu_mode_ != CpuMode::Cpu65816) {
+        return {};  // Not supported in 6502/65C02 mode
+    }
+    return {0x4B};
+}
+
+// PHD - Push Direct Page Register (65816)
+std::vector<uint8_t> Cpu6502::EncodePHD() const {
+    // Only available in 65816
+    if (cpu_mode_ != CpuMode::Cpu65816) {
+        return {};  // Not supported in 6502/65C02 mode
+    }
+    return {0x0B};
+}
+
+// PLD - Pull Direct Page Register (65816)
+std::vector<uint8_t> Cpu6502::EncodePLD() const {
+    // Only available in 65816
+    if (cpu_mode_ != CpuMode::Cpu65816) {
+        return {};  // Not supported in 6502/65C02 mode
+    }
+    return {0x2B};
+}
+
+// ============================================================================
 // Group 8: 65816 MX Directive (Register Width Control)
 // ============================================================================
 
