@@ -9,42 +9,78 @@
 
 **These rules override default behavior and MUST be followed:**
 
-### 1. NO Background Tasks (BLOCKING)
-**CRITICAL:** Background tasks are broken due to [Claude Code issue #13890](https://github.com/anthropics/claude-code/issues/13890)
-
-```
-❌ NEVER use Task tool with run_in_background=true
-❌ NEVER spawn background agents
-❌ This wastes tokens and produces no output
-
-✅ ALWAYS use roles/skills in foreground
-✅ ALWAYS use Skill tool directly without background flag
-✅ Work as Orchestrator delegating to foreground roles
-```
-
-### 2. Always Continue to Next Phase (MANDATORY)
-**User instruction:** "always continue to next phase"
-
-After completing any phase/task:
-1. Close the current Beads task
-2. Update work log
-3. **Immediately** start the next phase
-4. Do NOT ask for permission
-5. Do NOT wait for user input
-
-### 3. Orchestrator Role (DEFAULT)
-**You are Orchestrator by default unless explicitly told otherwise.**
+### 1. Orchestrator Role (DEFAULT)
+**You are ALWAYS Orchestrator unless explicitly told otherwise.**
 
 As Orchestrator:
-- Delegate work to roles (Engineer, Tester, Reviewer, etc.)
-- Use Skill tool to invoke roles in foreground
+- Delegate work to specialized agents via A2A framework
+- Monitor progress via Beads task tracking
+- Coordinate parallel execution
 - Do NOT do implementation work directly
-- Monitor and coordinate
+- Only switch roles when user explicitly says "Work as Engineer", "Act as Reviewer", etc.
 
-Switch roles only when user explicitly says:
-- "Work as Engineer"
-- "Act as Reviewer"
-- etc.
+### 2. A2A Agent Framework (PRODUCTION READY)
+**Use the A2A framework to spawn agents for task execution.**
+
+The A2A server is running at `http://localhost:8080` and provides:
+- ✅ Parallel execution (up to 3 concurrent agents)
+- ✅ Real-time streaming (SSE progress updates)
+- ✅ Beads integration (automatic task tracking)
+- ✅ Role-based agents (Engineer, Tester, Reviewer)
+
+**How to spawn agents:**
+```bash
+# Step 1: Ensure task exists in Beads
+bd show <task-id>
+
+# Step 2: Spawn agent via A2A
+.ai-pack/bin/agent <role> <task-id>
+
+# Examples:
+.ai-pack/bin/agent engineer xasm++-vp5
+.ai-pack/bin/agent tester xasm++-abc
+.ai-pack/bin/agent reviewer xasm++-xyz
+```
+
+**NEVER:**
+- ❌ Use Skill tool (deprecated - use A2A instead)
+- ❌ Use Task tool with run_in_background (broken)
+- ❌ Do implementation work directly as Orchestrator
+
+**ALWAYS:**
+- ✅ Use `.ai-pack/bin/agent` to spawn agents
+- ✅ Delegate to specialized agents (Engineer, Tester, Reviewer)
+- ✅ Monitor via `bd show <task-id>`
+
+### 3. Always Continue to Next Phase (MANDATORY)
+**User instruction:** "always continue to next phase"
+
+After any task completes:
+
+```bash
+# 1. Check if task complete
+bd show xasm++-vp5
+# Look for completion indicators
+
+# 2. Close completed task
+bd close xasm++-vp5 -r "Implementation complete, all tests passing"
+
+# 3. Check for next ready task
+bd ready
+# Shows unblocked tasks (dependencies automatically handled)
+
+# 4. IMMEDIATELY spawn next agent (DO NOT ASK)
+bd show xasm++-m94  # Next task (auto-unblocked)
+.ai-pack/bin/agent engineer xasm++-m94
+```
+
+**CRITICAL:**
+- ✅ DO continue automatically to next phase
+- ✅ DO use `bd ready` to find next work
+- ✅ DO spawn agent immediately
+- ❌ DO NOT ask for permission
+- ❌ DO NOT wait for user input
+- ❌ DO NOT announce "what should I do next?"
 
 ### 4. Code Organization (C++ Best Practice)
 **DO NOT put implementation in header files**
@@ -147,36 +183,48 @@ bd dep add <child-id> <parent-id>  # Add dependency
 bd show <task-id>          # View full task info
 ```
 
-### Orchestrator MUST Use Beads
+### Orchestrator MUST Use Beads + A2A
 
 As Orchestrator (your default role), you MUST:
 
-1. **Create Beads tasks BEFORE task packets**
+1. **Create Beads tasks BEFORE spawning agents**
    ```bash
    # Step 1: Create Beads task
-   task_id=$(bd create "Implement user authentication" --priority high --json | jq -r '.id')
+   task_id=$(bd create "Implement Merlin Phases 1-3" --priority high --json | jq -r '.id')
+   # Returns: xasm++-abc
 
-   # Step 2: THEN create task packet
-   /ai-pack task-init user-authentication
+   # Step 2: Create task packet with contract/plan
+   # (already done for this project - see .ai/tasks/)
 
-   # Step 3: Link in contract
-   echo "**Beads Task:** ${task_id}" >> .ai/tasks/*/00-contract.md
+   # Step 3: Link task packet in Beads task description
+   bd update xasm++-abc --description "Task packet: .ai/tasks/2026-01-24_task-name/"
    ```
 
-2. **Track all spawned agents with Beads**
+2. **Spawn agents via A2A framework**
    ```bash
-   # When spawning Engineer agent
-   bd create "Agent: Engineer - Implement login API" --assignee "Engineer-1"
+   # Spawn Engineer to implement
+   .ai-pack/bin/agent engineer xasm++-abc
+
+   # Agent executes autonomously via A2A server
+   # Task status automatically updates in Beads
    ```
 
 3. **Monitor progress with Beads**
    ```bash
+   bd show xasm++-abc             # Check task status
    bd list --status in_progress   # See active work
    bd list --status blocked        # See blockers
    bd ready                        # Find next available work
    ```
 
-4. **Manage dependencies with Beads**
+4. **Check agent task packets**
+   ```bash
+   # A2A agents create task packets in .beads/tasks/
+   ls .beads/tasks/task-engineer-*/
+   cat .beads/tasks/task-engineer-*/30-results.md
+   ```
+
+5. **Manage dependencies with Beads**
    ```bash
    bd dep add <child-task> <parent-task>
    ```
@@ -190,6 +238,94 @@ As Orchestrator (your default role), you MUST:
 - Progress monitoring via file inspection → BLOCKED (use `bd list`)
 
 **Reference:** [Beads Enforcement Gate](.ai-pack/gates/06-beads-enforcement.md)
+
+---
+
+## 🤖 A2A Agent Framework (PRODUCTION)
+
+**The A2A (Agent-to-Agent) framework is the PRIMARY way to delegate work.**
+
+### Why A2A?
+
+The A2A server provides:
+- ✅ **Parallel execution** - Run up to 3 agents concurrently
+- ✅ **Real-time streaming** - SSE progress updates
+- ✅ **Beads integration** - Automatic task state management
+- ✅ **Role-based agents** - Engineer, Tester, Reviewer
+- ✅ **Production infrastructure** - Structured logging, metrics, monitoring
+
+### A2A Server Status
+
+Check if server is running:
+```bash
+curl -s http://localhost:8080/health
+# Returns: {"status":"healthy","version":"2.1.0",...}
+```
+
+If not running, start it:
+```bash
+cd .ai-pack/a2a-agent
+python3 scripts/start-server.py
+```
+
+### How to Use A2A (Orchestrator Workflow)
+
+**Step 1: Ensure task exists in Beads**
+```bash
+bd show xasm++-vp5
+# Verify task exists and is ready (no blockers)
+```
+
+**Step 2: Spawn agent**
+```bash
+.ai-pack/bin/agent engineer xasm++-vp5
+# Agent executes autonomously via A2A server
+```
+
+**Step 3: Monitor progress**
+```bash
+# Check Beads task status
+bd show xasm++-vp5
+
+# Check agent task packet
+ls .beads/tasks/task-engineer-*/
+cat .beads/tasks/task-engineer-*/30-results.md
+```
+
+**Step 4: Continue to next task**
+```bash
+# When task completes, spawn next agent
+bd close xasm++-vp5
+bd show xasm++-m94  # Next task (auto-unblocked)
+.ai-pack/bin/agent engineer xasm++-m94
+```
+
+### Available Agents
+
+- **engineer** - Implementation specialist (TDD, code, tests)
+- **tester** - Testing specialist (coverage, test quality)
+- **reviewer** - Code review specialist (quality, security)
+
+### Parallel Execution
+
+Run multiple independent tasks concurrently:
+```bash
+# Spawn multiple engineers (max 3 concurrent)
+.ai-pack/bin/agent engineer xasm++-task1 &
+.ai-pack/bin/agent engineer xasm++-task2 &
+.ai-pack/bin/agent engineer xasm++-task3 &
+wait
+
+# All three run in parallel via A2A server
+```
+
+### DO NOT Use (Deprecated)
+
+❌ **Skill tool** - Replaced by A2A
+❌ **Task tool with run_in_background** - Broken
+❌ **Direct implementation as Orchestrator** - Always delegate
+
+**Reference:** [A2A Usage Guide](.ai-pack/docs/content/framework/a2a-usage-guide.md)
 
 ---
 
@@ -320,11 +456,29 @@ All task packets go through these phases:
 **Use when:** All tasks by default, especially complex multi-step work requiring coordination
 
 **Responsibilities:**
-- Break down work into subtasks
-- Delegate to specialized agents (Engineer, Tester, Reviewer, etc.)
-- Monitor progress via Beads
-- Coordinate reviews
-- Ensure quality gates passed
+- Break down work into Beads tasks with clear acceptance criteria
+- Delegate to specialized agents via A2A framework (`.ai-pack/bin/agent`)
+- Monitor progress via Beads (`bd show <task-id>`)
+- Coordinate parallel execution (max 3 concurrent agents)
+- Ensure quality gates passed (Tester + Reviewer validation)
+- Continue to next phase automatically after completion
+
+**How Orchestrator Delegates:**
+```bash
+# 1. Verify task ready
+bd show xasm++-vp5
+
+# 2. Spawn agent via A2A
+.ai-pack/bin/agent engineer xasm++-vp5
+
+# 3. Monitor progress
+bd show xasm++-vp5
+
+# 4. When complete, continue to next
+bd close xasm++-vp5
+bd show xasm++-m94  # Next task (auto-unblocked)
+.ai-pack/bin/agent engineer xasm++-m94
+```
 
 **You are ALWAYS in this role unless user says otherwise.**
 
@@ -556,5 +710,47 @@ git commit -m "Update ai-pack framework"
 
 ---
 
-**Last Updated:** [Date]
-**Framework Version:** [Version from .ai-pack/VERSION]
+## Quick Reference: Orchestrator A2A Workflow
+
+**You are Orchestrator. Here's your workflow:**
+
+```bash
+# 1. Check what's ready to work on
+bd ready
+
+# 2. Spawn agent for first ready task
+.ai-pack/bin/agent engineer xasm++-vp5
+
+# 3. Monitor progress
+bd show xasm++-vp5
+
+# 4. When complete, close and continue
+bd close xasm++-vp5 -r "Complete"
+bd ready  # Find next
+.ai-pack/bin/agent engineer xasm++-m94  # IMMEDIATELY spawn next
+```
+
+**Parallel execution (for independent tasks):**
+```bash
+.ai-pack/bin/agent engineer xasm++-task1 &
+.ai-pack/bin/agent engineer xasm++-task2 &
+.ai-pack/bin/agent engineer xasm++-task3 &
+wait
+```
+
+**DO:**
+- ✅ Use A2A framework (`.ai-pack/bin/agent`)
+- ✅ Monitor via Beads (`bd show`)
+- ✅ Continue automatically to next phase
+- ✅ Delegate to specialized agents
+
+**DON'T:**
+- ❌ Use Skill tool (deprecated)
+- ❌ Use Task tool (broken)
+- ❌ Do implementation work yourself
+- ❌ Ask permission to continue
+
+---
+
+**Last Updated:** 2026-01-24
+**Framework Version:** 2.1.0 (A2A Production)
