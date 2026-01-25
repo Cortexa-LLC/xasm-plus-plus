@@ -2230,3 +2230,128 @@ TEST(Cpu6502Test, LongJumps_NotAvailableIn6502Mode) {
     auto bytes3 = cpu.EncodeRTL();
     EXPECT_EQ(bytes3.size(), 0);
 }
+
+// ============================================================================
+// Phase 2.5 - Group 14: 65816 Miscellaneous Opcodes
+// ============================================================================
+
+// Test 213: PEA - Push Effective Address (65816)
+TEST(Cpu6502Test, PEA_65816) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65816);
+
+    auto bytes = cpu.EncodePEA(0x1234, AddressingMode::Immediate);
+    ASSERT_EQ(bytes.size(), 3);
+    EXPECT_EQ(bytes[0], 0xF4);  // PEA opcode
+    EXPECT_EQ(bytes[1], 0x34);  // Low byte
+    EXPECT_EQ(bytes[2], 0x12);  // High byte
+}
+
+// Test 214: PEI - Push Effective Indirect Address (65816)
+TEST(Cpu6502Test, PEI_65816) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65816);
+
+    auto bytes = cpu.EncodePEI(0x80, AddressingMode::ZeroPage);
+    ASSERT_EQ(bytes.size(), 2);
+    EXPECT_EQ(bytes[0], 0xD4);  // PEI opcode
+    EXPECT_EQ(bytes[1], 0x80);  // Zero page address
+}
+
+// Test 215: PER - Push Effective PC Relative Address (65816)
+TEST(Cpu6502Test, PER_65816) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65816);
+
+    auto bytes = cpu.EncodePER(0x1234, AddressingMode::Relative);
+    ASSERT_EQ(bytes.size(), 3);
+    EXPECT_EQ(bytes[0], 0x62);  // PER opcode
+    EXPECT_EQ(bytes[1], 0x34);  // Low byte
+    EXPECT_EQ(bytes[2], 0x12);  // High byte
+}
+
+// Test 216: MVN - Block Move Negative (65816)
+TEST(Cpu6502Test, MVN_65816) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65816);
+
+    // MVN srcbank, destbank
+    auto bytes = cpu.EncodeMVN(0x12, 0x34);
+    ASSERT_EQ(bytes.size(), 3);
+    EXPECT_EQ(bytes[0], 0x54);  // MVN opcode
+    EXPECT_EQ(bytes[1], 0x12);  // Source bank
+    EXPECT_EQ(bytes[2], 0x34);  // Destination bank
+}
+
+// Test 217: MVP - Block Move Positive (65816)
+TEST(Cpu6502Test, MVP_65816) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65816);
+
+    // MVP srcbank, destbank
+    auto bytes = cpu.EncodeMVP(0x56, 0x78);
+    ASSERT_EQ(bytes.size(), 3);
+    EXPECT_EQ(bytes[0], 0x44);  // MVP opcode
+    EXPECT_EQ(bytes[1], 0x56);  // Source bank
+    EXPECT_EQ(bytes[2], 0x78);  // Destination bank
+}
+
+// Test 218: COP - Coprocessor (65816)
+TEST(Cpu6502Test, COP_65816) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65816);
+
+    auto bytes = cpu.EncodeCOP(0x42, AddressingMode::Immediate);
+    ASSERT_EQ(bytes.size(), 2);
+    EXPECT_EQ(bytes[0], 0x02);  // COP opcode
+    EXPECT_EQ(bytes[1], 0x42);  // Signature byte
+}
+
+// Test 219: WDM - Reserved (65816)
+TEST(Cpu6502Test, WDM_65816) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65816);
+
+    auto bytes = cpu.EncodeWDM(0x99, AddressingMode::Immediate);
+    ASSERT_EQ(bytes.size(), 2);
+    EXPECT_EQ(bytes[0], 0x42);  // WDM opcode
+    EXPECT_EQ(bytes[1], 0x99);  // Reserved byte
+}
+
+// Test 220: XBA - Exchange B and A (65816)
+TEST(Cpu6502Test, XBA_65816) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65816);
+
+    auto bytes = cpu.EncodeXBA();
+    ASSERT_EQ(bytes.size(), 1);
+    EXPECT_EQ(bytes[0], 0xEB);  // XBA opcode
+}
+
+// Test 221: XCE - Exchange Carry and Emulation (65816)
+TEST(Cpu6502Test, XCE_65816) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65816);
+
+    auto bytes = cpu.EncodeXCE();
+    ASSERT_EQ(bytes.size(), 1);
+    EXPECT_EQ(bytes[0], 0xFB);  // XCE opcode
+}
+
+// Test 222: Miscellaneous opcodes not available in 6502/65C02
+TEST(Cpu6502Test, MiscOpcodes_NotAvailableIn6502Mode) {
+    Cpu6502 cpu;
+
+    auto bytes1 = cpu.EncodePEA(0x1234, AddressingMode::Immediate);
+    EXPECT_EQ(bytes1.size(), 0);
+
+    auto bytes2 = cpu.EncodeXBA();
+    EXPECT_EQ(bytes2.size(), 0);
+
+    cpu.SetCpuMode(CpuMode::Cpu65C02);
+    auto bytes3 = cpu.EncodeXCE();
+    EXPECT_EQ(bytes3.size(), 0);
+
+    auto bytes4 = cpu.EncodeMVN(0x12, 0x34);
+    EXPECT_EQ(bytes4.size(), 0);
+}

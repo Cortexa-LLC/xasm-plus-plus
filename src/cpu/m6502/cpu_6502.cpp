@@ -1380,6 +1380,133 @@ std::vector<uint8_t> Cpu6502::EncodeRTL() const {
 }
 
 // ============================================================================
+// Group 14: 65816 Miscellaneous Opcodes
+// ============================================================================
+
+// PEA - Push Effective Address (65816)
+std::vector<uint8_t> Cpu6502::EncodePEA(uint16_t operand, AddressingMode mode) const {
+    // Only available in 65816
+    if (cpu_mode_ != CpuMode::Cpu65816) {
+        return {};  // Not supported in 6502/65C02 mode
+    }
+
+    std::vector<uint8_t> bytes;
+
+    if (mode == AddressingMode::Immediate) {
+        bytes.push_back(0xF4);  // PEA opcode
+        bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
+        bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
+    }
+
+    return bytes;
+}
+
+// PEI - Push Effective Indirect Address (65816)
+std::vector<uint8_t> Cpu6502::EncodePEI(uint8_t operand, AddressingMode mode) const {
+    // Only available in 65816
+    if (cpu_mode_ != CpuMode::Cpu65816) {
+        return {};  // Not supported in 6502/65C02 mode
+    }
+
+    std::vector<uint8_t> bytes;
+
+    if (mode == AddressingMode::ZeroPage) {
+        bytes.push_back(0xD4);  // PEI opcode
+        bytes.push_back(operand);  // Zero page address
+    }
+
+    return bytes;
+}
+
+// PER - Push Effective PC Relative Address (65816)
+std::vector<uint8_t> Cpu6502::EncodePER(uint16_t operand, AddressingMode mode) const {
+    // Only available in 65816
+    if (cpu_mode_ != CpuMode::Cpu65816) {
+        return {};  // Not supported in 6502/65C02 mode
+    }
+
+    std::vector<uint8_t> bytes;
+
+    if (mode == AddressingMode::Relative) {
+        bytes.push_back(0x62);  // PER opcode
+        bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
+        bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
+    }
+
+    return bytes;
+}
+
+// MVN - Block Move Negative (65816)
+std::vector<uint8_t> Cpu6502::EncodeMVN(uint8_t srcbank, uint8_t destbank) const {
+    // Only available in 65816
+    if (cpu_mode_ != CpuMode::Cpu65816) {
+        return {};  // Not supported in 6502/65C02 mode
+    }
+    return {0x54, srcbank, destbank};
+}
+
+// MVP - Block Move Positive (65816)
+std::vector<uint8_t> Cpu6502::EncodeMVP(uint8_t srcbank, uint8_t destbank) const {
+    // Only available in 65816
+    if (cpu_mode_ != CpuMode::Cpu65816) {
+        return {};  // Not supported in 6502/65C02 mode
+    }
+    return {0x44, srcbank, destbank};
+}
+
+// COP - Coprocessor (65816)
+std::vector<uint8_t> Cpu6502::EncodeCOP(uint8_t operand, AddressingMode mode) const {
+    // Only available in 65816
+    if (cpu_mode_ != CpuMode::Cpu65816) {
+        return {};  // Not supported in 6502/65C02 mode
+    }
+
+    std::vector<uint8_t> bytes;
+
+    if (mode == AddressingMode::Immediate) {
+        bytes.push_back(0x02);  // COP opcode
+        bytes.push_back(operand);  // Signature byte
+    }
+
+    return bytes;
+}
+
+// WDM - Reserved (65816)
+std::vector<uint8_t> Cpu6502::EncodeWDM(uint8_t operand, AddressingMode mode) const {
+    // Only available in 65816
+    if (cpu_mode_ != CpuMode::Cpu65816) {
+        return {};  // Not supported in 6502/65C02 mode
+    }
+
+    std::vector<uint8_t> bytes;
+
+    if (mode == AddressingMode::Immediate) {
+        bytes.push_back(0x42);  // WDM opcode
+        bytes.push_back(operand);  // Reserved byte
+    }
+
+    return bytes;
+}
+
+// XBA - Exchange B and A (65816)
+std::vector<uint8_t> Cpu6502::EncodeXBA() const {
+    // Only available in 65816
+    if (cpu_mode_ != CpuMode::Cpu65816) {
+        return {};  // Not supported in 6502/65C02 mode
+    }
+    return {0xEB};
+}
+
+// XCE - Exchange Carry and Emulation (65816)
+std::vector<uint8_t> Cpu6502::EncodeXCE() const {
+    // Only available in 65816
+    if (cpu_mode_ != CpuMode::Cpu65816) {
+        return {};  // Not supported in 6502/65C02 mode
+    }
+    return {0xFB};
+}
+
+// ============================================================================
 // Group 8: 65816 MX Directive (Register Width Control)
 // ============================================================================
 

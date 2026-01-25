@@ -150,6 +150,17 @@ public:
     std::vector<uint8_t> EncodeJSL(uint32_t operand, AddressingMode mode) const;  // Jump Subroutine Long (65816)
     std::vector<uint8_t> EncodeRTL() const;  // Return from Subroutine Long (65816)
 
+    // Phase 2.5 - Group 14: 65816 Miscellaneous Opcodes
+    std::vector<uint8_t> EncodePEA(uint16_t operand, AddressingMode mode) const;  // Push Effective Address (65816)
+    std::vector<uint8_t> EncodePEI(uint8_t operand, AddressingMode mode) const;   // Push Effective Indirect (65816)
+    std::vector<uint8_t> EncodePER(uint16_t operand, AddressingMode mode) const;  // Push Effective PC Relative (65816)
+    std::vector<uint8_t> EncodeMVN(uint8_t srcbank, uint8_t destbank) const;      // Block Move Negative (65816)
+    std::vector<uint8_t> EncodeMVP(uint8_t srcbank, uint8_t destbank) const;      // Block Move Positive (65816)
+    std::vector<uint8_t> EncodeCOP(uint8_t operand, AddressingMode mode) const;   // Coprocessor (65816)
+    std::vector<uint8_t> EncodeWDM(uint8_t operand, AddressingMode mode) const;   // Reserved (65816)
+    std::vector<uint8_t> EncodeXBA() const;  // Exchange B and A (65816)
+    std::vector<uint8_t> EncodeXCE() const;  // Exchange Carry and Emulation (65816)
+
     // Phase 2.2: Subroutine
     std::vector<uint8_t> EncodeJSR(uint16_t operand, AddressingMode mode) const;
 
