@@ -14,9 +14,9 @@ target_include_directories(xasm_core PUBLIC
 # CPU plugins library (Phase 1+)
 add_library(xasm_cpu STATIC
     cpu/m6502/cpu_6502.cpp
+    cpu/m6502/cpu_65c02.cpp
+    cpu/m6502/cpu_65816.cpp
     # Future CPUs:
-    # cpu/m6502/cpu_65c02.cpp
-    # cpu/m6502/cpu_65816.cpp
     # cpu/m6809/cpu_6809.cpp
     # cpu/m68k/cpu_68000.cpp
     # cpu/z80/cpu_z80.cpp
