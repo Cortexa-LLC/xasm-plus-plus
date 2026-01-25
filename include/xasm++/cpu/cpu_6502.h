@@ -139,6 +139,12 @@ public:
     std::vector<uint8_t> EncodePHD() const;  // Push Direct Page Register (65816)
     std::vector<uint8_t> EncodePLD() const;  // Pull Direct Page Register (65816)
 
+    // Phase 2.5 - Group 12: 65816 Transfer Operations
+    std::vector<uint8_t> EncodeTCD() const;  // Transfer C to Direct Page (65816)
+    std::vector<uint8_t> EncodeTDC() const;  // Transfer Direct Page to C (65816)
+    std::vector<uint8_t> EncodeTCS() const;  // Transfer C to Stack Pointer (65816)
+    std::vector<uint8_t> EncodeTSC() const;  // Transfer Stack Pointer to C (65816)
+
     // Phase 2.2: Subroutine
     std::vector<uint8_t> EncodeJSR(uint16_t operand, AddressingMode mode) const;
 

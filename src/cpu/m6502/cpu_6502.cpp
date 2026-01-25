@@ -1289,6 +1289,46 @@ std::vector<uint8_t> Cpu6502::EncodePLD() const {
 }
 
 // ============================================================================
+// Group 12: 65816 Transfer Operations
+// ============================================================================
+
+// TCD - Transfer C to Direct Page (65816)
+std::vector<uint8_t> Cpu6502::EncodeTCD() const {
+    // Only available in 65816
+    if (cpu_mode_ != CpuMode::Cpu65816) {
+        return {};  // Not supported in 6502/65C02 mode
+    }
+    return {0x5B};
+}
+
+// TDC - Transfer Direct Page to C (65816)
+std::vector<uint8_t> Cpu6502::EncodeTDC() const {
+    // Only available in 65816
+    if (cpu_mode_ != CpuMode::Cpu65816) {
+        return {};  // Not supported in 6502/65C02 mode
+    }
+    return {0x7B};
+}
+
+// TCS - Transfer C to Stack Pointer (65816)
+std::vector<uint8_t> Cpu6502::EncodeTCS() const {
+    // Only available in 65816
+    if (cpu_mode_ != CpuMode::Cpu65816) {
+        return {};  // Not supported in 6502/65C02 mode
+    }
+    return {0x1B};
+}
+
+// TSC - Transfer Stack Pointer to C (65816)
+std::vector<uint8_t> Cpu6502::EncodeTSC() const {
+    // Only available in 65816
+    if (cpu_mode_ != CpuMode::Cpu65816) {
+        return {};  // Not supported in 6502/65C02 mode
+    }
+    return {0x3B};
+}
+
+// ============================================================================
 // Group 8: 65816 MX Directive (Register Width Control)
 // ============================================================================
 

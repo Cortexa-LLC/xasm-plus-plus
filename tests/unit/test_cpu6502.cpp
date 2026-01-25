@@ -2115,3 +2115,63 @@ TEST(Cpu6502Test, BankOps_NotAvailableIn6502Mode) {
     auto bytes2 = cpu.EncodePHB();
     EXPECT_EQ(bytes2.size(), 0);
 }
+
+// ============================================================================
+// Group 12: 65816 Transfer Operations
+// ============================================================================
+
+// Test 204: TCD - Transfer C to Direct Page - 65816
+TEST(Cpu6502Test, TCD_65816) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65816);
+
+    // TCD -> 5B (Transfer 16-bit accumulator to Direct Page register)
+    auto bytes = cpu.EncodeTCD();
+    ASSERT_EQ(bytes.size(), 1);
+    EXPECT_EQ(bytes[0], 0x5B);  // TCD opcode
+}
+
+// Test 205: TDC - Transfer Direct Page to C - 65816
+TEST(Cpu6502Test, TDC_65816) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65816);
+
+    // TDC -> 7B (Transfer Direct Page register to 16-bit accumulator)
+    auto bytes = cpu.EncodeTDC();
+    ASSERT_EQ(bytes.size(), 1);
+    EXPECT_EQ(bytes[0], 0x7B);  // TDC opcode
+}
+
+// Test 206: TCS - Transfer C to Stack Pointer - 65816
+TEST(Cpu6502Test, TCS_65816) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65816);
+
+    // TCS -> 1B (Transfer 16-bit accumulator to Stack Pointer)
+    auto bytes = cpu.EncodeTCS();
+    ASSERT_EQ(bytes.size(), 1);
+    EXPECT_EQ(bytes[0], 0x1B);  // TCS opcode
+}
+
+// Test 207: TSC - Transfer Stack Pointer to C - 65816
+TEST(Cpu6502Test, TSC_65816) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65816);
+
+    // TSC -> 3B (Transfer Stack Pointer to 16-bit accumulator)
+    auto bytes = cpu.EncodeTSC();
+    ASSERT_EQ(bytes.size(), 1);
+    EXPECT_EQ(bytes[0], 0x3B);  // TSC opcode
+}
+
+// Test 208: Transfer operations not available in 6502/65C02
+TEST(Cpu6502Test, Transfers_NotAvailableIn6502Mode) {
+    Cpu6502 cpu;
+
+    auto bytes1 = cpu.EncodeTCD();
+    EXPECT_EQ(bytes1.size(), 0);
+
+    cpu.SetCpuMode(CpuMode::Cpu65C02);
+    auto bytes2 = cpu.EncodeTCS();
+    EXPECT_EQ(bytes2.size(), 0);
+}
