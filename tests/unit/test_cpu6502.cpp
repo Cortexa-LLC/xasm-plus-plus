@@ -2175,3 +2175,58 @@ TEST(Cpu6502Test, Transfers_NotAvailableIn6502Mode) {
     auto bytes2 = cpu.EncodeTCS();
     EXPECT_EQ(bytes2.size(), 0);
 }
+
+// ============================================================================
+// Phase 2.5 - Group 13: 65816 Long Jumps
+// ============================================================================
+
+// Test 209: JML - Jump Long (65816)
+TEST(Cpu6502Test, JML_65816_AbsoluteLong) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65816);
+
+    auto bytes = cpu.EncodeJML(0x123456, AddressingMode::AbsoluteLong);
+    ASSERT_EQ(bytes.size(), 4);
+    EXPECT_EQ(bytes[0], 0x5C);  // JML opcode
+    EXPECT_EQ(bytes[1], 0x56);  // Low byte
+    EXPECT_EQ(bytes[2], 0x34);  // Middle byte
+    EXPECT_EQ(bytes[3], 0x12);  // Bank byte
+}
+
+// Test 210: JSL - Jump Subroutine Long (65816)
+TEST(Cpu6502Test, JSL_65816_AbsoluteLong) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65816);
+
+    auto bytes = cpu.EncodeJSL(0x023456, AddressingMode::AbsoluteLong);
+    ASSERT_EQ(bytes.size(), 4);
+    EXPECT_EQ(bytes[0], 0x22);  // JSL opcode
+    EXPECT_EQ(bytes[1], 0x56);  // Low byte
+    EXPECT_EQ(bytes[2], 0x34);  // Middle byte
+    EXPECT_EQ(bytes[3], 0x02);  // Bank byte
+}
+
+// Test 211: RTL - Return from Subroutine Long (65816)
+TEST(Cpu6502Test, RTL_65816) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65816);
+
+    auto bytes = cpu.EncodeRTL();
+    ASSERT_EQ(bytes.size(), 1);
+    EXPECT_EQ(bytes[0], 0x6B);  // RTL opcode
+}
+
+// Test 212: Long jumps not available in 6502/65C02
+TEST(Cpu6502Test, LongJumps_NotAvailableIn6502Mode) {
+    Cpu6502 cpu;
+
+    auto bytes1 = cpu.EncodeJML(0x123456, AddressingMode::AbsoluteLong);
+    EXPECT_EQ(bytes1.size(), 0);
+
+    cpu.SetCpuMode(CpuMode::Cpu65C02);
+    auto bytes2 = cpu.EncodeJSL(0x123456, AddressingMode::AbsoluteLong);
+    EXPECT_EQ(bytes2.size(), 0);
+
+    auto bytes3 = cpu.EncodeRTL();
+    EXPECT_EQ(bytes3.size(), 0);
+}

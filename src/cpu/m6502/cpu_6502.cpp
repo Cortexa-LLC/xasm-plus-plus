@@ -1329,6 +1329,57 @@ std::vector<uint8_t> Cpu6502::EncodeTSC() const {
 }
 
 // ============================================================================
+// Group 13: 65816 Long Jumps
+// ============================================================================
+
+// JML - Jump Long (65816)
+std::vector<uint8_t> Cpu6502::EncodeJML(uint32_t operand, AddressingMode mode) const {
+    // Only available in 65816
+    if (cpu_mode_ != CpuMode::Cpu65816) {
+        return {};  // Not supported in 6502/65C02 mode
+    }
+
+    std::vector<uint8_t> bytes;
+
+    if (mode == AddressingMode::AbsoluteLong) {
+        bytes.push_back(0x5C);  // JML opcode
+        bytes.push_back(static_cast<uint8_t>(operand & 0xFF));          // Low byte
+        bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF));   // Middle byte
+        bytes.push_back(static_cast<uint8_t>((operand >> 16) & 0xFF));  // Bank byte
+    }
+
+    return bytes;
+}
+
+// JSL - Jump Subroutine Long (65816)
+std::vector<uint8_t> Cpu6502::EncodeJSL(uint32_t operand, AddressingMode mode) const {
+    // Only available in 65816
+    if (cpu_mode_ != CpuMode::Cpu65816) {
+        return {};  // Not supported in 6502/65C02 mode
+    }
+
+    std::vector<uint8_t> bytes;
+
+    if (mode == AddressingMode::AbsoluteLong) {
+        bytes.push_back(0x22);  // JSL opcode
+        bytes.push_back(static_cast<uint8_t>(operand & 0xFF));          // Low byte
+        bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF));   // Middle byte
+        bytes.push_back(static_cast<uint8_t>((operand >> 16) & 0xFF));  // Bank byte
+    }
+
+    return bytes;
+}
+
+// RTL - Return from Subroutine Long (65816)
+std::vector<uint8_t> Cpu6502::EncodeRTL() const {
+    // Only available in 65816
+    if (cpu_mode_ != CpuMode::Cpu65816) {
+        return {};  // Not supported in 6502/65C02 mode
+    }
+    return {0x6B};
+}
+
+// ============================================================================
 // Group 8: 65816 MX Directive (Register Width Control)
 // ============================================================================
 

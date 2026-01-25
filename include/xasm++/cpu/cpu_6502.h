@@ -145,6 +145,11 @@ public:
     std::vector<uint8_t> EncodeTCS() const;  // Transfer C to Stack Pointer (65816)
     std::vector<uint8_t> EncodeTSC() const;  // Transfer Stack Pointer to C (65816)
 
+    // Phase 2.5 - Group 13: 65816 Long Jumps
+    std::vector<uint8_t> EncodeJML(uint32_t operand, AddressingMode mode) const;  // Jump Long (65816)
+    std::vector<uint8_t> EncodeJSL(uint32_t operand, AddressingMode mode) const;  // Jump Subroutine Long (65816)
+    std::vector<uint8_t> EncodeRTL() const;  // Return from Subroutine Long (65816)
+
     // Phase 2.2: Subroutine
     std::vector<uint8_t> EncodeJSR(uint16_t operand, AddressingMode mode) const;
 
