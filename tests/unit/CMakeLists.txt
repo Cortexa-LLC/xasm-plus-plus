@@ -93,6 +93,20 @@ target_link_libraries(test_simple_syntax
 
 gtest_discover_tests(test_simple_syntax)
 
+# MerlinSyntax tests
+add_executable(test_merlin_syntax
+    test_merlin_syntax.cpp
+)
+
+target_link_libraries(test_merlin_syntax
+    xasm_syntax
+    xasm_core
+    gtest_main
+    gtest
+)
+
+gtest_discover_tests(test_merlin_syntax)
+
 # BinaryOutput tests
 add_executable(test_binary_output
   test_binary_output.cpp

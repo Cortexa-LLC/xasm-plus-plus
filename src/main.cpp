@@ -5,6 +5,7 @@
 #include "xasm++/assembler.h"
 #include "xasm++/cpu/cpu_6502.h"
 #include "xasm++/syntax/simple_syntax.h"
+#include "xasm++/syntax/merlin_syntax.h"
 #include "xasm++/output/binary_output.h"
 #include "CLI/CLI.hpp"
 #include <iostream>
@@ -51,9 +52,14 @@ int main(int argc, char** argv) {
     ConcreteSymbolTable symbols;
 
     // Step 3: Parse source code
-    SimpleSyntaxParser parser;
     try {
-      parser.Parse(source, section, symbols);
+      if (opts.syntax == "merlin") {
+        MerlinSyntaxParser parser;
+        parser.Parse(source, section, symbols);
+      } else {
+        SimpleSyntaxParser parser;
+        parser.Parse(source, section, symbols);
+      }
     } catch (const std::exception& e) {
       std::cerr << "Parse error: " << e.what() << "\n";
       return 1;
