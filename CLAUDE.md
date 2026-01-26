@@ -25,22 +25,37 @@ As Orchestrator:
 The A2A server is running at `http://localhost:8080` and provides:
 - ✅ Parallel execution (up to 3 concurrent agents)
 - ✅ Real-time streaming (SSE progress updates)
-- ✅ Beads integration (automatic task tracking)
+- ✅ Beads integration (automatic task tracking with `bd update --claim`)
 - ✅ Role-based agents (Engineer, Tester, Reviewer)
+- ✅ Enhanced monitoring (agent CLI v2.2.0+: --json, --follow, --quiet flags)
 
 **How to spawn agents:**
 ```bash
 # Step 1: Ensure task exists in Beads
 bd show <task-id>
 
-# Step 2: Spawn agent via A2A
-.ai-pack/bin/agent <role> <task-id>
+# Step 2: Spawn agent via A2A using agent CLI
+agent <role> <task-id>
 
 # Examples:
-.ai-pack/bin/agent engineer xasm++-vp5
-.ai-pack/bin/agent tester xasm++-abc
-.ai-pack/bin/agent reviewer xasm++-xyz
+agent engineer xasm++-vp5
+agent tester xasm++-abc
+agent reviewer xasm++-xyz
 ```
+
+**Agent CLI vs Task Tool:**
+
+Use **agent CLI** when:
+- Task is long-running (>10 minutes expected)
+- Running multiple independent tasks in parallel
+- Task should persist across sessions
+- You want real-time progress monitoring
+
+Use **Task tool** when:
+- Task requires immediate results for next step
+- Agent needs conversation context from current session
+- Task is interactive (back-and-forth required)
+- Task is very short (<5 minutes)
 
 **NEVER:**
 - ❌ Use Skill tool (deprecated - use A2A instead)
@@ -48,8 +63,8 @@ bd show <task-id>
 - ❌ Do implementation work directly as Orchestrator
 
 **ALWAYS:**
-- ✅ Use `.ai-pack/bin/agent` to spawn agents
-- ✅ Delegate to specialized agents (Engineer, Tester, Reviewer)
+- ✅ Use `agent` CLI to spawn agents for A2A execution
+- ✅ Delegate to specialized agents (Engineer, Tester, Reviewer, etc.)
 - ✅ Monitor via `bd show <task-id>`
 
 ### 3. Always Continue to Next Phase (MANDATORY)
@@ -71,7 +86,7 @@ bd ready
 
 # 4. IMMEDIATELY spawn next agent (DO NOT ASK)
 bd show xasm++-m94  # Next task (auto-unblocked)
-.ai-pack/bin/agent engineer xasm++-m94
+agent engineer xasm++-m94
 ```
 
 **CRITICAL:**
@@ -288,8 +303,8 @@ bd list --status open      # Open tasks
 bd ready                   # Tasks ready to work on
 
 # Work on tasks
-bd start <task-id>         # Start working
-bd close <task-id>         # Complete task
+bd update --claim <task-id>  # Claim and start working
+bd close <task-id>           # Complete task
 bd block <task-id> "reason"  # Mark blocked
 
 # Dependencies
@@ -319,7 +334,7 @@ As Orchestrator (your default role), you MUST:
 2. **Spawn agents via A2A framework**
    ```bash
    # Spawn Engineer to implement
-   .ai-pack/bin/agent engineer xasm++-abc
+   agent engineer xasm++-abc
 
    # Agent executes autonomously via A2A server
    # Task status automatically updates in Beads
@@ -370,18 +385,64 @@ The A2A server provides:
 - ✅ **Role-based agents** - Engineer, Tester, Reviewer
 - ✅ **Production infrastructure** - Structured logging, metrics, monitoring
 
-### A2A Server Status
+### A2A Server Quick Start
 
-Check if server is running:
+**First time setup (4 steps):**
+
+1. **Install agent CLI** (optional but recommended):
+   ```bash
+   cd .ai-pack/a2a-agent
+   sudo make install
+   # Installs to /usr/local/bin/agent
+   # To uninstall: sudo make uninstall
+   ```
+
+2. **Start the A2A server:**
+   ```bash
+   cd .ai-pack/a2a-agent
+   python3 scripts/start-server.py
+   ```
+   Leave this terminal running.
+
+3. **Create a Beads task** (in new terminal):
+   ```bash
+   bd create "Implement user authentication with JWT tokens"
+   # Returns: xasm++-a1b2
+   ```
+
+4. **Run an agent:**
+   ```bash
+   agent engineer xasm++-a1b2
+   ```
+
+**Check server status:**
 ```bash
 curl -s http://localhost:8080/health
 # Returns: {"status":"healthy","version":"2.1.0",...}
 ```
 
-If not running, start it:
+**Health checks and metrics:**
 ```bash
-cd .ai-pack/a2a-agent
-python3 scripts/start-server.py
+curl http://localhost:8080/metrics   # Performance metrics
+agent metrics                         # Via CLI
+```
+
+**Agent CLI enhancements (v2.2.0+):**
+```bash
+# Check status programmatically
+agent status xasm++-a1b2 --json       # Machine-readable JSON output
+agent status xasm++-a1b2 --quiet      # Just the status value
+echo $?  # Exit code: 0=completed, 1=failed, 2=in_progress, 3=not found
+
+# Monitor logs
+agent logs xasm++-a1b2 --tail 50      # Last 50 lines
+agent logs xasm++-a1b2 --follow       # Stream new lines (like tail -f)
+agent logs --server --follow          # Monitor server logs in real-time
+
+# List agents
+agent list --running --json           # JSON output for scripting
+agent list --completed                # Show completed agents
+agent list --failed                   # Show failed agents
 ```
 
 ### How to Use A2A (Orchestrator Workflow)
@@ -394,7 +455,7 @@ bd show xasm++-vp5
 
 **Step 2: Spawn agent**
 ```bash
-.ai-pack/bin/agent engineer xasm++-vp5
+agent engineer xasm++-vp5
 # Agent executes autonomously via A2A server
 ```
 
@@ -403,7 +464,12 @@ bd show xasm++-vp5
 # Check Beads task status
 bd show xasm++-vp5
 
-# Check agent task packet
+# Check agent status via CLI (recommended)
+agent status xasm++-vp5          # Human-readable status
+agent status xasm++-vp5 --json   # JSON for scripting
+agent logs xasm++-vp5 --follow   # Stream real-time logs
+
+# Or check agent task packet directly
 ls .beads/tasks/task-engineer-*/
 cat .beads/tasks/task-engineer-*/30-results.md
 ```
@@ -413,23 +479,35 @@ cat .beads/tasks/task-engineer-*/30-results.md
 # When task completes, spawn next agent
 bd close xasm++-vp5
 bd show xasm++-m94  # Next task (auto-unblocked)
-.ai-pack/bin/agent engineer xasm++-m94
+agent engineer xasm++-m94
 ```
 
 ### Available Agents
 
+**Core Agents:**
 - **engineer** - Implementation specialist (TDD, code, tests)
 - **tester** - Testing specialist (coverage, test quality)
 - **reviewer** - Code review specialist (quality, security)
+
+**Planning Specialists:**
+- **architect** - System design (architecture, technical design, ADRs)
+- **cartographer** - Requirements (PRDs, user stories, acceptance criteria)
+- **designer** - UX design (wireframes, user flows, design specs)
+- **strategist** - Market analysis (MRDs, competitive analysis, business case)
+
+**Investigation Specialists:**
+- **inspector** - Bug investigation (root cause analysis, static code analysis)
+- **spelunker** - Runtime investigation (production debugging, profiling)
+- **archaeologist** - Legacy code (historical context, decision reconstruction)
 
 ### Parallel Execution
 
 Run multiple independent tasks concurrently:
 ```bash
 # Spawn multiple engineers (max 3 concurrent)
-.ai-pack/bin/agent engineer xasm++-task1 &
-.ai-pack/bin/agent engineer xasm++-task2 &
-.ai-pack/bin/agent engineer xasm++-task3 &
+agent engineer xasm++-task1 &
+agent engineer xasm++-task2 &
+agent engineer xasm++-task3 &
 wait
 
 # All three run in parallel via A2A server
@@ -573,9 +651,18 @@ All task packets go through these phases:
 
 **Responsibilities:**
 - Break down work into Beads tasks with clear acceptance criteria
-- Delegate to specialized agents via A2A framework (`.ai-pack/bin/agent`)
+- **Apply Small Batch Sizing** (critical for token budget management)
+  - ✅ **Ideal:** 1-5 files per task
+  - ⚠️ **Acceptable:** 6-14 files per task (requires decomposition plan)
+  - ❌ **Too Large:** 15+ files per task (MUST decompose into multiple tasks)
+  - **Token Budget:** Each file ≈ 1K-3K tokens, agent limit ~25K-32K tokens
+- Delegate to specialized agents via A2A framework (`agent`)
 - Monitor progress via Beads (`bd show <task-id>`)
-- Coordinate parallel execution (max 3 concurrent agents)
+- **Enforce WIP Limits** (Work In Progress)
+  - Maximum 3 agents simultaneously
+  - Preferred: 2 agents
+  - Ideal: 1 agent (complete before starting next)
+- Coordinate parallel execution (only for independent tasks)
 - Ensure quality gates passed (Tester + Reviewer validation)
 - Continue to next phase automatically after completion
 
@@ -585,7 +672,7 @@ All task packets go through these phases:
 bd show xasm++-vp5
 
 # 2. Spawn agent via A2A
-.ai-pack/bin/agent engineer xasm++-vp5
+agent engineer xasm++-vp5
 
 # 3. Monitor progress
 bd show xasm++-vp5
@@ -593,7 +680,7 @@ bd show xasm++-vp5
 # 4. When complete, continue to next
 bd close xasm++-vp5
 bd show xasm++-m94  # Next task (auto-unblocked)
-.ai-pack/bin/agent engineer xasm++-m94
+agent engineer xasm++-m94
 ```
 
 **You are ALWAYS in this role unless user says otherwise.**
@@ -631,11 +718,14 @@ bd show xasm++-m94  # Next task (auto-unblocked)
 ### Other Specialized Roles
 
 Available via explicit commands:
-- `/ai-pack test` - Tester role
-- `/ai-pack inspect` - Inspector role (bug investigation)
-- `/ai-pack architect` - Architect role (architecture design)
-- `/ai-pack designer` - Designer role (UX workflows)
-- `/ai-pack cartographer` - Cartographer role (product requirements)
+- `/ai-pack test` - Tester role (testing validation)
+- `/ai-pack inspect` - Inspector role (bug investigation, root cause analysis)
+- `/ai-pack spelunker` - Spelunker role (runtime investigation, production debugging)
+- `/ai-pack architect` - Architect role (architecture design, technical design)
+- `/ai-pack designer` - Designer role (UX workflows, wireframes)
+- `/ai-pack cartographer` - Cartographer role (product requirements, PRDs)
+- `/ai-pack strategist` - Strategist role (market analysis, business strategy)
+- `/ai-pack archaeologist` - Archaeologist role (legacy code investigation, historical context)
 
 **Unless instructed otherwise: Stay in Orchestrator role.**
 
@@ -835,7 +925,7 @@ git commit -m "Update ai-pack framework"
 bd ready
 
 # 2. Spawn agent for first ready task
-.ai-pack/bin/agent engineer xasm++-vp5
+agent engineer xasm++-vp5
 
 # 3. Monitor progress
 bd show xasm++-vp5
@@ -843,30 +933,48 @@ bd show xasm++-vp5
 # 4. When complete, close and continue
 bd close xasm++-vp5 -r "Complete"
 bd ready  # Find next
-.ai-pack/bin/agent engineer xasm++-m94  # IMMEDIATELY spawn next
+agent engineer xasm++-m94  # IMMEDIATELY spawn next
 ```
 
-**Parallel execution (for independent tasks):**
+**Parallel execution (for independent tasks, max 3 concurrent):**
 ```bash
-.ai-pack/bin/agent engineer xasm++-task1 &
-.ai-pack/bin/agent engineer xasm++-task2 &
-.ai-pack/bin/agent engineer xasm++-task3 &
+# Check current WIP first (don't exceed 3 concurrent agents)
+bd list --status in_progress
+
+# If WIP < 3, spawn parallel agents for independent tasks
+agent engineer xasm++-task1 &
+agent engineer xasm++-task2 &
+agent engineer xasm++-task3 &  # Max 3 concurrent
 wait
 ```
 
+**Small Batch Sizing (CRITICAL):**
+- ✅ 1-5 files per task (ideal)
+- ⚠️ 6-14 files per task (acceptable with plan)
+- ❌ 15+ files per task (MUST decompose)
+
+**Agent CLI vs Task Tool:**
+- Use `agent` CLI: Long-running (>10 min), parallel, persistent
+- Use Task tool: Short (<5 min), interactive, immediate results needed
+
 **DO:**
-- ✅ Use A2A framework (`.ai-pack/bin/agent`)
+- ✅ Use A2A framework (`agent` CLI)
+- ✅ Apply small batch sizing (1-14 files per task)
+- ✅ Enforce WIP limits (max 3 concurrent agents)
 - ✅ Monitor via Beads (`bd show`)
 - ✅ Continue automatically to next phase
 - ✅ Delegate to specialized agents
 
 **DON'T:**
 - ❌ Use Skill tool (deprecated)
-- ❌ Use Task tool (broken)
-- ❌ Do implementation work yourself
+- ❌ Use Task tool with run_in_background (broken)
+- ❌ Create tasks with 15+ files (decompose first)
+- ❌ Exceed 3 concurrent agents (WIP limit)
+- ❌ Do implementation work yourself as Orchestrator
 - ❌ Ask permission to continue
 
 ---
 
-**Last Updated:** 2026-01-24
+**Last Updated:** 2026-01-26
 **Framework Version:** 2.1.0 (A2A Production)
+**Agent CLI Version:** 2.2.0+ (with enhanced monitoring)
