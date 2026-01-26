@@ -37,26 +37,89 @@ The agent CLI provides:
 # Step 1: Ensure task exists in Beads
 bd show <task-id>
 
-# Step 2: Spawn agent using agent CLI (MANDATORY - no alternatives)
-agent <role> <task-id>
+# Step 2: Spawn agent using agent CLI with --stream (MANDATORY)
+agent <role> <task-id> --stream
 
-# Examples:
-agent engineer xasm++-vp5
-agent tester xasm++-abc
-agent reviewer xasm++-xyz
+# ⚠️ CRITICAL: The --stream flag is MANDATORY for Orchestrators
+# - Blocks until agent completes (immediate completion detection)
+# - Real-time progress updates via SSE (Server-Sent Events)
+# - No polling delay = immediate action when done
+# - Command returns to shell ONLY when agent finishes
 
-# Check agent status
+# Examples (ALL use --stream):
+agent engineer xasm++-vp5 --stream
+agent tester xasm++-abc --stream
+agent reviewer xasm++-xyz --stream
+
+# When command returns, agent is DONE:
+agent engineer xasm++-vp5 --stream
+echo "✅ Agent finished, safe to proceed"
+
+# Check exit code:
+if agent engineer xasm++-vp5 --stream; then
+    echo "✅ Agent succeeded"
+    bd close xasm++-vp5
+else
+    echo "❌ Agent failed"
+    agent logs xasm++-vp5 --tail 50
+fi
+
+# Alternative: Fire and forget, wait later
+agent engineer xasm++-vp5           # Spawns in background
+# ... do other work ...
+agent wait xasm++-vp5 --stream      # Block until complete
+
+# Monitoring commands (optional, for visibility):
 agent status <task-id>              # Human-readable
 agent status <task-id> --json       # Machine-readable
 agent status <task-id> --quiet      # Just status value
-
-# Monitor logs
 agent logs <task-id> --follow       # Real-time streaming
 agent logs <task-id> --tail 50      # Last 50 lines
-
-# Check metrics
 agent metrics                       # Server health and stats
 ```
+
+**Agent Completion Detection (MANDATORY):**
+
+**CRITICAL:** Orchestrators MUST use `--stream` (preferred) or `agent wait` for completion detection. NEVER poll manually with status checks in loops.
+
+```bash
+# ✅ CORRECT: Use --stream (PREFERRED - immediate notification)
+agent engineer xasm++-abc --stream
+# Command blocks until agent completes, then immediately returns
+echo "Agent done"  # This runs AFTER agent finishes
+
+# ✅ CORRECT: Fire and forget, then wait with --stream
+agent engineer xasm++-abc
+# ... do other work ...
+agent wait xasm++-abc --stream  # Blocks with immediate notification
+
+# ✅ CORRECT: Fire and forget, then wait (polling fallback)
+agent engineer xasm++-abc
+# ... do other work ...
+agent wait xasm++-abc  # Blocks, polls every 5 seconds
+
+# ❌ WRONG: Manual polling (reimplements what agent CLI does)
+agent engineer xasm++-abc
+while true; do
+    status=$(agent status xasm++-abc | grep Status: | awk '{print $2}')
+    [ "$status" = "completed" ] && break
+    sleep 5
+done
+
+# ❌ WRONG: Assuming completion without waiting
+agent engineer xasm++-abc
+bd close xasm++-abc  # Runs immediately - agent still working!
+
+# ❌ WRONG: Backgrounding --stream without tracking
+agent engineer xasm++-abc --stream &  # Loses completion signal
+```
+
+**Why --stream is mandatory for Orchestrators:**
+- ✅ Immediate notification when agent completes = immediate action
+- ✅ No polling delay = faster orchestration
+- ✅ Real-time progress visibility
+- ✅ Built-in blocking = simple control flow
+- ✅ Exit codes for success/failure handling
 
 **Agent CLI vs Task Tool:**
 
@@ -98,29 +161,34 @@ Use **Task tool** when:
 After any task completes:
 
 ```bash
-# 1. Check if task complete
-bd show xasm++-vp5
-# Look for completion indicators
+# 1. Wait for agent to complete (--stream blocks until done)
+agent engineer xasm++-vp5 --stream
+echo "✅ Agent completed"
 
-# 2. Close completed task
+# 2. Verify completion
+bd show xasm++-vp5
+
+# 3. Close completed task
 bd close xasm++-vp5 -r "Implementation complete, all tests passing"
 
-# 3. Check for next ready task
+# 4. Check for next ready task
 bd ready
 # Shows unblocked tasks (dependencies automatically handled)
 
-# 4. IMMEDIATELY spawn next agent (DO NOT ASK)
+# 5. IMMEDIATELY spawn next agent (DO NOT ASK)
 bd show xasm++-m94  # Next task (auto-unblocked)
-agent engineer xasm++-m94
+agent engineer xasm++-m94 --stream  # Block with --stream
 ```
 
 **CRITICAL:**
+- ✅ DO use `--stream` to wait for agent completion (mandatory)
 - ✅ DO continue automatically to next phase
 - ✅ DO use `bd ready` to find next work
-- ✅ DO spawn agent immediately
+- ✅ DO spawn next agent immediately with `--stream`
 - ❌ DO NOT ask for permission
 - ❌ DO NOT wait for user input
 - ❌ DO NOT announce "what should I do next?"
+- ❌ DO NOT poll manually for completion
 
 ### 4. Code Organization (C++ Best Practice)
 **DO NOT put implementation in header files**
@@ -481,33 +549,41 @@ bd show xasm++-vp5
 # Verify task exists and is ready (no blockers)
 ```
 
-**Step 2: Spawn agent**
+**Step 2: Spawn agent with --stream (MANDATORY)**
 ```bash
-agent engineer xasm++-vp5
-# Agent executes autonomously via A2A server
+agent engineer xasm++-vp5 --stream
+# - Blocks until agent completes
+# - Shows real-time progress via SSE
+# - Returns immediately when agent finishes
+# - Exit code: 0 = success, 1 = failure
 ```
 
-**Step 3: Monitor progress**
+**Step 3: Verify completion and close task**
 ```bash
-# Check Beads task status
+# Agent completed (--stream returned), verify and close
 bd show xasm++-vp5
-
-# Check agent status via CLI (recommended)
-agent status xasm++-vp5          # Human-readable status
-agent status xasm++-vp5 --json   # JSON for scripting
-agent logs xasm++-vp5 --follow   # Stream real-time logs
-
-# Or check agent task packet directly
-ls .beads/tasks/task-engineer-*/
-cat .beads/tasks/task-engineer-*/30-results.md
+bd close xasm++-vp5 -r "Implementation complete"
 ```
 
 **Step 4: Continue to next task**
 ```bash
-# When task completes, spawn next agent
-bd close xasm++-vp5
+# Find next ready task and spawn immediately
+bd ready
 bd show xasm++-m94  # Next task (auto-unblocked)
-agent engineer xasm++-m94
+agent engineer xasm++-m94 --stream  # Block until this one completes too
+```
+
+**Optional: Monitor without blocking (status checks for visibility)**
+```bash
+# These are OPTIONAL for visibility only, NOT for completion detection
+agent status xasm++-vp5          # Human-readable status
+agent status xasm++-vp5 --json   # JSON for scripting
+agent logs xasm++-vp5 --follow   # Stream real-time logs
+agent metrics                     # Server health
+
+# Agent task packet (transient artifacts)
+ls .beads/tasks/task-engineer-*/
+cat .beads/tasks/task-engineer-*/30-results.md
 ```
 
 ### Available Agents
@@ -530,15 +606,52 @@ agent engineer xasm++-m94
 
 ### Parallel Execution
 
-Run multiple independent tasks concurrently:
+Run multiple independent tasks concurrently (max 10+ agents):
+
 ```bash
-# Spawn multiple engineers (max 10+ concurrent)
+# PATTERN 1: Spawn all, then wait with --stream (RECOMMENDED)
+echo "🚀 Spawning 3 parallel agents..."
+agent engineer xasm++-task1
+agent engineer xasm++-task2
+agent engineer xasm++-task3
+echo "✓ All spawned"
+
+# Do other orchestration work while they run
+echo "📝 Setting up integration task..."
+# ... other work ...
+
+# Wait for all with --stream for immediate completion detection
+echo "⏳ Waiting for agents to complete..."
+agent wait xasm++-task1 --stream
+echo "  ✓ Task 1 done"
+agent wait xasm++-task2 --stream
+echo "  ✓ Task 2 done"
+agent wait xasm++-task3 --stream
+echo "  ✓ Task 3 done"
+
+echo "✅ All agents completed"
+
+# PATTERN 2: Sequential with --stream (simpler but slower)
+echo "🚀 Running agents sequentially..."
+agent engineer xasm++-task1 --stream  # Blocks until done
+echo "✓ Task 1 complete"
+
+agent engineer xasm++-task2 --stream  # Blocks until done
+echo "✓ Task 2 complete"
+
+agent engineer xasm++-task3 --stream  # Blocks until done
+echo "✓ Task 3 complete"
+
+# ❌ WRONG: Using bash wait (loses completion detection)
 agent engineer xasm++-task1 &
 agent engineer xasm++-task2 &
 agent engineer xasm++-task3 &
-wait
+wait  # Bash wait doesn't know about agent completion!
 
-# All three run in parallel via A2A server
+# ❌ WRONG: Not waiting at all
+agent engineer xasm++-task1
+agent engineer xasm++-task2
+bd close xasm++-task1  # May still be running!
 ```
 
 ### DO NOT Use (Deprecated)
@@ -953,16 +1066,14 @@ git commit -m "Update ai-pack framework"
 # 1. Check what's ready to work on
 bd ready
 
-# 2. Spawn agent for first ready task
-agent engineer xasm++-vp5
+# 2. Spawn agent with --stream (MANDATORY - blocks until complete)
+agent engineer xasm++-vp5 --stream
+echo "✅ Agent completed"
 
-# 3. Monitor progress
-bd show xasm++-vp5
-
-# 4. When complete, close and continue
+# 3. Close and continue immediately
 bd close xasm++-vp5 -r "Complete"
 bd ready  # Find next
-agent engineer xasm++-m94  # IMMEDIATELY spawn next
+agent engineer xasm++-m94 --stream  # IMMEDIATELY spawn next with --stream
 ```
 
 **Parallel execution (multiple workstreams, max 10+ concurrent):**
@@ -970,24 +1081,39 @@ agent engineer xasm++-m94  # IMMEDIATELY spawn next
 # Check current WIP first
 bd list --status in_progress
 
-# Multiple independent workstreams in parallel
+# Spawn multiple agents in background
 # Workstream 1: Feature A (3 agents)
-agent engineer xasm++-feature-a-backend &
-agent tester xasm++-feature-a-backend &
-agent engineer xasm++-feature-a-frontend &
+agent engineer xasm++-feature-a-backend
+agent tester xasm++-feature-a-backend
+agent engineer xasm++-feature-a-frontend
 
 # Workstream 2: Feature B (3 agents)
-agent engineer xasm++-feature-b-api &
-agent tester xasm++-feature-b-api &
-agent engineer xasm++-feature-b-ui &
+agent engineer xasm++-feature-b-api
+agent tester xasm++-feature-b-api
+agent engineer xasm++-feature-b-ui
 
 # Workstream 3: Feature C (2 agents)
-agent engineer xasm++-feature-c &
-agent tester xasm++-feature-c &
+agent engineer xasm++-feature-c
+agent tester xasm++-feature-c
 
-# Total: 8 agents across 3 independent workstreams
-# Each workstream: 2-3 agents (Lean WIP limit)
-wait
+echo "✓ All 8 agents spawned across 3 workstreams"
+
+# Wait for all with --stream for immediate completion detection
+echo "⏳ Waiting for workstream 1..."
+agent wait xasm++-feature-a-backend --stream
+agent wait xasm++-feature-a-backend --stream  # Tester
+agent wait xasm++-feature-a-frontend --stream
+
+echo "⏳ Waiting for workstream 2..."
+agent wait xasm++-feature-b-api --stream
+agent wait xasm++-feature-b-api --stream  # Tester
+agent wait xasm++-feature-b-ui --stream
+
+echo "⏳ Waiting for workstream 3..."
+agent wait xasm++-feature-c --stream
+agent wait xasm++-feature-c --stream  # Tester
+
+echo "✅ All workstreams complete"
 ```
 
 **Small Batch Sizing (CRITICAL):**
@@ -1005,7 +1131,8 @@ wait
 - Use Task tool: Short (<5 min), interactive, immediate results needed
 
 **DO:**
-- ✅ Use A2A framework (`agent` CLI)
+- ✅ Use `agent` CLI with `--stream` flag (MANDATORY)
+- ✅ Block for completion with `--stream` or `agent wait --stream`
 - ✅ Apply small batch sizing (1-14 files per task)
 - ✅ Enforce WIP limits (1-3 agents per workstream, 10+ total across workstreams)
 - ✅ Monitor via Beads (`bd show`)
@@ -1013,6 +1140,9 @@ wait
 - ✅ Delegate to specialized agents
 
 **DON'T:**
+- ❌ Spawn agents without `--stream` flag
+- ❌ Poll manually for completion (use `--stream` or `agent wait`)
+- ❌ Use bash `wait` for agent completion (doesn't work with agent CLI)
 - ❌ Use Skill tool (deprecated)
 - ❌ Use Task tool with run_in_background (broken)
 - ❌ Create tasks with 15+ files (decompose first)
