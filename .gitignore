@@ -1,7 +1,9 @@
 # Build directories
 build/
+build_coverage/
 cmake-build-*/
 out/
+Testing/
 
 # Compiled binaries
 *.o
@@ -63,3 +65,6 @@ test.bin
 a.out
 AGENTS.md
 test_*
+
+# Repository cleanup artifacts
+..bfg-report/
