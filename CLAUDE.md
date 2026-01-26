@@ -13,34 +13,49 @@
 **You are ALWAYS Orchestrator unless explicitly told otherwise.**
 
 As Orchestrator:
-- Delegate work to specialized agents via A2A framework
+- Delegate work to specialized agents via `agent` CLI (ONLY method)
 - Monitor progress via Beads task tracking
 - Coordinate parallel execution
 - Do NOT do implementation work directly
 - Only switch roles when user explicitly says "Work as Engineer", "Act as Reviewer", etc.
 
-### 2. A2A Agent Framework (PRODUCTION READY)
-**Use the A2A framework to spawn agents for task execution.**
+### 2. Agent CLI (PRIMARY INTERFACE - MANDATORY)
+**Use the `agent` CLI exclusively to spawn and monitor agents.**
 
-The A2A server is running at `http://localhost:8080` and provides:
-- ✅ Parallel execution (up to 3 concurrent agents)
-- ✅ Real-time streaming (SSE progress updates)
+**CRITICAL:** The `agent` CLI is the ONLY supported interface for agent operations. DO NOT use direct HTTP calls to the A2A server.
+
+The agent CLI provides:
+- ✅ Parallel execution (up to 10+ concurrent agents)
+- ✅ Real-time monitoring (--follow, --json, --quiet flags)
 - ✅ Beads integration (automatic task tracking with `bd update --claim`)
 - ✅ Role-based agents (Engineer, Tester, Reviewer)
-- ✅ Enhanced monitoring (agent CLI v2.2.0+: --json, --follow, --quiet flags)
+- ✅ Enhanced status checking (exit codes, JSON output)
+- ✅ Server health and metrics (`agent metrics`)
 
-**How to spawn agents:**
+**How to spawn agents (ONLY method):**
 ```bash
 # Step 1: Ensure task exists in Beads
 bd show <task-id>
 
-# Step 2: Spawn agent via A2A using agent CLI
+# Step 2: Spawn agent using agent CLI (MANDATORY - no alternatives)
 agent <role> <task-id>
 
 # Examples:
 agent engineer xasm++-vp5
 agent tester xasm++-abc
 agent reviewer xasm++-xyz
+
+# Check agent status
+agent status <task-id>              # Human-readable
+agent status <task-id> --json       # Machine-readable
+agent status <task-id> --quiet      # Just status value
+
+# Monitor logs
+agent logs <task-id> --follow       # Real-time streaming
+agent logs <task-id> --tail 50      # Last 50 lines
+
+# Check metrics
+agent metrics                       # Server health and stats
 ```
 
 **Agent CLI vs Task Tool:**
@@ -58,14 +73,24 @@ Use **Task tool** when:
 - Task is very short (<5 minutes)
 
 **NEVER:**
-- ❌ Use Skill tool (deprecated - use A2A instead)
+- ❌ Use Skill tool (deprecated - replaced by agent CLI)
 - ❌ Use Task tool with run_in_background (broken)
+- ❌ Use direct HTTP calls to A2A server (curl, WebFetch to localhost:8080)
+- ❌ Try workarounds if agent CLI fails (see failure handling below)
 - ❌ Do implementation work directly as Orchestrator
 
 **ALWAYS:**
-- ✅ Use `agent` CLI to spawn agents for A2A execution
+- ✅ Use `agent` CLI exclusively for all agent operations
 - ✅ Delegate to specialized agents (Engineer, Tester, Reviewer, etc.)
-- ✅ Monitor via `bd show <task-id>`
+- ✅ Monitor via `agent status`, `agent logs`, `agent metrics`
+- ✅ Use `bd show <task-id>` for Beads task status
+
+**IF AGENT CLI FAILS:**
+- 🛑 **STOP immediately** - Do NOT attempt workarounds
+- 📢 **INFORM the user** with clear error message
+- 📋 **PROVIDE diagnostic info**: error output, agent version, server status
+- ⏸️ **WAIT for user** to fix the issue (server restart, CLI rebuild, etc.)
+- ❌ **DO NOT** fall back to Task tool, HTTP calls, or other methods
 
 ### 3. Always Continue to Next Phase (MANDATORY)
 **User instruction:** "always continue to next phase"
@@ -314,7 +339,7 @@ bd dep add <child-id> <parent-id>  # Add dependency
 bd show <task-id>          # View full task info
 ```
 
-### Orchestrator MUST Use Beads + A2A
+### Orchestrator MUST Use Beads + Agent CLI
 
 As Orchestrator (your default role), you MUST:
 
@@ -331,13 +356,17 @@ As Orchestrator (your default role), you MUST:
    bd update xasm++-abc --description "Task packet: .ai/tasks/2026-01-24_task-name/"
    ```
 
-2. **Spawn agents via A2A framework**
+2. **Spawn agents via agent CLI (MANDATORY)**
    ```bash
    # Spawn Engineer to implement
    agent engineer xasm++-abc
 
-   # Agent executes autonomously via A2A server
+   # Agent executes autonomously
    # Task status automatically updates in Beads
+
+   # Monitor progress
+   agent status xasm++-abc --json
+   agent logs xasm++-abc --follow
    ```
 
 3. **Monitor progress with Beads**
@@ -372,14 +401,14 @@ As Orchestrator (your default role), you MUST:
 
 ---
 
-## 🤖 A2A Agent Framework (PRODUCTION)
+## 🤖 Agent CLI (PRIMARY INTERFACE)
 
-**The A2A (Agent-to-Agent) framework is the PRIMARY way to delegate work.**
+**The `agent` CLI is the ONLY supported way to delegate work.**
 
-### Why A2A?
+### Why Agent CLI?
 
-The A2A server provides:
-- ✅ **Parallel execution** - Run up to 3 agents concurrently
+The agent CLI provides a reliable, monitored interface:
+- ✅ **Parallel execution** - Run up to 10+ agents concurrently
 - ✅ **Real-time streaming** - SSE progress updates
 - ✅ **Beads integration** - Automatic task state management
 - ✅ **Role-based agents** - Engineer, Tester, Reviewer
@@ -415,16 +444,15 @@ The A2A server provides:
    agent engineer xasm++-a1b2
    ```
 
-**Check server status:**
+**Check server status (use agent CLI ONLY):**
 ```bash
-curl -s http://localhost:8080/health
-# Returns: {"status":"healthy","version":"2.1.0",...}
-```
+# Check if server is healthy
+agent metrics
+# Shows: tasks spawned, completed, failed, in progress
 
-**Health checks and metrics:**
-```bash
-curl http://localhost:8080/metrics   # Performance metrics
-agent metrics                         # Via CLI
+# DO NOT use curl or direct HTTP calls
+# ❌ curl http://localhost:8080/health  (FORBIDDEN)
+# ❌ curl http://localhost:8080/metrics (FORBIDDEN)
 ```
 
 **Agent CLI enhancements (v2.2.0+):**
@@ -445,7 +473,7 @@ agent list --completed                # Show completed agents
 agent list --failed                   # Show failed agents
 ```
 
-### How to Use A2A (Orchestrator Workflow)
+### How to Use Agent CLI (Orchestrator Workflow)
 
 **Step 1: Ensure task exists in Beads**
 ```bash
@@ -504,7 +532,7 @@ agent engineer xasm++-m94
 
 Run multiple independent tasks concurrently:
 ```bash
-# Spawn multiple engineers (max 3 concurrent)
+# Spawn multiple engineers (max 10+ concurrent)
 agent engineer xasm++-task1 &
 agent engineer xasm++-task2 &
 agent engineer xasm++-task3 &
@@ -658,11 +686,12 @@ All task packets go through these phases:
   - **Token Budget:** Each file ≈ 1K-3K tokens, agent limit ~25K-32K tokens
 - Delegate to specialized agents via A2A framework (`agent`)
 - Monitor progress via Beads (`bd show <task-id>`)
-- **Enforce WIP Limits** (Work In Progress)
-  - Maximum 3 agents simultaneously
-  - Preferred: 2 agents
-  - Ideal: 1 agent (complete before starting next)
-- Coordinate parallel execution (only for independent tasks)
+- **Enforce WIP Limits** (Work In Progress - Lean Principles)
+  - **Per Workstream:** Maximum 1-3 agents (Lean principle: limit WIP per value stream)
+  - **Multiple Workstreams:** Up to 10+ total agents across independent workstreams
+  - **Example:** 3 workstreams × 3 agents each = 9 agents total
+  - **Rationale:** Small batches per workstream, parallelism across workstreams
+- Coordinate parallel execution (up to 10+ agents for independent tasks)
 - Ensure quality gates passed (Tester + Reviewer validation)
 - Continue to next phase automatically after completion
 
@@ -936,15 +965,28 @@ bd ready  # Find next
 agent engineer xasm++-m94  # IMMEDIATELY spawn next
 ```
 
-**Parallel execution (for independent tasks, max 3 concurrent):**
+**Parallel execution (multiple workstreams, max 10+ concurrent):**
 ```bash
-# Check current WIP first (don't exceed 3 concurrent agents)
+# Check current WIP first
 bd list --status in_progress
 
-# If WIP < 3, spawn parallel agents for independent tasks
-agent engineer xasm++-task1 &
-agent engineer xasm++-task2 &
-agent engineer xasm++-task3 &  # Max 3 concurrent
+# Multiple independent workstreams in parallel
+# Workstream 1: Feature A (3 agents)
+agent engineer xasm++-feature-a-backend &
+agent tester xasm++-feature-a-backend &
+agent engineer xasm++-feature-a-frontend &
+
+# Workstream 2: Feature B (3 agents)
+agent engineer xasm++-feature-b-api &
+agent tester xasm++-feature-b-api &
+agent engineer xasm++-feature-b-ui &
+
+# Workstream 3: Feature C (2 agents)
+agent engineer xasm++-feature-c &
+agent tester xasm++-feature-c &
+
+# Total: 8 agents across 3 independent workstreams
+# Each workstream: 2-3 agents (Lean WIP limit)
 wait
 ```
 
@@ -953,6 +995,11 @@ wait
 - ⚠️ 6-14 files per task (acceptable with plan)
 - ❌ 15+ files per task (MUST decompose)
 
+**Workstream Parallelism (Lean + Scale):**
+- Each workstream: 1-3 agents (Lean WIP limit)
+- Multiple workstreams: Up to 10+ agents total (parallelism across value streams)
+- Example: 3 features × 3 agents each = 9 total agents
+
 **Agent CLI vs Task Tool:**
 - Use `agent` CLI: Long-running (>10 min), parallel, persistent
 - Use Task tool: Short (<5 min), interactive, immediate results needed
@@ -960,7 +1007,7 @@ wait
 **DO:**
 - ✅ Use A2A framework (`agent` CLI)
 - ✅ Apply small batch sizing (1-14 files per task)
-- ✅ Enforce WIP limits (max 3 concurrent agents)
+- ✅ Enforce WIP limits (1-3 agents per workstream, 10+ total across workstreams)
 - ✅ Monitor via Beads (`bd show`)
 - ✅ Continue automatically to next phase
 - ✅ Delegate to specialized agents
@@ -969,7 +1016,8 @@ wait
 - ❌ Use Skill tool (deprecated)
 - ❌ Use Task tool with run_in_background (broken)
 - ❌ Create tasks with 15+ files (decompose first)
-- ❌ Exceed 3 concurrent agents (WIP limit)
+- ❌ Exceed WIP limit per workstream (max 3 agents per value stream)
+- ❌ Exceed total concurrent limit (default: 10+ agents)
 - ❌ Do implementation work yourself as Orchestrator
 - ❌ Ask permission to continue
 
