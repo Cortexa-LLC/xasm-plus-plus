@@ -15,6 +15,7 @@ namespace xasm {
 // Forward declarations
 class Cpu6502;
 class SymbolTable;
+class ConcreteSymbolTable;
 
 // Assembler error
 struct AssemblerError {
@@ -57,6 +58,12 @@ public:
     AssemblerResult Assemble();
 
 private:
+    // Resolve symbols - extract label addresses from atoms
+    void ResolveSymbols(std::vector<std::shared_ptr<Atom>>& atoms,
+                        ConcreteSymbolTable& symbols,
+                        uint32_t org_address,
+                        AssemblerResult& result);
+
     std::vector<Section> sections_;
     Cpu6502* cpu_ = nullptr;
     SymbolTable* symbols_ = nullptr;

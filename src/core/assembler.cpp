@@ -449,56 +449,8 @@ AssemblerResult Assembler::Assemble() {
         // (Must happen AFTER encoding so encoded_bytes.size() is correct)
         // ALWAYS do this to ensure correct addresses, even with external symbol tables
         if (label_table_ptr != nullptr) {
-            // Clear only labels (preserve other symbols like EQU/SET)
-            // For now, just redefine - this will overwrite parser's placeholder addresses
-            uint32_t current_address = 0;
             for (auto& section : sections_) {
-                current_address = section.org;
-                for (auto& atom : section.atoms) {
-                    if (atom->type == AtomType::Org) {
-                        // Handle .org directive - updates current address
-                        auto org = std::dynamic_pointer_cast<OrgAtom>(atom);
-                        if (!org) {
-                            // Cast failed - this indicates a corrupted atom
-                            AssemblerError error;
-                            error.location = atom->location;
-                            error.message = "Failed to cast to OrgAtom - atom corruption detected";
-                            result.errors.push_back(error);
-                            result.success = false;
-                            continue;
-                        }
-                        current_address = org->address;
-                    } else if (atom->type == AtomType::Label) {
-                        auto label = std::dynamic_pointer_cast<LabelAtom>(atom);
-                        if (!label) {
-                            // Cast failed - this indicates a corrupted atom
-                            AssemblerError error;
-                            error.location = atom->location;
-                            error.message = "Failed to cast to LabelAtom - atom corruption detected";
-                            result.errors.push_back(error);
-                            result.success = false;
-                            continue;
-                        }
-                        // Update label address
-                        label->address = current_address;
-                        // Define or redefine label in symbol table
-                        label_table_ptr->Define(label->name, SymbolType::Label,
-                                               std::make_shared<LiteralExpr>(current_address));
-                    } else if (atom->type == AtomType::Instruction) {
-                        // Instructions consume bytes
-                        auto inst = std::dynamic_pointer_cast<InstructionAtom>(atom);
-                        if (!inst) {
-                            // Cast failed - this indicates a corrupted atom
-                            AssemblerError error;
-                            error.location = atom->location;
-                            error.message = "Failed to cast to InstructionAtom - atom corruption detected";
-                            result.errors.push_back(error);
-                            result.success = false;
-                            continue;
-                        }
-                        current_address += inst->encoded_bytes.size();
-                    }
-                }
+                ResolveSymbols(section.atoms, *label_table_ptr, section.org, result);
             }
         }
 
@@ -511,6 +463,62 @@ AssemblerResult Assembler::Assemble() {
 
     result.pass_count = pass;
     return result;
+}
+
+void Assembler::ResolveSymbols(std::vector<std::shared_ptr<Atom>>& atoms,
+                                ConcreteSymbolTable& symbols,
+                                uint32_t org_address,
+                                AssemblerResult& result) {
+    // Clear only labels (preserve other symbols like EQU/SET)
+    // For now, just redefine - this will overwrite parser's placeholder addresses
+    uint32_t current_address = org_address;
+    
+    // Process atoms to extract label addresses
+    for (auto& atom : atoms) {
+        if (atom->type == AtomType::Org) {
+            // Handle .org directive - updates current address
+            auto org = std::dynamic_pointer_cast<OrgAtom>(atom);
+            if (!org) {
+                // Cast failed - this indicates a corrupted atom
+                AssemblerError error;
+                error.location = atom->location;
+                error.message = "Failed to cast to OrgAtom - atom corruption detected";
+                result.errors.push_back(error);
+                result.success = false;
+                continue;
+            }
+            current_address = org->address;
+        } else if (atom->type == AtomType::Label) {
+            auto label = std::dynamic_pointer_cast<LabelAtom>(atom);
+            if (!label) {
+                // Cast failed - this indicates a corrupted atom
+                AssemblerError error;
+                error.location = atom->location;
+                error.message = "Failed to cast to LabelAtom - atom corruption detected";
+                result.errors.push_back(error);
+                result.success = false;
+                continue;
+            }
+            // Update label address
+            label->address = current_address;
+            // Define or redefine label in symbol table
+            symbols.Define(label->name, SymbolType::Label,
+                          std::make_shared<LiteralExpr>(current_address));
+        } else if (atom->type == AtomType::Instruction) {
+            // Instructions consume bytes
+            auto inst = std::dynamic_pointer_cast<InstructionAtom>(atom);
+            if (!inst) {
+                // Cast failed - this indicates a corrupted atom
+                AssemblerError error;
+                error.location = atom->location;
+                error.message = "Failed to cast to InstructionAtom - atom corruption detected";
+                result.errors.push_back(error);
+                result.success = false;
+                continue;
+            }
+            current_address += inst->encoded_bytes.size();
+        }
+    }
 }
 
 } // namespace xasm
