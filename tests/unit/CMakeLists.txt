@@ -65,6 +65,19 @@ target_link_libraries(test_assembler
 
 gtest_discover_tests(test_assembler)
 
+# ParseHex tests
+add_executable(test_parse_hex
+    test_parse_hex.cpp
+)
+
+target_link_libraries(test_parse_hex
+    xasm_core
+    gtest_main
+    gtest
+)
+
+gtest_discover_tests(test_parse_hex)
+
 # CPU 6502 tests
 add_executable(test_cpu6502
     test_cpu6502.cpp
@@ -138,3 +151,17 @@ target_include_directories(test_cli PRIVATE
 )
 
 gtest_discover_tests(test_cli)
+
+# Exception safety tests
+add_executable(test_exception_safety
+  test_exception_safety.cpp
+)
+
+target_link_libraries(test_exception_safety
+  xasm_core
+  xasm_cpu
+  gtest_main
+  gtest
+)
+
+gtest_discover_tests(test_exception_safety)

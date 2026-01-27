@@ -359,6 +359,15 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable& symbols,
             uint32_t current_address = section.org;
 
             for (auto& atom : section.atoms) {
+                // Skip null atoms gracefully
+                if (!atom) {
+                    AssemblerError error;
+                    error.message = "Null atom encountered - skipping";
+                    result.errors.push_back(error);
+                    result.success = false;
+                    continue;
+                }
+                
                 if (atom->type == AtomType::Org) {
                     // Handle .org directive
                     auto org = std::dynamic_pointer_cast<OrgAtom>(atom);
@@ -484,10 +493,32 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable& symbols,
                             result.errors.push_back(error);
                             result.success = false;
                         }
-                    } catch (const std::exception& e) {
-                        // Encoding error
+                    } catch (const std::invalid_argument& e) {
+                        // Invalid argument (e.g., unsupported addressing mode)
                         AssemblerError error;
-                        error.message = "Encoding error for " + mnemonic + ": " + e.what();
+                        error.location = inst->location;
+                        error.message = "Invalid argument for " + mnemonic + ": " + e.what();
+                        result.errors.push_back(error);
+                        result.success = false;
+                    } catch (const std::out_of_range& e) {
+                        // Value out of range (e.g., branch too far, value too large)
+                        AssemblerError error;
+                        error.location = inst->location;
+                        error.message = "Value out of range for " + mnemonic + ": " + e.what();
+                        result.errors.push_back(error);
+                        result.success = false;
+                    } catch (const std::runtime_error& e) {
+                        // Runtime error (e.g., undefined behavior, internal error)
+                        AssemblerError error;
+                        error.location = inst->location;
+                        error.message = "Runtime error encoding " + mnemonic + ": " + e.what();
+                        result.errors.push_back(error);
+                        result.success = false;
+                    } catch (const std::logic_error& e) {
+                        // Logic error (programming error, shouldn't happen in production)
+                        AssemblerError error;
+                        error.location = inst->location;
+                        error.message = "Logic error encoding " + mnemonic + ": " + e.what();
                         result.errors.push_back(error);
                         result.success = false;
                     }
@@ -568,6 +599,15 @@ void Assembler::ResolveSymbols(std::vector<std::shared_ptr<Atom>>& atoms,
     
     // Process atoms to extract label addresses
     for (auto& atom : atoms) {
+        // Skip null atoms gracefully
+        if (!atom) {
+            AssemblerError error;
+            error.message = "Null atom encountered in symbol resolution - skipping";
+            result.errors.push_back(error);
+            result.success = false;
+            continue;
+        }
+        
         if (atom->type == AtomType::Org) {
             // Handle .org directive - updates current address
             auto org = std::dynamic_pointer_cast<OrgAtom>(atom);

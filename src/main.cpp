@@ -11,6 +11,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <filesystem>
 
 // Forward declaration (implemented in cli_parser.cpp)
 namespace xasm {
@@ -52,7 +53,17 @@ int main(int argc, char** argv) {
     ConcreteSymbolTable symbols;
 
     // Step 3: Parse source code
+    // Change to source file's directory so PUT directives can find included files
+    std::filesystem::path input_path = std::filesystem::absolute(opts.input_file);
+    std::filesystem::path source_dir = input_path.parent_path();
+    std::filesystem::path original_dir = std::filesystem::current_path();
+    
     try {
+      // Change to source directory for PUT directive resolution
+      if (!source_dir.empty()) {
+        std::filesystem::current_path(source_dir);
+      }
+      
       if (opts.syntax == "merlin") {
         MerlinSyntaxParser parser;
         parser.Parse(source, section, symbols);
@@ -60,8 +71,23 @@ int main(int argc, char** argv) {
         SimpleSyntaxParser parser;
         parser.Parse(source, section, symbols);
       }
-    } catch (const std::exception& e) {
+      
+      // Restore original directory
+      std::filesystem::current_path(original_dir);
+    } catch (const std::filesystem::filesystem_error& e) {
+      // Restore original directory on filesystem error
+      std::filesystem::current_path(original_dir);
+      std::cerr << "Filesystem error: " << e.what() << "\n";
+      return 1;
+    } catch (const std::runtime_error& e) {
+      // Restore original directory on parse error
+      std::filesystem::current_path(original_dir);
       std::cerr << "Parse error: " << e.what() << "\n";
+      return 1;
+    } catch (const std::invalid_argument& e) {
+      // Restore original directory on invalid syntax
+      std::filesystem::current_path(original_dir);
+      std::cerr << "Invalid syntax: " << e.what() << "\n";
       return 1;
     }
 
@@ -87,7 +113,10 @@ int main(int argc, char** argv) {
     BinaryOutput output;
     try {
       output.WriteOutput(opts.output, sections, symbols);
-    } catch (const std::exception& e) {
+    } catch (const std::filesystem::filesystem_error& e) {
+      std::cerr << "File I/O error: " << e.what() << "\n";
+      return 1;
+    } catch (const std::runtime_error& e) {
       std::cerr << "Output error: " << e.what() << "\n";
       return 1;
     }
@@ -95,10 +124,19 @@ int main(int argc, char** argv) {
     std::cout << "Assembly successful: " << opts.output << "\n";
     return 0;
   } catch (const CLI::ParseError &e) {
-    std::cerr << "Error: " << e.what() << "\n";
+    std::cerr << "Command-line error: " << e.what() << "\n";
     return 1;
-  } catch (const std::exception &e) {
-    std::cerr << "Error: " << e.what() << "\n";
+  } catch (const std::bad_alloc& e) {
+    std::cerr << "Out of memory: " << e.what() << "\n";
+    return 1;
+  } catch (const std::ios_base::failure& e) {
+    std::cerr << "I/O error: " << e.what() << "\n";
+    return 1;
+  } catch (const std::runtime_error& e) {
+    std::cerr << "Runtime error: " << e.what() << "\n";
+    return 1;
+  } catch (const std::logic_error& e) {
+    std::cerr << "Logic error: " << e.what() << "\n";
     return 1;
   }
 }
