@@ -73,7 +73,7 @@ private:
     void HandleEqu(const std::string& label, const std::string& operand,
                   ConcreteSymbolTable& symbols);
     void HandleDB(const std::string& operand, Section& section, ConcreteSymbolTable& symbols);
-    void HandleDW(const std::string& operand, Section& section);
+    void HandleDW(const std::string& operand, Section& section, ConcreteSymbolTable& symbols);
     void HandleHex(const std::string& operand, Section& section);
     void HandleDS(const std::string& operand, Section& section, ConcreteSymbolTable& symbols);
     void HandleDum(const std::string& operand, ConcreteSymbolTable& symbols);

@@ -351,6 +351,45 @@ TEST(MerlinSyntaxTest, DwMultipleWords) {
     EXPECT_EQ(data_atom->data[3], 0xEF);  // High byte of $EF01
 }
 
+// RED: Test DW with symbol reference (like SEQTABLE.S)
+TEST(MerlinSyntaxTest, DwWithSymbolReference) {
+    MerlinSyntaxParser parser;
+    ConcreteSymbolTable symbols;
+    Section section("test", 0);
+
+    std::string source = 
+        "startrun NOP\n"
+        ":1 dw startrun\n";
+
+    parser.Parse(source, section, symbols);
+
+    // Should define both startrun and :1 labels
+    EXPECT_TRUE(symbols.IsDefined("startrun"));
+    EXPECT_TRUE(symbols.IsDefined(":1"));
+    
+    // Should have atoms: label, NOP, label, DW
+    ASSERT_GE(section.atoms.size(), 3);
+    
+    // Find the DataAtom from DW
+    std::shared_ptr<DataAtom> data_atom = nullptr;
+    for (const auto& atom : section.atoms) {
+        if (atom->type == AtomType::Data) {
+            data_atom = std::dynamic_pointer_cast<DataAtom>(atom);
+            if (data_atom && data_atom->data.size() == 2) {
+                break;  // Found the DW data (2 bytes = 1 word)
+            }
+        }
+    }
+    ASSERT_NE(data_atom, nullptr);
+    ASSERT_EQ(data_atom->data.size(), 2);
+    
+    // The word should be the address of startrun (which is 0 after ORG)
+    // Low byte first (little-endian)
+    // Since startrun is at address 0, the word should be $0000
+    EXPECT_EQ(data_atom->data[0], 0x00);  // Low byte
+    EXPECT_EQ(data_atom->data[1], 0x00);  // High byte
+}
+
 // ============================================================================
 // Phase 1: Foundation - HEX Directive
 // ============================================================================
@@ -389,6 +428,41 @@ TEST(MerlinSyntaxTest, HexWithSpaces) {
     EXPECT_EQ(data_atom->data[0], 0xAB);
     EXPECT_EQ(data_atom->data[1], 0xCD);
     EXPECT_EQ(data_atom->data[2], 0xEF);
+}
+
+// RED: Test HEX with comma-separated values
+TEST(MerlinSyntaxTest, HexWithCommas) {
+    MerlinSyntaxParser parser;
+    ConcreteSymbolTable symbols;
+    Section section("test", 0);
+
+    parser.Parse("         HEX 01,02,03", section, symbols);
+
+    ASSERT_EQ(section.atoms.size(), 1);
+    auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
+    ASSERT_NE(data_atom, nullptr);
+    ASSERT_EQ(data_atom->data.size(), 3);
+    EXPECT_EQ(data_atom->data[0], 0x01);
+    EXPECT_EQ(data_atom->data[1], 0x02);
+    EXPECT_EQ(data_atom->data[2], 0x03);
+}
+
+// RED: Test HEX with commas and spaces (PoP format)
+TEST(MerlinSyntaxTest, HexWithCommasAndSpaces) {
+    MerlinSyntaxParser parser;
+    ConcreteSymbolTable symbols;
+    Section section("test", 0);
+
+    parser.Parse("         HEX 00, 0d, 0b, 09", section, symbols);
+
+    ASSERT_EQ(section.atoms.size(), 1);
+    auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
+    ASSERT_NE(data_atom, nullptr);
+    ASSERT_EQ(data_atom->data.size(), 4);
+    EXPECT_EQ(data_atom->data[0], 0x00);
+    EXPECT_EQ(data_atom->data[1], 0x0D);
+    EXPECT_EQ(data_atom->data[2], 0x0B);
+    EXPECT_EQ(data_atom->data[3], 0x09);
 }
 
 // ============================================================================
@@ -542,6 +616,99 @@ TEST(MerlinSyntaxTest, PutEmptyFile) {
 
     // Should have no atoms added
     EXPECT_EQ(section.atoms.size(), 0);
+
+    // Clean up
+    std::remove(test_file.c_str());
+}
+
+// RED: Test PUT auto-appends .S extension when no extension present
+TEST(MerlinSyntaxTest, PutAutoAppendSExtension) {
+    MerlinSyntaxParser parser;
+    ConcreteSymbolTable symbols;
+    Section section("test", 0);
+
+    // Create a test file with .S extension
+    std::string test_file = "/tmp/xasm_test_include.S";
+    std::ofstream out(test_file);
+    out << "AUTOAPPEND_LABEL\n";
+    out << " DB $55\n";
+    out.close();
+
+    // Parse PUT directive WITHOUT .S extension - should auto-append
+    parser.Parse(" PUT /tmp/xasm_test_include", section, symbols);
+
+    // Should have found the file with auto-appended .S extension
+    EXPECT_TRUE(symbols.IsDefined("AUTOAPPEND_LABEL"));
+
+    // Clean up
+    std::remove(test_file.c_str());
+}
+
+// RED: Test PUT keeps existing extension (e.g., .HEX)
+TEST(MerlinSyntaxTest, PutKeepsExistingExtension) {
+    MerlinSyntaxParser parser;
+    ConcreteSymbolTable symbols;
+    Section section("test", 0);
+
+    // Create a test file with .HEX extension
+    std::string test_file = "/tmp/xasm_test_data.HEX";
+    std::ofstream out(test_file);
+    out << "DATA_LABEL\n";
+    out << " DB $AA\n";
+    out.close();
+
+    // Parse PUT directive WITH .HEX extension - should NOT append .S
+    parser.Parse(" PUT /tmp/xasm_test_data.HEX", section, symbols);
+
+    // Should have found the file with original extension
+    EXPECT_TRUE(symbols.IsDefined("DATA_LABEL"));
+
+    // Clean up
+    std::remove(test_file.c_str());
+}
+
+// RED: Test PUT auto-append with relative path
+TEST(MerlinSyntaxTest, PutAutoAppendRelativePath) {
+    MerlinSyntaxParser parser;
+    ConcreteSymbolTable symbols;
+    Section section("test", 0);
+
+    // Create a test file with .S extension in /tmp
+    std::string test_file = "/tmp/eq.S";
+    std::ofstream out(test_file);
+    out << "EQ_LABEL\n";
+    out << " DB $EE\n";
+    out.close();
+
+    // Parse PUT directive with just "eq" (no extension, no path)
+    // Should auto-append .S and find in /tmp
+    parser.Parse(" PUT eq", section, symbols);
+
+    // Should have found eq.S
+    EXPECT_TRUE(symbols.IsDefined("EQ_LABEL"));
+
+    // Clean up
+    std::remove(test_file.c_str());
+}
+
+// RED: Test PUT explicit .S still works (backward compatibility)
+TEST(MerlinSyntaxTest, PutExplicitSExtension) {
+    MerlinSyntaxParser parser;
+    ConcreteSymbolTable symbols;
+    Section section("test", 0);
+
+    // Create a test file with .S extension
+    std::string test_file = "/tmp/xasm_explicit.S";
+    std::ofstream out(test_file);
+    out << "EXPLICIT_LABEL\n";
+    out << " DB $EE\n";
+    out.close();
+
+    // Parse PUT directive WITH explicit .S extension
+    parser.Parse(" PUT /tmp/xasm_explicit.S", section, symbols);
+
+    // Should work as before (backward compatibility)
+    EXPECT_TRUE(symbols.IsDefined("EXPLICIT_LABEL"));
 
     // Clean up
     std::remove(test_file.c_str());
@@ -956,4 +1123,95 @@ TEST(MerlinSyntaxTest, DsWithExpression) {
     }
     ASSERT_NE(space_atom, nullptr);
     EXPECT_EQ(space_atom->size, 720);
+}
+
+// ============================================================================
+// Phase 8: USR Directive (External Subroutine Call)
+// ============================================================================
+
+// RED: Test USR with hex address
+TEST(MerlinSyntaxTest, UsrWithHexAddress) {
+    MerlinSyntaxParser parser;
+    ConcreteSymbolTable symbols;
+    Section section("test", 0);
+
+    parser.Parse("         USR $C000", section, symbols);
+
+    // Should create InstructionAtom for JSR
+    ASSERT_EQ(section.atoms.size(), 1);
+    auto instruction_atom = std::dynamic_pointer_cast<InstructionAtom>(section.atoms[0]);
+    ASSERT_NE(instruction_atom, nullptr);
+    EXPECT_EQ(instruction_atom->mnemonic, "JSR");
+    EXPECT_EQ(instruction_atom->operand, "$C000");
+}
+
+// RED: Test USR with decimal address
+TEST(MerlinSyntaxTest, UsrWithDecimalAddress) {
+    MerlinSyntaxParser parser;
+    ConcreteSymbolTable symbols;
+    Section section("test", 0);
+
+    parser.Parse("         USR 49152", section, symbols);
+
+    // Should create InstructionAtom for JSR
+    ASSERT_EQ(section.atoms.size(), 1);
+    auto instruction_atom = std::dynamic_pointer_cast<InstructionAtom>(section.atoms[0]);
+    ASSERT_NE(instruction_atom, nullptr);
+    EXPECT_EQ(instruction_atom->mnemonic, "JSR");
+    EXPECT_EQ(instruction_atom->operand, "49152");
+}
+
+// RED: Test USR with label reference
+TEST(MerlinSyntaxTest, UsrWithLabel) {
+    MerlinSyntaxParser parser;
+    ConcreteSymbolTable symbols;
+    Section section("test", 0);
+
+    std::string source = 
+        "DRAW     NOP\n"
+        "         USR DRAW\n";
+
+    parser.Parse(source, section, symbols);
+
+    // Should define DRAW label
+    EXPECT_TRUE(symbols.IsDefined("DRAW"));
+    
+    // Should have NOP instruction and JSR instruction
+    ASSERT_GE(section.atoms.size(), 3);  // Label, NOP, JSR
+    
+    // Find the JSR instruction atom
+    std::shared_ptr<InstructionAtom> jsr_atom = nullptr;
+    for (const auto& atom : section.atoms) {
+        if (atom->type == AtomType::Instruction) {
+            auto inst = std::dynamic_pointer_cast<InstructionAtom>(atom);
+            if (inst && inst->mnemonic == "JSR") {
+                jsr_atom = inst;
+                break;
+            }
+        }
+    }
+    ASSERT_NE(jsr_atom, nullptr);
+    EXPECT_EQ(jsr_atom->mnemonic, "JSR");
+    EXPECT_EQ(jsr_atom->operand, "DRAW");
+}
+
+// RED: Test USR with label on same line
+TEST(MerlinSyntaxTest, UsrWithLabelOnLine) {
+    MerlinSyntaxParser parser;
+    ConcreteSymbolTable symbols;
+    Section section("test", 0);
+
+    parser.Parse("CALLDRAW USR $C000", section, symbols);
+
+    // Should define CALLDRAW label
+    EXPECT_TRUE(symbols.IsDefined("CALLDRAW"));
+    
+    // Should have label and JSR instruction
+    ASSERT_EQ(section.atoms.size(), 2);
+    EXPECT_EQ(section.atoms[0]->type, AtomType::Label);
+    EXPECT_EQ(section.atoms[1]->type, AtomType::Instruction);
+    
+    auto instruction_atom = std::dynamic_pointer_cast<InstructionAtom>(section.atoms[1]);
+    ASSERT_NE(instruction_atom, nullptr);
+    EXPECT_EQ(instruction_atom->mnemonic, "JSR");
 }

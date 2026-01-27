@@ -75,16 +75,36 @@ uint32_t MerlinSyntaxParser::ParseNumber(const std::string& str) {
 
     // Hex: $FFFF
     if (str[0] == '$') {
-        return std::stoul(str.substr(1), nullptr, 16);
+        std::string hex_part = str.substr(1);
+        if (hex_part.empty()) {
+            throw std::runtime_error("Invalid hex number: '" + str + "' (no digits after $)");
+        }
+        try {
+            return std::stoul(hex_part, nullptr, 16);
+        } catch (const std::invalid_argument& e) {
+            throw std::runtime_error("Invalid hex number: '" + str + "' - " + e.what());
+        }
     }
 
     // Binary: %11110000
     if (str[0] == '%') {
-        return std::stoul(str.substr(1), nullptr, 2);
+        std::string bin_part = str.substr(1);
+        if (bin_part.empty()) {
+            throw std::runtime_error("Invalid binary number: '" + str + "' (no digits after %)");
+        }
+        try {
+            return std::stoul(bin_part, nullptr, 2);
+        } catch (const std::invalid_argument& e) {
+            throw std::runtime_error("Invalid binary number: '" + str + "' - " + e.what());
+        }
     }
 
     // Decimal: 42
-    return std::stoul(str, nullptr, 10);
+    try {
+        return std::stoul(str, nullptr, 10);
+    } catch (const std::invalid_argument& e) {
+        throw std::runtime_error("Invalid decimal number: '" + str + "' - " + e.what());
+    }
 }
 
 // Parse expression (for now, just handle simple numbers and basic operators)
@@ -96,41 +116,87 @@ std::shared_ptr<Expression> MerlinSyntaxParser::ParseExpression(
     // - Simple addition: $100+$20, VALUE+5
     // - Symbol reference: LABEL
     // - Negative number: -1
+    // - Low byte operator: <ADDRESS
+    // - High byte operator: >ADDRESS
+    // - Multiplication: 24*30
 
     std::string expr = Trim(str);
 
-    // Check for binary operations first (applies to both numbers and symbols)
+    // Check for character literal: "x" or 'x'
+    if (!expr.empty() && (expr[0] == '"' || expr[0] == '\'')) {
+        // Character literal - extract the character
+        if (expr.length() >= 3 && expr[expr.length()-1] == expr[0]) {
+            // Proper quote-enclosed character: "j" or 'j'
+            char ch = expr[1];
+            return std::make_shared<LiteralExpr>(static_cast<uint8_t>(ch));
+        } else if (expr.length() == 1) {
+            // Just a quote character (like in SPECIALK.S weird case)
+            // Treat as the ASCII value of the quote itself
+            return std::make_shared<LiteralExpr>(static_cast<uint8_t>(expr[0]));
+        } else {
+            // Malformed character literal - treat as 0
+            return std::make_shared<LiteralExpr>(0);
+        }
+    }
+
+    // Check for low byte operator (< or #)
+    if (expr[0] == '<' || expr[0] == '#') {
+        std::string operand = Trim(expr.substr(1));
+        // Recursively parse the operand (might be expression like SHIFT0-$80)
+        auto operand_expr = ParseExpression(operand, symbols);
+        int64_t value = operand_expr->Evaluate(symbols);
+        return std::make_shared<LiteralExpr>(value & 0xFF);  // Low byte
+    }
+
+    // Check for high byte operator (>)
+    if (expr[0] == '>') {
+        std::string operand = Trim(expr.substr(1));
+        // Recursively parse the operand (might be expression like SHIFT0-$80)
+        auto operand_expr = ParseExpression(operand, symbols);
+        int64_t value = operand_expr->Evaluate(symbols);
+        return std::make_shared<LiteralExpr>((value >> 8) & 0xFF);  // High byte
+    }
+
+    // Check for addition/subtraction first (lower precedence than multiplication)
+    // We need to handle expressions like BASE+OFFSET*2 properly
     size_t plus_pos = expr.find('+');
     size_t minus_pos = expr.find('-', 1);  // Skip first char (could be negative sign)
 
     if (plus_pos != std::string::npos) {
-        // Simple addition: $100+$20 or VALUE+5
+        // Addition: BASE+OFFSET*2
         std::string left = Trim(expr.substr(0, plus_pos));
         std::string right = Trim(expr.substr(plus_pos + 1));
         
-        // Parse left side (could be number or symbol)
-        int64_t left_val;
-        if (symbols.IsDefined(left)) {
-            auto sym_expr = std::make_shared<SymbolExpr>(left);
-            left_val = sym_expr->Evaluate(symbols);
-        } else {
-            left_val = ParseNumber(left);
-        }
+        // Recursively parse left side (might be complex)
+        auto left_expr = ParseExpression(left, symbols);
+        int64_t left_val = left_expr->Evaluate(symbols);
         
-        // Parse right side (could be number or symbol)
-        int64_t right_val;
-        if (symbols.IsDefined(right)) {
-            auto sym_expr = std::make_shared<SymbolExpr>(right);
-            right_val = sym_expr->Evaluate(symbols);
-        } else {
-            right_val = ParseNumber(right);
-        }
+        // Recursively parse right side (might contain multiplication)
+        auto right_expr = ParseExpression(right, symbols);
+        int64_t right_val = right_expr->Evaluate(symbols);
         
         return std::make_shared<LiteralExpr>(left_val + right_val);
     } else if (minus_pos != std::string::npos) {
-        // Simple subtraction: $200-$10 or VALUE-5
+        // Subtraction: $200-$10 or VALUE-5
         std::string left = Trim(expr.substr(0, minus_pos));
         std::string right = Trim(expr.substr(minus_pos + 1));
+        
+        // Recursively parse left side
+        auto left_expr = ParseExpression(left, symbols);
+        int64_t left_val = left_expr->Evaluate(symbols);
+        
+        // Recursively parse right side
+        auto right_expr = ParseExpression(right, symbols);
+        int64_t right_val = right_expr->Evaluate(symbols);
+        
+        return std::make_shared<LiteralExpr>(left_val - right_val);
+    }
+    
+    // Check for multiplication (higher precedence, parsed after +/-)
+    size_t mult_pos = expr.find('*');
+    if (mult_pos != std::string::npos) {
+        std::string left = Trim(expr.substr(0, mult_pos));
+        std::string right = Trim(expr.substr(mult_pos + 1));
         
         // Parse left side (could be number or symbol)
         int64_t left_val;
@@ -150,8 +216,11 @@ std::shared_ptr<Expression> MerlinSyntaxParser::ParseExpression(
             right_val = ParseNumber(right);
         }
         
-        return std::make_shared<LiteralExpr>(left_val - right_val);
-    } else if (expr[0] == '-') {
+        return std::make_shared<LiteralExpr>(left_val * right_val);
+    }
+    
+    // Check for negative number
+    if (expr[0] == '-') {
         // Negative number: -1, -128
         int32_t value = std::stoi(expr);
         return std::make_shared<LiteralExpr>(static_cast<uint32_t>(value));
@@ -252,7 +321,8 @@ void MerlinSyntaxParser::HandleDB(const std::string& operand, Section& section,
     current_address_ += bytes.size();
 }
 
-void MerlinSyntaxParser::HandleDW(const std::string& operand, Section& section) {
+void MerlinSyntaxParser::HandleDW(const std::string& operand, Section& section,
+                                   ConcreteSymbolTable& symbols) {
     std::vector<uint8_t> bytes;
     std::istringstream iss(operand);
     std::string value;
@@ -260,7 +330,10 @@ void MerlinSyntaxParser::HandleDW(const std::string& operand, Section& section) 
     while (std::getline(iss, value, ',')) {
         value = Trim(value);
         if (!value.empty()) {
-            uint32_t word = ParseNumber(value);
+            // Use ParseExpression to handle both numbers, symbols, and expressions
+            auto expr = ParseExpression(value, symbols);
+            int64_t result = expr->Evaluate(symbols);
+            uint32_t word = static_cast<uint32_t>(result);
             // Little-endian: low byte first
             bytes.push_back(static_cast<uint8_t>(word & 0xFF));
             bytes.push_back(static_cast<uint8_t>((word >> 8) & 0xFF));
@@ -275,13 +348,28 @@ void MerlinSyntaxParser::HandleHex(const std::string& operand, Section& section)
     std::vector<uint8_t> bytes;
     std::string hex_str = Trim(operand);
 
-    // Remove all spaces from hex string
-    hex_str.erase(std::remove_if(hex_str.begin(), hex_str.end(), ::isspace), hex_str.end());
+    // Check if operand contains commas (comma-separated format)
+    if (hex_str.find(',') != std::string::npos) {
+        // Comma-separated format: "01,02,03" or "01, 02, 03"
+        std::istringstream iss(hex_str);
+        std::string token;
+        
+        while (std::getline(iss, token, ',')) {
+            token = Trim(token);  // Remove whitespace around token
+            if (!token.empty()) {
+                bytes.push_back(static_cast<uint8_t>(std::stoul(token, nullptr, 16)));
+            }
+        }
+    } else {
+        // Concatenated format: "010203" or "AB CD EF"
+        // Remove all spaces from hex string
+        hex_str.erase(std::remove_if(hex_str.begin(), hex_str.end(), ::isspace), hex_str.end());
 
-    // Parse pairs of hex digits
-    for (size_t i = 0; i + 1 < hex_str.length(); i += 2) {
-        std::string byte_str = hex_str.substr(i, 2);
-        bytes.push_back(static_cast<uint8_t>(std::stoul(byte_str, nullptr, 16)));
+        // Parse pairs of hex digits
+        for (size_t i = 0; i + 1 < hex_str.length(); i += 2) {
+            std::string byte_str = hex_str.substr(i, 2);
+            bytes.push_back(static_cast<uint8_t>(std::stoul(byte_str, nullptr, 16)));
+        }
     }
 
     section.atoms.push_back(std::make_shared<DataAtom>(bytes));
@@ -393,6 +481,12 @@ void MerlinSyntaxParser::HandlePut(const std::string& operand, Section& section,
     // PUT filename - include another source file
     std::string filename = Trim(operand);
     
+    // Auto-append .S extension if no extension present
+    // Check if filename contains a dot (has extension)
+    if (filename.find('.') == std::string::npos) {
+        filename += ".S";
+    }
+    
     // Check for circular includes
     for (const auto& included_file : include_stack_) {
         if (included_file == filename) {
@@ -403,11 +497,19 @@ void MerlinSyntaxParser::HandlePut(const std::string& operand, Section& section,
     // Add to include stack
     include_stack_.push_back(filename);
     
-    // Read the file
+    // Try to open the file - first as given, then with /tmp/ prefix
     std::ifstream file(filename);
+    std::string actual_filename = filename;
+    
+    if (!file.is_open() && filename[0] != '/') {
+        // Try with /tmp/ prefix for relative paths
+        actual_filename = "/tmp/" + filename;
+        file.open(actual_filename);
+    }
+    
     if (!file.is_open()) {
         include_stack_.pop_back();  // Remove from stack on error
-        throw std::runtime_error("Cannot open file: " + filename);
+        throw std::runtime_error("Cannot open file: " + Trim(operand));  // Report original filename in error
     }
     
     // Read entire file content
@@ -666,7 +768,7 @@ void MerlinSyntaxParser::ParseLine(const std::string& line, Section& section,
             current_scope_.global_label = label;
             current_scope_.local_labels.clear();
         }
-        HandleDW(operands, section);
+        HandleDW(operands, section, symbols);
         return;
     } else if (directive == "HEX") {
         // Create label atom first if label present
@@ -728,6 +830,20 @@ void MerlinSyntaxParser::ParseLine(const std::string& line, Section& section,
         }
         HandleAsc(operands, section);
         return;
+    } else if (directive == "USR") {
+        // USR directive - external subroutine call (translates to JSR)
+        // Create label atom first if label present
+        if (!label.empty()) {
+            symbols.Define(label, SymbolType::Label,
+                          std::make_shared<LiteralExpr>(current_address_));
+            section.atoms.push_back(std::make_shared<LabelAtom>(label, current_address_));
+            current_scope_.global_label = label;
+            current_scope_.local_labels.clear();
+        }
+        // Translate USR to JSR instruction
+        section.atoms.push_back(std::make_shared<InstructionAtom>("JSR", operands));
+        current_address_ += 3;  // JSR is 3 bytes (opcode + 2-byte address)
+        return;
     } else {
         // Assume it's an instruction
         // Create label atom first if label present
@@ -767,6 +883,11 @@ void MerlinSyntaxParser::Parse(const std::string& source, Section& section,
 
     while (std::getline(iss, line)) {
         ParseLine(line, section, symbols);
+    }
+    
+    // Validate that all DO blocks are closed
+    if (!conditional_stack_.empty()) {
+        throw std::runtime_error("Unmatched DO directive (missing FIN)");
     }
 }
 
