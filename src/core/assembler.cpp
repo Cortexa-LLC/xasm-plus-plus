@@ -446,6 +446,23 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable& symbols,
                     }
 
                     // Special handling for branch instructions (relative addressing)
+                    //
+                    // WHY BRANCH RELAXATION?
+                    // ======================
+                    // 6502 branch instructions (BEQ, BNE, etc.) use 8-bit signed relative offsets,
+                    // limiting range to -128 to +127 bytes. If the target is farther away, we must
+                    // "relax" the branch into a longer sequence:
+                    //
+                    //   Short form (2 bytes):     BEQ label
+                    //   Long form (5 bytes):      BNE skip / JMP label / skip: ...
+                    //
+                    // This relaxation can trigger cascading changes:
+                    // - Short branch becomes long (adds 3 bytes)
+                    // - Subsequent instructions shift by 3 bytes
+                    // - Other branches may now be out of range
+                    // - Requires another pass to re-encode
+                    //
+                    // This is why multi-pass assembly is essential for correct branch generation.
                     bool is_branch = (mnemonic == "BEQ" || mnemonic == "BNE" ||
                                     mnemonic == "BCC" || mnemonic == "BCS" ||
                                     mnemonic == "BMI" || mnemonic == "BPL" ||
@@ -536,6 +553,43 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable& symbols,
 }
 
 AssemblerResult Assembler::Assemble() {
+    // WHY MULTI-PASS ASSEMBLY?
+    // ========================
+    // Multi-pass assembly is necessary because of three interdependent challenges:
+    //
+    // 1. FORWARD REFERENCES: Labels can be used before they're defined
+    //    Example: JMP end_loop    ; 'end_loop' address unknown on first pass
+    //             ...
+    //             end_loop: RTS   ; Now we know the address
+    //
+    // 2. BRANCH RELAXATION: Branch instructions may change size between passes
+    //    Example: BEQ label       ; Initially 2 bytes (short branch)
+    //             [lots of code]
+    //             label: NOP       ; If >127 bytes away, must expand to:
+    //                              ; BNE +3 / JMP label (5 bytes total)
+    //
+    // 3. INSTRUCTION SIZING: We can't know final instruction sizes until symbols are resolved
+    //    - Short branches (2 bytes) vs long branches (5 bytes)
+    //    - Zero page addressing ($80) vs absolute addressing ($1234)
+    //
+    // CONVERGENCE ALGORITHM:
+    // ======================
+    // We repeat encoding passes until instruction sizes stabilize:
+    // - Pass 1: Encode with best guesses, extract label addresses
+    // - Pass 2: Re-encode with updated addresses, check if sizes changed
+    // - Pass N: Repeat until sizes stop changing (converged)
+    //
+    // Typically converges in 2-3 passes. MAX_PASSES (500) prevents infinite loops
+    // in pathological cases (though such cases are rare in practice).
+    //
+    // WHY 500 PASSES?
+    // ===============
+    // Empirically, real-world code converges quickly (<10 passes).
+    // 500 is a safety limit chosen to be:
+    // - Large enough for any realistic code
+    // - Small enough to catch bugs (e.g., oscillating branches)
+    // - Fast enough not to annoy users (even 500 passes takes <1 second)
+
     AssemblerResult result;
 
     // Empty assembly
@@ -579,6 +633,8 @@ AssemblerResult Assembler::Assemble() {
         }
 
         // Check for convergence
+        // WHY: If instruction sizes are identical to previous pass, addresses won't change,
+        // so we've reached a stable state and can stop.
         if (pass > 1) {
             converged = CheckConvergence(previous_sizes, current_sizes);
         }
@@ -657,6 +713,17 @@ void Assembler::ResolveSymbols(std::vector<std::shared_ptr<Atom>>& atoms,
 bool Assembler::CheckConvergence(const std::vector<size_t>& previous_sizes,
                                   const std::vector<size_t>& current_sizes) const {
     // Convergence achieved when instruction sizes are identical between passes
+    //
+    // WHY THIS WORKS:
+    // ===============
+    // If all instruction sizes are stable, then:
+    // 1. All addresses are stable (no size changes = no address shifts)
+    // 2. All symbol values are stable (addresses determine symbol values)
+    // 3. All branches are correctly sized (no more relaxation needed)
+    // 4. Further passes would produce identical output (fixed point reached)
+    //
+    // This is the mathematical definition of convergence: f(x) = x
+    // where f is "encode one pass" and x is "instruction sizes vector"
     return current_sizes == previous_sizes;
 }
 
