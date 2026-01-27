@@ -140,8 +140,14 @@ std::shared_ptr<Expression> MerlinSyntaxParser::ParseExpression(
     }
 
     // Check for low byte operator (< or #)
-    if (expr[0] == '<' || expr[0] == '#') {
+    if (!expr.empty() && (expr[0] == '<' || expr[0] == '#')) {
+        if (expr.length() < 2) {
+            throw std::runtime_error("Low byte operator (</#) requires an operand");
+        }
         std::string operand = Trim(expr.substr(1));
+        if (operand.empty()) {
+            throw std::runtime_error("Low byte operator (</#) has empty operand");
+        }
         // Recursively parse the operand (might be expression like SHIFT0-$80)
         auto operand_expr = ParseExpression(operand, symbols);
         int64_t value = operand_expr->Evaluate(symbols);
@@ -149,8 +155,14 @@ std::shared_ptr<Expression> MerlinSyntaxParser::ParseExpression(
     }
 
     // Check for high byte operator (>)
-    if (expr[0] == '>') {
+    if (!expr.empty() && expr[0] == '>') {
+        if (expr.length() < 2) {
+            throw std::runtime_error("High byte operator (>) requires an operand");
+        }
         std::string operand = Trim(expr.substr(1));
+        if (operand.empty()) {
+            throw std::runtime_error("High byte operator (>) has empty operand");
+        }
         // Recursively parse the operand (might be expression like SHIFT0-$80)
         auto operand_expr = ParseExpression(operand, symbols);
         int64_t value = operand_expr->Evaluate(symbols);
@@ -220,19 +232,19 @@ std::shared_ptr<Expression> MerlinSyntaxParser::ParseExpression(
     }
     
     // Check for negative number
-    if (expr[0] == '-') {
+    if (!expr.empty() && expr[0] == '-') {
         // Negative number: -1, -128
         int32_t value = std::stoi(expr);
         return std::make_shared<LiteralExpr>(static_cast<uint32_t>(value));
-    } else if (expr[0] == '$' || expr[0] == '%' || std::isdigit(expr[0])) {
+    } else if (!expr.empty() && (expr[0] == '$' || expr[0] == '%' || std::isdigit(expr[0]))) {
         // Pure number
         return std::make_shared<LiteralExpr>(ParseNumber(expr));
-    } else if (symbols.IsDefined(expr)) {
+    } else if (!expr.empty() && symbols.IsDefined(expr)) {
         // Symbol reference
         return std::make_shared<SymbolExpr>(expr);
     }
 
-    // Unknown - return literal 0 for now
+    // Unknown or empty - return literal 0 for now
     return std::make_shared<LiteralExpr>(0);
 }
 
@@ -274,6 +286,11 @@ void MerlinSyntaxParser::HandleOrg(const std::string& operand, Section& section,
                                     ConcreteSymbolTable& symbols) {
     std::string op = Trim(operand);
     uint32_t address;
+    
+    // Check if operand is empty
+    if (op.empty()) {
+        throw std::runtime_error("ORG directive requires an address operand");
+    }
     
     // Check if operand is a symbol or a number
     if (op[0] == '$' || op[0] == '%' || std::isdigit(op[0])) {
@@ -393,6 +410,11 @@ void MerlinSyntaxParser::HandleDS(const std::string& operand, Section& section,
         std::string left = Trim(op.substr(0, mult_pos));
         std::string right = Trim(op.substr(mult_pos + 1));
         
+        // Check for empty operands
+        if (left.empty() || right.empty()) {
+            throw std::runtime_error("DS: Multiplication requires operands on both sides");
+        }
+        
         // Evaluate left side
         uint32_t left_val;
         if (left[0] == '$' || left[0] == '%' || std::isdigit(left[0])) {
@@ -452,6 +474,11 @@ void MerlinSyntaxParser::HandleDum(const std::string& operand, ConcreteSymbolTab
     in_dum_block_ = true;
     
     std::string op = Trim(operand);
+    
+    // Check if operand is empty
+    if (op.empty()) {
+        throw std::runtime_error("DUM directive requires an address operand");
+    }
     
     // Check if operand is a symbol or a number
     if (op[0] == '$' || op[0] == '%' || std::isdigit(op[0])) {

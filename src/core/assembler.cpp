@@ -36,6 +36,11 @@ static AddressingMode DetermineAddressingMode(const std::string& operands) {
     }
 
     std::string trimmed = Trim(operands);
+    
+    // After trimming, check if empty (was all whitespace)
+    if (trimmed.empty()) {
+        return AddressingMode::Implied;
+    }
 
     // Group 1: Accumulator addressing mode
     // ASL A, LSR A, ROL A, ROR A
@@ -86,6 +91,11 @@ static AddressingMode DetermineAddressingMode(const std::string& operands) {
         std::string addr_part = trimmed.substr(0, comma_pos);
         addr_part = Trim(addr_part);
 
+        // Check for empty addr_part
+        if (addr_part.empty()) {
+            return AddressingMode::Absolute;  // Default fallback
+        }
+
         // Check if it's a hex address or label
         if (addr_part[0] == '$') {
             uint32_t value = ParseHex(addr_part);
@@ -104,6 +114,11 @@ static AddressingMode DetermineAddressingMode(const std::string& operands) {
         size_t comma_pos = (comma_y != std::string::npos) ? comma_y : comma_y_space;
         std::string addr_part = trimmed.substr(0, comma_pos);
         addr_part = Trim(addr_part);
+
+        // Check for empty addr_part
+        if (addr_part.empty()) {
+            return AddressingMode::Absolute;  // Default fallback
+        }
 
         // Check if it's a hex address or label
         if (addr_part[0] == '$') {

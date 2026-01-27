@@ -1215,3 +1215,225 @@ TEST(MerlinSyntaxTest, UsrWithLabelOnLine) {
     ASSERT_NE(instruction_atom, nullptr);
     EXPECT_EQ(instruction_atom->mnemonic, "JSR");
 }
+
+// ============================================================================
+// Bounds Checking and Input Validation Tests (M4 Refactoring)
+// ============================================================================
+
+// RED: Test StripComments with empty string
+TEST(MerlinSyntaxTest, StripCommentsEmptyString) {
+    MerlinSyntaxParser parser;
+    ConcreteSymbolTable symbols;
+    Section section("test", 0);
+
+    // Empty string should not crash
+    parser.Parse("", section, symbols);
+    EXPECT_EQ(section.atoms.size(), 0);
+}
+
+// RED: Test StripComments with single asterisk
+TEST(MerlinSyntaxTest, StripCommentsSingleAsterisk) {
+    MerlinSyntaxParser parser;
+    ConcreteSymbolTable symbols;
+    Section section("test", 0);
+
+    // Single * should be treated as comment
+    parser.Parse("*", section, symbols);
+    EXPECT_EQ(section.atoms.size(), 0);
+}
+
+// RED: Test ParseNumber with empty string
+TEST(MerlinSyntaxTest, ParseNumberEmptyString) {
+    MerlinSyntaxParser parser;
+    ConcreteSymbolTable symbols;
+    Section section("test", 0);
+
+    // Empty string in number context should return 0 or handle gracefully
+    parser.Parse("VALUE EQU ", section, symbols);
+    // Should not crash
+}
+
+// RED: Test ParseNumber with $ only (no digits)
+TEST(MerlinSyntaxTest, ParseNumberDollarOnly) {
+    MerlinSyntaxParser parser;
+    ConcreteSymbolTable symbols;
+    Section section("test", 0);
+
+    // $ with no digits should throw error
+    EXPECT_THROW(
+        parser.Parse("VALUE EQU $", section, symbols),
+        std::runtime_error
+    );
+}
+
+// RED: Test ParseNumber with % only (no digits)
+TEST(MerlinSyntaxTest, ParseNumberPercentOnly) {
+    MerlinSyntaxParser parser;
+    ConcreteSymbolTable symbols;
+    Section section("test", 0);
+
+    // % with no digits should throw error
+    EXPECT_THROW(
+        parser.Parse("VALUE EQU %", section, symbols),
+        std::runtime_error
+    );
+}
+
+// RED: Test ParseExpression with single character that's a quote
+TEST(MerlinSyntaxTest, ParseExpressionSingleQuote) {
+    MerlinSyntaxParser parser;
+    ConcreteSymbolTable symbols;
+    Section section("test", 0);
+
+    // Single quote character (from SPECIALK.S edge case)
+    parser.Parse("VALUE EQU '", section, symbols);
+    // Should not crash, handle gracefully
+}
+
+// RED: Test ParseExpression with empty string for low byte operator
+TEST(MerlinSyntaxTest, ParseExpressionLowByteEmpty) {
+    MerlinSyntaxParser parser;
+    ConcreteSymbolTable symbols;
+    Section section("test", 0);
+
+    // < with nothing after it
+    EXPECT_THROW(
+        parser.Parse("VALUE EQU <", section, symbols),
+        std::exception  // Should throw some exception
+    );
+}
+
+// RED: Test ParseExpression with empty string for high byte operator
+TEST(MerlinSyntaxTest, ParseExpressionHighByteEmpty) {
+    MerlinSyntaxParser parser;
+    ConcreteSymbolTable symbols;
+    Section section("test", 0);
+
+    // > with nothing after it
+    EXPECT_THROW(
+        parser.Parse("VALUE EQU >", section, symbols),
+        std::exception  // Should throw some exception
+    );
+}
+
+// RED: Test HandleHex with empty string
+TEST(MerlinSyntaxTest, HandleHexEmptyString) {
+    MerlinSyntaxParser parser;
+    ConcreteSymbolTable symbols;
+    Section section("test", 0);
+
+    // HEX with no operand
+    parser.Parse("         HEX", section, symbols);
+    
+    // Should create empty DataAtom
+    ASSERT_EQ(section.atoms.size(), 1);
+    auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
+    ASSERT_NE(data_atom, nullptr);
+    EXPECT_EQ(data_atom->data.size(), 0);
+}
+
+// RED: Test HandleHex with single digit (odd length)
+TEST(MerlinSyntaxTest, HandleHexSingleDigit) {
+    MerlinSyntaxParser parser;
+    ConcreteSymbolTable symbols;
+    Section section("test", 0);
+
+    // HEX with odd number of digits should handle gracefully
+    parser.Parse("         HEX A", section, symbols);
+    
+    // Should not crash (might skip last digit or pad with 0)
+    ASSERT_EQ(section.atoms.size(), 1);
+}
+
+// RED: Test HandleAsc with empty operand
+TEST(MerlinSyntaxTest, HandleAscEmptyOperand) {
+    MerlinSyntaxParser parser;
+    ConcreteSymbolTable symbols;
+    Section section("test", 0);
+
+    // ASC with no operand
+    parser.Parse("         ASC", section, symbols);
+    
+    // Should create empty DataAtom
+    ASSERT_EQ(section.atoms.size(), 1);
+    auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
+    ASSERT_NE(data_atom, nullptr);
+    EXPECT_EQ(data_atom->data.size(), 0);
+}
+
+// RED: Test HandleAsc with single quote only
+TEST(MerlinSyntaxTest, HandleAscSingleQuoteOnly) {
+    MerlinSyntaxParser parser;
+    ConcreteSymbolTable symbols;
+    Section section("test", 0);
+
+    // ASC with just opening quote
+    parser.Parse("         ASC '", section, symbols);
+    
+    // Should handle gracefully
+    ASSERT_EQ(section.atoms.size(), 1);
+}
+
+// RED: Test HandleDS with empty operand
+TEST(MerlinSyntaxTest, HandleDsEmptyOperand) {
+    MerlinSyntaxParser parser;
+    ConcreteSymbolTable symbols;
+    Section section("test", 0);
+
+    // DS with no operand
+    parser.Parse("         DS", section, symbols);
+    
+    // Should create SpaceAtom with 0 size
+    ASSERT_EQ(section.atoms.size(), 1);
+    auto space_atom = std::dynamic_pointer_cast<SpaceAtom>(section.atoms[0]);
+    ASSERT_NE(space_atom, nullptr);
+    EXPECT_EQ(space_atom->size, 0);
+}
+
+// RED: Test HandleDS with multiplication where operands empty
+TEST(MerlinSyntaxTest, HandleDsMultiplicationEmpty) {
+    MerlinSyntaxParser parser;
+    ConcreteSymbolTable symbols;
+    Section section("test", 0);
+
+    // DS with * but no operands
+    EXPECT_THROW(
+        parser.Parse("         DS *", section, symbols),
+        std::exception  // Should throw
+    );
+}
+
+// RED: Test Trim with empty string
+TEST(MerlinSyntaxTest, TrimEmptyString) {
+    MerlinSyntaxParser parser;
+    
+    // Access Trim through a parse that uses it
+    ConcreteSymbolTable symbols;
+    Section section("test", 0);
+    
+    // Parse line that's all whitespace
+    parser.Parse("         ", section, symbols);
+    EXPECT_EQ(section.atoms.size(), 0);
+}
+
+// RED: Test ParseLine with only whitespace
+TEST(MerlinSyntaxTest, ParseLineOnlyWhitespace) {
+    MerlinSyntaxParser parser;
+    ConcreteSymbolTable symbols;
+    Section section("test", 0);
+
+    parser.Parse("              ", section, symbols);
+    EXPECT_EQ(section.atoms.size(), 0);
+}
+
+// RED: Test substr safety in ParseExpression with short strings
+TEST(MerlinSyntaxTest, ParseExpressionShortStringAddition) {
+    MerlinSyntaxParser parser;
+    ConcreteSymbolTable symbols;
+    Section section("test", 0);
+
+    // Single character before +
+    parser.Parse("X EQU 5", section, symbols);
+    parser.Parse("Y EQU X+", section, symbols);
+    // Should handle gracefully, not crash
+}
