@@ -200,6 +200,14 @@ public:
     // Calculate instruction size
     size_t CalculateInstructionSize(AddressingMode mode) const;
 
+    // Branch relaxation support (long branches)
+    // Convert out-of-range branches to: B!cc *+5; JMP target
+    bool NeedsBranchRelaxation(uint16_t current_addr, uint16_t target_addr) const;
+    uint8_t GetComplementaryBranchOpcode(uint8_t branch_opcode) const;
+    std::vector<uint8_t> EncodeBranchWithRelaxation(uint8_t branch_opcode, 
+                                                      uint16_t current_addr, 
+                                                      uint16_t target_addr) const;
+
 private:
     // Phase 2.5: CPU mode state
     CpuMode cpu_mode_ = CpuMode::Cpu6502;  // Default to 6502

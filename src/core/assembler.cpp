@@ -2,6 +2,7 @@
 
 #include "xasm++/assembler.h"
 #include "xasm++/cpu/cpu_6502.h"
+#include "xasm++/cpu/opcodes_6502.h"
 #include "xasm++/symbol.h"
 #include <string>
 #include <sstream>
@@ -432,14 +433,14 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable& symbols,
                         
                         // Get branch opcode for this mnemonic
                         uint8_t branch_opcode = 0;
-                        if (mnemonic == "BEQ") branch_opcode = 0xF0;
-                        else if (mnemonic == "BNE") branch_opcode = 0xD0;
-                        else if (mnemonic == "BCC") branch_opcode = 0x90;
-                        else if (mnemonic == "BCS") branch_opcode = 0xB0;
-                        else if (mnemonic == "BMI") branch_opcode = 0x30;
-                        else if (mnemonic == "BPL") branch_opcode = 0x10;
-                        else if (mnemonic == "BVC") branch_opcode = 0x50;
-                        else if (mnemonic == "BVS") branch_opcode = 0x70;
+                        if (mnemonic == "BEQ") branch_opcode = Opcodes::BEQ;
+                        else if (mnemonic == "BNE") branch_opcode = Opcodes::BNE;
+                        else if (mnemonic == "BCC") branch_opcode = Opcodes::BCC;
+                        else if (mnemonic == "BCS") branch_opcode = Opcodes::BCS;
+                        else if (mnemonic == "BMI") branch_opcode = Opcodes::BMI;
+                        else if (mnemonic == "BPL") branch_opcode = Opcodes::BPL;
+                        else if (mnemonic == "BVC") branch_opcode = Opcodes::BVC;
+                        else if (mnemonic == "BVS") branch_opcode = Opcodes::BVS;
                         
                         // Use branch relaxation (handles both short and long branches)
                         inst->encoded_bytes = cpu_->EncodeBranchWithRelaxation(
