@@ -5,105 +5,123 @@
 
 namespace xasm {
 
-// LDA - Load Accumulator
-// Note: Changed to uint32_t for 65816 24-bit addressing support
-std::vector<uint8_t> Cpu6502::EncodeLDA(uint32_t operand, AddressingMode mode) const {
-    std::vector<uint8_t> bytes;
+// ============================================================================
+// Generic Encoding Helper - Reduces Duplication Across Encode Methods
+// ============================================================================
 
+/**
+ * @brief Generic encoding function using opcode table
+ * 
+ * This function eliminates duplication across 50+ Encode methods by
+ * implementing the common switch-statement logic once.
+ * 
+ * @param table Opcode table mapping addressing modes to opcodes
+ * @param operand The operand value (address or immediate value)
+ * @param mode The addressing mode
+ * @return Encoded bytes (opcode + operand bytes)
+ */
+std::vector<uint8_t> Cpu6502::EncodeWithTable(const OpcodeTable& table, 
+                                                uint32_t operand, 
+                                                AddressingMode mode) const {
+    std::vector<uint8_t> bytes;
+    std::optional<uint8_t> opcode;
+
+    // Map addressing mode to opcode from table
     switch (mode) {
         case AddressingMode::Immediate:
-            bytes.push_back(Opcodes::LDA_IMM);
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+            opcode = table.immediate;
             break;
 
         case AddressingMode::ZeroPage:
-            bytes.push_back(Opcodes::LDA_ZP);
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+            opcode = table.zero_page;
             break;
 
         case AddressingMode::ZeroPageX:
-            bytes.push_back(Opcodes::LDA_ZPX);
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+            opcode = table.zero_page_x;
+            break;
+
+        case AddressingMode::ZeroPageY:
+            opcode = table.zero_page_y;
             break;
 
         case AddressingMode::Absolute:
-            bytes.push_back(Opcodes::LDA_ABS);
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
-            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
+            opcode = table.absolute;
             break;
 
         case AddressingMode::AbsoluteX:
-            bytes.push_back(Opcodes::LDA_ABX);
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
-            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
+            opcode = table.absolute_x;
             break;
 
         case AddressingMode::AbsoluteY:
-            bytes.push_back(Opcodes::LDA_ABY);
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
-            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
+            opcode = table.absolute_y;
+            break;
+
+        case AddressingMode::Indirect:
+            opcode = table.indirect;
             break;
 
         case AddressingMode::IndirectX:
-            bytes.push_back(Opcodes::LDA_INX);
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+            opcode = table.indirect_x;
             break;
 
         case AddressingMode::IndirectY:
-            bytes.push_back(Opcodes::LDA_INY);
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+            opcode = table.indirect_y;
             break;
 
-        // Phase 2.5 - Group 6: 65C02 Enhanced Addressing Modes
+        case AddressingMode::Accumulator:
+            opcode = table.accumulator;
+            break;
+
+        case AddressingMode::Relative:
+            opcode = table.relative;
+            break;
+
         case AddressingMode::IndirectZeroPage:
             // Only available in 65C02 and later
             if (cpu_mode_ != CpuMode::Cpu6502) {
-                bytes.push_back(Opcodes::LDA_IZP);
-                bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+                opcode = table.indirect_zero_page;
             }
             break;
 
-        // Phase 2.5 - Group 9: 65816 Long Addressing Modes
+        case AddressingMode::AbsoluteIndexedIndirect:
+            // Only available in 65C02 and later
+            if (cpu_mode_ != CpuMode::Cpu6502) {
+                opcode = table.absolute_indexed_indirect;
+            }
+            break;
+
         case AddressingMode::AbsoluteLong:
             // Only available in 65816
             if (cpu_mode_ == CpuMode::Cpu65816) {
-                bytes.push_back(Opcodes::LDA_ALG);
-                bytes.push_back(static_cast<uint8_t>(operand & 0xFF));         // Low byte
-                bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF));  // Middle byte
-                bytes.push_back(static_cast<uint8_t>((operand >> 16) & 0xFF)); // High byte (bank)
+                opcode = table.absolute_long;
             }
             break;
 
         case AddressingMode::IndirectLong:
             // Only available in 65816
             if (cpu_mode_ == CpuMode::Cpu65816) {
-                bytes.push_back(Opcodes::LDA_ILG);
-                bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+                opcode = table.indirect_long;
             }
             break;
 
         case AddressingMode::IndirectLongIndexedY:
             // Only available in 65816
             if (cpu_mode_ == CpuMode::Cpu65816) {
-                bytes.push_back(Opcodes::LDA_ILY);
-                bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+                opcode = table.indirect_long_indexed_y;
             }
             break;
 
-        // Phase 2.5 - Group 10: 65816 Stack Relative Addressing
         case AddressingMode::StackRelative:
             // Only available in 65816
             if (cpu_mode_ == CpuMode::Cpu65816) {
-                bytes.push_back(Opcodes::LDA_SR);
-                bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+                opcode = table.stack_relative;
             }
             break;
 
         case AddressingMode::StackRelativeIndirectIndexedY:
             // Only available in 65816
             if (cpu_mode_ == CpuMode::Cpu65816) {
-                bytes.push_back(Opcodes::LDA_SRY);
-                bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+                opcode = table.stack_relative_indirect_indexed_y;
             }
             break;
 
@@ -111,57 +129,115 @@ std::vector<uint8_t> Cpu6502::EncodeLDA(uint32_t operand, AddressingMode mode) c
             break;
     }
 
+    // If opcode found, encode instruction
+    if (opcode.has_value()) {
+        bytes.push_back(opcode.value());
+
+        // Add operand bytes based on addressing mode
+        switch (mode) {
+            case AddressingMode::Immediate:
+            case AddressingMode::ZeroPage:
+            case AddressingMode::ZeroPageX:
+            case AddressingMode::ZeroPageY:
+            case AddressingMode::IndirectX:
+            case AddressingMode::IndirectY:
+            case AddressingMode::Relative:
+            case AddressingMode::IndirectZeroPage:
+            case AddressingMode::IndirectLong:
+            case AddressingMode::IndirectLongIndexedY:
+            case AddressingMode::StackRelative:
+            case AddressingMode::StackRelativeIndirectIndexedY:
+                // 1-byte operand
+                bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+                break;
+
+            case AddressingMode::Absolute:
+            case AddressingMode::AbsoluteX:
+            case AddressingMode::AbsoluteY:
+            case AddressingMode::Indirect:
+            case AddressingMode::AbsoluteIndexedIndirect:
+                // 2-byte operand (little-endian)
+                bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+                bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF));
+                break;
+
+            case AddressingMode::AbsoluteLong:
+                // 3-byte operand (24-bit address, little-endian)
+                bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+                bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF));
+                bytes.push_back(static_cast<uint8_t>((operand >> 16) & 0xFF));
+                break;
+
+            case AddressingMode::Accumulator:
+            case AddressingMode::Implied:
+                // No operand bytes
+                break;
+
+            default:
+                break;
+        }
+    }
+
     return bytes;
+}
+
+// ============================================================================
+// Encode Methods - Now Using Opcode Tables (Reduced Duplication)
+// ============================================================================
+
+// LDA - Load Accumulator
+// Note: Changed to uint32_t for 65816 24-bit addressing support
+std::vector<uint8_t> Cpu6502::EncodeLDA(uint32_t operand, AddressingMode mode) const {
+    static const OpcodeTable LDA_TABLE = {
+        .immediate = Opcodes::LDA_IMM,
+        .zero_page = Opcodes::LDA_ZP,
+        .zero_page_x = Opcodes::LDA_ZPX,
+        .zero_page_y = std::nullopt,
+        .absolute = Opcodes::LDA_ABS,
+        .absolute_x = Opcodes::LDA_ABX,
+        .absolute_y = Opcodes::LDA_ABY,
+        .indirect = std::nullopt,
+        .indirect_x = Opcodes::LDA_INX,
+        .indirect_y = Opcodes::LDA_INY,
+        .accumulator = std::nullopt,
+        .relative = std::nullopt,
+        .indirect_zero_page = Opcodes::LDA_IZP,           // 65C02+
+        .absolute_indexed_indirect = std::nullopt,
+        .absolute_long = Opcodes::LDA_ALG,                // 65816
+        .indirect_long = Opcodes::LDA_ILG,                // 65816
+        .indirect_long_indexed_y = Opcodes::LDA_ILY,      // 65816
+        .stack_relative = Opcodes::LDA_SR,                // 65816
+        .stack_relative_indirect_indexed_y = Opcodes::LDA_SRY  // 65816
+    };
+
+    return EncodeWithTable(LDA_TABLE, operand, mode);
 }
 
 // STA - Store Accumulator
 std::vector<uint8_t> Cpu6502::EncodeSTA(uint16_t operand, AddressingMode mode) const {
-    std::vector<uint8_t> bytes;
+    static const OpcodeTable STA_TABLE = {
+        .immediate = std::nullopt,
+        .zero_page = Opcodes::STA_ZP,
+        .zero_page_x = Opcodes::STA_ZPX,
+        .zero_page_y = std::nullopt,
+        .absolute = Opcodes::STA_ABS,
+        .absolute_x = Opcodes::STA_ABX,
+        .absolute_y = Opcodes::STA_ABY,
+        .indirect = std::nullopt,
+        .indirect_x = Opcodes::STA_INX,
+        .indirect_y = Opcodes::STA_INY,
+        .accumulator = std::nullopt,
+        .relative = std::nullopt,
+        .indirect_zero_page = std::nullopt,
+        .absolute_indexed_indirect = std::nullopt,
+        .absolute_long = std::nullopt,
+        .indirect_long = std::nullopt,
+        .indirect_long_indexed_y = std::nullopt,
+        .stack_relative = std::nullopt,
+        .stack_relative_indirect_indexed_y = std::nullopt
+    };
 
-    switch (mode) {
-        case AddressingMode::ZeroPage:
-            bytes.push_back(Opcodes::STA_ZP);
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-            break;
-
-        case AddressingMode::ZeroPageX:
-            bytes.push_back(Opcodes::STA_ZPX);
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-            break;
-
-        case AddressingMode::Absolute:
-            bytes.push_back(Opcodes::STA_ABS);
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF));
-            break;
-
-        case AddressingMode::AbsoluteX:
-            bytes.push_back(Opcodes::STA_ABX);
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF));
-            break;
-
-        case AddressingMode::AbsoluteY:
-            bytes.push_back(Opcodes::STA_ABY);
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF));
-            break;
-
-        case AddressingMode::IndirectX:
-            bytes.push_back(Opcodes::STA_INX);
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-            break;
-
-        case AddressingMode::IndirectY:
-            bytes.push_back(Opcodes::STA_INY);
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-            break;
-
-        default:
-            break;
-    }
-
-    return bytes;
+    return EncodeWithTable(STA_TABLE, operand, mode);
 }
 
 // JMP - Jump
@@ -203,279 +279,139 @@ std::vector<uint8_t> Cpu6502::EncodeRTS() const {
 
 // ADC - Add with Carry
 std::vector<uint8_t> Cpu6502::EncodeADC(uint16_t operand, AddressingMode mode) const {
-    std::vector<uint8_t> bytes;
+    static const OpcodeTable ADC_TABLE = {
+        .immediate = Opcodes::ADC_IMM,
+        .zero_page = Opcodes::ADC_ZP,
+        .zero_page_x = Opcodes::ADC_ZPX,
+        .zero_page_y = std::nullopt,
+        .absolute = Opcodes::ADC_ABS,
+        .absolute_x = Opcodes::ADC_ABX,
+        .absolute_y = Opcodes::ADC_ABY,
+        .indirect = std::nullopt,
+        .indirect_x = Opcodes::ADC_INX,
+        .indirect_y = Opcodes::ADC_INY,
+        .accumulator = std::nullopt,
+        .relative = std::nullopt,
+        .indirect_zero_page = std::nullopt,
+        .absolute_indexed_indirect = std::nullopt,
+        .absolute_long = std::nullopt,
+        .indirect_long = std::nullopt,
+        .indirect_long_indexed_y = std::nullopt,
+        .stack_relative = std::nullopt,
+        .stack_relative_indirect_indexed_y = std::nullopt
+    };
 
-    switch (mode) {
-        case AddressingMode::Immediate:
-            bytes.push_back(Opcodes::ADC_IMM);  // ADC #imm
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-            break;
-
-        case AddressingMode::ZeroPage:
-            bytes.push_back(Opcodes::ADC_ZP);  // ADC zp
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-            break;
-
-        case AddressingMode::ZeroPageX:
-            bytes.push_back(Opcodes::ADC_ZPX);  // ADC zp,X
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-            break;
-
-        case AddressingMode::Absolute:
-            bytes.push_back(Opcodes::ADC_ABS);  // ADC abs
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
-            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
-            break;
-
-        case AddressingMode::AbsoluteX:
-            bytes.push_back(Opcodes::ADC_ABX);  // ADC abs,X
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
-            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
-            break;
-
-        case AddressingMode::AbsoluteY:
-            bytes.push_back(Opcodes::ADC_ABY);  // ADC abs,Y
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
-            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
-            break;
-
-        case AddressingMode::IndirectX:
-            bytes.push_back(Opcodes::ADC_INX);  // ADC (zp,X)
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-            break;
-
-        case AddressingMode::IndirectY:
-            bytes.push_back(Opcodes::ADC_INY);  // ADC (zp),Y
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-            break;
-
-        default:
-            break;
-    }
-
-    return bytes;
+    return EncodeWithTable(ADC_TABLE, operand, mode);
 }
 
 // SBC - Subtract with Carry
 std::vector<uint8_t> Cpu6502::EncodeSBC(uint16_t operand, AddressingMode mode) const {
-    std::vector<uint8_t> bytes;
+    static const OpcodeTable SBC_TABLE = {
+        .immediate = Opcodes::SBC_IMM,
+        .zero_page = Opcodes::SBC_ZP,
+        .zero_page_x = Opcodes::SBC_ZPX,
+        .zero_page_y = std::nullopt,
+        .absolute = Opcodes::SBC_ABS,
+        .absolute_x = Opcodes::SBC_ABX,
+        .absolute_y = Opcodes::SBC_ABY,
+        .indirect = std::nullopt,
+        .indirect_x = Opcodes::SBC_INX,
+        .indirect_y = Opcodes::SBC_INY,
+        .accumulator = std::nullopt,
+        .relative = std::nullopt,
+        .indirect_zero_page = std::nullopt,
+        .absolute_indexed_indirect = std::nullopt,
+        .absolute_long = std::nullopt,
+        .indirect_long = std::nullopt,
+        .indirect_long_indexed_y = std::nullopt,
+        .stack_relative = std::nullopt,
+        .stack_relative_indirect_indexed_y = std::nullopt
+    };
 
-    switch (mode) {
-        case AddressingMode::Immediate:
-            bytes.push_back(Opcodes::SBC_IMM);  // SBC #imm
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-            break;
-
-        case AddressingMode::ZeroPage:
-            bytes.push_back(Opcodes::SBC_ZP);  // SBC zp
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-            break;
-
-        case AddressingMode::ZeroPageX:
-            bytes.push_back(Opcodes::SBC_ZPX);  // SBC zp,X
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-            break;
-
-        case AddressingMode::Absolute:
-            bytes.push_back(Opcodes::SBC_ABS);  // SBC abs
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
-            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
-            break;
-
-        case AddressingMode::AbsoluteX:
-            bytes.push_back(Opcodes::SBC_ABX);  // SBC abs,X
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
-            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
-            break;
-
-        case AddressingMode::AbsoluteY:
-            bytes.push_back(Opcodes::SBC_ABY);  // SBC abs,Y
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
-            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
-            break;
-
-        case AddressingMode::IndirectX:
-            bytes.push_back(Opcodes::SBC_INX);  // SBC (zp,X)
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-            break;
-
-        case AddressingMode::IndirectY:
-            bytes.push_back(Opcodes::SBC_INY);  // SBC (zp),Y
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-            break;
-
-        default:
-            break;
-    }
-
-    return bytes;
+    return EncodeWithTable(SBC_TABLE, operand, mode);
 }
 
 // Phase 2.2: Logic Instructions
 
 // AND - Logical AND
 std::vector<uint8_t> Cpu6502::EncodeAND(uint16_t operand, AddressingMode mode) const {
-    std::vector<uint8_t> bytes;
+    static const OpcodeTable AND_TABLE = {
+        .immediate = Opcodes::AND_IMM,
+        .zero_page = Opcodes::AND_ZP,
+        .zero_page_x = Opcodes::AND_ZPX,
+        .zero_page_y = std::nullopt,
+        .absolute = Opcodes::AND_ABS,
+        .absolute_x = Opcodes::AND_ABX,
+        .absolute_y = Opcodes::AND_ABY,
+        .indirect = std::nullopt,
+        .indirect_x = Opcodes::AND_INX,
+        .indirect_y = Opcodes::AND_INY,
+        .accumulator = std::nullopt,
+        .relative = std::nullopt,
+        .indirect_zero_page = std::nullopt,
+        .absolute_indexed_indirect = std::nullopt,
+        .absolute_long = std::nullopt,
+        .indirect_long = std::nullopt,
+        .indirect_long_indexed_y = std::nullopt,
+        .stack_relative = std::nullopt,
+        .stack_relative_indirect_indexed_y = std::nullopt
+    };
 
-    switch (mode) {
-        case AddressingMode::Immediate:
-            bytes.push_back(Opcodes::AND_IMM);  // AND #imm
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-            break;
-
-        case AddressingMode::ZeroPage:
-            bytes.push_back(Opcodes::AND_ZP);  // AND zp
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-            break;
-
-        case AddressingMode::ZeroPageX:
-            bytes.push_back(Opcodes::AND_ZPX);  // AND zp,X
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-            break;
-
-        case AddressingMode::Absolute:
-            bytes.push_back(Opcodes::AND_ABS);  // AND abs
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
-            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
-            break;
-
-        case AddressingMode::AbsoluteX:
-            bytes.push_back(Opcodes::AND_ABX);  // AND abs,X
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
-            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
-            break;
-
-        case AddressingMode::AbsoluteY:
-            bytes.push_back(Opcodes::AND_ABY);  // AND abs,Y
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
-            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
-            break;
-
-        case AddressingMode::IndirectX:
-            bytes.push_back(Opcodes::AND_INX);  // AND (zp,X)
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-            break;
-
-        case AddressingMode::IndirectY:
-            bytes.push_back(Opcodes::AND_INY);  // AND (zp),Y
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-            break;
-
-        default:
-            break;
-    }
-
-    return bytes;
+    return EncodeWithTable(AND_TABLE, operand, mode);
 }
 
 // ORA - Logical OR
 std::vector<uint8_t> Cpu6502::EncodeORA(uint16_t operand, AddressingMode mode) const {
-    std::vector<uint8_t> bytes;
+    static const OpcodeTable ORA_TABLE = {
+        .immediate = Opcodes::ORA_IMM,
+        .zero_page = Opcodes::ORA_ZP,
+        .zero_page_x = Opcodes::ORA_ZPX,
+        .zero_page_y = std::nullopt,
+        .absolute = Opcodes::ORA_ABS,
+        .absolute_x = Opcodes::ORA_ABX,
+        .absolute_y = Opcodes::ORA_ABY,
+        .indirect = std::nullopt,
+        .indirect_x = Opcodes::ORA_INX,
+        .indirect_y = Opcodes::ORA_INY,
+        .accumulator = std::nullopt,
+        .relative = std::nullopt,
+        .indirect_zero_page = std::nullopt,
+        .absolute_indexed_indirect = std::nullopt,
+        .absolute_long = std::nullopt,
+        .indirect_long = std::nullopt,
+        .indirect_long_indexed_y = std::nullopt,
+        .stack_relative = std::nullopt,
+        .stack_relative_indirect_indexed_y = std::nullopt
+    };
 
-    switch (mode) {
-        case AddressingMode::Immediate:
-            bytes.push_back(Opcodes::ORA_IMM);  // ORA #imm
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-            break;
-
-        case AddressingMode::ZeroPage:
-            bytes.push_back(Opcodes::ORA_ZP);  // ORA zp
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-            break;
-
-        case AddressingMode::ZeroPageX:
-            bytes.push_back(Opcodes::ORA_ZPX);  // ORA zp,X
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-            break;
-
-        case AddressingMode::Absolute:
-            bytes.push_back(Opcodes::ORA_ABS);  // ORA abs
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
-            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
-            break;
-
-        case AddressingMode::AbsoluteX:
-            bytes.push_back(Opcodes::ORA_ABX);  // ORA abs,X
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
-            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
-            break;
-
-        case AddressingMode::AbsoluteY:
-            bytes.push_back(Opcodes::ORA_ABY);  // ORA abs,Y
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
-            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
-            break;
-
-        case AddressingMode::IndirectX:
-            bytes.push_back(Opcodes::ORA_INX);  // ORA (zp,X)
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-            break;
-
-        case AddressingMode::IndirectY:
-            bytes.push_back(Opcodes::ORA_INY);  // ORA (zp),Y
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-            break;
-
-        default:
-            break;
-    }
-
-    return bytes;
+    return EncodeWithTable(ORA_TABLE, operand, mode);
 }
 
 // EOR - Exclusive OR
 std::vector<uint8_t> Cpu6502::EncodeEOR(uint16_t operand, AddressingMode mode) const {
-    std::vector<uint8_t> bytes;
+    static const OpcodeTable EOR_TABLE = {
+        .immediate = Opcodes::EOR_IMM,
+        .zero_page = Opcodes::EOR_ZP,
+        .zero_page_x = Opcodes::EOR_ZPX,
+        .zero_page_y = std::nullopt,
+        .absolute = Opcodes::EOR_ABS,
+        .absolute_x = Opcodes::EOR_ABX,
+        .absolute_y = Opcodes::EOR_ABY,
+        .indirect = std::nullopt,
+        .indirect_x = Opcodes::EOR_INX,
+        .indirect_y = Opcodes::EOR_INY,
+        .accumulator = std::nullopt,
+        .relative = std::nullopt,
+        .indirect_zero_page = std::nullopt,
+        .absolute_indexed_indirect = std::nullopt,
+        .absolute_long = std::nullopt,
+        .indirect_long = std::nullopt,
+        .indirect_long_indexed_y = std::nullopt,
+        .stack_relative = std::nullopt,
+        .stack_relative_indirect_indexed_y = std::nullopt
+    };
 
-    switch (mode) {
-        case AddressingMode::Immediate:
-            bytes.push_back(Opcodes::EOR_IMM);  // EOR #imm
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-            break;
-
-        case AddressingMode::ZeroPage:
-            bytes.push_back(Opcodes::EOR_ZP);  // EOR zp
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-            break;
-
-        case AddressingMode::ZeroPageX:
-            bytes.push_back(Opcodes::EOR_ZPX);  // EOR zp,X
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-            break;
-
-        case AddressingMode::Absolute:
-            bytes.push_back(Opcodes::EOR_ABS);  // EOR abs
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
-            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
-            break;
-
-        case AddressingMode::AbsoluteX:
-            bytes.push_back(Opcodes::EOR_ABX);  // EOR abs,X
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
-            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
-            break;
-
-        case AddressingMode::AbsoluteY:
-            bytes.push_back(Opcodes::EOR_ABY);  // EOR abs,Y
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
-            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
-            break;
-
-        case AddressingMode::IndirectX:
-            bytes.push_back(Opcodes::EOR_INX);  // EOR (zp,X)
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-            break;
-
-        case AddressingMode::IndirectY:
-            bytes.push_back(Opcodes::EOR_INY);  // EOR (zp),Y
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-            break;
-
-        default:
-            break;
-    }
-
-    return bytes;
+    return EncodeWithTable(EOR_TABLE, operand, mode);
 }
 
 // Phase 2.2: Additional Loads/Stores
