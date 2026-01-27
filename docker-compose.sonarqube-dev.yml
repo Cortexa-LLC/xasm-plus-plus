@@ -1,0 +1,11 @@
+# SonarQube Developer Edition Override
+# This file extends .ai-pack/docker-compose.sonarqube.yml
+# Use: docker-compose -f .ai-pack/docker-compose.sonarqube.yml -f docker-compose.sonarqube-dev.yml up -d
+
+version: '3.8'
+
+services:
+  sonarqube:
+    # Override image to use Developer Edition
+    image: sonarqube:10-developer
+    # All other settings inherited from base compose file
