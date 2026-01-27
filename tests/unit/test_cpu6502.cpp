@@ -2355,3 +2355,232 @@ TEST(Cpu6502Test, MiscOpcodes_NotAvailableIn6502Mode) {
     auto bytes4 = cpu.EncodeMVN(0x12, 0x34);
     EXPECT_EQ(bytes4.size(), 0);
 }
+
+// ============================================================================
+// Branch Relaxation Tests (Long Branch Support)
+// ============================================================================
+
+// Test 223: Branch in range - no relaxation needed (+127)
+TEST(Cpu6502Test, BranchRelaxation_InRange_Positive127) {
+    Cpu6502 cpu;
+    
+    // BEQ with offset +127 (maximum positive offset)
+    // Should NOT relax - still fits in 8-bit signed range
+    auto bytes = cpu.EncodeBEQ(0x7F, AddressingMode::Relative);
+    ASSERT_EQ(bytes.size(), 2);
+    EXPECT_EQ(bytes[0], 0xF0);  // BEQ opcode (not relaxed)
+    EXPECT_EQ(bytes[1], 0x7F);  // Offset +127
+}
+
+// Test 224: Branch in range - no relaxation needed (-128)
+TEST(Cpu6502Test, BranchRelaxation_InRange_Negative128) {
+    Cpu6502 cpu;
+    
+    // BEQ with offset -128 (minimum negative offset)
+    // Should NOT relax - still fits in 8-bit signed range
+    auto bytes = cpu.EncodeBEQ(0x80, AddressingMode::Relative);  // 0x80 = -128 in signed
+    ASSERT_EQ(bytes.size(), 2);
+    EXPECT_EQ(bytes[0], 0xF0);  // BEQ opcode (not relaxed)
+    EXPECT_EQ(bytes[1], 0x80);  // Offset -128
+}
+
+// Test 225: Branch out of range - relaxation needed (+128)
+// BEQ target → BNE *+5; JMP target
+TEST(Cpu6502Test, BranchRelaxation_OutOfRange_Positive128) {
+    Cpu6502 cpu;
+    
+    // BEQ to address 0x1082 from address 0x1000
+    // Offset = 0x1082 - (0x1000 + 2) = 0x80 = +128 (out of range)
+    // Should relax to: BNE *+5; JMP $1082
+    auto bytes = cpu.EncodeBranchWithRelaxation(0xF0, 0x1000, 0x1082);
+    
+    ASSERT_EQ(bytes.size(), 5);
+    EXPECT_EQ(bytes[0], 0xD0);  // BNE opcode (complement of BEQ)
+    EXPECT_EQ(bytes[1], 0x03);  // Skip 3 bytes (JMP instruction)
+    EXPECT_EQ(bytes[2], 0x4C);  // JMP opcode
+    EXPECT_EQ(bytes[3], 0x82);  // Target low byte
+    EXPECT_EQ(bytes[4], 0x10);  // Target high byte
+}
+
+// Test 226: Branch out of range - relaxation needed (-129)
+// BEQ target → BNE *+5; JMP target
+TEST(Cpu6502Test, BranchRelaxation_OutOfRange_Negative129) {
+    Cpu6502 cpu;
+    
+    // BEQ to address 0x0F7F from address 0x1000
+    // Offset = 0x0F7F - (0x1000 + 2) = -131 (out of range)
+    // Should relax to: BNE *+5; JMP $0F7F
+    auto bytes = cpu.EncodeBranchWithRelaxation(0xF0, 0x1000, 0x0F7F);
+    
+    ASSERT_EQ(bytes.size(), 5);
+    EXPECT_EQ(bytes[0], 0xD0);  // BNE opcode (complement of BEQ)
+    EXPECT_EQ(bytes[1], 0x03);  // Skip 3 bytes (JMP instruction)
+    EXPECT_EQ(bytes[2], 0x4C);  // JMP opcode
+    EXPECT_EQ(bytes[3], 0x7F);  // Target low byte
+    EXPECT_EQ(bytes[4], 0x0F);  // Target high byte
+}
+
+// Test 227: BNE out of range - should relax to BEQ + JMP
+TEST(Cpu6502Test, BranchRelaxation_BNE_OutOfRange) {
+    Cpu6502 cpu;
+    
+    // BNE to address 0x1200 from address 0x1000
+    // Offset = 0x1200 - (0x1000 + 2) = +510 (out of range)
+    // Should relax to: BEQ *+5; JMP $1200
+    auto bytes = cpu.EncodeBranchWithRelaxation(0xD0, 0x1000, 0x1200);
+    
+    ASSERT_EQ(bytes.size(), 5);
+    EXPECT_EQ(bytes[0], 0xF0);  // BEQ opcode (complement of BNE)
+    EXPECT_EQ(bytes[1], 0x03);  // Skip 3 bytes
+    EXPECT_EQ(bytes[2], 0x4C);  // JMP opcode
+    EXPECT_EQ(bytes[3], 0x00);  // Target low byte
+    EXPECT_EQ(bytes[4], 0x12);  // Target high byte
+}
+
+// Test 228: BCC out of range - should relax to BCS + JMP
+TEST(Cpu6502Test, BranchRelaxation_BCC_OutOfRange) {
+    Cpu6502 cpu;
+    
+    // BCC to address 0x1200 from address 0x1000
+    // Should relax to: BCS *+5; JMP $1200
+    auto bytes = cpu.EncodeBranchWithRelaxation(0x90, 0x1000, 0x1200);
+    
+    ASSERT_EQ(bytes.size(), 5);
+    EXPECT_EQ(bytes[0], 0xB0);  // BCS opcode (complement of BCC)
+    EXPECT_EQ(bytes[1], 0x03);  // Skip 3 bytes
+    EXPECT_EQ(bytes[2], 0x4C);  // JMP opcode
+    EXPECT_EQ(bytes[3], 0x00);  // Target low byte
+    EXPECT_EQ(bytes[4], 0x12);  // Target high byte
+}
+
+// Test 229: BCS out of range - should relax to BCC + JMP
+TEST(Cpu6502Test, BranchRelaxation_BCS_OutOfRange) {
+    Cpu6502 cpu;
+    
+    // BCS to address 0x1200 from address 0x1000
+    // Should relax to: BCC *+5; JMP $1200
+    auto bytes = cpu.EncodeBranchWithRelaxation(0xB0, 0x1000, 0x1200);
+    
+    ASSERT_EQ(bytes.size(), 5);
+    EXPECT_EQ(bytes[0], 0x90);  // BCC opcode (complement of BCS)
+    EXPECT_EQ(bytes[1], 0x03);  // Skip 3 bytes
+    EXPECT_EQ(bytes[2], 0x4C);  // JMP opcode
+    EXPECT_EQ(bytes[3], 0x00);  // Target low byte
+    EXPECT_EQ(bytes[4], 0x12);  // Target high byte
+}
+
+// Test 230: BPL out of range - should relax to BMI + JMP
+TEST(Cpu6502Test, BranchRelaxation_BPL_OutOfRange) {
+    Cpu6502 cpu;
+    
+    // BPL to address 0x1200 from address 0x1000
+    // Should relax to: BMI *+5; JMP $1200
+    auto bytes = cpu.EncodeBranchWithRelaxation(0x10, 0x1000, 0x1200);
+    
+    ASSERT_EQ(bytes.size(), 5);
+    EXPECT_EQ(bytes[0], 0x30);  // BMI opcode (complement of BPL)
+    EXPECT_EQ(bytes[1], 0x03);  // Skip 3 bytes
+    EXPECT_EQ(bytes[2], 0x4C);  // JMP opcode
+    EXPECT_EQ(bytes[3], 0x00);  // Target low byte
+    EXPECT_EQ(bytes[4], 0x12);  // Target high byte
+}
+
+// Test 231: BMI out of range - should relax to BPL + JMP
+TEST(Cpu6502Test, BranchRelaxation_BMI_OutOfRange) {
+    Cpu6502 cpu;
+    
+    // BMI to address 0x1200 from address 0x1000
+    // Should relax to: BPL *+5; JMP $1200
+    auto bytes = cpu.EncodeBranchWithRelaxation(0x30, 0x1000, 0x1200);
+    
+    ASSERT_EQ(bytes.size(), 5);
+    EXPECT_EQ(bytes[0], 0x10);  // BPL opcode (complement of BMI)
+    EXPECT_EQ(bytes[1], 0x03);  // Skip 3 bytes
+    EXPECT_EQ(bytes[2], 0x4C);  // JMP opcode
+    EXPECT_EQ(bytes[3], 0x00);  // Target low byte
+    EXPECT_EQ(bytes[4], 0x12);  // Target high byte
+}
+
+// Test 232: BVC out of range - should relax to BVS + JMP
+TEST(Cpu6502Test, BranchRelaxation_BVC_OutOfRange) {
+    Cpu6502 cpu;
+    
+    // BVC to address 0x1200 from address 0x1000
+    // Should relax to: BVS *+5; JMP $1200
+    auto bytes = cpu.EncodeBranchWithRelaxation(0x50, 0x1000, 0x1200);
+    
+    ASSERT_EQ(bytes.size(), 5);
+    EXPECT_EQ(bytes[0], 0x70);  // BVS opcode (complement of BVC)
+    EXPECT_EQ(bytes[1], 0x03);  // Skip 3 bytes
+    EXPECT_EQ(bytes[2], 0x4C);  // JMP opcode
+    EXPECT_EQ(bytes[3], 0x00);  // Target low byte
+    EXPECT_EQ(bytes[4], 0x12);  // Target high byte
+}
+
+// Test 233: BVS out of range - should relax to BVC + JMP
+TEST(Cpu6502Test, BranchRelaxation_BVS_OutOfRange) {
+    Cpu6502 cpu;
+    
+    // BVS to address 0x1200 from address 0x1000
+    // Should relax to: BVC *+5; JMP $1200
+    auto bytes = cpu.EncodeBranchWithRelaxation(0x70, 0x1000, 0x1200);
+    
+    ASSERT_EQ(bytes.size(), 5);
+    EXPECT_EQ(bytes[0], 0x50);  // BVC opcode (complement of BVS)
+    EXPECT_EQ(bytes[1], 0x03);  // Skip 3 bytes
+    EXPECT_EQ(bytes[2], 0x4C);  // JMP opcode
+    EXPECT_EQ(bytes[3], 0x00);  // Target low byte
+    EXPECT_EQ(bytes[4], 0x12);  // Target high byte
+}
+
+// Test 234: Test opcode complement function (XOR 0x20)
+TEST(Cpu6502Test, BranchRelaxation_OpcodeComplement) {
+    Cpu6502 cpu;
+    
+    // Test that all branch opcodes complement correctly via XOR 0x20
+    EXPECT_EQ(cpu.GetComplementaryBranchOpcode(0x10), 0x30);  // BPL → BMI
+    EXPECT_EQ(cpu.GetComplementaryBranchOpcode(0x30), 0x10);  // BMI → BPL
+    EXPECT_EQ(cpu.GetComplementaryBranchOpcode(0x50), 0x70);  // BVC → BVS
+    EXPECT_EQ(cpu.GetComplementaryBranchOpcode(0x70), 0x50);  // BVS → BVC
+    EXPECT_EQ(cpu.GetComplementaryBranchOpcode(0x90), 0xB0);  // BCC → BCS
+    EXPECT_EQ(cpu.GetComplementaryBranchOpcode(0xB0), 0x90);  // BCS → BCC
+    EXPECT_EQ(cpu.GetComplementaryBranchOpcode(0xD0), 0xF0);  // BNE → BEQ
+    EXPECT_EQ(cpu.GetComplementaryBranchOpcode(0xF0), 0xD0);  // BEQ → BNE
+}
+
+// Test 235: Test branch range detection
+TEST(Cpu6502Test, BranchRelaxation_NeedsBranchRelaxation) {
+    Cpu6502 cpu;
+    
+    // Test positive edge cases
+    // From 0x1000, to reach 0x1081: offset = 0x1081 - (0x1000 + 2) = 0x7F = +127 (in range)
+    EXPECT_FALSE(cpu.NeedsBranchRelaxation(0x1000, 0x1081));  // +127 - in range
+    // From 0x1000, to reach 0x1082: offset = 0x1082 - (0x1000 + 2) = 0x80 = +128 (out of range)
+    EXPECT_TRUE(cpu.NeedsBranchRelaxation(0x1000, 0x1082));   // +128 - out of range
+    
+    // Test negative edge cases
+    // From 0x1000, to reach 0x0F82: offset = 0x0F82 - (0x1000 + 2) = -128 (in range)
+    EXPECT_FALSE(cpu.NeedsBranchRelaxation(0x1000, 0x0F82));  // -128 - in range
+    // From 0x1000, to reach 0x0F81: offset = 0x0F81 - (0x1000 + 2) = -129 (out of range)
+    EXPECT_TRUE(cpu.NeedsBranchRelaxation(0x1000, 0x0F81));   // -129 - out of range
+    
+    // Test large offsets
+    EXPECT_TRUE(cpu.NeedsBranchRelaxation(0x1000, 0x1200));   // +510 - out of range
+    EXPECT_TRUE(cpu.NeedsBranchRelaxation(0x1200, 0x1000));   // -510 - out of range
+}
+
+// Test 236: Large offset (Prince of Persia scale - 3017 bytes)
+TEST(Cpu6502Test, BranchRelaxation_LargeOffset_PoP) {
+    Cpu6502 cpu;
+    
+    // Simulate FRAMEADV.S case: BCC from $12FE to $1EC9 (offset = 3017 bytes)
+    // Should relax to: BCS *+5; JMP $1EC9
+    auto bytes = cpu.EncodeBranchWithRelaxation(0x90, 0x12FE, 0x1EC9);
+    
+    ASSERT_EQ(bytes.size(), 5);
+    EXPECT_EQ(bytes[0], 0xB0);  // BCS opcode (complement of BCC)
+    EXPECT_EQ(bytes[1], 0x03);  // Skip 3 bytes
+    EXPECT_EQ(bytes[2], 0x4C);  // JMP opcode
+    EXPECT_EQ(bytes[3], 0xC9);  // Target low byte
+    EXPECT_EQ(bytes[4], 0x1E);  // Target high byte
+}

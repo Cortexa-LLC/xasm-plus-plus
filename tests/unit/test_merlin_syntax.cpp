@@ -14,7 +14,6 @@ using namespace xasm;
 // Phase 1: Foundation - Comment Parsing
 // ============================================================================
 
-// RED: Test asterisk comment in column 1
 TEST(MerlinSyntaxTest, CommentWithAsterisk) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -26,7 +25,6 @@ TEST(MerlinSyntaxTest, CommentWithAsterisk) {
     EXPECT_EQ(section.atoms.size(), 0);
 }
 
-// RED: Test semicolon inline comment
 TEST(MerlinSyntaxTest, CommentWithSemicolon) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -38,7 +36,6 @@ TEST(MerlinSyntaxTest, CommentWithSemicolon) {
     EXPECT_EQ(section.atoms.size(), 0);
 }
 
-// RED: Test inline comment after directive
 TEST(MerlinSyntaxTest, InlineComment) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -56,7 +53,6 @@ TEST(MerlinSyntaxTest, InlineComment) {
 // Phase 1: Foundation - Global Label Parsing
 // ============================================================================
 
-// RED: Test global label definition
 TEST(MerlinSyntaxTest, GlobalLabel) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -76,7 +72,6 @@ TEST(MerlinSyntaxTest, GlobalLabel) {
     EXPECT_EQ(label_atom->name, "START");
 }
 
-// RED: Test global label with instruction
 TEST(MerlinSyntaxTest, GlobalLabelWithInstruction) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -96,7 +91,6 @@ TEST(MerlinSyntaxTest, GlobalLabelWithInstruction) {
 // Phase 1: Foundation - ORG Directive
 // ============================================================================
 
-// RED: Test ORG directive with hex value
 TEST(MerlinSyntaxTest, OrgDirective) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -115,7 +109,6 @@ TEST(MerlinSyntaxTest, OrgDirective) {
     EXPECT_EQ(org_atom->address, 0x8000);
 }
 
-// RED: Test ORG with decimal value
 TEST(MerlinSyntaxTest, OrgWithDecimal) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -133,7 +126,6 @@ TEST(MerlinSyntaxTest, OrgWithDecimal) {
 // Phase 1: Foundation - Number Formats
 // ============================================================================
 
-// RED: Test hex number parsing
 TEST(MerlinSyntaxTest, HexNumber) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -148,7 +140,6 @@ TEST(MerlinSyntaxTest, HexNumber) {
     EXPECT_EQ(data_atom->data[0], 0xFF);
 }
 
-// RED: Test binary number parsing
 TEST(MerlinSyntaxTest, BinaryNumber) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -163,7 +154,6 @@ TEST(MerlinSyntaxTest, BinaryNumber) {
     EXPECT_EQ(data_atom->data[0], 0xF0);
 }
 
-// RED: Test decimal number parsing
 TEST(MerlinSyntaxTest, DecimalNumber) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -182,7 +172,6 @@ TEST(MerlinSyntaxTest, DecimalNumber) {
 // Phase 1: Foundation - EQU Directive
 // ============================================================================
 
-// RED: Test EQU directive
 TEST(MerlinSyntaxTest, EquDirective) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -195,7 +184,6 @@ TEST(MerlinSyntaxTest, EquDirective) {
     EXPECT_EQ(section.atoms.size(), 0);
 }
 
-// RED: Test EQU with expression
 TEST(MerlinSyntaxTest, EquWithExpression) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -208,7 +196,6 @@ TEST(MerlinSyntaxTest, EquWithExpression) {
     EXPECT_TRUE(symbols.Lookup("VALUE", value));
 }
 
-// RED: Test = syntax (alternate EQU syntax)
 TEST(MerlinSyntaxTest, EqualsDirective) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -221,7 +208,6 @@ TEST(MerlinSyntaxTest, EqualsDirective) {
     EXPECT_EQ(section.atoms.size(), 0);
 }
 
-// RED: Test = syntax with hex value
 TEST(MerlinSyntaxTest, EqualsWithHex) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -235,7 +221,6 @@ TEST(MerlinSyntaxTest, EqualsWithHex) {
     EXPECT_EQ(value, 0xd000);
 }
 
-// RED: Test DUM with symbol reference
 TEST(MerlinSyntaxTest, DumWithSymbol) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -255,7 +240,6 @@ TEST(MerlinSyntaxTest, DumWithSymbol) {
     EXPECT_TRUE(symbols.IsDefined("_firstboot"));
 }
 
-// RED: Test ORG with symbol reference
 TEST(MerlinSyntaxTest, OrgWithSymbol) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -281,7 +265,6 @@ TEST(MerlinSyntaxTest, OrgWithSymbol) {
 // Phase 1: Foundation - DB Directive
 // ============================================================================
 
-// RED: Test DB with single byte
 TEST(MerlinSyntaxTest, DbSingleByte) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -296,7 +279,6 @@ TEST(MerlinSyntaxTest, DbSingleByte) {
     EXPECT_EQ(data_atom->data[0], 0x42);
 }
 
-// RED: Test DB with multiple bytes
 TEST(MerlinSyntaxTest, DbMultipleBytes) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -317,7 +299,6 @@ TEST(MerlinSyntaxTest, DbMultipleBytes) {
 // Phase 1: Foundation - DW Directive
 // ============================================================================
 
-// RED: Test DW with single word
 TEST(MerlinSyntaxTest, DwSingleWord) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -333,7 +314,6 @@ TEST(MerlinSyntaxTest, DwSingleWord) {
     EXPECT_EQ(data_atom->data[1], 0x12);  // High byte
 }
 
-// RED: Test DW with multiple words
 TEST(MerlinSyntaxTest, DwMultipleWords) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -351,7 +331,6 @@ TEST(MerlinSyntaxTest, DwMultipleWords) {
     EXPECT_EQ(data_atom->data[3], 0xEF);  // High byte of $EF01
 }
 
-// RED: Test DW with symbol reference (like SEQTABLE.S)
 TEST(MerlinSyntaxTest, DwWithSymbolReference) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -394,7 +373,6 @@ TEST(MerlinSyntaxTest, DwWithSymbolReference) {
 // Phase 1: Foundation - HEX Directive
 // ============================================================================
 
-// RED: Test HEX directive
 TEST(MerlinSyntaxTest, HexDirective) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -413,7 +391,6 @@ TEST(MerlinSyntaxTest, HexDirective) {
     EXPECT_EQ(data_atom->data[4], 0x05);
 }
 
-// RED: Test HEX with spaces
 TEST(MerlinSyntaxTest, HexWithSpaces) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -430,7 +407,6 @@ TEST(MerlinSyntaxTest, HexWithSpaces) {
     EXPECT_EQ(data_atom->data[2], 0xEF);
 }
 
-// RED: Test HEX with comma-separated values
 TEST(MerlinSyntaxTest, HexWithCommas) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -447,7 +423,6 @@ TEST(MerlinSyntaxTest, HexWithCommas) {
     EXPECT_EQ(data_atom->data[2], 0x03);
 }
 
-// RED: Test HEX with commas and spaces (PoP format)
 TEST(MerlinSyntaxTest, HexWithCommasAndSpaces) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -469,7 +444,6 @@ TEST(MerlinSyntaxTest, HexWithCommasAndSpaces) {
 // Phase 4: PUT Directive (File Inclusion)
 // ============================================================================
 
-// RED: Test basic PUT directive
 TEST(MerlinSyntaxTest, PutDirectiveBasic) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -493,7 +467,6 @@ TEST(MerlinSyntaxTest, PutDirectiveBasic) {
     std::remove(test_file.c_str());
 }
 
-// RED: Test PUT circular include detection (self-reference)
 TEST(MerlinSyntaxTest, PutCircularIncludeSelf) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -515,7 +488,6 @@ TEST(MerlinSyntaxTest, PutCircularIncludeSelf) {
     std::remove(test_file.c_str());
 }
 
-// RED: Test PUT circular include detection (A includes B includes A)
 TEST(MerlinSyntaxTest, PutCircularIncludeCycle) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -544,7 +516,6 @@ TEST(MerlinSyntaxTest, PutCircularIncludeCycle) {
     std::remove(file_b.c_str());
 }
 
-// RED: Test PUT with nested includes (3 levels deep)
 TEST(MerlinSyntaxTest, PutNestedIncludes3Levels) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -587,7 +558,6 @@ TEST(MerlinSyntaxTest, PutNestedIncludes3Levels) {
     std::remove(file_3.c_str());
 }
 
-// RED: Test PUT file not found error
 TEST(MerlinSyntaxTest, PutFileNotFound) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -600,7 +570,6 @@ TEST(MerlinSyntaxTest, PutFileNotFound) {
     );
 }
 
-// RED: Test PUT with empty file
 TEST(MerlinSyntaxTest, PutEmptyFile) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -621,7 +590,6 @@ TEST(MerlinSyntaxTest, PutEmptyFile) {
     std::remove(test_file.c_str());
 }
 
-// RED: Test PUT auto-appends .S extension when no extension present
 TEST(MerlinSyntaxTest, PutAutoAppendSExtension) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -644,7 +612,6 @@ TEST(MerlinSyntaxTest, PutAutoAppendSExtension) {
     std::remove(test_file.c_str());
 }
 
-// RED: Test PUT keeps existing extension (e.g., .HEX)
 TEST(MerlinSyntaxTest, PutKeepsExistingExtension) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -667,7 +634,6 @@ TEST(MerlinSyntaxTest, PutKeepsExistingExtension) {
     std::remove(test_file.c_str());
 }
 
-// RED: Test PUT auto-append with relative path
 TEST(MerlinSyntaxTest, PutAutoAppendRelativePath) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -691,7 +657,6 @@ TEST(MerlinSyntaxTest, PutAutoAppendRelativePath) {
     std::remove(test_file.c_str());
 }
 
-// RED: Test PUT explicit .S still works (backward compatibility)
 TEST(MerlinSyntaxTest, PutExplicitSExtension) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -718,7 +683,6 @@ TEST(MerlinSyntaxTest, PutExplicitSExtension) {
 // Phase 5: DFB Directive (Define Font Byte)
 // ============================================================================
 
-// RED: Test DFB with single byte
 TEST(MerlinSyntaxTest, DfbSingleByte) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -733,7 +697,6 @@ TEST(MerlinSyntaxTest, DfbSingleByte) {
     EXPECT_EQ(data_atom->data[0], 0x42);
 }
 
-// RED: Test DFB with multiple bytes
 TEST(MerlinSyntaxTest, DfbMultipleBytes) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -751,7 +714,6 @@ TEST(MerlinSyntaxTest, DfbMultipleBytes) {
     EXPECT_EQ(data_atom->data[3], 0x04);
 }
 
-// RED: Test DFB with signed negative byte
 TEST(MerlinSyntaxTest, DfbSignedNegativeByte) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -767,7 +729,6 @@ TEST(MerlinSyntaxTest, DfbSignedNegativeByte) {
     EXPECT_EQ(data_atom->data[0], 0xFF);
 }
 
-// RED: Test DFB with high bit set (font mode)
 TEST(MerlinSyntaxTest, DfbHighBit) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -783,7 +744,6 @@ TEST(MerlinSyntaxTest, DfbHighBit) {
     EXPECT_EQ(data_atom->data[0], 0xC1);  // $80 | $41
 }
 
-// RED: Test DFB with expression
 TEST(MerlinSyntaxTest, DfbWithExpression) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -799,7 +759,6 @@ TEST(MerlinSyntaxTest, DfbWithExpression) {
     EXPECT_EQ(data_atom->data[0], 0x15);  // $10 + 5
 }
 
-// RED: Test DFB with label
 TEST(MerlinSyntaxTest, DfbWithLabel) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -815,7 +774,6 @@ TEST(MerlinSyntaxTest, DfbWithLabel) {
 // Phase 6: DO/ELSE/FIN Conditional Assembly
 // ============================================================================
 
-// RED: Test DO/FIN with true condition (code should be included)
 TEST(MerlinSyntaxTest, DoFinTrue) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -835,7 +793,6 @@ TEST(MerlinSyntaxTest, DoFinTrue) {
     EXPECT_EQ(data_atom->data[0], 0x42);
 }
 
-// RED: Test DO/FIN with false condition (code should be excluded)
 TEST(MerlinSyntaxTest, DoFinFalse) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -852,7 +809,6 @@ TEST(MerlinSyntaxTest, DoFinFalse) {
     EXPECT_EQ(section.atoms.size(), 0);
 }
 
-// RED: Test DO/ELSE/FIN with true condition (ELSE branch excluded)
 TEST(MerlinSyntaxTest, DoElseFinTrue) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -874,7 +830,6 @@ TEST(MerlinSyntaxTest, DoElseFinTrue) {
     EXPECT_EQ(data_atom->data[0], 0x42);
 }
 
-// RED: Test DO/ELSE/FIN with false condition (ELSE branch included)
 TEST(MerlinSyntaxTest, DoElseFinFalse) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -896,7 +851,6 @@ TEST(MerlinSyntaxTest, DoElseFinFalse) {
     EXPECT_EQ(data_atom->data[0], 0x99);
 }
 
-// RED: Test nested DO/FIN blocks
 TEST(MerlinSyntaxTest, DoFinNested) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -922,7 +876,6 @@ TEST(MerlinSyntaxTest, DoFinNested) {
 // Phase 7: Listing Control Directives (LST, LSTDO, TR)
 // ============================================================================
 
-// RED: Test LST directive (listing on)
 TEST(MerlinSyntaxTest, LstDirective) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -934,7 +887,6 @@ TEST(MerlinSyntaxTest, LstDirective) {
     EXPECT_EQ(section.atoms.size(), 0);
 }
 
-// RED: Test LST OFF directive (listing off)
 TEST(MerlinSyntaxTest, LstOffDirective) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -946,7 +898,6 @@ TEST(MerlinSyntaxTest, LstOffDirective) {
     EXPECT_EQ(section.atoms.size(), 0);
 }
 
-// RED: Test LSTDO directive (list during DO blocks)
 TEST(MerlinSyntaxTest, LstdoDirective) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -958,7 +909,6 @@ TEST(MerlinSyntaxTest, LstdoDirective) {
     EXPECT_EQ(section.atoms.size(), 0);
 }
 
-// RED: Test TR directive (truncate listing)
 TEST(MerlinSyntaxTest, TrDirective) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -970,7 +920,6 @@ TEST(MerlinSyntaxTest, TrDirective) {
     EXPECT_EQ(section.atoms.size(), 0);
 }
 
-// RED: Test TR with ADR/ON/OFF parameters
 TEST(MerlinSyntaxTest, TrWithParameters) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -992,7 +941,6 @@ TEST(MerlinSyntaxTest, TrWithParameters) {
 // Phase 7: ASC Directive (ASCII String)
 // ============================================================================
 
-// RED: Test ASC with simple string
 TEST(MerlinSyntaxTest, AscSimpleString) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -1012,7 +960,6 @@ TEST(MerlinSyntaxTest, AscSimpleString) {
     EXPECT_EQ(data_atom->data[4], 'O');
 }
 
-// RED: Test ASC with double quotes
 TEST(MerlinSyntaxTest, AscDoubleQuotes) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -1030,7 +977,6 @@ TEST(MerlinSyntaxTest, AscDoubleQuotes) {
     EXPECT_EQ(data_atom->data[3], 'T');
 }
 
-// RED: Test ASC with high bit set (used for inverse/flashing text)
 TEST(MerlinSyntaxTest, AscHighBit) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -1047,7 +993,6 @@ TEST(MerlinSyntaxTest, AscHighBit) {
     EXPECT_EQ(data_atom->data[1], 'I' | 0x80);  // High bit set on last char
 }
 
-// RED: Test ASC with empty string
 TEST(MerlinSyntaxTest, AscEmptyString) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -1066,7 +1011,6 @@ TEST(MerlinSyntaxTest, AscEmptyString) {
 // DS Directive with Expressions
 // ============================================================================
 
-// RED: Test DS with symbol reference (from PoP EQ.S)
 TEST(MerlinSyntaxTest, DsWithSymbolReference) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -1099,7 +1043,6 @@ TEST(MerlinSyntaxTest, DsWithSymbolReference) {
     EXPECT_EQ(space_atom->size, 200);
 }
 
-// RED: Test DS with expression (multiplication)
 TEST(MerlinSyntaxTest, DsWithExpression) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -1129,7 +1072,6 @@ TEST(MerlinSyntaxTest, DsWithExpression) {
 // Phase 8: USR Directive (External Subroutine Call)
 // ============================================================================
 
-// RED: Test USR with hex address
 TEST(MerlinSyntaxTest, UsrWithHexAddress) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -1145,7 +1087,6 @@ TEST(MerlinSyntaxTest, UsrWithHexAddress) {
     EXPECT_EQ(instruction_atom->operand, "$C000");
 }
 
-// RED: Test USR with decimal address
 TEST(MerlinSyntaxTest, UsrWithDecimalAddress) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -1161,7 +1102,6 @@ TEST(MerlinSyntaxTest, UsrWithDecimalAddress) {
     EXPECT_EQ(instruction_atom->operand, "49152");
 }
 
-// RED: Test USR with label reference
 TEST(MerlinSyntaxTest, UsrWithLabel) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -1195,7 +1135,6 @@ TEST(MerlinSyntaxTest, UsrWithLabel) {
     EXPECT_EQ(jsr_atom->operand, "DRAW");
 }
 
-// RED: Test USR with label on same line
 TEST(MerlinSyntaxTest, UsrWithLabelOnLine) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -1220,7 +1159,6 @@ TEST(MerlinSyntaxTest, UsrWithLabelOnLine) {
 // Bounds Checking and Input Validation Tests (M4 Refactoring)
 // ============================================================================
 
-// RED: Test StripComments with empty string
 TEST(MerlinSyntaxTest, StripCommentsEmptyString) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -1231,7 +1169,6 @@ TEST(MerlinSyntaxTest, StripCommentsEmptyString) {
     EXPECT_EQ(section.atoms.size(), 0);
 }
 
-// RED: Test StripComments with single asterisk
 TEST(MerlinSyntaxTest, StripCommentsSingleAsterisk) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -1242,7 +1179,6 @@ TEST(MerlinSyntaxTest, StripCommentsSingleAsterisk) {
     EXPECT_EQ(section.atoms.size(), 0);
 }
 
-// RED: Test ParseNumber with empty string
 TEST(MerlinSyntaxTest, ParseNumberEmptyString) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -1253,7 +1189,6 @@ TEST(MerlinSyntaxTest, ParseNumberEmptyString) {
     // Should not crash
 }
 
-// RED: Test ParseNumber with $ only (no digits)
 TEST(MerlinSyntaxTest, ParseNumberDollarOnly) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -1266,7 +1201,6 @@ TEST(MerlinSyntaxTest, ParseNumberDollarOnly) {
     );
 }
 
-// RED: Test ParseNumber with % only (no digits)
 TEST(MerlinSyntaxTest, ParseNumberPercentOnly) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -1279,7 +1213,6 @@ TEST(MerlinSyntaxTest, ParseNumberPercentOnly) {
     );
 }
 
-// RED: Test ParseExpression with single character that's a quote
 TEST(MerlinSyntaxTest, ParseExpressionSingleQuote) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -1290,7 +1223,6 @@ TEST(MerlinSyntaxTest, ParseExpressionSingleQuote) {
     // Should not crash, handle gracefully
 }
 
-// RED: Test ParseExpression with empty string for low byte operator
 TEST(MerlinSyntaxTest, ParseExpressionLowByteEmpty) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -1303,7 +1235,6 @@ TEST(MerlinSyntaxTest, ParseExpressionLowByteEmpty) {
     );
 }
 
-// RED: Test ParseExpression with empty string for high byte operator
 TEST(MerlinSyntaxTest, ParseExpressionHighByteEmpty) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -1316,7 +1247,6 @@ TEST(MerlinSyntaxTest, ParseExpressionHighByteEmpty) {
     );
 }
 
-// RED: Test HandleHex with empty string
 TEST(MerlinSyntaxTest, HandleHexEmptyString) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -1332,7 +1262,6 @@ TEST(MerlinSyntaxTest, HandleHexEmptyString) {
     EXPECT_EQ(data_atom->data.size(), 0);
 }
 
-// RED: Test HandleHex with single digit (odd length)
 TEST(MerlinSyntaxTest, HandleHexSingleDigit) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -1345,7 +1274,6 @@ TEST(MerlinSyntaxTest, HandleHexSingleDigit) {
     ASSERT_EQ(section.atoms.size(), 1);
 }
 
-// RED: Test HandleAsc with empty operand
 TEST(MerlinSyntaxTest, HandleAscEmptyOperand) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -1361,7 +1289,6 @@ TEST(MerlinSyntaxTest, HandleAscEmptyOperand) {
     EXPECT_EQ(data_atom->data.size(), 0);
 }
 
-// RED: Test HandleAsc with single quote only
 TEST(MerlinSyntaxTest, HandleAscSingleQuoteOnly) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -1374,7 +1301,6 @@ TEST(MerlinSyntaxTest, HandleAscSingleQuoteOnly) {
     ASSERT_EQ(section.atoms.size(), 1);
 }
 
-// RED: Test HandleDS with empty operand
 TEST(MerlinSyntaxTest, HandleDsEmptyOperand) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -1390,7 +1316,6 @@ TEST(MerlinSyntaxTest, HandleDsEmptyOperand) {
     EXPECT_EQ(space_atom->size, 0);
 }
 
-// RED: Test HandleDS with multiplication where operands empty
 TEST(MerlinSyntaxTest, HandleDsMultiplicationEmpty) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -1403,7 +1328,6 @@ TEST(MerlinSyntaxTest, HandleDsMultiplicationEmpty) {
     );
 }
 
-// RED: Test Trim with empty string
 TEST(MerlinSyntaxTest, TrimEmptyString) {
     MerlinSyntaxParser parser;
     
@@ -1416,7 +1340,6 @@ TEST(MerlinSyntaxTest, TrimEmptyString) {
     EXPECT_EQ(section.atoms.size(), 0);
 }
 
-// RED: Test ParseLine with only whitespace
 TEST(MerlinSyntaxTest, ParseLineOnlyWhitespace) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;
@@ -1426,7 +1349,6 @@ TEST(MerlinSyntaxTest, ParseLineOnlyWhitespace) {
     EXPECT_EQ(section.atoms.size(), 0);
 }
 
-// RED: Test substr safety in ParseExpression with short strings
 TEST(MerlinSyntaxTest, ParseExpressionShortStringAddition) {
     MerlinSyntaxParser parser;
     ConcreteSymbolTable symbols;

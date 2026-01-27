@@ -64,7 +64,7 @@ test.asm
 test.bin
 a.out
 AGENTS.md
-test_*
+/test_*
 
 # Repository cleanup artifacts
 ..bfg-report/
