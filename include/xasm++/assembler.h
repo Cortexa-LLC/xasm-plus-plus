@@ -69,6 +69,11 @@ private:
     std::vector<size_t> EncodeInstructions(ConcreteSymbolTable& symbols,
                                             AssemblerResult& result);
 
+    // Check convergence - compare instruction sizes from previous and current passes
+    // Returns true if sizes are identical (converged), false otherwise
+    bool CheckConvergence(const std::vector<size_t>& previous_sizes,
+                          const std::vector<size_t>& current_sizes) const;
+
     std::vector<Section> sections_;
     Cpu6502* cpu_ = nullptr;
     SymbolTable* symbols_ = nullptr;

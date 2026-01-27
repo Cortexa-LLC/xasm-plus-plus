@@ -461,9 +461,9 @@ AssemblerResult Assembler::Assemble() {
             }
         }
 
-        // Check for convergence (sizes didn't change)
-        if (pass > 1 && current_sizes == previous_sizes) {
-            converged = true;
+        // Check for convergence
+        if (pass > 1) {
+            converged = CheckConvergence(previous_sizes, current_sizes);
         }
         previous_sizes = current_sizes;
     }
@@ -526,6 +526,12 @@ void Assembler::ResolveSymbols(std::vector<std::shared_ptr<Atom>>& atoms,
             current_address += inst->encoded_bytes.size();
         }
     }
+}
+
+bool Assembler::CheckConvergence(const std::vector<size_t>& previous_sizes,
+                                  const std::vector<size_t>& current_sizes) const {
+    // Convergence achieved when instruction sizes are identical between passes
+    return current_sizes == previous_sizes;
 }
 
 } // namespace xasm
