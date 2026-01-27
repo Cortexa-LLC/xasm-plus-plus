@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+#include <optional>
 #include "xasm++/cpu/cpu_6502_branch_handler.h"
 
 namespace xasm {
@@ -210,6 +211,37 @@ public:
                                                       uint16_t target_addr) const;
 
 private:
+    // Opcode table structure for reducing duplication
+    // Maps addressing modes to their corresponding opcodes for an instruction
+    struct OpcodeTable {
+        std::optional<uint8_t> immediate;
+        std::optional<uint8_t> zero_page;
+        std::optional<uint8_t> zero_page_x;
+        std::optional<uint8_t> zero_page_y;
+        std::optional<uint8_t> absolute;
+        std::optional<uint8_t> absolute_x;
+        std::optional<uint8_t> absolute_y;
+        std::optional<uint8_t> indirect;
+        std::optional<uint8_t> indirect_x;
+        std::optional<uint8_t> indirect_y;
+        std::optional<uint8_t> accumulator;
+        std::optional<uint8_t> relative;
+        std::optional<uint8_t> indirect_zero_page;           // 65C02+
+        std::optional<uint8_t> absolute_indexed_indirect;    // 65C02+
+        std::optional<uint8_t> absolute_long;                // 65816
+        std::optional<uint8_t> indirect_long;                // 65816
+        std::optional<uint8_t> indirect_long_indexed_y;      // 65816
+        std::optional<uint8_t> stack_relative;               // 65816
+        std::optional<uint8_t> stack_relative_indirect_indexed_y;  // 65816
+    };
+
+    // Generic encoding function using opcode table
+    // Eliminates duplication across 50+ Encode methods
+    std::vector<uint8_t> EncodeWithTable(const OpcodeTable& table, 
+                                           uint32_t operand, 
+                                           AddressingMode mode) const;
+
+private:
     // Phase 2.5: CPU mode state
     CpuMode cpu_mode_ = CpuMode::Cpu6502;  // Default to 6502
 
@@ -219,7 +251,7 @@ private:
     bool m_flag_ = true;   // Default: 8-bit accumulator (emulation mode)
     bool x_flag_ = true;   // Default: 8-bit index registers (emulation mode)
 
-    // Branch relaxation handler (God class refactoring M6.1)
+    // Branch relaxation handler (Large class refactoring - improving SRP compliance M6.1)
     Cpu6502BranchHandler branch_handler_;
 };
 

@@ -1,5 +1,5 @@
 // 6502 Branch Relaxation Handler
-// Extracted from Cpu6502 god class refactoring (M6.1)
+// Extracted from Cpu6502 Large class refactoring - improving SRP compliance (M6.1)
 
 #pragma once
 

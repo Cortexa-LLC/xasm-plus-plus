@@ -1,5 +1,5 @@
 // 6502 Branch Relaxation Handler implementation
-// Extracted from Cpu6502 god class refactoring (M6.1)
+// Extracted from Cpu6502 Large class refactoring - improving SRP compliance (M6.1)
 
 #include "xasm++/cpu/cpu_6502_branch_handler.h"
 #include "xasm++/cpu/opcodes_6502.h"
