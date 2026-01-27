@@ -165,3 +165,17 @@ target_link_libraries(test_exception_safety
 )
 
 gtest_discover_tests(test_exception_safety)
+
+# Error reporting tests
+add_executable(test_error_reporting
+  test_error_reporting.cpp
+)
+
+target_link_libraries(test_error_reporting
+  xasm_syntax
+  xasm_core
+  gtest_main
+  gtest
+)
+
+gtest_discover_tests(test_error_reporting)

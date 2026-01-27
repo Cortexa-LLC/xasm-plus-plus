@@ -48,6 +48,10 @@ private:
     // Include file tracking (for circular include detection)
     std::vector<std::string> include_stack_;
 
+    // Source location tracking (for error reporting)
+    std::string current_file_;
+    int current_line_;
+
     // Conditional assembly state (DO/ELSE/FIN)
     struct ConditionalBlock {
         bool condition;      // True if condition is met
@@ -91,6 +95,9 @@ private:
     uint32_t ParseNumber(const std::string& str);
     std::shared_ptr<Expression> ParseExpression(const std::string& str,
                                                ConcreteSymbolTable& symbols);
+
+    // Error formatting with source location
+    std::string FormatError(const std::string& message) const;
 };
 
 } // namespace xasm

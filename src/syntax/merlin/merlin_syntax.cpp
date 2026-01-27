@@ -17,7 +17,9 @@ namespace xasm {
 MerlinSyntaxParser::MerlinSyntaxParser()
     : in_dum_block_(false)
     , dum_address_(0)
-    , current_address_(0) {
+    , current_address_(0)
+    , current_file_("<stdin>")
+    , current_line_(0) {
 }
 
 // ============================================================================
@@ -63,6 +65,13 @@ std::string MerlinSyntaxParser::ToUpper(const std::string& str) {
     return result;
 }
 
+// Format error message with source location
+std::string MerlinSyntaxParser::FormatError(const std::string& message) const {
+    std::ostringstream oss;
+    oss << current_file_ << ":" << current_line_ << ": error: " << message;
+    return oss.str();
+}
+
 // ============================================================================
 // Number Parsing
 // ============================================================================
@@ -77,12 +86,12 @@ uint32_t MerlinSyntaxParser::ParseNumber(const std::string& str) {
     if (str[0] == '$') {
         std::string hex_part = str.substr(1);
         if (hex_part.empty()) {
-            throw std::runtime_error("Invalid hex number: '" + str + "' (no digits after $)");
+            throw std::runtime_error(FormatError("Invalid hex number: '" + str + "' (no digits after $)"));
         }
         try {
             return std::stoul(hex_part, nullptr, 16);
         } catch (const std::invalid_argument& e) {
-            throw std::runtime_error("Invalid hex number: '" + str + "' - " + e.what());
+            throw std::runtime_error(FormatError("Invalid hex number: '" + str + "' - " + e.what()));
         }
     }
 
@@ -90,12 +99,12 @@ uint32_t MerlinSyntaxParser::ParseNumber(const std::string& str) {
     if (str[0] == '%') {
         std::string bin_part = str.substr(1);
         if (bin_part.empty()) {
-            throw std::runtime_error("Invalid binary number: '" + str + "' (no digits after %)");
+            throw std::runtime_error(FormatError("Invalid binary number: '" + str + "' (no digits after %)"));
         }
         try {
             return std::stoul(bin_part, nullptr, 2);
         } catch (const std::invalid_argument& e) {
-            throw std::runtime_error("Invalid binary number: '" + str + "' - " + e.what());
+            throw std::runtime_error(FormatError("Invalid binary number: '" + str + "' - " + e.what()));
         }
     }
 
@@ -103,7 +112,7 @@ uint32_t MerlinSyntaxParser::ParseNumber(const std::string& str) {
     try {
         return std::stoul(str, nullptr, 10);
     } catch (const std::invalid_argument& e) {
-        throw std::runtime_error("Invalid decimal number: '" + str + "' - " + e.what());
+        throw std::runtime_error(FormatError("Invalid decimal number: '" + str + "' - " + e.what()));
     }
 }
 
@@ -142,11 +151,11 @@ std::shared_ptr<Expression> MerlinSyntaxParser::ParseExpression(
     // Check for low byte operator (< or #)
     if (!expr.empty() && (expr[0] == '<' || expr[0] == '#')) {
         if (expr.length() < 2) {
-            throw std::runtime_error("Low byte operator (</#) requires an operand");
+            throw std::runtime_error(FormatError("Low byte operator (</#) requires an operand"));
         }
         std::string operand = Trim(expr.substr(1));
         if (operand.empty()) {
-            throw std::runtime_error("Low byte operator (</#) has empty operand");
+            throw std::runtime_error(FormatError("Low byte operator (</#) has empty operand"));
         }
         // Recursively parse the operand (might be expression like SHIFT0-$80)
         auto operand_expr = ParseExpression(operand, symbols);
@@ -157,11 +166,11 @@ std::shared_ptr<Expression> MerlinSyntaxParser::ParseExpression(
     // Check for high byte operator (>)
     if (!expr.empty() && expr[0] == '>') {
         if (expr.length() < 2) {
-            throw std::runtime_error("High byte operator (>) requires an operand");
+            throw std::runtime_error(FormatError("High byte operator (>) requires an operand"));
         }
         std::string operand = Trim(expr.substr(1));
         if (operand.empty()) {
-            throw std::runtime_error("High byte operator (>) has empty operand");
+            throw std::runtime_error(FormatError("High byte operator (>) has empty operand"));
         }
         // Recursively parse the operand (might be expression like SHIFT0-$80)
         auto operand_expr = ParseExpression(operand, symbols);
@@ -289,7 +298,7 @@ void MerlinSyntaxParser::HandleOrg(const std::string& operand, Section& section,
     
     // Check if operand is empty
     if (op.empty()) {
-        throw std::runtime_error("ORG directive requires an address operand");
+        throw std::runtime_error(FormatError("ORG directive requires an address operand"));
     }
     
     // Check if operand is a symbol or a number
@@ -412,7 +421,7 @@ void MerlinSyntaxParser::HandleDS(const std::string& operand, Section& section,
         
         // Check for empty operands
         if (left.empty() || right.empty()) {
-            throw std::runtime_error("DS: Multiplication requires operands on both sides");
+            throw std::runtime_error(FormatError("DS: Multiplication requires operands on both sides"));
         }
         
         // Evaluate left side
@@ -425,7 +434,7 @@ void MerlinSyntaxParser::HandleDS(const std::string& operand, Section& section,
             if (symbols.Lookup(left, value)) {
                 left_val = static_cast<uint32_t>(value);
             } else {
-                throw std::runtime_error("DS: Undefined symbol: " + left);
+                throw std::runtime_error(FormatError("DS: Undefined symbol: " + left));
             }
         }
         
@@ -439,7 +448,7 @@ void MerlinSyntaxParser::HandleDS(const std::string& operand, Section& section,
             if (symbols.Lookup(right, value)) {
                 right_val = static_cast<uint32_t>(value);
             } else {
-                throw std::runtime_error("DS: Undefined symbol: " + right);
+                throw std::runtime_error(FormatError("DS: Undefined symbol: " + right));
             }
         }
         
@@ -455,7 +464,7 @@ void MerlinSyntaxParser::HandleDS(const std::string& operand, Section& section,
         if (symbols.Lookup(op, value)) {
             count = static_cast<uint32_t>(value);
         } else {
-            throw std::runtime_error("DS: Undefined symbol: " + op);
+            throw std::runtime_error(FormatError("DS: Undefined symbol: " + op));
         }
     }
     
@@ -477,7 +486,7 @@ void MerlinSyntaxParser::HandleDum(const std::string& operand, ConcreteSymbolTab
     
     // Check if operand is empty
     if (op.empty()) {
-        throw std::runtime_error("DUM directive requires an address operand");
+        throw std::runtime_error(FormatError("DUM directive requires an address operand"));
     }
     
     // Check if operand is a symbol or a number
@@ -517,7 +526,7 @@ void MerlinSyntaxParser::HandlePut(const std::string& operand, Section& section,
     // Check for circular includes
     for (const auto& included_file : include_stack_) {
         if (included_file == filename) {
-            throw std::runtime_error("Circular include detected: " + filename);
+            throw std::runtime_error(FormatError("Circular include detected: " + filename));
         }
     }
     
@@ -536,7 +545,7 @@ void MerlinSyntaxParser::HandlePut(const std::string& operand, Section& section,
     
     if (!file.is_open()) {
         include_stack_.pop_back();  // Remove from stack on error
-        throw std::runtime_error("Cannot open file: " + Trim(operand));  // Report original filename in error
+        throw std::runtime_error(FormatError("Cannot open file: " + Trim(operand)));  // Report original filename in error
     }
     
     // Read entire file content
@@ -576,12 +585,12 @@ void MerlinSyntaxParser::HandleDo(const std::string& operand, ConcreteSymbolTabl
 void MerlinSyntaxParser::HandleElse() {
     // ELSE - switch to alternative branch in conditional block
     if (conditional_stack_.empty()) {
-        throw std::runtime_error("ELSE without matching DO");
+        throw std::runtime_error(FormatError("ELSE without matching DO"));
     }
     
     ConditionalBlock& block = conditional_stack_.back();
     if (block.in_else_block) {
-        throw std::runtime_error("Multiple ELSE in same DO block");
+        throw std::runtime_error(FormatError("Multiple ELSE in same DO block"));
     }
     
     block.in_else_block = true;
@@ -595,7 +604,7 @@ void MerlinSyntaxParser::HandleElse() {
 void MerlinSyntaxParser::HandleFin() {
     // FIN - end conditional assembly block
     if (conditional_stack_.empty()) {
-        throw std::runtime_error("FIN without matching DO");
+        throw std::runtime_error(FormatError("FIN without matching DO"));
     }
     
     conditional_stack_.pop_back();
@@ -903,18 +912,20 @@ void MerlinSyntaxParser::Parse(const std::string& source, Section& section,
     current_scope_.global_label.clear();
     current_scope_.local_labels.clear();
     variable_labels_.clear();
+    current_line_ = 0;  // Reset line counter
 
     // Split into lines and parse
     std::istringstream iss(source);
     std::string line;
 
     while (std::getline(iss, line)) {
+        current_line_++;  // Increment line counter for each line
         ParseLine(line, section, symbols);
     }
     
     // Validate that all DO blocks are closed
     if (!conditional_stack_.empty()) {
-        throw std::runtime_error("Unmatched DO directive (missing FIN)");
+        throw std::runtime_error(FormatError("Unmatched DO directive (missing FIN)"));
     }
 }
 
