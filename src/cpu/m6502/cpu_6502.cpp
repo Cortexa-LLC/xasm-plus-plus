@@ -1277,77 +1277,17 @@ size_t Cpu6502::CalculateInstructionSize(AddressingMode mode) const {
  * @return true if branch needs relaxation (out of range), false otherwise
  */
 bool Cpu6502::NeedsBranchRelaxation(uint16_t current_addr, uint16_t target_addr) const {
-    // Calculate offset: target - (PC + 2)
-    // PC + 2 because branch instruction is 2 bytes (opcode + offset)
-    int16_t offset = static_cast<int16_t>(target_addr) - static_cast<int16_t>(current_addr + 2);
-    
-    // Check if offset fits in 8-bit signed range (-128 to +127)
-    return (offset < -128 || offset > 127);
+    return branch_handler_.NeedsBranchRelaxation(current_addr, target_addr);
 }
 
-/**
- * @brief Get complementary (inverted) branch opcode
- * 
- * All 6502 branch opcodes can be inverted by XORing with Opcodes::JSR.
- * This is used for branch relaxation: BEQ far → BNE *+5; JMP far
- * 
- * Examples:
- *   BEQ (Opcodes::BEQ) → BNE (Opcodes::BNE)  [Opcodes::BEQ XOR Opcodes::JSR = Opcodes::BNE]
- *   BCC (Opcodes::BCC) → BCS (Opcodes::BCS)  [Opcodes::BCC XOR Opcodes::JSR = Opcodes::BCS]
- * 
- * @param branch_opcode Original branch opcode
- * @return Complementary branch opcode
- */
 uint8_t Cpu6502::GetComplementaryBranchOpcode(uint8_t branch_opcode) const {
-    return branch_opcode ^ Opcodes::JSR;
+    return branch_handler_.GetComplementaryBranchOpcode(branch_opcode);
 }
 
-/**
- * @brief Encode branch instruction with automatic relaxation if needed
- * 
- * If branch target is in range (-128 to +127 bytes):
- *   Emits normal 2-byte branch: [opcode] [offset]
- * 
- * If branch target is out of range:
- *   Emits relaxed 5-byte sequence: [B!cc] [Opcodes::BRANCH_RELAXATION_OFFSET] [JMP] [target_lo] [target_hi]
- * 
- * Example: BEQ $1200 from $1000 (offset = +510, out of range)
- *   Normal:  F0 7E (fails - offset too large)
- *   Relaxed: D0 03 4C 00 12 (BNE *+5; JMP $1200)
- * 
- * @param branch_opcode Branch opcode (BEQ, BNE, BCC, BCS, etc.)
- * @param current_addr Address where branch instruction will be located
- * @param target_addr Target address to branch to
- * @return Encoded bytes (2 bytes if in range, 5 bytes if relaxed)
- */
 std::vector<uint8_t> Cpu6502::EncodeBranchWithRelaxation(uint8_t branch_opcode,
                                                            uint16_t current_addr,
                                                            uint16_t target_addr) const {
-    std::vector<uint8_t> bytes;
-    
-    if (!NeedsBranchRelaxation(current_addr, target_addr)) {
-        // Branch is in range - emit normal 2-byte branch
-        int16_t offset = static_cast<int16_t>(target_addr) - static_cast<int16_t>(current_addr + 2);
-        bytes.push_back(branch_opcode);
-        bytes.push_back(static_cast<uint8_t>(offset & 0xFF));
-    } else {
-        // Branch is out of range - emit relaxed 5-byte sequence
-        // Format: [B!cc] [Opcodes::BRANCH_RELAXATION_OFFSET] [JMP] [target_lo] [target_hi]
-        
-        // 1. Emit complementary branch (inverted condition)
-        uint8_t complement = GetComplementaryBranchOpcode(branch_opcode);
-        bytes.push_back(complement);
-        
-        // 2. Emit offset of +3 (skip over the 3-byte JMP instruction)
-        bytes.push_back(Opcodes::BRANCH_RELAXATION_OFFSET);
-        
-        // 3. Emit JMP absolute to target
-        bytes.push_back(Opcodes::JMP_ABS);  // JMP opcode
-        bytes.push_back(static_cast<uint8_t>(target_addr & 0xFF));        // Low byte
-        bytes.push_back(static_cast<uint8_t>((target_addr >> 8) & 0xFF)); // High byte
-    }
-    
-    return bytes;
+    return branch_handler_.EncodeBranchWithRelaxation(branch_opcode, current_addr, target_addr);
 }
 
 } // namespace xasm

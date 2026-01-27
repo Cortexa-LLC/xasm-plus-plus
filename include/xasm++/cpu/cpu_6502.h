@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+#include "xasm++/cpu/cpu_6502_branch_handler.h"
 
 namespace xasm {
 
@@ -217,6 +218,9 @@ private:
     // x flag: false = 16-bit index registers, true = 8-bit index registers
     bool m_flag_ = true;   // Default: 8-bit accumulator (emulation mode)
     bool x_flag_ = true;   // Default: 8-bit index registers (emulation mode)
+
+    // Branch relaxation handler (God class refactoring M6.1)
+    Cpu6502BranchHandler branch_handler_;
 };
 
 } // namespace xasm

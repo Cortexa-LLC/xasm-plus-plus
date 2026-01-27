@@ -5,6 +5,7 @@ add_library(xasm_core STATIC
     core/symbol.cpp
     core/section.cpp
     core/assembler.cpp
+    core/parse_utils.cpp
 )
 
 target_include_directories(xasm_core PUBLIC
@@ -14,6 +15,7 @@ target_include_directories(xasm_core PUBLIC
 # CPU plugins library (Phase 1+)
 add_library(xasm_cpu STATIC
     cpu/m6502/cpu_6502.cpp
+    cpu/m6502/cpu_6502_branch_handler.cpp
     cpu/m6502/cpu_65c02.cpp
     cpu/m6502/cpu_65816.cpp
     # Future CPUs:
