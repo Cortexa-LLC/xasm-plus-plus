@@ -135,6 +135,184 @@ static AddressingMode DetermineAddressingMode(const std::string& operands) {
     return AddressingMode::Absolute;
 }
 
+Assembler::Assembler() {
+    InitializeInstructionHandlers();
+}
+
+void Assembler::InitializeInstructionHandlers() {
+    // Instructions with no operands (implied addressing)
+    instruction_handlers_["NOP"] = [](Cpu6502* cpu, uint16_t, AddressingMode) {
+        return cpu->EncodeNOP();
+    };
+    instruction_handlers_["RTS"] = [](Cpu6502* cpu, uint16_t, AddressingMode) {
+        return cpu->EncodeRTS();
+    };
+    instruction_handlers_["RTI"] = [](Cpu6502* cpu, uint16_t, AddressingMode) {
+        return cpu->EncodeRTI();
+    };
+    instruction_handlers_["BRK"] = [](Cpu6502* cpu, uint16_t, AddressingMode) {
+        return cpu->EncodeBRK();
+    };
+    instruction_handlers_["INX"] = [](Cpu6502* cpu, uint16_t, AddressingMode) {
+        return cpu->EncodeINX();
+    };
+    instruction_handlers_["INY"] = [](Cpu6502* cpu, uint16_t, AddressingMode) {
+        return cpu->EncodeINY();
+    };
+    instruction_handlers_["DEX"] = [](Cpu6502* cpu, uint16_t, AddressingMode) {
+        return cpu->EncodeDEX();
+    };
+    instruction_handlers_["DEY"] = [](Cpu6502* cpu, uint16_t, AddressingMode) {
+        return cpu->EncodeDEY();
+    };
+    instruction_handlers_["PHA"] = [](Cpu6502* cpu, uint16_t, AddressingMode) {
+        return cpu->EncodePHA();
+    };
+    instruction_handlers_["PLA"] = [](Cpu6502* cpu, uint16_t, AddressingMode) {
+        return cpu->EncodePLA();
+    };
+    instruction_handlers_["PHP"] = [](Cpu6502* cpu, uint16_t, AddressingMode) {
+        return cpu->EncodePHP();
+    };
+    instruction_handlers_["PLP"] = [](Cpu6502* cpu, uint16_t, AddressingMode) {
+        return cpu->EncodePLP();
+    };
+    instruction_handlers_["CLC"] = [](Cpu6502* cpu, uint16_t, AddressingMode) {
+        return cpu->EncodeCLC();
+    };
+    instruction_handlers_["SEC"] = [](Cpu6502* cpu, uint16_t, AddressingMode) {
+        return cpu->EncodeSEC();
+    };
+    instruction_handlers_["CLD"] = [](Cpu6502* cpu, uint16_t, AddressingMode) {
+        return cpu->EncodeCLD();
+    };
+    instruction_handlers_["SED"] = [](Cpu6502* cpu, uint16_t, AddressingMode) {
+        return cpu->EncodeSED();
+    };
+    instruction_handlers_["CLI"] = [](Cpu6502* cpu, uint16_t, AddressingMode) {
+        return cpu->EncodeCLI();
+    };
+    instruction_handlers_["SEI"] = [](Cpu6502* cpu, uint16_t, AddressingMode) {
+        return cpu->EncodeSEI();
+    };
+    instruction_handlers_["CLV"] = [](Cpu6502* cpu, uint16_t, AddressingMode) {
+        return cpu->EncodeCLV();
+    };
+    instruction_handlers_["TSX"] = [](Cpu6502* cpu, uint16_t, AddressingMode) {
+        return cpu->EncodeTSX();
+    };
+    instruction_handlers_["TXS"] = [](Cpu6502* cpu, uint16_t, AddressingMode) {
+        return cpu->EncodeTXS();
+    };
+    instruction_handlers_["TAX"] = [](Cpu6502* cpu, uint16_t, AddressingMode) {
+        return cpu->EncodeTAX();
+    };
+    instruction_handlers_["TAY"] = [](Cpu6502* cpu, uint16_t, AddressingMode) {
+        return cpu->EncodeTAY();
+    };
+    instruction_handlers_["TXA"] = [](Cpu6502* cpu, uint16_t, AddressingMode) {
+        return cpu->EncodeTXA();
+    };
+    instruction_handlers_["TYA"] = [](Cpu6502* cpu, uint16_t, AddressingMode) {
+        return cpu->EncodeTYA();
+    };
+    
+    // Instructions with operands
+    instruction_handlers_["LDA"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
+        return cpu->EncodeLDA(value, mode);
+    };
+    instruction_handlers_["STA"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
+        return cpu->EncodeSTA(value, mode);
+    };
+    instruction_handlers_["JMP"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
+        return cpu->EncodeJMP(value, mode);
+    };
+    instruction_handlers_["ADC"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
+        return cpu->EncodeADC(value, mode);
+    };
+    instruction_handlers_["SBC"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
+        return cpu->EncodeSBC(value, mode);
+    };
+    instruction_handlers_["AND"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
+        return cpu->EncodeAND(value, mode);
+    };
+    instruction_handlers_["ORA"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
+        return cpu->EncodeORA(value, mode);
+    };
+    instruction_handlers_["EOR"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
+        return cpu->EncodeEOR(value, mode);
+    };
+    instruction_handlers_["LDX"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
+        return cpu->EncodeLDX(value, mode);
+    };
+    instruction_handlers_["LDY"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
+        return cpu->EncodeLDY(value, mode);
+    };
+    instruction_handlers_["STX"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
+        return cpu->EncodeSTX(value, mode);
+    };
+    instruction_handlers_["STY"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
+        return cpu->EncodeSTY(value, mode);
+    };
+    instruction_handlers_["CMP"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
+        return cpu->EncodeCMP(value, mode);
+    };
+    instruction_handlers_["CPX"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
+        return cpu->EncodeCPX(value, mode);
+    };
+    instruction_handlers_["CPY"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
+        return cpu->EncodeCPY(value, mode);
+    };
+    instruction_handlers_["BEQ"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
+        return cpu->EncodeBEQ(value, mode);
+    };
+    instruction_handlers_["BNE"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
+        return cpu->EncodeBNE(value, mode);
+    };
+    instruction_handlers_["BCC"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
+        return cpu->EncodeBCC(value, mode);
+    };
+    instruction_handlers_["BCS"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
+        return cpu->EncodeBCS(value, mode);
+    };
+    instruction_handlers_["BMI"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
+        return cpu->EncodeBMI(value, mode);
+    };
+    instruction_handlers_["BPL"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
+        return cpu->EncodeBPL(value, mode);
+    };
+    instruction_handlers_["BVC"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
+        return cpu->EncodeBVC(value, mode);
+    };
+    instruction_handlers_["BVS"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
+        return cpu->EncodeBVS(value, mode);
+    };
+    instruction_handlers_["INC"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
+        return cpu->EncodeINC(value, mode);
+    };
+    instruction_handlers_["DEC"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
+        return cpu->EncodeDEC(value, mode);
+    };
+    instruction_handlers_["JSR"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
+        return cpu->EncodeJSR(value, mode);
+    };
+    instruction_handlers_["BIT"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
+        return cpu->EncodeBIT(value, mode);
+    };
+    instruction_handlers_["ASL"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
+        return cpu->EncodeASL(value, mode);
+    };
+    instruction_handlers_["LSR"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
+        return cpu->EncodeLSR(value, mode);
+    };
+    instruction_handlers_["ROL"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
+        return cpu->EncodeROL(value, mode);
+    };
+    instruction_handlers_["ROR"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
+        return cpu->EncodeROR(value, mode);
+    };
+}
+
 void Assembler::SetCpuPlugin(Cpu6502* cpu) {
     cpu_ = cpu;
 }
@@ -277,120 +455,12 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable& symbols,
                         continue;  // Skip to next atom
                     }
 
-                    // Call appropriate CPU encoding method
+                    // Use hash map lookup for O(1) instruction dispatch
                     try {
-                        if (mnemonic == "NOP") {
-                            inst->encoded_bytes = cpu_->EncodeNOP();
-                        } else if (mnemonic == "RTS") {
-                            inst->encoded_bytes = cpu_->EncodeRTS();
-                        } else if (mnemonic == "LDA") {
-                            inst->encoded_bytes = cpu_->EncodeLDA(value, mode);
-                        } else if (mnemonic == "STA") {
-                            inst->encoded_bytes = cpu_->EncodeSTA(value, mode);
-                        } else if (mnemonic == "JMP") {
-                            inst->encoded_bytes = cpu_->EncodeJMP(value, mode);
-                        } else if (mnemonic == "ADC") {
-                            inst->encoded_bytes = cpu_->EncodeADC(value, mode);
-                        } else if (mnemonic == "SBC") {
-                            inst->encoded_bytes = cpu_->EncodeSBC(value, mode);
-                        } else if (mnemonic == "AND") {
-                            inst->encoded_bytes = cpu_->EncodeAND(value, mode);
-                        } else if (mnemonic == "ORA") {
-                            inst->encoded_bytes = cpu_->EncodeORA(value, mode);
-                        } else if (mnemonic == "EOR") {
-                            inst->encoded_bytes = cpu_->EncodeEOR(value, mode);
-                        } else if (mnemonic == "LDX") {
-                            inst->encoded_bytes = cpu_->EncodeLDX(value, mode);
-                        } else if (mnemonic == "LDY") {
-                            inst->encoded_bytes = cpu_->EncodeLDY(value, mode);
-                        } else if (mnemonic == "STX") {
-                            inst->encoded_bytes = cpu_->EncodeSTX(value, mode);
-                        } else if (mnemonic == "STY") {
-                            inst->encoded_bytes = cpu_->EncodeSTY(value, mode);
-                        } else if (mnemonic == "CMP") {
-                            inst->encoded_bytes = cpu_->EncodeCMP(value, mode);
-                        } else if (mnemonic == "CPX") {
-                            inst->encoded_bytes = cpu_->EncodeCPX(value, mode);
-                        } else if (mnemonic == "CPY") {
-                            inst->encoded_bytes = cpu_->EncodeCPY(value, mode);
-                        } else if (mnemonic == "BEQ") {
-                            inst->encoded_bytes = cpu_->EncodeBEQ(value, mode);
-                        } else if (mnemonic == "BNE") {
-                            inst->encoded_bytes = cpu_->EncodeBNE(value, mode);
-                        } else if (mnemonic == "BCC") {
-                            inst->encoded_bytes = cpu_->EncodeBCC(value, mode);
-                        } else if (mnemonic == "BCS") {
-                            inst->encoded_bytes = cpu_->EncodeBCS(value, mode);
-                        } else if (mnemonic == "BMI") {
-                            inst->encoded_bytes = cpu_->EncodeBMI(value, mode);
-                        } else if (mnemonic == "BPL") {
-                            inst->encoded_bytes = cpu_->EncodeBPL(value, mode);
-                        } else if (mnemonic == "BVC") {
-                            inst->encoded_bytes = cpu_->EncodeBVC(value, mode);
-                        } else if (mnemonic == "BVS") {
-                            inst->encoded_bytes = cpu_->EncodeBVS(value, mode);
-                        } else if (mnemonic == "INX") {
-                            inst->encoded_bytes = cpu_->EncodeINX();
-                        } else if (mnemonic == "INY") {
-                            inst->encoded_bytes = cpu_->EncodeINY();
-                        } else if (mnemonic == "DEX") {
-                            inst->encoded_bytes = cpu_->EncodeDEX();
-                        } else if (mnemonic == "DEY") {
-                            inst->encoded_bytes = cpu_->EncodeDEY();
-                        } else if (mnemonic == "INC") {
-                            inst->encoded_bytes = cpu_->EncodeINC(value, mode);
-                        } else if (mnemonic == "DEC") {
-                            inst->encoded_bytes = cpu_->EncodeDEC(value, mode);
-                        } else if (mnemonic == "PHA") {
-                            inst->encoded_bytes = cpu_->EncodePHA();
-                        } else if (mnemonic == "PLA") {
-                            inst->encoded_bytes = cpu_->EncodePLA();
-                        } else if (mnemonic == "PHP") {
-                            inst->encoded_bytes = cpu_->EncodePHP();
-                        } else if (mnemonic == "PLP") {
-                            inst->encoded_bytes = cpu_->EncodePLP();
-                        } else if (mnemonic == "JSR") {
-                            inst->encoded_bytes = cpu_->EncodeJSR(value, mode);
-                        } else if (mnemonic == "BIT") {
-                            inst->encoded_bytes = cpu_->EncodeBIT(value, mode);
-                        } else if (mnemonic == "ASL") {
-                            inst->encoded_bytes = cpu_->EncodeASL(value, mode);
-                        } else if (mnemonic == "LSR") {
-                            inst->encoded_bytes = cpu_->EncodeLSR(value, mode);
-                        } else if (mnemonic == "ROL") {
-                            inst->encoded_bytes = cpu_->EncodeROL(value, mode);
-                        } else if (mnemonic == "ROR") {
-                            inst->encoded_bytes = cpu_->EncodeROR(value, mode);
-                        } else if (mnemonic == "RTI") {
-                            inst->encoded_bytes = cpu_->EncodeRTI();
-                        } else if (mnemonic == "BRK") {
-                            inst->encoded_bytes = cpu_->EncodeBRK();
-                        } else if (mnemonic == "CLC") {
-                            inst->encoded_bytes = cpu_->EncodeCLC();
-                        } else if (mnemonic == "SEC") {
-                            inst->encoded_bytes = cpu_->EncodeSEC();
-                        } else if (mnemonic == "CLD") {
-                            inst->encoded_bytes = cpu_->EncodeCLD();
-                        } else if (mnemonic == "SED") {
-                            inst->encoded_bytes = cpu_->EncodeSED();
-                        } else if (mnemonic == "CLI") {
-                            inst->encoded_bytes = cpu_->EncodeCLI();
-                        } else if (mnemonic == "SEI") {
-                            inst->encoded_bytes = cpu_->EncodeSEI();
-                        } else if (mnemonic == "CLV") {
-                            inst->encoded_bytes = cpu_->EncodeCLV();
-                        } else if (mnemonic == "TSX") {
-                            inst->encoded_bytes = cpu_->EncodeTSX();
-                        } else if (mnemonic == "TXS") {
-                            inst->encoded_bytes = cpu_->EncodeTXS();
-                        } else if (mnemonic == "TAX") {
-                            inst->encoded_bytes = cpu_->EncodeTAX();
-                        } else if (mnemonic == "TAY") {
-                            inst->encoded_bytes = cpu_->EncodeTAY();
-                        } else if (mnemonic == "TXA") {
-                            inst->encoded_bytes = cpu_->EncodeTXA();
-                        } else if (mnemonic == "TYA") {
-                            inst->encoded_bytes = cpu_->EncodeTYA();
+                        auto it = instruction_handlers_.find(mnemonic);
+                        if (it != instruction_handlers_.end()) {
+                            // Found handler - invoke it
+                            inst->encoded_bytes = it->second(cpu_, value, mode);
                         } else {
                             // Unknown instruction
                             AssemblerError error;

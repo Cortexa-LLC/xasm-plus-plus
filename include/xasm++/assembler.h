@@ -6,14 +6,16 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+#include <unordered_map>
+#include <functional>
 
 #include "xasm++/atom.h"
 #include "xasm++/section.h"
+#include "xasm++/cpu/cpu_6502.h"
 
 namespace xasm {
 
 // Forward declarations
-class Cpu6502;
 class SymbolTable;
 class ConcreteSymbolTable;
 
@@ -37,7 +39,7 @@ public:
     static constexpr int FAST_PHASE_LIMIT = 50;
     static constexpr int MAX_PASSES = 500;
 
-    Assembler() = default;
+    Assembler();
 
     // Set CPU plugin for instruction encoding
     void SetCpuPlugin(Cpu6502* cpu);
@@ -58,6 +60,12 @@ public:
     AssemblerResult Assemble();
 
 private:
+    // Instruction handler function type
+    using InstructionHandler = std::function<std::vector<uint8_t>(Cpu6502*, uint16_t, AddressingMode)>;
+    
+    // Initialize instruction handler map
+    void InitializeInstructionHandlers();
+
     // Resolve symbols - extract label addresses from atoms
     void ResolveSymbols(std::vector<std::shared_ptr<Atom>>& atoms,
                         ConcreteSymbolTable& symbols,
@@ -77,6 +85,7 @@ private:
     std::vector<Section> sections_;
     Cpu6502* cpu_ = nullptr;
     SymbolTable* symbols_ = nullptr;
+    std::unordered_map<std::string, InstructionHandler> instruction_handlers_;
 };
 
 } // namespace xasm
