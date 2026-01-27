@@ -220,7 +220,7 @@ public:
      * @throws std::runtime_error if symbol is not defined
      */
     int64_t Evaluate(const SymbolTable& symbols) const override {
-        int64_t value;
+        int64_t value = 0;
         if (!symbols.Lookup(symbol, value)) {
             throw std::runtime_error("Undefined symbol: " + symbol);
         }

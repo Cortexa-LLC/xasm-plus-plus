@@ -218,18 +218,18 @@ std::shared_ptr<Expression> MerlinSyntaxParser::ParseExpression(
     if (mult_pos != std::string::npos) {
         std::string left = Trim(expr.substr(0, mult_pos));
         std::string right = Trim(expr.substr(mult_pos + 1));
-        
+
         // Parse left side (could be number or symbol)
-        int64_t left_val;
+        int64_t left_val = 0;
         if (symbols.IsDefined(left)) {
             auto sym_expr = std::make_shared<SymbolExpr>(left);
             left_val = sym_expr->Evaluate(symbols);
         } else {
             left_val = ParseNumber(left);
         }
-        
+
         // Parse right side (could be number or symbol)
-        int64_t right_val;
+        int64_t right_val = 0;
         if (symbols.IsDefined(right)) {
             auto sym_expr = std::make_shared<SymbolExpr>(right);
             right_val = sym_expr->Evaluate(symbols);
