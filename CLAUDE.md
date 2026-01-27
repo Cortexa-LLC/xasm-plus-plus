@@ -668,6 +668,41 @@ bd close xasm++-task1  # May still be running!
 
 This project uses the **ai-pack framework** for structured AI-assisted development.
 
+### AI-Pack Provided Tools
+
+The ai-pack framework includes quality assurance tools:
+
+**SonarQube Integration:**
+- **`.ai-pack/scripts/setup-sonarqube.py`** - Setup local SonarQube server with Docker
+- **`.ai-pack/scripts/validate-with-sonarqube.py`** - Run SonarQube analysis on source code
+- **`.ai-pack/scripts/sonarqube-check.sh`** - Shell script wrapper for validation
+- **`.ai-pack/docker-compose.sonarqube.yml`** - Docker Compose configuration for SonarQube
+- **`.ai-pack/sonar-project.properties`** - Template configuration (copy/customize for your project)
+
+**Usage:**
+```bash
+# 1. Start SonarQube server (first time only)
+cd .ai-pack
+python3 scripts/setup-sonarqube.py
+
+# 2. Create project-specific sonar-project.properties
+# Copy template and customize for your project
+cp .ai-pack/sonar-project.properties sonar-project.properties
+# Edit projectKey, projectName, sources, etc.
+
+# 3. Generate compile_commands.json (C++ projects)
+cmake -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+cmake --build build
+
+# 4. Run analysis
+.ai-pack/scripts/validate-with-sonarqube.py <source-dir>
+
+# Alternative: Use sonar-scanner directly
+sonar-scanner
+```
+
+**Note:** Project-specific `sonar-project.properties` should be at repository root, NOT in `.ai-pack/` (which is immutable).
+
 ### Directory Structure
 
 ```
