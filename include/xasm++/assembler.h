@@ -64,6 +64,11 @@ private:
                         uint32_t org_address,
                         AssemblerResult& result);
 
+    // Encode instructions - encode all instruction atoms using CPU plugin
+    // Returns vector of instruction sizes for convergence checking
+    std::vector<size_t> EncodeInstructions(ConcreteSymbolTable& symbols,
+                                            AssemblerResult& result);
+
     std::vector<Section> sections_;
     Cpu6502* cpu_ = nullptr;
     SymbolTable* symbols_ = nullptr;
