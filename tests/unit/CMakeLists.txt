@@ -179,3 +179,17 @@ target_link_libraries(test_error_reporting
 )
 
 gtest_discover_tests(test_error_reporting)
+
+# Const correctness tests
+add_executable(test_const_correctness
+  test_const_correctness.cpp
+)
+
+target_link_libraries(test_const_correctness
+  xasm_core
+  xasm_cpu
+  gtest_main
+  gtest
+)
+
+gtest_discover_tests(test_const_correctness)
