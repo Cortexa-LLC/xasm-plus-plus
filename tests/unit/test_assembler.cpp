@@ -971,3 +971,269 @@ TEST(AssemblerTest, IntegrationMixedAddressingModes) {
     EXPECT_EQ(sta_indy->encoded_bytes[0], 0x91);  // STA indirect indexed
     EXPECT_EQ(jmp_ind->encoded_bytes[0], 0x6C);   // JMP indirect
 }
+
+// ============================================================================
+// Group 6: Branch Relaxation Tests
+// ============================================================================
+
+// Test 43: Long branch that needs relaxation (currently FAILS)
+TEST(AssemblerTest, LongBranchNeedsRelaxation) {
+    Assembler assembler;
+    Cpu6502 cpu;
+    assembler.SetCpuPlugin(&cpu);
+
+    Section section(".text", static_cast<uint32_t>(SectionAttributes::Code), 0x1000);
+
+    // Create a branch with target out of range (+512 bytes, max is +127)
+    auto beq = std::make_shared<InstructionAtom>("BEQ", "far_target");
+    
+    // Add padding (255 NOPs = 255 bytes, makes target > 127 bytes away)
+    section.atoms.push_back(beq);
+    for (int i = 0; i < 255; i++) {
+        section.atoms.push_back(std::make_shared<InstructionAtom>("NOP", ""));
+    }
+    
+    auto far_label = std::make_shared<LabelAtom>("far_target", 0);
+    section.atoms.push_back(far_label);
+    
+    assembler.AddSection(section);
+    AssemblerResult result = assembler.Assemble();
+
+    // Currently this throws an error - should succeed with relaxation
+    EXPECT_TRUE(result.success);
+    
+    // Relaxed branch should be 5 bytes: BNE *+5; JMP target
+    EXPECT_EQ(beq->encoded_bytes.size(), 5);
+    EXPECT_EQ(beq->encoded_bytes[0], 0xD0);  // BNE (complement of BEQ)
+    EXPECT_EQ(beq->encoded_bytes[1], 0x03);  // Skip 3 bytes (JMP instruction)
+    EXPECT_EQ(beq->encoded_bytes[2], 0x4C);  // JMP opcode
+}
+
+// Test 44: Short branch that doesn't need relaxation
+TEST(AssemblerTest, ShortBranchNoRelaxation) {
+    Assembler assembler;
+    Cpu6502 cpu;
+    assembler.SetCpuPlugin(&cpu);
+
+    Section section(".text", static_cast<uint32_t>(SectionAttributes::Code), 0x1000);
+
+    // Create a short branch (within +127 bytes)
+    auto beq = std::make_shared<InstructionAtom>("BEQ", "near_target");
+    
+    // Add a few NOPs (10 bytes, well within range)
+    section.atoms.push_back(beq);
+    for (int i = 0; i < 10; i++) {
+        section.atoms.push_back(std::make_shared<InstructionAtom>("NOP", ""));
+    }
+    
+    auto near_label = std::make_shared<LabelAtom>("near_target", 0);
+    section.atoms.push_back(near_label);
+    
+    assembler.AddSection(section);
+    AssemblerResult result = assembler.Assemble();
+
+    EXPECT_TRUE(result.success);
+    
+    // Short branch should be 2 bytes: BEQ offset
+    EXPECT_EQ(beq->encoded_bytes.size(), 2);
+    EXPECT_EQ(beq->encoded_bytes[0], 0xF0);  // BEQ opcode
+    EXPECT_EQ(beq->encoded_bytes[1], 0x0A);  // Offset = +10
+}
+
+// Test 45: Backward branch (negative offset)
+TEST(AssemblerTest, BackwardBranch) {
+    Assembler assembler;
+    Cpu6502 cpu;
+    assembler.SetCpuPlugin(&cpu);
+
+    Section section(".text", static_cast<uint32_t>(SectionAttributes::Code), 0x1000);
+
+    // Create a backward branch
+    auto loop_label = std::make_shared<LabelAtom>("loop", 0);
+    section.atoms.push_back(loop_label);
+    
+    // Add a few instructions
+    section.atoms.push_back(std::make_shared<InstructionAtom>("NOP", ""));
+    section.atoms.push_back(std::make_shared<InstructionAtom>("DEX", ""));
+    auto bne = std::make_shared<InstructionAtom>("BNE", "loop");
+    section.atoms.push_back(bne);
+    
+    assembler.AddSection(section);
+    AssemblerResult result = assembler.Assemble();
+
+    EXPECT_TRUE(result.success);
+    
+    // Backward branch should be 2 bytes: BNE offset
+    EXPECT_EQ(bne->encoded_bytes.size(), 2);
+    EXPECT_EQ(bne->encoded_bytes[0], 0xD0);  // BNE opcode
+    // Offset should be -4 (back to loop label)
+    EXPECT_EQ(bne->encoded_bytes[1], 0xFC);  // -4 in two's complement
+}
+
+// ============================================================================
+// Group 7: Dynamic Cast Safety Tests (C2 Critical Issue)
+// ============================================================================
+
+// Test 46: OrgAtom cast failure detection (Pass 1)
+TEST(AssemblerTest, OrgAtomCastFailure_Pass1) {
+    // This test creates a corrupt atom to verify error handling
+    // In practice, this should never happen, but defensive programming requires checking
+    
+    Assembler assembler;
+    Cpu6502 cpu;
+    assembler.SetCpuPlugin(&cpu);
+    
+    Section section(".text", static_cast<uint32_t>(SectionAttributes::Code), 0x1000);
+    
+    // Create a base Atom with Org type (simulates corruption)
+    auto corrupt_atom = std::make_shared<Atom>(AtomType::Org);
+    section.atoms.push_back(corrupt_atom);
+
+    assembler.AddSection(section);
+    AssemblerResult result = assembler.Assemble();
+    
+    // Should fail with error about cast failure
+    EXPECT_FALSE(result.success);
+    EXPECT_GT(result.errors.size(), 0);
+    
+    // Error message should mention the cast failure
+    bool found_cast_error = false;
+    for (const auto& error : result.errors) {
+        if (error.message.find("cast") != std::string::npos && 
+            error.message.find("OrgAtom") != std::string::npos) {
+            found_cast_error = true;
+            break;
+        }
+    }
+    EXPECT_TRUE(found_cast_error);
+}
+
+// Test 47: InstructionAtom cast failure detection (Pass 1)
+TEST(AssemblerTest, InstructionAtomCastFailure_Pass1) {
+    Assembler assembler;
+    Cpu6502 cpu;
+    assembler.SetCpuPlugin(&cpu);
+    
+    Section section(".text", static_cast<uint32_t>(SectionAttributes::Code), 0x1000);
+    
+    // Create a base Atom with Instruction type (simulates corruption)
+    auto corrupt_atom = std::make_shared<Atom>(AtomType::Instruction);
+    section.atoms.push_back(corrupt_atom);
+
+    assembler.AddSection(section);
+    AssemblerResult result = assembler.Assemble();
+    
+    // Should fail with error about cast failure
+    EXPECT_FALSE(result.success);
+    EXPECT_GT(result.errors.size(), 0);
+    
+    // Error message should mention the cast failure
+    bool found_cast_error = false;
+    for (const auto& error : result.errors) {
+        if (error.message.find("cast") != std::string::npos && 
+            error.message.find("InstructionAtom") != std::string::npos) {
+            found_cast_error = true;
+            break;
+        }
+    }
+    EXPECT_TRUE(found_cast_error);
+}
+
+// Test 48: LabelAtom cast failure detection (Pass 2)
+TEST(AssemblerTest, LabelAtomCastFailure_Pass2) {
+    Assembler assembler;
+    Cpu6502 cpu;
+    assembler.SetCpuPlugin(&cpu);
+    
+    Section section(".text", static_cast<uint32_t>(SectionAttributes::Code), 0x1000);
+    
+    // Create a base Atom with Label type (simulates corruption)
+    auto corrupt_atom = std::make_shared<Atom>(AtomType::Label);
+    section.atoms.push_back(corrupt_atom);
+
+    assembler.AddSection(section);
+    AssemblerResult result = assembler.Assemble();
+    
+    // Should fail with error about cast failure
+    EXPECT_FALSE(result.success);
+    EXPECT_GT(result.errors.size(), 0);
+    
+    // Error message should mention the cast failure
+    bool found_cast_error = false;
+    for (const auto& error : result.errors) {
+        if (error.message.find("cast") != std::string::npos && 
+            error.message.find("LabelAtom") != std::string::npos) {
+            found_cast_error = true;
+            break;
+        }
+    }
+    EXPECT_TRUE(found_cast_error);
+}
+
+// Test 49: OrgAtom cast failure detection (Pass 2)
+TEST(AssemblerTest, OrgAtomCastFailure_Pass2) {
+    Assembler assembler;
+    Cpu6502 cpu;
+    assembler.SetCpuPlugin(&cpu);
+    
+    Section section(".text", static_cast<uint32_t>(SectionAttributes::Code), 0x1000);
+    
+    // Add a valid instruction first to trigger Pass 2
+    section.atoms.push_back(std::make_shared<InstructionAtom>("NOP", ""));
+    
+    // Create a base Atom with Org type (simulates corruption)
+    auto corrupt_atom = std::make_shared<Atom>(AtomType::Org);
+    section.atoms.push_back(corrupt_atom);
+
+    assembler.AddSection(section);
+    AssemblerResult result = assembler.Assemble();
+    
+    // Should fail with error about cast failure
+    EXPECT_FALSE(result.success);
+    EXPECT_GT(result.errors.size(), 0);
+    
+    // Error message should mention the cast failure
+    bool found_cast_error = false;
+    for (const auto& error : result.errors) {
+        if (error.message.find("cast") != std::string::npos && 
+            error.message.find("OrgAtom") != std::string::npos) {
+            found_cast_error = true;
+            break;
+        }
+    }
+    EXPECT_TRUE(found_cast_error);
+}
+
+// Test 50: InstructionAtom cast failure detection (Pass 2)
+TEST(AssemblerTest, InstructionAtomCastFailure_Pass2) {
+    Assembler assembler;
+    Cpu6502 cpu;
+    assembler.SetCpuPlugin(&cpu);
+    
+    Section section(".text", static_cast<uint32_t>(SectionAttributes::Code), 0x1000);
+    
+    // Add a valid label first to trigger Pass 2
+    section.atoms.push_back(std::make_shared<LabelAtom>("start", 0x1000));
+    
+    // Create a base Atom with Instruction type (simulates corruption)
+    auto corrupt_atom = std::make_shared<Atom>(AtomType::Instruction);
+    section.atoms.push_back(corrupt_atom);
+
+    assembler.AddSection(section);
+    AssemblerResult result = assembler.Assemble();
+    
+    // Should fail with error about cast failure
+    EXPECT_FALSE(result.success);
+    EXPECT_GT(result.errors.size(), 0);
+    
+    // Error message should mention the cast failure
+    bool found_cast_error = false;
+    for (const auto& error : result.errors) {
+        if (error.message.find("cast") != std::string::npos && 
+            error.message.find("InstructionAtom") != std::string::npos) {
+            found_cast_error = true;
+            break;
+        }
+    }
+    EXPECT_TRUE(found_cast_error);
+}
