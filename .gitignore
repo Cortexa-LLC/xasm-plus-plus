@@ -53,6 +53,14 @@ docs/html/
 docs/latex/
 docs/doxygen_sqlite3.db
 
+# SonarQube
+.scannerwork/
+.sonar-cache/
+sonar-project.local.properties
+*.local.properties
+sonar.env
+.env
+
 # AI/LLM transient working files (not for version control)
 .ai/tasks/
 .beads/
