@@ -18,3 +18,17 @@ target_link_libraries(placeholder_test
 )
 
 gtest_discover_tests(placeholder_test)
+
+# E2E tests - Prince of Persia complete validation
+find_package(Python3 COMPONENTS Interpreter)
+if(Python3_FOUND)
+  add_test(
+    NAME e2e_pop_complete_validation
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/e2e/apple2/prince_of_persia/test_pop_complete.py
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+  )
+  set_tests_properties(e2e_pop_complete_validation PROPERTIES
+    LABELS "e2e;prince_of_persia"
+    TIMEOUT 120
+  )
+endif()
