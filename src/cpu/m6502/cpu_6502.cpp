@@ -242,27 +242,12 @@ std::vector<uint8_t> Cpu6502::EncodeSTA(uint16_t operand, AddressingMode mode) c
 
 // JMP - Jump
 std::vector<uint8_t> Cpu6502::EncodeJMP(uint16_t operand, AddressingMode mode) const {
-    std::vector<uint8_t> bytes;
-
-    if (mode == AddressingMode::Absolute) {
-        bytes.push_back(Opcodes::JMP_ABS);
-        bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-        bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF));
-    } else if (mode == AddressingMode::Indirect) {
-        bytes.push_back(Opcodes::JMP_IND);
-        bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-        bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF));
-    } else if (mode == AddressingMode::AbsoluteIndexedIndirect) {
-        // Phase 2.5 - Group 6: 65C02 Enhanced Addressing Mode
-        // Only available in 65C02 and later
-        if (cpu_mode_ != CpuMode::Cpu6502) {
-            bytes.push_back(Opcodes::JMP_AIX);
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF));
-        }
-    }
-
-    return bytes;
+    static const OpcodeTable JMP_TABLE = {
+        .absolute = Opcodes::JMP_ABS,
+        .indirect = Opcodes::JMP_IND,
+        .absolute_indexed_indirect = Opcodes::JMP_AIX  // 65C02+
+    };
+    return EncodeWithTable(JMP_TABLE, operand, mode);
 }
 
 // NOP - No Operation
@@ -418,331 +403,157 @@ std::vector<uint8_t> Cpu6502::EncodeEOR(uint16_t operand, AddressingMode mode) c
 
 // LDX - Load X Register
 std::vector<uint8_t> Cpu6502::EncodeLDX(uint16_t operand, AddressingMode mode) const {
-    std::vector<uint8_t> bytes;
-
-    switch (mode) {
-        case AddressingMode::Immediate:
-            bytes.push_back(Opcodes::LDX_IMM);  // LDX #imm
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-            break;
-
-        case AddressingMode::ZeroPage:
-            bytes.push_back(Opcodes::LDX_ZP);  // LDX zp
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-            break;
-
-        case AddressingMode::ZeroPageY:
-            bytes.push_back(Opcodes::LDX_ZPY);  // LDX zp,Y
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-            break;
-
-        case AddressingMode::Absolute:
-            bytes.push_back(Opcodes::LDX_ABS);  // LDX abs
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
-            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
-            break;
-
-        case AddressingMode::AbsoluteY:
-            bytes.push_back(Opcodes::LDX_ABY);  // LDX abs,Y
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
-            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
-            break;
-
-        default:
-            break;
-    }
-
-    return bytes;
+    static const OpcodeTable LDX_TABLE = {
+        .immediate = Opcodes::LDX_IMM,
+        .zero_page = Opcodes::LDX_ZP,
+        .zero_page_x = std::nullopt,
+        .zero_page_y = Opcodes::LDX_ZPY,
+        .absolute = Opcodes::LDX_ABS,
+        .absolute_x = std::nullopt,
+        .absolute_y = Opcodes::LDX_ABY
+    };
+    return EncodeWithTable(LDX_TABLE, operand, mode);
 }
 
 // LDY - Load Y Register
 std::vector<uint8_t> Cpu6502::EncodeLDY(uint16_t operand, AddressingMode mode) const {
-    std::vector<uint8_t> bytes;
-
-    switch (mode) {
-        case AddressingMode::Immediate:
-            bytes.push_back(Opcodes::LDY_IMM);  // LDY #imm
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-            break;
-
-        case AddressingMode::ZeroPage:
-            bytes.push_back(Opcodes::LDY_ZP);  // LDY zp
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-            break;
-
-        case AddressingMode::ZeroPageX:
-            bytes.push_back(Opcodes::LDY_ZPX);  // LDY zp,X
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-            break;
-
-        case AddressingMode::Absolute:
-            bytes.push_back(Opcodes::LDY_ABS);  // LDY abs
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
-            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
-            break;
-
-        case AddressingMode::AbsoluteX:
-            bytes.push_back(Opcodes::LDY_ABX);  // LDY abs,X
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
-            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
-            break;
-
-        default:
-            break;
-    }
-
-    return bytes;
+    static const OpcodeTable LDY_TABLE = {
+        .immediate = Opcodes::LDY_IMM,
+        .zero_page = Opcodes::LDY_ZP,
+        .zero_page_x = Opcodes::LDY_ZPX,
+        .zero_page_y = std::nullopt,
+        .absolute = Opcodes::LDY_ABS,
+        .absolute_x = Opcodes::LDY_ABX,
+        .absolute_y = std::nullopt
+    };
+    return EncodeWithTable(LDY_TABLE, operand, mode);
 }
 
 // STX - Store X Register
 std::vector<uint8_t> Cpu6502::EncodeSTX(uint16_t operand, AddressingMode mode) const {
-    std::vector<uint8_t> bytes;
-
-    switch (mode) {
-        case AddressingMode::ZeroPage:
-            bytes.push_back(Opcodes::STX_ZP);  // STX zp
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-            break;
-
-        case AddressingMode::ZeroPageY:
-            bytes.push_back(Opcodes::STX_ZPY);  // STX zp,Y
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-            break;
-
-        case AddressingMode::Absolute:
-            bytes.push_back(Opcodes::STX_ABS);  // STX abs
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
-            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
-            break;
-
-        default:
-            break;
-    }
-
-    return bytes;
+    static const OpcodeTable STX_TABLE = {
+        .zero_page = Opcodes::STX_ZP,
+        .zero_page_x = std::nullopt,
+        .zero_page_y = Opcodes::STX_ZPY,
+        .absolute = Opcodes::STX_ABS
+    };
+    return EncodeWithTable(STX_TABLE, operand, mode);
 }
 
 // STY - Store Y Register
 std::vector<uint8_t> Cpu6502::EncodeSTY(uint16_t operand, AddressingMode mode) const {
-    std::vector<uint8_t> bytes;
-
-    switch (mode) {
-        case AddressingMode::ZeroPage:
-            bytes.push_back(Opcodes::STY_ZP);  // STY zp
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-            break;
-
-        case AddressingMode::ZeroPageX:
-            bytes.push_back(Opcodes::STY_ZPX);  // STY zp,X
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-            break;
-
-        case AddressingMode::Absolute:
-            bytes.push_back(Opcodes::STY_ABS);  // STY abs
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
-            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
-            break;
-
-        default:
-            break;
-    }
-
-    return bytes;
+    static const OpcodeTable STY_TABLE = {
+        .zero_page = Opcodes::STY_ZP,
+        .zero_page_x = Opcodes::STY_ZPX,
+        .zero_page_y = std::nullopt,
+        .absolute = Opcodes::STY_ABS
+    };
+    return EncodeWithTable(STY_TABLE, operand, mode);
 }
 
 // Phase 2.2: Comparisons
 
 // CMP - Compare Accumulator
 std::vector<uint8_t> Cpu6502::EncodeCMP(uint16_t operand, AddressingMode mode) const {
-    std::vector<uint8_t> bytes;
-
-    switch (mode) {
-        case AddressingMode::Immediate:
-            bytes.push_back(Opcodes::CMP_IMM);  // CMP #imm
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-            break;
-
-        case AddressingMode::ZeroPage:
-            bytes.push_back(Opcodes::CMP_ZP);  // CMP zp
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-            break;
-
-        case AddressingMode::ZeroPageX:
-            bytes.push_back(Opcodes::CMP_ZPX);  // CMP zp,X
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-            break;
-
-        case AddressingMode::Absolute:
-            bytes.push_back(Opcodes::CMP_ABS);  // CMP abs
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
-            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
-            break;
-
-        case AddressingMode::AbsoluteX:
-            bytes.push_back(Opcodes::CMP_ABX);  // CMP abs,X
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
-            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
-            break;
-
-        case AddressingMode::AbsoluteY:
-            bytes.push_back(Opcodes::CMP_ABY);  // CMP abs,Y
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
-            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
-            break;
-
-        case AddressingMode::IndirectX:
-            bytes.push_back(Opcodes::CMP_INX);  // CMP (zp,X)
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-            break;
-
-        case AddressingMode::IndirectY:
-            bytes.push_back(Opcodes::CMP_INY);  // CMP (zp),Y
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-            break;
-
-        default:
-            break;
-    }
-
-    return bytes;
+    static const OpcodeTable CMP_TABLE = {
+        .immediate = Opcodes::CMP_IMM,
+        .zero_page = Opcodes::CMP_ZP,
+        .zero_page_x = Opcodes::CMP_ZPX,
+        .zero_page_y = std::nullopt,
+        .absolute = Opcodes::CMP_ABS,
+        .absolute_x = Opcodes::CMP_ABX,
+        .absolute_y = Opcodes::CMP_ABY,
+        .indirect = std::nullopt,
+        .indirect_x = Opcodes::CMP_INX,
+        .indirect_y = Opcodes::CMP_INY
+    };
+    return EncodeWithTable(CMP_TABLE, operand, mode);
 }
 
 // CPX - Compare X Register
 std::vector<uint8_t> Cpu6502::EncodeCPX(uint16_t operand, AddressingMode mode) const {
-    std::vector<uint8_t> bytes;
-
-    switch (mode) {
-        case AddressingMode::Immediate:
-            bytes.push_back(Opcodes::CPX_IMM);  // CPX #imm
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-            break;
-
-        case AddressingMode::ZeroPage:
-            bytes.push_back(Opcodes::CPX_ZP);  // CPX zp
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-            break;
-
-        case AddressingMode::Absolute:
-            bytes.push_back(Opcodes::CPX_ABS);  // CPX abs
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
-            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
-            break;
-
-        default:
-            break;
-    }
-
-    return bytes;
+    static const OpcodeTable CPX_TABLE = {
+        .immediate = Opcodes::CPX_IMM,
+        .zero_page = Opcodes::CPX_ZP,
+        .absolute = Opcodes::CPX_ABS
+    };
+    return EncodeWithTable(CPX_TABLE, operand, mode);
 }
 
 // CPY - Compare Y Register
 std::vector<uint8_t> Cpu6502::EncodeCPY(uint16_t operand, AddressingMode mode) const {
-    std::vector<uint8_t> bytes;
-
-    switch (mode) {
-        case AddressingMode::Immediate:
-            bytes.push_back(Opcodes::CPY_IMM);  // CPY #imm
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-            break;
-
-        case AddressingMode::ZeroPage:
-            bytes.push_back(Opcodes::CPY_ZP);  // CPY zp
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-            break;
-
-        case AddressingMode::Absolute:
-            bytes.push_back(Opcodes::CPY_ABS);  // CPY abs
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
-            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
-            break;
-
-        default:
-            break;
-    }
-
-    return bytes;
+    static const OpcodeTable CPY_TABLE = {
+        .immediate = Opcodes::CPY_IMM,
+        .zero_page = Opcodes::CPY_ZP,
+        .absolute = Opcodes::CPY_ABS
+    };
+    return EncodeWithTable(CPY_TABLE, operand, mode);
 }
 
 // Phase 2.2: Branch Instructions
 
 // BEQ - Branch if Equal
 std::vector<uint8_t> Cpu6502::EncodeBEQ(uint16_t operand, AddressingMode mode) const {
-    std::vector<uint8_t> bytes;
-    if (mode == AddressingMode::Relative) {
-        bytes.push_back(Opcodes::BEQ);  // BEQ opcode
-        bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-    }
-    return bytes;
+    static const OpcodeTable BEQ_TABLE = {
+        .relative = Opcodes::BEQ
+    };
+    return EncodeWithTable(BEQ_TABLE, operand, mode);
 }
 
 // BNE - Branch if Not Equal
 std::vector<uint8_t> Cpu6502::EncodeBNE(uint16_t operand, AddressingMode mode) const {
-    std::vector<uint8_t> bytes;
-    if (mode == AddressingMode::Relative) {
-        bytes.push_back(Opcodes::BNE);  // BNE opcode
-        bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-    }
-    return bytes;
+    static const OpcodeTable BNE_TABLE = {
+        .relative = Opcodes::BNE
+    };
+    return EncodeWithTable(BNE_TABLE, operand, mode);
 }
 
 // BCC - Branch if Carry Clear
 std::vector<uint8_t> Cpu6502::EncodeBCC(uint16_t operand, AddressingMode mode) const {
-    std::vector<uint8_t> bytes;
-    if (mode == AddressingMode::Relative) {
-        bytes.push_back(Opcodes::BCC);  // BCC opcode
-        bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-    }
-    return bytes;
+    static const OpcodeTable BCC_TABLE = {
+        .relative = Opcodes::BCC
+    };
+    return EncodeWithTable(BCC_TABLE, operand, mode);
 }
 
 // BCS - Branch if Carry Set
 std::vector<uint8_t> Cpu6502::EncodeBCS(uint16_t operand, AddressingMode mode) const {
-    std::vector<uint8_t> bytes;
-    if (mode == AddressingMode::Relative) {
-        bytes.push_back(Opcodes::BCS);  // BCS opcode
-        bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-    }
-    return bytes;
+    static const OpcodeTable BCS_TABLE = {
+        .relative = Opcodes::BCS
+    };
+    return EncodeWithTable(BCS_TABLE, operand, mode);
 }
 
 // BMI - Branch if Minus
 std::vector<uint8_t> Cpu6502::EncodeBMI(uint16_t operand, AddressingMode mode) const {
-    std::vector<uint8_t> bytes;
-    if (mode == AddressingMode::Relative) {
-        bytes.push_back(Opcodes::BMI);  // BMI opcode
-        bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-    }
-    return bytes;
+    static const OpcodeTable BMI_TABLE = {
+        .relative = Opcodes::BMI
+    };
+    return EncodeWithTable(BMI_TABLE, operand, mode);
 }
 
 // BPL - Branch if Plus
 std::vector<uint8_t> Cpu6502::EncodeBPL(uint16_t operand, AddressingMode mode) const {
-    std::vector<uint8_t> bytes;
-    if (mode == AddressingMode::Relative) {
-        bytes.push_back(Opcodes::BPL);  // BPL opcode
-        bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-    }
-    return bytes;
+    static const OpcodeTable BPL_TABLE = {
+        .relative = Opcodes::BPL
+    };
+    return EncodeWithTable(BPL_TABLE, operand, mode);
 }
 
 // BVC - Branch if Overflow Clear
 std::vector<uint8_t> Cpu6502::EncodeBVC(uint16_t operand, AddressingMode mode) const {
-    std::vector<uint8_t> bytes;
-    if (mode == AddressingMode::Relative) {
-        bytes.push_back(Opcodes::BVC);  // BVC opcode
-        bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-    }
-    return bytes;
+    static const OpcodeTable BVC_TABLE = {
+        .relative = Opcodes::BVC
+    };
+    return EncodeWithTable(BVC_TABLE, operand, mode);
 }
 
 // BVS - Branch if Overflow Set
 std::vector<uint8_t> Cpu6502::EncodeBVS(uint16_t operand, AddressingMode mode) const {
-    std::vector<uint8_t> bytes;
-    if (mode == AddressingMode::Relative) {
-        bytes.push_back(Opcodes::BVS);  // BVS opcode
-        bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-    }
-    return bytes;
+    static const OpcodeTable BVS_TABLE = {
+        .relative = Opcodes::BVS
+    };
+    return EncodeWithTable(BVS_TABLE, operand, mode);
 }
 
 // Phase 2.2: Inc/Dec Instructions
@@ -769,70 +580,24 @@ std::vector<uint8_t> Cpu6502::EncodeDEY() const {
 
 // INC - Increment Memory
 std::vector<uint8_t> Cpu6502::EncodeINC(uint16_t operand, AddressingMode mode) const {
-    std::vector<uint8_t> bytes;
-
-    switch (mode) {
-        case AddressingMode::ZeroPage:
-            bytes.push_back(Opcodes::INC_ZP);  // INC zp
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-            break;
-
-        case AddressingMode::ZeroPageX:
-            bytes.push_back(Opcodes::INC_ZPX);  // INC zp,X
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-            break;
-
-        case AddressingMode::Absolute:
-            bytes.push_back(Opcodes::INC_ABS);  // INC abs
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
-            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
-            break;
-
-        case AddressingMode::AbsoluteX:
-            bytes.push_back(Opcodes::INC_ABX);  // INC abs,X
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
-            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
-            break;
-
-        default:
-            break;
-    }
-
-    return bytes;
+    static const OpcodeTable INC_TABLE = {
+        .zero_page = Opcodes::INC_ZP,
+        .zero_page_x = Opcodes::INC_ZPX,
+        .absolute = Opcodes::INC_ABS,
+        .absolute_x = Opcodes::INC_ABX
+    };
+    return EncodeWithTable(INC_TABLE, operand, mode);
 }
 
 // DEC - Decrement Memory
 std::vector<uint8_t> Cpu6502::EncodeDEC(uint16_t operand, AddressingMode mode) const {
-    std::vector<uint8_t> bytes;
-
-    switch (mode) {
-        case AddressingMode::ZeroPage:
-            bytes.push_back(Opcodes::DEC_ZP);  // DEC zp
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-            break;
-
-        case AddressingMode::ZeroPageX:
-            bytes.push_back(Opcodes::DEC_ZPX);  // DEC zp,X
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-            break;
-
-        case AddressingMode::Absolute:
-            bytes.push_back(Opcodes::DEC_ABS);  // DEC abs
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
-            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
-            break;
-
-        case AddressingMode::AbsoluteX:
-            bytes.push_back(Opcodes::DEC_ABX);  // DEC abs,X
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
-            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
-            break;
-
-        default:
-            break;
-    }
-
-    return bytes;
+    static const OpcodeTable DEC_TABLE = {
+        .zero_page = Opcodes::DEC_ZP,
+        .zero_page_x = Opcodes::DEC_ZPX,
+        .absolute = Opcodes::DEC_ABS,
+        .absolute_x = Opcodes::DEC_ABX
+    };
+    return EncodeWithTable(DEC_TABLE, operand, mode);
 }
 
 // Phase 2.2: Stack Operations
@@ -861,15 +626,10 @@ std::vector<uint8_t> Cpu6502::EncodePLP() const {
 
 // JSR - Jump to Subroutine
 std::vector<uint8_t> Cpu6502::EncodeJSR(uint16_t operand, AddressingMode mode) const {
-    std::vector<uint8_t> bytes;
-
-    if (mode == AddressingMode::Absolute) {
-        bytes.push_back(Opcodes::JSR);  // JSR abs
-        bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
-        bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
-    }
-
-    return bytes;
+    static const OpcodeTable JSR_TABLE = {
+        .absolute = Opcodes::JSR
+    };
+    return EncodeWithTable(JSR_TABLE, operand, mode);
 }
 
 // ============================================================================
@@ -877,44 +637,38 @@ std::vector<uint8_t> Cpu6502::EncodeJSR(uint16_t operand, AddressingMode mode) c
 // ============================================================================
 
 // Group 1: BIT - Test Bits
+// Note: Special case - some standard addressing modes only available in 65C02+
 std::vector<uint8_t> Cpu6502::EncodeBIT(uint16_t operand, AddressingMode mode) const {
     std::vector<uint8_t> bytes;
 
     switch (mode) {
         case AddressingMode::ZeroPage:
-            bytes.push_back(Opcodes::BIT_ZP);  // BIT zp
+            bytes.push_back(Opcodes::BIT_ZP);
             bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
             break;
 
         case AddressingMode::Absolute:
-            bytes.push_back(Opcodes::BIT_ABS);  // BIT abs
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
-            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
+            bytes.push_back(Opcodes::BIT_ABS);
+            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF));
             break;
 
-        // Phase 2.5 - Group 6: 65C02 Enhanced Addressing Modes for BIT
         case AddressingMode::Immediate:
-            // Only available in 65C02 and later
-            if (cpu_mode_ != CpuMode::Cpu6502) {
-                bytes.push_back(Opcodes::BIT_IMM);  // BIT #imm - 65C02+
-                bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-            }
-            break;
-
         case AddressingMode::ZeroPageX:
-            // Only available in 65C02 and later
-            if (cpu_mode_ != CpuMode::Cpu6502) {
-                bytes.push_back(Opcodes::BIT_ZPX);  // BIT zp,X - 65C02+
-                bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-            }
-            break;
-
         case AddressingMode::AbsoluteX:
-            // Only available in 65C02 and later
+            // These modes only available in 65C02+
             if (cpu_mode_ != CpuMode::Cpu6502) {
-                bytes.push_back(Opcodes::BIT_ABX);  // BIT abs,X - 65C02+
-                bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
-                bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
+                if (mode == AddressingMode::Immediate) {
+                    bytes.push_back(Opcodes::BIT_IMM);
+                    bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+                } else if (mode == AddressingMode::ZeroPageX) {
+                    bytes.push_back(Opcodes::BIT_ZPX);
+                    bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+                } else if (mode == AddressingMode::AbsoluteX) {
+                    bytes.push_back(Opcodes::BIT_ABX);
+                    bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+                    bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF));
+                }
             }
             break;
 
@@ -929,156 +683,52 @@ std::vector<uint8_t> Cpu6502::EncodeBIT(uint16_t operand, AddressingMode mode) c
 
 // ASL - Arithmetic Shift Left
 std::vector<uint8_t> Cpu6502::EncodeASL(uint16_t operand, AddressingMode mode) const {
-    std::vector<uint8_t> bytes;
-
-    switch (mode) {
-        case AddressingMode::Accumulator:
-            bytes.push_back(Opcodes::ASL_ACC);  // ASL A
-            break;
-
-        case AddressingMode::ZeroPage:
-            bytes.push_back(Opcodes::ASL_ZP);  // ASL zp
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-            break;
-
-        case AddressingMode::ZeroPageX:
-            bytes.push_back(Opcodes::ASL_ZPX);  // ASL zp,X
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-            break;
-
-        case AddressingMode::Absolute:
-            bytes.push_back(Opcodes::ASL_ABS);  // ASL abs
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
-            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
-            break;
-
-        case AddressingMode::AbsoluteX:
-            bytes.push_back(Opcodes::ASL_ABX);  // ASL abs,X
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
-            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
-            break;
-
-        default:
-            break;
-    }
-
-    return bytes;
+    static const OpcodeTable ASL_TABLE = {
+        .zero_page = Opcodes::ASL_ZP,
+        .zero_page_x = Opcodes::ASL_ZPX,
+        .absolute = Opcodes::ASL_ABS,
+        .absolute_x = Opcodes::ASL_ABX,
+        .accumulator = Opcodes::ASL_ACC
+    };
+    return EncodeWithTable(ASL_TABLE, operand, mode);
 }
 
 // LSR - Logical Shift Right
 std::vector<uint8_t> Cpu6502::EncodeLSR(uint16_t operand, AddressingMode mode) const {
-    std::vector<uint8_t> bytes;
-
-    switch (mode) {
-        case AddressingMode::Accumulator:
-            bytes.push_back(Opcodes::LSR_ACC);  // LSR A
-            break;
-
-        case AddressingMode::ZeroPage:
-            bytes.push_back(Opcodes::LSR_ZP);  // LSR zp
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-            break;
-
-        case AddressingMode::ZeroPageX:
-            bytes.push_back(Opcodes::LSR_ZPX);  // LSR zp,X
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-            break;
-
-        case AddressingMode::Absolute:
-            bytes.push_back(Opcodes::LSR_ABS);  // LSR abs
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
-            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
-            break;
-
-        case AddressingMode::AbsoluteX:
-            bytes.push_back(Opcodes::LSR_ABX);  // LSR abs,X
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
-            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
-            break;
-
-        default:
-            break;
-    }
-
-    return bytes;
+    static const OpcodeTable LSR_TABLE = {
+        .zero_page = Opcodes::LSR_ZP,
+        .zero_page_x = Opcodes::LSR_ZPX,
+        .absolute = Opcodes::LSR_ABS,
+        .absolute_x = Opcodes::LSR_ABX,
+        .accumulator = Opcodes::LSR_ACC
+    };
+    return EncodeWithTable(LSR_TABLE, operand, mode);
 }
 
 // Group 3: Rotate Instructions
 
 // ROL - Rotate Left
 std::vector<uint8_t> Cpu6502::EncodeROL(uint16_t operand, AddressingMode mode) const {
-    std::vector<uint8_t> bytes;
-
-    switch (mode) {
-        case AddressingMode::Accumulator:
-            bytes.push_back(Opcodes::ROL_ACC);  // ROL A
-            break;
-
-        case AddressingMode::ZeroPage:
-            bytes.push_back(Opcodes::ROL_ZP);  // ROL zp
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-            break;
-
-        case AddressingMode::ZeroPageX:
-            bytes.push_back(Opcodes::ROL_ZPX);  // ROL zp,X
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-            break;
-
-        case AddressingMode::Absolute:
-            bytes.push_back(Opcodes::ROL_ABS);  // ROL abs
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
-            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
-            break;
-
-        case AddressingMode::AbsoluteX:
-            bytes.push_back(Opcodes::ROL_ABX);  // ROL abs,X
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
-            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
-            break;
-
-        default:
-            break;
-    }
-
-    return bytes;
+    static const OpcodeTable ROL_TABLE = {
+        .zero_page = Opcodes::ROL_ZP,
+        .zero_page_x = Opcodes::ROL_ZPX,
+        .absolute = Opcodes::ROL_ABS,
+        .absolute_x = Opcodes::ROL_ABX,
+        .accumulator = Opcodes::ROL_ACC
+    };
+    return EncodeWithTable(ROL_TABLE, operand, mode);
 }
 
 // ROR - Rotate Right
 std::vector<uint8_t> Cpu6502::EncodeROR(uint16_t operand, AddressingMode mode) const {
-    std::vector<uint8_t> bytes;
-
-    switch (mode) {
-        case AddressingMode::Accumulator:
-            bytes.push_back(Opcodes::ROR_ACC);  // ROR A
-            break;
-
-        case AddressingMode::ZeroPage:
-            bytes.push_back(Opcodes::ROR_ZP);  // ROR zp
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-            break;
-
-        case AddressingMode::ZeroPageX:
-            bytes.push_back(Opcodes::ROR_ZPX);  // ROR zp,X
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-            break;
-
-        case AddressingMode::Absolute:
-            bytes.push_back(Opcodes::ROR_ABS);  // ROR abs
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
-            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
-            break;
-
-        case AddressingMode::AbsoluteX:
-            bytes.push_back(Opcodes::ROR_ABX);  // ROR abs,X
-            bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
-            bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
-            break;
-
-        default:
-            break;
-    }
-
-    return bytes;
+    static const OpcodeTable ROR_TABLE = {
+        .zero_page = Opcodes::ROR_ZP,
+        .zero_page_x = Opcodes::ROR_ZPX,
+        .absolute = Opcodes::ROR_ABS,
+        .absolute_x = Opcodes::ROR_ABX,
+        .accumulator = Opcodes::ROR_ACC
+    };
+    return EncodeWithTable(ROR_TABLE, operand, mode);
 }
 
 // Group 4: Interrupt Instructions
