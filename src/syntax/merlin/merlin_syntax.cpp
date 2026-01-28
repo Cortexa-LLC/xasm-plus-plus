@@ -294,20 +294,20 @@ std::string MerlinSyntaxParser::ParseLabel(const std::string& line, size_t& pos,
 void MerlinSyntaxParser::HandleOrg(const std::string& operand, Section& section,
                                     ConcreteSymbolTable& symbols) {
     std::string op = Trim(operand);
-    uint32_t address;
-    
+    uint32_t address = 0;
+
     // Check if operand is empty
     if (op.empty()) {
         throw std::runtime_error(FormatError("ORG directive requires an address operand"));
     }
-    
+
     // Check if operand is a symbol or a number
     if (op[0] == '$' || op[0] == '%' || std::isdigit(op[0])) {
         // It's a number
         address = ParseNumber(op);
     } else {
         // It's a symbol - look it up
-        int64_t value;
+        int64_t value = 0;
         if (symbols.Lookup(op, value)) {
             address = static_cast<uint32_t>(value);
         } else {
@@ -407,8 +407,8 @@ void MerlinSyntaxParser::HandleDS(const std::string& operand, Section& section,
     // DS (Define Space) - reserve bytes
     // Can be a number, symbol, or expression
     std::string op = Trim(operand);
-    uint32_t count;
-    
+    uint32_t count = 0;
+
     // Check for empty operand
     if (op.empty()) {
         count = 0;
@@ -423,28 +423,29 @@ void MerlinSyntaxParser::HandleDS(const std::string& operand, Section& section,
         if (left.empty() || right.empty()) {
             throw std::runtime_error(FormatError("DS: Multiplication requires operands on both sides"));
         }
-        
+
+
         // Evaluate left side
-        uint32_t left_val;
+        uint32_t left_val = 0;
         if (left[0] == '$' || left[0] == '%' || std::isdigit(left[0])) {
             left_val = ParseNumber(left);
         } else {
             // Symbol lookup
-            int64_t value;
+            int64_t value = 0;
             if (symbols.Lookup(left, value)) {
                 left_val = static_cast<uint32_t>(value);
             } else {
                 throw std::runtime_error(FormatError("DS: Undefined symbol: " + left));
             }
         }
-        
+
         // Evaluate right side
-        uint32_t right_val;
+        uint32_t right_val = 0;
         if (right[0] == '$' || right[0] == '%' || std::isdigit(right[0])) {
             right_val = ParseNumber(right);
         } else {
             // Symbol lookup
-            int64_t value;
+            int64_t value = 0;
             if (symbols.Lookup(right, value)) {
                 right_val = static_cast<uint32_t>(value);
             } else {
@@ -460,7 +461,7 @@ void MerlinSyntaxParser::HandleDS(const std::string& operand, Section& section,
     }
     // Symbol reference
     else {
-        int64_t value;
+        int64_t value = 0;
         if (symbols.Lookup(op, value)) {
             count = static_cast<uint32_t>(value);
         } else {
@@ -495,7 +496,7 @@ void MerlinSyntaxParser::HandleDum(const std::string& operand, ConcreteSymbolTab
         dum_address_ = ParseNumber(op);
     } else {
         // It's a symbol - look it up
-        int64_t value;
+        int64_t value = 0;
         if (symbols.Lookup(op, value)) {
             dum_address_ = static_cast<uint32_t>(value);
         } else {
