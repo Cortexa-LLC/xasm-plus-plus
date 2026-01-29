@@ -2,6 +2,7 @@
 // Phases 1-3: Foundation, Local Labels, DUM Blocks
 
 #include "xasm++/syntax/merlin_syntax.h"
+#include "xasm++/util/string_utils.h"
 #include <sstream>
 #include <fstream>
 #include <algorithm>
@@ -9,6 +10,9 @@
 #include <stdexcept>
 
 namespace xasm {
+
+using xasm::util::Trim;
+using xasm::util::ToUpper;
 
 // ============================================================================
 // Constructor
@@ -47,23 +51,7 @@ std::string MerlinSyntaxParser::StripComments(const std::string& line) {
     return line;
 }
 
-// Trim leading and trailing whitespace
-std::string MerlinSyntaxParser::Trim(const std::string& str) {
-    size_t start = str.find_first_not_of(" \t");
-    if (start == std::string::npos) {
-        return "";
-    }
-    size_t end = str.find_last_not_of(" \t");
-    return str.substr(start, end - start + 1);
-}
 
-// Convert string to uppercase
-std::string MerlinSyntaxParser::ToUpper(const std::string& str) {
-    std::string result = str;
-    std::transform(result.begin(), result.end(), result.begin(),
-                  [](unsigned char c) { return std::toupper(c); });
-    return result;
-}
 
 // Format error message with source location
 std::string MerlinSyntaxParser::FormatError(const std::string& message) const {

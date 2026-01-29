@@ -4,6 +4,7 @@
 #include "xasm++/cpu/cpu_6502.h"
 #include "xasm++/cpu/opcodes_6502.h"
 #include "xasm++/symbol.h"
+#include "xasm++/util/string_utils.h"
 #include <string>
 #include <sstream>
 #include <algorithm>
@@ -11,23 +12,8 @@
 
 namespace xasm {
 
-// Helper: Parse hex value ($1234 or $42)
-static uint32_t ParseHex(const std::string& str) {
-    if (str.empty() || str[0] != '$') {
-        return 0;
-    }
-    return std::stoul(str.substr(1), nullptr, 16);
-}
-
-// Helper: Trim whitespace
-static std::string Trim(const std::string& str) {
-    size_t start = str.find_first_not_of(" \t");
-    if (start == std::string::npos) {
-        return "";
-    }
-    size_t end = str.find_last_not_of(" \t");
-    return str.substr(start, end - start + 1);
-}
+using xasm::util::Trim;
+using xasm::util::ParseHex;
 
 // Helper: Determine addressing mode from operands string
 static AddressingMode DetermineAddressingMode(const std::string& operands) {
@@ -156,19 +142,55 @@ Assembler::Assembler() {
 }
 
 void Assembler::InitializeInstructionHandlers() {
-    // Instructions with no operands (implied addressing)
-    instruction_handlers_["NOP"] = [](Cpu6502* cpu, uint16_t, AddressingMode) {
-        return cpu->EncodeNOP();
+    RegisterMemoryInstructions();
+    RegisterArithmeticInstructions();
+    RegisterBranchInstructions();
+    RegisterStackInstructions();
+    RegisterControlInstructions();
+}
+
+void Assembler::RegisterMemoryInstructions() {
+    // Load instructions
+    instruction_handlers_["LDA"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
+        return cpu->EncodeLDA(value, mode);
     };
-    instruction_handlers_["RTS"] = [](Cpu6502* cpu, uint16_t, AddressingMode) {
-        return cpu->EncodeRTS();
+    instruction_handlers_["LDX"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
+        return cpu->EncodeLDX(value, mode);
     };
-    instruction_handlers_["RTI"] = [](Cpu6502* cpu, uint16_t, AddressingMode) {
-        return cpu->EncodeRTI();
+    instruction_handlers_["LDY"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
+        return cpu->EncodeLDY(value, mode);
     };
-    instruction_handlers_["BRK"] = [](Cpu6502* cpu, uint16_t, AddressingMode) {
-        return cpu->EncodeBRK();
+    
+    // Store instructions
+    instruction_handlers_["STA"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
+        return cpu->EncodeSTA(value, mode);
     };
+    instruction_handlers_["STX"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
+        return cpu->EncodeSTX(value, mode);
+    };
+    instruction_handlers_["STY"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
+        return cpu->EncodeSTY(value, mode);
+    };
+}
+
+void Assembler::RegisterArithmeticInstructions() {
+    // Arithmetic operations
+    instruction_handlers_["ADC"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
+        return cpu->EncodeADC(value, mode);
+    };
+    instruction_handlers_["SBC"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
+        return cpu->EncodeSBC(value, mode);
+    };
+    
+    // Increment/decrement memory
+    instruction_handlers_["INC"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
+        return cpu->EncodeINC(value, mode);
+    };
+    instruction_handlers_["DEC"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
+        return cpu->EncodeDEC(value, mode);
+    };
+    
+    // Increment/decrement registers (implied addressing)
     instruction_handlers_["INX"] = [](Cpu6502* cpu, uint16_t, AddressingMode) {
         return cpu->EncodeINX();
     };
@@ -181,6 +203,36 @@ void Assembler::InitializeInstructionHandlers() {
     instruction_handlers_["DEY"] = [](Cpu6502* cpu, uint16_t, AddressingMode) {
         return cpu->EncodeDEY();
     };
+}
+
+void Assembler::RegisterBranchInstructions() {
+    instruction_handlers_["BEQ"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
+        return cpu->EncodeBEQ(value, mode);
+    };
+    instruction_handlers_["BNE"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
+        return cpu->EncodeBNE(value, mode);
+    };
+    instruction_handlers_["BCC"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
+        return cpu->EncodeBCC(value, mode);
+    };
+    instruction_handlers_["BCS"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
+        return cpu->EncodeBCS(value, mode);
+    };
+    instruction_handlers_["BPL"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
+        return cpu->EncodeBPL(value, mode);
+    };
+    instruction_handlers_["BMI"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
+        return cpu->EncodeBMI(value, mode);
+    };
+    instruction_handlers_["BVC"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
+        return cpu->EncodeBVC(value, mode);
+    };
+    instruction_handlers_["BVS"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
+        return cpu->EncodeBVS(value, mode);
+    };
+}
+
+void Assembler::RegisterStackInstructions() {
     instruction_handlers_["PHA"] = [](Cpu6502* cpu, uint16_t, AddressingMode) {
         return cpu->EncodePHA();
     };
@@ -193,6 +245,30 @@ void Assembler::InitializeInstructionHandlers() {
     instruction_handlers_["PLP"] = [](Cpu6502* cpu, uint16_t, AddressingMode) {
         return cpu->EncodePLP();
     };
+}
+
+void Assembler::RegisterControlInstructions() {
+    // Control flow
+    instruction_handlers_["NOP"] = [](Cpu6502* cpu, uint16_t, AddressingMode) {
+        return cpu->EncodeNOP();
+    };
+    instruction_handlers_["BRK"] = [](Cpu6502* cpu, uint16_t, AddressingMode) {
+        return cpu->EncodeBRK();
+    };
+    instruction_handlers_["RTI"] = [](Cpu6502* cpu, uint16_t, AddressingMode) {
+        return cpu->EncodeRTI();
+    };
+    instruction_handlers_["RTS"] = [](Cpu6502* cpu, uint16_t, AddressingMode) {
+        return cpu->EncodeRTS();
+    };
+    instruction_handlers_["JMP"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
+        return cpu->EncodeJMP(value, mode);
+    };
+    instruction_handlers_["JSR"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
+        return cpu->EncodeJSR(value, mode);
+    };
+    
+    // Status flag operations
     instruction_handlers_["CLC"] = [](Cpu6502* cpu, uint16_t, AddressingMode) {
         return cpu->EncodeCLC();
     };
@@ -214,6 +290,8 @@ void Assembler::InitializeInstructionHandlers() {
     instruction_handlers_["CLV"] = [](Cpu6502* cpu, uint16_t, AddressingMode) {
         return cpu->EncodeCLV();
     };
+    
+    // Register transfers
     instruction_handlers_["TSX"] = [](Cpu6502* cpu, uint16_t, AddressingMode) {
         return cpu->EncodeTSX();
     };
@@ -233,22 +311,7 @@ void Assembler::InitializeInstructionHandlers() {
         return cpu->EncodeTYA();
     };
     
-    // Instructions with operands
-    instruction_handlers_["LDA"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
-        return cpu->EncodeLDA(value, mode);
-    };
-    instruction_handlers_["STA"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
-        return cpu->EncodeSTA(value, mode);
-    };
-    instruction_handlers_["JMP"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
-        return cpu->EncodeJMP(value, mode);
-    };
-    instruction_handlers_["ADC"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
-        return cpu->EncodeADC(value, mode);
-    };
-    instruction_handlers_["SBC"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
-        return cpu->EncodeSBC(value, mode);
-    };
+    // Logical operations
     instruction_handlers_["AND"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
         return cpu->EncodeAND(value, mode);
     };
@@ -258,18 +321,8 @@ void Assembler::InitializeInstructionHandlers() {
     instruction_handlers_["EOR"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
         return cpu->EncodeEOR(value, mode);
     };
-    instruction_handlers_["LDX"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
-        return cpu->EncodeLDX(value, mode);
-    };
-    instruction_handlers_["LDY"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
-        return cpu->EncodeLDY(value, mode);
-    };
-    instruction_handlers_["STX"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
-        return cpu->EncodeSTX(value, mode);
-    };
-    instruction_handlers_["STY"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
-        return cpu->EncodeSTY(value, mode);
-    };
+    
+    // Comparison operations
     instruction_handlers_["CMP"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
         return cpu->EncodeCMP(value, mode);
     };
@@ -279,42 +332,13 @@ void Assembler::InitializeInstructionHandlers() {
     instruction_handlers_["CPY"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
         return cpu->EncodeCPY(value, mode);
     };
-    instruction_handlers_["BEQ"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
-        return cpu->EncodeBEQ(value, mode);
-    };
-    instruction_handlers_["BNE"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
-        return cpu->EncodeBNE(value, mode);
-    };
-    instruction_handlers_["BCC"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
-        return cpu->EncodeBCC(value, mode);
-    };
-    instruction_handlers_["BCS"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
-        return cpu->EncodeBCS(value, mode);
-    };
-    instruction_handlers_["BMI"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
-        return cpu->EncodeBMI(value, mode);
-    };
-    instruction_handlers_["BPL"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
-        return cpu->EncodeBPL(value, mode);
-    };
-    instruction_handlers_["BVC"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
-        return cpu->EncodeBVC(value, mode);
-    };
-    instruction_handlers_["BVS"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
-        return cpu->EncodeBVS(value, mode);
-    };
-    instruction_handlers_["INC"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
-        return cpu->EncodeINC(value, mode);
-    };
-    instruction_handlers_["DEC"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
-        return cpu->EncodeDEC(value, mode);
-    };
-    instruction_handlers_["JSR"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
-        return cpu->EncodeJSR(value, mode);
-    };
+    
+    // Bit operations
     instruction_handlers_["BIT"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
         return cpu->EncodeBIT(value, mode);
     };
+    
+    // Shift/rotate operations
     instruction_handlers_["ASL"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
         return cpu->EncodeASL(value, mode);
     };

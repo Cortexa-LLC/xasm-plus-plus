@@ -183,6 +183,43 @@ private:
     void InitializeInstructionHandlers();
 
     /**
+     * @brief Register memory access instructions (load/store)
+     * 
+     * Registers handlers for: LDA, LDX, LDY, STA, STX, STY
+     */
+    void RegisterMemoryInstructions();
+
+    /**
+     * @brief Register arithmetic and increment/decrement instructions
+     * 
+     * Registers handlers for: ADC, SBC, INC, DEC, INX, INY, DEX, DEY
+     */
+    void RegisterArithmeticInstructions();
+
+    /**
+     * @brief Register branch instructions
+     * 
+     * Registers handlers for: BEQ, BNE, BCC, BCS, BPL, BMI, BVC, BVS
+     */
+    void RegisterBranchInstructions();
+
+    /**
+     * @brief Register stack manipulation instructions
+     * 
+     * Registers handlers for: PHA, PLA, PHP, PLP
+     */
+    void RegisterStackInstructions();
+
+    /**
+     * @brief Register control flow and status instructions
+     * 
+     * Registers handlers for: NOP, BRK, RTI, RTS, JMP, JSR, CLC, SEC, CLD, SED,
+     * CLI, SEI, CLV, TSX, TXS, TAX, TAY, TXA, TYA, AND, ORA, EOR, CMP, CPX, CPY,
+     * BIT, ASL, LSR, ROL, ROR
+     */
+    void RegisterControlInstructions();
+
+    /**
      * @brief Resolve symbols in a single pass
      * 
      * Extracts label addresses from label atoms and updates the symbol table.

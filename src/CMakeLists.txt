@@ -6,6 +6,7 @@ add_library(xasm_core STATIC
     core/section.cpp
     core/assembler.cpp
     core/parse_utils.cpp
+    utils/string_utils.cpp
 )
 
 target_include_directories(xasm_core PUBLIC

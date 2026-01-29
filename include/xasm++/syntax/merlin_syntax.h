@@ -159,8 +159,6 @@ private:
 
     // Parsing helpers
     std::string StripComments(const std::string& line);
-    std::string Trim(const std::string& str);
-    std::string ToUpper(const std::string& str);
 
     void ParseLine(const std::string& line, Section& section, ConcreteSymbolTable& symbols);
 

@@ -193,3 +193,15 @@ target_link_libraries(test_const_correctness
 )
 
 gtest_discover_tests(test_const_correctness)
+
+# Address value object tests (Tier 2.2 refactoring)
+add_executable(test_address
+    test_address.cpp
+)
+
+target_link_libraries(test_address
+    gtest_main
+    gtest
+)
+
+gtest_discover_tests(test_address)

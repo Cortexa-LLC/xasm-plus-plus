@@ -66,6 +66,7 @@ sonar.env
 .beads/
 .claude/.coordination-checkpoint
 .claude/.watchdog-checkpoint
+.claude/settings.local.json
 
 # Temporary test files
 test.asm
@@ -73,6 +74,7 @@ test.bin
 a.out
 AGENTS.md
 /test_*
+tests/scratch/
 
 # Repository cleanup artifacts
 ..bfg-report/
