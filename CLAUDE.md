@@ -673,6 +673,13 @@ This project uses the **ai-pack framework** for structured AI-assisted developme
 The ai-pack framework includes quality assurance tools:
 
 **SonarQube Integration:**
+
+**Documentation:**
+- **`.ai-pack/docs/SONARQUBE-SETUP.md`** - Local setup with credentials management
+- **`.ai-pack/docs/SONARQUBE-DEVELOPER-EDITION.md`** - Upgrade guide for C/C++ analysis ($150/year)
+- **`.ai-pack/docs/SONARQUBE-TRIAL-QUICKSTART.md`** - Quick start for Developer Edition trial
+
+**Tools:**
 - **`.ai-pack/scripts/setup-sonarqube.py`** - Setup local SonarQube server with Docker
 - **`.ai-pack/scripts/validate-with-sonarqube.py`** - Run SonarQube analysis on source code
 - **`.ai-pack/scripts/sonarqube-check.sh`** - Shell script wrapper for validation
