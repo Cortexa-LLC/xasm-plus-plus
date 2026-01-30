@@ -78,3 +78,4 @@ tests/scratch/
 
 # Repository cleanup artifacts
 ..bfg-report/
+pop_analysis_output/
