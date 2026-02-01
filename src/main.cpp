@@ -128,6 +128,7 @@ int main(int argc, char** argv) {
     // Step 4: Create assembler (CPU already created in Step 2)
     Assembler assembler;
     assembler.SetCpuPlugin(&cpu);
+    assembler.SetSymbolTable(&symbols);  // CRITICAL: Link symbol table to assembler
     assembler.AddSection(section);
 
     // Step 5: Assemble (encode instructions, resolve symbols)

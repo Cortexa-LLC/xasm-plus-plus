@@ -284,8 +284,20 @@ std::shared_ptr<Expression> MerlinSyntaxParser::ParseExpression(
     // Check for negative number
     if (!expr.empty() && expr[0] == '-') {
         // Negative number: -1, -128
-        int32_t value = std::stoi(expr);
-        return std::make_shared<LiteralExpr>(static_cast<uint32_t>(value));
+        // Check if rest is all digits (valid negative number)
+        bool is_neg_number = true;
+        for (size_t i = 1; i < expr.length(); ++i) {
+            if (!std::isdigit(static_cast<unsigned char>(expr[i]))) {
+                is_neg_number = false;
+                break;
+            }
+        }
+        if (is_neg_number && expr.length() > 1) {
+            // Valid negative number - use stoll for proper sign extension to int64_t
+            int64_t value = std::stoll(expr);
+            return std::make_shared<LiteralExpr>(value);
+        }
+        // Otherwise might be subtraction expression, fall through to operator handling
     } else if (!expr.empty() && (expr[0] == '$' || expr[0] == '%' || std::isdigit(expr[0]))) {
         // Pure number
         return std::make_shared<LiteralExpr>(ParseNumber(expr));
@@ -385,7 +397,7 @@ void MerlinSyntaxParser::HandleDB(const std::string& operand, Section& section,
     // Create DataAtom with expressions (will be evaluated during assembly)
     auto atom = std::make_shared<DataAtom>(expressions, DataSize::Byte);
     section.atoms.push_back(atom);
-    
+
     // Update address (1 byte per expression)
     current_address_ += expressions.size();
 }

@@ -26,7 +26,37 @@ using xasm::util::ParseHex;
 static std::shared_ptr<Expression> ParseExpression(const std::string& str,
                                                      ConcreteSymbolTable& symbols) {
     std::string trimmed = Trim(str);
-    
+
+    // Check for low byte operator (# or <) BEFORE checking for operators
+    if (!trimmed.empty() && (trimmed[0] == '#' || trimmed[0] == '<')) {
+        if (trimmed.length() < 2) {
+            throw std::runtime_error("Low byte operator (#/<) requires an operand");
+        }
+        std::string operand = Trim(trimmed.substr(1));
+        if (operand.empty()) {
+            throw std::runtime_error("Low byte operator (#/<) has empty operand");
+        }
+        // Recursively parse the operand (might be expression like SHIFT0-$80)
+        auto operand_expr = ParseExpression(operand, symbols);
+        int64_t value = operand_expr->Evaluate(symbols);
+        return std::make_shared<LiteralExpr>(value & 0xFF);  // Low byte
+    }
+
+    // Check for high byte operator (>)
+    if (!trimmed.empty() && trimmed[0] == '>') {
+        if (trimmed.length() < 2) {
+            throw std::runtime_error("High byte operator (>) requires an operand");
+        }
+        std::string operand = Trim(trimmed.substr(1));
+        if (operand.empty()) {
+            throw std::runtime_error("High byte operator (>) has empty operand");
+        }
+        // Recursively parse the operand (might be expression like SHIFT0-$80)
+        auto operand_expr = ParseExpression(operand, symbols);
+        int64_t value = operand_expr->Evaluate(symbols);
+        return std::make_shared<LiteralExpr>((value >> 8) & 0xFF);  // High byte
+    }
+
     // Check for addition first (before trying to parse as single value)
     size_t plus_pos = trimmed.find('+');
     if (plus_pos != std::string::npos && plus_pos > 0) {
@@ -91,7 +121,25 @@ static std::shared_ptr<Expression> ParseExpression(const std::string& str,
             throw std::runtime_error("Binary number out of range: '" + trimmed + "' - " + e.what());
         }
     }
-    
+
+    // Negative number: -1, -128 (check BEFORE general decimal to avoid symbol lookup)
+    if (!trimmed.empty() && trimmed[0] == '-') {
+        // Check if rest is all digits (valid negative number)
+        bool is_neg_number = true;
+        for (size_t i = 1; i < trimmed.length(); ++i) {
+            if (!std::isdigit(static_cast<unsigned char>(trimmed[i]))) {
+                is_neg_number = false;
+                break;
+            }
+        }
+        if (is_neg_number && trimmed.length() > 1) {
+            // Valid negative number
+            int64_t value = std::stoll(trimmed);
+            return std::make_shared<LiteralExpr>(value);
+        }
+        // Otherwise fall through - might be subtraction or symbol starting with '-'
+    }
+
     // Decimal literal: 42
     bool is_number = true;
     for (char c : trimmed) {
@@ -104,7 +152,7 @@ static std::shared_ptr<Expression> ParseExpression(const std::string& str,
         int64_t value = std::stoll(trimmed);
         return std::make_shared<LiteralExpr>(value);
     }
-    
+
     // Symbol reference
     return std::make_shared<SymbolExpr>(trimmed);
 }
@@ -584,18 +632,16 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable& symbols,
                         result.success = false;
                         continue;
                     }
-                    
+
                     // Re-evaluate expressions on each pass for forward references
                     if (!data->expressions.empty()) {
                         data->data.clear();
-                        
+
                         for (const auto& expr_str : data->expressions) {
                             try {
                                 auto expr = ParseExpression(expr_str, symbols);
                                 int64_t value = expr->Evaluate(symbols);
-                                
 
-                                
                                 if (data->data_size == DataSize::Byte) {
                                     // Byte data (DB/DFB)
                                     data->data.push_back(static_cast<uint8_t>(value & 0xFF));
