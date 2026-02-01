@@ -4,6 +4,7 @@
 
 #include "xasm++/syntax/merlin_syntax.h"
 #include "xasm++/symbol.h"
+#include "xasm++/cpu/cpu_6502.h"
 #include <gtest/gtest.h>
 #include <fstream>
 #include <cstdio>
@@ -1685,6 +1686,67 @@ TEST(MerlinSyntaxTest, XcDirective) {
     EXPECT_EQ(section.atoms.size(), 0);
 }
 
+TEST(MerlinSyntaxTest, MxDirectiveBinary) {
+    // MX - Set 65816 register widths (binary format %00-%11)
+    MerlinSyntaxParser parser;
+    ConcreteSymbolTable symbols;
+    Section section("test", 0);
+
+    // Test all binary modes
+    parser.Parse(" mx %00", section, symbols);  // 16-bit A, 16-bit X/Y
+    parser.Parse(" mx %01", section, symbols);  // 16-bit A, 8-bit X/Y
+    parser.Parse(" mx %10", section, symbols);  // 8-bit A, 16-bit X/Y
+    parser.Parse(" mx %11", section, symbols);  // 8-bit A, 8-bit X/Y
+
+    // MX is a state-tracking directive - should produce no atoms
+    EXPECT_EQ(section.atoms.size(), 0);
+}
+
+TEST(MerlinSyntaxTest, MxDirectiveDecimal) {
+    // MX - Set 65816 register widths (decimal format 0-3)
+    MerlinSyntaxParser parser;
+    ConcreteSymbolTable symbols;
+    Section section("test", 0);
+
+    // Test all decimal modes
+    parser.Parse(" mx 0", section, symbols);  // Same as %00
+    parser.Parse(" mx 1", section, symbols);  // Same as %01
+    parser.Parse(" mx 2", section, symbols);  // Same as %10
+    parser.Parse(" mx 3", section, symbols);  // Same as %11
+
+    // MX is a state-tracking directive - should produce no atoms
+    EXPECT_EQ(section.atoms.size(), 0);
+}
+
+TEST(MerlinSyntaxTest, MxDirectiveInvalidBinary) {
+    // MX with invalid binary value should throw
+    MerlinSyntaxParser parser;
+    ConcreteSymbolTable symbols;
+    Section section("test", 0);
+
+    EXPECT_THROW(parser.Parse(" mx %12", section, symbols), std::runtime_error);
+    EXPECT_THROW(parser.Parse(" mx %100", section, symbols), std::runtime_error);
+}
+
+TEST(MerlinSyntaxTest, MxDirectiveInvalidDecimal) {
+    // MX with invalid decimal value should throw
+    MerlinSyntaxParser parser;
+    ConcreteSymbolTable symbols;
+    Section section("test", 0);
+
+    EXPECT_THROW(parser.Parse(" mx 4", section, symbols), std::runtime_error);
+    EXPECT_THROW(parser.Parse(" mx 10", section, symbols), std::runtime_error);
+}
+
+TEST(MerlinSyntaxTest, MxDirectiveMissing) {
+    // MX without operand should throw
+    MerlinSyntaxParser parser;
+    ConcreteSymbolTable symbols;
+    Section section("test", 0);
+
+    EXPECT_THROW(parser.Parse(" mx", section, symbols), std::runtime_error);
+}
+
 TEST(MerlinSyntaxTest, RevDirective) {
     // REV - Reverse ASCII string
     // Emits reversed string as data bytes and defines label at that location
@@ -1754,4 +1816,103 @@ TEST(MerlinSyntaxTest, LupDirective) {
     EXPECT_THROW({
         parser.Parse(source, section, symbols);
     }, std::runtime_error);
+}
+
+// ============================================================================
+// 65816 Instructions and Directives (xasm++-hhy)
+// ============================================================================
+
+TEST(MerlinSyntaxTest, BltInstructionParsing) {
+    // BLT - Branch if Less Than (signed comparison)
+    // This is an alias for BCC (Branch if Carry Clear)  
+    // Used after CMP for signed comparisons: if A < operand, branch
+    
+    MerlinSyntaxParser parser;
+    ConcreteSymbolTable symbols;
+    Section section("test", 0);
+    
+    // Parse BLT instruction
+    parser.Parse(" blt target", section, symbols);
+    
+    // Should generate an instruction atom
+    ASSERT_EQ(section.atoms.size(), 1);
+    auto instr_atom = std::dynamic_pointer_cast<InstructionAtom>(section.atoms[0]);
+    ASSERT_NE(instr_atom, nullptr);
+    
+    // BLT should be recognized as a valid branch instruction
+    EXPECT_EQ(instr_atom->mnemonic, "BLT");
+    EXPECT_EQ(instr_atom->operand, "target");
+}
+
+// ============================================================================
+// Label-based MAC Definition (UNPACK.S style)
+// ============================================================================
+
+TEST(MerlinSyntaxTest, MacroLabelBasedDefinition) {
+    // Label-based MAC definition: MacroName MAC param1;param2
+    // From UNPACK.S: stlx mac bank;addr
+    MerlinSyntaxParser parser;
+    ConcreteSymbolTable symbols;
+    Section section("test", 0);
+
+    std::string source = 
+        "stlx mac bank;addr\n"
+        " hex 9f\n"
+        " da ]2\n"
+        " db ]1\n"
+        " <<<\n";
+
+    parser.Parse(source, section, symbols);
+
+    // Macro definition should not generate atoms
+    EXPECT_EQ(section.atoms.size(), 0);
+}
+
+TEST(MerlinSyntaxTest, MacroLabelBasedExpansion) {
+    // Test macro expansion after label-based definition
+    MerlinSyntaxParser parser;
+    ConcreteSymbolTable symbols;
+    Section section("test", 0);
+
+    std::string source = 
+        "stlx mac bank;addr\n"
+        " hex 9f\n"
+        " da ]2\n"
+        " db ]1\n"
+        " <<<\n"
+        "\n"
+        " stlx $E1;$9D00\n";
+
+    parser.Parse(source, section, symbols);
+
+    // Should expand to: hex 9f, da $9D00, db $E1
+    // That's 1 + 2 + 1 = 4 bytes
+    ASSERT_EQ(section.atoms.size(), 3);  // 3 data atoms
+    
+    auto data1 = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
+    ASSERT_NE(data1, nullptr);
+    ASSERT_EQ(data1->data.size(), 1);
+    EXPECT_EQ(data1->data[0], 0x9F);
+}
+
+TEST(MerlinSyntaxTest, MacroLabelBasedWithNoParams) {
+    // Label-based MAC with no parameters
+    MerlinSyntaxParser parser;
+    ConcreteSymbolTable symbols;
+    Section section("test", 0);
+
+    std::string source = 
+        "init mac\n"
+        " lda #$00\n"
+        " tax\n"
+        " <<<\n"
+        "\n"
+        " init\n";
+
+    parser.Parse(source, section, symbols);
+
+    // Should expand to: LDA #$00, TAX
+    ASSERT_EQ(section.atoms.size(), 2);
+    EXPECT_EQ(section.atoms[0]->type, AtomType::Instruction);
+    EXPECT_EQ(section.atoms[1]->type, AtomType::Instruction);
 }

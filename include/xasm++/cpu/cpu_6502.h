@@ -358,6 +358,8 @@ public:
     std::vector<uint8_t> EncodeWDM(uint8_t operand, AddressingMode mode) const;   // Reserved (65816)
     std::vector<uint8_t> EncodeXBA() const;  // Exchange B and A (65816)
     std::vector<uint8_t> EncodeXCE() const;  // Exchange Carry and Emulation (65816)
+    std::vector<uint8_t> EncodeSEP(uint16_t value, AddressingMode mode) const;  // Set Processor Status Bits (65816)
+    std::vector<uint8_t> EncodeREP(uint16_t value, AddressingMode mode) const;  // Reset Processor Status Bits (65816)
 
     // Phase 2.2: Subroutine
     std::vector<uint8_t> EncodeJSR(uint16_t operand, AddressingMode mode) const;

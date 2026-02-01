@@ -21,6 +21,9 @@
 
 namespace xasm {
 
+// Forward declarations
+class Cpu6502;
+
 /**
  * @brief Merlin assembly syntax parser
  * 
@@ -106,6 +109,13 @@ public:
     MerlinSyntaxParser();
 
     /**
+     * @brief Set CPU plugin for mode switching (e.g., XC directive)
+     *
+     * @param cpu Pointer to CPU plugin (must remain valid during parsing)
+     */
+    void SetCpu(Cpu6502* cpu);
+
+    /**
      * @brief Parse Merlin assembly source into atoms and symbols
      * 
      * Parses the provided Merlin-format assembly source and populates
@@ -163,6 +173,8 @@ private:
     std::string current_file_;      ///< Current source filename
     int current_line_;              ///< Current line number
 
+    Cpu6502* cpu_ = nullptr;        ///< CPU plugin for mode switching (XC directive)
+
     /**
      * @brief Conditional assembly block state
      * 
@@ -210,6 +222,7 @@ private:
     void HandleEnd();
     void HandleSav(const std::string& operand);
     void HandleXc(const std::string& operand);
+    void HandleMx(const std::string& operand);
     void HandleRev(const std::string& label, const std::string& operand,
                    Section& section, ConcreteSymbolTable& symbols);
     void HandleLup(const std::string& operand);

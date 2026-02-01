@@ -62,9 +62,25 @@ int main(int argc, char** argv) {
     std::string source = buffer.str();
     file.close();
 
-    // Step 2: Create section and symbol table
+    // Step 2: Create section, symbol table, and CPU plugin
     Section section;
     ConcreteSymbolTable symbols;
+    Cpu6502 cpu;
+
+    // Set initial CPU mode from command-line option
+    if (opts.cpu == "6502") {
+      cpu.SetCpuMode(CpuMode::Cpu6502);
+    } else if (opts.cpu == "65c02") {
+      cpu.SetCpuMode(CpuMode::Cpu65C02);
+    } else if (opts.cpu == "65c02rock") {
+      cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
+    } else if (opts.cpu == "65816") {
+      cpu.SetCpuMode(CpuMode::Cpu65816);
+    } else {
+      std::cerr << "Error: Unknown CPU type: " << opts.cpu << "\n";
+      std::cerr << "Supported: 6502, 65c02, 65c02rock, 65816\n";
+      return 1;
+    }
 
     // Step 3: Parse source code
     // Change to source file's directory so PUT directives can find included files
@@ -80,6 +96,7 @@ int main(int argc, char** argv) {
       
       if (opts.syntax == "merlin") {
         MerlinSyntaxParser parser;
+        parser.SetCpu(&cpu);  // Allow XC directive to toggle CPU mode
         parser.Parse(source, section, symbols);
       } else if (opts.syntax == "scmasm") {
         ScmasmSyntaxParser parser;
@@ -108,8 +125,7 @@ int main(int argc, char** argv) {
       return 1;
     }
 
-    // Step 4: Create CPU plugin and assembler
-    Cpu6502 cpu;
+    // Step 4: Create assembler (CPU already created in Step 2)
     Assembler assembler;
     assembler.SetCpuPlugin(&cpu);
     assembler.AddSection(section);

@@ -187,6 +187,7 @@ constexpr uint8_t BMI = 0x30;  // BMI rel      - Branch if Minus
 constexpr uint8_t BPL = 0x10;  // BPL rel      - Branch if Plus
 constexpr uint8_t BVC = 0x50;  // BVC rel      - Branch if Overflow Clear
 constexpr uint8_t BVS = 0x70;  // BVS rel      - Branch if Overflow Set
+constexpr uint8_t BRA = 0x80;  // BRA rel      - Branch Always (65C02)
 
 // ============================================================================
 // Jump and Subroutine Instructions

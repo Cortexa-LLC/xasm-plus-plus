@@ -2,6 +2,7 @@
 // Phases 1-3: Foundation, Local Labels, DUM Blocks
 
 #include "xasm++/syntax/merlin_syntax.h"
+#include "xasm++/cpu/cpu_6502.h"
 #include "xasm++/util/string_utils.h"
 #include <sstream>
 #include <fstream>
@@ -27,7 +28,12 @@ MerlinSyntaxParser::MerlinSyntaxParser()
     , current_address_(0)
     , end_directive_seen_(false)
     , current_file_("<stdin>")
-    , current_line_(0) {
+    , current_line_(0)
+    , cpu_(nullptr) {
+}
+
+void MerlinSyntaxParser::SetCpu(Cpu6502* cpu) {
+    cpu_ = cpu;
 }
 
 // ============================================================================
@@ -1094,11 +1100,70 @@ void MerlinSyntaxParser::HandleSav(const std::string& /* operand */) {
     // No atoms created, no state changed
 }
 
-void MerlinSyntaxParser::HandleXc(const std::string& /* operand */) {
+void MerlinSyntaxParser::HandleXc(const std::string& operand) {
     // XC [ON|OFF] - Toggle 65C02 CPU instruction set
-    // This is a no-op for now - CPU mode is controlled by --cpu flag
-    // Used in GRAFIX.S: "xc off"
-    // No atoms created, no state changed
+    // xc or xc on  = enable 65C02 mode
+    // xc off       = disable 65C02 mode (back to 6502)
+
+    if (!cpu_) {
+        // No CPU set - silently ignore (for tests that don't need CPU)
+        return;
+    }
+
+    std::string op = ToUpper(Trim(operand));
+
+    if (op.empty() || op == "ON") {
+        // Enable 65C02 mode
+        cpu_->SetCpuMode(CpuMode::Cpu65C02);
+    } else if (op == "OFF") {
+        // Disable 65C02 mode (back to 6502)
+        cpu_->SetCpuMode(CpuMode::Cpu6502);
+    } else {
+        throw std::runtime_error(FormatError("XC: invalid operand (expected ON or OFF)"));
+    }
+
+    // No atoms created
+}
+
+void MerlinSyntaxParser::HandleMx(const std::string& operand) {
+    // MX mode - Set 65816 accumulator and index register widths
+    // mx %00 or mx 0 = 16-bit A, 16-bit X/Y (native mode)
+    // mx %01 or mx 1 = 16-bit A, 8-bit X/Y
+    // mx %10 or mx 2 = 8-bit A, 16-bit X/Y
+    // mx %11 or mx 3 = 8-bit A, 8-bit X/Y (emulation mode)
+    // This is a directive only - tracks state but doesn't change CPU encoding
+    // (Actual 65816 instruction encoding changes based on MX are out of scope)
+    
+    std::string op = Trim(operand);
+    if (op.empty()) {
+        throw std::runtime_error(FormatError("MX directive requires an operand"));
+    }
+    
+    int mode = -1;
+    
+    // Check for binary format %00-%11
+    if (op[0] == '%') {
+        std::string binary = op.substr(1);
+        if (binary == "00") mode = 0;
+        else if (binary == "01") mode = 1;
+        else if (binary == "10") mode = 2;
+        else if (binary == "11") mode = 3;
+        else {
+            throw std::runtime_error(FormatError("MX directive expects binary %00-%11 or decimal 0-3"));
+        }
+    }
+    // Check for decimal format 0-3
+    else if (op.length() == 1 && op[0] >= '0' && op[0] <= '3') {
+        mode = op[0] - '0';
+    }
+    else {
+        throw std::runtime_error(FormatError("MX directive expects binary %00-%11 or decimal 0-3"));
+    }
+    
+    // Store mode (no atoms created, just state tracking)
+    // In a full implementation, this would affect how 65816 instructions are encoded
+    // For now, just validate and accept the directive
+    (void)mode;  // Suppress unused variable warning
 }
 
 void MerlinSyntaxParser::HandleRev(const std::string& label, const std::string& operand,
@@ -1422,39 +1487,44 @@ void MerlinSyntaxParser::ParseLine(const std::string& line, Section& section,
         return;
     } else if (directive == "MAC") {
         // MAC MacroName - Can be either:
-        // 1. Macro invocation (if macro already exists) - used with PMC/EOM style
-        //    Format: MAC MacroName;param1;param2;...
+        // 1. Macro invocation (if macro already exists):
+        //    Format: MAC MacroName;param1;param2;... OR  MacroName;param1;param2
         // 2. Macro definition (if macro doesn't exist) - Merlin style, terminated with <<<
+        //    Format: MacroName MAC param1;param2  (label is macro name)
         
-        // Parse macro name and parameters
-        // Parameters are separated by semicolons: MAC LoadValue;#$42
-        size_t semicolon_pos = operands.find(';');
         std::string macro_name;
         std::string params_str;
         
-        if (semicolon_pos != std::string::npos) {
-            macro_name = ToUpper(Trim(operands.substr(0, semicolon_pos)));
-            params_str = Trim(operands.substr(semicolon_pos + 1));
+        // Check if label is present - if so, it's the macro name (Merlin label-based syntax)
+        if (!label.empty()) {
+            // Label-based definition: stlx mac bank;addr
+            // Label = "stlx" (macro name)
+            // Operands = "bank;addr" (parameter names)
+            macro_name = ToUpper(label);
+            params_str = operands;  // These are parameter names for definition, not values
         } else {
-            macro_name = ToUpper(Trim(operands));
-            params_str = "";
+            // No label - macro name must be in operands
+            // Parse macro name and parameters from operands
+            // Parameters are separated by semicolons: MAC LoadValue;#$42
+            size_t semicolon_pos = operands.find(';');
+            
+            if (semicolon_pos != std::string::npos) {
+                macro_name = ToUpper(Trim(operands.substr(0, semicolon_pos)));
+                params_str = Trim(operands.substr(semicolon_pos + 1));
+            } else {
+                macro_name = ToUpper(Trim(operands));
+                params_str = "";
+            }
         }
         
         if (macro_name.empty()) {
             throw std::runtime_error(FormatError("MAC requires macro name"));
         }
         
-        // Check if this macro already exists (was defined with PMC/EOM)
+        // Check if this macro already exists (was defined with PMC/EOM or previous MAC)
         if (macros_.find(macro_name) != macros_.end()) {
             // Macro exists - this is an INVOCATION
-            // Create label atom first if label present
-            if (!label.empty()) {
-                symbols.Define(label, SymbolType::Label,
-                              std::make_shared<LiteralExpr>(current_address_));
-                section.atoms.push_back(std::make_shared<LabelAtom>(label, current_address_));
-                current_scope_.global_label = label;
-                current_scope_.local_labels.clear();
-            }
+            // (No label should be present for invocation - it was already handled above)
             // Expand the macro with parameters
             ExpandMacro(macro_name, params_str, section, symbols);
             return;
@@ -1504,6 +1574,10 @@ void MerlinSyntaxParser::ParseLine(const std::string& line, Section& section,
     } else if (directive == "XC") {
         // XC [ON|OFF] - Toggle 65C02 CPU mode (no-op)
         HandleXc(operands);
+        return;
+    } else if (directive == "MX") {
+        // MX mode - Set 65816 register widths (state tracking only)
+        HandleMx(operands);
         return;
     } else if (directive == "REV") {
         // REV "string" - Reverse ASCII string

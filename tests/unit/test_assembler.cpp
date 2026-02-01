@@ -1237,3 +1237,129 @@ TEST(AssemblerTest, InstructionAtomCastFailure_Pass2) {
     }
     EXPECT_TRUE(found_cast_error);
 }
+
+// Test PHB - Push Data Bank Register (65816)
+TEST(AssemblerTest, PHB_65816) {
+    Assembler assembler;
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65816);
+    assembler.SetCpuPlugin(&cpu);
+    
+    Section section(".text", static_cast<uint32_t>(SectionAttributes::Code), 0x1000);
+    
+    // PHB -> 8B
+    auto instr = std::make_shared<InstructionAtom>("PHB", "");
+    section.atoms.push_back(instr);
+    
+    assembler.AddSection(section);
+    AssemblerResult result = assembler.Assemble();
+    
+    EXPECT_TRUE(result.success);
+    ASSERT_EQ(instr->encoded_bytes.size(), 1);
+    EXPECT_EQ(instr->encoded_bytes[0], 0x8B);  // PHB opcode
+}
+
+// Test PLB - Pull Data Bank Register (65816)
+TEST(AssemblerTest, PLB_65816) {
+    Assembler assembler;
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65816);
+    assembler.SetCpuPlugin(&cpu);
+    
+    Section section(".text", static_cast<uint32_t>(SectionAttributes::Code), 0x1000);
+    
+    // PLB -> AB
+    auto instr = std::make_shared<InstructionAtom>("PLB", "");
+    section.atoms.push_back(instr);
+    
+    assembler.AddSection(section);
+    AssemblerResult result = assembler.Assemble();
+    
+    EXPECT_TRUE(result.success);
+    ASSERT_EQ(instr->encoded_bytes.size(), 1);
+    EXPECT_EQ(instr->encoded_bytes[0], 0xAB);  // PLB opcode
+}
+
+// Test PHX - Push X Register (65C02+)
+TEST(AssemblerTest, PHX_65C02) {
+    Assembler assembler;
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65C02);
+    assembler.SetCpuPlugin(&cpu);
+    
+    Section section(".text", static_cast<uint32_t>(SectionAttributes::Code), 0x1000);
+    
+    // PHX -> DA
+    auto instr = std::make_shared<InstructionAtom>("PHX", "");
+    section.atoms.push_back(instr);
+    
+    assembler.AddSection(section);
+    AssemblerResult result = assembler.Assemble();
+    
+    EXPECT_TRUE(result.success);
+    ASSERT_EQ(instr->encoded_bytes.size(), 1);
+    EXPECT_EQ(instr->encoded_bytes[0], 0xDA);  // PHX opcode
+}
+
+// Test PLX - Pull X Register (65C02+)
+TEST(AssemblerTest, PLX_65C02) {
+    Assembler assembler;
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65C02);
+    assembler.SetCpuPlugin(&cpu);
+    
+    Section section(".text", static_cast<uint32_t>(SectionAttributes::Code), 0x1000);
+    
+    // PLX -> FA
+    auto instr = std::make_shared<InstructionAtom>("PLX", "");
+    section.atoms.push_back(instr);
+    
+    assembler.AddSection(section);
+    AssemblerResult result = assembler.Assemble();
+    
+    EXPECT_TRUE(result.success);
+    ASSERT_EQ(instr->encoded_bytes.size(), 1);
+    EXPECT_EQ(instr->encoded_bytes[0], 0xFA);  // PLX opcode
+}
+
+// Test PHY - Push Y Register (65C02+)
+TEST(AssemblerTest, PHY_65C02) {
+    Assembler assembler;
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65C02);
+    assembler.SetCpuPlugin(&cpu);
+    
+    Section section(".text", static_cast<uint32_t>(SectionAttributes::Code), 0x1000);
+    
+    // PHY -> 5A
+    auto instr = std::make_shared<InstructionAtom>("PHY", "");
+    section.atoms.push_back(instr);
+    
+    assembler.AddSection(section);
+    AssemblerResult result = assembler.Assemble();
+    
+    EXPECT_TRUE(result.success);
+    ASSERT_EQ(instr->encoded_bytes.size(), 1);
+    EXPECT_EQ(instr->encoded_bytes[0], 0x5A);  // PHY opcode
+}
+
+// Test PLY - Pull Y Register (65C02+)
+TEST(AssemblerTest, PLY_65C02) {
+    Assembler assembler;
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65C02);
+    assembler.SetCpuPlugin(&cpu);
+    
+    Section section(".text", static_cast<uint32_t>(SectionAttributes::Code), 0x1000);
+    
+    // PLY -> 7A
+    auto instr = std::make_shared<InstructionAtom>("PLY", "");
+    section.atoms.push_back(instr);
+    
+    assembler.AddSection(section);
+    AssemblerResult result = assembler.Assemble();
+    
+    EXPECT_TRUE(result.success);
+    ASSERT_EQ(instr->encoded_bytes.size(), 1);
+    EXPECT_EQ(instr->encoded_bytes[0], 0x7A);  // PLY opcode
+}

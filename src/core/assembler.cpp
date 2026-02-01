@@ -22,9 +22,38 @@ using xasm::util::ParseHex;
 // - Hex literals: $1234
 // - Decimal literals: 42
 // - Symbol references: label_name
+// - Simple expressions: $528+2, label-$80
 static std::shared_ptr<Expression> ParseExpression(const std::string& str,
-                                                     ConcreteSymbolTable& /* symbols */) {
+                                                     ConcreteSymbolTable& symbols) {
     std::string trimmed = Trim(str);
+    
+    // Check for addition first (before trying to parse as single value)
+    size_t plus_pos = trimmed.find('+');
+    if (plus_pos != std::string::npos && plus_pos > 0) {
+        std::string left = Trim(trimmed.substr(0, plus_pos));
+        std::string right = Trim(trimmed.substr(plus_pos + 1));
+        
+        // Recursively parse both sides
+        auto left_expr = ParseExpression(left, symbols);
+        auto right_expr = ParseExpression(right, symbols);
+        
+        // Return BinaryOpExpr for addition
+        return std::make_shared<BinaryOpExpr>(BinaryOp::Add, left_expr, right_expr);
+    }
+    
+    // Check for subtraction (skip first char - could be negative sign)
+    size_t minus_pos = trimmed.find('-', 1);
+    if (minus_pos != std::string::npos && minus_pos > 0) {
+        std::string left = Trim(trimmed.substr(0, minus_pos));
+        std::string right = Trim(trimmed.substr(minus_pos + 1));
+        
+        // Recursively parse both sides
+        auto left_expr = ParseExpression(left, symbols);
+        auto right_expr = ParseExpression(right, symbols);
+        
+        // Return BinaryOpExpr for subtraction
+        return std::make_shared<BinaryOpExpr>(BinaryOp::Subtract, left_expr, right_expr);
+    }
     
     // Hex literal: $1234 (may have addressing mode suffix like $200,x)
     if (!trimmed.empty() && trimmed[0] == '$') {
@@ -78,6 +107,12 @@ static std::shared_ptr<Expression> ParseExpression(const std::string& str,
     
     // Symbol reference
     return std::make_shared<SymbolExpr>(trimmed);
+}
+
+// Helper: Check if a string contains expression operators
+static bool ContainsExpressionOperators(const std::string& str) {
+    // Expression operators: + - * / < > & | ^ ~
+    return str.find_first_of("+-*/&|^~<>") != std::string::npos;
 }
 
 // Helper: Determine addressing mode from operands string
@@ -149,6 +184,10 @@ static AddressingMode DetermineAddressingMode(const std::string& operands) {
 
         // Check if it's a hex address or label
         if (addr_part[0] == '$') {
+            // If expression contains operators, can't evaluate yet - default to AbsoluteX
+            if (ContainsExpressionOperators(addr_part)) {
+                return AddressingMode::AbsoluteX;  // Conservative choice
+            }
             uint32_t value = ParseHex(addr_part);
             if (value <= 0xFF) {
                 return AddressingMode::ZeroPageX;
@@ -173,6 +212,10 @@ static AddressingMode DetermineAddressingMode(const std::string& operands) {
 
         // Check if it's a hex address or label
         if (addr_part[0] == '$') {
+            // If expression contains operators, can't evaluate yet - default to AbsoluteY
+            if (ContainsExpressionOperators(addr_part)) {
+                return AddressingMode::AbsoluteY;  // Conservative choice
+            }
             uint32_t value = ParseHex(addr_part);
             if (value <= 0xFF) {
                 return AddressingMode::ZeroPageY;
@@ -191,6 +234,10 @@ static AddressingMode DetermineAddressingMode(const std::string& operands) {
 
     // Absolute or zero page: $1234 or $80
     if (trimmed[0] == '$') {
+        // If expression contains operators, can't evaluate yet - default to Absolute
+        if (ContainsExpressionOperators(trimmed)) {
+            return AddressingMode::Absolute;  // Conservative choice
+        }
         uint32_t value = ParseHex(trimmed);
         if (value <= 0xFF) {
             return AddressingMode::ZeroPage;
@@ -236,6 +283,11 @@ void Assembler::RegisterMemoryInstructions() {
     instruction_handlers_["STY"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
         return cpu->EncodeSTY(value, mode);
     };
+
+    // 65C02 store zero instruction
+    instruction_handlers_["STZ"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
+        return cpu->EncodeSTZ(value, mode);
+    };
 }
 
 void Assembler::RegisterArithmeticInstructions() {
@@ -280,6 +332,9 @@ void Assembler::RegisterBranchInstructions() {
     instruction_handlers_["BCC"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
         return cpu->EncodeBCC(value, mode);
     };
+    instruction_handlers_["BLT"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
+        return cpu->EncodeBCC(value, mode);  // BLT is an alias for BCC (Branch if Less Than)
+    };
     instruction_handlers_["BCS"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
         return cpu->EncodeBCS(value, mode);
     };
@@ -309,6 +364,20 @@ void Assembler::RegisterStackInstructions() {
     };
     instruction_handlers_["PLP"] = [](Cpu6502* cpu, uint16_t, AddressingMode) {
         return cpu->EncodePLP();
+    };
+
+    // 65C02 stack instructions
+    instruction_handlers_["PHX"] = [](Cpu6502* cpu, uint16_t, AddressingMode) {
+        return cpu->EncodePHX();
+    };
+    instruction_handlers_["PLX"] = [](Cpu6502* cpu, uint16_t, AddressingMode) {
+        return cpu->EncodePLX();
+    };
+    instruction_handlers_["PHY"] = [](Cpu6502* cpu, uint16_t, AddressingMode) {
+        return cpu->EncodePHY();
+    };
+    instruction_handlers_["PLY"] = [](Cpu6502* cpu, uint16_t, AddressingMode) {
+        return cpu->EncodePLY();
     };
 }
 
@@ -416,6 +485,37 @@ void Assembler::RegisterControlInstructions() {
     instruction_handlers_["ROR"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
         return cpu->EncodeROR(value, mode);
     };
+    
+    // 65816 instructions
+    instruction_handlers_["XCE"] = [](Cpu6502* cpu, uint16_t, AddressingMode) {
+        return cpu->EncodeXCE();
+    };
+    instruction_handlers_["SEP"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
+        return cpu->EncodeSEP(value, mode);
+    };
+    instruction_handlers_["REP"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
+        return cpu->EncodeREP(value, mode);
+    };
+    instruction_handlers_["PHB"] = [](Cpu6502* cpu, uint16_t, AddressingMode) {
+        return cpu->EncodePHB();
+    };
+    instruction_handlers_["PLB"] = [](Cpu6502* cpu, uint16_t, AddressingMode) {
+        return cpu->EncodePLB();
+    };
+    
+    // 65C02 instructions
+    instruction_handlers_["TSB"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
+        return cpu->EncodeTSB(value, mode);
+    };
+    instruction_handlers_["TRB"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
+        return cpu->EncodeTRB(value, mode);
+    };
+    instruction_handlers_["BRA"] = [](Cpu6502* cpu, uint16_t value, AddressingMode mode) {
+        return cpu->EncodeBRA(value, mode);
+    };
+    
+    // MVN/MVP require special handling with two operands (srcbank, destbank)
+    // Will be handled separately in EncodeInstructions
 }
 
 void Assembler::SetCpuPlugin(Cpu6502* cpu) {
@@ -596,7 +696,22 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable& symbols,
                             }
                         } else if (value_str[0] == '$') {
                             // Absolute/Zero Page: $1234 (or $1234,X after stripping)
-                            value = static_cast<uint16_t>(ParseHex(value_str));
+                            // Use ParseExpression to handle both simple hex and expressions like $528+2
+                            try {
+                                auto expr = ParseExpression(value_str, symbols);
+                                int64_t expr_value = expr->Evaluate(symbols);
+                                value = static_cast<uint16_t>(expr_value);
+                            } catch (const std::exception& e) {
+                                // Check if this is a parse error or an undefined symbol
+                                std::string msg(e.what());
+                                if (msg.find("Undefined symbol") != std::string::npos) {
+                                    // Symbol undefined (forward reference) - use placeholder 0
+                                    value = 0;
+                                } else {
+                                    // Parse error - propagate the exception
+                                    throw;
+                                }
+                            }
                         } else if (value_str != "A") {
                             // Label reference - look up in symbol table (skip if accumulator "A")
                             SymbolTable* lookup_table = symbols_ ? symbols_ : &symbols;
@@ -630,7 +745,8 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable& symbols,
                     bool is_branch = (mnemonic == "BEQ" || mnemonic == "BNE" ||
                                     mnemonic == "BCC" || mnemonic == "BCS" ||
                                     mnemonic == "BMI" || mnemonic == "BPL" ||
-                                    mnemonic == "BVC" || mnemonic == "BVS");
+                                    mnemonic == "BVC" || mnemonic == "BVS" ||
+                                    mnemonic == "BLT" || mnemonic == "BRA");
 
                     if (is_branch && mode == AddressingMode::Absolute) {
                         // Branch instructions use relative addressing
@@ -641,11 +757,13 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable& symbols,
                         if (mnemonic == "BEQ") branch_opcode = Opcodes::BEQ;
                         else if (mnemonic == "BNE") branch_opcode = Opcodes::BNE;
                         else if (mnemonic == "BCC") branch_opcode = Opcodes::BCC;
+                        else if (mnemonic == "BLT") branch_opcode = Opcodes::BCC;  // BLT is an alias for BCC
                         else if (mnemonic == "BCS") branch_opcode = Opcodes::BCS;
                         else if (mnemonic == "BMI") branch_opcode = Opcodes::BMI;
                         else if (mnemonic == "BPL") branch_opcode = Opcodes::BPL;
                         else if (mnemonic == "BVC") branch_opcode = Opcodes::BVC;
                         else if (mnemonic == "BVS") branch_opcode = Opcodes::BVS;
+                        else if (mnemonic == "BRA") branch_opcode = Opcodes::BRA;
                         
                         // Use branch relaxation (handles both short and long branches)
                         inst->encoded_bytes = cpu_->EncodeBranchWithRelaxation(
@@ -655,6 +773,57 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable& symbols,
                         );
                         
                         // Skip the normal encoding path for branches
+                        // Advance current address past this instruction
+                        current_address += inst->encoded_bytes.size();
+                        current_sizes.push_back(inst->encoded_bytes.size());
+                        continue;  // Skip to next atom
+                    }
+
+                    // Special handling for MVN/MVP (Block Move with two operands)
+                    if (mnemonic == "MVN" || mnemonic == "MVP") {
+                        // Parse operands: "srcbank,destbank" or "$E1,$01"
+                        std::string trimmed_operand = Trim(operand);
+                        size_t comma_pos = trimmed_operand.find(',');
+                        
+                        if (comma_pos == std::string::npos) {
+                            AssemblerError error;
+                            error.location = inst->location;
+                            error.message = mnemonic + " requires two operands: srcbank,destbank";
+                            result.errors.push_back(error);
+                            result.success = false;
+                            continue;
+                        }
+                        
+                        // Extract source and dest banks
+                        std::string src_str = Trim(trimmed_operand.substr(0, comma_pos));
+                        std::string dst_str = Trim(trimmed_operand.substr(comma_pos + 1));
+                        
+                        // Helper lambda to parse bank value
+                        auto parse_bank = [](const std::string& str) -> uint8_t {
+                            if (!str.empty() && str[0] == '$') {
+                                return static_cast<uint8_t>(ParseHex(str) & 0xFF);
+                            }
+                            return static_cast<uint8_t>(std::stoul(str, nullptr, 10) & 0xFF);
+                        };
+                        
+                        try {
+                            uint8_t srcbank = parse_bank(src_str);
+                            uint8_t destbank = parse_bank(dst_str);
+                            
+                            // Encode the instruction
+                            inst->encoded_bytes = (mnemonic == "MVN") ?
+                                cpu_->EncodeMVN(srcbank, destbank) :
+                                cpu_->EncodeMVP(srcbank, destbank);
+                            
+                        } catch (const std::exception& e) {
+                            AssemblerError error;
+                            error.location = inst->location;
+                            error.message = "Invalid bank values for " + mnemonic + ": " + e.what();
+                            result.errors.push_back(error);
+                            result.success = false;
+                            continue;
+                        }
+                        
                         // Advance current address past this instruction
                         current_address += inst->encoded_bytes.size();
                         current_sizes.push_back(inst->encoded_bytes.size());

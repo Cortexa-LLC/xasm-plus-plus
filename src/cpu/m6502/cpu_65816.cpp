@@ -304,5 +304,29 @@ bool Cpu6502::IsIndex8Bit() const {
     return x_flag_;  // true = 8-bit, false = 16-bit
 }
 
+// SEP - Set Processor Status Bits (65816 only)
+// Sets bits in the processor status register based on immediate value
+std::vector<uint8_t> Cpu6502::EncodeSEP(uint16_t value, AddressingMode mode) const {
+    if (cpu_mode_ != CpuMode::Cpu65816) {
+        return {};  // Not available in 6502/65C02
+    }
+    if (mode != AddressingMode::Immediate) {
+        return {};  // SEP only supports immediate addressing
+    }
+    return {0xE2, static_cast<uint8_t>(value & 0xFF)};
+}
+
+// REP - Reset Processor Status Bits (65816 only)
+// Clears bits in the processor status register based on immediate value
+std::vector<uint8_t> Cpu6502::EncodeREP(uint16_t value, AddressingMode mode) const {
+    if (cpu_mode_ != CpuMode::Cpu65816) {
+        return {};  // Not available in 6502/65C02
+    }
+    if (mode != AddressingMode::Immediate) {
+        return {};  // REP only supports immediate addressing
+    }
+    return {0xC2, static_cast<uint8_t>(value & 0xFF)};
+}
+
 
 } // namespace xasm

@@ -81,6 +81,7 @@ gtest_discover_tests(test_parse_hex)
 # CPU 6502 tests
 add_executable(test_cpu6502
     test_cpu6502.cpp
+    test_65816_extended.cpp
 )
 
 target_link_libraries(test_cpu6502
