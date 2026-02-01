@@ -1656,3 +1656,102 @@ TEST(MerlinSyntaxTest, MacroMerlinStyleWithParameters) {
     EXPECT_EQ(inst2->mnemonic, "STA");
     EXPECT_EQ(inst2->operand, "$80");
 }
+
+// ============================================================================
+// Missing Directives (xasm++-1s3)
+// ============================================================================
+
+TEST(MerlinSyntaxTest, SavDirective) {
+    // SAV - Save output filename (no-op for now)
+    MerlinSyntaxParser parser;
+    ConcreteSymbolTable symbols;
+    Section section("test", 0);
+
+    parser.Parse(" sav boot", section, symbols);
+
+    // SAV is a no-op directive - should produce no atoms
+    EXPECT_EQ(section.atoms.size(), 0);
+}
+
+TEST(MerlinSyntaxTest, XcDirective) {
+    // XC - Toggle 65C02 CPU mode (no-op for now)
+    MerlinSyntaxParser parser;
+    ConcreteSymbolTable symbols;
+    Section section("test", 0);
+
+    parser.Parse(" xc off", section, symbols);
+
+    // XC is a no-op directive - should produce no atoms
+    EXPECT_EQ(section.atoms.size(), 0);
+}
+
+TEST(MerlinSyntaxTest, RevDirective) {
+    // REV - Reverse ASCII string
+    // Emits reversed string as data bytes and defines label at that location
+    MerlinSyntaxParser parser;
+    ConcreteSymbolTable symbols;
+    Section section("test", 0);
+
+    parser.Parse("C_test rev \"ABC\"", section, symbols);
+
+    // REV should define label and emit reversed string data
+    EXPECT_TRUE(symbols.IsDefined("C_test"));
+    
+    // Label should point to address 0 (start of section)
+    int64_t value;
+    EXPECT_TRUE(symbols.Lookup("C_test", value));
+    EXPECT_EQ(value, 0);
+    
+    // Should have label and data atoms
+    ASSERT_EQ(section.atoms.size(), 2);
+    EXPECT_EQ(section.atoms[0]->type, AtomType::Label);
+    
+    // Data should be "CBA" (reversed)
+    auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[1]);
+    ASSERT_NE(data_atom, nullptr);
+    ASSERT_EQ(data_atom->data.size(), 3);
+    EXPECT_EQ(data_atom->data[0], 'C');  // 0x43
+    EXPECT_EQ(data_atom->data[1], 'B');  // 0x42
+    EXPECT_EQ(data_atom->data[2], 'A');  // 0x41
+}
+
+TEST(MerlinSyntaxTest, RevDirectiveWithSingleChar) {
+    // REV with single character
+    MerlinSyntaxParser parser;
+    ConcreteSymbolTable symbols;
+    Section section("test", 0);
+
+    parser.Parse("C_x rev \"X\"", section, symbols);
+
+    // REV should define label and emit single byte
+    EXPECT_TRUE(symbols.IsDefined("C_x"));
+    
+    // Label should point to address 0
+    int64_t value;
+    EXPECT_TRUE(symbols.Lookup("C_x", value));
+    EXPECT_EQ(value, 0);
+    
+    // Should have label and data atoms
+    ASSERT_EQ(section.atoms.size(), 2);
+    EXPECT_EQ(section.atoms[0]->type, AtomType::Label);
+    
+    // Data should be "X"
+    auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[1]);
+    ASSERT_NE(data_atom, nullptr);
+    ASSERT_EQ(data_atom->data.size(), 1);
+    EXPECT_EQ(data_atom->data[0], 'X');  // 0x58
+}
+
+TEST(MerlinSyntaxTest, LupDirective) {
+    // LUP - Loop directive (should error - not yet implemented)
+    MerlinSyntaxParser parser;
+    ConcreteSymbolTable symbols;
+    Section section("test", 0);
+
+    std::string source = " lup 36\n";
+
+    // LUP should throw an error indicating it's not yet implemented
+    EXPECT_THROW({
+        parser.Parse(source, section, symbols);
+    }, std::runtime_error);
+}

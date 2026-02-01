@@ -1087,6 +1087,87 @@ void MerlinSyntaxParser::HandleFLS(const std::string& operand, Section& section)
     current_address_ += bytes.size();
 }
 
+void MerlinSyntaxParser::HandleSav(const std::string& /* operand */) {
+    // SAV filename - Save output filename directive
+    // This is a no-op for now - output filename is controlled by command-line args
+    // Used in BOOT.S: "sav boot"
+    // No atoms created, no state changed
+}
+
+void MerlinSyntaxParser::HandleXc(const std::string& /* operand */) {
+    // XC [ON|OFF] - Toggle 65C02 CPU instruction set
+    // This is a no-op for now - CPU mode is controlled by --cpu flag
+    // Used in GRAFIX.S: "xc off"
+    // No atoms created, no state changed
+}
+
+void MerlinSyntaxParser::HandleRev(const std::string& label, const std::string& operand,
+                                    Section& section, ConcreteSymbolTable& symbols) {
+    // REV "string" - Reverse ASCII string
+    // Used in SPECIALK.S: C_skip rev "SKIP"
+    // Reverses the string bytes and emits them to the output
+    // Creates a label at the start of the reversed string
+    
+    std::string op = Trim(operand);
+    
+    if (op.empty()) {
+        throw std::runtime_error(FormatError("REV requires a string operand"));
+    }
+    
+    // Find string delimiter (single or double quote)
+    char quote = '\0';
+    size_t start_pos = 0;
+    
+    if (op[0] == '\'' || op[0] == '"') {
+        quote = op[0];
+        start_pos = 1;
+    } else {
+        throw std::runtime_error(FormatError("REV requires quoted string"));
+    }
+    
+    // Find closing quote
+    size_t end_pos = op.find(quote, start_pos);
+    if (end_pos == std::string::npos) {
+        // No closing quote - treat rest as string
+        end_pos = op.length();
+    }
+    
+    // Extract string content
+    std::string text = op.substr(start_pos, end_pos - start_pos);
+    
+    if (text.empty()) {
+        throw std::runtime_error(FormatError("REV requires non-empty string"));
+    }
+    
+    // Create label at current address (before emitting bytes)
+    if (!label.empty()) {
+        symbols.Define(label, SymbolType::Label,
+                      std::make_shared<LiteralExpr>(current_address_));
+        section.atoms.push_back(std::make_shared<LabelAtom>(label, current_address_));
+        current_scope_.global_label = label;
+        current_scope_.local_labels.clear();
+    }
+    
+    // Reverse the string
+    std::string reversed(text.rbegin(), text.rend());
+    
+    // Emit reversed bytes as data
+    std::vector<uint8_t> bytes;
+    for (char ch : reversed) {
+        bytes.push_back(static_cast<uint8_t>(ch));
+    }
+    
+    section.atoms.push_back(std::make_shared<DataAtom>(bytes));
+    current_address_ += bytes.size();
+}
+
+void MerlinSyntaxParser::HandleLup(const std::string& /* operand */) {
+    // LUP count - Loop directive (repeat following code count times)
+    // This is deferred for now - requires complex loop expansion
+    // Used in TABLES.S: "lup 36"
+    throw std::runtime_error(FormatError("LUP directive not yet implemented (deferred)"));
+}
+
 // ============================================================================
 // Line Parsing
 // ============================================================================
@@ -1415,6 +1496,25 @@ void MerlinSyntaxParser::ParseLine(const std::string& line, Section& section,
             current_scope_.local_labels.clear();
         }
         HandleEnd();
+        return;
+    } else if (directive == "SAV") {
+        // SAV filename - Save output filename (no-op)
+        HandleSav(operands);
+        return;
+    } else if (directive == "XC") {
+        // XC [ON|OFF] - Toggle 65C02 CPU mode (no-op)
+        HandleXc(operands);
+        return;
+    } else if (directive == "REV") {
+        // REV "string" - Reverse ASCII string
+        if (label.empty()) {
+            throw std::runtime_error(FormatError("REV requires a label"));
+        }
+        HandleRev(label, operands, section, symbols);
+        return;
+    } else if (directive == "LUP") {
+        // LUP count - Loop directive (not implemented yet)
+        HandleLup(operands);
         return;
     } else {
         // Check if it's a macro invocation

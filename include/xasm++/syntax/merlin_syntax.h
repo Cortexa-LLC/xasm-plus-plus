@@ -208,6 +208,11 @@ private:
     void HandleElse();
     void HandleFin();
     void HandleEnd();
+    void HandleSav(const std::string& operand);
+    void HandleXc(const std::string& operand);
+    void HandleRev(const std::string& label, const std::string& operand,
+                   Section& section, ConcreteSymbolTable& symbols);
+    void HandleLup(const std::string& operand);
 
     // Macro directives
     void HandlePMC(const std::string& operand);
