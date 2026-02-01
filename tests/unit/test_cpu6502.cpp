@@ -2584,3 +2584,485 @@ TEST(Cpu6502Test, BranchRelaxation_LargeOffset_PoP) {
     EXPECT_EQ(bytes[3], 0xC9);  // Target low byte
     EXPECT_EQ(bytes[4], 0x1E);  // Target high byte
 }
+
+// ============================================================================
+// Phase 2.6: 65C02 Rockwell Extensions
+// Group 1: WAI/STP - Processor Control
+// ============================================================================
+
+// Test 237: WAI (Wait for Interrupt) - 65C02 Rockwell
+TEST(Cpu6502Test, WAI_65C02Rockwell) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
+
+    // WAI -> CB
+    auto bytes = cpu.EncodeWAI();
+    ASSERT_EQ(bytes.size(), 1);
+    EXPECT_EQ(bytes[0], 0xCB);  // WAI opcode
+}
+
+// Test 238: STP (Stop Processor) - 65C02 Rockwell
+TEST(Cpu6502Test, STP_65C02Rockwell) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
+
+    // STP -> DB
+    auto bytes = cpu.EncodeSTP();
+    ASSERT_EQ(bytes.size(), 1);
+    EXPECT_EQ(bytes[0], 0xDB);  // STP opcode
+}
+
+// Test 239: WAI not available in 6502 mode
+TEST(Cpu6502Test, WAI_NotAvailableIn6502Mode) {
+    Cpu6502 cpu;
+    // Default mode is 6502
+    
+    auto bytes = cpu.EncodeWAI();
+    EXPECT_EQ(bytes.size(), 0);  // Empty = not supported
+}
+
+// Test 240: WAI not available in standard 65C02 mode (Rockwell-only)
+TEST(Cpu6502Test, WAI_NotAvailableInStandard65C02) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65C02);  // Standard 65C02, not Rockwell
+    
+    auto bytes = cpu.EncodeWAI();
+    EXPECT_EQ(bytes.size(), 0);  // Empty = Rockwell-only instruction
+}
+
+// Test 241: STP not available in 6502 mode
+TEST(Cpu6502Test, STP_NotAvailableIn6502Mode) {
+    Cpu6502 cpu;
+    // Default mode is 6502
+    
+    auto bytes = cpu.EncodeSTP();
+    EXPECT_EQ(bytes.size(), 0);  // Empty = not supported
+}
+
+// Test 242: STP not available in standard 65C02 mode (Rockwell-only)
+TEST(Cpu6502Test, STP_NotAvailableInStandard65C02) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65C02);  // Standard 65C02, not Rockwell
+    
+    auto bytes = cpu.EncodeSTP();
+    EXPECT_EQ(bytes.size(), 0);  // Empty = Rockwell-only instruction
+}
+
+// ============================================================================
+// Phase 2.6: 65C02 Rockwell Extensions
+// Group 2: RMB/SMB - Reset/Set Memory Bit
+// ============================================================================
+
+// Test 243: RMB0 (Reset Memory Bit 0) - 65C02 Rockwell
+TEST(Cpu6502Test, RMB0_65C02Rockwell) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
+
+    // RMB0 $80 -> 07 80
+    auto bytes = cpu.EncodeRMB0(0x80, AddressingMode::ZeroPage);
+    ASSERT_EQ(bytes.size(), 2);
+    EXPECT_EQ(bytes[0], 0x07);  // RMB0 opcode
+    EXPECT_EQ(bytes[1], 0x80);  // Zero page address
+}
+
+// Test 244: RMB1 - 65C02 Rockwell
+TEST(Cpu6502Test, RMB1_65C02Rockwell) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
+
+    // RMB1 $42 -> 17 42
+    auto bytes = cpu.EncodeRMB1(0x42, AddressingMode::ZeroPage);
+    ASSERT_EQ(bytes.size(), 2);
+    EXPECT_EQ(bytes[0], 0x17);  // RMB1 opcode
+    EXPECT_EQ(bytes[1], 0x42);
+}
+
+// Test 245: RMB2 - 65C02 Rockwell
+TEST(Cpu6502Test, RMB2_65C02Rockwell) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
+
+    // RMB2 $FF -> 27 FF
+    auto bytes = cpu.EncodeRMB2(0xFF, AddressingMode::ZeroPage);
+    ASSERT_EQ(bytes.size(), 2);
+    EXPECT_EQ(bytes[0], 0x27);
+    EXPECT_EQ(bytes[1], 0xFF);
+}
+
+// Test 246: RMB3 - 65C02 Rockwell
+TEST(Cpu6502Test, RMB3_65C02Rockwell) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
+
+    auto bytes = cpu.EncodeRMB3(0x00, AddressingMode::ZeroPage);
+    ASSERT_EQ(bytes.size(), 2);
+    EXPECT_EQ(bytes[0], 0x37);
+    EXPECT_EQ(bytes[1], 0x00);
+}
+
+// Test 247: RMB4 - 65C02 Rockwell
+TEST(Cpu6502Test, RMB4_65C02Rockwell) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
+
+    auto bytes = cpu.EncodeRMB4(0x80, AddressingMode::ZeroPage);
+    ASSERT_EQ(bytes.size(), 2);
+    EXPECT_EQ(bytes[0], 0x47);
+    EXPECT_EQ(bytes[1], 0x80);
+}
+
+// Test 248: RMB5 - 65C02 Rockwell
+TEST(Cpu6502Test, RMB5_65C02Rockwell) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
+
+    auto bytes = cpu.EncodeRMB5(0x80, AddressingMode::ZeroPage);
+    ASSERT_EQ(bytes.size(), 2);
+    EXPECT_EQ(bytes[0], 0x57);
+    EXPECT_EQ(bytes[1], 0x80);
+}
+
+// Test 249: RMB6 - 65C02 Rockwell
+TEST(Cpu6502Test, RMB6_65C02Rockwell) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
+
+    auto bytes = cpu.EncodeRMB6(0x80, AddressingMode::ZeroPage);
+    ASSERT_EQ(bytes.size(), 2);
+    EXPECT_EQ(bytes[0], 0x67);
+    EXPECT_EQ(bytes[1], 0x80);
+}
+
+// Test 250: RMB7 - 65C02 Rockwell
+TEST(Cpu6502Test, RMB7_65C02Rockwell) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
+
+    auto bytes = cpu.EncodeRMB7(0x80, AddressingMode::ZeroPage);
+    ASSERT_EQ(bytes.size(), 2);
+    EXPECT_EQ(bytes[0], 0x77);
+    EXPECT_EQ(bytes[1], 0x80);
+}
+
+// Test 251: SMB0 (Set Memory Bit 0) - 65C02 Rockwell
+TEST(Cpu6502Test, SMB0_65C02Rockwell) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
+
+    // SMB0 $80 -> 87 80
+    auto bytes = cpu.EncodeSMB0(0x80, AddressingMode::ZeroPage);
+    ASSERT_EQ(bytes.size(), 2);
+    EXPECT_EQ(bytes[0], 0x87);
+    EXPECT_EQ(bytes[1], 0x80);
+}
+
+// Test 252: SMB1 - 65C02 Rockwell
+TEST(Cpu6502Test, SMB1_65C02Rockwell) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
+
+    auto bytes = cpu.EncodeSMB1(0x42, AddressingMode::ZeroPage);
+    ASSERT_EQ(bytes.size(), 2);
+    EXPECT_EQ(bytes[0], 0x97);
+    EXPECT_EQ(bytes[1], 0x42);
+}
+
+// Test 253: SMB2 - 65C02 Rockwell
+TEST(Cpu6502Test, SMB2_65C02Rockwell) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
+
+    auto bytes = cpu.EncodeSMB2(0xFF, AddressingMode::ZeroPage);
+    ASSERT_EQ(bytes.size(), 2);
+    EXPECT_EQ(bytes[0], 0xA7);
+    EXPECT_EQ(bytes[1], 0xFF);
+}
+
+// Test 254: SMB3 - 65C02 Rockwell
+TEST(Cpu6502Test, SMB3_65C02Rockwell) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
+
+    auto bytes = cpu.EncodeSMB3(0x00, AddressingMode::ZeroPage);
+    ASSERT_EQ(bytes.size(), 2);
+    EXPECT_EQ(bytes[0], 0xB7);
+    EXPECT_EQ(bytes[1], 0x00);
+}
+
+// Test 255: SMB4 - 65C02 Rockwell
+TEST(Cpu6502Test, SMB4_65C02Rockwell) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
+
+    auto bytes = cpu.EncodeSMB4(0x80, AddressingMode::ZeroPage);
+    ASSERT_EQ(bytes.size(), 2);
+    EXPECT_EQ(bytes[0], 0xC7);
+    EXPECT_EQ(bytes[1], 0x80);
+}
+
+// Test 256: SMB5 - 65C02 Rockwell
+TEST(Cpu6502Test, SMB5_65C02Rockwell) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
+
+    auto bytes = cpu.EncodeSMB5(0x80, AddressingMode::ZeroPage);
+    ASSERT_EQ(bytes.size(), 2);
+    EXPECT_EQ(bytes[0], 0xD7);
+    EXPECT_EQ(bytes[1], 0x80);
+}
+
+// Test 257: SMB6 - 65C02 Rockwell
+TEST(Cpu6502Test, SMB6_65C02Rockwell) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
+
+    auto bytes = cpu.EncodeSMB6(0x80, AddressingMode::ZeroPage);
+    ASSERT_EQ(bytes.size(), 2);
+    EXPECT_EQ(bytes[0], 0xE7);
+    EXPECT_EQ(bytes[1], 0x80);
+}
+
+// Test 258: SMB7 - 65C02 Rockwell
+TEST(Cpu6502Test, SMB7_65C02Rockwell) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
+
+    auto bytes = cpu.EncodeSMB7(0x80, AddressingMode::ZeroPage);
+    ASSERT_EQ(bytes.size(), 2);
+    EXPECT_EQ(bytes[0], 0xF7);
+    EXPECT_EQ(bytes[1], 0x80);
+}
+
+// Test 259: RMB not available in 6502 mode
+TEST(Cpu6502Test, RMB_NotAvailableIn6502Mode) {
+    Cpu6502 cpu;
+    
+    auto bytes = cpu.EncodeRMB0(0x80, AddressingMode::ZeroPage);
+    EXPECT_EQ(bytes.size(), 0);
+}
+
+// Test 260: SMB not available in standard 65C02 mode
+TEST(Cpu6502Test, SMB_NotAvailableInStandard65C02) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65C02);
+    
+    auto bytes = cpu.EncodeSMB0(0x80, AddressingMode::ZeroPage);
+    EXPECT_EQ(bytes.size(), 0);
+}
+
+// ============================================================================
+// Phase 2.6: 65C02 Rockwell Extensions
+// Group 3: BBR/BBS - Branch on Bit Reset/Set
+// ============================================================================
+
+// Test 261: BBR0 (Branch if Bit 0 Reset) - 65C02 Rockwell
+TEST(Cpu6502Test, BBR0_65C02Rockwell) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
+
+    // BBR0 $80, $10 -> 0F 80 10
+    // Zero page address $80, relative branch offset $10
+    auto bytes = cpu.EncodeBBR0(0x80, 0x10);
+    ASSERT_EQ(bytes.size(), 3);
+    EXPECT_EQ(bytes[0], 0x0F);  // BBR0 opcode
+    EXPECT_EQ(bytes[1], 0x80);  // Zero page address
+    EXPECT_EQ(bytes[2], 0x10);  // Relative offset
+}
+
+// Test 262: BBR1 - 65C02 Rockwell
+TEST(Cpu6502Test, BBR1_65C02Rockwell) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
+
+    auto bytes = cpu.EncodeBBR1(0x42, 0x20);
+    ASSERT_EQ(bytes.size(), 3);
+    EXPECT_EQ(bytes[0], 0x1F);
+    EXPECT_EQ(bytes[1], 0x42);
+    EXPECT_EQ(bytes[2], 0x20);
+}
+
+// Test 263: BBR2 - 65C02 Rockwell
+TEST(Cpu6502Test, BBR2_65C02Rockwell) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
+
+    auto bytes = cpu.EncodeBBR2(0xFF, 0xFE);  // Negative offset
+    ASSERT_EQ(bytes.size(), 3);
+    EXPECT_EQ(bytes[0], 0x2F);
+    EXPECT_EQ(bytes[1], 0xFF);
+    EXPECT_EQ(bytes[2], 0xFE);
+}
+
+// Test 264: BBR3 - 65C02 Rockwell
+TEST(Cpu6502Test, BBR3_65C02Rockwell) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
+
+    auto bytes = cpu.EncodeBBR3(0x00, 0x7F);  // Max positive offset
+    ASSERT_EQ(bytes.size(), 3);
+    EXPECT_EQ(bytes[0], 0x3F);
+    EXPECT_EQ(bytes[1], 0x00);
+    EXPECT_EQ(bytes[2], 0x7F);
+}
+
+// Test 265: BBR4 - 65C02 Rockwell
+TEST(Cpu6502Test, BBR4_65C02Rockwell) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
+
+    auto bytes = cpu.EncodeBBR4(0x80, 0x00);
+    ASSERT_EQ(bytes.size(), 3);
+    EXPECT_EQ(bytes[0], 0x4F);
+    EXPECT_EQ(bytes[1], 0x80);
+    EXPECT_EQ(bytes[2], 0x00);
+}
+
+// Test 266: BBR5 - 65C02 Rockwell
+TEST(Cpu6502Test, BBR5_65C02Rockwell) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
+
+    auto bytes = cpu.EncodeBBR5(0x80, 0x10);
+    ASSERT_EQ(bytes.size(), 3);
+    EXPECT_EQ(bytes[0], 0x5F);
+    EXPECT_EQ(bytes[1], 0x80);
+    EXPECT_EQ(bytes[2], 0x10);
+}
+
+// Test 267: BBR6 - 65C02 Rockwell
+TEST(Cpu6502Test, BBR6_65C02Rockwell) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
+
+    auto bytes = cpu.EncodeBBR6(0x80, 0x10);
+    ASSERT_EQ(bytes.size(), 3);
+    EXPECT_EQ(bytes[0], 0x6F);
+    EXPECT_EQ(bytes[1], 0x80);
+    EXPECT_EQ(bytes[2], 0x10);
+}
+
+// Test 268: BBR7 - 65C02 Rockwell
+TEST(Cpu6502Test, BBR7_65C02Rockwell) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
+
+    auto bytes = cpu.EncodeBBR7(0x80, 0x10);
+    ASSERT_EQ(bytes.size(), 3);
+    EXPECT_EQ(bytes[0], 0x7F);
+    EXPECT_EQ(bytes[1], 0x80);
+    EXPECT_EQ(bytes[2], 0x10);
+}
+
+// Test 269: BBS0 (Branch if Bit 0 Set) - 65C02 Rockwell
+TEST(Cpu6502Test, BBS0_65C02Rockwell) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
+
+    // BBS0 $80, $10 -> 8F 80 10
+    auto bytes = cpu.EncodeBBS0(0x80, 0x10);
+    ASSERT_EQ(bytes.size(), 3);
+    EXPECT_EQ(bytes[0], 0x8F);
+    EXPECT_EQ(bytes[1], 0x80);
+    EXPECT_EQ(bytes[2], 0x10);
+}
+
+// Test 270: BBS1 - 65C02 Rockwell
+TEST(Cpu6502Test, BBS1_65C02Rockwell) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
+
+    auto bytes = cpu.EncodeBBS1(0x42, 0x20);
+    ASSERT_EQ(bytes.size(), 3);
+    EXPECT_EQ(bytes[0], 0x9F);
+    EXPECT_EQ(bytes[1], 0x42);
+    EXPECT_EQ(bytes[2], 0x20);
+}
+
+// Test 271: BBS2 - 65C02 Rockwell
+TEST(Cpu6502Test, BBS2_65C02Rockwell) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
+
+    auto bytes = cpu.EncodeBBS2(0xFF, 0xFE);
+    ASSERT_EQ(bytes.size(), 3);
+    EXPECT_EQ(bytes[0], 0xAF);
+    EXPECT_EQ(bytes[1], 0xFF);
+    EXPECT_EQ(bytes[2], 0xFE);
+}
+
+// Test 272: BBS3 - 65C02 Rockwell
+TEST(Cpu6502Test, BBS3_65C02Rockwell) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
+
+    auto bytes = cpu.EncodeBBS3(0x00, 0x7F);
+    ASSERT_EQ(bytes.size(), 3);
+    EXPECT_EQ(bytes[0], 0xBF);
+    EXPECT_EQ(bytes[1], 0x00);
+    EXPECT_EQ(bytes[2], 0x7F);
+}
+
+// Test 273: BBS4 - 65C02 Rockwell
+TEST(Cpu6502Test, BBS4_65C02Rockwell) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
+
+    auto bytes = cpu.EncodeBBS4(0x80, 0x00);
+    ASSERT_EQ(bytes.size(), 3);
+    EXPECT_EQ(bytes[0], 0xCF);
+    EXPECT_EQ(bytes[1], 0x80);
+    EXPECT_EQ(bytes[2], 0x00);
+}
+
+// Test 274: BBS5 - 65C02 Rockwell
+TEST(Cpu6502Test, BBS5_65C02Rockwell) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
+
+    auto bytes = cpu.EncodeBBS5(0x80, 0x10);
+    ASSERT_EQ(bytes.size(), 3);
+    EXPECT_EQ(bytes[0], 0xDF);
+    EXPECT_EQ(bytes[1], 0x80);
+    EXPECT_EQ(bytes[2], 0x10);
+}
+
+// Test 275: BBS6 - 65C02 Rockwell
+TEST(Cpu6502Test, BBS6_65C02Rockwell) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
+
+    auto bytes = cpu.EncodeBBS6(0x80, 0x10);
+    ASSERT_EQ(bytes.size(), 3);
+    EXPECT_EQ(bytes[0], 0xEF);
+    EXPECT_EQ(bytes[1], 0x80);
+    EXPECT_EQ(bytes[2], 0x10);
+}
+
+// Test 276: BBS7 - 65C02 Rockwell
+TEST(Cpu6502Test, BBS7_65C02Rockwell) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
+
+    auto bytes = cpu.EncodeBBS7(0x80, 0x10);
+    ASSERT_EQ(bytes.size(), 3);
+    EXPECT_EQ(bytes[0], 0xFF);
+    EXPECT_EQ(bytes[1], 0x80);
+    EXPECT_EQ(bytes[2], 0x10);
+}
+
+// Test 277: BBR not available in 6502 mode
+TEST(Cpu6502Test, BBR_NotAvailableIn6502Mode) {
+    Cpu6502 cpu;
+    
+    auto bytes = cpu.EncodeBBR0(0x80, 0x10);
+    EXPECT_EQ(bytes.size(), 0);
+}
+
+// Test 278: BBS not available in standard 65C02 mode
+TEST(Cpu6502Test, BBS_NotAvailableInStandard65C02) {
+    Cpu6502 cpu;
+    cpu.SetCpuMode(CpuMode::Cpu65C02);
+    
+    auto bytes = cpu.EncodeBBS0(0x80, 0x10);
+    EXPECT_EQ(bytes.size(), 0);
+}

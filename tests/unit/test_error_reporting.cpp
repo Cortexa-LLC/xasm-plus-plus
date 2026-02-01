@@ -250,3 +250,193 @@ TEST(ErrorReportingTest, ErrorIncludesFilename) {
             << "Error should include filename component: '" << error_msg << "'";
     }
 }
+
+// ============================================================================
+// New Error Formatter Tests - ErrorFormatter Class
+// ============================================================================
+
+#include "xasm++/core/error_formatter.h"
+#include <sstream>
+#include <fstream>
+
+TEST(ErrorFormatterTest, BasicFormatWithoutColors) {
+    ErrorFormatter formatter(ErrorFormatter::ColorMode::Disabled);
+    
+    AssemblerError error;
+    error.message = "undefined symbol 'PLAYER_X'";
+    error.location.filename = "test.s";
+    error.location.line = 42;
+    error.location.column = 10;
+    
+    std::string formatted = formatter.FormatError(error, nullptr);
+    
+    EXPECT_NE(formatted.find("error: undefined symbol 'PLAYER_X'"), std::string::npos);
+    EXPECT_NE(formatted.find("test.s:42:10"), std::string::npos);
+    // Should NOT contain ANSI escape codes
+    EXPECT_EQ(formatted.find("\033["), std::string::npos);
+}
+
+TEST(ErrorFormatterTest, FormatWithColors) {
+    ErrorFormatter formatter(ErrorFormatter::ColorMode::Enabled);
+    
+    AssemblerError error;
+    error.message = "undefined symbol 'PLAYER_X'";
+    error.location.filename = "test.s";
+    error.location.line = 42;
+    error.location.column = 10;
+    
+    std::string formatted = formatter.FormatError(error, nullptr);
+    
+    // Should contain ANSI escape codes for colors
+    EXPECT_NE(formatted.find("\033["), std::string::npos);
+}
+
+TEST(ErrorFormatterTest, FormatWithSourceContext) {
+    // Create a test file
+    std::ofstream test_file("/tmp/test_error_context.s");
+    test_file << "; Test file\n";
+    test_file << "         ORG $6000\n";
+    test_file << "         LDA PLAYER_X  ; Undefined symbol\n";
+    test_file << "         RTS\n";
+    test_file.close();
+    
+    ErrorFormatter formatter(ErrorFormatter::ColorMode::Disabled);
+    
+    AssemblerError error;
+    error.message = "undefined symbol 'PLAYER_X'";
+    error.location.filename = "/tmp/test_error_context.s";
+    error.location.line = 3;
+    error.location.column = 14;
+    
+    std::string formatted = formatter.FormatError(error, nullptr);
+    
+    // Should include source line
+    EXPECT_NE(formatted.find("LDA PLAYER_X"), std::string::npos);
+    // Should include line number in margin
+    EXPECT_NE(formatted.find("3 |"), std::string::npos);
+}
+
+TEST(ErrorFormatterTest, FormatWithColumnMarker) {
+    std::ofstream test_file("/tmp/test_column_marker.s");
+    test_file << "         LDA PLAYER_X\n";
+    test_file.close();
+    
+    ErrorFormatter formatter(ErrorFormatter::ColorMode::Disabled);
+    
+    AssemblerError error;
+    error.message = "undefined symbol 'PLAYER_X'";
+    error.location.filename = "/tmp/test_column_marker.s";
+    error.location.line = 1;
+    error.location.column = 14;
+    
+    std::string formatted = formatter.FormatError(error, nullptr);
+    
+    // Should include column marker (^^^)
+    EXPECT_NE(formatted.find("^"), std::string::npos);
+}
+
+TEST(ErrorFormatterTest, FormatWithSymbolSuggestions) {
+    ConcreteSymbolTable symbols;
+    symbols.DefineLabel("PLAYER_Y", 0x1000);
+    symbols.DefineLabel("PLAYER_Z", 0x2000);
+    symbols.DefineLabel("ENEMY_X", 0x3000);
+    
+    ErrorFormatter formatter(ErrorFormatter::ColorMode::Disabled);
+    
+    AssemblerError error;
+    error.message = "undefined symbol 'PLAYER_X'";
+    error.location.filename = "test.s";
+    error.location.line = 1;
+    error.location.column = 1;
+    
+    std::string formatted = formatter.FormatError(error, &symbols);
+    
+    // Should suggest PLAYER_Y (edit distance 1)
+    EXPECT_NE(formatted.find("did you mean"), std::string::npos);
+    EXPECT_NE(formatted.find("PLAYER_Y"), std::string::npos);
+}
+
+TEST(ErrorFormatterTest, MultipleSuggestions) {
+    ConcreteSymbolTable symbols;
+    symbols.DefineLabel("PLAYER_Y", 0x1000);
+    symbols.DefineLabel("PLAYER_Z", 0x2000);
+    symbols.DefineLabel("PLAYER_A", 0x3000);
+    
+    ErrorFormatter formatter(ErrorFormatter::ColorMode::Disabled);
+    
+    AssemblerError error;
+    error.message = "undefined symbol 'PLAYER_X'";
+    error.location.filename = "test.s";
+    error.location.line = 1;
+    error.location.column = 1;
+    
+    std::string formatted = formatter.FormatError(error, &symbols);
+    
+    // Should suggest multiple symbols
+    EXPECT_NE(formatted.find("PLAYER_Y"), std::string::npos);
+    EXPECT_NE(formatted.find("PLAYER_Z"), std::string::npos);
+    EXPECT_NE(formatted.find("PLAYER_A"), std::string::npos);
+}
+
+TEST(ErrorFormatterTest, NoColorEnvironmentVariable) {
+    // Set NO_COLOR environment variable
+    setenv("NO_COLOR", "1", 1);
+    
+    ErrorFormatter formatter(ErrorFormatter::ColorMode::Auto);
+    
+    AssemblerError error;
+    error.message = "test error";
+    error.location.filename = "test.s";
+    error.location.line = 1;
+    error.location.column = 1;
+    
+    std::string formatted = formatter.FormatError(error, nullptr);
+    
+    // Should NOT contain ANSI escape codes
+    EXPECT_EQ(formatted.find("\033["), std::string::npos);
+    
+    // Clean up
+    unsetenv("NO_COLOR");
+}
+
+TEST(ErrorFormatterTest, AutoColorModeWithTTY) {
+    // Note: This test behavior depends on whether stdout is a TTY
+    // We just verify it doesn't crash
+    ErrorFormatter formatter(ErrorFormatter::ColorMode::Auto);
+    
+    AssemblerError error;
+    error.message = "test error";
+    error.location.filename = "test.s";
+    error.location.line = 1;
+    error.location.column = 1;
+    
+    std::string formatted = formatter.FormatError(error, nullptr);
+    
+    // Just verify it produces output
+    EXPECT_FALSE(formatted.empty());
+}
+
+TEST(ErrorFormatterTest, EditDistanceCalculation) {
+    // Test the edit distance algorithm directly
+    ErrorFormatter formatter(ErrorFormatter::ColorMode::Disabled);
+    
+    // Create an error to get access to the formatter
+    ConcreteSymbolTable symbols;
+    symbols.DefineLabel("PLAYER_Y", 0x1000);  // Distance 1 from PLAYER_X
+    symbols.DefineLabel("ZLAYER_X", 0x2000);  // Distance 1 from PLAYER_X
+    symbols.DefineLabel("ENEMY_X", 0x3000);   // Distance 3 from PLAYER_X
+    
+    AssemblerError error;
+    error.message = "undefined symbol 'PLAYER_X'";
+    error.location.filename = "test.s";
+    error.location.line = 1;
+    error.location.column = 1;
+    
+    std::string formatted = formatter.FormatError(error, &symbols);
+    
+    // Should suggest PLAYER_Y and ZLAYER_X (distance 1)
+    // Should NOT suggest ENEMY_X (distance 3 > 2)
+    EXPECT_NE(formatted.find("PLAYER_Y"), std::string::npos);
+    EXPECT_NE(formatted.find("ZLAYER_X"), std::string::npos);
+    EXPECT_EQ(formatted.find("ENEMY_X"), std::string::npos);
+}

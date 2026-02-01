@@ -6,6 +6,7 @@ add_library(xasm_core STATIC
     core/section.cpp
     core/assembler.cpp
     core/parse_utils.cpp
+    core/error_formatter.cpp
     utils/string_utils.cpp
 )
 
@@ -19,8 +20,8 @@ add_library(xasm_cpu STATIC
     cpu/m6502/cpu_6502_branch_handler.cpp
     cpu/m6502/cpu_65c02.cpp
     cpu/m6502/cpu_65816.cpp
+    cpu/m6809/cpu_6809.cpp
     # Future CPUs:
-    # cpu/m6809/cpu_6809.cpp
     # cpu/m68k/cpu_68000.cpp
     # cpu/z80/cpu_z80.cpp
     # cpu/intel/cpu_8080.cpp
@@ -41,9 +42,9 @@ target_link_libraries(xasm_core PUBLIC
 add_library(xasm_syntax STATIC
     syntax/simple_syntax.cpp
     syntax/merlin/merlin_syntax.cpp
+    syntax/scmasm/scmasm_syntax.cpp
     # Future syntax plugins:
     # syntax/mos/mos_base_syntax.cpp
-    # syntax/scmasm/scmasm_syntax.cpp
     # syntax/motorola/motorola_base_syntax.cpp
     # syntax/edtasm/edtasm_syntax.cpp
     # syntax/edtasm_m80/edtasm_m80_syntax.cpp
@@ -62,9 +63,9 @@ target_link_libraries(xasm_syntax PUBLIC
 # Output plugins library (Phase 1+)
 add_library(xasm_output STATIC
   output/binary_output.cpp
+  output/listing_output.cpp
+  output/symbol_output.cpp
   # Future output plugins:
-  # output/listing_output.cpp
-  # output/symbol_output.cpp
   # output/hex_output.cpp
   # output/apple2/dos33_output.cpp
   # output/apple2/prodos_output.cpp

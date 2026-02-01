@@ -132,12 +132,30 @@ private:
 
     LabelScope current_scope_;      ///< Current label scope (for :LOCAL labels)
 
+    /**
+     * @brief Macro definition
+     * 
+     * Stores a macro body for later expansion via MAC directive.
+     */
+    struct MacroDefinition {
+        std::string name;                    ///< Macro name
+        std::vector<std::string> body;       ///< Lines of macro body (unexpanded)
+        int param_count;                     ///< Number of parameters used (]1, ]2, etc.)
+    };
+
+    // Macro state
+    bool in_macro_definition_;                                    ///< True if defining a macro
+    MacroDefinition current_macro_;                               ///< Current macro being defined
+    std::unordered_map<std::string, MacroDefinition> macros_;     ///< Defined macros
+    int macro_expansion_depth_;                                   ///< Prevent infinite recursion
+
     // DUM block state
     bool in_dum_block_;             ///< True if currently inside a DUM block
     uint32_t dum_address_;          ///< Current address within DUM block
     std::unordered_map<std::string, uint32_t> variable_labels_;  ///< ]variable -> offset
 
     uint32_t current_address_;      ///< Current address (for tracking label addresses)
+    bool end_directive_seen_;       ///< True if END directive has been processed
 
     std::vector<std::string> include_stack_;    ///< Include file tracking (for circular detection)
 
@@ -182,9 +200,27 @@ private:
     void HandleLstdo();
     void HandleTr(const std::string& operand);
     void HandleAsc(const std::string& operand, Section& section);
+    void HandleDA(const std::string& operand, Section& section, ConcreteSymbolTable& symbols);
+    void HandleDCI(const std::string& operand, Section& section);
+    void HandleINV(const std::string& operand, Section& section);
+    void HandleFLS(const std::string& operand, Section& section);
     void HandleDo(const std::string& operand, ConcreteSymbolTable& symbols);
     void HandleElse();
     void HandleFin();
+    void HandleEnd();
+
+    // Macro directives
+    void HandlePMC(const std::string& operand);
+    void HandleEOM();
+    void HandleMAC(const std::string& macro_name, const std::string& params,
+                   Section& section, ConcreteSymbolTable& symbols);  // Invoke macro (Merlin style)
+    void HandleMacroEnd();  // End macro definition (<<<)
+    void ExpandMacro(const std::string& macro_name, const std::string& operand,
+                     Section& section, ConcreteSymbolTable& symbols);
+
+    // Macro helpers
+    std::string SubstituteParameters(const std::string& line, 
+                                    const std::vector<std::string>& params);
 
     // Expression/number parsing
     uint32_t ParseNumber(const std::string& str);

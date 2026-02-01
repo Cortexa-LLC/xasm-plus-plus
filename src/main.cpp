@@ -6,7 +6,11 @@
 #include "xasm++/cpu/cpu_6502.h"
 #include "xasm++/syntax/simple_syntax.h"
 #include "xasm++/syntax/merlin_syntax.h"
+#include "xasm++/syntax/scmasm_syntax.h"
 #include "xasm++/output/binary_output.h"
+#include "xasm++/output/listing_output.h"
+#include "xasm++/output/symbol_output.h"
+#include "xasm++/core/error_formatter.h"
 #include "CLI/CLI.hpp"
 #include <iostream>
 #include <fstream>
@@ -25,7 +29,17 @@ int main(int argc, char** argv) {
   try {
     CommandLineOptions opts = ParseCommandLine(argc, argv);
 
+    // Create error formatter with configured color mode
+    ErrorFormatter::ColorMode color_mode = ErrorFormatter::ColorMode::Auto;
+    if (opts.color_mode == "always") {
+      color_mode = ErrorFormatter::ColorMode::Enabled;
+    } else if (opts.color_mode == "never") {
+      color_mode = ErrorFormatter::ColorMode::Disabled;
+    }
+    ErrorFormatter error_formatter(color_mode);
+
     if (opts.show_help) {
+      std::cout << opts.help_message;
       return 0;
     }
 
@@ -67,6 +81,9 @@ int main(int argc, char** argv) {
       if (opts.syntax == "merlin") {
         MerlinSyntaxParser parser;
         parser.Parse(source, section, symbols);
+      } else if (opts.syntax == "scmasm") {
+        ScmasmSyntaxParser parser;
+        parser.Parse(source, section, symbols);
       } else {
         SimpleSyntaxParser parser;
         parser.Parse(source, section, symbols);
@@ -100,9 +117,8 @@ int main(int argc, char** argv) {
     // Step 5: Assemble (encode instructions, resolve symbols)
     AssemblerResult result = assembler.Assemble();
     if (!result.success) {
-      std::cerr << "Assembly failed:\n";
       for (const auto& error : result.errors) {
-        std::cerr << "  " << error.message << "\n";
+        std::cout << error_formatter.FormatError(error, &symbols) << "\n";
       }
       return 1;
     }
@@ -122,6 +138,29 @@ int main(int argc, char** argv) {
     }
 
     std::cout << "Assembly successful: " << opts.output << "\n";
+
+    // Step 7: Generate listing file if requested
+    if (!opts.listing_file.empty()) {
+      ListingOutput listing;
+      try {
+        listing.WriteOutput(opts.listing_file, sections, symbols);
+        std::cout << "Listing file generated: " << opts.listing_file << "\n";
+      } catch (const std::exception& e) {
+        std::cerr << "Warning: Failed to generate listing file: " << e.what() << "\n";
+      }
+    }
+
+    // Step 8: Generate symbol table if requested
+    if (!opts.symbol_file.empty()) {
+      SymbolOutput symbol_output;
+      try {
+        symbol_output.WriteOutput(opts.symbol_file, sections, symbols);
+        std::cout << "Symbol table generated: " << opts.symbol_file << "\n";
+      } catch (const std::exception& e) {
+        std::cerr << "Warning: Failed to generate symbol table: " << e.what() << "\n";
+      }
+    }
+
     return 0;
   } catch (const CLI::ParseError &e) {
     std::cerr << "Command-line error: " << e.what() << "\n";
@@ -137,6 +176,8 @@ int main(int argc, char** argv) {
     return 1;
   } catch (const std::logic_error& e) {
     std::cerr << "Logic error: " << e.what() << "\n";
+    std::cerr << "This is likely an unhandled std::invalid_argument from stoul/stoi conversion.\n";
+    std::cerr << "Please report this bug with the source file that caused it.\n";
     return 1;
   }
 }

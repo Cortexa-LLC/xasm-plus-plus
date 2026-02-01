@@ -3,17 +3,82 @@
 #include "xasm++/assembler.h"
 #include "xasm++/cpu/cpu_6502.h"
 #include "xasm++/cpu/opcodes_6502.h"
+#include "xasm++/expression.h"
 #include "xasm++/symbol.h"
 #include "xasm++/util/string_utils.h"
 #include <string>
 #include <sstream>
 #include <algorithm>
 #include <cctype>
+#include <iostream>
 
 namespace xasm {
 
 using xasm::util::Trim;
 using xasm::util::ParseHex;
+
+// Helper: Simple expression parser for data directives
+// This is a simplified version that handles:
+// - Hex literals: $1234
+// - Decimal literals: 42
+// - Symbol references: label_name
+static std::shared_ptr<Expression> ParseExpression(const std::string& str,
+                                                     ConcreteSymbolTable& /* symbols */) {
+    std::string trimmed = Trim(str);
+    
+    // Hex literal: $1234 (may have addressing mode suffix like $200,x)
+    if (!trimmed.empty() && trimmed[0] == '$') {
+        // Strip addressing mode suffix (,X ,Y ,S) before parsing
+        std::string hex_str = trimmed;
+        size_t comma_pos = hex_str.find(',');
+        if (comma_pos != std::string::npos) {
+            hex_str = hex_str.substr(0, comma_pos);
+        }
+        uint32_t value = ParseHex(hex_str);
+        return std::make_shared<LiteralExpr>(value);
+    }
+    
+    // Binary literal: %10101010
+    if (!trimmed.empty() && trimmed[0] == '%') {
+        std::string bin_part = trimmed.substr(1);
+        if (bin_part.empty()) {
+            throw std::runtime_error("Invalid binary number: '" + trimmed + "' (no digits after %)");
+        }
+        
+        // Validate binary digits BEFORE calling stoul
+        for (char c : bin_part) {
+            if (c != '0' && c != '1') {
+                throw std::runtime_error("Invalid binary digit '" + std::string(1, c) + 
+                                       "' in binary number: '" + trimmed + "'");
+            }
+        }
+        
+        try {
+            uint32_t value = std::stoul(bin_part, nullptr, 2);
+            return std::make_shared<LiteralExpr>(value);
+        } catch (const std::invalid_argument& e) {
+            throw std::runtime_error("Invalid binary number: '" + trimmed + "' - " + e.what());
+        } catch (const std::out_of_range& e) {
+            throw std::runtime_error("Binary number out of range: '" + trimmed + "' - " + e.what());
+        }
+    }
+    
+    // Decimal literal: 42
+    bool is_number = true;
+    for (char c : trimmed) {
+        if (!std::isdigit(static_cast<unsigned char>(c))) {
+            is_number = false;
+            break;
+        }
+    }
+    if (is_number && !trimmed.empty()) {
+        int64_t value = std::stoll(trimmed);
+        return std::make_shared<LiteralExpr>(value);
+    }
+    
+    // Symbol reference
+    return std::make_shared<SymbolExpr>(trimmed);
+}
 
 // Helper: Determine addressing mode from operands string
 static AddressingMode DetermineAddressingMode(const std::string& operands) {
@@ -408,6 +473,64 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable& symbols,
                 } else if (atom->type == AtomType::Label) {
                     // Labels don't advance address yet, but we track them
                     // (address will be finalized in Pass 2)
+                } else if (atom->type == AtomType::Data) {
+                    auto data = std::dynamic_pointer_cast<DataAtom>(atom);
+                    if (!data) {
+                        // Cast failed - this indicates a corrupted atom
+                        AssemblerError error;
+                        error.location = atom->location;
+                        error.message = "Failed to cast to DataAtom - atom corruption detected";
+                        result.errors.push_back(error);
+                        result.success = false;
+                        continue;
+                    }
+                    
+                    // Re-evaluate expressions on each pass for forward references
+                    if (!data->expressions.empty()) {
+                        data->data.clear();
+                        
+                        for (const auto& expr_str : data->expressions) {
+                            try {
+                                auto expr = ParseExpression(expr_str, symbols);
+                                int64_t value = expr->Evaluate(symbols);
+                                
+
+                                
+                                if (data->data_size == DataSize::Byte) {
+                                    // Byte data (DB/DFB)
+                                    data->data.push_back(static_cast<uint8_t>(value & 0xFF));
+                                } else {
+                                    // Word data (DW/DA) - little-endian
+                                    uint32_t word = static_cast<uint32_t>(value);
+                                    data->data.push_back(static_cast<uint8_t>(word & 0xFF));
+                                    data->data.push_back(static_cast<uint8_t>((word >> 8) & 0xFF));
+                                }
+                            } catch (const std::exception& e) {
+                                // Check if this is a parse error or an undefined symbol
+                                std::string msg(e.what());
+                                if (msg.find("Undefined symbol") != std::string::npos) {
+                                    // Symbol undefined (forward reference) - use placeholder
+                                    // Multi-pass assembly will resolve on subsequent passes
+                                    // If still undefined after convergence, will be caught elsewhere
+                                    if (data->data_size == DataSize::Byte) {
+                                        data->data.push_back(0);
+                                    } else {
+                                        data->data.push_back(0);
+                                        data->data.push_back(0);
+                                    }
+                                } else {
+                                    // Parse error - propagate the exception
+                                    throw;
+                                }
+                            }
+                        }
+                        
+                        data->size = data->data.size();
+                    }
+                    
+                    // Advance address past this data
+                    current_address += data->size;
+                    current_sizes.push_back(data->size);
                 } else if (atom->type == AtomType::Instruction) {
                     auto inst = std::dynamic_pointer_cast<InstructionAtom>(atom);
                     if (!inst) {
@@ -452,8 +575,25 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable& symbols,
                         }
 
                         if (value_str[0] == '#') {
-                            // Immediate: #$42
-                            value = static_cast<uint16_t>(ParseHex(value_str.substr(1)));
+                            // Immediate: #$42 or #SYMBOL
+                            // Use ParseExpression to handle both hex literals and symbol references
+                            std::string expr_str = value_str.substr(1);
+                            try {
+                                auto expr = ParseExpression(expr_str, symbols);
+                                int64_t expr_value = expr->Evaluate(symbols);
+                                value = static_cast<uint16_t>(expr_value);
+                            } catch (const std::exception& e) {
+                                // Check if this is a parse error or an undefined symbol
+                                std::string msg(e.what());
+                                if (msg.find("Undefined symbol") != std::string::npos) {
+                                    // Symbol undefined (forward reference) - use placeholder 0
+                                    // Multi-pass assembly will resolve on subsequent passes
+                                    value = 0;
+                                } else {
+                                    // Parse error - propagate the exception
+                                    throw;
+                                }
+                            }
                         } else if (value_str[0] == '$') {
                             // Absolute/Zero Page: $1234 (or $1234,X after stripping)
                             value = static_cast<uint16_t>(ParseHex(value_str));
@@ -730,6 +870,49 @@ void Assembler::ResolveSymbols(std::vector<std::shared_ptr<Atom>>& atoms,
                 continue;
             }
             current_address += inst->encoded_bytes.size();
+        } else if (atom->type == AtomType::Data) {
+            // Data directives consume bytes
+            auto data = std::dynamic_pointer_cast<DataAtom>(atom);
+            if (!data) {
+                // Cast failed - this indicates a corrupted atom
+                AssemblerError error;
+                error.location = atom->location;
+                error.message = "Failed to cast to DataAtom - atom corruption detected";
+                result.errors.push_back(error);
+                result.success = false;
+                continue;
+            }
+            current_address += data->size;
+        } else if (atom->type == AtomType::Space) {
+            // Space directives consume bytes
+            auto space = std::dynamic_pointer_cast<SpaceAtom>(atom);
+            if (!space) {
+                // Cast failed - this indicates a corrupted atom
+                AssemblerError error;
+                error.location = atom->location;
+                error.message = "Failed to cast to SpaceAtom - atom corruption detected";
+                result.errors.push_back(error);
+                result.success = false;
+                continue;
+            }
+            current_address += space->size;
+        } else if (atom->type == AtomType::Align) {
+            // Align directives may add padding
+            auto align = std::dynamic_pointer_cast<AlignAtom>(atom);
+            if (!align) {
+                // Cast failed - this indicates a corrupted atom
+                AssemblerError error;
+                error.location = atom->location;
+                error.message = "Failed to cast to AlignAtom - atom corruption detected";
+                result.errors.push_back(error);
+                result.success = false;
+                continue;
+            }
+            // Calculate padding needed to reach alignment
+            uint32_t remainder = current_address % align->alignment;
+            if (remainder != 0) {
+                current_address += align->alignment - remainder;
+            }
         }
     }
 }

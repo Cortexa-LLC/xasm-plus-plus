@@ -948,16 +948,16 @@ TEST(MerlinSyntaxTest, AscSimpleString) {
 
     parser.Parse("         ASC 'HELLO'", section, symbols);
 
-    // Should create DataAtom with ASCII bytes
+    // ASC should set high bit on ALL characters (Apple II standard)
     ASSERT_EQ(section.atoms.size(), 1);
     auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
     ASSERT_NE(data_atom, nullptr);
     ASSERT_EQ(data_atom->data.size(), 5);
-    EXPECT_EQ(data_atom->data[0], 'H');
-    EXPECT_EQ(data_atom->data[1], 'E');
-    EXPECT_EQ(data_atom->data[2], 'L');
-    EXPECT_EQ(data_atom->data[3], 'L');
-    EXPECT_EQ(data_atom->data[4], 'O');
+    EXPECT_EQ(data_atom->data[0], 'H' | 0x80);  // 0xC8
+    EXPECT_EQ(data_atom->data[1], 'E' | 0x80);  // 0xC5
+    EXPECT_EQ(data_atom->data[2], 'L' | 0x80);  // 0xCC
+    EXPECT_EQ(data_atom->data[3], 'L' | 0x80);  // 0xCC
+    EXPECT_EQ(data_atom->data[4], 'O' | 0x80);  // 0xCF
 }
 
 TEST(MerlinSyntaxTest, AscDoubleQuotes) {
@@ -967,14 +967,15 @@ TEST(MerlinSyntaxTest, AscDoubleQuotes) {
 
     parser.Parse("         ASC \"TEST\"", section, symbols);
 
+    // ASC should set high bit on ALL characters (Apple II standard)
     ASSERT_EQ(section.atoms.size(), 1);
     auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
     ASSERT_NE(data_atom, nullptr);
     ASSERT_EQ(data_atom->data.size(), 4);
-    EXPECT_EQ(data_atom->data[0], 'T');
-    EXPECT_EQ(data_atom->data[1], 'E');
-    EXPECT_EQ(data_atom->data[2], 'S');
-    EXPECT_EQ(data_atom->data[3], 'T');
+    EXPECT_EQ(data_atom->data[0], 'T' | 0x80);  // 0xD4
+    EXPECT_EQ(data_atom->data[1], 'E' | 0x80);  // 0xC5
+    EXPECT_EQ(data_atom->data[2], 'S' | 0x80);  // 0xD3
+    EXPECT_EQ(data_atom->data[3], 'T' | 0x80);  // 0xD4
 }
 
 TEST(MerlinSyntaxTest, AscHighBit) {
@@ -982,15 +983,16 @@ TEST(MerlinSyntaxTest, AscHighBit) {
     ConcreteSymbolTable symbols;
     Section section("test", 0);
 
-    // Merlin allows 'text'80 to set high bit on last character
+    // ASC sets high bit on ALL characters (Apple II standard)
+    // The '80' suffix is legacy and ignored (high bit already set)
     parser.Parse("         ASC 'HI'80", section, symbols);
 
     ASSERT_EQ(section.atoms.size(), 1);
     auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
     ASSERT_NE(data_atom, nullptr);
     ASSERT_EQ(data_atom->data.size(), 2);
-    EXPECT_EQ(data_atom->data[0], 'H');
-    EXPECT_EQ(data_atom->data[1], 'I' | 0x80);  // High bit set on last char
+    EXPECT_EQ(data_atom->data[0], 'H' | 0x80);  // High bit set on all chars
+    EXPECT_EQ(data_atom->data[1], 'I' | 0x80);  // High bit set on all chars
 }
 
 TEST(MerlinSyntaxTest, AscEmptyString) {
@@ -1079,12 +1081,8 @@ TEST(MerlinSyntaxTest, UsrWithHexAddress) {
 
     parser.Parse("         USR $C000", section, symbols);
 
-    // Should create InstructionAtom for JSR
-    ASSERT_EQ(section.atoms.size(), 1);
-    auto instruction_atom = std::dynamic_pointer_cast<InstructionAtom>(section.atoms[0]);
-    ASSERT_NE(instruction_atom, nullptr);
-    EXPECT_EQ(instruction_atom->mnemonic, "JSR");
-    EXPECT_EQ(instruction_atom->operand, "$C000");
+    // USR is a no-op - should not generate any atoms
+    EXPECT_EQ(section.atoms.size(), 0);
 }
 
 TEST(MerlinSyntaxTest, UsrWithDecimalAddress) {
@@ -1094,12 +1092,8 @@ TEST(MerlinSyntaxTest, UsrWithDecimalAddress) {
 
     parser.Parse("         USR 49152", section, symbols);
 
-    // Should create InstructionAtom for JSR
-    ASSERT_EQ(section.atoms.size(), 1);
-    auto instruction_atom = std::dynamic_pointer_cast<InstructionAtom>(section.atoms[0]);
-    ASSERT_NE(instruction_atom, nullptr);
-    EXPECT_EQ(instruction_atom->mnemonic, "JSR");
-    EXPECT_EQ(instruction_atom->operand, "49152");
+    // USR is a no-op - should not generate any atoms
+    EXPECT_EQ(section.atoms.size(), 0);
 }
 
 TEST(MerlinSyntaxTest, UsrWithLabel) {
@@ -1116,23 +1110,14 @@ TEST(MerlinSyntaxTest, UsrWithLabel) {
     // Should define DRAW label
     EXPECT_TRUE(symbols.IsDefined("DRAW"));
     
-    // Should have NOP instruction and JSR instruction
-    ASSERT_GE(section.atoms.size(), 3);  // Label, NOP, JSR
+    // Should have only label and NOP - USR generates no atoms
+    ASSERT_EQ(section.atoms.size(), 2);  // Label, NOP (no JSR)
+    EXPECT_EQ(section.atoms[0]->type, AtomType::Label);
+    EXPECT_EQ(section.atoms[1]->type, AtomType::Instruction);
     
-    // Find the JSR instruction atom
-    std::shared_ptr<InstructionAtom> jsr_atom = nullptr;
-    for (const auto& atom : section.atoms) {
-        if (atom->type == AtomType::Instruction) {
-            auto inst = std::dynamic_pointer_cast<InstructionAtom>(atom);
-            if (inst && inst->mnemonic == "JSR") {
-                jsr_atom = inst;
-                break;
-            }
-        }
-    }
-    ASSERT_NE(jsr_atom, nullptr);
-    EXPECT_EQ(jsr_atom->mnemonic, "JSR");
-    EXPECT_EQ(jsr_atom->operand, "DRAW");
+    auto inst = std::dynamic_pointer_cast<InstructionAtom>(section.atoms[1]);
+    ASSERT_NE(inst, nullptr);
+    EXPECT_EQ(inst->mnemonic, "NOP");
 }
 
 TEST(MerlinSyntaxTest, UsrWithLabelOnLine) {
@@ -1145,14 +1130,9 @@ TEST(MerlinSyntaxTest, UsrWithLabelOnLine) {
     // Should define CALLDRAW label
     EXPECT_TRUE(symbols.IsDefined("CALLDRAW"));
     
-    // Should have label and JSR instruction
-    ASSERT_EQ(section.atoms.size(), 2);
+    // Should have only label - USR generates no atoms
+    ASSERT_EQ(section.atoms.size(), 1);
     EXPECT_EQ(section.atoms[0]->type, AtomType::Label);
-    EXPECT_EQ(section.atoms[1]->type, AtomType::Instruction);
-    
-    auto instruction_atom = std::dynamic_pointer_cast<InstructionAtom>(section.atoms[1]);
-    ASSERT_NE(instruction_atom, nullptr);
-    EXPECT_EQ(instruction_atom->mnemonic, "JSR");
 }
 
 // ============================================================================
@@ -1358,4 +1338,321 @@ TEST(MerlinSyntaxTest, ParseExpressionShortStringAddition) {
     parser.Parse("X EQU 5", section, symbols);
     parser.Parse("Y EQU X+", section, symbols);
     // Should handle gracefully, not crash
+}
+
+// ============================================================================
+// Phase 10: END Directive
+// ============================================================================
+
+TEST(MerlinSyntaxTest, EndDirective) {
+    MerlinSyntaxParser parser;
+    ConcreteSymbolTable symbols;
+    Section section("test", 0);
+
+    parser.Parse("         END", section, symbols);
+
+    // END directive should be a no-op - no atoms generated
+    EXPECT_EQ(section.atoms.size(), 0);
+}
+
+TEST(MerlinSyntaxTest, EndDirectiveWithCode) {
+    MerlinSyntaxParser parser;
+    ConcreteSymbolTable symbols;
+    Section section("test", 0);
+
+    std::string source = 
+        "         ORG $8000\n"
+        "START    LDA #$00\n"
+        "         STA $C000\n"
+        "         END\n";
+
+    parser.Parse(source, section, symbols);
+
+    // Should process code before END
+    EXPECT_TRUE(symbols.IsDefined("START"));
+    ASSERT_GE(section.atoms.size(), 3);  // ORG, Label, LDA, STA
+}
+
+TEST(MerlinSyntaxTest, EndDirectiveIgnoresAfter) {
+    MerlinSyntaxParser parser;
+    ConcreteSymbolTable symbols;
+    Section section("test", 0);
+
+    std::string source = 
+        "         DB $01\n"
+        "         END\n"
+        "         DB $02\n";
+
+    parser.Parse(source, section, symbols);
+
+    // Should only have first DB - code after END should be ignored
+    ASSERT_EQ(section.atoms.size(), 1);
+    auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
+    ASSERT_NE(data_atom, nullptr);
+    EXPECT_EQ(data_atom->data[0], 0x01);
+}
+
+// ============================================================================
+// Phase 9: Macro System (PMC/MAC/EOM)
+// ============================================================================
+
+TEST(MerlinSyntaxTest, MacroDefinitionEmpty) {
+    MerlinSyntaxParser parser;
+    ConcreteSymbolTable symbols;
+    Section section("test", 0);
+
+    std::string source = 
+        " PMC EmptyMacro\n"
+        " EOM\n";
+
+    parser.Parse(source, section, symbols);
+
+    // Empty macro should be defined but produce no atoms
+    EXPECT_EQ(section.atoms.size(), 0);
+}
+
+TEST(MerlinSyntaxTest, MacroDefinitionSimple) {
+    MerlinSyntaxParser parser;
+    ConcreteSymbolTable symbols;
+    Section section("test", 0);
+
+    std::string source = 
+        " PMC SimpleMacro\n"
+        " NOP\n"
+        " NOP\n"
+        " EOM\n";
+
+    parser.Parse(source, section, symbols);
+
+    // Macro definition should not generate atoms
+    EXPECT_EQ(section.atoms.size(), 0);
+}
+
+TEST(MerlinSyntaxTest, MacroExpansionSimple) {
+    MerlinSyntaxParser parser;
+    ConcreteSymbolTable symbols;
+    Section section("test", 0);
+
+    std::string source = 
+        " PMC SimpleMacro\n"
+        " NOP\n"
+        " NOP\n"
+        " EOM\n"
+        "\n"
+        " MAC SimpleMacro\n";
+
+    parser.Parse(source, section, symbols);
+
+    // MAC should expand to 2 NOP instructions
+    ASSERT_EQ(section.atoms.size(), 2);
+    EXPECT_EQ(section.atoms[0]->type, AtomType::Instruction);
+    EXPECT_EQ(section.atoms[1]->type, AtomType::Instruction);
+}
+
+TEST(MerlinSyntaxTest, MacroWithParametersOneParam) {
+    MerlinSyntaxParser parser;
+    ConcreteSymbolTable symbols;
+    Section section("test", 0);
+
+    std::string source = 
+        " PMC LoadValue\n"
+        " LDA ]1\n"
+        " EOM\n"
+        "\n"
+        " MAC LoadValue;#$42\n";
+
+    parser.Parse(source, section, symbols);
+
+    // Should expand to LDA #$42
+    ASSERT_EQ(section.atoms.size(), 1);
+    auto inst = std::dynamic_pointer_cast<InstructionAtom>(section.atoms[0]);
+    ASSERT_NE(inst, nullptr);
+    EXPECT_EQ(inst->mnemonic, "LDA");
+}
+
+TEST(MerlinSyntaxTest, MacroWithParametersTwoParams) {
+    MerlinSyntaxParser parser;
+    ConcreteSymbolTable symbols;
+    Section section("test", 0);
+
+    std::string source = 
+        " PMC CopyByte\n"
+        " LDA ]1\n"
+        " STA ]2\n"
+        " EOM\n"
+        "\n"
+        " MAC CopyByte;$C000;$C001\n";
+
+    parser.Parse(source, section, symbols);
+
+    // Should expand to LDA $C000 / STA $C001
+    ASSERT_EQ(section.atoms.size(), 2);
+    auto inst1 = std::dynamic_pointer_cast<InstructionAtom>(section.atoms[0]);
+    ASSERT_NE(inst1, nullptr);
+    EXPECT_EQ(inst1->mnemonic, "LDA");
+    
+    auto inst2 = std::dynamic_pointer_cast<InstructionAtom>(section.atoms[1]);
+    ASSERT_NE(inst2, nullptr);
+    EXPECT_EQ(inst2->mnemonic, "STA");
+}
+
+TEST(MerlinSyntaxTest, MacroUndefinedError) {
+    MerlinSyntaxParser parser;
+    ConcreteSymbolTable symbols;
+    Section section("test", 0);
+
+    std::string source = " MAC UndefinedMacro\n";
+
+    // Should throw error for undefined macro
+    EXPECT_THROW(
+        parser.Parse(source, section, symbols),
+        std::runtime_error
+    );
+}
+
+TEST(MerlinSyntaxTest, MacroNestedExpansion) {
+    MerlinSyntaxParser parser;
+    ConcreteSymbolTable symbols;
+    Section section("test", 0);
+
+    std::string source = 
+        " PMC InnerMacro\n"
+        " NOP\n"
+        " EOM\n"
+        "\n"
+        " PMC OuterMacro\n"
+        " MAC InnerMacro\n"
+        " EOM\n"
+        "\n"
+        " MAC OuterMacro\n";
+
+    parser.Parse(source, section, symbols);
+
+    // OuterMacro should expand InnerMacro, which expands to NOP
+    ASSERT_EQ(section.atoms.size(), 1);
+    auto inst = std::dynamic_pointer_cast<InstructionAtom>(section.atoms[0]);
+    ASSERT_NE(inst, nullptr);
+    EXPECT_EQ(inst->mnemonic, "NOP");
+}
+
+TEST(MerlinSyntaxTest, MacroLocalLabelScope) {
+    MerlinSyntaxParser parser;
+    ConcreteSymbolTable symbols;
+    Section section("test", 0);
+
+    std::string source = 
+        " PMC LoopMacro\n"
+        ":LOOP LDA #$00\n"
+        " JMP :LOOP\n"
+        " EOM\n"
+        "\n"
+        "FIRST NOP\n"
+        " MAC LoopMacro\n"
+        "SECOND NOP\n"
+        " MAC LoopMacro\n";
+
+    parser.Parse(source, section, symbols);
+
+    // Each macro expansion should have its own local label scope
+    // Both :LOOP labels should be scoped differently
+    EXPECT_TRUE(symbols.IsDefined("FIRST"));
+    EXPECT_TRUE(symbols.IsDefined("SECOND"));
+}
+
+TEST(MerlinSyntaxTest, MacroMultipleExpansions) {
+    MerlinSyntaxParser parser;
+    ConcreteSymbolTable symbols;
+    Section section("test", 0);
+
+    std::string source = 
+        " PMC Inc16\n"
+        " INC ]1\n"
+        " BNE :SKIP\n"
+        " INC ]1+1\n"
+        ":SKIP\n"
+        " EOM\n"
+        "\n"
+        " MAC Inc16;$20\n"
+        " MAC Inc16;$30\n"
+        " MAC Inc16;$40\n";
+
+    parser.Parse(source, section, symbols);
+
+    // Should expand macro 3 times
+    // Each with INC, BNE, INC (and label)
+    ASSERT_GE(section.atoms.size(), 3 * 2);  // At least 3 * (INC, BNE, INC) but labels add more
+}
+
+// ============================================================================
+// Merlin-style Macro Definition (MAC/<<<)
+// ============================================================================
+
+TEST(MerlinSyntaxTest, MacroMerlinStyleDefinition) {
+    MerlinSyntaxParser parser;
+    ConcreteSymbolTable symbols;
+    Section section("test", 0);
+
+    std::string source = 
+        "         MAC   INIT\n"
+        "         LDA   #$00\n"
+        "         TAX\n"
+        "         TAY\n"
+        "         <<<\n";
+
+    parser.Parse(source, section, symbols);
+
+    // Macro definition should not generate atoms
+    EXPECT_EQ(section.atoms.size(), 0);
+}
+
+TEST(MerlinSyntaxTest, MacroMerlinStyleExpansion) {
+    MerlinSyntaxParser parser;
+    ConcreteSymbolTable symbols;
+    Section section("test", 0);
+
+    std::string source = 
+        "         MAC   INIT\n"
+        "         LDA   #$00\n"
+        "         TAX\n"
+        "         TAY\n"
+        "         <<<\n"
+        "\n"
+        "START    INIT\n";
+
+    parser.Parse(source, section, symbols);
+
+    // Should expand to: Label, LDA, TAX, TAY
+    ASSERT_GE(section.atoms.size(), 4);
+    EXPECT_EQ(section.atoms[0]->type, AtomType::Label);
+    EXPECT_EQ(section.atoms[1]->type, AtomType::Instruction);
+    EXPECT_EQ(section.atoms[2]->type, AtomType::Instruction);
+    EXPECT_EQ(section.atoms[3]->type, AtomType::Instruction);
+}
+
+TEST(MerlinSyntaxTest, MacroMerlinStyleWithParameters) {
+    MerlinSyntaxParser parser;
+    ConcreteSymbolTable symbols;
+    Section section("test", 0);
+
+    std::string source = 
+        "         MAC   STORE\n"
+        "         LDA   #]1\n"
+        "         STA   ]2\n"
+        "         <<<\n"
+        "\n"
+        "         STORE $42,$80\n";
+
+    parser.Parse(source, section, symbols);
+
+    // Should expand to: LDA #$42, STA $80
+    ASSERT_EQ(section.atoms.size(), 2);
+    auto inst1 = std::dynamic_pointer_cast<InstructionAtom>(section.atoms[0]);
+    ASSERT_NE(inst1, nullptr);
+    EXPECT_EQ(inst1->mnemonic, "LDA");
+    EXPECT_EQ(inst1->operand, "#$42");
+    
+    auto inst2 = std::dynamic_pointer_cast<InstructionAtom>(section.atoms[1]);
+    ASSERT_NE(inst2, nullptr);
+    EXPECT_EQ(inst2->mnemonic, "STA");
+    EXPECT_EQ(inst2->operand, "$80");
 }

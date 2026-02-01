@@ -876,4 +876,312 @@ std::vector<uint8_t> Cpu6502::EncodeBranchWithRelaxation(uint8_t branch_opcode,
     return branch_handler_.EncodeBranchWithRelaxation(branch_opcode, current_addr, target_addr);
 }
 
+// ============================================================================
+// Phase 2.6: 65C02 Rockwell Extensions
+// ============================================================================
+
+/**
+ * @brief Encode WAI (Wait for Interrupt) - Rockwell 65C02 extension
+ * 
+ * WAI halts the processor until an interrupt (IRQ or NMI) occurs.
+ * Power-saving instruction for Apple IIc, IIgs, and WDC 65C02S.
+ * 
+ * Opcode: CB (Implied addressing)
+ * Only available in Cpu65C02Rock mode.
+ */
+std::vector<uint8_t> Cpu6502::EncodeWAI() const {
+    // Rockwell/WDC 65C02 extension only
+    if (cpu_mode_ != CpuMode::Cpu65C02Rock) {
+        return {};  // Not available in this CPU mode
+    }
+    
+    return {0xCB};  // WAI opcode
+}
+
+/**
+ * @brief Encode STP (Stop Processor) - Rockwell 65C02 extension
+ * 
+ * STP completely stops the processor until hardware reset.
+ * Halt instruction for power-down or error conditions.
+ * 
+ * Opcode: DB (Implied addressing)
+ * Only available in Cpu65C02Rock mode.
+ */
+std::vector<uint8_t> Cpu6502::EncodeSTP() const {
+    // Rockwell/WDC 65C02 extension only
+    if (cpu_mode_ != CpuMode::Cpu65C02Rock) {
+        return {};  // Not available in this CPU mode
+    }
+    
+    return {0xDB};  // STP opcode
+}
+
+// ============================================================================
+// RMB0-RMB7: Reset Memory Bit (Rockwell 65C02 Extensions)
+// 
+// These instructions reset (clear to 0) a specific bit in a zero page location.
+// Each instruction operates on one of the 8 bits (0-7).
+// 
+// Addressing: Zero Page only
+// Format: RMBn $zp (2 bytes: opcode + zero page address)
+// Opcodes: 07, 17, 27, 37, 47, 57, 67, 77
+// ============================================================================
+
+std::vector<uint8_t> Cpu6502::EncodeRMB0(uint8_t operand, AddressingMode mode) const {
+    if (cpu_mode_ != CpuMode::Cpu65C02Rock || mode != AddressingMode::ZeroPage) {
+        return {};
+    }
+    return {0x07, operand};
+}
+
+std::vector<uint8_t> Cpu6502::EncodeRMB1(uint8_t operand, AddressingMode mode) const {
+    if (cpu_mode_ != CpuMode::Cpu65C02Rock || mode != AddressingMode::ZeroPage) {
+        return {};
+    }
+    return {0x17, operand};
+}
+
+std::vector<uint8_t> Cpu6502::EncodeRMB2(uint8_t operand, AddressingMode mode) const {
+    if (cpu_mode_ != CpuMode::Cpu65C02Rock || mode != AddressingMode::ZeroPage) {
+        return {};
+    }
+    return {0x27, operand};
+}
+
+std::vector<uint8_t> Cpu6502::EncodeRMB3(uint8_t operand, AddressingMode mode) const {
+    if (cpu_mode_ != CpuMode::Cpu65C02Rock || mode != AddressingMode::ZeroPage) {
+        return {};
+    }
+    return {0x37, operand};
+}
+
+std::vector<uint8_t> Cpu6502::EncodeRMB4(uint8_t operand, AddressingMode mode) const {
+    if (cpu_mode_ != CpuMode::Cpu65C02Rock || mode != AddressingMode::ZeroPage) {
+        return {};
+    }
+    return {0x47, operand};
+}
+
+std::vector<uint8_t> Cpu6502::EncodeRMB5(uint8_t operand, AddressingMode mode) const {
+    if (cpu_mode_ != CpuMode::Cpu65C02Rock || mode != AddressingMode::ZeroPage) {
+        return {};
+    }
+    return {0x57, operand};
+}
+
+std::vector<uint8_t> Cpu6502::EncodeRMB6(uint8_t operand, AddressingMode mode) const {
+    if (cpu_mode_ != CpuMode::Cpu65C02Rock || mode != AddressingMode::ZeroPage) {
+        return {};
+    }
+    return {0x67, operand};
+}
+
+std::vector<uint8_t> Cpu6502::EncodeRMB7(uint8_t operand, AddressingMode mode) const {
+    if (cpu_mode_ != CpuMode::Cpu65C02Rock || mode != AddressingMode::ZeroPage) {
+        return {};
+    }
+    return {0x77, operand};
+}
+
+// ============================================================================
+// SMB0-SMB7: Set Memory Bit (Rockwell 65C02 Extensions)
+// 
+// These instructions set (to 1) a specific bit in a zero page location.
+// Each instruction operates on one of the 8 bits (0-7).
+// 
+// Addressing: Zero Page only
+// Format: SMBn $zp (2 bytes: opcode + zero page address)
+// Opcodes: 87, 97, A7, B7, C7, D7, E7, F7
+// ============================================================================
+
+std::vector<uint8_t> Cpu6502::EncodeSMB0(uint8_t operand, AddressingMode mode) const {
+    if (cpu_mode_ != CpuMode::Cpu65C02Rock || mode != AddressingMode::ZeroPage) {
+        return {};
+    }
+    return {0x87, operand};
+}
+
+std::vector<uint8_t> Cpu6502::EncodeSMB1(uint8_t operand, AddressingMode mode) const {
+    if (cpu_mode_ != CpuMode::Cpu65C02Rock || mode != AddressingMode::ZeroPage) {
+        return {};
+    }
+    return {0x97, operand};
+}
+
+std::vector<uint8_t> Cpu6502::EncodeSMB2(uint8_t operand, AddressingMode mode) const {
+    if (cpu_mode_ != CpuMode::Cpu65C02Rock || mode != AddressingMode::ZeroPage) {
+        return {};
+    }
+    return {0xA7, operand};
+}
+
+std::vector<uint8_t> Cpu6502::EncodeSMB3(uint8_t operand, AddressingMode mode) const {
+    if (cpu_mode_ != CpuMode::Cpu65C02Rock || mode != AddressingMode::ZeroPage) {
+        return {};
+    }
+    return {0xB7, operand};
+}
+
+std::vector<uint8_t> Cpu6502::EncodeSMB4(uint8_t operand, AddressingMode mode) const {
+    if (cpu_mode_ != CpuMode::Cpu65C02Rock || mode != AddressingMode::ZeroPage) {
+        return {};
+    }
+    return {0xC7, operand};
+}
+
+std::vector<uint8_t> Cpu6502::EncodeSMB5(uint8_t operand, AddressingMode mode) const {
+    if (cpu_mode_ != CpuMode::Cpu65C02Rock || mode != AddressingMode::ZeroPage) {
+        return {};
+    }
+    return {0xD7, operand};
+}
+
+std::vector<uint8_t> Cpu6502::EncodeSMB6(uint8_t operand, AddressingMode mode) const {
+    if (cpu_mode_ != CpuMode::Cpu65C02Rock || mode != AddressingMode::ZeroPage) {
+        return {};
+    }
+    return {0xE7, operand};
+}
+
+std::vector<uint8_t> Cpu6502::EncodeSMB7(uint8_t operand, AddressingMode mode) const {
+    if (cpu_mode_ != CpuMode::Cpu65C02Rock || mode != AddressingMode::ZeroPage) {
+        return {};
+    }
+    return {0xF7, operand};
+}
+
+// ============================================================================
+// BBR0-BBR7: Branch if Bit Reset (Rockwell 65C02 Extensions)
+// 
+// These instructions test a specific bit in a zero page location and branch
+// if that bit is reset (0). Each instruction tests one of the 8 bits (0-7).
+// 
+// Addressing: Zero Page + Relative (unique to these instructions)
+// Format: BBRn $zp, label (3 bytes: opcode + zp address + relative offset)
+// Opcodes: 0F, 1F, 2F, 3F, 4F, 5F, 6F, 7F
+// ============================================================================
+
+std::vector<uint8_t> Cpu6502::EncodeBBR0(uint8_t zp_addr, uint8_t offset) const {
+    if (cpu_mode_ != CpuMode::Cpu65C02Rock) {
+        return {};
+    }
+    return {0x0F, zp_addr, offset};
+}
+
+std::vector<uint8_t> Cpu6502::EncodeBBR1(uint8_t zp_addr, uint8_t offset) const {
+    if (cpu_mode_ != CpuMode::Cpu65C02Rock) {
+        return {};
+    }
+    return {0x1F, zp_addr, offset};
+}
+
+std::vector<uint8_t> Cpu6502::EncodeBBR2(uint8_t zp_addr, uint8_t offset) const {
+    if (cpu_mode_ != CpuMode::Cpu65C02Rock) {
+        return {};
+    }
+    return {0x2F, zp_addr, offset};
+}
+
+std::vector<uint8_t> Cpu6502::EncodeBBR3(uint8_t zp_addr, uint8_t offset) const {
+    if (cpu_mode_ != CpuMode::Cpu65C02Rock) {
+        return {};
+    }
+    return {0x3F, zp_addr, offset};
+}
+
+std::vector<uint8_t> Cpu6502::EncodeBBR4(uint8_t zp_addr, uint8_t offset) const {
+    if (cpu_mode_ != CpuMode::Cpu65C02Rock) {
+        return {};
+    }
+    return {0x4F, zp_addr, offset};
+}
+
+std::vector<uint8_t> Cpu6502::EncodeBBR5(uint8_t zp_addr, uint8_t offset) const {
+    if (cpu_mode_ != CpuMode::Cpu65C02Rock) {
+        return {};
+    }
+    return {0x5F, zp_addr, offset};
+}
+
+std::vector<uint8_t> Cpu6502::EncodeBBR6(uint8_t zp_addr, uint8_t offset) const {
+    if (cpu_mode_ != CpuMode::Cpu65C02Rock) {
+        return {};
+    }
+    return {0x6F, zp_addr, offset};
+}
+
+std::vector<uint8_t> Cpu6502::EncodeBBR7(uint8_t zp_addr, uint8_t offset) const {
+    if (cpu_mode_ != CpuMode::Cpu65C02Rock) {
+        return {};
+    }
+    return {0x7F, zp_addr, offset};
+}
+
+// ============================================================================
+// BBS0-BBS7: Branch if Bit Set (Rockwell 65C02 Extensions)
+// 
+// These instructions test a specific bit in a zero page location and branch
+// if that bit is set (1). Each instruction tests one of the 8 bits (0-7).
+// 
+// Addressing: Zero Page + Relative (unique to these instructions)
+// Format: BBSn $zp, label (3 bytes: opcode + zp address + relative offset)
+// Opcodes: 8F, 9F, AF, BF, CF, DF, EF, FF
+// ============================================================================
+
+std::vector<uint8_t> Cpu6502::EncodeBBS0(uint8_t zp_addr, uint8_t offset) const {
+    if (cpu_mode_ != CpuMode::Cpu65C02Rock) {
+        return {};
+    }
+    return {0x8F, zp_addr, offset};
+}
+
+std::vector<uint8_t> Cpu6502::EncodeBBS1(uint8_t zp_addr, uint8_t offset) const {
+    if (cpu_mode_ != CpuMode::Cpu65C02Rock) {
+        return {};
+    }
+    return {0x9F, zp_addr, offset};
+}
+
+std::vector<uint8_t> Cpu6502::EncodeBBS2(uint8_t zp_addr, uint8_t offset) const {
+    if (cpu_mode_ != CpuMode::Cpu65C02Rock) {
+        return {};
+    }
+    return {0xAF, zp_addr, offset};
+}
+
+std::vector<uint8_t> Cpu6502::EncodeBBS3(uint8_t zp_addr, uint8_t offset) const {
+    if (cpu_mode_ != CpuMode::Cpu65C02Rock) {
+        return {};
+    }
+    return {0xBF, zp_addr, offset};
+}
+
+std::vector<uint8_t> Cpu6502::EncodeBBS4(uint8_t zp_addr, uint8_t offset) const {
+    if (cpu_mode_ != CpuMode::Cpu65C02Rock) {
+        return {};
+    }
+    return {0xCF, zp_addr, offset};
+}
+
+std::vector<uint8_t> Cpu6502::EncodeBBS5(uint8_t zp_addr, uint8_t offset) const {
+    if (cpu_mode_ != CpuMode::Cpu65C02Rock) {
+        return {};
+    }
+    return {0xDF, zp_addr, offset};
+}
+
+std::vector<uint8_t> Cpu6502::EncodeBBS6(uint8_t zp_addr, uint8_t offset) const {
+    if (cpu_mode_ != CpuMode::Cpu65C02Rock) {
+        return {};
+    }
+    return {0xEF, zp_addr, offset};
+}
+
+std::vector<uint8_t> Cpu6502::EncodeBBS7(uint8_t zp_addr, uint8_t offset) const {
+    if (cpu_mode_ != CpuMode::Cpu65C02Rock) {
+        return {};
+    }
+    return {0xFF, zp_addr, offset};
+}
+
 } // namespace xasm

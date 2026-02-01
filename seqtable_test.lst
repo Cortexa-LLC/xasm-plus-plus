@@ -1,0 +1,1332 @@
+Assembly Listing
+================
+
+Address  Bytes              Source
+-------  -----------------  ------
+
+; Section: 
+3000                        .ORG $3000
+3000                        :1:
+3000     00 00            
+3002                        :2:
+3002     00 00            
+3004                        :3:
+3004     00 00            
+3006                        :4:
+3006     00 00            
+3008                        :5:
+3008     00 00            
+300A                        :6:
+300A     00 00            
+300C                        :7:
+300C     00 00            
+300E                        :8:
+300E     00 00            
+3010                        :9:
+3010     00 00            
+3012                        :10:
+3012     00 00            
+3014                        :11:
+3014     00 00            
+3016                        :12:
+3016     00 00            
+3018                        :13:
+3018     00 00            
+301A                        :14:
+301A     00 00            
+301C                        :15:
+301C     00 00            
+301E                        :16:
+301E     00 00            
+3020                        :17:
+3020     00 00            
+3022                        :18:
+3022     00 00            
+3024                        :19:
+3024     00 00            
+3026                        :20:
+3026     00 00            
+3028                        :21:
+3028     00 00            
+302A                        :22:
+302A     00 00            
+302C                        :23:
+302C     00 00            
+302E                        :24:
+302E     00 00            
+3030                        :25:
+3030     00 00            
+3032                        :26:
+3032     00 00            
+3034                        :27:
+3034     00 00            
+3036                        :28:
+3036     00 00            
+3038                        :29:
+3038     00 00            
+303A                        :30:
+303A     00 00            
+303C                        :31:
+303C     00 00            
+303E                        :32:
+303E     00 00            
+3040                        :33:
+3040     00 00            
+3042                        :34:
+3042     00 00            
+3044                        :35:
+3044     00 00            
+3046                        :36:
+3046     00 00            
+3048                        :37:
+3048     00 00            
+304A                        :38:
+304A     00 00            
+304C                        :39:
+304C     00 00            
+304E                        :40:
+304E     00 00            
+3050                        :41:
+3050     00 00            
+3052                        :42:
+3052     00 00            
+3054                        :43:
+3054     00 00            
+3056                        :44:
+3056     00 00            
+3058                        :45:
+3058     00 00            
+305A                        :46:
+305A     00 00            
+305C                        :47:
+305C     00 00            
+305E                        :48:
+305E     00 00            
+3060                        :49:
+3060     00 00            
+3062                        :50:
+3062     00 00            
+3064                        :51:
+3064     00 00            
+3066                        :52:
+3066     00 00            
+3068                        :53:
+3068     00 00            
+306A                        :54:
+306A     00 00            
+306C                        :55:
+306C     00 00            
+306E                        :56:
+306E     00 00            
+3070                        :57:
+3070     00 00            
+3072                        :58:
+3072     00 00            
+3074                        :59:
+3074     00 00            
+3076                        :60:
+3076     00 00            
+3078                        :61:
+3078     00 00            
+307A                        :62:
+307A     00 00            
+307C                        :63:
+307C     00 00            
+307E                        :64:
+307E     00 00            
+3080                        :65:
+3080     00 00            
+3082                        :66:
+3082     00 00            
+3084                        :67:
+3084     00 00            
+3086                        :68:
+3086     00 00            
+3088                        :69:
+3088     00 00            
+308A                        :70:
+308A     00 00            
+308C                        :71:
+308C     00 00            
+308E                        :72:
+308E     00 00            
+3090                        :73:
+3090     00 00            
+3092                        :74:
+3092     00 00            
+3094                        :75:
+3094     00 00            
+3096                        :76:
+3096     00 00            
+3098                        :77:
+3098     00 00            
+309A                        :78:
+309A     00 00            
+309C                        :79:
+309C     00 00            
+309E                        :80:
+309E     00 00            
+30A0                        :81:
+30A0     00 00            
+30A2                        :82:
+30A2     00 00            
+30A4                        :83:
+30A4     00 00            
+30A6                        :84:
+30A6     00 00            
+30A8                        :85:
+30A8     00 00            
+30AA                        :86:
+30AA     00 00            
+30AC                        :87:
+30AC     00 00            
+30AE                        :88:
+30AE     00 00            
+30B0                        :89:
+30B0     00 00            
+30B2                        :90:
+30B2     00 00            
+30B4                        :91:
+30B4     00 00            
+30B6                        :92:
+30B6     00 00            
+30B8                        :93:
+30B8     00 00            
+30BA                        :94:
+30BA     00 00            
+30BC                        :95:
+30BC     00 00            
+30BE                        :96:
+30BE     00 00            
+30C0                        :97:
+30C0     00 00            
+30C2                        :98:
+30C2     00 00            
+30C4                        :99:
+30C4     00 00            
+30C6                        :100:
+30C6     00 00            
+30C8                        :101:
+30C8     00 00            
+30CA                        :102:
+30CA     00 00            
+30CC                        :103:
+30CC     00 00            
+30CE                        :104:
+30CE     00 00            
+30D0                        :105:
+30D0     00 00            
+30D2                        :106:
+30D2     00 00            
+30D4                        :107:
+30D4     00 00            
+30D6                        :108:
+30D6     00 00            
+30D8                        :109:
+30D8     00 00            
+30DA                        :110:
+30DA     00 00            
+30DC                        :111:
+30DC     00 00            
+30DE                        :112:
+30DE     00 00            
+30E0                        :113:
+30E0     00 00            
+30E2                        :114:
+30E2     00 00            
+30E4                        running:
+30E4     F9 01            
+30E6     FF               
+30E7     00 00            
+30E9                        startrun:
+30E9     F9 01            
+30EB                        runstt1:
+30EB     01               
+30EC                        runstt2:
+30EC     02               
+30ED                        runstt3:
+30ED     03               
+30EE                        runstt4:
+30EE     04 FB 08         
+30F1                        runstt5:
+30F1     05 FB 03         
+30F4                        runstt6:
+30F4     06 FB 03         
+30F7                        runcyc1:
+30F7     07 FB 05         
+30FA                        runcyc2:
+30FA     08 FB 01         
+30FD                        runcyc3:
+30FD     F2 01 09 FB 02   
+3102                        runcyc4:
+3102     0A FB 04         
+3105                        runcyc5:
+3105     0B FB 05         
+3108                        runcyc6:
+3108     0C FB 02         
+310B                        runcyc7:
+310B     F2 01 0D FB 03   
+3110                        runcyc8:
+3110     0E FB 04         
+3113     FF               
+3114     F7 30            
+3116                        stand:
+3116     F9 00            
+3118     0F               
+3119     FF               
+311A     16 31            
+311C                        goalertstand:
+311C     F9 01            
+311E                        alertstand:
+311E                        :loop:
+311E     A6               
+311F     FF               
+3120     1E 31            
+3122                        arise:
+3122     F9 05            
+3124     FB 0A B1         
+3127     B1               
+3128     FB F9 FA FE B2   
+312D     FB 05 FA 02 A6   
+3132     FB FF            
+3134     FF               
+3135     00 00            
+3137                        guardengarde:
+3137     FF               
+3138     00 00            
+313A                        engarde:
+313A     F9 01            
+313C     FB 02            
+313E     CF               
+313F     D0 FB 02         
+3142     D1 FB 02         
+3145     D2 FB 03         
+3148                        ready:
+3148     F9 01            
+314A     F2 00            
+314C     9E               
+314D     AA               
+314E                        :loop:
+314E     AB               
+314F     FF               
+3150     4E 31            
+3152                        stabbed:
+3152     F9 05            
+3154     F8 FF 00         
+3157     AC FB FF FA 01   
+315C     AD FB FF         
+315F     AE FB FF FA 02   
+3164     FB FE FA 01      
+3168     FB FB FA FC      
+316C     FF               
+316D     00 00            
+316F                        strikeadv:
+316F     F9 01            
+3171     F8 01 00         
+3174     9B               
+3175     FB 02 A5         
+3178     FB FE            
+317A     FF               
+317B     48 31            
+317D                        strikeret:
+317D     F9 01            
+317F     F8 FF 00         
+3182     9B 9C 9D         
+3185     9E               
+3186     FF               
+3187     00 00            
+3189                        advance:
+3189     F9 01            
+318B     F8 01 00         
+318E     FB 02 A3         
+3191     FB 04 A4         
+3194     A5               
+3195     FF               
+3196     48 31            
+3198                        fastadvance:
+3198     F9 01            
+319A     F8 01 00         
+319D     FB 06 A4         
+31A0     A5               
+31A1     FF               
+31A2     48 31            
+31A4                        retreat:
+31A4     F9 01            
+31A6     F8 FF 00         
+31A9     FB FD A0         
+31AC     FB FE 9D         
+31AF     FF               
+31B0     48 31            
+31B2                        strike:
+31B2     F9 01            
+31B4     F8 FF 00         
+31B7     A8               
+31B8                        faststrike:
+31B8     F9 01            
+31BA                        guy3:
+31BA     97               
+31BB                        guy4:
+31BB     F9 01            
+31BD     98               
+31BE                        guy5:
+31BE     99               
+31BF                        guy6:
+31BF     9A               
+31C0                        guy7:
+31C0     F9 05            
+31C2     9B               
+31C3                        guy8:
+31C3     F9 01            
+31C5     9C               
+31C6                        guy9:
+31C6     9D               
+31C7     FF               
+31C8     48 31            
+31CA                        blockedstrike:
+31CA     F9 01            
+31CC     A7               
+31CD     FF               
+31CE     C0 31            
+31D0                        blocktostrike:
+31D0     A2               
+31D1     FF               
+31D2     BB 31            
+31D4                        readyblock:
+31D4     A9               
+31D5                        blocking:
+31D5     96               
+31D6     FF               
+31D7     48 31            
+31D9                        strikeblock:
+31D9     9F               
+31DA     A0               
+31DB     FF               
+31DC     D5 31            
+31DE                        landengarde:
+31DE     F9 01            
+31E0     F4               
+31E1     FF               
+31E2     48 31            
+31E4                        bumpengfwd:
+31E4     F9 05            
+31E6     FB F8            
+31E8     FF               
+31E9     48 31            
+31EB                        bumpengback:
+31EB     F9 05            
+31ED     A0               
+31EE     9D               
+31EF     FF               
+31F0     48 31            
+31F2                        flee:
+31F2     F9 07            
+31F4     FB F8            
+31F6     FF               
+31F7     00 00            
+31F9                        turnengarde:
+31F9     F9 05            
+31FB     FE FB 05         
+31FE     FF               
+31FF     A4 31            
+3201                        alertturn:
+3201     F9 05            
+3203     FE FB 12         
+3206     FF               
+3207     1C 31            
+3209                        standjump:
+3209     F9 01            
+320B     10               
+320C     11 FB 02         
+320F     12 FB 02         
+3212     13 FB 02         
+3215     14 FB 02         
+3218     15 FB 02         
+321B     16 FB 07         
+321E     17 FB 09         
+3221     18 FB 05 FA FA   
+3226                        sjland:
+3226     19 FB 01 FA 06   
+322B     1A FB 04         
+322E     F4               
+322F     F2 01 1B FB FD   
+3234     1C FB 05         
+3237     1D               
+3238     F2 01 1E         
+323B     1F               
+323C     20               
+323D     21 FB 01         
+3240     FF               
+3241     16 31            
+3243                        runjump:
+3243     F9 01            
+3245     F2 01 22 FB 05   
+324A     23 FB 06         
+324D     24 FB 03         
+3250     25 FB 05         
+3253     F2 01 26 FB 07   
+3258     27 FB 0C FA FD   
+325D     28 FB 08 FA F7   
+3262     29 FB 08 FA FE   
+3267     2A FB 04 FA 0B   
+326C     2B FB 04 FA 03   
+3271                        rjlandrun:
+3271     2C FB 05         
+3274     F4 F2 01         
+3277     FF               
+3278     F7 30            
+327A                        rdiveroll:
+327A     F9 01            
+327C     FB 01            
+327E     6B FB 02         
+3281     FB 02            
+3283     6C               
+3284     FB 02            
+3286     6D               
+3287     FB 02            
+3289     6D               
+328A     FB 02            
+328C                        :crouch:
+328C     6D               
+328D     FF               
+328E     8C 32            
+3290                        sdiveroll:
+3290                        crawl:
+3290     F9 01            
+3292     FB 01 6E         
+3295     6F FB 02         
+3298     70               
+3299     FB 02            
+329B     6C               
+329C     FB 02            
+329E                        :crouch:
+329E     6D               
+329F     FF               
+32A0     9E 32            
+32A2                        turndraw:
+32A2     F9 07            
+32A4     FE FB 06         
+32A7     2D FB 01         
+32AA     2E               
+32AB     FF               
+32AC     3A 31            
+32AE                        turn:
+32AE     F9 07            
+32B0     FE FB 06         
+32B3     2D FB 01         
+32B6     2E FB 02         
+32B9     2F FB FF         
+32BC                        finishturn:
+32BC     30 FB 01         
+32BF     31 FB FE         
+32C2     32 33 34         
+32C5     FF               
+32C6     16 31            
+32C8                        turnrun:
+32C8     F9 01            
+32CA     FB FF            
+32CC     FF               
+32CD     EB 30            
+32CF                        runturn:
+32CF     F9 01            
+32D1     FB 01            
+32D3     35 FB 01         
+32D6     F2 01 36 FB 08   
+32DB     37               
+32DC     F2 01 38 FB 07   
+32E1     39 FB 03         
+32E4     3A FB 01         
+32E7     3B               
+32E8     3C FB 02         
+32EB     3D FB FF         
+32EE     3E               
+32EF     3F               
+32F0     40 FB FF         
+32F3     41 FB F2         
+32F6     FE FF            
+32F8     0B 31            
+32FA                        fightfall:
+32FA     F9 03            
+32FC     FA FF            
+32FE     66 FB FE FA 06   
+3303     67 FB FE FA 09   
+3308     68 FB FF FA 0C   
+330D     69 FB FD         
+3310     F8 00 0F         
+3313     FF               
+3314     00 00            
+3316                        efightfall:
+3316     F9 03            
+3318     FA FF FB FE      
+331C     66 FB FD FA 06   
+3321     67 FB FD FA 09   
+3326     68 FB FE FA 0C   
+332B     69 FB FD         
+332E     F8 00 0F         
+3331     FF               
+3332     00 00            
+3334                        efightfallfwd:
+3334     F9 03            
+3336     FB 01 FA FF      
+333A     66 FB 02 FA 06   
+333F     67 FB FF FA 09   
+3344     68 FA 0C         
+3347     69 FB FE         
+334A     F8 01 0F         
+334D     FF               
+334E     00 00            
+3350                        stepfall:
+3350     F9 03            
+3352     FB 01 FA 03      
+3356     F7               
+3357     00 00            
+3359                        fall1:
+3359     66 FB 02 FA 06   
+335E     67 FB FF FA 09   
+3363     68 FA 0C         
+3366     69 FB FE         
+3369     F8 01 0F         
+336C     FF               
+336D     00 00            
+336F                        patchfall:
+336F     FB FF FA FD      
+3373     FF               
+3374     59 33            
+3376                        stepfall2:
+3376     FB 01            
+3378     FF               
+3379     50 33            
+337B                        stepfloat:
+337B     66 FB 02 FA 03   
+3380     67 FB FF FA 04   
+3385     68 FA 05         
+3388     69 FB FE         
+338B     F8 01 06         
+338E     FF               
+338F     00 00            
+3391                        jumpfall:
+3391     F9 03            
+3393     FB 01 FA 03      
+3397     66 FB 02 FA 06   
+339C     67 FB 01 FA 09   
+33A1     68 FB 02 FA 0C   
+33A6     69               
+33A7     F8 02 0F         
+33AA     FF               
+33AB     00 00            
+33AD                        rjumpfall:
+33AD     F9 03            
+33AF     FB 01 FA 03      
+33B3     66 FB 03 FA 06   
+33B8     67 FB 02 FA 09   
+33BD     68 FB 03 FA 0C   
+33C2     69               
+33C3     F8 03 0F         
+33C6     FF               
+33C7     00 00            
+33C9                        jumphangMed:
+33C9     F9 01            
+33CB     43 44 45 46 47 48 49 4A
+33D6     F9 02            
+33D8     4E 4F 50         
+33DB     FF               
+33DC     00 00            
+33DE                        jumphangLong:
+33DE     F9 01            
+33E0     43 44 45 46 47 48 49 4A
+33EB     F9 02            
+33ED     FB 01 4E         
+33F0     FB 02 4F         
+33F3     FB 01 50         
+33F6     FF               
+33F7     00 00            
+33F9                        jumpbackhang:
+33F9     F9 01            
+33FB     43 44 45 46 47 48 49 4A
+3405     FB FF 4D         
+3408     F9 02            
+340A     FB FE 4E         
+340D     FB FF 4F         
+3410     FB FF 50         
+3413     FF               
+3414     00 00            
+3416                        hang:
+3416     F9 02            
+3418     5B               
+3419                        hang1:
+3419     5A 59 58 57 57 57 58 59
+3427     60 61 62 63 61 60 5F 5E
+3431     5B 5A 59 58 57 58 59 5A
+343F     5F 5E 5D 5C      
+3443     FF               
+3444     00 00            
+3446                        hangstraight:
+3446     F9 06            
+3448     F2 02            
+344A     5C 5D 5D 5C 5C   
+344F                        :loop:
+344F     5B               
+3450     FF               
+3451     4F 34            
+3453                        climbfail:
+3453     87               
+3454     88               
+3455     89 89            
+3457     8A 8A 8A 8A      
+345B     89 88 87         
+345E     FB F9            
+3460     FF               
+3461     00 00            
+3463                        climbdown:
+3463     F9 01            
+3465     94               
+3466     91 90 8F 8E 8D   
+346B     FB FB            
+346D     FA 3F            
+346F     FC               
+3470     F9 03            
+3472     8C 8A 88         
+3475     5B               
+3476     FF               
+3477     19 34            
+3479                        climbup:
+3479     F9 01            
+347B     87               
+347C     88               
+347D     89               
+347E     8A               
+347F     8B               
+3480     8C               
+3481     FB 05            
+3483     FA C1            
+3485     FD               
+3486     8D               
+3487     8E               
+3488     8F               
+3489     90               
+348A     91               
+348B     92               
+348C     93               
+348D     94               
+348E     F9 05            
+3490     95               
+3491     F9 01            
+3493     76 77            
+3495     FB 01            
+3497     FF               
+3498     16 31            
+349A                        hangdrop:
+349A     F9 00            
+349C     51 52            
+349E     F9 05            
+34A0     53               
+34A1     F9 01            
+34A3     F4 F2 00         
+34A6     54 55            
+34A8     FB 03            
+34AA     FF               
+34AB     16 31            
+34AD                        hangfall:
+34AD     F9 03            
+34AF     51 FA 06         
+34B2     51 FA 09         
+34B5     51 FA 0C         
+34B8     FB 02            
+34BA     F8 00 0C         
+34BD     FF               
+34BE     00 00            
+34C0                        freefall:
+34C0     F9 04            
+34C2                        :loop:
+34C2     6A               
+34C3     FF               
+34C4     C2 34            
+34C6                        runstop:
+34C6     F9 01            
+34C8     35 FB 02         
+34CB     F2 01 36 FB 07   
+34D0     37               
+34D1     F2 01 38 FB 02   
+34D6     31 FB FE         
+34D9     32 33 34         
+34DC     FF               
+34DD     16 31            
+34DF                        jumpup:
+34DF     F9 01            
+34E1     43 44 45 46 47 48 49 4A
+34ED     F9 00            
+34EF     F5 4F            
+34F1     FF               
+34F2     9A 34            
+34F4                        highjump:
+34F4     F9 01            
+34F6     43 44 45 46 47 48 49 4A
+3502     4F FA FC         
+3505     4F FA FE         
+3508     4F               
+3509     4F FA 02         
+350C     4F FA 04         
+350F     FF               
+3510     9A 34            
+3512                        superhijump:
+3512     43 44 45 46 47 48 49 4A
+351C     FA FF 4D         
+351F     FA FD 4E         
+3522     FA FC 4F         
+3525     FA F6 4F         
+3528     FA F7 4F         
+352B     FA F8 4F         
+352E     FA F9 4F         
+3531     FA FA 4F         
+3534     FA FB 4F         
+3537     FA FC 4F         
+353A     FA FD 4F         
+353D     FA FE 4F         
+3540     FA FE 4F         
+3543     FA FF 4F         
+3546     FA FF 4F         
+3549     FA FF 4F         
+354C     4F 4F 4F         
+354F     FA 01 4F         
+3552     FA 01 4F         
+3555     FA 02 4F         
+3558     FA 02 4F         
+355B     FA 03 4F         
+355E     FA 04 4F         
+3561     FA 05 4F         
+3564     FA 06 4F         
+3567     F8 00 06         
+356A     FF               
+356B     C0 34            
+356D                        fallhang:
+356D     F9 03            
+356F     50               
+3570     F2 01            
+3572     FF               
+3573     16 34            
+3575                        bump:
+3575     F9 05            
+3577     FB FC            
+3579     32 33 34         
+357C     FF               
+357D     16 31            
+357F                        bumpfall:
+357F     F9 05            
+3581     FB 01 FA 03      
+3585     F7               
+3586     00 00            
+3588     66 FB 02 FA 06   
+358D     67 FB FF FA 09   
+3592     68 FA 0C         
+3595     69 FB FE         
+3598     F8 00 0F         
+359B     FF               
+359C     C0 34            
+359E                        bumpfloat:
+359E     66 FB 02 FA 03   
+35A3     67 FB FF FA 04   
+35A8     68 FA 05         
+35AB     69 FB FE         
+35AE     F8 00 06         
+35B1     FF               
+35B2     C0 34            
+35B4                        hardbump:
+35B4     F9 05            
+35B6     FB FF FA FC 66   
+35BB     FB FF FA 03      
+35BF     FB FD FA 01      
+35C3     F4               
+35C4     FB 01            
+35C6     F2 01            
+35C8     6B FB 02         
+35CB     6C               
+35CC     F2 01            
+35CE     6D               
+35CF     FF               
+35D0     00 00            
+35D2                        testfoot:
+35D2     79 FB 01         
+35D5     7A               
+35D6     7B FB 02         
+35D9     7C FB 04         
+35DC     7D FB 03         
+35DF     7E               
+35E0     FB FC 56         
+35E3     F2 01 F4         
+35E6     FB FC 74         
+35E9     FB FE            
+35EB     75 76 77         
+35EE     FF               
+35EF     16 31            
+35F1                        stepback:
+35F1     FB FB            
+35F3     FF               
+35F4     16 31            
+35F6                        fullstep:
+35F6                        step14:
+35F6     F9 01            
+35F8     79 FB 01         
+35FB     7A FB 01         
+35FE     7B FB 03         
+3601     7C FB 04         
+3604     7D FB 03         
+3607     7E FB FF         
+360A     FB 03            
+360C     7F 80 81 82 83 84
+3612     FF               
+3613     16 31            
+3615                        step13:
+3615     F9 01            
+3617     79 FB 01         
+361A     7A FB 01         
+361D     7B FB 03         
+3620     7C FB 04         
+3623     7D FB 03         
+3626     7E FB FF         
+3629     FB 02            
+362B     7F 80 81 82 83 84
+3631     FF               
+3632     16 31            
+3634                        step12:
+3634     F9 01            
+3636     79 FB 01         
+3639     7A FB 01         
+363C     7B FB 03         
+363F     7C FB 04         
+3642     7D FB 03         
+3645     7E FB FF         
+3648     FB 01            
+364A     7F 80 81 82 83 84
+3650     FF               
+3651     16 31            
+3653                        step11:
+3653     F9 01            
+3655     79 FB 01         
+3658     7A FB 01         
+365B     7B FB 03         
+365E     7C FB 04         
+3661     7D FB 03         
+3664     7E FB FF         
+3667     7F 80 81 82 83 84
+366D     FF               
+366E     16 31            
+3670                        step10:
+3670     F9 01            
+3672     79 FB 01         
+3675                        step10a:
+3675     7A FB 01         
+3678     7B FB 03         
+367B     7C FB 04         
+367E     7D FB 03         
+3681     7E FB FE         
+3684     80 81 82 83 84   
+3689     FF               
+368A     16 31            
+368C                        step9:
+368C     F9 01            
+368E     79               
+368F     FF               
+3690     75 36            
+3692                        step8:
+3692     F9 01            
+3694     79 FB 01         
+3697     7A FB 01         
+369A     7B FB 03         
+369D     7C FB 04         
+36A0     7D FB FF         
+36A3     7F 80 81 82 83 84
+36A9     FF               
+36AA     16 31            
+36AC                        step7:
+36AC     F9 01            
+36AE     79 FB 01         
+36B1     7A FB 01         
+36B4     7B FB 03         
+36B7     7C FB 02         
+36BA     81 82 83 84      
+36BE     FF               
+36BF     16 31            
+36C1                        step6:
+36C1     F9 01            
+36C3     79 FB 01         
+36C6     7A FB 01         
+36C9     7B FB 02         
+36CC     7C FB 02         
+36CF     81 82 83 84      
+36D3     FF               
+36D4     16 31            
+36D6                        step5:
+36D6     F9 01            
+36D8     79 FB 01         
+36DB     7A FB 01         
+36DE     7B FB 02         
+36E1     7C FB 01         
+36E4     81 82 83 84      
+36E8     FF               
+36E9     16 31            
+36EB                        step4:
+36EB     F9 01            
+36ED     79 FB 01         
+36F0     7A FB 01         
+36F3     7B FB 02         
+36F6     83 84            
+36F8     FF               
+36F9     16 31            
+36FB                        step3:
+36FB     F9 01            
+36FD     79 FB 01         
+3700     7A FB 01         
+3703     7B FB 01         
+3706     83 84            
+3708     FF               
+3709     16 31            
+370B                        step2:
+370B     F9 01            
+370D     79 FB 01         
+3710     7A FB 01         
+3713     84               
+3714     FF               
+3715     16 31            
+3717                        step1:
+3717     F9 01            
+3719     79 FB 01         
+371C     84               
+371D     FF               
+371E     16 31            
+3720                        stoop:
+3720     F9 01            
+3722     FB 01            
+3724     6B FB 02         
+3727     6C               
+3728                        :crouch:
+3728     6D               
+3729     FF               
+372A     28 37            
+372C                        standup:
+372C     F9 05            
+372E     FB 01 6E         
+3731     6F FB 02         
+3734     70               
+3735     71 FB 01         
+3738     72               
+3739     73               
+373A     74 FB FC         
+373D     75 76 77         
+3740     FF               
+3741     16 31            
+3743                        pickupsword:
+3743     F9 01            
+3745     F3 01            
+3747     E5 E5 E5 E5 E5 E5
+374D     E6 E7 E8         
+3750     FF               
+3751     00 00            
+3753                        resheathe:
+3753     F9 01            
+3755     FB FB            
+3757     E9 EA EB         
+375A     EC ED EE EF F0 85 85
+3761     86 86 86         
+3764     30 FB 01         
+3767     31 FB FE         
+376A     F9 05 32 F9 01   
+376F     33 34            
+3771     FF               
+3772     16 31            
+3774                        fastsheathe:
+3774     F9 01            
+3776     FB FB            
+3778     EA EC EE F0 86   
+377D     FB FF            
+377F     FF               
+3780     16 31            
+3782                        drinkpotion:
+3782     F9 01            
+3784     FB 04            
+3786     BF C0 C1 C2 C3 C4 C5 C6
+3790     C9 CA CB CC      
+3794     CD CD CD         
+3797     F3 01            
+3799     CD CD            
+379B     C9 C6            
+379D     FB FC            
+379F     FF               
+37A0     16 31            
+37A2                        softland:
+37A2     F9 05            
+37A4     F4               
+37A5     FB 01            
+37A7     F2 01 6B FB 02   
+37AC     6C               
+37AD     F2 01            
+37AF     F9 01            
+37B1                        :crouch:
+37B1     6D               
+37B2     FF               
+37B3     B1 37            
+37B5                        landrun:
+37B5     F9 01            
+37B7     FA FE FB 01      
+37BB     6B FB 02         
+37BE     6C               
+37BF     6D FB 01         
+37C2     6E               
+37C3     6F FB 02         
+37C6     70               
+37C7     71 FB 01 FA 01   
+37CC     72 FA 01         
+37CF     73 FB FE         
+37D2     FF               
+37D3     EE 30            
+37D5                        medland:
+37D5     F9 05            
+37D7     F4               
+37D8     FA FE FB 01      
+37DC     FB 02            
+37DE     6C               
+37DF     6D 6D 6D 6D 6D 6D 6D 6D
+37E8     6D 6D 6D 6D 6D 6D 6D 6D
+37F1     6D 6D 6D 6D 6D 6D 6D 6D
+37FA     6D 6D FB 01      
+37FE     6E 6E 6E         
+3801     6F FB 02         
+3804     70               
+3805     71 FB 01 FA 01   
+380A     72 FA 01         
+380D     73               
+380E     74 FB FC         
+3811     75               
+3812     76               
+3813     77               
+3814     FF               
+3815     16 31            
+3817                        hardland:
+3817     F9 05            
+3819     F4               
+381A     FA FE FB 03      
+381E     B9               
+381F     F6               
+3820                        :dead:
+3820     B9               
+3821     FF               
+3822     20 38            
+3824                        stabkill:
+3824     F9 05            
+3826     FF               
+3827     00 00            
+3829                        dropdead:
+3829     F9 01            
+382B     F6               
+382C     B3               
+382D     B4               
+382E     B5               
+382F     B6 FB 01         
+3832     B7 FB FC         
+3835                        :dead:
+3835     B9               
+3836     FF               
+3837     35 38            
+3839                        impale:
+3839     F9 01            
+383B     F4               
+383C     FB 04            
+383E     B1               
+383F     F6               
+3840                        :dead:
+3840     B1               
+3841     FF               
+3842     40 38            
+3844                        halve:
+3844     F9 01            
+3846     B2               
+3847     F6               
+3848                        :dead:
+3848     B2               
+3849     FF               
+384A     48 38            
+384C                        crush:
+384C     FF               
+384D     D5 37            
+384F                        deadfall:
+384F     F8 00 00         
+3852     F9 04            
+3854                        :loop:
+3854     B9               
+3855     FF               
+3856     54 38            
+3858                        climbstairs:
+3858     F9 05            
+385A     FB FB FA FF      
+385E     F2 01 D9         
+3861     DA               
+3862     DB FB 01         
+3865     DC FB FC FA FD   
+386A     F2 01 DD FB FC FA FE
+3871     DE DE FB FE FA FD
+3877     DF DF FB FD FA F8
+387D     F2 01 E0 E0 FB FF FA FF
+3885     E1 E1 FB FD FA FC
+388B     E2 E2 FB FF FA FB
+3891     F2 01 E3 E3 FB FE FA FF
+3899     E4 E4            
+389B     00 F2 01         
+389E     00 00 00 00 F2 01
+38A4     00 00 00 00 F2 01
+38AA     00 00 00 00 F2 01
+38B0     F1               
+38B1                        :loop:
+38B1     00 FF            
+38B3     B1 38            
+38B5                        Vstand:
+38B5     36 FF            
+38B7     B5 38            
+38B9                        Vraise:
+38B9     55 43 43 43 43 43 43
+38C0     44 45 46 47 48 49 4A 4B
+38CA                        :loop:
+38CA     4C               
+38CB     FF               
+38CC     CA 38            
+38CE                        Vwalk:
+38CE     FB 01            
+38D0                        Vwalk1:
+38D0     30 FB 02         
+38D3                        Vwalk2:
+38D3     31 FB 06         
+38D6     32 FB 01         
+38D9     33 FB FF         
+38DC     34 FB 01         
+38DF     35 FB 01         
+38E2     FF               
+38E3     D0 38            
+38E5                        Vstop:
+38E5     FB 01            
+38E7     37 38            
+38E9     FF               
+38EA     B5 38            
+38EC                        Vexit:
+38EC     4D 4E 4F 50 51 52
+38F2     FB 01            
+38F4     36 36 36 36 36 36
+38FA     39               
+38FB     3A               
+38FC     3B               
+38FD     3C               
+38FE     3D FB 02         
+3901     3E FB FF         
+3904     3F FB FD         
+3907     40               
+3908     41 FB FF         
+390B     42               
+390C     FE FB 10         
+390F     FB 03            
+3911     FF               
+3912     D3 38            
+3914                        Pstand:
+3914     0B FF            
+3916     14 39            
+3918                        Palert:
+3918     02 03 04 05 06 07 08 09
+3920     FE FB 09         
+3923     0B FF            
+3925     14 39            
+3927                        Pback:
+3927     FE FB 0B         
+392A     0C               
+392B     FB 01 0D         
+392E     FB 01 0E         
+3931     FB 03 0F         
+3934     FB 01 10         
+3937                        :loop:
+3937     11               
+3938     FF               
+3939     37 39            
+393B                        Plie:
+393B     13               
+393C     FF               
+393D     3B 39            
+393F                        Pwaiting:
+393F                        :loop:
+393F     14               
+3940     FF               
+3941     3F 39            
+3943                        Pembrace:
+3943     15               
+3944     FB 01 16         
+3947     17               
+3948     18               
+3949     FB 01 19         
+394C     FB FD 1A         
+394F     FB FE 1B         
+3952     FB FC 1C         
+3955     FB FD 1D         
+3958     FB FE 1E         
+395B     FB FD 1F         
+395E     FB FF 20         
+3961                        :loop:
+3961     21               
+3962     FF               
+3963     61 39            
+3965                        Pstroke:
+3965                        :loop:
+3965     25               
+3966     FF               
+3967     65 39            
+3969                        Prise:
+3969     25 26 27 28 29 2A 2B 2C
+3974     FE FB 0D         
+3977                        :loop:
+3977     0B FF            
+3979     77 39            
+397B                        Pcrouch:
+397B     0B 0B            
+397D     FE FB 0D         
+3980     2F 2E 2D 2C 2B 2A 29 28
+398B     24 24 24 23 23 23
+3991     22 22 22 22 22 22 22
+3998     23 23 24 24 24 23 23 23
+39A0     22 22 22 22 22 22 22
+39A7     23 23 24 24 24 23 23 23
+39AF     22 22 22 22 22 22 22 22
+39B8     23 23 23         
+39BB                        :loop:
+39BB     24               
+39BC     FF               
+39BD     BB 39            
+39BF                        Pslump:
+39BF     01               
+39C0                        :loop:
+39C0     12               
+39C1     FF               
+39C2     C0 39            
+39C4                        Mscurry:
+39C4     F9 01            
+39C6                        Mscurry1:
+39C6                        :loop:
+39C6     BA FB 05         
+39C9     BA FB 03         
+39CC     BB FB 04         
+39CF     FF               
+39D0     C6 39            
+39D2                        Mstop:
+39D2                        :loop:
+39D2     BA               
+39D3     FF               
+39D4     D2 39            
+39D6                        Mraise:
+39D6                        :loop:
+39D6     BC               
+39D7     FF               
+39D8     D6 39            
+39DA                        Mleave:
+39DA     F9 00            
+39DC     BA BA BA         
+39DF     BC BC BC BC BC BC BC BC
+39E7     FE FB 08         
+39EA     FF               
+39EB     C6 39            
+39ED                        Mclimb:
+39ED     BA               
+39EE     FF               
+39EF     ED 39            
+
+; End of listing

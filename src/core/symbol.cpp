@@ -11,6 +11,10 @@ void ConcreteSymbolTable::Define(const std::string& name, SymbolType type,
     symbols_[name] = Symbol(name, type, value);
 }
 
+void ConcreteSymbolTable::DefineLabel(const std::string& name, int64_t value) {
+    Define(name, SymbolType::Label, std::make_shared<LiteralExpr>(value));
+}
+
 bool ConcreteSymbolTable::Lookup(const std::string& name, int64_t& value) const {
     auto it = symbols_.find(name);
     if (it != symbols_.end()) {
@@ -42,6 +46,15 @@ bool ConcreteSymbolTable::IsDefined(const std::string& name) const {
 
 const std::unordered_map<std::string, Symbol>& ConcreteSymbolTable::GetAllSymbols() const {
     return symbols_;
+}
+
+std::vector<std::string> ConcreteSymbolTable::GetAllSymbolNames() const {
+    std::vector<std::string> names;
+    names.reserve(symbols_.size());
+    for (const auto& pair : symbols_) {
+        names.push_back(pair.first);
+    }
+    return names;
 }
 
 void ConcreteSymbolTable::Clear() {

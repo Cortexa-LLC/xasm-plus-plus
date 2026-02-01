@@ -27,16 +27,28 @@ CommandLineOptions ParseCommandLine(int argc, char** argv) {
   // Syntax parser option
   app.add_option("--syntax", opts.syntax, "Syntax parser (default: simple)")
       ->default_val("simple")
-      ->check(CLI::IsMember({"simple", "merlin"}));  // simple and merlin supported
+      ->check(CLI::IsMember({"simple", "merlin", "scmasm"}));  // simple, merlin, and scmasm supported
 
   // Output file option
   app.add_option("--output,-o", opts.output, "Output file (default: a.out)")
       ->default_val("a.out");
 
+  // Listing file option (optional)
+  app.add_option("--list", opts.listing_file, "Generate listing file (.lst)");
+
+  // Symbol table option (optional)
+  app.add_option("--symbols", opts.symbol_file, "Generate symbol table file (.sym)");
+
+  // Color output option
+  app.add_option("--color", opts.color_mode, "Color output (auto, always, never)")
+      ->default_val("auto")
+      ->check(CLI::IsMember({"auto", "always", "never"}));
+
   try {
     app.parse(argc, argv);
   } catch (const CLI::CallForHelp &e) {
     opts.show_help = true;
+    opts.help_message = app.help();
     return opts;
   } catch (const CLI::CallForVersion &e) {
     opts.show_version = true;

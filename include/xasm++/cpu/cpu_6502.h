@@ -286,6 +286,50 @@ public:
     // Phase 2.5 - Group 5: 65C02 Branch Always
     std::vector<uint8_t> EncodeBRA(uint16_t operand, AddressingMode mode) const;  // Branch Always (65C02+)
 
+    // Phase 2.6: 65C02 Rockwell Extensions - Processor Control
+    std::vector<uint8_t> EncodeWAI() const;  // Wait for Interrupt (65C02 Rockwell+)
+    std::vector<uint8_t> EncodeSTP() const;  // Stop Processor (65C02 Rockwell+)
+
+    // Phase 2.6: 65C02 Rockwell Extensions - Reset Memory Bit
+    std::vector<uint8_t> EncodeRMB0(uint8_t operand, AddressingMode mode) const;  // Reset Bit 0 (65C02 Rockwell+)
+    std::vector<uint8_t> EncodeRMB1(uint8_t operand, AddressingMode mode) const;  // Reset Bit 1 (65C02 Rockwell+)
+    std::vector<uint8_t> EncodeRMB2(uint8_t operand, AddressingMode mode) const;  // Reset Bit 2 (65C02 Rockwell+)
+    std::vector<uint8_t> EncodeRMB3(uint8_t operand, AddressingMode mode) const;  // Reset Bit 3 (65C02 Rockwell+)
+    std::vector<uint8_t> EncodeRMB4(uint8_t operand, AddressingMode mode) const;  // Reset Bit 4 (65C02 Rockwell+)
+    std::vector<uint8_t> EncodeRMB5(uint8_t operand, AddressingMode mode) const;  // Reset Bit 5 (65C02 Rockwell+)
+    std::vector<uint8_t> EncodeRMB6(uint8_t operand, AddressingMode mode) const;  // Reset Bit 6 (65C02 Rockwell+)
+    std::vector<uint8_t> EncodeRMB7(uint8_t operand, AddressingMode mode) const;  // Reset Bit 7 (65C02 Rockwell+)
+
+    // Phase 2.6: 65C02 Rockwell Extensions - Set Memory Bit
+    std::vector<uint8_t> EncodeSMB0(uint8_t operand, AddressingMode mode) const;  // Set Bit 0 (65C02 Rockwell+)
+    std::vector<uint8_t> EncodeSMB1(uint8_t operand, AddressingMode mode) const;  // Set Bit 1 (65C02 Rockwell+)
+    std::vector<uint8_t> EncodeSMB2(uint8_t operand, AddressingMode mode) const;  // Set Bit 2 (65C02 Rockwell+)
+    std::vector<uint8_t> EncodeSMB3(uint8_t operand, AddressingMode mode) const;  // Set Bit 3 (65C02 Rockwell+)
+    std::vector<uint8_t> EncodeSMB4(uint8_t operand, AddressingMode mode) const;  // Set Bit 4 (65C02 Rockwell+)
+    std::vector<uint8_t> EncodeSMB5(uint8_t operand, AddressingMode mode) const;  // Set Bit 5 (65C02 Rockwell+)
+    std::vector<uint8_t> EncodeSMB6(uint8_t operand, AddressingMode mode) const;  // Set Bit 6 (65C02 Rockwell+)
+    std::vector<uint8_t> EncodeSMB7(uint8_t operand, AddressingMode mode) const;  // Set Bit 7 (65C02 Rockwell+)
+
+    // Phase 2.6: 65C02 Rockwell Extensions - Branch on Bit Reset
+    std::vector<uint8_t> EncodeBBR0(uint8_t zp_addr, uint8_t offset) const;  // Branch if Bit 0 Reset (65C02 Rockwell+)
+    std::vector<uint8_t> EncodeBBR1(uint8_t zp_addr, uint8_t offset) const;  // Branch if Bit 1 Reset (65C02 Rockwell+)
+    std::vector<uint8_t> EncodeBBR2(uint8_t zp_addr, uint8_t offset) const;  // Branch if Bit 2 Reset (65C02 Rockwell+)
+    std::vector<uint8_t> EncodeBBR3(uint8_t zp_addr, uint8_t offset) const;  // Branch if Bit 3 Reset (65C02 Rockwell+)
+    std::vector<uint8_t> EncodeBBR4(uint8_t zp_addr, uint8_t offset) const;  // Branch if Bit 4 Reset (65C02 Rockwell+)
+    std::vector<uint8_t> EncodeBBR5(uint8_t zp_addr, uint8_t offset) const;  // Branch if Bit 5 Reset (65C02 Rockwell+)
+    std::vector<uint8_t> EncodeBBR6(uint8_t zp_addr, uint8_t offset) const;  // Branch if Bit 6 Reset (65C02 Rockwell+)
+    std::vector<uint8_t> EncodeBBR7(uint8_t zp_addr, uint8_t offset) const;  // Branch if Bit 7 Reset (65C02 Rockwell+)
+
+    // Phase 2.6: 65C02 Rockwell Extensions - Branch on Bit Set
+    std::vector<uint8_t> EncodeBBS0(uint8_t zp_addr, uint8_t offset) const;  // Branch if Bit 0 Set (65C02 Rockwell+)
+    std::vector<uint8_t> EncodeBBS1(uint8_t zp_addr, uint8_t offset) const;  // Branch if Bit 1 Set (65C02 Rockwell+)
+    std::vector<uint8_t> EncodeBBS2(uint8_t zp_addr, uint8_t offset) const;  // Branch if Bit 2 Set (65C02 Rockwell+)
+    std::vector<uint8_t> EncodeBBS3(uint8_t zp_addr, uint8_t offset) const;  // Branch if Bit 3 Set (65C02 Rockwell+)
+    std::vector<uint8_t> EncodeBBS4(uint8_t zp_addr, uint8_t offset) const;  // Branch if Bit 4 Set (65C02 Rockwell+)
+    std::vector<uint8_t> EncodeBBS5(uint8_t zp_addr, uint8_t offset) const;  // Branch if Bit 5 Set (65C02 Rockwell+)
+    std::vector<uint8_t> EncodeBBS6(uint8_t zp_addr, uint8_t offset) const;  // Branch if Bit 6 Set (65C02 Rockwell+)
+    std::vector<uint8_t> EncodeBBS7(uint8_t zp_addr, uint8_t offset) const;  // Branch if Bit 7 Set (65C02 Rockwell+)
+
     // Phase 2.5 - Group 11: 65816 Bank Operations
     std::vector<uint8_t> EncodePHB() const;  // Push Data Bank Register (65816)
     std::vector<uint8_t> EncodePLB() const;  // Pull Data Bank Register (65816)

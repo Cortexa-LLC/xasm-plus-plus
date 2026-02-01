@@ -1,5 +1,8 @@
 # Integration tests - end-to-end assembly pipeline validation
 
+# Binary compatibility tests (compare with vasm-ext)
+add_subdirectory(binary_compat)
+
 # Test programs (simple syntax)
 set(TEST_PROGRAMS
   01_hello

@@ -5,6 +5,7 @@
 #include "xasm++/util/string_utils.h"
 #include <sstream>
 #include <fstream>
+#include <iostream>
 #include <algorithm>
 #include <cctype>
 #include <stdexcept>
@@ -468,16 +469,49 @@ void MerlinSyntaxParser::HandleDS(const std::string& operand, Section& section,
 
     // Substitute * (program counter) with current address BEFORE parsing
     // In Merlin syntax, * represents the current program counter
+    // BUT: Don't substitute when * is multiplication (between two operands)
     if (op.find('*') != std::string::npos) {
         std::ostringstream hex_stream;
         hex_stream << "$" << std::hex << (in_dum_block_ ? dum_address_ : current_address_);
         std::string pc_hex = hex_stream.str();
 
-        // Replace all * with the hex address
+        // Replace * with address, but only when it's program counter (not multiplication)
         size_t pos = 0;
         while ((pos = op.find('*', pos)) != std::string::npos) {
-            op.replace(pos, 1, pc_hex);
-            pos += pc_hex.length();
+            // Check if * is multiplication by examining characters before and after
+            bool is_multiplication = false;
+
+            // Check character before *
+            bool has_operand_before = false;
+            if (pos > 0) {
+                char before = op[pos - 1];
+                // Operand before: digit, letter, or closing paren
+                if (std::isalnum(static_cast<unsigned char>(before)) || before == ')') {
+                    has_operand_before = true;
+                }
+            }
+
+            // Check character after *
+            bool has_operand_after = false;
+            if (pos + 1 < op.length()) {
+                char after = op[pos + 1];
+                // Operand after: digit, letter, or opening paren
+                if (std::isalnum(static_cast<unsigned char>(after)) || after == '(' || after == '$' || after == '%') {
+                    has_operand_after = true;
+                }
+            }
+
+            // It's multiplication if there are operands on BOTH sides
+            is_multiplication = has_operand_before && has_operand_after;
+
+            if (is_multiplication) {
+                // Skip this *, it's multiplication
+                pos++;
+            } else {
+                // This is program counter, substitute it
+                op.replace(pos, 1, pc_hex);
+                pos += pc_hex.length();
+            }
         }
     }
 
@@ -629,9 +663,14 @@ void MerlinSyntaxParser::HandleElse() {
 void MerlinSyntaxParser::HandleFin() {
     // FIN - end conditional assembly block
     if (conditional_stack_.empty()) {
-        throw std::runtime_error(FormatError("FIN without matching DO"));
+        // Merlin quirk: FIN without DO is a warning, not an error
+        // This is needed for Prince of Persia source (SPECIALK.S has extra FINs)
+        // vasm treats this as WARNING and continues processing
+        // We'll do the same - just ignore the extra FIN
+        std::cerr << "Warning: " << FormatError("FIN without matching DO (ignored for Merlin compatibility)") << std::endl;
+        return;
     }
-    
+
     conditional_stack_.pop_back();
 }
 

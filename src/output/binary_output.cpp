@@ -6,6 +6,8 @@
 #include "xasm++/symbol.h"
 #include <fstream>
 #include <stdexcept>
+#include <iostream>
+#include <iomanip>
 
 namespace xasm {
 
@@ -85,7 +87,7 @@ void BinaryOutput::WriteOutput(const std::string& filename,
 
         case AtomType::Org:
           // OrgAtom: Track address but don't write bytes
-          // Fall through
+          break;
         case AtomType::Label:
           // LabelAtom: No bytes generated
           break;

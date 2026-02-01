@@ -15,6 +15,7 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 #include "xasm++/atom.h"      // For SourceLocation
 #include "xasm++/expression.h"
@@ -129,6 +130,17 @@ public:
     void Define(const std::string& name, SymbolType type, std::shared_ptr<Expression> value);
 
     /**
+     * @brief Define a label with a numeric value (convenience method)
+     * 
+     * Helper method for defining simple labels with integer values.
+     * Wraps the value in a LiteralExpr.
+     * 
+     * @param name Label name
+     * @param value Numeric value for the label
+     */
+    void DefineLabel(const std::string& name, int64_t value);
+
+    /**
      * @brief Look up a symbol value
      * 
      * Evaluates the symbol's expression and returns its numeric value.
@@ -177,6 +189,16 @@ public:
      * @return Const reference to the symbol map
      */
     const std::unordered_map<std::string, Symbol>& GetAllSymbols() const;
+
+    /**
+     * @brief Get all symbol names
+     * 
+     * Returns a vector containing just the names of all defined symbols.
+     * Useful for symbol suggestion algorithms.
+     * 
+     * @return Vector of symbol names
+     */
+    std::vector<std::string> GetAllSymbolNames() const;
 
     /**
      * @brief Clear all symbols from the table

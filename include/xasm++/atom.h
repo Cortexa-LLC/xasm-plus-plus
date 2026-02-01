@@ -160,26 +160,53 @@ public:
 };
 
 /**
- * @brief Data atom - represents raw data bytes
+ * @brief Data size for data atoms (byte vs word)
+ */
+enum class DataSize {
+    Byte,       ///< 8-bit data (db, dfb directives)
+    Word        ///< 16-bit data (dw, da directives)
+};
+
+/**
+ * @brief Data atom - represents raw data bytes or expressions
  * 
- * A data atom contains raw bytes that are emitted directly to the output.
- * This is used for directives like .byte, .word, .db, etc.
+ * A data atom contains raw bytes or expressions that will be evaluated
+ * and emitted to the output. This is used for directives like .byte,
+ * .word, .db, .dw, etc.
+ * 
+ * The atom stores both the original expression strings and the evaluated
+ * bytes. The expressions are re-evaluated on each pass to resolve forward
+ * references and ensure correct addresses.
  * 
  * @par Example
  * @code
- * .byte $01, $02, $03   ; DataAtom(data={0x01, 0x02, 0x03})
+ * .byte $01, $02, $03   ; DataAtom(expressions={"$01", "$02", "$03"}, data_size=Byte)
+ * .word start, end      ; DataAtom(expressions={"start", "end"}, data_size=Word)
  * @endcode
  */
 class DataAtom : public Atom {
 public:
-    std::vector<uint8_t> data;      ///< Raw data bytes to emit
+    std::vector<std::string> expressions;   ///< Original expression strings
+    std::vector<uint8_t> data;              ///< Evaluated data bytes
+    DataSize data_size;                     ///< Size of each data element
 
     /**
-     * @brief Construct a data atom
+     * @brief Construct a data atom with expressions (for multi-pass evaluation)
+     * @param exprs Vector of expression strings
+     * @param size Data size (Byte or Word)
+     */
+    DataAtom(const std::vector<std::string>& exprs, DataSize size)
+        : Atom(AtomType::Data), expressions(exprs), data_size(size) {
+        // Size will be determined after evaluation
+        this->size = 0;
+    }
+
+    /**
+     * @brief Construct a data atom with pre-evaluated bytes (legacy constructor)
      * @param d Vector of bytes to emit
      */
     explicit DataAtom(const std::vector<uint8_t>& d)
-        : Atom(AtomType::Data), data(d) {
+        : Atom(AtomType::Data), data(d), data_size(DataSize::Byte) {
         size = data.size();
     }
 };

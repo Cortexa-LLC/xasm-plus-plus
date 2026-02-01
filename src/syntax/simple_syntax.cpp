@@ -13,7 +13,24 @@ static uint32_t ParseHex(const std::string& str) {
   if (str.empty() || str[0] != '$') {
     return 0;
   }
-  return std::stoul(str.substr(1), nullptr, 16);
+  std::string hex_part = str.substr(1);
+  if (hex_part.empty()) {
+    throw std::runtime_error("Invalid hex number: '" + str + "' (no digits after $)");
+  }
+  
+  // Validate hex digits
+  for (char c : hex_part) {
+    if (!std::isxdigit(static_cast<unsigned char>(c))) {
+      throw std::runtime_error("Invalid hex digit '" + std::string(1, c) + 
+                              "' in hex number: '" + str + "'");
+    }
+  }
+  
+  try {
+    return std::stoul(hex_part, nullptr, 16);
+  } catch (const std::exception& e) {
+    throw std::runtime_error("Failed to parse hex number '" + str + "': " + e.what());
+  }
 }
 
 // Helper: Trim whitespace
