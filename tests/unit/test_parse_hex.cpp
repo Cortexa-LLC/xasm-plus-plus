@@ -4,14 +4,12 @@
 #include <gtest/gtest.h>
 #include <stdexcept>
 #include <cstdint>
-
-// Since ParseHex is currently static, we need to test through the assembler
-// or extract it to a testable location. For now, we'll create a test-accessible version.
+#include "xasm++/parse_utils.h"
 
 namespace xasm {
 
-// Helper function to test (will be extracted from assembler.cpp)
-uint32_t ParseHexSafe(const std::string& str, bool& success, std::string& error_msg);
+// ParseHexSafe is already declared in parse_utils.h
+// ParseHex (exception-throwing variant) will be added
 
 // ============================================================================
 // ============================================================================
@@ -196,6 +194,67 @@ TEST(ParseHexTest, LeadingZeros) {
     EXPECT_TRUE(success);
     EXPECT_EQ(result, 0x42);
     EXPECT_TRUE(error.empty());
+}
+
+// ============================================================================
+// ParseHex (Exception-Throwing Variant) Tests
+// ============================================================================
+
+// Test: ParseHex with $ prefix
+TEST(ParseHexExceptionTest, WithDollarPrefix) {
+    EXPECT_EQ(0x1234, ParseHex("$1234"));
+    EXPECT_EQ(0xFF, ParseHex("$FF"));
+    EXPECT_EQ(0xABCD, ParseHex("$ABCD"));
+}
+
+// Test: ParseHex without $ prefix (should work)
+TEST(ParseHexExceptionTest, WithoutDollarPrefix) {
+    EXPECT_EQ(0x1234, ParseHex("1234"));
+    EXPECT_EQ(0xFF, ParseHex("FF"));
+    EXPECT_EQ(0xABCD, ParseHex("ABCD"));
+}
+
+// Test: ParseHex strips addressing mode suffixes
+TEST(ParseHexExceptionTest, StripAddressingModeSuffixes) {
+    EXPECT_EQ(0x10, ParseHex("$10,X"));
+    EXPECT_EQ(0x20, ParseHex("$20,Y"));
+    EXPECT_EQ(0x30, ParseHex("$30,S"));
+    EXPECT_EQ(0x1234, ParseHex("$1234,X"));
+}
+
+// Test: ParseHex throws on empty string
+TEST(ParseHexExceptionTest, ThrowsOnEmptyString) {
+    EXPECT_THROW(ParseHex(""), std::invalid_argument);
+}
+
+// Test: ParseHex throws on invalid hex characters
+TEST(ParseHexExceptionTest, ThrowsOnInvalidHexCharacters) {
+    EXPECT_THROW(ParseHex("$GHIJ"), std::invalid_argument);
+    EXPECT_THROW(ParseHex("$12XZ"), std::invalid_argument);
+    EXPECT_THROW(ParseHex("GHIJ"), std::invalid_argument);
+}
+
+// Test: ParseHex throws on only $ prefix
+TEST(ParseHexExceptionTest, ThrowsOnOnlyDollarSign) {
+    EXPECT_THROW(ParseHex("$"), std::invalid_argument);
+}
+
+// Test: ParseHex handles lowercase
+TEST(ParseHexExceptionTest, HandlesLowercase) {
+    EXPECT_EQ(0xabcd, ParseHex("$abcd"));
+    EXPECT_EQ(0xabcd, ParseHex("abcd"));
+}
+
+// Test: ParseHex handles mixed case
+TEST(ParseHexExceptionTest, HandlesMixedCase) {
+    EXPECT_EQ(0xAbCd, ParseHex("$AbCd"));
+    EXPECT_EQ(0xAbCd, ParseHex("AbCd"));
+}
+
+// Test: ParseHex handles zero
+TEST(ParseHexExceptionTest, HandlesZero) {
+    EXPECT_EQ(0, ParseHex("$0"));
+    EXPECT_EQ(0, ParseHex("0"));
 }
 
 } // namespace xasm

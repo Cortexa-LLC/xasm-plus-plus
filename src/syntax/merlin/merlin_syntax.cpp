@@ -364,7 +364,7 @@ void MerlinSyntaxParser::HandleOrg(const std::string& operand, Section& section,
         if (symbols.Lookup(op, value)) {
             address = static_cast<uint32_t>(value);
         } else {
-            // Symbol not found - use 0 for now (forward reference issue)
+            // Symbol not found - this should throw an error in proper assembly
             address = 0;
         }
     }

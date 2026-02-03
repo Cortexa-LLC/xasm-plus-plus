@@ -21,13 +21,8 @@ std::string Trim(const std::string& str);
  */
 std::string ToUpper(const std::string& str);
 
-/**
- * @brief Parse hexadecimal string (with or without '$' prefix)
- * @param str The hexadecimal string to parse (e.g., "$FF" or "FF")
- * @return Parsed unsigned 32-bit integer value
- * @throws std::invalid_argument if string is not valid hex
- */
-uint32_t ParseHex(const std::string& str);
+// ParseHex moved to xasm++/parse_utils.h for consolidation
+// See: .ai/tasks/2026-01-31_refactor-number-parsing/
 
 } // namespace util
 } // namespace xasm

@@ -6,6 +6,7 @@
 #include "xasm++/expression.h"
 #include "xasm++/symbol.h"
 #include "xasm++/util/string_utils.h"
+#include "xasm++/parse_utils.h"
 #include <string>
 #include <sstream>
 #include <algorithm>
@@ -14,8 +15,10 @@
 
 namespace xasm {
 
+// Bring util functions into scope for convenience
 using xasm::util::Trim;
-using xasm::util::ParseHex;
+
+// Note: ParseHex() consolidated to xasm::ParseHex (from parse_utils.h)
 
 // Helper: Simple expression parser for data directives
 // This is a simplified version that handles:

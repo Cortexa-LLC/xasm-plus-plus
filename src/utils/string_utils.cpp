@@ -22,38 +22,8 @@ std::string ToUpper(const std::string& str) {
     return result;
 }
 
-uint32_t ParseHex(const std::string& str) {
-    if (str.empty()) {
-        throw std::invalid_argument("Empty string cannot be parsed as hex");
-    }
-
-    // Skip '$' prefix if present
-    std::string hex_str = (str[0] == '$') ? str.substr(1) : str;
-
-    if (hex_str.empty()) {
-        throw std::invalid_argument("Hex string contains only '$' prefix");
-    }
-
-    // Strip addressing mode suffix (,X ,Y ,S) before parsing
-    size_t comma_pos = hex_str.find(',');
-    if (comma_pos != std::string::npos) {
-        hex_str = hex_str.substr(0, comma_pos);
-    }
-
-    // Validate all characters are hex digits
-    for (char c : hex_str) {
-        if (!std::isxdigit(static_cast<unsigned char>(c))) {
-            throw std::invalid_argument("Invalid hex digit '" + std::string(1, c) +
-                                       "' in hex string: '" + str + "'");
-        }
-    }
-
-    try {
-        return std::stoul(hex_str, nullptr, 16);
-    } catch (const std::exception& e) {
-        throw std::runtime_error("Failed to parse hex string '" + str + "': " + e.what());
-    }
-}
+// ParseHex moved to src/core/parse_utils.cpp for consolidation
+// See: .ai/tasks/2026-01-31_refactor-number-parsing/
 
 } // namespace util
 } // namespace xasm

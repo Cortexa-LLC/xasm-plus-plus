@@ -9,7 +9,23 @@
 namespace xasm {
 
 /**
- * Parse a hexadecimal string with $ prefix into a uint32_t value
+ * Parse a hexadecimal string into a uint32_t value (exception-throwing variant)
+ * 
+ * This function provides flexible hex parsing with:
+ * - Optional '$' prefix (strips if present)
+ * - Addressing mode suffix stripping (,X ,Y ,S)
+ * - Exception-based error reporting
+ * 
+ * @param str Hex string (e.g., "$1234", "1234", "$10,X")
+ * @return Parsed uint32_t value
+ * @throws std::invalid_argument if string is not valid hex
+ * 
+ * @note Consolidates duplicate implementations from string_utils and simple_syntax
+ */
+uint32_t ParseHex(const std::string& str);
+
+/**
+ * Parse a hexadecimal string with $ prefix into a uint32_t value (safe variant)
  * 
  * This function provides safe parsing with:
  * - Input validation (checks for valid hex characters)
@@ -26,12 +42,7 @@ namespace xasm {
  */
 uint32_t ParseHexSafe(const std::string& str, bool& success, std::string& error_msg);
 
-/**
- * Trim whitespace from both ends of a string
- * 
- * @param str Input string to trim
- * @return Trimmed string with leading/trailing whitespace removed
- */
-std::string Trim(const std::string& str);
+// Note: Trim() is still available from xasm::util namespace (string_utils.h)
+// Not consolidated here to avoid conflicts with static Trim in simple_syntax.cpp
 
 } // namespace xasm
