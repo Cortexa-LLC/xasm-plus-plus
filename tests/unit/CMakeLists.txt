@@ -135,6 +135,21 @@ target_link_libraries(test_merlin_syntax
 
 gtest_discover_tests(test_merlin_syntax)
 
+# XC Directive tests (Merlin CPU mode switching)
+add_executable(test_xc_directive
+    test_xc_directive.cpp
+)
+
+target_link_libraries(test_xc_directive
+    xasm_syntax
+    xasm_cpu
+    xasm_core
+    gtest_main
+    gtest
+)
+
+gtest_discover_tests(test_xc_directive)
+
 # ScmasmSyntax tests
 add_executable(test_scmasm_syntax
     test_scmasm_syntax.cpp

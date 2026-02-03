@@ -16,6 +16,7 @@ set(TEST_PROGRAMS
 set(MERLIN_TEST_PROGRAMS
   06_pop_eq
   07_pop_subs
+  09_xc_directive
 )
 
 # For each test program:
