@@ -79,3 +79,6 @@ tests/scratch/
 # Repository cleanup artifacts
 ..bfg-report/
 pop_analysis_output/
+
+# Test output binaries
+tests/e2e/**/output/*.bin
