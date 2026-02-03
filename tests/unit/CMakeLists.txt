@@ -93,6 +93,20 @@ target_link_libraries(test_cpu6502
 
 gtest_discover_tests(test_cpu6502)
 
+# CPU 6809 tests
+add_executable(test_cpu6809
+    test_cpu6809.cpp
+)
+
+target_link_libraries(test_cpu6809
+    xasm_cpu
+    xasm_core
+    gtest_main
+    gtest
+)
+
+gtest_discover_tests(test_cpu6809)
+
 # SimpleSyntax tests
 add_executable(test_simple_syntax
     test_simple_syntax.cpp
@@ -290,3 +304,5 @@ target_link_libraries(test_stoul_fix
 )
 
 gtest_discover_tests(test_stoul_fix)
+
+
