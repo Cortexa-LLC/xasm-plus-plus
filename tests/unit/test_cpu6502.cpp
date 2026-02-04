@@ -2240,7 +2240,8 @@ TEST(Cpu6502Test, PEA_65816) {
     Cpu6502 cpu;
     cpu.SetCpuMode(CpuMode::Cpu65816);
 
-    auto bytes = cpu.EncodePEA(0x1234, AddressingMode::Immediate);
+    // PEA uses Absolute addressing, not Immediate
+    auto bytes = cpu.EncodePEA(0x1234, AddressingMode::Absolute);
     ASSERT_EQ(bytes.size(), 3);
     EXPECT_EQ(bytes[0], 0xF4);  // PEA opcode
     EXPECT_EQ(bytes[1], 0x34);  // Low byte
