@@ -27,7 +27,7 @@ CommandLineOptions ParseCommandLine(int argc, char** argv) {
   // Syntax parser option
   app.add_option("--syntax", opts.syntax, "Syntax parser (default: simple)")
       ->default_val("simple")
-      ->check(CLI::IsMember({"simple", "merlin", "scmasm"}));  // simple, merlin, and scmasm supported
+      ->check(CLI::IsMember({"simple", "merlin", "scmasm", "edtasm"}));  // simple, merlin, scmasm, and edtasm supported
 
   // Output file option
   app.add_option("--output,-o", opts.output, "Output file (default: a.out)")

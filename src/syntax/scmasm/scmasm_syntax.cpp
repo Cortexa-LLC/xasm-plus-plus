@@ -236,9 +236,7 @@ void ScmasmSyntaxParser::ParseLine(const std::string& line, Section& section, Co
     // Convert opcode to uppercase for comparison
     std::string opcode_upper = opcode;
     std::transform(opcode_upper.begin(), opcode_upper.end(), opcode_upper.begin(), ::toupper);
-    
-    std::cerr << "DEBUG ParseLine: opcode='" << opcode_upper << "' operand='" << operand << "' label='" << label << "'\n";
-    
+
     // Handle directives (must start with .)
     if (!opcode.empty() && opcode[0] == '.') {
         // For directives, define the label but DON'T create a label atom
@@ -339,10 +337,8 @@ void ScmasmSyntaxParser::ParseLine(const std::string& line, Section& section, Co
         }
         
         // Check if it's a macro invocation
-        std::cerr << "DEBUG: Checking if '" << opcode_upper << "' is a macro. Defined macros: " << macros_.size() << "\n";
         auto it = macros_.find(opcode_upper);
         if (it != macros_.end()) {
-            std::cerr << "DEBUG: Found macro '" << opcode_upper << "' with operand '" << operand << "'\n";
             // Parse macro parameters from operand
             std::vector<std::string> params;
             if (!operand.empty()) {
@@ -361,8 +357,6 @@ void ScmasmSyntaxParser::ParseLine(const std::string& line, Section& section, Co
                     ++pos;
                 }
             }
-            std::cerr << "DEBUG: Parsed " << params.size() << " params\n";
-            
             // Invoke the macro
             InvokeMacro(opcode_upper, params, section, symbols);
         }
@@ -1106,7 +1100,6 @@ void ScmasmSyntaxParser::InvokeMacro(const std::string& name,
     std::vector<std::string> expanded_lines;
     for (const auto& line : macro.lines) {
         std::string expanded = SubstituteParameters(line, params);
-        std::cerr << "DEBUG: Macro line '" << line << "' expanded to '" << expanded << "'\n";
         expanded_lines.push_back(expanded);
     }
     
@@ -1160,9 +1153,6 @@ void ScmasmSyntaxParser::HandleDo(const std::string& operand,
                                    size_t& line_idx) {
     // Evaluate condition
     uint32_t condition = EvaluateExpression(operand, symbols);
-    
-    std::cerr << "DEBUG HandleDo: line_idx=" << line_idx << ", condition=" << condition << std::endl;
-    
     // Find matching .ELSE or .FIN
     size_t else_line = std::string::npos;
     size_t fin_line = std::string::npos;
@@ -1204,13 +1194,10 @@ void ScmasmSyntaxParser::HandleDo(const std::string& operand,
         
         if (first_token == ".DO" || directive == ".DO") {
             nesting++;
-            std::cerr << "DEBUG: Found nested .DO at line " << i << ", nesting now " << nesting << std::endl;
         } else if ((first_token == ".ELSE" || directive == ".ELSE") && nesting == 1) {
             else_line = i;
-            std::cerr << "DEBUG: Found .ELSE at line " << i << std::endl;
         } else if (first_token == ".FIN" || directive == ".FIN") {
             nesting--;
-            std::cerr << "DEBUG: Found .FIN at line " << i << ", nesting now " << nesting << std::endl;
             if (nesting == 0) {
                 fin_line = i;
                 break;

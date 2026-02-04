@@ -107,6 +107,20 @@ target_link_libraries(test_cpu6809
 
 gtest_discover_tests(test_cpu6809)
 
+# CPU 6809 Indexed Addressing tests
+add_executable(test_cpu6809_indexed
+    test_cpu6809_indexed.cpp
+)
+
+target_link_libraries(test_cpu6809_indexed
+    xasm_cpu
+    xasm_core
+    gtest_main
+    gtest
+)
+
+gtest_discover_tests(test_cpu6809_indexed)
+
 # SimpleSyntax tests
 add_executable(test_simple_syntax
     test_simple_syntax.cpp
@@ -163,6 +177,21 @@ target_link_libraries(test_scmasm_syntax
 )
 
 gtest_discover_tests(test_scmasm_syntax)
+
+# EdtasmSyntax tests
+add_executable(test_edtasm_syntax
+    test_edtasm_syntax.cpp
+)
+
+target_link_libraries(test_edtasm_syntax
+    xasm_syntax
+    xasm_cpu
+    xasm_core
+    gtest_main
+    gtest
+)
+
+gtest_discover_tests(test_edtasm_syntax)
 
 # BinaryOutput tests
 add_executable(test_binary_output

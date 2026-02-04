@@ -4,9 +4,11 @@
 #include "xasm++/cli/command_line_options.h"
 #include "xasm++/assembler.h"
 #include "xasm++/cpu/cpu_6502.h"
+#include "xasm++/cpu/cpu_6809.h"
 #include "xasm++/syntax/simple_syntax.h"
 #include "xasm++/syntax/merlin_syntax.h"
 #include "xasm++/syntax/scmasm_syntax.h"
+#include "xasm++/syntax/edtasm_syntax.h"
 #include "xasm++/output/binary_output.h"
 #include "xasm++/output/listing_output.h"
 #include "xasm++/output/symbol_output.h"
@@ -100,6 +102,9 @@ int main(int argc, char** argv) {
         parser.Parse(source, section, symbols);
       } else if (opts.syntax == "scmasm") {
         ScmasmSyntaxParser parser;
+        parser.Parse(source, section, symbols);
+      } else if (opts.syntax == "edtasm") {
+        EdtasmSyntaxParser parser;
         parser.Parse(source, section, symbols);
       } else {
         SimpleSyntaxParser parser;

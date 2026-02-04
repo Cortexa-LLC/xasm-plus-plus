@@ -43,10 +43,10 @@ add_library(xasm_syntax STATIC
     syntax/simple_syntax.cpp
     syntax/merlin/merlin_syntax.cpp
     syntax/scmasm/scmasm_syntax.cpp
+    syntax/edtasm/edtasm_syntax.cpp
     # Future syntax plugins:
     # syntax/mos/mos_base_syntax.cpp
     # syntax/motorola/motorola_base_syntax.cpp
-    # syntax/edtasm/edtasm_syntax.cpp
     # syntax/edtasm_m80/edtasm_m80_syntax.cpp
     # syntax/zilog/zilog_base_syntax.cpp
     # syntax/intel/intel_base_syntax.cpp
