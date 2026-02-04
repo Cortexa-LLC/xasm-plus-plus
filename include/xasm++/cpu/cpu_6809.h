@@ -576,6 +576,135 @@ public:
      */
     std::vector<uint8_t> EncodeBSR(int32_t offset, AddressingMode6809 mode) const;
 
+    /**
+     * @brief Encode LBRA (Long Branch Always) instruction
+     * 
+     * @param offset Signed 16-bit offset from PC (-32768 to +32767)
+     * @return Vector of encoded bytes (4 bytes: 0x10 0x16 offset_msb offset_lsb)
+     */
+    std::vector<uint8_t> EncodeLBRA(int16_t offset) const;
+
+    /**
+     * @brief Encode LBRN (Long Branch Never) instruction
+     * 
+     * @param offset Signed 16-bit offset from PC
+     * @return Vector of encoded bytes (4 bytes: 0x10 0x21 offset_msb offset_lsb)
+     * @note This instruction never branches but takes 4 bytes and time
+     */
+    std::vector<uint8_t> EncodeLBRN(int16_t offset) const;
+
+    /**
+     * @brief Encode LBHI (Long Branch if Higher - unsigned) instruction
+     * 
+     * @param offset Signed 16-bit offset from PC
+     * @return Vector of encoded bytes (4 bytes: 0x10 0x22 offset_msb offset_lsb)
+     */
+    std::vector<uint8_t> EncodeLBHI(int16_t offset) const;
+
+    /**
+     * @brief Encode LBLS (Long Branch if Lower or Same - unsigned) instruction
+     * 
+     * @param offset Signed 16-bit offset from PC
+     * @return Vector of encoded bytes (4 bytes: 0x10 0x23 offset_msb offset_lsb)
+     */
+    std::vector<uint8_t> EncodeLBLS(int16_t offset) const;
+
+    /**
+     * @brief Encode LBCC/LBHS (Long Branch if Carry Clear) instruction
+     * 
+     * @param offset Signed 16-bit offset from PC
+     * @return Vector of encoded bytes (4 bytes: 0x10 0x24 offset_msb offset_lsb)
+     */
+    std::vector<uint8_t> EncodeLBCC(int16_t offset) const;
+
+    /**
+     * @brief Encode LBCS/LBLO (Long Branch if Carry Set) instruction
+     * 
+     * @param offset Signed 16-bit offset from PC
+     * @return Vector of encoded bytes (4 bytes: 0x10 0x25 offset_msb offset_lsb)
+     */
+    std::vector<uint8_t> EncodeLBCS(int16_t offset) const;
+
+    /**
+     * @brief Encode LBNE (Long Branch if Not Equal) instruction
+     * 
+     * @param offset Signed 16-bit offset from PC
+     * @return Vector of encoded bytes (4 bytes: 0x10 0x26 offset_msb offset_lsb)
+     */
+    std::vector<uint8_t> EncodeLBNE(int16_t offset) const;
+
+    /**
+     * @brief Encode LBEQ (Long Branch if Equal) instruction
+     * 
+     * @param offset Signed 16-bit offset from PC
+     * @return Vector of encoded bytes (4 bytes: 0x10 0x27 offset_msb offset_lsb)
+     */
+    std::vector<uint8_t> EncodeLBEQ(int16_t offset) const;
+
+    /**
+     * @brief Encode LBVC (Long Branch if Overflow Clear) instruction
+     * 
+     * @param offset Signed 16-bit offset from PC
+     * @return Vector of encoded bytes (4 bytes: 0x10 0x28 offset_msb offset_lsb)
+     */
+    std::vector<uint8_t> EncodeLBVC(int16_t offset) const;
+
+    /**
+     * @brief Encode LBVS (Long Branch if Overflow Set) instruction
+     * 
+     * @param offset Signed 16-bit offset from PC
+     * @return Vector of encoded bytes (4 bytes: 0x10 0x29 offset_msb offset_lsb)
+     */
+    std::vector<uint8_t> EncodeLBVS(int16_t offset) const;
+
+    /**
+     * @brief Encode LBPL (Long Branch if Plus) instruction
+     * 
+     * @param offset Signed 16-bit offset from PC
+     * @return Vector of encoded bytes (4 bytes: 0x10 0x2A offset_msb offset_lsb)
+     */
+    std::vector<uint8_t> EncodeLBPL(int16_t offset) const;
+
+    /**
+     * @brief Encode LBMI (Long Branch if Minus) instruction
+     * 
+     * @param offset Signed 16-bit offset from PC
+     * @return Vector of encoded bytes (4 bytes: 0x10 0x2B offset_msb offset_lsb)
+     */
+    std::vector<uint8_t> EncodeLBMI(int16_t offset) const;
+
+    /**
+     * @brief Encode LBGE (Long Branch if Greater or Equal - signed) instruction
+     * 
+     * @param offset Signed 16-bit offset from PC
+     * @return Vector of encoded bytes (4 bytes: 0x10 0x2C offset_msb offset_lsb)
+     */
+    std::vector<uint8_t> EncodeLBGE(int16_t offset) const;
+
+    /**
+     * @brief Encode LBLT (Long Branch if Less Than - signed) instruction
+     * 
+     * @param offset Signed 16-bit offset from PC
+     * @return Vector of encoded bytes (4 bytes: 0x10 0x2D offset_msb offset_lsb)
+     */
+    std::vector<uint8_t> EncodeLBLT(int16_t offset) const;
+
+    /**
+     * @brief Encode LBGT (Long Branch if Greater Than - signed) instruction
+     * 
+     * @param offset Signed 16-bit offset from PC
+     * @return Vector of encoded bytes (4 bytes: 0x10 0x2E offset_msb offset_lsb)
+     */
+    std::vector<uint8_t> EncodeLBGT(int16_t offset) const;
+
+    /**
+     * @brief Encode LBLE (Long Branch if Less or Equal - signed) instruction
+     * 
+     * @param offset Signed 16-bit offset from PC
+     * @return Vector of encoded bytes (4 bytes: 0x10 0x2F offset_msb offset_lsb)
+     */
+    std::vector<uint8_t> EncodeLBLE(int16_t offset) const;
+
     /** @} */  // End of Branch Instructions
 
     /**

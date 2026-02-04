@@ -933,3 +933,197 @@ TEST_F(Cpu6809Test, NEGB_Inherent) {
     ASSERT_EQ(1, bytes.size());
     EXPECT_EQ(0x50, bytes[0]);  // NEGB opcode
 }
+
+// ============================================================================
+// Phase 2B: Long Branch Instructions (16-bit relative)
+// ============================================================================
+
+TEST_F(Cpu6809Test, LBRA_Relative16_Forward) {
+    // LBRA with 16-bit offset (forward branch)
+    auto bytes = cpu.EncodeLBRA(1000);
+    ASSERT_EQ(4, bytes.size());
+    EXPECT_EQ(0x10, bytes[0]);  // Page 2 prefix
+    EXPECT_EQ(0x16, bytes[1]);  // LBRA opcode
+    EXPECT_EQ(0x03, bytes[2]);  // High byte of 1000 (0x03E8)
+    EXPECT_EQ(0xE8, bytes[3]);  // Low byte
+}
+
+TEST_F(Cpu6809Test, LBRA_Relative16_Backward) {
+    // LBRA with negative offset (backward branch)
+    auto bytes = cpu.EncodeLBRA(-1000);
+    ASSERT_EQ(4, bytes.size());
+    EXPECT_EQ(0x10, bytes[0]);  // Page 2 prefix
+    EXPECT_EQ(0x16, bytes[1]);  // LBRA opcode
+    EXPECT_EQ(0xFC, bytes[2]);  // High byte of -1000 (0xFC18)
+    EXPECT_EQ(0x18, bytes[3]);  // Low byte
+}
+
+TEST_F(Cpu6809Test, LBRA_Relative16_MaxPositive) {
+    // LBRA with maximum positive offset (+32767)
+    auto bytes = cpu.EncodeLBRA(32767);
+    ASSERT_EQ(4, bytes.size());
+    EXPECT_EQ(0x10, bytes[0]);
+    EXPECT_EQ(0x16, bytes[1]);
+    EXPECT_EQ(0x7F, bytes[2]);  // High byte of 32767 (0x7FFF)
+    EXPECT_EQ(0xFF, bytes[3]);  // Low byte
+}
+
+TEST_F(Cpu6809Test, LBRA_Relative16_MaxNegative) {
+    // LBRA with maximum negative offset (-32768)
+    auto bytes = cpu.EncodeLBRA(-32768);
+    ASSERT_EQ(4, bytes.size());
+    EXPECT_EQ(0x10, bytes[0]);
+    EXPECT_EQ(0x16, bytes[1]);
+    EXPECT_EQ(0x80, bytes[2]);  // High byte of -32768 (0x8000)
+    EXPECT_EQ(0x00, bytes[3]);  // Low byte
+}
+
+TEST_F(Cpu6809Test, LBRN_Relative16) {
+    // LBRN (Long Branch Never) - always takes 4 bytes but never branches
+    auto bytes = cpu.EncodeLBRN(100);
+    ASSERT_EQ(4, bytes.size());
+    EXPECT_EQ(0x10, bytes[0]);  // Page 2 prefix
+    EXPECT_EQ(0x21, bytes[1]);  // LBRN opcode
+    EXPECT_EQ(0x00, bytes[2]);  // High byte of 100
+    EXPECT_EQ(0x64, bytes[3]);  // Low byte
+}
+
+TEST_F(Cpu6809Test, LBHI_Relative16) {
+    // LBHI (Long Branch if Higher - unsigned)
+    auto bytes = cpu.EncodeLBHI(500);
+    ASSERT_EQ(4, bytes.size());
+    EXPECT_EQ(0x10, bytes[0]);  // Page 2 prefix
+    EXPECT_EQ(0x22, bytes[1]);  // LBHI opcode
+    EXPECT_EQ(0x01, bytes[2]);  // High byte of 500 (0x01F4)
+    EXPECT_EQ(0xF4, bytes[3]);  // Low byte
+}
+
+TEST_F(Cpu6809Test, LBLS_Relative16) {
+    // LBLS (Long Branch if Lower or Same - unsigned)
+    auto bytes = cpu.EncodeLBLS(-250);
+    ASSERT_EQ(4, bytes.size());
+    EXPECT_EQ(0x10, bytes[0]);  // Page 2 prefix
+    EXPECT_EQ(0x23, bytes[1]);  // LBLS opcode
+    EXPECT_EQ(0xFF, bytes[2]);  // High byte of -250 (0xFF06)
+    EXPECT_EQ(0x06, bytes[3]);  // Low byte
+}
+
+TEST_F(Cpu6809Test, LBCC_Relative16) {
+    // LBCC/LBHS (Long Branch if Carry Clear)
+    auto bytes = cpu.EncodeLBCC(2000);
+    ASSERT_EQ(4, bytes.size());
+    EXPECT_EQ(0x10, bytes[0]);  // Page 2 prefix
+    EXPECT_EQ(0x24, bytes[1]);  // LBCC opcode
+    EXPECT_EQ(0x07, bytes[2]);  // High byte of 2000 (0x07D0)
+    EXPECT_EQ(0xD0, bytes[3]);  // Low byte
+}
+
+TEST_F(Cpu6809Test, LBCS_Relative16) {
+    // LBCS/LBLO (Long Branch if Carry Set)
+    auto bytes = cpu.EncodeLBCS(-2000);
+    ASSERT_EQ(4, bytes.size());
+    EXPECT_EQ(0x10, bytes[0]);  // Page 2 prefix
+    EXPECT_EQ(0x25, bytes[1]);  // LBCS opcode
+    EXPECT_EQ(0xF8, bytes[2]);  // High byte of -2000 (0xF830)
+    EXPECT_EQ(0x30, bytes[3]);  // Low byte
+}
+
+TEST_F(Cpu6809Test, LBNE_Relative16) {
+    // LBNE (Long Branch if Not Equal)
+    auto bytes = cpu.EncodeLBNE(300);
+    ASSERT_EQ(4, bytes.size());
+    EXPECT_EQ(0x10, bytes[0]);  // Page 2 prefix
+    EXPECT_EQ(0x26, bytes[1]);  // LBNE opcode
+    EXPECT_EQ(0x01, bytes[2]);  // High byte of 300 (0x012C)
+    EXPECT_EQ(0x2C, bytes[3]);  // Low byte
+}
+
+TEST_F(Cpu6809Test, LBEQ_Relative16) {
+    // LBEQ (Long Branch if Equal)
+    auto bytes = cpu.EncodeLBEQ(-300);
+    ASSERT_EQ(4, bytes.size());
+    EXPECT_EQ(0x10, bytes[0]);  // Page 2 prefix
+    EXPECT_EQ(0x27, bytes[1]);  // LBEQ opcode
+    EXPECT_EQ(0xFE, bytes[2]);  // High byte of -300 (0xFED4)
+    EXPECT_EQ(0xD4, bytes[3]);  // Low byte
+}
+
+TEST_F(Cpu6809Test, LBVC_Relative16) {
+    // LBVC (Long Branch if Overflow Clear)
+    auto bytes = cpu.EncodeLBVC(150);
+    ASSERT_EQ(4, bytes.size());
+    EXPECT_EQ(0x10, bytes[0]);  // Page 2 prefix
+    EXPECT_EQ(0x28, bytes[1]);  // LBVC opcode
+    EXPECT_EQ(0x00, bytes[2]);  // High byte of 150 (0x0096)
+    EXPECT_EQ(0x96, bytes[3]);  // Low byte
+}
+
+TEST_F(Cpu6809Test, LBVS_Relative16) {
+    // LBVS (Long Branch if Overflow Set)
+    auto bytes = cpu.EncodeLBVS(-150);
+    ASSERT_EQ(4, bytes.size());
+    EXPECT_EQ(0x10, bytes[0]);  // Page 2 prefix
+    EXPECT_EQ(0x29, bytes[1]);  // LBVS opcode
+    EXPECT_EQ(0xFF, bytes[2]);  // High byte of -150 (0xFF6A)
+    EXPECT_EQ(0x6A, bytes[3]);  // Low byte
+}
+
+TEST_F(Cpu6809Test, LBPL_Relative16) {
+    // LBPL (Long Branch if Plus)
+    auto bytes = cpu.EncodeLBPL(800);
+    ASSERT_EQ(4, bytes.size());
+    EXPECT_EQ(0x10, bytes[0]);  // Page 2 prefix
+    EXPECT_EQ(0x2A, bytes[1]);  // LBPL opcode
+    EXPECT_EQ(0x03, bytes[2]);  // High byte of 800 (0x0320)
+    EXPECT_EQ(0x20, bytes[3]);  // Low byte
+}
+
+TEST_F(Cpu6809Test, LBMI_Relative16) {
+    // LBMI (Long Branch if Minus)
+    auto bytes = cpu.EncodeLBMI(-800);
+    ASSERT_EQ(4, bytes.size());
+    EXPECT_EQ(0x10, bytes[0]);  // Page 2 prefix
+    EXPECT_EQ(0x2B, bytes[1]);  // LBMI opcode
+    EXPECT_EQ(0xFC, bytes[2]);  // High byte of -800 (0xFCE0)
+    EXPECT_EQ(0xE0, bytes[3]);  // Low byte
+}
+
+TEST_F(Cpu6809Test, LBGE_Relative16) {
+    // LBGE (Long Branch if Greater or Equal - signed)
+    auto bytes = cpu.EncodeLBGE(600);
+    ASSERT_EQ(4, bytes.size());
+    EXPECT_EQ(0x10, bytes[0]);  // Page 2 prefix
+    EXPECT_EQ(0x2C, bytes[1]);  // LBGE opcode
+    EXPECT_EQ(0x02, bytes[2]);  // High byte of 600 (0x0258)
+    EXPECT_EQ(0x58, bytes[3]);  // Low byte
+}
+
+TEST_F(Cpu6809Test, LBLT_Relative16) {
+    // LBLT (Long Branch if Less Than - signed)
+    auto bytes = cpu.EncodeLBLT(-600);
+    ASSERT_EQ(4, bytes.size());
+    EXPECT_EQ(0x10, bytes[0]);  // Page 2 prefix
+    EXPECT_EQ(0x2D, bytes[1]);  // LBLT opcode
+    EXPECT_EQ(0xFD, bytes[2]);  // High byte of -600 (0xFDA8)
+    EXPECT_EQ(0xA8, bytes[3]);  // Low byte
+}
+
+TEST_F(Cpu6809Test, LBGT_Relative16) {
+    // LBGT (Long Branch if Greater Than - signed)
+    auto bytes = cpu.EncodeLBGT(400);
+    ASSERT_EQ(4, bytes.size());
+    EXPECT_EQ(0x10, bytes[0]);  // Page 2 prefix
+    EXPECT_EQ(0x2E, bytes[1]);  // LBGT opcode
+    EXPECT_EQ(0x01, bytes[2]);  // High byte of 400 (0x0190)
+    EXPECT_EQ(0x90, bytes[3]);  // Low byte
+}
+
+TEST_F(Cpu6809Test, LBLE_Relative16) {
+    // LBLE (Long Branch if Less or Equal - signed)
+    auto bytes = cpu.EncodeLBLE(-400);
+    ASSERT_EQ(4, bytes.size());
+    EXPECT_EQ(0x10, bytes[0]);  // Page 2 prefix
+    EXPECT_EQ(0x2F, bytes[1]);  // LBLE opcode
+    EXPECT_EQ(0xFE, bytes[2]);  // High byte of -400 (0xFE70)
+    EXPECT_EQ(0x70, bytes[3]);  // Low byte
+}

@@ -568,6 +568,138 @@ std::vector<uint8_t> Cpu6809::EncodeBSR(int32_t offset, AddressingMode6809 mode)
 }
 
 // ============================================================================
+// Long Branch Instructions (16-bit relative addressing)
+// ============================================================================
+
+std::vector<uint8_t> Cpu6809::EncodeLBRA(int16_t offset) const {
+    // LBRA - Long Branch Always (Opcode: 0x10 0x16)
+    std::vector<uint8_t> result = {0x10, 0x16};
+    auto offset_bytes = ToBigEndian(static_cast<uint16_t>(offset));
+    result.insert(result.end(), offset_bytes.begin(), offset_bytes.end());
+    return result;
+}
+
+std::vector<uint8_t> Cpu6809::EncodeLBRN(int16_t offset) const {
+    // LBRN - Long Branch Never (Opcode: 0x10 0x21)
+    std::vector<uint8_t> result = {0x10, 0x21};
+    auto offset_bytes = ToBigEndian(static_cast<uint16_t>(offset));
+    result.insert(result.end(), offset_bytes.begin(), offset_bytes.end());
+    return result;
+}
+
+std::vector<uint8_t> Cpu6809::EncodeLBHI(int16_t offset) const {
+    // LBHI - Long Branch if Higher, unsigned (Opcode: 0x10 0x22)
+    std::vector<uint8_t> result = {0x10, 0x22};
+    auto offset_bytes = ToBigEndian(static_cast<uint16_t>(offset));
+    result.insert(result.end(), offset_bytes.begin(), offset_bytes.end());
+    return result;
+}
+
+std::vector<uint8_t> Cpu6809::EncodeLBLS(int16_t offset) const {
+    // LBLS - Long Branch if Lower or Same, unsigned (Opcode: 0x10 0x23)
+    std::vector<uint8_t> result = {0x10, 0x23};
+    auto offset_bytes = ToBigEndian(static_cast<uint16_t>(offset));
+    result.insert(result.end(), offset_bytes.begin(), offset_bytes.end());
+    return result;
+}
+
+std::vector<uint8_t> Cpu6809::EncodeLBCC(int16_t offset) const {
+    // LBCC/LBHS - Long Branch if Carry Clear (Opcode: 0x10 0x24)
+    std::vector<uint8_t> result = {0x10, 0x24};
+    auto offset_bytes = ToBigEndian(static_cast<uint16_t>(offset));
+    result.insert(result.end(), offset_bytes.begin(), offset_bytes.end());
+    return result;
+}
+
+std::vector<uint8_t> Cpu6809::EncodeLBCS(int16_t offset) const {
+    // LBCS/LBLO - Long Branch if Carry Set (Opcode: 0x10 0x25)
+    std::vector<uint8_t> result = {0x10, 0x25};
+    auto offset_bytes = ToBigEndian(static_cast<uint16_t>(offset));
+    result.insert(result.end(), offset_bytes.begin(), offset_bytes.end());
+    return result;
+}
+
+std::vector<uint8_t> Cpu6809::EncodeLBNE(int16_t offset) const {
+    // LBNE - Long Branch if Not Equal (Opcode: 0x10 0x26)
+    std::vector<uint8_t> result = {0x10, 0x26};
+    auto offset_bytes = ToBigEndian(static_cast<uint16_t>(offset));
+    result.insert(result.end(), offset_bytes.begin(), offset_bytes.end());
+    return result;
+}
+
+std::vector<uint8_t> Cpu6809::EncodeLBEQ(int16_t offset) const {
+    // LBEQ - Long Branch if Equal (Opcode: 0x10 0x27)
+    std::vector<uint8_t> result = {0x10, 0x27};
+    auto offset_bytes = ToBigEndian(static_cast<uint16_t>(offset));
+    result.insert(result.end(), offset_bytes.begin(), offset_bytes.end());
+    return result;
+}
+
+std::vector<uint8_t> Cpu6809::EncodeLBVC(int16_t offset) const {
+    // LBVC - Long Branch if Overflow Clear (Opcode: 0x10 0x28)
+    std::vector<uint8_t> result = {0x10, 0x28};
+    auto offset_bytes = ToBigEndian(static_cast<uint16_t>(offset));
+    result.insert(result.end(), offset_bytes.begin(), offset_bytes.end());
+    return result;
+}
+
+std::vector<uint8_t> Cpu6809::EncodeLBVS(int16_t offset) const {
+    // LBVS - Long Branch if Overflow Set (Opcode: 0x10 0x29)
+    std::vector<uint8_t> result = {0x10, 0x29};
+    auto offset_bytes = ToBigEndian(static_cast<uint16_t>(offset));
+    result.insert(result.end(), offset_bytes.begin(), offset_bytes.end());
+    return result;
+}
+
+std::vector<uint8_t> Cpu6809::EncodeLBPL(int16_t offset) const {
+    // LBPL - Long Branch if Plus (Opcode: 0x10 0x2A)
+    std::vector<uint8_t> result = {0x10, 0x2A};
+    auto offset_bytes = ToBigEndian(static_cast<uint16_t>(offset));
+    result.insert(result.end(), offset_bytes.begin(), offset_bytes.end());
+    return result;
+}
+
+std::vector<uint8_t> Cpu6809::EncodeLBMI(int16_t offset) const {
+    // LBMI - Long Branch if Minus (Opcode: 0x10 0x2B)
+    std::vector<uint8_t> result = {0x10, 0x2B};
+    auto offset_bytes = ToBigEndian(static_cast<uint16_t>(offset));
+    result.insert(result.end(), offset_bytes.begin(), offset_bytes.end());
+    return result;
+}
+
+std::vector<uint8_t> Cpu6809::EncodeLBGE(int16_t offset) const {
+    // LBGE - Long Branch if Greater or Equal, signed (Opcode: 0x10 0x2C)
+    std::vector<uint8_t> result = {0x10, 0x2C};
+    auto offset_bytes = ToBigEndian(static_cast<uint16_t>(offset));
+    result.insert(result.end(), offset_bytes.begin(), offset_bytes.end());
+    return result;
+}
+
+std::vector<uint8_t> Cpu6809::EncodeLBLT(int16_t offset) const {
+    // LBLT - Long Branch if Less Than, signed (Opcode: 0x10 0x2D)
+    std::vector<uint8_t> result = {0x10, 0x2D};
+    auto offset_bytes = ToBigEndian(static_cast<uint16_t>(offset));
+    result.insert(result.end(), offset_bytes.begin(), offset_bytes.end());
+    return result;
+}
+
+std::vector<uint8_t> Cpu6809::EncodeLBGT(int16_t offset) const {
+    // LBGT - Long Branch if Greater Than, signed (Opcode: 0x10 0x2E)
+    std::vector<uint8_t> result = {0x10, 0x2E};
+    auto offset_bytes = ToBigEndian(static_cast<uint16_t>(offset));
+    result.insert(result.end(), offset_bytes.begin(), offset_bytes.end());
+    return result;
+}
+
+std::vector<uint8_t> Cpu6809::EncodeLBLE(int16_t offset) const {
+    // LBLE - Long Branch if Less or Equal, signed (Opcode: 0x10 0x2F)
+    std::vector<uint8_t> result = {0x10, 0x2F};
+    auto offset_bytes = ToBigEndian(static_cast<uint16_t>(offset));
+    result.insert(result.end(), offset_bytes.begin(), offset_bytes.end());
+    return result;
+}
+
+// ============================================================================
 // Comparison Instructions
 // ============================================================================
 
