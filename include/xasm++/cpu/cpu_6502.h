@@ -11,6 +11,7 @@
 
 #pragma once
 
+#include "xasm++/cpu/cpu_plugin.h"
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -106,7 +107,7 @@ enum class CpuMode {
  * // Returns: {0xA9, 0x42}
  * @endcode
  */
-class Cpu6502 {
+class Cpu6502 : public CpuPlugin {
 public:
     /**
      * @brief Default constructor - initializes to 6502 mode
@@ -114,10 +115,28 @@ public:
     Cpu6502() = default;
 
     /**
+     * @brief Virtual destructor
+     */
+    ~Cpu6502() override = default;
+
+    // CpuPlugin interface implementation
+    std::string GetCpuFamily() const override { return "6502"; }
+    std::vector<std::string> GetSupportedVariants() const override {
+        return {"6502", "65c02", "65c02rock", "65816"};
+    }
+
+    /**
      * @brief Get the CPU plugin name
      * @return "6502"
      */
     std::string GetName() const { return "6502"; }
+
+    // CpuPlugin instruction encoding interface
+    std::vector<uint8_t> EncodeInstruction(
+        const std::string& mnemonic,
+        uint32_t operand,
+        const std::string& operand_str
+    ) const override;
 
     /**
      * @brief Set the CPU mode

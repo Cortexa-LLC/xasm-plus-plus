@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include "xasm++/cpu/cpu_plugin.h"
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -91,7 +92,7 @@ enum class AddressingMode6809 {
  * // Returns: {0xCC, 0x12, 0x34}  // Note: MSB first (big-endian)
  * @endcode
  */
-class Cpu6809 {
+class Cpu6809 : public CpuPlugin {
 public:
     /**
      * @brief Default constructor - initializes to 6809 mode
@@ -99,10 +100,28 @@ public:
     Cpu6809() = default;
 
     /**
+     * @brief Virtual destructor
+     */
+    ~Cpu6809() override = default;
+
+    // CpuPlugin interface implementation
+    std::string GetCpuFamily() const override { return "6809"; }
+    std::vector<std::string> GetSupportedVariants() const override {
+        return {"6809"};
+    }
+
+    /**
      * @brief Get the CPU plugin name
      * @return "6809"
      */
     std::string GetName() const { return "6809"; }
+
+    // CpuPlugin instruction encoding interface
+    std::vector<uint8_t> EncodeInstruction(
+        const std::string& mnemonic,
+        uint32_t operand,
+        const std::string& operand_str
+    ) const override;
 
     /**
      * @brief Set the direct page register

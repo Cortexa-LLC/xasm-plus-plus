@@ -1353,4 +1353,206 @@ size_t Cpu6809::CalculateInstructionSize(AddressingMode6809 mode) const {
     }
 }
 
+// ============================================================================
+// CpuPlugin Interface Implementation - EncodeInstruction()
+// ============================================================================
+
+/**
+ * @brief Polymorphic instruction encoder - dispatches to specific Encode* methods
+ * 
+ * This method implements the CpuPlugin interface, allowing the assembler to
+ * encode instructions without knowing the specific CPU type.
+ * 
+ * For 6809, addressing modes are determined by operand string syntax:
+ * - #value    → Immediate
+ * - <address  → Direct page
+ * - address   → Extended
+ * - ,X        → Indexed zero offset
+ * - offset,X  → Indexed with offset
+ * - etc.
+ * 
+ * @param mnemonic Instruction mnemonic (e.g., "LDA", "STA", "JMP")
+ * @param operand Operand value (immediate value or address)
+ * @param operand_str Original operand string for parsing addressing modes
+ * @return Vector of encoded bytes
+ * 
+ * @throws std::invalid_argument if instruction/addressing mode not supported
+ * @throws std::out_of_range if operand value out of range
+ */
+std::vector<uint8_t> Cpu6809::EncodeInstruction(
+    const std::string& mnemonic,
+    uint32_t operand,
+    const std::string& operand_str
+) const {
+    // Helper to trim whitespace
+    auto trim = [](const std::string& s) {
+        size_t start = s.find_first_not_of(" \t\n\r");
+        if (start == std::string::npos) return std::string("");
+        size_t end = s.find_last_not_of(" \t\n\r");
+        return s.substr(start, end - start + 1);
+    };
+
+    // Determine addressing mode from operand_str
+    std::string trimmed = trim(operand_str);
+    AddressingMode6809 mode = AddressingMode6809::Inherent;
+
+    if (!trimmed.empty()) {
+        // Immediate mode: #value
+        if (trimmed[0] == '#') {
+            // Determine if 8-bit or 16-bit based on instruction
+            // For now, assume 8-bit for A/B instructions, 16-bit for D/X/Y/U/S
+            bool is_16bit = (mnemonic == "LDD" || mnemonic == "LDX" || mnemonic == "LDY" ||
+                            mnemonic == "LDU" || mnemonic == "LDS" || mnemonic == "CMPX" ||
+                            mnemonic == "CMPY" || mnemonic == "CMPU" || mnemonic == "CMPS");
+            mode = is_16bit ? AddressingMode6809::Immediate16 : AddressingMode6809::Immediate8;
+        }
+        // Direct page mode: <address or address < $100
+        else if (trimmed[0] == '<' || operand < 0x100) {
+            mode = AddressingMode6809::Direct;
+        }
+        // Indexed modes: ,X or ,Y or offset,X etc.
+        else if (trimmed.find(',') != std::string::npos) {
+            // For simplicity, detect common indexed patterns
+            if (trimmed.find(",X") != std::string::npos || trimmed.find(",Y") != std::string::npos ||
+                trimmed.find(",U") != std::string::npos || trimmed.find(",S") != std::string::npos) {
+                // Check for offset
+                size_t comma = trimmed.find(',');
+                if (comma == 0) {
+                    // ,X or ,Y - zero offset
+                    mode = AddressingMode6809::IndexedZeroOffset;
+                } else {
+                    // offset,X - determine offset size
+                    // For now, default to 8-bit offset indexed
+                    mode = AddressingMode6809::Indexed8BitOffset;
+                }
+            } else {
+                mode = AddressingMode6809::IndexedZeroOffset;
+            }
+        }
+        // Extended mode: address >= $100
+        else {
+            mode = AddressingMode6809::Extended;
+        }
+    }
+
+    // Dispatch to appropriate Encode* method based on mnemonic
+    // Load instructions
+    if (mnemonic == "LDA") return EncodeLDA(operand, mode);
+    if (mnemonic == "LDB") return EncodeLDB(operand, mode);
+    if (mnemonic == "LDD") return EncodeLDD(operand, mode);
+    if (mnemonic == "LDX") return EncodeLDX(operand, mode);
+    if (mnemonic == "LDY") return EncodeLDY(operand, mode);
+    
+    // Store instructions
+    if (mnemonic == "STA") return EncodeSTA(operand, mode);
+    if (mnemonic == "STB") return EncodeSTB(operand, mode);
+    if (mnemonic == "STD") return EncodeSTD(operand, mode);
+    if (mnemonic == "STX") return EncodeSTX(operand, mode);
+    if (mnemonic == "STY") return EncodeSTY(operand, mode);
+    
+    // Arithmetic
+    if (mnemonic == "ADDA") return EncodeADDA(operand, mode);
+    if (mnemonic == "ADDB") return EncodeADDB(operand, mode);
+    if (mnemonic == "SUBA") return EncodeSUBA(operand, mode);
+    if (mnemonic == "SUBB") return EncodeSUBB(operand, mode);
+    
+    // Logical
+    if (mnemonic == "ANDA") return EncodeANDA(operand, mode);
+    if (mnemonic == "ANDB") return EncodeANDB(operand, mode);
+    if (mnemonic == "ORA") return EncodeORA(operand, mode);
+    if (mnemonic == "ORB") return EncodeORB(operand, mode);
+    if (mnemonic == "EORA") return EncodeEORA(operand, mode);
+    if (mnemonic == "EORB") return EncodeEORB(operand, mode);
+    if (mnemonic == "BITA") return EncodeBITA(operand, mode);
+    if (mnemonic == "BITB") return EncodeBITB(operand, mode);
+    
+    // Compare
+    if (mnemonic == "CMPA") return EncodeCMPA(operand, mode);
+    if (mnemonic == "CMPB") return EncodeCMPB(operand, mode);
+    if (mnemonic == "CMPX") return EncodeCMPX(operand, mode);
+    if (mnemonic == "CMPY") return EncodeCMPY(operand, mode);
+    
+    // Branches (8-bit relative)
+    if (mnemonic == "BRA") return EncodeBRA(static_cast<int32_t>(operand), mode);
+    if (mnemonic == "BEQ") return EncodeBEQ(static_cast<int32_t>(operand), mode);
+    if (mnemonic == "BNE") return EncodeBNE(static_cast<int32_t>(operand), mode);
+    if (mnemonic == "BCC" || mnemonic == "BHS") return EncodeBCC(static_cast<int32_t>(operand), mode);
+    if (mnemonic == "BCS" || mnemonic == "BLO") return EncodeBCS(static_cast<int32_t>(operand), mode);
+    if (mnemonic == "BMI") return EncodeBMI(static_cast<int32_t>(operand), mode);
+    if (mnemonic == "BPL") return EncodeBPL(static_cast<int32_t>(operand), mode);
+    if (mnemonic == "BVS") return EncodeBVS(static_cast<int32_t>(operand), mode);
+    if (mnemonic == "BVC") return EncodeBVC(static_cast<int32_t>(operand), mode);
+    if (mnemonic == "BGE") return EncodeBGE(static_cast<int32_t>(operand), mode);
+    if (mnemonic == "BLT") return EncodeBLT(static_cast<int32_t>(operand), mode);
+    if (mnemonic == "BGT") return EncodeBGT(static_cast<int32_t>(operand), mode);
+    if (mnemonic == "BLE") return EncodeBLE(static_cast<int32_t>(operand), mode);
+    if (mnemonic == "BHI") return EncodeBHI(static_cast<int32_t>(operand), mode);
+    if (mnemonic == "BLS") return EncodeBLS(static_cast<int32_t>(operand), mode);
+    if (mnemonic == "BSR") return EncodeBSR(static_cast<int32_t>(operand), mode);
+    
+    // Long branches (16-bit relative)
+    if (mnemonic == "LBRA") return EncodeLBRA(static_cast<int16_t>(operand));
+    if (mnemonic == "LBRN") return EncodeLBRN(static_cast<int16_t>(operand));
+    if (mnemonic == "LBHI") return EncodeLBHI(static_cast<int16_t>(operand));
+    if (mnemonic == "LBLS") return EncodeLBLS(static_cast<int16_t>(operand));
+    if (mnemonic == "LBCC" || mnemonic == "LBHS") return EncodeLBCC(static_cast<int16_t>(operand));
+    if (mnemonic == "LBCS" || mnemonic == "LBLO") return EncodeLBCS(static_cast<int16_t>(operand));
+    if (mnemonic == "LBNE") return EncodeLBNE(static_cast<int16_t>(operand));
+    if (mnemonic == "LBEQ") return EncodeLBEQ(static_cast<int16_t>(operand));
+    if (mnemonic == "LBVC") return EncodeLBVC(static_cast<int16_t>(operand));
+    if (mnemonic == "LBVS") return EncodeLBVS(static_cast<int16_t>(operand));
+    if (mnemonic == "LBPL") return EncodeLBPL(static_cast<int16_t>(operand));
+    if (mnemonic == "LBMI") return EncodeLBMI(static_cast<int16_t>(operand));
+    if (mnemonic == "LBGE") return EncodeLBGE(static_cast<int16_t>(operand));
+    if (mnemonic == "LBLT") return EncodeLBLT(static_cast<int16_t>(operand));
+    if (mnemonic == "LBGT") return EncodeLBGT(static_cast<int16_t>(operand));
+    if (mnemonic == "LBLE") return EncodeLBLE(static_cast<int16_t>(operand));
+    
+    // Jumps/Subroutines
+    if (mnemonic == "JMP") return EncodeJMP(operand, mode);
+    if (mnemonic == "JSR") return EncodeJSR(operand, mode);
+    if (mnemonic == "LEAX") return EncodeLEAX(operand, mode);
+    if (mnemonic == "LEAY") return EncodeLEAY(operand, mode);
+    if (mnemonic == "RTS") return EncodeRTS();
+    
+    // Inherent instructions
+    if (mnemonic == "NOP") return EncodeNOP();
+    if (mnemonic == "CLRA") return EncodeCLRA();
+    if (mnemonic == "CLRB") return EncodeCLRB();
+    if (mnemonic == "ASLA") return EncodeASLA();
+    if (mnemonic == "ASLB") return EncodeASLB();
+    if (mnemonic == "ASRA") return EncodeASRA();
+    if (mnemonic == "ASRB") return EncodeASRB();
+    if (mnemonic == "LSRA") return EncodeLSRA();
+    if (mnemonic == "LSRB") return EncodeLSRB();
+    if (mnemonic == "ROLA") return EncodeROLA();
+    if (mnemonic == "ROLB") return EncodeROLB();
+    if (mnemonic == "RORA") return EncodeRORA();
+    if (mnemonic == "RORB") return EncodeRORB();
+    if (mnemonic == "INCA") return EncodeINCA();
+    if (mnemonic == "INCB") return EncodeINCB();
+    if (mnemonic == "DECA") return EncodeDECA();
+    if (mnemonic == "DECB") return EncodeDECB();
+    if (mnemonic == "TSTA") return EncodeTSTA();
+    if (mnemonic == "TSTB") return EncodeTSTB();
+    if (mnemonic == "COMA") return EncodeCOMA();
+    if (mnemonic == "COMB") return EncodeCOMB();
+    if (mnemonic == "NEGA") return EncodeNEGA();
+    if (mnemonic == "NEGB") return EncodeNEGB();
+    
+    // Stack operations - need to parse register mask from operand_str
+    // For now, default to common cases
+    if (mnemonic == "PSHS") return EncodePSHS(static_cast<uint8_t>(operand));
+    if (mnemonic == "PULS") return EncodePULS(static_cast<uint8_t>(operand));
+    if (mnemonic == "PSHU") return EncodePSHU(static_cast<uint8_t>(operand));
+    if (mnemonic == "PULU") return EncodePULU(static_cast<uint8_t>(operand));
+    
+    // Register transfers - need to parse src/dst registers
+    if (mnemonic == "TFR") return EncodeTFR(static_cast<uint8_t>(operand >> 4), static_cast<uint8_t>(operand & 0xF));
+    if (mnemonic == "EXG") return EncodeEXG(static_cast<uint8_t>(operand >> 4), static_cast<uint8_t>(operand & 0xF));
+    
+    // Unsupported instruction
+    throw std::invalid_argument("Unsupported instruction: " + mnemonic);
+}
+
 } // namespace xasm

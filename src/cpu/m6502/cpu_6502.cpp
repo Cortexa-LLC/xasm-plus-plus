@@ -1184,4 +1184,528 @@ std::vector<uint8_t> Cpu6502::EncodeBBS7(uint8_t zp_addr, uint8_t offset) const 
     return {0xFF, zp_addr, offset};
 }
 
+// ============================================================================
+// Phase 2.5 - Group 2: 65C02 Stack Operations
+// ============================================================================
+
+std::vector<uint8_t> Cpu6502::EncodePHX() const {
+    if (cpu_mode_ == CpuMode::Cpu6502) {
+        return {};  // Not available in base 6502
+    }
+    return {0xDA};  // PHX opcode
+}
+
+std::vector<uint8_t> Cpu6502::EncodePLX() const {
+    if (cpu_mode_ == CpuMode::Cpu6502) {
+        return {};
+    }
+    return {0xFA};  // PLX opcode
+}
+
+std::vector<uint8_t> Cpu6502::EncodePHY() const {
+    if (cpu_mode_ == CpuMode::Cpu6502) {
+        return {};
+    }
+    return {0x5A};  // PHY opcode
+}
+
+std::vector<uint8_t> Cpu6502::EncodePLY() const {
+    if (cpu_mode_ == CpuMode::Cpu6502) {
+        return {};
+    }
+    return {0x7A};  // PLY opcode
+}
+
+// ============================================================================
+// Phase 2.5 - Group 3: 65C02 Store Zero
+// ============================================================================
+
+std::vector<uint8_t> Cpu6502::EncodeSTZ(uint16_t operand, AddressingMode mode) const {
+    if (cpu_mode_ == CpuMode::Cpu6502) {
+        return {};  // Not available in base 6502
+    }
+
+    static const OpcodeTable STZ_TABLE = {
+        .zero_page = 0x64,
+        .zero_page_x = 0x74,
+        .absolute = 0x9C,
+        .absolute_x = 0x9E
+    };
+    return EncodeWithTable(STZ_TABLE, operand, mode);
+}
+
+// ============================================================================
+// Phase 2.5 - Group 4: 65C02 Bit Test
+// ============================================================================
+
+std::vector<uint8_t> Cpu6502::EncodeTRB(uint16_t operand, AddressingMode mode) const {
+    if (cpu_mode_ == CpuMode::Cpu6502) {
+        return {};
+    }
+
+    static const OpcodeTable TRB_TABLE = {
+        .zero_page = 0x14,
+        .absolute = 0x1C
+    };
+    return EncodeWithTable(TRB_TABLE, operand, mode);
+}
+
+std::vector<uint8_t> Cpu6502::EncodeTSB(uint16_t operand, AddressingMode mode) const {
+    if (cpu_mode_ == CpuMode::Cpu6502) {
+        return {};
+    }
+
+    static const OpcodeTable TSB_TABLE = {
+        .zero_page = 0x04,
+        .absolute = 0x0C
+    };
+    return EncodeWithTable(TSB_TABLE, operand, mode);
+}
+
+// ============================================================================
+// Phase 2.5 - Group 5: 65C02 Branch Always
+// ============================================================================
+
+std::vector<uint8_t> Cpu6502::EncodeBRA(uint16_t operand, AddressingMode mode) const {
+    if (cpu_mode_ == CpuMode::Cpu6502) {
+        return {};
+    }
+
+    static const OpcodeTable BRA_TABLE = {
+        .relative = 0x80
+    };
+    return EncodeWithTable(BRA_TABLE, operand, mode);
+}
+
+// ============================================================================
+// Phase 2.5 - Groups 11-14: 65816 Instructions
+// ============================================================================
+
+std::vector<uint8_t> Cpu6502::EncodePHB() const {
+    if (cpu_mode_ != CpuMode::Cpu65816) return {};
+    return {0x8B};
+}
+
+std::vector<uint8_t> Cpu6502::EncodePLB() const {
+    if (cpu_mode_ != CpuMode::Cpu65816) return {};
+    return {0xAB};
+}
+
+std::vector<uint8_t> Cpu6502::EncodePHK() const {
+    if (cpu_mode_ != CpuMode::Cpu65816) return {};
+    return {0x4B};
+}
+
+std::vector<uint8_t> Cpu6502::EncodePHD() const {
+    if (cpu_mode_ != CpuMode::Cpu65816) return {};
+    return {0x0B};
+}
+
+std::vector<uint8_t> Cpu6502::EncodePLD() const {
+    if (cpu_mode_ != CpuMode::Cpu65816) return {};
+    return {0x2B};
+}
+
+std::vector<uint8_t> Cpu6502::EncodeTCD() const {
+    if (cpu_mode_ != CpuMode::Cpu65816) return {};
+    return {0x5B};
+}
+
+std::vector<uint8_t> Cpu6502::EncodeTDC() const {
+    if (cpu_mode_ != CpuMode::Cpu65816) return {};
+    return {0x7B};
+}
+
+std::vector<uint8_t> Cpu6502::EncodeTCS() const {
+    if (cpu_mode_ != CpuMode::Cpu65816) return {};
+    return {0x1B};
+}
+
+std::vector<uint8_t> Cpu6502::EncodeTSC() const {
+    if (cpu_mode_ != CpuMode::Cpu65816) return {};
+    return {0x3B};
+}
+
+std::vector<uint8_t> Cpu6502::EncodeJML(uint32_t operand, AddressingMode mode) const {
+    if (cpu_mode_ != CpuMode::Cpu65816) return {};
+    
+    if (mode == AddressingMode::AbsoluteLong) {
+        std::vector<uint8_t> bytes = {0x5C};
+        bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+        bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF));
+        bytes.push_back(static_cast<uint8_t>((operand >> 16) & 0xFF));
+        return bytes;
+    } else if (mode == AddressingMode::Indirect) {
+        std::vector<uint8_t> bytes = {0xDC};
+        bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+        bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF));
+        return bytes;
+    }
+    return {};
+}
+
+std::vector<uint8_t> Cpu6502::EncodeJSL(uint32_t operand, AddressingMode mode) const {
+    if (cpu_mode_ != CpuMode::Cpu65816) return {};
+    
+    if (mode == AddressingMode::AbsoluteLong) {
+        std::vector<uint8_t> bytes = {0x22};
+        bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+        bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF));
+        bytes.push_back(static_cast<uint8_t>((operand >> 16) & 0xFF));
+        return bytes;
+    }
+    return {};
+}
+
+std::vector<uint8_t> Cpu6502::EncodeRTL() const {
+    if (cpu_mode_ != CpuMode::Cpu65816) return {};
+    return {0x6B};
+}
+
+std::vector<uint8_t> Cpu6502::EncodePEA(uint16_t operand, AddressingMode mode) const {
+    if (cpu_mode_ != CpuMode::Cpu65816) return {};
+    
+    if (mode == AddressingMode::Absolute) {
+        std::vector<uint8_t> bytes = {0xF4};
+        bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+        bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF));
+        return bytes;
+    }
+    return {};
+}
+
+std::vector<uint8_t> Cpu6502::EncodePEI(uint8_t operand, AddressingMode mode) const {
+    if (cpu_mode_ != CpuMode::Cpu65816) return {};
+    
+    if (mode == AddressingMode::ZeroPage) {
+        return {0xD4, operand};
+    }
+    return {};
+}
+
+std::vector<uint8_t> Cpu6502::EncodePER(uint16_t operand, AddressingMode mode) const {
+    if (cpu_mode_ != CpuMode::Cpu65816) return {};
+    
+    if (mode == AddressingMode::Relative) {
+        std::vector<uint8_t> bytes = {0x62};
+        bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+        bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF));
+        return bytes;
+    }
+    return {};
+}
+
+std::vector<uint8_t> Cpu6502::EncodeMVN(uint8_t srcbank, uint8_t destbank) const {
+    if (cpu_mode_ != CpuMode::Cpu65816) return {};
+    return {0x54, srcbank, destbank};
+}
+
+std::vector<uint8_t> Cpu6502::EncodeMVP(uint8_t srcbank, uint8_t destbank) const {
+    if (cpu_mode_ != CpuMode::Cpu65816) return {};
+    return {0x44, srcbank, destbank};
+}
+
+std::vector<uint8_t> Cpu6502::EncodeCOP(uint8_t operand, AddressingMode mode) const {
+    if (cpu_mode_ != CpuMode::Cpu65816) return {};
+    
+    if (mode == AddressingMode::Immediate) {
+        return {0x02, operand};
+    }
+    return {};
+}
+
+std::vector<uint8_t> Cpu6502::EncodeWDM(uint8_t operand, AddressingMode mode) const {
+    if (cpu_mode_ != CpuMode::Cpu65816) return {};
+    
+    if (mode == AddressingMode::Immediate) {
+        return {0x42, operand};
+    }
+    return {};
+}
+
+std::vector<uint8_t> Cpu6502::EncodeXBA() const {
+    if (cpu_mode_ != CpuMode::Cpu65816) return {};
+    return {0xEB};
+}
+
+std::vector<uint8_t> Cpu6502::EncodeXCE() const {
+    if (cpu_mode_ != CpuMode::Cpu65816) return {};
+    return {0xFB};
+}
+
+std::vector<uint8_t> Cpu6502::EncodeSEP(uint16_t value, AddressingMode mode) const {
+    if (cpu_mode_ != CpuMode::Cpu65816) return {};
+    
+    if (mode == AddressingMode::Immediate) {
+        return {0xE2, static_cast<uint8_t>(value & 0xFF)};
+    }
+    return {};
+}
+
+std::vector<uint8_t> Cpu6502::EncodeREP(uint16_t value, AddressingMode mode) const {
+    if (cpu_mode_ != CpuMode::Cpu65816) return {};
+    
+    if (mode == AddressingMode::Immediate) {
+        return {0xC2, static_cast<uint8_t>(value & 0xFF)};
+    }
+    return {};
+}
+
+// ============================================================================
+// CPU Mode Configuration
+// ============================================================================
+
+void Cpu6502::SetCpuMode(CpuMode mode) {
+    cpu_mode_ = mode;
+}
+
+CpuMode Cpu6502::GetCpuMode() const {
+    return cpu_mode_;
+}
+
+void Cpu6502::SetMX(bool m_flag, bool x_flag) {
+    m_flag_ = m_flag;
+    x_flag_ = x_flag;
+}
+
+bool Cpu6502::IsAccumulator8Bit() const {
+    return m_flag_;
+}
+
+bool Cpu6502::IsIndex8Bit() const {
+    return x_flag_;
+}
+
+// ============================================================================
+// CpuPlugin Interface Implementation - EncodeInstruction()
+// ============================================================================
+
+/**
+ * @brief Polymorphic instruction encoder - dispatches to specific Encode* methods
+ * 
+ * This method implements the CpuPlugin interface, allowing the assembler to
+ * encode instructions without knowing the specific CPU type.
+ * 
+ * @param mnemonic Instruction mnemonic (e.g., "LDA", "STA", "JMP")
+ * @param operand Operand value (immediate value or address)
+ * @param operand_str Original operand string for parsing addressing modes
+ * @return Vector of encoded bytes
+ * 
+ * @throws std::invalid_argument if instruction/addressing mode not supported
+ * @throws std::out_of_range if operand value out of range
+ */
+std::vector<uint8_t> Cpu6502::EncodeInstruction(
+    const std::string& mnemonic,
+    uint32_t operand,
+    const std::string& operand_str
+) const {
+    // Helper to trim whitespace
+    auto trim = [](const std::string& s) {
+        size_t start = s.find_first_not_of(" \t\n\r");
+        if (start == std::string::npos) return std::string("");
+        size_t end = s.find_last_not_of(" \t\n\r");
+        return s.substr(start, end - start + 1);
+    };
+
+    // Helper to parse hex value
+    auto parse_hex = [](const std::string& s) -> uint32_t {
+        if (s.empty() || s[0] != '$') return 0;
+        return std::stoul(s.substr(1), nullptr, 16);
+    };
+
+    // Determine addressing mode from operand_str
+    std::string trimmed = trim(operand_str);
+    AddressingMode mode = AddressingMode::Implied;
+
+    if (!trimmed.empty()) {
+        // Accumulator mode
+        if (trimmed == "A") {
+            mode = AddressingMode::Accumulator;
+        }
+        // Immediate mode
+        else if (trimmed[0] == '#') {
+            mode = AddressingMode::Immediate;
+        }
+        // Indirect modes
+        else if (trimmed[0] == '(') {
+            size_t close_paren = trimmed.find(')');
+            if (close_paren != std::string::npos) {
+                std::string inside = trimmed.substr(1, close_paren - 1);
+                inside = trim(inside);
+                
+                // Check for indexed indirect: ($80,X)
+                if (inside.find(",X") != std::string::npos || inside.find(", X") != std::string::npos) {
+                    mode = AddressingMode::IndirectX;
+                }
+                // Check for indirect indexed: ($80),Y
+                else if (close_paren < trimmed.length() - 1) {
+                    std::string after = trim(trimmed.substr(close_paren + 1));
+                    if (after == ",Y" || after == ", Y") {
+                        mode = AddressingMode::IndirectY;
+                    }
+                }
+                // Simple indirect: ($1234) - only for JMP
+                else {
+                    mode = AddressingMode::Indirect;
+                }
+            }
+        }
+        // Indexed modes: ,X or ,Y
+        else if (trimmed.find(",X") != std::string::npos || trimmed.find(", X") != std::string::npos) {
+            size_t comma_pos = trimmed.find(",X");
+            if (comma_pos == std::string::npos) comma_pos = trimmed.find(", X");
+            std::string addr_part = trim(trimmed.substr(0, comma_pos));
+            
+            if (!addr_part.empty() && addr_part[0] == '$') {
+                uint32_t val = parse_hex(addr_part);
+                mode = (val <= 0xFF) ? AddressingMode::ZeroPageX : AddressingMode::AbsoluteX;
+            } else {
+                mode = AddressingMode::AbsoluteX;  // Label
+            }
+        }
+        else if (trimmed.find(",Y") != std::string::npos || trimmed.find(", Y") != std::string::npos) {
+            size_t comma_pos = trimmed.find(",Y");
+            if (comma_pos == std::string::npos) comma_pos = trimmed.find(", Y");
+            std::string addr_part = trim(trimmed.substr(0, comma_pos));
+            
+            if (!addr_part.empty() && addr_part[0] == '$') {
+                uint32_t val = parse_hex(addr_part);
+                mode = (val <= 0xFF) ? AddressingMode::ZeroPageY : AddressingMode::AbsoluteY;
+            } else {
+                mode = AddressingMode::AbsoluteY;  // Label
+            }
+        }
+        // Absolute or ZeroPage
+        else {
+            if (trimmed[0] == '$') {
+                uint32_t val = parse_hex(trimmed);
+                mode = (val <= 0xFF) ? AddressingMode::ZeroPage : AddressingMode::Absolute;
+            } else {
+                mode = AddressingMode::Absolute;  // Label - assume absolute
+            }
+        }
+    }
+
+    // Dispatch to appropriate Encode* method based on mnemonic
+    // Load instructions
+    if (mnemonic == "LDA") return EncodeLDA(operand, mode);
+    if (mnemonic == "LDX") return EncodeLDX(operand, mode);
+    if (mnemonic == "LDY") return EncodeLDY(operand, mode);
+    
+    // Store instructions
+    if (mnemonic == "STA") return EncodeSTA(operand, mode);
+    if (mnemonic == "STX") return EncodeSTX(operand, mode);
+    if (mnemonic == "STY") return EncodeSTY(operand, mode);
+    if (mnemonic == "STZ") return EncodeSTZ(operand, mode);
+    
+    // Arithmetic
+    if (mnemonic == "ADC") return EncodeADC(operand, mode);
+    if (mnemonic == "SBC") return EncodeSBC(operand, mode);
+    if (mnemonic == "INC") return EncodeINC(operand, mode);
+    if (mnemonic == "DEC") return EncodeDEC(operand, mode);
+    if (mnemonic == "INX") return EncodeINX();
+    if (mnemonic == "INY") return EncodeINY();
+    if (mnemonic == "DEX") return EncodeDEX();
+    if (mnemonic == "DEY") return EncodeDEY();
+    
+    // Logical
+    if (mnemonic == "AND") return EncodeAND(operand, mode);
+    if (mnemonic == "ORA") return EncodeORA(operand, mode);
+    if (mnemonic == "EOR") return EncodeEOR(operand, mode);
+    if (mnemonic == "BIT") return EncodeBIT(operand, mode);
+    
+    // Compare
+    if (mnemonic == "CMP") return EncodeCMP(operand, mode);
+    if (mnemonic == "CPX") return EncodeCPX(operand, mode);
+    if (mnemonic == "CPY") return EncodeCPY(operand, mode);
+    
+    // Branches
+    if (mnemonic == "BEQ") return EncodeBEQ(operand, mode);
+    if (mnemonic == "BNE") return EncodeBNE(operand, mode);
+    if (mnemonic == "BCC") return EncodeBCC(operand, mode);
+    if (mnemonic == "BCS") return EncodeBCS(operand, mode);
+    if (mnemonic == "BMI") return EncodeBMI(operand, mode);
+    if (mnemonic == "BPL") return EncodeBPL(operand, mode);
+    if (mnemonic == "BVC") return EncodeBVC(operand, mode);
+    if (mnemonic == "BVS") return EncodeBVS(operand, mode);
+    if (mnemonic == "BRA") return EncodeBRA(operand, mode);
+    
+    // Jumps/Subroutines
+    if (mnemonic == "JMP") return EncodeJMP(operand, mode);
+    if (mnemonic == "JSR") return EncodeJSR(operand, mode);
+    if (mnemonic == "RTS") return EncodeRTS();
+    if (mnemonic == "RTI") return EncodeRTI();
+    
+    // Stack
+    if (mnemonic == "PHA") return EncodePHA();
+    if (mnemonic == "PLA") return EncodePLA();
+    if (mnemonic == "PHP") return EncodePHP();
+    if (mnemonic == "PLP") return EncodePLP();
+    if (mnemonic == "PHX") return EncodePHX();
+    if (mnemonic == "PLX") return EncodePLX();
+    if (mnemonic == "PHY") return EncodePHY();
+    if (mnemonic == "PLY") return EncodePLY();
+    
+    // Shifts/Rotates
+    if (mnemonic == "ASL") return EncodeASL(operand, mode);
+    if (mnemonic == "LSR") return EncodeLSR(operand, mode);
+    if (mnemonic == "ROL") return EncodeROL(operand, mode);
+    if (mnemonic == "ROR") return EncodeROR(operand, mode);
+    
+    // Flags
+    if (mnemonic == "CLC") return EncodeCLC();
+    if (mnemonic == "SEC") return EncodeSEC();
+    if (mnemonic == "CLD") return EncodeCLD();
+    if (mnemonic == "SED") return EncodeSED();
+    if (mnemonic == "CLI") return EncodeCLI();
+    if (mnemonic == "SEI") return EncodeSEI();
+    if (mnemonic == "CLV") return EncodeCLV();
+    
+    // Transfers
+    if (mnemonic == "TAX") return EncodeTAX();
+    if (mnemonic == "TAY") return EncodeTAY();
+    if (mnemonic == "TXA") return EncodeTXA();
+    if (mnemonic == "TYA") return EncodeTYA();
+    if (mnemonic == "TSX") return EncodeTSX();
+    if (mnemonic == "TXS") return EncodeTXS();
+    
+    // Misc
+    if (mnemonic == "NOP") return EncodeNOP();
+    if (mnemonic == "BRK") return EncodeBRK();
+    
+    // 65C02 Bit test
+    if (mnemonic == "TRB") return EncodeTRB(operand, mode);
+    if (mnemonic == "TSB") return EncodeTSB(operand, mode);
+    
+    // 65816 instructions
+    if (mnemonic == "PHB") return EncodePHB();
+    if (mnemonic == "PLB") return EncodePLB();
+    if (mnemonic == "PHK") return EncodePHK();
+    if (mnemonic == "PHD") return EncodePHD();
+    if (mnemonic == "PLD") return EncodePLD();
+    if (mnemonic == "TCD") return EncodeTCD();
+    if (mnemonic == "TDC") return EncodeTDC();
+    if (mnemonic == "TCS") return EncodeTCS();
+    if (mnemonic == "TSC") return EncodeTSC();
+    if (mnemonic == "JML") return EncodeJML(operand, mode);
+    if (mnemonic == "JSL") return EncodeJSL(operand, mode);
+    if (mnemonic == "RTL") return EncodeRTL();
+    if (mnemonic == "PEA") return EncodePEA(operand, mode);
+    if (mnemonic == "PEI") return EncodePEI(operand, mode);
+    if (mnemonic == "PER") return EncodePER(operand, mode);
+    if (mnemonic == "XBA") return EncodeXBA();
+    if (mnemonic == "XCE") return EncodeXCE();
+    if (mnemonic == "SEP") return EncodeSEP(operand, mode);
+    if (mnemonic == "REP") return EncodeREP(operand, mode);
+    if (mnemonic == "COP") return EncodeCOP(operand, mode);
+    if (mnemonic == "WDM") return EncodeWDM(operand, mode);
+    
+    // Rockwell 65C02 extensions
+    if (mnemonic == "WAI") return EncodeWAI();
+    if (mnemonic == "STP") return EncodeSTP();
+    
+    // Unsupported instruction
+    throw std::invalid_argument("Unsupported instruction: " + mnemonic);
+}
+
 } // namespace xasm

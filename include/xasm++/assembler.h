@@ -18,13 +18,15 @@
 
 #include "xasm++/atom.h"
 #include "xasm++/section.h"
-#include "xasm++/cpu/cpu_6502.h"
+#include "xasm++/cpu/cpu_plugin.h"
 
 namespace xasm {
 
 // Forward declarations
 class SymbolTable;
 class ConcreteSymbolTable;
+class Cpu6502;
+enum class AddressingMode;
 
 /**
  * @brief Represents an error that occurred during assembly
@@ -98,16 +100,16 @@ public:
 
     /**
      * @brief Set the CPU plugin for instruction encoding
-     * 
+     *
      * The CPU plugin is responsible for encoding instructions into machine code.
      * Different CPU plugins can be used for different target architectures
-     * (6502, 65C02, 65816, etc.).
-     * 
+     * (6502, 65C02, 65816, 6809, Z80, etc.).
+     *
      * @param cpu Pointer to CPU plugin (must remain valid for lifetime of assembler)
-     * 
+     *
      * @note The assembler does not take ownership of the CPU plugin
      */
-    void SetCpuPlugin(Cpu6502* cpu);
+    void SetCpuPlugin(CpuPlugin* cpu);
 
     /**
      * @brief Set the symbol table for symbol resolution
@@ -166,58 +168,7 @@ public:
     AssemblerResult Assemble();
 
 private:
-    /**
-     * @brief Function type for instruction encoding handlers
-     * 
-     * Each instruction has a handler that encodes it into machine code
-     * given the CPU plugin, operand value, and addressing mode.
-     */
-    using InstructionHandler = std::function<std::vector<uint8_t>(Cpu6502*, uint16_t, AddressingMode)>;
-    
-    /**
-     * @brief Initialize the instruction handler dispatch table
-     * 
-     * Populates instruction_handlers_ with mappings from instruction mnemonics
-     * to their corresponding encoding functions.
-     */
-    void InitializeInstructionHandlers();
-
-    /**
-     * @brief Register memory access instructions (load/store)
-     * 
-     * Registers handlers for: LDA, LDX, LDY, STA, STX, STY
-     */
-    void RegisterMemoryInstructions();
-
-    /**
-     * @brief Register arithmetic and increment/decrement instructions
-     * 
-     * Registers handlers for: ADC, SBC, INC, DEC, INX, INY, DEX, DEY
-     */
-    void RegisterArithmeticInstructions();
-
-    /**
-     * @brief Register branch instructions
-     * 
-     * Registers handlers for: BEQ, BNE, BCC, BCS, BPL, BMI, BVC, BVS
-     */
-    void RegisterBranchInstructions();
-
-    /**
-     * @brief Register stack manipulation instructions
-     * 
-     * Registers handlers for: PHA, PLA, PHP, PLP
-     */
-    void RegisterStackInstructions();
-
-    /**
-     * @brief Register control flow and status instructions
-     * 
-     * Registers handlers for: NOP, BRK, RTI, RTS, JMP, JSR, CLC, SEC, CLD, SED,
-     * CLI, SEI, CLV, TSX, TXS, TAX, TAY, TXA, TYA, AND, ORA, EOR, CMP, CPX, CPY,
-     * BIT, ASL, LSR, ROL, ROR
-     */
-    void RegisterControlInstructions();
+    // CPU plugin polymorphism - instruction encoding delegated to CpuPlugin::EncodeInstruction()
 
     /**
      * @brief Resolve symbols in a single pass
@@ -264,9 +215,8 @@ private:
                           const std::vector<size_t>& current_sizes) const;
 
     std::vector<Section> sections_;                                         ///< Sections to assemble
-    Cpu6502* cpu_ = nullptr;                                                ///< CPU plugin for instruction encoding
+    CpuPlugin* cpu_ = nullptr;                                              ///< CPU plugin for instruction encoding
     SymbolTable* symbols_ = nullptr;                                        ///< Symbol table for symbol resolution
-    std::unordered_map<std::string, InstructionHandler> instruction_handlers_; ///< Instruction dispatch table
 };
 
 } // namespace xasm

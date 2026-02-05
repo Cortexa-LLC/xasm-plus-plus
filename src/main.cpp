@@ -5,6 +5,7 @@
 #include "xasm++/assembler.h"
 #include "xasm++/cpu/cpu_6502.h"
 #include "xasm++/cpu/cpu_6809.h"
+#include "xasm++/cpu/cpu_constants.h"
 #include "xasm++/syntax/simple_syntax.h"
 #include "xasm++/syntax/merlin_syntax.h"
 #include "xasm++/syntax/scmasm_syntax.h"
@@ -67,20 +68,31 @@ int main(int argc, char** argv) {
     // Step 2: Create section, symbol table, and CPU plugin
     Section section;
     ConcreteSymbolTable symbols;
-    Cpu6502 cpu;
 
-    // Set initial CPU mode from command-line option
-    if (opts.cpu == "6502") {
-      cpu.SetCpuMode(CpuMode::Cpu6502);
-    } else if (opts.cpu == "65c02") {
-      cpu.SetCpuMode(CpuMode::Cpu65C02);
-    } else if (opts.cpu == "65c02rock") {
-      cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
-    } else if (opts.cpu == "65816") {
-      cpu.SetCpuMode(CpuMode::Cpu65816);
+    // Create appropriate CPU plugin based on command-line option
+    CpuPlugin* cpu = nullptr;
+    Cpu6502 cpu6502;
+    Cpu6809 cpu6809;
+
+    if (opts.cpu == cpu::CPU_6809) {
+      cpu = &cpu6809;
+    } else if (opts.cpu == cpu::CPU_6502) {
+      cpu6502.SetCpuMode(CpuMode::Cpu6502);
+      cpu = &cpu6502;
+    } else if (opts.cpu == cpu::CPU_65C02) {
+      cpu6502.SetCpuMode(CpuMode::Cpu65C02);
+      cpu = &cpu6502;
+    } else if (opts.cpu == cpu::CPU_65C02_ROCK) {
+      cpu6502.SetCpuMode(CpuMode::Cpu65C02Rock);
+      cpu = &cpu6502;
+    } else if (opts.cpu == cpu::CPU_65816) {
+      cpu6502.SetCpuMode(CpuMode::Cpu65816);
+      cpu = &cpu6502;
     } else {
       std::cerr << "Error: Unknown CPU type: " << opts.cpu << "\n";
-      std::cerr << "Supported: 6502, 65c02, 65c02rock, 65816\n";
+      std::cerr << "Supported: " << cpu::CPU_6502 << ", " << cpu::CPU_65C02 << ", "
+                << cpu::CPU_65C02_ROCK << ", " << cpu::CPU_65816 << ", "
+                << cpu::CPU_6809 << "\n";
       return 1;
     }
 
@@ -97,16 +109,25 @@ int main(int argc, char** argv) {
       }
       
       if (opts.syntax == "merlin") {
+        // Merlin syntax requires 6502 family CPU
+        if (opts.cpu == cpu::CPU_6809) {
+          std::cerr << "Error: Merlin syntax is only compatible with 6502 family CPUs\n";
+          std::cerr << "For " << cpu::CPU_6809 << ", use --syntax edtasm or --syntax scmasm\n";
+          return 1;
+        }
         MerlinSyntaxParser parser;
-        parser.SetCpu(&cpu);  // Allow XC directive to toggle CPU mode
+        parser.SetCpu(&cpu6502);  // Merlin uses 6502-specific features
         parser.Parse(source, section, symbols);
       } else if (opts.syntax == "scmasm") {
+        // SCMASM works with both 6502 and 6809
         ScmasmSyntaxParser parser;
         parser.Parse(source, section, symbols);
       } else if (opts.syntax == "edtasm") {
+        // EDTASM works with both 6502 and 6809
         EdtasmSyntaxParser parser;
         parser.Parse(source, section, symbols);
       } else {
+        // Simple syntax works with both 6502 and 6809
         SimpleSyntaxParser parser;
         parser.Parse(source, section, symbols);
       }
@@ -132,7 +153,7 @@ int main(int argc, char** argv) {
 
     // Step 4: Create assembler (CPU already created in Step 2)
     Assembler assembler;
-    assembler.SetCpuPlugin(&cpu);
+    assembler.SetCpuPlugin(cpu);
     assembler.SetSymbolTable(&symbols);  // CRITICAL: Link symbol table to assembler
     assembler.AddSection(section);
 

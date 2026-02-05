@@ -3,6 +3,7 @@
 
 #include "CLI/CLI.hpp"
 #include "xasm++/cli/command_line_options.h"
+#include "xasm++/cpu/cpu_constants.h"
 
 namespace xasm {
 
@@ -21,8 +22,9 @@ CommandLineOptions ParseCommandLine(int argc, char** argv) {
 
   // CPU architecture option
   app.add_option("--cpu", opts.cpu, "CPU architecture (default: 6502)")
-      ->default_val("6502")
-      ->check(CLI::IsMember({"6502"}));  // Extensible to 65c02, z80, etc.
+      ->default_val(cpu::CPU_6502)
+      ->check(CLI::IsMember({cpu::CPU_6502, cpu::CPU_65C02, cpu::CPU_65C02_ROCK,
+                              cpu::CPU_65816, cpu::CPU_6809}));
 
   // Syntax parser option
   app.add_option("--syntax", opts.syntax, "Syntax parser (default: simple)")
