@@ -1,0 +1,8 @@
+{
+  "label": "6809 (Motorola)",
+  "position": 3,
+  "link": {
+    "type": "generated-index",
+    "description": "Motorola 6809 CPU reference and EDTASM syntax."
+  }
+}

@@ -595,7 +595,7 @@ cat .beads/tasks/task-engineer-*/30-results.md
 
 **Planning Specialists:**
 - **architect** - System design (architecture, technical design, ADRs)
-- **cartographer** - Requirements (PRDs, user stories, acceptance criteria)
+- **pm** (Product Manager) - Requirements (PRDs, user stories, acceptance criteria)
 - **designer** - UX design (wireframes, user flows, design specs)
 - **strategist** - Market analysis (MRDs, competitive analysis, business case)
 
@@ -907,7 +907,7 @@ Available via explicit commands:
 - `/ai-pack spelunker` - Spelunker role (runtime investigation, production debugging)
 - `/ai-pack architect` - Architect role (architecture design, technical design)
 - `/ai-pack designer` - Designer role (UX workflows, wireframes)
-- `/ai-pack cartographer` - Cartographer role (product requirements, PRDs)
+- `/ai-pack pm` - Product Manager role (product requirements, PRDs)
 - `/ai-pack strategist` - Strategist role (market analysis, business strategy)
 - `/ai-pack archaeologist` - Archaeologist role (legacy code investigation, historical context)
 

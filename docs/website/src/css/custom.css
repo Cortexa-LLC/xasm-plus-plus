@@ -1,0 +1,122 @@
+/**
+ * xasm++ Documentation - Custom Styling
+ *
+ * Placeholder brand colors (will be customized later):
+ * - Primary: Blue/Tech theme
+ * - Accent: Retro computing feel
+ */
+
+/* Light Mode */
+:root {
+  /* Primary colors - placeholder blue theme */
+  --ifm-color-primary: #2e8555;
+  --ifm-color-primary-dark: #29784c;
+  --ifm-color-primary-darker: #277148;
+  --ifm-color-primary-darkest: #205d3b;
+  --ifm-color-primary-light: #33925d;
+  --ifm-color-primary-lighter: #359962;
+  --ifm-color-primary-lightest: #3cad6e;
+
+  /* Typography - compact style */
+  --ifm-font-size-base: 15px;
+  --ifm-code-font-size: 90%;
+  --ifm-h1-font-size: 2rem;
+  --ifm-h2-font-size: 1.5rem;
+  --ifm-h3-font-size: 1.25rem;
+  --ifm-h4-font-size: 1.1rem;
+  --ifm-line-height-base: 1.6;
+  --ifm-font-family-base: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  --ifm-font-family-monospace: 'Menlo', 'Monaco', 'Courier New', monospace;
+
+  /* Code Highlighting */
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+}
+
+/* Dark Mode */
+[data-theme='dark'] {
+  --ifm-color-primary: #25c2a0;
+  --ifm-color-primary-dark: #21af90;
+  --ifm-color-primary-darker: #1fa588;
+  --ifm-color-primary-darkest: #1a8870;
+  --ifm-color-primary-light: #29d5b0;
+  --ifm-color-primary-lighter: #32d8b4;
+  --ifm-color-primary-lightest: #4fddbf;
+  
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+}
+
+/* Hero Banner */
+.hero--primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+/* Code Blocks - Retro computing theme */
+.prism-code {
+  border-left: 3px solid var(--ifm-color-primary);
+}
+
+/* Compact sidebar navigation */
+.theme-doc-sidebar-container {
+  font-size: 14px;
+}
+
+.menu__link {
+  font-size: 14px;
+  padding: 0.4rem 0.75rem;
+}
+
+/* Compact article styling */
+article {
+  font-size: 15px;
+}
+
+article h1 {
+  font-size: 2rem;
+  margin-top: 1.5rem;
+  margin-bottom: 1rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+article h2 {
+  font-size: 1.5rem;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+article h3 {
+  font-size: 1.25rem;
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+article p {
+  margin-bottom: 1rem;
+  line-height: 1.6;
+}
+
+article code {
+  font-size: 0.9em;
+  background-color: rgba(0, 0, 0, 0.05);
+  padding: 0.2em 0.4em;
+  border-radius: 3px;
+}
+
+[data-theme='dark'] article code {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+article pre {
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+}
+
+/* Assembly code highlighting hint */
+code[class*="language-asm"] {
+  font-family: var(--ifm-font-family-monospace);
+}
