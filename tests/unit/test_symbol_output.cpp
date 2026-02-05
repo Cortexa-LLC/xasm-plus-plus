@@ -1,12 +1,12 @@
 // SymbolOutput Plugin tests
 // Phase 3.3: Output Format Plugins - Symbol Table Output
 
+#include "xasm++/expression.h"
 #include "xasm++/output/symbol_output.h"
 #include "xasm++/section.h"
 #include "xasm++/symbol.h"
-#include "xasm++/expression.h"
-#include <gtest/gtest.h>
 #include <fstream>
+#include <gtest/gtest.h>
 #include <vector>
 
 using namespace xasm;
@@ -15,7 +15,7 @@ using namespace xasm;
 TEST(SymbolOutputTest, EmptySymbolTable) {
   SymbolOutput output;
   Section section("test", 0);
-  std::vector<Section*> sections = {&section};
+  std::vector<Section *> sections = {&section};
   ConcreteSymbolTable symbols;
 
   output.WriteOutput("test.sym", sections, symbols);
@@ -23,11 +23,11 @@ TEST(SymbolOutputTest, EmptySymbolTable) {
   // Verify file exists
   std::ifstream file("test.sym");
   ASSERT_TRUE(file.is_open());
-  
+
   // Should have header but no symbols
   std::string line;
   std::getline(file, line);
-  EXPECT_FALSE(line.empty());  // Header exists
+  EXPECT_FALSE(line.empty()); // Header exists
   file.close();
 
   // Cleanup
@@ -38,10 +38,11 @@ TEST(SymbolOutputTest, EmptySymbolTable) {
 TEST(SymbolOutputTest, SingleSymbol) {
   SymbolOutput output;
   Section section("test", 0);
-  std::vector<Section*> sections = {&section};
-  
+  std::vector<Section *> sections = {&section};
+
   ConcreteSymbolTable symbols;
-  symbols.Define("start", SymbolType::Label, std::make_shared<LiteralExpr>(0x8000));
+  symbols.Define("start", SymbolType::Label,
+                 std::make_shared<LiteralExpr>(0x8000));
 
   output.WriteOutput("test.sym", {&section}, symbols);
 
@@ -61,12 +62,15 @@ TEST(SymbolOutputTest, SingleSymbol) {
 TEST(SymbolOutputTest, MultipleSymbolsSorted) {
   SymbolOutput output;
   Section section("test", 0);
-  std::vector<Section*> sections = {&section};
-  
+  std::vector<Section *> sections = {&section};
+
   ConcreteSymbolTable symbols;
-  symbols.Define("zebra", SymbolType::Label, std::make_shared<LiteralExpr>(0x9000));
-  symbols.Define("apple", SymbolType::Label, std::make_shared<LiteralExpr>(0x8000));
-  symbols.Define("middle", SymbolType::Label, std::make_shared<LiteralExpr>(0x8500));
+  symbols.Define("zebra", SymbolType::Label,
+                 std::make_shared<LiteralExpr>(0x9000));
+  symbols.Define("apple", SymbolType::Label,
+                 std::make_shared<LiteralExpr>(0x8000));
+  symbols.Define("middle", SymbolType::Label,
+                 std::make_shared<LiteralExpr>(0x8500));
 
   output.WriteOutput("test.sym", {&section}, symbols);
 
@@ -91,11 +95,13 @@ TEST(SymbolOutputTest, MultipleSymbolsSorted) {
 TEST(SymbolOutputTest, DifferentSymbolTypes) {
   SymbolOutput output;
   Section section("test", 0);
-  std::vector<Section*> sections = {&section};
-  
+  std::vector<Section *> sections = {&section};
+
   ConcreteSymbolTable symbols;
-  symbols.Define("label1", SymbolType::Label, std::make_shared<LiteralExpr>(0x8000));
-  symbols.Define("CONST1", SymbolType::Equate, std::make_shared<LiteralExpr>(42));
+  symbols.Define("label1", SymbolType::Label,
+                 std::make_shared<LiteralExpr>(0x8000));
+  symbols.Define("CONST1", SymbolType::Equate,
+                 std::make_shared<LiteralExpr>(42));
   symbols.Define("var1", SymbolType::Set, std::make_shared<LiteralExpr>(100));
 
   output.WriteOutput("test.sym", {&section}, symbols);
@@ -129,10 +135,11 @@ TEST(SymbolOutputTest, FileExtension) {
 TEST(SymbolOutputTest, HexValueFormat) {
   SymbolOutput output;
   Section section("test", 0);
-  std::vector<Section*> sections = {&section};
-  
+  std::vector<Section *> sections = {&section};
+
   ConcreteSymbolTable symbols;
-  symbols.Define("addr", SymbolType::Label, std::make_shared<LiteralExpr>(0xABCD));
+  symbols.Define("addr", SymbolType::Label,
+                 std::make_shared<LiteralExpr>(0xABCD));
 
   output.WriteOutput("test.sym", {&section}, symbols);
 
@@ -142,7 +149,7 @@ TEST(SymbolOutputTest, HexValueFormat) {
   file.close();
 
   // Should contain hex value (case may vary)
-  EXPECT_TRUE(content.find("ABCD") != std::string::npos || 
+  EXPECT_TRUE(content.find("ABCD") != std::string::npos ||
               content.find("abcd") != std::string::npos);
 
   std::remove("test.sym");
@@ -152,19 +159,20 @@ TEST(SymbolOutputTest, HexValueFormat) {
 TEST(SymbolOutputTest, LargeSymbolTable) {
   SymbolOutput output;
   Section section("test", 0);
-  std::vector<Section*> sections = {&section};
-  
+  std::vector<Section *> sections = {&section};
+
   ConcreteSymbolTable symbols;
   for (int i = 0; i < 100; ++i) {
     std::string name = "sym" + std::to_string(i);
-    symbols.Define(name, SymbolType::Label, std::make_shared<LiteralExpr>(0x8000 + i));
+    symbols.Define(name, SymbolType::Label,
+                   std::make_shared<LiteralExpr>(0x8000 + i));
   }
 
   output.WriteOutput("test.sym", {&section}, symbols);
 
   std::ifstream file("test.sym");
   ASSERT_TRUE(file.is_open());
-  
+
   // Count lines
   int line_count = 0;
   std::string line;

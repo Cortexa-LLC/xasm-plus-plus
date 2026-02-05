@@ -1,16 +1,16 @@
 /**
  * @file test_cpu6809_indexed.cpp
  * @brief Unit tests for Motorola 6809 Indexed Addressing Modes (16 sub-modes)
- * 
+ *
  * Tests the complex indexed addressing post-byte encoding following TDD:
  * RED -> GREEN -> REFACTOR cycle.
- * 
+ *
  * The 6809 has 16 indexed addressing sub-modes encoded in a post-byte.
  * This is the most complex feature of the 6809 CPU.
  */
 
-#include <gtest/gtest.h>
 #include "xasm++/cpu/cpu_6809.h"
+#include <gtest/gtest.h>
 
 using namespace xasm;
 
@@ -20,7 +20,7 @@ using namespace xasm;
 
 class Cpu6809IndexedTest : public ::testing::Test {
 protected:
-    Cpu6809 cpu;
+  Cpu6809 cpu;
 };
 
 // ============================================================================
@@ -28,21 +28,21 @@ protected:
 // ============================================================================
 
 TEST_F(Cpu6809IndexedTest, LDA_IndexedZeroOffset_X) {
-    // LDA ,X -> opcode A6, post-byte 84
-    auto bytes = cpu.EncodeLDA(0, AddressingMode6809::IndexedZeroOffset);
-    ASSERT_EQ(2, bytes.size());
-    EXPECT_EQ(0xA6, bytes[0]);  // LDA indexed opcode
-    EXPECT_EQ(0x84, bytes[1]);  // Post-byte: 10000100 (,X)
+  // LDA ,X -> opcode A6, post-byte 84
+  auto bytes = cpu.EncodeLDA(0, AddressingMode6809::IndexedZeroOffset);
+  ASSERT_EQ(2, bytes.size());
+  EXPECT_EQ(0xA6, bytes[0]); // LDA indexed opcode
+  EXPECT_EQ(0x84, bytes[1]); // Post-byte: 10000100 (,X)
 }
 
 TEST_F(Cpu6809IndexedTest, LDA_IndexedZeroOffset_Y) {
-    // LDA ,Y -> opcode A6, post-byte A4
-    // Y register bits: 01 (bits 6-5)
-    auto bytes = cpu.EncodeLDA(0, AddressingMode6809::IndexedZeroOffset);
-    ASSERT_EQ(2, bytes.size());
-    EXPECT_EQ(0xA6, bytes[0]);
-    // TODO: Need to pass register selection separately
-    // EXPECT_EQ(0xA4, bytes[1]);  // Post-byte: 10100100 (,Y)
+  // LDA ,Y -> opcode A6, post-byte A4
+  // Y register bits: 01 (bits 6-5)
+  auto bytes = cpu.EncodeLDA(0, AddressingMode6809::IndexedZeroOffset);
+  ASSERT_EQ(2, bytes.size());
+  EXPECT_EQ(0xA6, bytes[0]);
+  // TODO: Need to pass register selection separately
+  // EXPECT_EQ(0xA4, bytes[1]);  // Post-byte: 10100100 (,Y)
 }
 
 // ============================================================================
@@ -50,43 +50,43 @@ TEST_F(Cpu6809IndexedTest, LDA_IndexedZeroOffset_Y) {
 // ============================================================================
 
 TEST_F(Cpu6809IndexedTest, LDA_Indexed5BitOffset_Zero) {
-    // LDA 0,X -> post-byte 00000000 (5-bit zero offset)
-    auto bytes = cpu.EncodeLDA(0, AddressingMode6809::Indexed5BitOffset);
-    ASSERT_EQ(2, bytes.size());
-    EXPECT_EQ(0xA6, bytes[0]);  // LDA indexed opcode
-    EXPECT_EQ(0x00, bytes[1]);  // Post-byte: 00000000 (0,X)
+  // LDA 0,X -> post-byte 00000000 (5-bit zero offset)
+  auto bytes = cpu.EncodeLDA(0, AddressingMode6809::Indexed5BitOffset);
+  ASSERT_EQ(2, bytes.size());
+  EXPECT_EQ(0xA6, bytes[0]); // LDA indexed opcode
+  EXPECT_EQ(0x00, bytes[1]); // Post-byte: 00000000 (0,X)
 }
 
 TEST_F(Cpu6809IndexedTest, LDA_Indexed5BitOffset_Positive) {
-    // LDA 10,X -> post-byte 00001010
-    auto bytes = cpu.EncodeLDA(10, AddressingMode6809::Indexed5BitOffset);
-    ASSERT_EQ(2, bytes.size());
-    EXPECT_EQ(0xA6, bytes[0]);
-    EXPECT_EQ(0x0A, bytes[1]);  // Post-byte: 00001010 (10,X)
+  // LDA 10,X -> post-byte 00001010
+  auto bytes = cpu.EncodeLDA(10, AddressingMode6809::Indexed5BitOffset);
+  ASSERT_EQ(2, bytes.size());
+  EXPECT_EQ(0xA6, bytes[0]);
+  EXPECT_EQ(0x0A, bytes[1]); // Post-byte: 00001010 (10,X)
 }
 
 TEST_F(Cpu6809IndexedTest, LDA_Indexed5BitOffset_Max_Positive) {
-    // LDA 15,X -> post-byte 00001111
-    auto bytes = cpu.EncodeLDA(15, AddressingMode6809::Indexed5BitOffset);
-    ASSERT_EQ(2, bytes.size());
-    EXPECT_EQ(0xA6, bytes[0]);
-    EXPECT_EQ(0x0F, bytes[1]);  // Post-byte: 00001111 (15,X)
+  // LDA 15,X -> post-byte 00001111
+  auto bytes = cpu.EncodeLDA(15, AddressingMode6809::Indexed5BitOffset);
+  ASSERT_EQ(2, bytes.size());
+  EXPECT_EQ(0xA6, bytes[0]);
+  EXPECT_EQ(0x0F, bytes[1]); // Post-byte: 00001111 (15,X)
 }
 
 TEST_F(Cpu6809IndexedTest, LDA_Indexed5BitOffset_Negative) {
-    // LDA -1,X -> post-byte 00011111 (5-bit two's complement)
-    auto bytes = cpu.EncodeLDA(-1, AddressingMode6809::Indexed5BitOffset);
-    ASSERT_EQ(2, bytes.size());
-    EXPECT_EQ(0xA6, bytes[0]);
-    EXPECT_EQ(0x1F, bytes[1]);  // Post-byte: 00011111 (-1,X)
+  // LDA -1,X -> post-byte 00011111 (5-bit two's complement)
+  auto bytes = cpu.EncodeLDA(-1, AddressingMode6809::Indexed5BitOffset);
+  ASSERT_EQ(2, bytes.size());
+  EXPECT_EQ(0xA6, bytes[0]);
+  EXPECT_EQ(0x1F, bytes[1]); // Post-byte: 00011111 (-1,X)
 }
 
 TEST_F(Cpu6809IndexedTest, LDA_Indexed5BitOffset_Max_Negative) {
-    // LDA -16,X -> post-byte 00010000 (5-bit two's complement)
-    auto bytes = cpu.EncodeLDA(-16, AddressingMode6809::Indexed5BitOffset);
-    ASSERT_EQ(2, bytes.size());
-    EXPECT_EQ(0xA6, bytes[0]);
-    EXPECT_EQ(0x10, bytes[1]);  // Post-byte: 00010000 (-16,X)
+  // LDA -16,X -> post-byte 00010000 (5-bit two's complement)
+  auto bytes = cpu.EncodeLDA(-16, AddressingMode6809::Indexed5BitOffset);
+  ASSERT_EQ(2, bytes.size());
+  EXPECT_EQ(0xA6, bytes[0]);
+  EXPECT_EQ(0x10, bytes[1]); // Post-byte: 00010000 (-16,X)
 }
 
 // ============================================================================
@@ -94,39 +94,39 @@ TEST_F(Cpu6809IndexedTest, LDA_Indexed5BitOffset_Max_Negative) {
 // ============================================================================
 
 TEST_F(Cpu6809IndexedTest, LDA_Indexed8BitOffset_Positive) {
-    // LDA 100,X -> opcode A6, post-byte 88, offset 64
-    auto bytes = cpu.EncodeLDA(100, AddressingMode6809::Indexed8BitOffset);
-    ASSERT_EQ(3, bytes.size());
-    EXPECT_EQ(0xA6, bytes[0]);  // LDA indexed opcode
-    EXPECT_EQ(0x88, bytes[1]);  // Post-byte: 10001000 (8-bit offset, X)
-    EXPECT_EQ(0x64, bytes[2]);  // Offset: 100
+  // LDA 100,X -> opcode A6, post-byte 88, offset 64
+  auto bytes = cpu.EncodeLDA(100, AddressingMode6809::Indexed8BitOffset);
+  ASSERT_EQ(3, bytes.size());
+  EXPECT_EQ(0xA6, bytes[0]); // LDA indexed opcode
+  EXPECT_EQ(0x88, bytes[1]); // Post-byte: 10001000 (8-bit offset, X)
+  EXPECT_EQ(0x64, bytes[2]); // Offset: 100
 }
 
 TEST_F(Cpu6809IndexedTest, LDA_Indexed8BitOffset_Negative) {
-    // LDA -50,X -> opcode A6, post-byte 88, offset CE
-    auto bytes = cpu.EncodeLDA(-50, AddressingMode6809::Indexed8BitOffset);
-    ASSERT_EQ(3, bytes.size());
-    EXPECT_EQ(0xA6, bytes[0]);
-    EXPECT_EQ(0x88, bytes[1]);  // Post-byte: 10001000
-    EXPECT_EQ(0xCE, bytes[2]);  // Offset: -50 as two's complement
+  // LDA -50,X -> opcode A6, post-byte 88, offset CE
+  auto bytes = cpu.EncodeLDA(-50, AddressingMode6809::Indexed8BitOffset);
+  ASSERT_EQ(3, bytes.size());
+  EXPECT_EQ(0xA6, bytes[0]);
+  EXPECT_EQ(0x88, bytes[1]); // Post-byte: 10001000
+  EXPECT_EQ(0xCE, bytes[2]); // Offset: -50 as two's complement
 }
 
 TEST_F(Cpu6809IndexedTest, LDA_Indexed8BitOffset_Max_Positive) {
-    // LDA 127,X
-    auto bytes = cpu.EncodeLDA(127, AddressingMode6809::Indexed8BitOffset);
-    ASSERT_EQ(3, bytes.size());
-    EXPECT_EQ(0xA6, bytes[0]);
-    EXPECT_EQ(0x88, bytes[1]);
-    EXPECT_EQ(0x7F, bytes[2]);  // Offset: 127
+  // LDA 127,X
+  auto bytes = cpu.EncodeLDA(127, AddressingMode6809::Indexed8BitOffset);
+  ASSERT_EQ(3, bytes.size());
+  EXPECT_EQ(0xA6, bytes[0]);
+  EXPECT_EQ(0x88, bytes[1]);
+  EXPECT_EQ(0x7F, bytes[2]); // Offset: 127
 }
 
 TEST_F(Cpu6809IndexedTest, LDA_Indexed8BitOffset_Max_Negative) {
-    // LDA -128,X
-    auto bytes = cpu.EncodeLDA(-128, AddressingMode6809::Indexed8BitOffset);
-    ASSERT_EQ(3, bytes.size());
-    EXPECT_EQ(0xA6, bytes[0]);
-    EXPECT_EQ(0x88, bytes[1]);
-    EXPECT_EQ(0x80, bytes[2]);  // Offset: -128 as two's complement
+  // LDA -128,X
+  auto bytes = cpu.EncodeLDA(-128, AddressingMode6809::Indexed8BitOffset);
+  ASSERT_EQ(3, bytes.size());
+  EXPECT_EQ(0xA6, bytes[0]);
+  EXPECT_EQ(0x88, bytes[1]);
+  EXPECT_EQ(0x80, bytes[2]); // Offset: -128 as two's complement
 }
 
 // ============================================================================
@@ -134,43 +134,43 @@ TEST_F(Cpu6809IndexedTest, LDA_Indexed8BitOffset_Max_Negative) {
 // ============================================================================
 
 TEST_F(Cpu6809IndexedTest, LDA_Indexed16BitOffset_Positive) {
-    // LDA 1000,X -> opcode A6, post-byte 89, offset 03E8 (big-endian)
-    auto bytes = cpu.EncodeLDA(1000, AddressingMode6809::Indexed16BitOffset);
-    ASSERT_EQ(4, bytes.size());
-    EXPECT_EQ(0xA6, bytes[0]);  // LDA indexed opcode
-    EXPECT_EQ(0x89, bytes[1]);  // Post-byte: 10001001 (16-bit offset, X)
-    EXPECT_EQ(0x03, bytes[2]);  // Offset high byte
-    EXPECT_EQ(0xE8, bytes[3]);  // Offset low byte
+  // LDA 1000,X -> opcode A6, post-byte 89, offset 03E8 (big-endian)
+  auto bytes = cpu.EncodeLDA(1000, AddressingMode6809::Indexed16BitOffset);
+  ASSERT_EQ(4, bytes.size());
+  EXPECT_EQ(0xA6, bytes[0]); // LDA indexed opcode
+  EXPECT_EQ(0x89, bytes[1]); // Post-byte: 10001001 (16-bit offset, X)
+  EXPECT_EQ(0x03, bytes[2]); // Offset high byte
+  EXPECT_EQ(0xE8, bytes[3]); // Offset low byte
 }
 
 TEST_F(Cpu6809IndexedTest, LDA_Indexed16BitOffset_Negative) {
-    // LDA -1000,X -> opcode A6, post-byte 89, offset FC18
-    auto bytes = cpu.EncodeLDA(-1000, AddressingMode6809::Indexed16BitOffset);
-    ASSERT_EQ(4, bytes.size());
-    EXPECT_EQ(0xA6, bytes[0]);
-    EXPECT_EQ(0x89, bytes[1]);  // Post-byte: 10001001
-    EXPECT_EQ(0xFC, bytes[2]);  // Offset high byte (two's complement)
-    EXPECT_EQ(0x18, bytes[3]);  // Offset low byte
+  // LDA -1000,X -> opcode A6, post-byte 89, offset FC18
+  auto bytes = cpu.EncodeLDA(-1000, AddressingMode6809::Indexed16BitOffset);
+  ASSERT_EQ(4, bytes.size());
+  EXPECT_EQ(0xA6, bytes[0]);
+  EXPECT_EQ(0x89, bytes[1]); // Post-byte: 10001001
+  EXPECT_EQ(0xFC, bytes[2]); // Offset high byte (two's complement)
+  EXPECT_EQ(0x18, bytes[3]); // Offset low byte
 }
 
 TEST_F(Cpu6809IndexedTest, LDA_Indexed16BitOffset_Max_Positive) {
-    // LDA 32767,X
-    auto bytes = cpu.EncodeLDA(32767, AddressingMode6809::Indexed16BitOffset);
-    ASSERT_EQ(4, bytes.size());
-    EXPECT_EQ(0xA6, bytes[0]);
-    EXPECT_EQ(0x89, bytes[1]);
-    EXPECT_EQ(0x7F, bytes[2]);  // High byte: 0x7F
-    EXPECT_EQ(0xFF, bytes[3]);  // Low byte: 0xFF
+  // LDA 32767,X
+  auto bytes = cpu.EncodeLDA(32767, AddressingMode6809::Indexed16BitOffset);
+  ASSERT_EQ(4, bytes.size());
+  EXPECT_EQ(0xA6, bytes[0]);
+  EXPECT_EQ(0x89, bytes[1]);
+  EXPECT_EQ(0x7F, bytes[2]); // High byte: 0x7F
+  EXPECT_EQ(0xFF, bytes[3]); // Low byte: 0xFF
 }
 
 TEST_F(Cpu6809IndexedTest, LDA_Indexed16BitOffset_Max_Negative) {
-    // LDA -32768,X
-    auto bytes = cpu.EncodeLDA(-32768, AddressingMode6809::Indexed16BitOffset);
-    ASSERT_EQ(4, bytes.size());
-    EXPECT_EQ(0xA6, bytes[0]);
-    EXPECT_EQ(0x89, bytes[1]);
-    EXPECT_EQ(0x80, bytes[2]);  // High byte: 0x80
-    EXPECT_EQ(0x00, bytes[3]);  // Low byte: 0x00
+  // LDA -32768,X
+  auto bytes = cpu.EncodeLDA(-32768, AddressingMode6809::Indexed16BitOffset);
+  ASSERT_EQ(4, bytes.size());
+  EXPECT_EQ(0xA6, bytes[0]);
+  EXPECT_EQ(0x89, bytes[1]);
+  EXPECT_EQ(0x80, bytes[2]); // High byte: 0x80
+  EXPECT_EQ(0x00, bytes[3]); // Low byte: 0x00
 }
 
 // ============================================================================
@@ -178,27 +178,27 @@ TEST_F(Cpu6809IndexedTest, LDA_Indexed16BitOffset_Max_Negative) {
 // ============================================================================
 
 TEST_F(Cpu6809IndexedTest, LDA_IndexedAccumA) {
-    // LDA A,X -> opcode A6, post-byte 86
-    auto bytes = cpu.EncodeLDA(0, AddressingMode6809::IndexedAccumA);
-    ASSERT_EQ(2, bytes.size());
-    EXPECT_EQ(0xA6, bytes[0]);  // LDA indexed opcode
-    EXPECT_EQ(0x86, bytes[1]);  // Post-byte: 10000110 (A,X)
+  // LDA A,X -> opcode A6, post-byte 86
+  auto bytes = cpu.EncodeLDA(0, AddressingMode6809::IndexedAccumA);
+  ASSERT_EQ(2, bytes.size());
+  EXPECT_EQ(0xA6, bytes[0]); // LDA indexed opcode
+  EXPECT_EQ(0x86, bytes[1]); // Post-byte: 10000110 (A,X)
 }
 
 TEST_F(Cpu6809IndexedTest, LDA_IndexedAccumB) {
-    // LDA B,X -> opcode A6, post-byte 85
-    auto bytes = cpu.EncodeLDA(0, AddressingMode6809::IndexedAccumB);
-    ASSERT_EQ(2, bytes.size());
-    EXPECT_EQ(0xA6, bytes[0]);  // LDA indexed opcode
-    EXPECT_EQ(0x85, bytes[1]);  // Post-byte: 10000101 (B,X)
+  // LDA B,X -> opcode A6, post-byte 85
+  auto bytes = cpu.EncodeLDA(0, AddressingMode6809::IndexedAccumB);
+  ASSERT_EQ(2, bytes.size());
+  EXPECT_EQ(0xA6, bytes[0]); // LDA indexed opcode
+  EXPECT_EQ(0x85, bytes[1]); // Post-byte: 10000101 (B,X)
 }
 
 TEST_F(Cpu6809IndexedTest, LDA_IndexedAccumD) {
-    // LDA D,X -> opcode A6, post-byte 8B
-    auto bytes = cpu.EncodeLDA(0, AddressingMode6809::IndexedAccumD);
-    ASSERT_EQ(2, bytes.size());
-    EXPECT_EQ(0xA6, bytes[0]);  // LDA indexed opcode
-    EXPECT_EQ(0x8B, bytes[1]);  // Post-byte: 10001011 (D,X)
+  // LDA D,X -> opcode A6, post-byte 8B
+  auto bytes = cpu.EncodeLDA(0, AddressingMode6809::IndexedAccumD);
+  ASSERT_EQ(2, bytes.size());
+  EXPECT_EQ(0xA6, bytes[0]); // LDA indexed opcode
+  EXPECT_EQ(0x8B, bytes[1]); // Post-byte: 10001011 (D,X)
 }
 
 // ============================================================================
@@ -206,19 +206,19 @@ TEST_F(Cpu6809IndexedTest, LDA_IndexedAccumD) {
 // ============================================================================
 
 TEST_F(Cpu6809IndexedTest, LDA_IndexedAutoInc1) {
-    // LDA ,X+ -> opcode A6, post-byte 80
-    auto bytes = cpu.EncodeLDA(0, AddressingMode6809::IndexedAutoInc1);
-    ASSERT_EQ(2, bytes.size());
-    EXPECT_EQ(0xA6, bytes[0]);  // LDA indexed opcode
-    EXPECT_EQ(0x80, bytes[1]);  // Post-byte: 10000000 (,X+)
+  // LDA ,X+ -> opcode A6, post-byte 80
+  auto bytes = cpu.EncodeLDA(0, AddressingMode6809::IndexedAutoInc1);
+  ASSERT_EQ(2, bytes.size());
+  EXPECT_EQ(0xA6, bytes[0]); // LDA indexed opcode
+  EXPECT_EQ(0x80, bytes[1]); // Post-byte: 10000000 (,X+)
 }
 
 TEST_F(Cpu6809IndexedTest, LDA_IndexedAutoInc2) {
-    // LDA ,X++ -> opcode A6, post-byte 81
-    auto bytes = cpu.EncodeLDA(0, AddressingMode6809::IndexedAutoInc2);
-    ASSERT_EQ(2, bytes.size());
-    EXPECT_EQ(0xA6, bytes[0]);  // LDA indexed opcode
-    EXPECT_EQ(0x81, bytes[1]);  // Post-byte: 10000001 (,X++)
+  // LDA ,X++ -> opcode A6, post-byte 81
+  auto bytes = cpu.EncodeLDA(0, AddressingMode6809::IndexedAutoInc2);
+  ASSERT_EQ(2, bytes.size());
+  EXPECT_EQ(0xA6, bytes[0]); // LDA indexed opcode
+  EXPECT_EQ(0x81, bytes[1]); // Post-byte: 10000001 (,X++)
 }
 
 // ============================================================================
@@ -226,19 +226,19 @@ TEST_F(Cpu6809IndexedTest, LDA_IndexedAutoInc2) {
 // ============================================================================
 
 TEST_F(Cpu6809IndexedTest, LDA_IndexedAutoDec1) {
-    // LDA ,-X -> opcode A6, post-byte 82
-    auto bytes = cpu.EncodeLDA(0, AddressingMode6809::IndexedAutoDec1);
-    ASSERT_EQ(2, bytes.size());
-    EXPECT_EQ(0xA6, bytes[0]);  // LDA indexed opcode
-    EXPECT_EQ(0x82, bytes[1]);  // Post-byte: 10000010 (,-X)
+  // LDA ,-X -> opcode A6, post-byte 82
+  auto bytes = cpu.EncodeLDA(0, AddressingMode6809::IndexedAutoDec1);
+  ASSERT_EQ(2, bytes.size());
+  EXPECT_EQ(0xA6, bytes[0]); // LDA indexed opcode
+  EXPECT_EQ(0x82, bytes[1]); // Post-byte: 10000010 (,-X)
 }
 
 TEST_F(Cpu6809IndexedTest, LDA_IndexedAutoDec2) {
-    // LDA ,--X -> opcode A6, post-byte 83
-    auto bytes = cpu.EncodeLDA(0, AddressingMode6809::IndexedAutoDec2);
-    ASSERT_EQ(2, bytes.size());
-    EXPECT_EQ(0xA6, bytes[0]);  // LDA indexed opcode
-    EXPECT_EQ(0x83, bytes[1]);  // Post-byte: 10000011 (,--X)
+  // LDA ,--X -> opcode A6, post-byte 83
+  auto bytes = cpu.EncodeLDA(0, AddressingMode6809::IndexedAutoDec2);
+  ASSERT_EQ(2, bytes.size());
+  EXPECT_EQ(0xA6, bytes[0]); // LDA indexed opcode
+  EXPECT_EQ(0x83, bytes[1]); // Post-byte: 10000011 (,--X)
 }
 
 // ============================================================================
@@ -246,41 +246,41 @@ TEST_F(Cpu6809IndexedTest, LDA_IndexedAutoDec2) {
 // ============================================================================
 
 TEST_F(Cpu6809IndexedTest, LDA_IndexedPCRelative8) {
-    // LDA 50,PCR -> opcode A6, post-byte 8C, offset 32
-    auto bytes = cpu.EncodeLDA(50, AddressingMode6809::IndexedPCRelative8);
-    ASSERT_EQ(3, bytes.size());
-    EXPECT_EQ(0xA6, bytes[0]);  // LDA indexed opcode
-    EXPECT_EQ(0x8C, bytes[1]);  // Post-byte: 10001100 (8-bit PC-relative)
-    EXPECT_EQ(0x32, bytes[2]);  // Offset: 50
+  // LDA 50,PCR -> opcode A6, post-byte 8C, offset 32
+  auto bytes = cpu.EncodeLDA(50, AddressingMode6809::IndexedPCRelative8);
+  ASSERT_EQ(3, bytes.size());
+  EXPECT_EQ(0xA6, bytes[0]); // LDA indexed opcode
+  EXPECT_EQ(0x8C, bytes[1]); // Post-byte: 10001100 (8-bit PC-relative)
+  EXPECT_EQ(0x32, bytes[2]); // Offset: 50
 }
 
 TEST_F(Cpu6809IndexedTest, LDA_IndexedPCRelative8_Negative) {
-    // LDA -50,PCR
-    auto bytes = cpu.EncodeLDA(-50, AddressingMode6809::IndexedPCRelative8);
-    ASSERT_EQ(3, bytes.size());
-    EXPECT_EQ(0xA6, bytes[0]);
-    EXPECT_EQ(0x8C, bytes[1]);  // Post-byte: 10001100
-    EXPECT_EQ(0xCE, bytes[2]);  // Offset: -50 as two's complement
+  // LDA -50,PCR
+  auto bytes = cpu.EncodeLDA(-50, AddressingMode6809::IndexedPCRelative8);
+  ASSERT_EQ(3, bytes.size());
+  EXPECT_EQ(0xA6, bytes[0]);
+  EXPECT_EQ(0x8C, bytes[1]); // Post-byte: 10001100
+  EXPECT_EQ(0xCE, bytes[2]); // Offset: -50 as two's complement
 }
 
 TEST_F(Cpu6809IndexedTest, LDA_IndexedPCRelative16) {
-    // LDA 1000,PCR -> opcode A6, post-byte 8D, offset 03E8
-    auto bytes = cpu.EncodeLDA(1000, AddressingMode6809::IndexedPCRelative16);
-    ASSERT_EQ(4, bytes.size());
-    EXPECT_EQ(0xA6, bytes[0]);  // LDA indexed opcode
-    EXPECT_EQ(0x8D, bytes[1]);  // Post-byte: 10001101 (16-bit PC-relative)
-    EXPECT_EQ(0x03, bytes[2]);  // Offset high byte
-    EXPECT_EQ(0xE8, bytes[3]);  // Offset low byte
+  // LDA 1000,PCR -> opcode A6, post-byte 8D, offset 03E8
+  auto bytes = cpu.EncodeLDA(1000, AddressingMode6809::IndexedPCRelative16);
+  ASSERT_EQ(4, bytes.size());
+  EXPECT_EQ(0xA6, bytes[0]); // LDA indexed opcode
+  EXPECT_EQ(0x8D, bytes[1]); // Post-byte: 10001101 (16-bit PC-relative)
+  EXPECT_EQ(0x03, bytes[2]); // Offset high byte
+  EXPECT_EQ(0xE8, bytes[3]); // Offset low byte
 }
 
 TEST_F(Cpu6809IndexedTest, LDA_IndexedPCRelative16_Negative) {
-    // LDA -1000,PCR
-    auto bytes = cpu.EncodeLDA(-1000, AddressingMode6809::IndexedPCRelative16);
-    ASSERT_EQ(4, bytes.size());
-    EXPECT_EQ(0xA6, bytes[0]);
-    EXPECT_EQ(0x8D, bytes[1]);  // Post-byte: 10001101
-    EXPECT_EQ(0xFC, bytes[2]);  // Offset high byte (two's complement)
-    EXPECT_EQ(0x18, bytes[3]);  // Offset low byte
+  // LDA -1000,PCR
+  auto bytes = cpu.EncodeLDA(-1000, AddressingMode6809::IndexedPCRelative16);
+  ASSERT_EQ(4, bytes.size());
+  EXPECT_EQ(0xA6, bytes[0]);
+  EXPECT_EQ(0x8D, bytes[1]); // Post-byte: 10001101
+  EXPECT_EQ(0xFC, bytes[2]); // Offset high byte (two's complement)
+  EXPECT_EQ(0x18, bytes[3]); // Offset low byte
 }
 
 // ============================================================================
@@ -288,34 +288,34 @@ TEST_F(Cpu6809IndexedTest, LDA_IndexedPCRelative16_Negative) {
 // ============================================================================
 
 TEST_F(Cpu6809IndexedTest, LDA_IndexedIndirect_ZeroOffset) {
-    // LDA [,X] -> opcode A6, post-byte 94 (indirect flag set)
-    auto bytes = cpu.EncodeLDA(0, AddressingMode6809::IndexedIndirect);
-    ASSERT_EQ(2, bytes.size());
-    EXPECT_EQ(0xA6, bytes[0]);  // LDA indexed opcode
-    EXPECT_EQ(0x94, bytes[1]);  // Post-byte: 10010100 ([,X])
-                                 // Bit 7 = 1 (indirect)
-                                 // Bits 6-5 = 00 (X register)
-                                 // Bits 4-0 = 10100 (zero offset mode)
+  // LDA [,X] -> opcode A6, post-byte 94 (indirect flag set)
+  auto bytes = cpu.EncodeLDA(0, AddressingMode6809::IndexedIndirect);
+  ASSERT_EQ(2, bytes.size());
+  EXPECT_EQ(0xA6, bytes[0]); // LDA indexed opcode
+  EXPECT_EQ(0x94, bytes[1]); // Post-byte: 10010100 ([,X])
+                             // Bit 7 = 1 (indirect)
+                             // Bits 6-5 = 00 (X register)
+                             // Bits 4-0 = 10100 (zero offset mode)
 }
 
 TEST_F(Cpu6809IndexedTest, LDA_IndexedIndirect_8BitOffset) {
-    // LDA [10,X] -> opcode A6, post-byte 98, offset 0A
-    auto bytes = cpu.EncodeLDA(10, AddressingMode6809::IndexedIndirect);
-    ASSERT_EQ(3, bytes.size());
-    EXPECT_EQ(0xA6, bytes[0]);  // LDA indexed opcode
-    EXPECT_EQ(0x98, bytes[1]);  // Post-byte: 10011000 ([8-bit offset, X])
-                                 // Bit 7 = 1 (indirect)
-    EXPECT_EQ(0x0A, bytes[2]);  // Offset: 10
+  // LDA [10,X] -> opcode A6, post-byte 98, offset 0A
+  auto bytes = cpu.EncodeLDA(10, AddressingMode6809::IndexedIndirect);
+  ASSERT_EQ(3, bytes.size());
+  EXPECT_EQ(0xA6, bytes[0]); // LDA indexed opcode
+  EXPECT_EQ(0x98, bytes[1]); // Post-byte: 10011000 ([8-bit offset, X])
+                             // Bit 7 = 1 (indirect)
+  EXPECT_EQ(0x0A, bytes[2]); // Offset: 10
 }
 
 TEST_F(Cpu6809IndexedTest, LDA_IndexedIndirect_16BitOffset) {
-    // LDA [1000,X] -> opcode A6, post-byte 99, offset 03E8
-    auto bytes = cpu.EncodeLDA(1000, AddressingMode6809::IndexedIndirect);
-    ASSERT_EQ(4, bytes.size());
-    EXPECT_EQ(0xA6, bytes[0]);  // LDA indexed opcode
-    EXPECT_EQ(0x99, bytes[1]);  // Post-byte: 10011001 ([16-bit offset, X])
-    EXPECT_EQ(0x03, bytes[2]);  // Offset high byte
-    EXPECT_EQ(0xE8, bytes[3]);  // Offset low byte
+  // LDA [1000,X] -> opcode A6, post-byte 99, offset 03E8
+  auto bytes = cpu.EncodeLDA(1000, AddressingMode6809::IndexedIndirect);
+  ASSERT_EQ(4, bytes.size());
+  EXPECT_EQ(0xA6, bytes[0]); // LDA indexed opcode
+  EXPECT_EQ(0x99, bytes[1]); // Post-byte: 10011001 ([16-bit offset, X])
+  EXPECT_EQ(0x03, bytes[2]); // Offset high byte
+  EXPECT_EQ(0xE8, bytes[3]); // Offset low byte
 }
 
 // ============================================================================
@@ -323,13 +323,14 @@ TEST_F(Cpu6809IndexedTest, LDA_IndexedIndirect_16BitOffset) {
 // ============================================================================
 
 TEST_F(Cpu6809IndexedTest, LDA_IndexedExtendedIndirect) {
-    // LDA [$1234] -> opcode A6, post-byte 9F, address 1234
-    auto bytes = cpu.EncodeLDA(0x1234, AddressingMode6809::IndexedExtendedIndirect);
-    ASSERT_EQ(4, bytes.size());
-    EXPECT_EQ(0xA6, bytes[0]);  // LDA indexed opcode
-    EXPECT_EQ(0x9F, bytes[1]);  // Post-byte: 10011111 (extended indirect)
-    EXPECT_EQ(0x12, bytes[2]);  // Address high byte
-    EXPECT_EQ(0x34, bytes[3]);  // Address low byte
+  // LDA [$1234] -> opcode A6, post-byte 9F, address 1234
+  auto bytes =
+      cpu.EncodeLDA(0x1234, AddressingMode6809::IndexedExtendedIndirect);
+  ASSERT_EQ(4, bytes.size());
+  EXPECT_EQ(0xA6, bytes[0]); // LDA indexed opcode
+  EXPECT_EQ(0x9F, bytes[1]); // Post-byte: 10011111 (extended indirect)
+  EXPECT_EQ(0x12, bytes[2]); // Address high byte
+  EXPECT_EQ(0x34, bytes[3]); // Address low byte
 }
 
 // ============================================================================
@@ -337,21 +338,21 @@ TEST_F(Cpu6809IndexedTest, LDA_IndexedExtendedIndirect) {
 // ============================================================================
 
 TEST_F(Cpu6809IndexedTest, LDA_Indexed5BitOffset_Y_Register) {
-    // LDA 5,Y -> post-byte 00100101 (Y register, 5-bit offset)
-    // Bits 6-5 = 01 (Y register)
-    // TODO: Need API to specify register
+  // LDA 5,Y -> post-byte 00100101 (Y register, 5-bit offset)
+  // Bits 6-5 = 01 (Y register)
+  // TODO: Need API to specify register
 }
 
 TEST_F(Cpu6809IndexedTest, LDA_Indexed5BitOffset_U_Register) {
-    // LDA 5,U -> post-byte 01000101 (U register, 5-bit offset)
-    // Bits 6-5 = 10 (U register)
-    // TODO: Need API to specify register
+  // LDA 5,U -> post-byte 01000101 (U register, 5-bit offset)
+  // Bits 6-5 = 10 (U register)
+  // TODO: Need API to specify register
 }
 
 TEST_F(Cpu6809IndexedTest, LDA_Indexed5BitOffset_S_Register) {
-    // LDA 5,S -> post-byte 01100101 (S register, 5-bit offset)
-    // Bits 6-5 = 11 (S register)
-    // TODO: Need API to specify register
+  // LDA 5,S -> post-byte 01100101 (S register, 5-bit offset)
+  // Bits 6-5 = 11 (S register)
+  // TODO: Need API to specify register
 }
 
 // ============================================================================
@@ -359,30 +360,30 @@ TEST_F(Cpu6809IndexedTest, LDA_Indexed5BitOffset_S_Register) {
 // ============================================================================
 
 TEST_F(Cpu6809IndexedTest, STB_IndexedZeroOffset) {
-    // STB ,X -> different opcode, same post-byte pattern
-    auto bytes = cpu.EncodeSTB(0, AddressingMode6809::IndexedZeroOffset);
-    ASSERT_EQ(2, bytes.size());
-    EXPECT_EQ(0xE7, bytes[0]);  // STB indexed opcode
-    EXPECT_EQ(0x84, bytes[1]);  // Post-byte: 10000100 (,X)
+  // STB ,X -> different opcode, same post-byte pattern
+  auto bytes = cpu.EncodeSTB(0, AddressingMode6809::IndexedZeroOffset);
+  ASSERT_EQ(2, bytes.size());
+  EXPECT_EQ(0xE7, bytes[0]); // STB indexed opcode
+  EXPECT_EQ(0x84, bytes[1]); // Post-byte: 10000100 (,X)
 }
 
 TEST_F(Cpu6809IndexedTest, LDD_Indexed8BitOffset) {
-    // LDD 50,X
-    auto bytes = cpu.EncodeLDD(50, AddressingMode6809::Indexed8BitOffset);
-    ASSERT_EQ(3, bytes.size());
-    EXPECT_EQ(0xEC, bytes[0]);  // LDD indexed opcode
-    EXPECT_EQ(0x88, bytes[1]);  // Post-byte: 10001000
-    EXPECT_EQ(0x32, bytes[2]);  // Offset: 50
+  // LDD 50,X
+  auto bytes = cpu.EncodeLDD(50, AddressingMode6809::Indexed8BitOffset);
+  ASSERT_EQ(3, bytes.size());
+  EXPECT_EQ(0xEC, bytes[0]); // LDD indexed opcode
+  EXPECT_EQ(0x88, bytes[1]); // Post-byte: 10001000
+  EXPECT_EQ(0x32, bytes[2]); // Offset: 50
 }
 
 TEST_F(Cpu6809IndexedTest, LEAX_Indexed16BitOffset) {
-    // LEAX 2000,X
-    auto bytes = cpu.EncodeLEAX(2000, AddressingMode6809::Indexed16BitOffset);
-    ASSERT_EQ(4, bytes.size());
-    EXPECT_EQ(0x30, bytes[0]);  // LEAX opcode
-    EXPECT_EQ(0x89, bytes[1]);  // Post-byte: 10001001 (16-bit offset, X)
-    EXPECT_EQ(0x07, bytes[2]);  // Offset high byte (2000 = 0x07D0)
-    EXPECT_EQ(0xD0, bytes[3]);  // Offset low byte
+  // LEAX 2000,X
+  auto bytes = cpu.EncodeLEAX(2000, AddressingMode6809::Indexed16BitOffset);
+  ASSERT_EQ(4, bytes.size());
+  EXPECT_EQ(0x30, bytes[0]); // LEAX opcode
+  EXPECT_EQ(0x89, bytes[1]); // Post-byte: 10001001 (16-bit offset, X)
+  EXPECT_EQ(0x07, bytes[2]); // Offset high byte (2000 = 0x07D0)
+  EXPECT_EQ(0xD0, bytes[3]); // Offset low byte
 }
 
 // ============================================================================
@@ -390,39 +391,39 @@ TEST_F(Cpu6809IndexedTest, LEAX_Indexed16BitOffset) {
 // ============================================================================
 
 TEST_F(Cpu6809IndexedTest, Indexed_ChoosesCorrectMode_ForOffset_16) {
-    // Offset 16 is just outside 5-bit range, should use 8-bit
-    auto bytes = cpu.EncodeLDA(16, AddressingMode6809::Indexed8BitOffset);
-    ASSERT_EQ(3, bytes.size());
-    EXPECT_EQ(0xA6, bytes[0]);
-    EXPECT_EQ(0x88, bytes[1]);  // 8-bit offset mode
-    EXPECT_EQ(0x10, bytes[2]);  // Offset: 16
+  // Offset 16 is just outside 5-bit range, should use 8-bit
+  auto bytes = cpu.EncodeLDA(16, AddressingMode6809::Indexed8BitOffset);
+  ASSERT_EQ(3, bytes.size());
+  EXPECT_EQ(0xA6, bytes[0]);
+  EXPECT_EQ(0x88, bytes[1]); // 8-bit offset mode
+  EXPECT_EQ(0x10, bytes[2]); // Offset: 16
 }
 
 TEST_F(Cpu6809IndexedTest, Indexed_ChoosesCorrectMode_ForOffset_Minus17) {
-    // Offset -17 is just outside 5-bit range, should use 8-bit
-    auto bytes = cpu.EncodeLDA(-17, AddressingMode6809::Indexed8BitOffset);
-    ASSERT_EQ(3, bytes.size());
-    EXPECT_EQ(0xA6, bytes[0]);
-    EXPECT_EQ(0x88, bytes[1]);  // 8-bit offset mode
-    EXPECT_EQ(0xEF, bytes[2]);  // Offset: -17 as two's complement
+  // Offset -17 is just outside 5-bit range, should use 8-bit
+  auto bytes = cpu.EncodeLDA(-17, AddressingMode6809::Indexed8BitOffset);
+  ASSERT_EQ(3, bytes.size());
+  EXPECT_EQ(0xA6, bytes[0]);
+  EXPECT_EQ(0x88, bytes[1]); // 8-bit offset mode
+  EXPECT_EQ(0xEF, bytes[2]); // Offset: -17 as two's complement
 }
 
 TEST_F(Cpu6809IndexedTest, Indexed_ChoosesCorrectMode_ForOffset_128) {
-    // Offset 128 is just outside 8-bit signed range, should use 16-bit
-    auto bytes = cpu.EncodeLDA(128, AddressingMode6809::Indexed16BitOffset);
-    ASSERT_EQ(4, bytes.size());
-    EXPECT_EQ(0xA6, bytes[0]);
-    EXPECT_EQ(0x89, bytes[1]);  // 16-bit offset mode
-    EXPECT_EQ(0x00, bytes[2]);  // Offset high byte
-    EXPECT_EQ(0x80, bytes[3]);  // Offset low byte
+  // Offset 128 is just outside 8-bit signed range, should use 16-bit
+  auto bytes = cpu.EncodeLDA(128, AddressingMode6809::Indexed16BitOffset);
+  ASSERT_EQ(4, bytes.size());
+  EXPECT_EQ(0xA6, bytes[0]);
+  EXPECT_EQ(0x89, bytes[1]); // 16-bit offset mode
+  EXPECT_EQ(0x00, bytes[2]); // Offset high byte
+  EXPECT_EQ(0x80, bytes[3]); // Offset low byte
 }
 
 TEST_F(Cpu6809IndexedTest, Indexed_ChoosesCorrectMode_ForOffset_Minus129) {
-    // Offset -129 is just outside 8-bit signed range, should use 16-bit
-    auto bytes = cpu.EncodeLDA(-129, AddressingMode6809::Indexed16BitOffset);
-    ASSERT_EQ(4, bytes.size());
-    EXPECT_EQ(0xA6, bytes[0]);
-    EXPECT_EQ(0x89, bytes[1]);  // 16-bit offset mode
-    EXPECT_EQ(0xFF, bytes[2]);  // Offset high byte (two's complement)
-    EXPECT_EQ(0x7F, bytes[3]);  // Offset low byte
+  // Offset -129 is just outside 8-bit signed range, should use 16-bit
+  auto bytes = cpu.EncodeLDA(-129, AddressingMode6809::Indexed16BitOffset);
+  ASSERT_EQ(4, bytes.size());
+  EXPECT_EQ(0xA6, bytes[0]);
+  EXPECT_EQ(0x89, bytes[1]); // 16-bit offset mode
+  EXPECT_EQ(0xFF, bytes[2]); // Offset high byte (two's complement)
+  EXPECT_EQ(0x7F, bytes[3]); // Offset low byte
 }

@@ -1,9 +1,9 @@
 // FlexAsmSyntax tests
 // FLEX ASM09 Assembler Syntax for Motorola 6809
 
-#include "xasm++/syntax/flex_syntax.h"
-#include "xasm++/symbol.h"
 #include "xasm++/cpu/cpu_6809.h"
+#include "xasm++/symbol.h"
+#include "xasm++/syntax/flex_syntax.h"
 #include <gtest/gtest.h>
 
 using namespace xasm;
@@ -13,25 +13,25 @@ using namespace xasm;
 // ============================================================================
 
 TEST(FlexSyntaxTest, CommentWithAsterisk) {
-    FlexAsmSyntax parser;
-    ConcreteSymbolTable symbols;
-    Section section("test", 0);
+  FlexAsmSyntax parser;
+  ConcreteSymbolTable symbols;
+  Section section("test", 0);
 
-    parser.Parse("* This is a comment", section, symbols);
+  parser.Parse("* This is a comment", section, symbols);
 
-    // Comment lines should produce no atoms
-    EXPECT_EQ(section.atoms.size(), 0);
+  // Comment lines should produce no atoms
+  EXPECT_EQ(section.atoms.size(), 0);
 }
 
 TEST(FlexSyntaxTest, BlankLines) {
-    FlexAsmSyntax parser;
-    ConcreteSymbolTable symbols;
-    Section section("test", 0);
+  FlexAsmSyntax parser;
+  ConcreteSymbolTable symbols;
+  Section section("test", 0);
 
-    parser.Parse("\n\n   \n\t\n", section, symbols);
+  parser.Parse("\n\n   \n\t\n", section, symbols);
 
-    // Blank lines should produce no atoms
-    EXPECT_EQ(section.atoms.size(), 0);
+  // Blank lines should produce no atoms
+  EXPECT_EQ(section.atoms.size(), 0);
 }
 
 // ============================================================================
@@ -39,19 +39,19 @@ TEST(FlexSyntaxTest, BlankLines) {
 // ============================================================================
 
 TEST(FlexSyntaxTest, OrgDirective) {
-    FlexAsmSyntax parser;
-    ConcreteSymbolTable symbols;
-    Section section("test", 0);
+  FlexAsmSyntax parser;
+  ConcreteSymbolTable symbols;
+  Section section("test", 0);
 
-    parser.Parse("        ORG     $0400", section, symbols);
+  parser.Parse("        ORG     $0400", section, symbols);
 
-    ASSERT_EQ(section.atoms.size(), 1);
-    auto atom = section.atoms[0];
-    EXPECT_EQ(atom->type, AtomType::Org);
+  ASSERT_EQ(section.atoms.size(), 1);
+  auto atom = section.atoms[0];
+  EXPECT_EQ(atom->type, AtomType::Org);
 
-    auto org_atom = std::dynamic_pointer_cast<OrgAtom>(atom);
-    ASSERT_NE(org_atom, nullptr);
-    EXPECT_EQ(org_atom->address, 0x0400);
+  auto org_atom = std::dynamic_pointer_cast<OrgAtom>(atom);
+  ASSERT_NE(org_atom, nullptr);
+  EXPECT_EQ(org_atom->address, 0x0400);
 }
 
 // ============================================================================
@@ -59,20 +59,20 @@ TEST(FlexSyntaxTest, OrgDirective) {
 // ============================================================================
 
 TEST(FlexSyntaxTest, EquDirective) {
-    FlexAsmSyntax parser;
-    ConcreteSymbolTable symbols;
-    Section section("test", 0);
+  FlexAsmSyntax parser;
+  ConcreteSymbolTable symbols;
+  Section section("test", 0);
 
-    parser.Parse("BUFSIZE EQU     256", section, symbols);
+  parser.Parse("BUFSIZE EQU     256", section, symbols);
 
-    // EQU creates symbol but no atom
-    EXPECT_TRUE(symbols.IsDefined("BUFSIZE"));
-    EXPECT_EQ(section.atoms.size(), 0);
+  // EQU creates symbol but no atom
+  EXPECT_TRUE(symbols.IsDefined("BUFSIZE"));
+  EXPECT_EQ(section.atoms.size(), 0);
 
-    // Verify value
-    int64_t value;
-    ASSERT_TRUE(symbols.Lookup("BUFSIZE", value));
-    EXPECT_EQ(value, 256);
+  // Verify value
+  int64_t value;
+  ASSERT_TRUE(symbols.Lookup("BUFSIZE", value));
+  EXPECT_EQ(value, 256);
 }
 
 // ============================================================================
@@ -80,30 +80,30 @@ TEST(FlexSyntaxTest, EquDirective) {
 // ============================================================================
 
 TEST(FlexSyntaxTest, SetDirective) {
-    FlexAsmSyntax parser;
-    ConcreteSymbolTable symbols;
-    Section section("test", 0);
+  FlexAsmSyntax parser;
+  ConcreteSymbolTable symbols;
+  Section section("test", 0);
 
-    parser.Parse("COUNT   SET     0", section, symbols);
+  parser.Parse("COUNT   SET     0", section, symbols);
 
-    EXPECT_TRUE(symbols.IsDefined("COUNT"));
-    int64_t value;
-    ASSERT_TRUE(symbols.Lookup("COUNT", value));
-    EXPECT_EQ(value, 0);
+  EXPECT_TRUE(symbols.IsDefined("COUNT"));
+  int64_t value;
+  ASSERT_TRUE(symbols.Lookup("COUNT", value));
+  EXPECT_EQ(value, 0);
 }
 
 TEST(FlexSyntaxTest, SetDirectiveReassignment) {
-    FlexAsmSyntax parser;
-    ConcreteSymbolTable symbols;
-    Section section("test", 0);
+  FlexAsmSyntax parser;
+  ConcreteSymbolTable symbols;
+  Section section("test", 0);
 
-    parser.Parse("COUNT   SET     0\nCOUNT   SET     5", section, symbols);
+  parser.Parse("COUNT   SET     0\nCOUNT   SET     5", section, symbols);
 
-    // SET allows redefinition (unlike EQU)
-    EXPECT_TRUE(symbols.IsDefined("COUNT"));
-    int64_t value;
-    ASSERT_TRUE(symbols.Lookup("COUNT", value));
-    EXPECT_EQ(value, 5);
+  // SET allows redefinition (unlike EQU)
+  EXPECT_TRUE(symbols.IsDefined("COUNT"));
+  int64_t value;
+  ASSERT_TRUE(symbols.Lookup("COUNT", value));
+  EXPECT_EQ(value, 5);
 }
 
 // ============================================================================
@@ -111,35 +111,35 @@ TEST(FlexSyntaxTest, SetDirectiveReassignment) {
 // ============================================================================
 
 TEST(FlexSyntaxTest, FcbDirectiveSingle) {
-    FlexAsmSyntax parser;
-    ConcreteSymbolTable symbols;
-    Section section("test", 0);
+  FlexAsmSyntax parser;
+  ConcreteSymbolTable symbols;
+  Section section("test", 0);
 
-    parser.Parse("        FCB     $FF", section, symbols);
+  parser.Parse("        FCB     $FF", section, symbols);
 
-    ASSERT_EQ(section.atoms.size(), 1);
-    auto atom = section.atoms[0];
-    EXPECT_EQ(atom->type, AtomType::Data);
+  ASSERT_EQ(section.atoms.size(), 1);
+  auto atom = section.atoms[0];
+  EXPECT_EQ(atom->type, AtomType::Data);
 
-    auto data_atom = std::dynamic_pointer_cast<DataAtom>(atom);
-    ASSERT_NE(data_atom, nullptr);
-    ASSERT_EQ(data_atom->data.size(), 1);
-    EXPECT_EQ(data_atom->data[0], 0xFF);
+  auto data_atom = std::dynamic_pointer_cast<DataAtom>(atom);
+  ASSERT_NE(data_atom, nullptr);
+  ASSERT_EQ(data_atom->data.size(), 1);
+  EXPECT_EQ(data_atom->data[0], 0xFF);
 }
 
 TEST(FlexSyntaxTest, FcbDirectiveMultiple) {
-    FlexAsmSyntax parser;
-    ConcreteSymbolTable symbols;
-    Section section("test", 0);
+  FlexAsmSyntax parser;
+  ConcreteSymbolTable symbols;
+  Section section("test", 0);
 
-    parser.Parse("        FCB     1,2,3,4,5", section, symbols);
+  parser.Parse("        FCB     1,2,3,4,5", section, symbols);
 
-    ASSERT_EQ(section.atoms.size(), 1);
-    auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
-    ASSERT_NE(data_atom, nullptr);
-    ASSERT_EQ(data_atom->data.size(), 5);
-    EXPECT_EQ(data_atom->data[0], 1);
-    EXPECT_EQ(data_atom->data[4], 5);
+  ASSERT_EQ(section.atoms.size(), 1);
+  auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
+  ASSERT_NE(data_atom, nullptr);
+  ASSERT_EQ(data_atom->data.size(), 5);
+  EXPECT_EQ(data_atom->data[0], 1);
+  EXPECT_EQ(data_atom->data[4], 5);
 }
 
 // ============================================================================
@@ -147,19 +147,19 @@ TEST(FlexSyntaxTest, FcbDirectiveMultiple) {
 // ============================================================================
 
 TEST(FlexSyntaxTest, FdbDirectiveSingle) {
-    FlexAsmSyntax parser;
-    ConcreteSymbolTable symbols;
-    Section section("test", 0);
+  FlexAsmSyntax parser;
+  ConcreteSymbolTable symbols;
+  Section section("test", 0);
 
-    parser.Parse("        FDB     $1234", section, symbols);
+  parser.Parse("        FDB     $1234", section, symbols);
 
-    ASSERT_EQ(section.atoms.size(), 1);
-    auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
-    ASSERT_NE(data_atom, nullptr);
-    ASSERT_EQ(data_atom->data.size(), 2);
-    // 6809 uses big-endian (MSB first)
-    EXPECT_EQ(data_atom->data[0], 0x12);  // High byte
-    EXPECT_EQ(data_atom->data[1], 0x34);  // Low byte
+  ASSERT_EQ(section.atoms.size(), 1);
+  auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
+  ASSERT_NE(data_atom, nullptr);
+  ASSERT_EQ(data_atom->data.size(), 2);
+  // 6809 uses big-endian (MSB first)
+  EXPECT_EQ(data_atom->data[0], 0x12); // High byte
+  EXPECT_EQ(data_atom->data[1], 0x34); // Low byte
 }
 
 // ============================================================================
@@ -167,18 +167,18 @@ TEST(FlexSyntaxTest, FdbDirectiveSingle) {
 // ============================================================================
 
 TEST(FlexSyntaxTest, FccDirectiveSlashDelimiter) {
-    FlexAsmSyntax parser;
-    ConcreteSymbolTable symbols;
-    Section section("test", 0);
+  FlexAsmSyntax parser;
+  ConcreteSymbolTable symbols;
+  Section section("test", 0);
 
-    parser.Parse("        FCC     /Hello/", section, symbols);
+  parser.Parse("        FCC     /Hello/", section, symbols);
 
-    ASSERT_EQ(section.atoms.size(), 1);
-    auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
-    ASSERT_NE(data_atom, nullptr);
-    ASSERT_EQ(data_atom->data.size(), 5);
-    EXPECT_EQ(data_atom->data[0], 'H');
-    EXPECT_EQ(data_atom->data[4], 'o');
+  ASSERT_EQ(section.atoms.size(), 1);
+  auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
+  ASSERT_NE(data_atom, nullptr);
+  ASSERT_EQ(data_atom->data.size(), 5);
+  EXPECT_EQ(data_atom->data[0], 'H');
+  EXPECT_EQ(data_atom->data[4], 'o');
 }
 
 // ============================================================================
@@ -186,21 +186,21 @@ TEST(FlexSyntaxTest, FccDirectiveSlashDelimiter) {
 // ============================================================================
 
 TEST(FlexSyntaxTest, RmbDirective) {
-    FlexAsmSyntax parser;
-    ConcreteSymbolTable symbols;
-    Section section("test", 0);
+  FlexAsmSyntax parser;
+  ConcreteSymbolTable symbols;
+  Section section("test", 0);
 
-    parser.Parse("BUFFER  RMB     256", section, symbols);
+  parser.Parse("BUFFER  RMB     256", section, symbols);
 
-    // RMB creates a Space atom (reserve memory bytes)
-    ASSERT_EQ(section.atoms.size(), 2);  // Label + Space
-    EXPECT_EQ(section.atoms[0]->type, AtomType::Label);
-    EXPECT_EQ(section.atoms[1]->type, AtomType::Space);
+  // RMB creates a Space atom (reserve memory bytes)
+  ASSERT_EQ(section.atoms.size(), 2); // Label + Space
+  EXPECT_EQ(section.atoms[0]->type, AtomType::Label);
+  EXPECT_EQ(section.atoms[1]->type, AtomType::Space);
 
-    auto space_atom = std::dynamic_pointer_cast<SpaceAtom>(section.atoms[1]);
-    ASSERT_NE(space_atom, nullptr);
-    EXPECT_EQ(space_atom->count, 256);
-    EXPECT_EQ(space_atom->size, 256);
+  auto space_atom = std::dynamic_pointer_cast<SpaceAtom>(section.atoms[1]);
+  ASSERT_NE(space_atom, nullptr);
+  EXPECT_EQ(space_atom->count, 256);
+  EXPECT_EQ(space_atom->size, 256);
 }
 
 // ============================================================================
@@ -208,23 +208,23 @@ TEST(FlexSyntaxTest, RmbDirective) {
 // ============================================================================
 
 TEST(FlexSyntaxTest, NamDirective) {
-    FlexAsmSyntax parser;
-    ConcreteSymbolTable symbols;
-    Section section("test", 0);
+  FlexAsmSyntax parser;
+  ConcreteSymbolTable symbols;
+  Section section("test", 0);
 
-    parser.Parse("        NAM     My Program", section, symbols);
+  parser.Parse("        NAM     My Program", section, symbols);
 
-    // NAM sets title but produces no atoms
-    EXPECT_EQ(section.atoms.size(), 0);
+  // NAM sets title but produces no atoms
+  EXPECT_EQ(section.atoms.size(), 0);
 }
 
 TEST(FlexSyntaxTest, TtlDirective) {
-    FlexAsmSyntax parser;
-    ConcreteSymbolTable symbols;
-    Section section("test", 0);
+  FlexAsmSyntax parser;
+  ConcreteSymbolTable symbols;
+  Section section("test", 0);
 
-    parser.Parse("        TTL     My Program", section, symbols);
+  parser.Parse("        TTL     My Program", section, symbols);
 
-    // TTL is synonym for NAM
-    EXPECT_EQ(section.atoms.size(), 0);
+  // TTL is synonym for NAM
+  EXPECT_EQ(section.atoms.size(), 0);
 }

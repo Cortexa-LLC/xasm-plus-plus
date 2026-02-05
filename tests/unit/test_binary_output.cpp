@@ -4,8 +4,8 @@
 #include "xasm++/output/binary_output.h"
 #include "xasm++/section.h"
 #include "xasm++/symbol.h"
-#include <gtest/gtest.h>
 #include <fstream>
+#include <gtest/gtest.h>
 #include <vector>
 
 using namespace xasm;
@@ -14,7 +14,7 @@ using namespace xasm;
 TEST(BinaryOutputTest, EmptySection) {
   BinaryOutput output;
   Section section("test", 0);
-  std::vector<Section*> sections = {&section};
+  std::vector<Section *> sections = {&section};
   ConcreteSymbolTable symbols;
 
   output.WriteOutput("test.bin", sections, symbols);
@@ -44,7 +44,7 @@ TEST(BinaryOutputTest, DataAtomSerialization) {
   std::ifstream file("test.bin", std::ios::binary);
   ASSERT_TRUE(file.is_open());
   std::vector<uint8_t> result((std::istreambuf_iterator<char>(file)),
-                               std::istreambuf_iterator<char>());
+                              std::istreambuf_iterator<char>());
   file.close();
 
   ASSERT_EQ(result.size(), 4);
@@ -62,7 +62,8 @@ TEST(BinaryOutputTest, OrgDirective) {
   BinaryOutput output;
   Section section("test", 0);
   section.atoms.push_back(std::make_shared<OrgAtom>(0x8000));
-  section.atoms.push_back(std::make_shared<DataAtom>(std::vector<uint8_t>{0xAA}));
+  section.atoms.push_back(
+      std::make_shared<DataAtom>(std::vector<uint8_t>{0xAA}));
 
   ConcreteSymbolTable symbols;
   output.WriteOutput("test.bin", {&section}, symbols);
@@ -70,7 +71,7 @@ TEST(BinaryOutputTest, OrgDirective) {
   // ORG doesn't write bytes, just the data after it
   std::ifstream file("test.bin", std::ios::binary);
   std::vector<uint8_t> result((std::istreambuf_iterator<char>(file)),
-                               std::istreambuf_iterator<char>());
+                              std::istreambuf_iterator<char>());
   file.close();
 
   ASSERT_EQ(result.size(), 1);
@@ -84,7 +85,8 @@ TEST(BinaryOutputTest, LabelHandling) {
   BinaryOutput output;
   Section section("test", 0);
   section.atoms.push_back(std::make_shared<LabelAtom>("start", 0x8000));
-  section.atoms.push_back(std::make_shared<DataAtom>(std::vector<uint8_t>{0xFF}));
+  section.atoms.push_back(
+      std::make_shared<DataAtom>(std::vector<uint8_t>{0xFF}));
 
   ConcreteSymbolTable symbols;
   output.WriteOutput("test.bin", {&section}, symbols);
@@ -92,7 +94,7 @@ TEST(BinaryOutputTest, LabelHandling) {
   // Label produces no bytes
   std::ifstream file("test.bin", std::ios::binary);
   std::vector<uint8_t> result((std::istreambuf_iterator<char>(file)),
-                               std::istreambuf_iterator<char>());
+                              std::istreambuf_iterator<char>());
   file.close();
 
   ASSERT_EQ(result.size(), 1);
@@ -113,7 +115,7 @@ TEST(BinaryOutputTest, SpaceAtomSerialization) {
   // Space writes zeros
   std::ifstream file("test.bin", std::ios::binary);
   std::vector<uint8_t> result((std::istreambuf_iterator<char>(file)),
-                               std::istreambuf_iterator<char>());
+                              std::istreambuf_iterator<char>());
   file.close();
 
   ASSERT_EQ(result.size(), 4);
@@ -129,9 +131,11 @@ TEST(BinaryOutputTest, SpaceAtomSerialization) {
 TEST(BinaryOutputTest, AlignAtomHandling) {
   BinaryOutput output;
   Section section("test", 0);
-  section.atoms.push_back(std::make_shared<DataAtom>(std::vector<uint8_t>{0x01}));
+  section.atoms.push_back(
+      std::make_shared<DataAtom>(std::vector<uint8_t>{0x01}));
   section.atoms.push_back(std::make_shared<AlignAtom>(4));
-  section.atoms.push_back(std::make_shared<DataAtom>(std::vector<uint8_t>{0x02}));
+  section.atoms.push_back(
+      std::make_shared<DataAtom>(std::vector<uint8_t>{0x02}));
 
   ConcreteSymbolTable symbols;
   output.WriteOutput("test.bin", {&section}, symbols);
@@ -139,12 +143,12 @@ TEST(BinaryOutputTest, AlignAtomHandling) {
   // 1 byte data + 3 bytes padding + 1 byte data = 5 bytes
   std::ifstream file("test.bin", std::ios::binary);
   std::vector<uint8_t> result((std::istreambuf_iterator<char>(file)),
-                               std::istreambuf_iterator<char>());
+                              std::istreambuf_iterator<char>());
   file.close();
 
   ASSERT_EQ(result.size(), 5);
   EXPECT_EQ(result[0], 0x01);
-  EXPECT_EQ(result[1], 0x00);  // Padding
+  EXPECT_EQ(result[1], 0x00); // Padding
   EXPECT_EQ(result[2], 0x00);
   EXPECT_EQ(result[3], 0x00);
   EXPECT_EQ(result[4], 0x02);
@@ -156,10 +160,12 @@ TEST(BinaryOutputTest, AlignAtomHandling) {
 TEST(BinaryOutputTest, MultipleSections) {
   BinaryOutput output;
   Section section1("code", 0);
-  section1.atoms.push_back(std::make_shared<DataAtom>(std::vector<uint8_t>{0xAA}));
+  section1.atoms.push_back(
+      std::make_shared<DataAtom>(std::vector<uint8_t>{0xAA}));
 
   Section section2("data", 0);
-  section2.atoms.push_back(std::make_shared<DataAtom>(std::vector<uint8_t>{0xBB}));
+  section2.atoms.push_back(
+      std::make_shared<DataAtom>(std::vector<uint8_t>{0xBB}));
 
   ConcreteSymbolTable symbols;
   output.WriteOutput("test.bin", {&section1, &section2}, symbols);
@@ -167,7 +173,7 @@ TEST(BinaryOutputTest, MultipleSections) {
   // Sections written sequentially
   std::ifstream file("test.bin", std::ios::binary);
   std::vector<uint8_t> result((std::istreambuf_iterator<char>(file)),
-                               std::istreambuf_iterator<char>());
+                              std::istreambuf_iterator<char>());
   file.close();
 
   ASSERT_EQ(result.size(), 2);
@@ -184,7 +190,7 @@ TEST(BinaryOutputTest, InstructionSerialization) {
 
   // Create instruction atom with encoded bytes
   auto inst = std::make_shared<InstructionAtom>("LDA", "#$42");
-  inst->encoded_bytes = {0xA9, 0x42};  // LDA immediate
+  inst->encoded_bytes = {0xA9, 0x42}; // LDA immediate
   inst->size = 2;
   section.atoms.push_back(inst);
 
@@ -193,7 +199,7 @@ TEST(BinaryOutputTest, InstructionSerialization) {
 
   std::ifstream file("test.bin", std::ios::binary);
   std::vector<uint8_t> result((std::istreambuf_iterator<char>(file)),
-                               std::istreambuf_iterator<char>());
+                              std::istreambuf_iterator<char>());
   file.close();
 
   ASSERT_EQ(result.size(), 2);
@@ -210,10 +216,9 @@ TEST(BinaryOutputTest, FileWriteError) {
   ConcreteSymbolTable symbols;
 
   // Try to write to invalid path
-  EXPECT_THROW(
-    output.WriteOutput("/invalid/nonexistent/path/test.bin", {&section}, symbols),
-    std::runtime_error
-  );
+  EXPECT_THROW(output.WriteOutput("/invalid/nonexistent/path/test.bin",
+                                  {&section}, symbols),
+               std::runtime_error);
 }
 
 // Test 10: Complete program (all atom types)
@@ -234,7 +239,8 @@ TEST(BinaryOutputTest, CompleteProgram) {
   section.atoms.push_back(lda);
 
   // DataAtom
-  section.atoms.push_back(std::make_shared<DataAtom>(std::vector<uint8_t>{0x01, 0x02}));
+  section.atoms.push_back(
+      std::make_shared<DataAtom>(std::vector<uint8_t>{0x01, 0x02}));
 
   // SpaceAtom
   section.atoms.push_back(std::make_shared<SpaceAtom>(2));
@@ -245,16 +251,16 @@ TEST(BinaryOutputTest, CompleteProgram) {
   // Expected: A9 42 01 02 00 00
   std::ifstream file("test.bin", std::ios::binary);
   std::vector<uint8_t> result((std::istreambuf_iterator<char>(file)),
-                               std::istreambuf_iterator<char>());
+                              std::istreambuf_iterator<char>());
   file.close();
 
   ASSERT_EQ(result.size(), 6);
-  EXPECT_EQ(result[0], 0xA9);  // LDA opcode
-  EXPECT_EQ(result[1], 0x42);  // LDA operand
-  EXPECT_EQ(result[2], 0x01);  // Data
-  EXPECT_EQ(result[3], 0x02);  // Data
-  EXPECT_EQ(result[4], 0x00);  // Space
-  EXPECT_EQ(result[5], 0x00);  // Space
+  EXPECT_EQ(result[0], 0xA9); // LDA opcode
+  EXPECT_EQ(result[1], 0x42); // LDA operand
+  EXPECT_EQ(result[2], 0x01); // Data
+  EXPECT_EQ(result[3], 0x02); // Data
+  EXPECT_EQ(result[4], 0x00); // Space
+  EXPECT_EQ(result[5], 0x00); // Space
 
   std::remove("test.bin");
 }

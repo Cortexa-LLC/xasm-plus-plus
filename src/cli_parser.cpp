@@ -8,7 +8,7 @@
 namespace xasm {
 
 // Parse command-line arguments and return options struct
-CommandLineOptions ParseCommandLine(int argc, char** argv) {
+CommandLineOptions ParseCommandLine(int argc, char **argv) {
   CommandLineOptions opts;
 
   CLI::App app{"xasm++ - Cross-platform assembler", "xasm++"};
@@ -17,19 +17,22 @@ CommandLineOptions ParseCommandLine(int argc, char** argv) {
   app.set_help_flag("--help,-h", "Show help message");
   app.set_version_flag("--version,-v", "0.1.0");
 
-  // Positional argument: input file (required, but allow --help/--version without it)
+  // Positional argument: input file (required, but allow --help/--version
+  // without it)
   app.add_option("input", opts.input_file, "Input assembly file");
 
   // CPU architecture option
   app.add_option("--cpu", opts.cpu, "CPU architecture (default: 6502)")
       ->default_val(cpu::CPU_6502)
       ->check(CLI::IsMember({cpu::CPU_6502, cpu::CPU_65C02, cpu::CPU_65C02_ROCK,
-                              cpu::CPU_65816, cpu::CPU_6809}));
+                             cpu::CPU_65816, cpu::CPU_6809}));
 
   // Syntax parser option
   app.add_option("--syntax", opts.syntax, "Syntax parser (default: simple)")
       ->default_val("simple")
-      ->check(CLI::IsMember({"simple", "merlin", "scmasm", "edtasm"}));  // simple, merlin, scmasm, and edtasm supported
+      ->check(CLI::IsMember(
+          {"simple", "merlin", "scmasm",
+           "edtasm"})); // simple, merlin, scmasm, and edtasm supported
 
   // Output file option
   app.add_option("--output,-o", opts.output, "Output file (default: a.out)")
@@ -39,10 +42,12 @@ CommandLineOptions ParseCommandLine(int argc, char** argv) {
   app.add_option("--list", opts.listing_file, "Generate listing file (.lst)");
 
   // Symbol table option (optional)
-  app.add_option("--symbols", opts.symbol_file, "Generate symbol table file (.sym)");
+  app.add_option("--symbols", opts.symbol_file,
+                 "Generate symbol table file (.sym)");
 
   // Color output option
-  app.add_option("--color", opts.color_mode, "Color output (auto, always, never)")
+  app.add_option("--color", opts.color_mode,
+                 "Color output (auto, always, never)")
       ->default_val("auto")
       ->check(CLI::IsMember({"auto", "always", "never"}));
 

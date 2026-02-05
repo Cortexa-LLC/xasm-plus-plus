@@ -1,8 +1,8 @@
 #ifndef XASM_UTIL_STRING_UTILS_H
 #define XASM_UTIL_STRING_UTILS_H
 
-#include <string>
 #include <cstdint>
+#include <string>
 
 namespace xasm {
 namespace util {
@@ -12,14 +12,14 @@ namespace util {
  * @param str The string to trim
  * @return Trimmed string with no leading/trailing spaces or tabs
  */
-std::string Trim(const std::string& str);
+std::string Trim(const std::string &str);
 
 /**
  * @brief Convert string to uppercase
  * @param str The string to convert
  * @return Uppercase version of the input string
  */
-std::string ToUpper(const std::string& str);
+std::string ToUpper(const std::string &str);
 
 // ParseHex moved to xasm++/parse_utils.h for consolidation
 // See: .ai/tasks/2026-01-31_refactor-number-parsing/

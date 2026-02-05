@@ -3,15 +3,15 @@
 
 #include "xasm++/syntax/edtasm_syntax.h"
 #include "xasm++/parse_utils.h"
-#include <sstream>
 #include <algorithm>
 #include <cctype>
+#include <sstream>
 #include <stdexcept>
 
 namespace xasm {
 
 // Helper: Trim whitespace from both ends
-std::string EdtasmSyntaxParser::Trim(const std::string& str) {
+std::string EdtasmSyntaxParser::Trim(const std::string &str) {
   size_t start = str.find_first_not_of(" \t");
   if (start == std::string::npos) {
     return "";
@@ -21,15 +21,15 @@ std::string EdtasmSyntaxParser::Trim(const std::string& str) {
 }
 
 // Helper: Convert to uppercase
-std::string EdtasmSyntaxParser::ToUpper(const std::string& str) {
+std::string EdtasmSyntaxParser::ToUpper(const std::string &str) {
   std::string result = str;
   std::transform(result.begin(), result.end(), result.begin(),
-        [](unsigned char c) { return std::toupper(c); });
+                 [](unsigned char c) { return std::toupper(c); });
   return result;
 }
 
 // Helper: Strip comments (semicolon to end of line)
-std::string EdtasmSyntaxParser::StripComments(const std::string& str) {
+std::string EdtasmSyntaxParser::StripComments(const std::string &str) {
   size_t comment_pos = str.find(';');
   if (comment_pos != std::string::npos) {
     return str.substr(0, comment_pos);
@@ -38,15 +38,15 @@ std::string EdtasmSyntaxParser::StripComments(const std::string& str) {
 }
 
 // Helper: Check if line is a comment line (starts with *)
-bool EdtasmSyntaxParser::IsCommentLine(const std::string& line) {
+bool EdtasmSyntaxParser::IsCommentLine(const std::string &line) {
   std::string trimmed = Trim(line);
   return !trimmed.empty() && trimmed[0] == '*';
 }
 
 // Helper: Parse numeric value (supports $hex, %binary, 'char', decimal)
-uint32_t EdtasmSyntaxParser::ParseNumber(const std::string& str) {
+uint32_t EdtasmSyntaxParser::ParseNumber(const std::string &str) {
   std::string trimmed = Trim(str);
-  
+
   if (trimmed.empty()) {
     throw std::runtime_error("Empty number string");
   }
@@ -77,17 +77,17 @@ uint32_t EdtasmSyntaxParser::ParseNumber(const std::string& str) {
   // Decimal (default)
   try {
     return static_cast<uint32_t>(std::stoul(trimmed, nullptr, 10));
-  } catch (const std::exception& e) {
+  } catch (const std::exception &e) {
     throw std::runtime_error("Invalid decimal number: " + trimmed);
   }
 }
 
 // Parse directive (ORG, END, EQU, SET, FCB, FDB, FCC, RMB, SETDP)
-void EdtasmSyntaxParser::ParseDirective(const std::string& directive, 
-                                         const std::string& operands,
-                                         const std::string& label,
-                                         Section& section, 
-                                         ConcreteSymbolTable& symbols) {
+void EdtasmSyntaxParser::ParseDirective(const std::string &directive,
+                                        const std::string &operands,
+                                        const std::string &label,
+                                        Section &section,
+                                        ConcreteSymbolTable &symbols) {
   std::string dir_upper = ToUpper(directive);
 
   // ORG - Set origin address
@@ -110,7 +110,7 @@ void EdtasmSyntaxParser::ParseDirective(const std::string& directive,
       throw std::runtime_error("EQU requires a label");
     }
     uint32_t value = ParseNumber(operands);
-    symbols.Define(label, SymbolType::Equate, 
+    symbols.Define(label, SymbolType::Equate,
                    std::make_shared<LiteralExpr>(value));
     return;
   }
@@ -122,7 +122,7 @@ void EdtasmSyntaxParser::ParseDirective(const std::string& directive,
     }
     uint32_t value = ParseNumber(operands);
     // SET allows redefinition, so we define it as Set type
-    symbols.Define(label, SymbolType::Set, 
+    symbols.Define(label, SymbolType::Set,
                    std::make_shared<LiteralExpr>(value));
     return;
   }
@@ -156,8 +156,8 @@ void EdtasmSyntaxParser::ParseDirective(const std::string& directive,
       if (!value.empty()) {
         uint32_t word = ParseNumber(value);
         // 6809 uses big-endian (MSB first)
-        bytes.push_back(static_cast<uint8_t>((word >> 8) & 0xFF));  // High byte
-        bytes.push_back(static_cast<uint8_t>(word & 0xFF));         // Low byte
+        bytes.push_back(static_cast<uint8_t>((word >> 8) & 0xFF)); // High byte
+        bytes.push_back(static_cast<uint8_t>(word & 0xFF));        // Low byte
       }
     }
 
@@ -176,7 +176,7 @@ void EdtasmSyntaxParser::ParseDirective(const std::string& directive,
     // First non-whitespace character is the delimiter
     char delimiter = trimmed[0];
     size_t end_pos = trimmed.find(delimiter, 1);
-    
+
     if (end_pos == std::string::npos) {
       throw std::runtime_error("FCC: Missing closing delimiter");
     }
@@ -208,9 +208,8 @@ void EdtasmSyntaxParser::ParseDirective(const std::string& directive,
 }
 
 // Parse a single line
-void EdtasmSyntaxParser::ParseLine(const std::string& line, 
-                                    Section& section, 
-                                    ConcreteSymbolTable& symbols) {
+void EdtasmSyntaxParser::ParseLine(const std::string &line, Section &section,
+                                   ConcreteSymbolTable &symbols) {
   // Strip comments first
   std::string processed = StripComments(line);
   processed = Trim(processed);
@@ -251,7 +250,7 @@ void EdtasmSyntaxParser::ParseLine(const std::string& line,
     } else {
       label = processed.substr(0, label_end);
       std::string rest = Trim(processed.substr(label_end));
-      
+
       size_t opcode_end = rest.find_first_of(" \t");
       if (opcode_end == std::string::npos) {
         opcode = rest;
@@ -260,7 +259,6 @@ void EdtasmSyntaxParser::ParseLine(const std::string& line,
         operands = Trim(rest.substr(opcode_end));
       }
     }
-
   }
 
   if (opcode.empty()) {
@@ -268,25 +266,28 @@ void EdtasmSyntaxParser::ParseLine(const std::string& line,
     if (!label.empty()) {
       symbols.Define(label, SymbolType::Label,
                      std::make_shared<LiteralExpr>(current_address_));
-      section.atoms.push_back(std::make_shared<LabelAtom>(label, current_address_));
+      section.atoms.push_back(
+          std::make_shared<LabelAtom>(label, current_address_));
     }
     return;
   }
 
   // Check if opcode is a directive
   std::string opcode_upper = ToUpper(opcode);
-  bool is_directive = (opcode_upper == "ORG" || opcode_upper == "END" || 
+  bool is_directive = (opcode_upper == "ORG" || opcode_upper == "END" ||
                        opcode_upper == "EQU" || opcode_upper == "SET" ||
-                       opcode_upper == "FCB" || opcode_upper == "FDB" || 
+                       opcode_upper == "FCB" || opcode_upper == "FDB" ||
                        opcode_upper == "FCC" || opcode_upper == "RMB" ||
                        opcode_upper == "SETDP");
 
   // Create label atom for non-EQU/SET directives and instructions
-  // EQU and SET handle their labels internally (they don't create address labels)
+  // EQU and SET handle their labels internally (they don't create address
+  // labels)
   if (!label.empty() && opcode_upper != "EQU" && opcode_upper != "SET") {
     symbols.Define(label, SymbolType::Label,
                    std::make_shared<LiteralExpr>(current_address_));
-    section.atoms.push_back(std::make_shared<LabelAtom>(label, current_address_));
+    section.atoms.push_back(
+        std::make_shared<LabelAtom>(label, current_address_));
   }
 
   if (is_directive) {
@@ -295,14 +296,14 @@ void EdtasmSyntaxParser::ParseLine(const std::string& line,
   }
 
   // Otherwise, it's an instruction
-  section.atoms.push_back(std::make_shared<InstructionAtom>(opcode_upper, operands));
-  current_address_ += 1;  // Placeholder (actual size determined during encoding)
+  section.atoms.push_back(
+      std::make_shared<InstructionAtom>(opcode_upper, operands));
+  current_address_ += 1; // Placeholder (actual size determined during encoding)
 }
 
 // Main parse function
-void EdtasmSyntaxParser::Parse(const std::string& source, 
-                                Section& section, 
-                                ConcreteSymbolTable& symbols) {
+void EdtasmSyntaxParser::Parse(const std::string &source, Section &section,
+                               ConcreteSymbolTable &symbols) {
   if (source.empty()) {
     return;
   }

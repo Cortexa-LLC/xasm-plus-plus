@@ -1,34 +1,34 @@
 // xasm++ - Cross-platform assembler
 // Phase 1: Minimal Viable Assembler - Command-Line Interface
 
-#include "xasm++/cli/command_line_options.h"
+#include "CLI/CLI.hpp"
 #include "xasm++/assembler.h"
+#include "xasm++/cli/command_line_options.h"
+#include "xasm++/core/error_formatter.h"
 #include "xasm++/cpu/cpu_6502.h"
 #include "xasm++/cpu/cpu_6809.h"
 #include "xasm++/cpu/cpu_constants.h"
-#include "xasm++/syntax/simple_syntax.h"
-#include "xasm++/syntax/merlin_syntax.h"
-#include "xasm++/syntax/scmasm_syntax.h"
-#include "xasm++/syntax/edtasm_syntax.h"
 #include "xasm++/output/binary_output.h"
 #include "xasm++/output/listing_output.h"
 #include "xasm++/output/symbol_output.h"
-#include "xasm++/core/error_formatter.h"
-#include "CLI/CLI.hpp"
-#include <iostream>
-#include <fstream>
-#include <sstream>
+#include "xasm++/syntax/edtasm_syntax.h"
+#include "xasm++/syntax/merlin_syntax.h"
+#include "xasm++/syntax/scmasm_syntax.h"
+#include "xasm++/syntax/simple_syntax.h"
 #include <filesystem>
+#include <fstream>
+#include <iostream>
+#include <sstream>
 
 // Forward declaration (implemented in cli_parser.cpp)
 namespace xasm {
-  CommandLineOptions ParseCommandLine(int argc, char** argv);
+CommandLineOptions ParseCommandLine(int argc, char **argv);
 }
 
 using namespace xasm;
 
 // Main entry point
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   try {
     CommandLineOptions opts = ParseCommandLine(argc, argv);
 
@@ -70,7 +70,7 @@ int main(int argc, char** argv) {
     ConcreteSymbolTable symbols;
 
     // Create appropriate CPU plugin based on command-line option
-    CpuPlugin* cpu = nullptr;
+    CpuPlugin *cpu = nullptr;
     Cpu6502 cpu6502;
     Cpu6809 cpu6809;
 
@@ -90,33 +90,37 @@ int main(int argc, char** argv) {
       cpu = &cpu6502;
     } else {
       std::cerr << "Error: Unknown CPU type: " << opts.cpu << "\n";
-      std::cerr << "Supported: " << cpu::CPU_6502 << ", " << cpu::CPU_65C02 << ", "
-                << cpu::CPU_65C02_ROCK << ", " << cpu::CPU_65816 << ", "
+      std::cerr << "Supported: " << cpu::CPU_6502 << ", " << cpu::CPU_65C02
+                << ", " << cpu::CPU_65C02_ROCK << ", " << cpu::CPU_65816 << ", "
                 << cpu::CPU_6809 << "\n";
       return 1;
     }
 
     // Step 3: Parse source code
-    // Change to source file's directory so PUT directives can find included files
-    std::filesystem::path input_path = std::filesystem::absolute(opts.input_file);
+    // Change to source file's directory so PUT directives can find included
+    // files
+    std::filesystem::path input_path =
+        std::filesystem::absolute(opts.input_file);
     std::filesystem::path source_dir = input_path.parent_path();
     std::filesystem::path original_dir = std::filesystem::current_path();
-    
+
     try {
       // Change to source directory for PUT directive resolution
       if (!source_dir.empty()) {
         std::filesystem::current_path(source_dir);
       }
-      
+
       if (opts.syntax == "merlin") {
         // Merlin syntax requires 6502 family CPU
         if (opts.cpu == cpu::CPU_6809) {
-          std::cerr << "Error: Merlin syntax is only compatible with 6502 family CPUs\n";
-          std::cerr << "For " << cpu::CPU_6809 << ", use --syntax edtasm or --syntax scmasm\n";
+          std::cerr << "Error: Merlin syntax is only compatible with 6502 "
+                       "family CPUs\n";
+          std::cerr << "For " << cpu::CPU_6809
+                    << ", use --syntax edtasm or --syntax scmasm\n";
           return 1;
         }
         MerlinSyntaxParser parser;
-        parser.SetCpu(&cpu6502);  // Merlin uses 6502-specific features
+        parser.SetCpu(&cpu6502); // Merlin uses 6502-specific features
         parser.Parse(source, section, symbols);
       } else if (opts.syntax == "scmasm") {
         // SCMASM works with both 6502 and 6809
@@ -131,20 +135,20 @@ int main(int argc, char** argv) {
         SimpleSyntaxParser parser;
         parser.Parse(source, section, symbols);
       }
-      
+
       // Restore original directory
       std::filesystem::current_path(original_dir);
-    } catch (const std::filesystem::filesystem_error& e) {
+    } catch (const std::filesystem::filesystem_error &e) {
       // Restore original directory on filesystem error
       std::filesystem::current_path(original_dir);
       std::cerr << "Filesystem error: " << e.what() << "\n";
       return 1;
-    } catch (const std::runtime_error& e) {
+    } catch (const std::runtime_error &e) {
       // Restore original directory on parse error
       std::filesystem::current_path(original_dir);
       std::cerr << "Parse error: " << e.what() << "\n";
       return 1;
-    } catch (const std::invalid_argument& e) {
+    } catch (const std::invalid_argument &e) {
       // Restore original directory on invalid syntax
       std::filesystem::current_path(original_dir);
       std::cerr << "Invalid syntax: " << e.what() << "\n";
@@ -154,13 +158,14 @@ int main(int argc, char** argv) {
     // Step 4: Create assembler (CPU already created in Step 2)
     Assembler assembler;
     assembler.SetCpuPlugin(cpu);
-    assembler.SetSymbolTable(&symbols);  // CRITICAL: Link symbol table to assembler
+    assembler.SetSymbolTable(
+        &symbols); // CRITICAL: Link symbol table to assembler
     assembler.AddSection(section);
 
     // Step 5: Assemble (encode instructions, resolve symbols)
     AssemblerResult result = assembler.Assemble();
     if (!result.success) {
-      for (const auto& error : result.errors) {
+      for (const auto &error : result.errors) {
         std::cout << error_formatter.FormatError(error, &symbols) << "\n";
       }
       return 1;
@@ -168,14 +173,14 @@ int main(int argc, char** argv) {
 
     // Step 6: Write output file
     // Note: Section was modified in-place by Assemble()
-    std::vector<Section*> sections = {&section};
+    std::vector<Section *> sections = {&section};
     BinaryOutput output;
     try {
       output.WriteOutput(opts.output, sections, symbols);
-    } catch (const std::filesystem::filesystem_error& e) {
+    } catch (const std::filesystem::filesystem_error &e) {
       std::cerr << "File I/O error: " << e.what() << "\n";
       return 1;
-    } catch (const std::runtime_error& e) {
+    } catch (const std::runtime_error &e) {
       std::cerr << "Output error: " << e.what() << "\n";
       return 1;
     }
@@ -188,8 +193,9 @@ int main(int argc, char** argv) {
       try {
         listing.WriteOutput(opts.listing_file, sections, symbols);
         std::cout << "Listing file generated: " << opts.listing_file << "\n";
-      } catch (const std::exception& e) {
-        std::cerr << "Warning: Failed to generate listing file: " << e.what() << "\n";
+      } catch (const std::exception &e) {
+        std::cerr << "Warning: Failed to generate listing file: " << e.what()
+                  << "\n";
       }
     }
 
@@ -199,8 +205,9 @@ int main(int argc, char** argv) {
       try {
         symbol_output.WriteOutput(opts.symbol_file, sections, symbols);
         std::cout << "Symbol table generated: " << opts.symbol_file << "\n";
-      } catch (const std::exception& e) {
-        std::cerr << "Warning: Failed to generate symbol table: " << e.what() << "\n";
+      } catch (const std::exception &e) {
+        std::cerr << "Warning: Failed to generate symbol table: " << e.what()
+                  << "\n";
       }
     }
 
@@ -208,19 +215,21 @@ int main(int argc, char** argv) {
   } catch (const CLI::ParseError &e) {
     std::cerr << "Command-line error: " << e.what() << "\n";
     return 1;
-  } catch (const std::bad_alloc& e) {
+  } catch (const std::bad_alloc &e) {
     std::cerr << "Out of memory: " << e.what() << "\n";
     return 1;
-  } catch (const std::ios_base::failure& e) {
+  } catch (const std::ios_base::failure &e) {
     std::cerr << "I/O error: " << e.what() << "\n";
     return 1;
-  } catch (const std::runtime_error& e) {
+  } catch (const std::runtime_error &e) {
     std::cerr << "Runtime error: " << e.what() << "\n";
     return 1;
-  } catch (const std::logic_error& e) {
+  } catch (const std::logic_error &e) {
     std::cerr << "Logic error: " << e.what() << "\n";
-    std::cerr << "This is likely an unhandled std::invalid_argument from stoul/stoi conversion.\n";
-    std::cerr << "Please report this bug with the source file that caused it.\n";
+    std::cerr << "This is likely an unhandled std::invalid_argument from "
+                 "stoul/stoi conversion.\n";
+    std::cerr
+        << "Please report this bug with the source file that caused it.\n";
     return 1;
   }
 }

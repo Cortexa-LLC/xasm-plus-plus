@@ -1,23 +1,23 @@
 /**
  * @file merlin_syntax.h
  * @brief Merlin assembly syntax parser
- * 
+ *
  * This file defines a parser for Merlin assembler syntax, which was used
  * in many classic Apple II programs including Prince of Persia. The parser
  * implements Merlin's distinctive syntax and directive set.
- * 
+ *
  * @note Phases 1-3: Foundation, Local Labels, DUM Blocks
  */
 
 #pragma once
 
+#include "xasm++/expression.h"
+#include "xasm++/section.h"
+#include "xasm++/symbol.h"
+#include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include <memory>
-#include "xasm++/section.h"
-#include "xasm++/symbol.h"
-#include "xasm++/expression.h"
 
 namespace xasm {
 
@@ -26,13 +26,13 @@ class Cpu6502;
 
 /**
  * @brief Merlin assembly syntax parser
- * 
+ *
  * The MerlinSyntaxParser implements the Merlin assembler syntax used on
  * the Apple II. Merlin has a distinctive syntax style with special label
  * types and directives that differ from other assemblers.
- * 
+ *
  * @par Supported Features
- * - **Comment Styles**: 
+ * - **Comment Styles**:
  *   - `*` in column 1 for full-line comments
  *   - `;` for inline comments
  * - **Label Types**:
@@ -53,7 +53,7 @@ class Cpu6502;
  *   - `$hex` - Hexadecimal (e.g., `$1234`)
  *   - `%binary` - Binary (e.g., `%10101010`)
  *   - Decimal - Plain numbers (e.g., `42`)
- * 
+ *
  * @par Local Label Scoping
  * Local labels (starting with `:`) are scoped to the most recent global
  * label. This allows reusing simple names like `:loop` without conflicts:
@@ -63,14 +63,14 @@ class Cpu6502;
  *     DEX
  *     BNE :loop
  *     RTS
- * 
+ *
  * SUBROUTINE2
  *   :loop    ; Resolves to SUBROUTINE2:loop (different from above)
  *     INX
  *     BNE :loop
  *     RTS
  * @endcode
- * 
+ *
  * @par DUM Blocks
  * DUM blocks define dummy variables that don't generate output but
  * reserve space for variable definitions:
@@ -79,174 +79,187 @@ class Cpu6502;
  * ]COUNTER  DS 1 ; Reserve 1 byte at $20
  * ]POINTER  DS 2 ; Reserve 2 bytes at $21
  * DEND           ; End dummy block
- * 
+ *
  * ; Use variables in code
  * INC ]COUNTER   ; INC $20
  * LDA ]POINTER   ; LDA $21
  * @endcode
- * 
+ *
  * @par Example Usage
  * @code
  * MerlinSyntaxParser parser;
  * Section section("CODE", 0x01, 0x6000);
  * ConcreteSymbolTable symbols;
- * 
+ *
  * std::string source = R"(
  *         ORG $6000
  * START   LDA #$42
  *         STA $C000
  * :LOOP   JMP :LOOP
  * )";
- * 
+ *
  * parser.Parse(source, section, symbols);
  * @endcode
  */
 class MerlinSyntaxParser {
 public:
-    /**
-     * @brief Constructor - initializes parser state
-     */
-    MerlinSyntaxParser();
+  /**
+   * @brief Constructor - initializes parser state
+   */
+  MerlinSyntaxParser();
 
-    /**
-     * @brief Set CPU plugin for mode switching (e.g., XC directive)
-     *
-     * @param cpu Pointer to CPU plugin (must remain valid during parsing)
-     */
-    void SetCpu(Cpu6502* cpu);
+  /**
+   * @brief Set CPU plugin for mode switching (e.g., XC directive)
+   *
+   * @param cpu Pointer to CPU plugin (must remain valid during parsing)
+   */
+  void SetCpu(Cpu6502 *cpu);
 
-    /**
-     * @brief Parse Merlin assembly source into atoms and symbols
-     * 
-     * Parses the provided Merlin-format assembly source and populates
-     * the section with atoms and the symbol table with label definitions.
-     * 
-     * @param source Assembly source code (multi-line string)
-     * @param section Section to populate with atoms
-     * @param symbols Symbol table to populate with label definitions
-     * 
-     * @throws std::runtime_error on parse errors (syntax errors, undefined labels, etc.)
-     */
-    void Parse(const std::string& source, Section& section, ConcreteSymbolTable& symbols);
+  /**
+   * @brief Parse Merlin assembly source into atoms and symbols
+   *
+   * Parses the provided Merlin-format assembly source and populates
+   * the section with atoms and the symbol table with label definitions.
+   *
+   * @param source Assembly source code (multi-line string)
+   * @param section Section to populate with atoms
+   * @param symbols Symbol table to populate with label definitions
+   *
+   * @throws std::runtime_error on parse errors (syntax errors, undefined
+   * labels, etc.)
+   */
+  void Parse(const std::string &source, Section &section,
+             ConcreteSymbolTable &symbols);
 
 private:
-    /**
-     * @brief Label scope for managing :LOCAL labels
-     * 
-     * Local labels are scoped to the most recent global label.
-     */
-    struct LabelScope {
-        std::string global_label;  ///< The global label this scope belongs to
-        std::unordered_map<std::string, uint32_t> local_labels;  ///< :label -> address
-    };
+  /**
+   * @brief Label scope for managing :LOCAL labels
+   *
+   * Local labels are scoped to the most recent global label.
+   */
+  struct LabelScope {
+    std::string global_label; ///< The global label this scope belongs to
+    std::unordered_map<std::string, uint32_t>
+        local_labels; ///< :label -> address
+  };
 
-    LabelScope current_scope_;      ///< Current label scope (for :LOCAL labels)
+  LabelScope current_scope_; ///< Current label scope (for :LOCAL labels)
 
-    /**
-     * @brief Macro definition
-     * 
-     * Stores a macro body for later expansion via MAC directive.
-     */
-    struct MacroDefinition {
-        std::string name;                    ///< Macro name
-        std::vector<std::string> body;       ///< Lines of macro body (unexpanded)
-        int param_count;                     ///< Number of parameters used (]1, ]2, etc.)
-    };
+  /**
+   * @brief Macro definition
+   *
+   * Stores a macro body for later expansion via MAC directive.
+   */
+  struct MacroDefinition {
+    std::string name;              ///< Macro name
+    std::vector<std::string> body; ///< Lines of macro body (unexpanded)
+    int param_count;               ///< Number of parameters used (]1, ]2, etc.)
+  };
 
-    // Macro state
-    bool in_macro_definition_;                                    ///< True if defining a macro
-    MacroDefinition current_macro_;                               ///< Current macro being defined
-    std::unordered_map<std::string, MacroDefinition> macros_;     ///< Defined macros
-    int macro_expansion_depth_;                                   ///< Prevent infinite recursion
+  // Macro state
+  bool in_macro_definition_;      ///< True if defining a macro
+  MacroDefinition current_macro_; ///< Current macro being defined
+  std::unordered_map<std::string, MacroDefinition> macros_; ///< Defined macros
+  int macro_expansion_depth_; ///< Prevent infinite recursion
 
-    // DUM block state
-    bool in_dum_block_;             ///< True if currently inside a DUM block
-    uint32_t dum_address_;          ///< Current address within DUM block
-    std::unordered_map<std::string, uint32_t> variable_labels_;  ///< ]variable -> offset
+  // DUM block state
+  bool in_dum_block_;    ///< True if currently inside a DUM block
+  uint32_t dum_address_; ///< Current address within DUM block
+  std::unordered_map<std::string, uint32_t>
+      variable_labels_; ///< ]variable -> offset
 
-    uint32_t current_address_;      ///< Current address (for tracking label addresses)
-    bool end_directive_seen_;       ///< True if END directive has been processed
+  uint32_t current_address_; ///< Current address (for tracking label addresses)
+  bool end_directive_seen_;  ///< True if END directive has been processed
 
-    std::vector<std::string> include_stack_;    ///< Include file tracking (for circular detection)
+  std::vector<std::string>
+      include_stack_; ///< Include file tracking (for circular detection)
 
-    // Source location tracking (for error reporting)
-    std::string current_file_;      ///< Current source filename
-    int current_line_;              ///< Current line number
+  // Source location tracking (for error reporting)
+  std::string current_file_; ///< Current source filename
+  int current_line_;         ///< Current line number
 
-    Cpu6502* cpu_ = nullptr;        ///< CPU plugin for mode switching (XC directive)
+  Cpu6502 *cpu_ = nullptr; ///< CPU plugin for mode switching (XC directive)
 
-    /**
-     * @brief Conditional assembly block state
-     * 
-     * Tracks DO/ELSE/FIN conditional assembly blocks.
-     */
-    struct ConditionalBlock {
-        bool condition;      ///< True if condition is met
-        bool in_else_block;  ///< True if currently in ELSE block
-        bool should_emit;    ///< True if code should be emitted
-    };
-    std::vector<ConditionalBlock> conditional_stack_;   ///< Stack of nested conditionals
+  /**
+   * @brief Conditional assembly block state
+   *
+   * Tracks DO/ELSE/FIN conditional assembly blocks.
+   */
+  struct ConditionalBlock {
+    bool condition;     ///< True if condition is met
+    bool in_else_block; ///< True if currently in ELSE block
+    bool should_emit;   ///< True if code should be emitted
+  };
+  std::vector<ConditionalBlock>
+      conditional_stack_; ///< Stack of nested conditionals
 
-    // Parsing helpers
-    std::string StripComments(const std::string& line);
+  // Parsing helpers
+  std::string StripComments(const std::string &line);
 
-    void ParseLine(const std::string& line, Section& section, ConcreteSymbolTable& symbols);
+  void ParseLine(const std::string &line, Section &section,
+                 ConcreteSymbolTable &symbols);
 
-    // Label parsing
-    std::string ParseLabel(const std::string& line, size_t& pos, Section& section,
-                          ConcreteSymbolTable& symbols);
+  // Label parsing
+  std::string ParseLabel(const std::string &line, size_t &pos, Section &section,
+                         ConcreteSymbolTable &symbols);
 
-    // Directive handlers
-    void HandleOrg(const std::string& operand, Section& section,
-                   ConcreteSymbolTable& symbols);
-    void HandleEqu(const std::string& label, const std::string& operand,
-                  ConcreteSymbolTable& symbols);
-    void HandleDB(const std::string& operand, Section& section, ConcreteSymbolTable& symbols);
-    void HandleDW(const std::string& operand, Section& section, ConcreteSymbolTable& symbols);
-    void HandleHex(const std::string& operand, Section& section);
-    void HandleDS(const std::string& operand, Section& section, ConcreteSymbolTable& symbols);
-    void HandleDum(const std::string& operand, ConcreteSymbolTable& symbols);
-    void HandleDend();
-    void HandlePut(const std::string& operand, Section& section, ConcreteSymbolTable& symbols);
-    void HandleLst(const std::string& operand);
-    void HandleLstdo();
-    void HandleTr(const std::string& operand);
-    void HandleAsc(const std::string& operand, Section& section);
-    void HandleDA(const std::string& operand, Section& section, ConcreteSymbolTable& symbols);
-    void HandleDCI(const std::string& operand, Section& section);
-    void HandleINV(const std::string& operand, Section& section);
-    void HandleFLS(const std::string& operand, Section& section);
-    void HandleDo(const std::string& operand, ConcreteSymbolTable& symbols);
-    void HandleElse();
-    void HandleFin();
-    void HandleEnd();
-    void HandleSav(const std::string& operand);
-    void HandleXc(const std::string& operand);
-    void HandleMx(const std::string& operand);
-    void HandleRev(const std::string& label, const std::string& operand,
-                   Section& section, ConcreteSymbolTable& symbols);
-    void HandleLup(const std::string& operand);
+  // Directive handlers
+  void HandleOrg(const std::string &operand, Section &section,
+                 ConcreteSymbolTable &symbols);
+  void HandleEqu(const std::string &label, const std::string &operand,
+                 ConcreteSymbolTable &symbols);
+  void HandleDB(const std::string &operand, Section &section,
+                ConcreteSymbolTable &symbols);
+  void HandleDW(const std::string &operand, Section &section,
+                ConcreteSymbolTable &symbols);
+  void HandleHex(const std::string &operand, Section &section);
+  void HandleDS(const std::string &operand, Section &section,
+                ConcreteSymbolTable &symbols);
+  void HandleDum(const std::string &operand, ConcreteSymbolTable &symbols);
+  void HandleDend();
+  void HandlePut(const std::string &operand, Section &section,
+                 ConcreteSymbolTable &symbols);
+  void HandleLst(const std::string &operand);
+  void HandleLstdo();
+  void HandleTr(const std::string &operand);
+  void HandleAsc(const std::string &operand, Section &section);
+  void HandleDA(const std::string &operand, Section &section,
+                ConcreteSymbolTable &symbols);
+  void HandleDCI(const std::string &operand, Section &section);
+  void HandleINV(const std::string &operand, Section &section);
+  void HandleFLS(const std::string &operand, Section &section);
+  void HandleDo(const std::string &operand, ConcreteSymbolTable &symbols);
+  void HandleElse();
+  void HandleFin();
+  void HandleEnd();
+  void HandleSav(const std::string &operand);
+  void HandleXc(const std::string &operand);
+  void HandleMx(const std::string &operand);
+  void HandleRev(const std::string &label, const std::string &operand,
+                 Section &section, ConcreteSymbolTable &symbols);
+  void HandleLup(const std::string &operand);
 
-    // Macro directives
-    void HandlePMC(const std::string& operand);
-    void HandleEOM();
-    void HandleMAC(const std::string& macro_name, const std::string& params,
-                   Section& section, ConcreteSymbolTable& symbols);  // Invoke macro (Merlin style)
-    void HandleMacroEnd();  // End macro definition (<<<)
-    void ExpandMacro(const std::string& macro_name, const std::string& operand,
-                     Section& section, ConcreteSymbolTable& symbols);
+  // Macro directives
+  void HandlePMC(const std::string &operand);
+  void HandleEOM();
+  void HandleMAC(const std::string &macro_name, const std::string &params,
+                 Section &section,
+                 ConcreteSymbolTable &symbols); // Invoke macro (Merlin style)
+  void HandleMacroEnd();                        // End macro definition (<<<)
+  void ExpandMacro(const std::string &macro_name, const std::string &operand,
+                   Section &section, ConcreteSymbolTable &symbols);
 
-    // Macro helpers
-    std::string SubstituteParameters(const std::string& line, 
-                                    const std::vector<std::string>& params);
+  // Macro helpers
+  std::string SubstituteParameters(const std::string &line,
+                                   const std::vector<std::string> &params);
 
-    // Expression/number parsing
-    uint32_t ParseNumber(const std::string& str);
-    std::shared_ptr<Expression> ParseExpression(const std::string& str,
-                                               ConcreteSymbolTable& symbols);
+  // Expression/number parsing
+  uint32_t ParseNumber(const std::string &str);
+  std::shared_ptr<Expression> ParseExpression(const std::string &str,
+                                              ConcreteSymbolTable &symbols);
 
-    // Error formatting with source location
-    std::string FormatError(const std::string& message) const;
+  // Error formatting with source location
+  std::string FormatError(const std::string &message) const;
 };
 
 } // namespace xasm

@@ -3,14 +3,14 @@
 
 #include "xasm++/syntax/simple_syntax.h"
 #include "xasm++/parse_utils.h"
-#include <sstream>
 #include <algorithm>
 #include <cctype>
+#include <sstream>
 
 namespace xasm {
 
 // Helper: Trim whitespace
-static std::string Trim(const std::string& str) {
+static std::string Trim(const std::string &str) {
   size_t start = str.find_first_not_of(" \t");
   if (start == std::string::npos) {
     return "";
@@ -20,15 +20,15 @@ static std::string Trim(const std::string& str) {
 }
 
 // Helper: Convert to uppercase
-static std::string ToUpper(const std::string& str) {
+static std::string ToUpper(const std::string &str) {
   std::string result = str;
   std::transform(result.begin(), result.end(), result.begin(),
-        [](unsigned char c) { return std::toupper(c); });
+                 [](unsigned char c) { return std::toupper(c); });
   return result;
 }
 
 // Helper: Strip comments (semicolon to end of line)
-static std::string StripComments(const std::string& str) {
+static std::string StripComments(const std::string &str) {
   size_t comment_pos = str.find(';');
   if (comment_pos != std::string::npos) {
     return str.substr(0, comment_pos);
@@ -41,7 +41,8 @@ static bool IsIdentifierStart(char c) {
   return std::isalpha(static_cast<unsigned char>(c)) || c == '_';
 }
 
-void SimpleSyntaxParser::Parse(const std::string& source, Section& section, ConcreteSymbolTable& symbols) {
+void SimpleSyntaxParser::Parse(const std::string &source, Section &section,
+                               ConcreteSymbolTable &symbols) {
   if (source.empty()) {
     return;
   }
@@ -69,16 +70,17 @@ void SimpleSyntaxParser::Parse(const std::string& source, Section& section, Conc
       if (!label_name.empty() && IsIdentifierStart(label_name[0])) {
         // Define symbol
         symbols.Define(label_name, SymbolType::Label,
-              std::make_shared<LiteralExpr>(current_address));
+                       std::make_shared<LiteralExpr>(current_address));
 
         // Create LabelAtom
-        section.atoms.push_back(std::make_shared<LabelAtom>(label_name, current_address));
+        section.atoms.push_back(
+            std::make_shared<LabelAtom>(label_name, current_address));
 
         // Continue parsing rest of line (if any)
         if (colon_pos + 1 < line.length()) {
           line = Trim(line.substr(colon_pos + 1));
         } else {
-          continue;  // Label only, no instruction
+          continue; // Label only, no instruction
         }
       }
     }
@@ -127,8 +129,9 @@ void SimpleSyntaxParser::Parse(const std::string& source, Section& section, Conc
           value = Trim(value);
           if (!value.empty()) {
             uint32_t word = ParseHex(value);
-            bytes.push_back(static_cast<uint8_t>(word & 0xFF));        // Low byte
-            bytes.push_back(static_cast<uint8_t>((word >> 8) & 0xFF)); // High byte
+            bytes.push_back(static_cast<uint8_t>(word & 0xFF)); // Low byte
+            bytes.push_back(
+                static_cast<uint8_t>((word >> 8) & 0xFF)); // High byte
           }
         }
 
@@ -148,9 +151,10 @@ void SimpleSyntaxParser::Parse(const std::string& source, Section& section, Conc
         operands = "";
       }
 
-      section.atoms.push_back(std::make_shared<InstructionAtom>(mnemonic, operands));
+      section.atoms.push_back(
+          std::make_shared<InstructionAtom>(mnemonic, operands));
       // Size will be determined during encoding phase
-      current_address += 1;  // Placeholder (actual size determined later)
+      current_address += 1; // Placeholder (actual size determined later)
     }
   }
 }

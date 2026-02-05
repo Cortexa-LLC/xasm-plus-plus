@@ -1,8 +1,8 @@
 // SimpleSyntax Parser tests
 // Phase 1: Minimal Viable Assembler - SimpleSyntax Plugin
 
-#include "xasm++/syntax/simple_syntax.h"
 #include "xasm++/symbol.h"
+#include "xasm++/syntax/simple_syntax.h"
 #include <gtest/gtest.h>
 
 using namespace xasm;
@@ -77,8 +77,8 @@ TEST(SimpleSyntaxTest, DwDirective) {
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(atom);
   ASSERT_NE(data_atom, nullptr);
   ASSERT_EQ(data_atom->data.size(), 2);
-  EXPECT_EQ(data_atom->data[0], 0x34);  // Low byte
-  EXPECT_EQ(data_atom->data[1], 0x12);  // High byte
+  EXPECT_EQ(data_atom->data[0], 0x34); // Low byte
+  EXPECT_EQ(data_atom->data[1], 0x12); // High byte
 }
 
 // Test 5: Label parsing
@@ -127,7 +127,8 @@ TEST(SimpleSyntaxTest, Comments) {
   ConcreteSymbolTable symbols;
   Section section("test", 0);
 
-  parser.Parse("    ; This is a comment\n    LDA #$42 ; Load A", section, symbols);
+  parser.Parse("    ; This is a comment\n    LDA #$42 ; Load A", section,
+               symbols);
 
   // Comment line produces nothing, instruction line produces InstructionAtom
   ASSERT_EQ(section.atoms.size(), 1);
@@ -153,7 +154,8 @@ loop:   JMP loop
 
   parser.Parse(program, section, symbols);
 
-  // Should have: OrgAtom, LabelAtom, InstructionAtom, InstructionAtom, LabelAtom, InstructionAtom, DataAtom, DataAtom
+  // Should have: OrgAtom, LabelAtom, InstructionAtom, InstructionAtom,
+  // LabelAtom, InstructionAtom, DataAtom, DataAtom
   ASSERT_EQ(section.atoms.size(), 8);
 
   // Verify atom types

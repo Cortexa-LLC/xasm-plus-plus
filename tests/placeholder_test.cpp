@@ -3,15 +3,11 @@
 
 #include <gtest/gtest.h>
 
-TEST(PlaceholderTest, InfrastructureWorks) {
-    EXPECT_TRUE(true);
-}
+TEST(PlaceholderTest, InfrastructureWorks) { EXPECT_TRUE(true); }
 
-TEST(PlaceholderTest, BasicArithmetic) {
-    EXPECT_EQ(2 + 2, 4);
-}
+TEST(PlaceholderTest, BasicArithmetic) { EXPECT_EQ(2 + 2, 4); }
 
 int main(int argc, char **argv) {
-    ::testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }
