@@ -1,21 +1,22 @@
 /**
  * xasm++ Documentation - Custom Styling
  *
- * Placeholder brand colors (will be customized later):
- * - Primary: Blue/Tech theme
- * - Accent: Retro computing feel
+ * Brand Theme:
+ * - Primary: Cyan/bright blue (from banner logo)
+ * - Background: Deep blue/navy (from banner background)
+ * - Modern tech aesthetic with blue/cyan palette
  */
 
 /* Light Mode */
 :root {
-  /* Primary colors - placeholder blue theme */
-  --ifm-color-primary: #2e8555;
-  --ifm-color-primary-dark: #29784c;
-  --ifm-color-primary-darker: #277148;
-  --ifm-color-primary-darkest: #205d3b;
-  --ifm-color-primary-light: #33925d;
-  --ifm-color-primary-lighter: #359962;
-  --ifm-color-primary-lightest: #3cad6e;
+  /* Primary colors - cyan/blue theme from banner */
+  --ifm-color-primary: #0ea5e9;
+  --ifm-color-primary-dark: #0c93d1;
+  --ifm-color-primary-darker: #0b8bc5;
+  --ifm-color-primary-darkest: #0973a3;
+  --ifm-color-primary-light: #26b3ed;
+  --ifm-color-primary-lighter: #32b8ee;
+  --ifm-color-primary-lightest: #5ac8f1;
 
   /* Typography - compact style */
   --ifm-font-size-base: 15px;
@@ -35,21 +36,27 @@
 
 /* Dark Mode */
 [data-theme='dark'] {
-  --ifm-color-primary: #25c2a0;
-  --ifm-color-primary-dark: #21af90;
-  --ifm-color-primary-darker: #1fa588;
-  --ifm-color-primary-darkest: #1a8870;
-  --ifm-color-primary-light: #29d5b0;
-  --ifm-color-primary-lighter: #32d8b4;
-  --ifm-color-primary-lightest: #4fddbf;
-  
-  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+  /* Brighter cyan/blue for dark backgrounds */
+  --ifm-color-primary: #22d3ee;
+  --ifm-color-primary-dark: #1fc9e3;
+  --ifm-color-primary-darker: #1dbfd8;
+  --ifm-color-primary-darkest: #189db3;
+  --ifm-color-primary-light: #3dd8f0;
+  --ifm-color-primary-lighter: #4ddcf1;
+  --ifm-color-primary-lightest: #76e4f4;
+
+  /* Deep blue background matching banner */
+  --ifm-background-color: #0f172a;
+  --ifm-background-surface-color: #1e293b;
+
+  --docusaurus-highlighted-code-line-bg: rgba(34, 211, 238, 0.1);
 }
 
-/* Hero Banner */
+/* Hero Banner - Deep blue matching banner background */
 .hero--primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #011e61;
   color: white;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 /* Code Blocks - Retro computing theme */

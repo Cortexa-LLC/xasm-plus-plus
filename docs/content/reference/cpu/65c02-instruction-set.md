@@ -1,4 +1,5 @@
 ---
+id: 65c02-instruction-set
 sidebar_position: 2
 ---
 

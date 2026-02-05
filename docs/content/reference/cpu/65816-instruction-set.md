@@ -1,4 +1,5 @@
 ---
+id: 65816-instruction-set
 sidebar_position: 4
 ---
 

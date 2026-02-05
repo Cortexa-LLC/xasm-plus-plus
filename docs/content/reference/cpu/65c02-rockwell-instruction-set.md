@@ -1,4 +1,5 @@
 ---
+id: 65c02-rockwell-instruction-set
 sidebar_position: 3
 ---
 

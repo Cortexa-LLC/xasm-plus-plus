@@ -1,4 +1,5 @@
 ---
+id: 6502-instruction-set
 sidebar_position: 1
 ---
 

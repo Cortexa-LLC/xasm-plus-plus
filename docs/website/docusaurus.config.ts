@@ -5,7 +5,7 @@ import type * as Preset from '@docusaurus/preset-classic';
 const config: Config = {
   title: 'xasm++',
   tagline: 'Modern C++ Cross-Assembler for 6502, 65C02, 65816, and 6809',
-  favicon: 'img/favicon.svg',
+  favicon: 'img/favicon.ico',
 
   future: {
     v4: true,
@@ -54,15 +54,15 @@ const config: Config = {
   ],
 
   themeConfig: {
-    image: 'img/banner.svg',
+    image: 'img/banner.png',
     colorMode: {
       respectPrefersColorScheme: true,
     },
     navbar: {
       title: 'xasm++',
       logo: {
-        alt: 'xasm++ Logo',
-        src: 'img/logo.svg',
+        alt: 'xasm++',
+        src: 'img/logo.png',
       },
       items: [
         {
