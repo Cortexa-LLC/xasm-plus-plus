@@ -349,4 +349,18 @@ target_link_libraries(test_stoul_fix
 
 gtest_discover_tests(test_stoul_fix)
 
+# FlexAsmSyntax tests
+add_executable(test_flex_syntax
+    test_flex_syntax.cpp
+)
+
+target_link_libraries(test_flex_syntax
+    xasm_syntax
+    xasm_cpu
+    xasm_core
+    gtest_main
+    gtest
+)
+
+gtest_discover_tests(test_flex_syntax)
 

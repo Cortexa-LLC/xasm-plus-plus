@@ -1,8 +1,0 @@
-{
-  "label": "FLEX ASM (6809)",
-  "position": 4,
-  "link": {
-    "type": "generated-index",
-    "description": "FLEX Operating System assembler (ASM09) syntax for Motorola 6809."
-  }
-}
