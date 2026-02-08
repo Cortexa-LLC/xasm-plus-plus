@@ -429,9 +429,28 @@ As Orchestrator (your default role), you MUST:
    bd update xasm++-abc --description "Task packet: .ai/tasks/2026-01-24_task-name/"
    ```
 
-2. **Spawn agents via agent CLI (MANDATORY)**
+2. **VALIDATE task packet exists BEFORE spawning Engineer agents**
    ```bash
-   # Spawn Engineer to implement
+   # ⚠️ CRITICAL: Engineer agents require task packets
+   # Check if task packet directory exists
+   task_packet=$(bd show xasm++-abc --json | jq -r '.description' | grep -oP 'Task packet: \K[^\s]+')
+
+   if [ ! -d "$task_packet" ]; then
+       echo "❌ Task packet missing: $task_packet"
+       echo "Creating task packet..."
+       mkdir -p "$task_packet"
+       cp .ai-pack/templates/task-packet/*.md "$task_packet/"
+       # Fill out contract and plan before continuing
+       echo "⚠️ Fill out 00-contract.md and 10-plan.md before spawning engineer"
+       exit 1
+   fi
+
+   echo "✅ Task packet exists: $task_packet"
+   ```
+
+3. **Spawn agents via agent CLI (MANDATORY)**
+   ```bash
+   # Spawn Engineer to implement (only after task packet validated)
    agent engineer xasm++-abc
 
    # Agent executes autonomously
@@ -442,7 +461,7 @@ As Orchestrator (your default role), you MUST:
    agent logs xasm++-abc --follow
    ```
 
-3. **Monitor progress with Beads**
+4. **Monitor progress with Beads**
    ```bash
    bd show xasm++-abc             # Check task status
    bd list --status in_progress   # See active work
@@ -450,14 +469,15 @@ As Orchestrator (your default role), you MUST:
    bd ready                        # Find next available work
    ```
 
-4. **Check agent task packets**
+5. **Check agent task packets**
    ```bash
    # A2A agents create task packets in .beads/tasks/
-   ls .beads/tasks/task-engineer-*/
-   cat .beads/tasks/task-engineer-*/30-results.md
+   # Format: {beads-id}-{timestamp}/
+   ls .beads/tasks/xasm++-abc-*/
+   cat .beads/tasks/xasm++-abc-*/30-results.md
    ```
 
-5. **Manage dependencies with Beads**
+6. **Manage dependencies with Beads**
    ```bash
    bd dep add <child-task> <parent-task>
    ```
