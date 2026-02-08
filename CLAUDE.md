@@ -34,19 +34,24 @@ The agent CLI provides:
 
 **How to spawn agents (ONLY method):**
 ```bash
-# Step 1: Ensure task exists in Beads
-bd show <task-id>
+# Step 1: Create Beads task FIRST (agents require valid Beads task IDs)
+task_id=$(bd create "Task description..." --priority high --json | jq -r '.id')
+# Returns: xasm++-vp5 (Beads task ID)
 
 # Step 2: Spawn agent using agent CLI with --stream (MANDATORY)
-agent <role> <task-id> --stream
+agent <role> $task_id --stream
 
-# ⚠️ CRITICAL: The --stream flag is MANDATORY for Orchestrators
+# ⚠️ CRITICAL: Task ID Requirements
+# - MUST be a valid Beads task ID (e.g., xasm++-vp5)
+# - Hierarchical IDs NOT supported (e.g., xasm++-684.1 will FAIL)
+# - Create standalone tasks, use dependencies for relationships
+# - The --stream flag is MANDATORY for Orchestrators
 # - Blocks until agent completes (immediate completion detection)
 # - Real-time progress updates via SSE (Server-Sent Events)
 # - No polling delay = immediate action when done
 # - Command returns to shell ONLY when agent finishes
 
-# Examples (ALL use --stream):
+# Examples (ALL use --stream with valid Beads IDs):
 agent engineer xasm++-vp5 --stream
 agent tester xasm++-abc --stream
 agent reviewer xasm++-xyz --stream
@@ -457,6 +462,42 @@ As Orchestrator (your default role), you MUST:
    bd dep add <child-task> <parent-task>
    ```
 
+### ⚠️ CRITICAL: Task Decomposition for A2A Agents
+
+When decomposing large tasks into subtasks for A2A agents:
+
+**DO:**
+- ✅ Create **standalone Beads tasks** (each gets unique ID like `xasm++-abc`)
+- ✅ Use `bd dep add` to link tasks with dependencies
+- ✅ Keep each subtask to 1-5 files (ideal) or 6-14 files (acceptable)
+- ✅ Each subtask gets its own task packet reference in description
+
+**DON'T:**
+- ❌ Use hierarchical/child task IDs (e.g., `xasm++-684.1`, `xasm++-684.2`)
+- ❌ Use `--parent` flag to create parent-child relationships for A2A tasks
+- ❌ Expect A2A agents to accept non-Beads task IDs
+
+**Example - Correct decomposition:**
+```bash
+# Create parent task for tracking
+parent_id=$(bd create "Phase 2: Macro Processor (Parent)" --priority 2 --json | jq -r '.id')
+# Returns: xasm++-684
+
+# Create standalone subtasks (NOT children!)
+task1=$(bd create "Phase 2.1: MacroProcessor Foundation..." --priority 2 --json | jq -r '.id')
+# Returns: xasm++-abc (standalone ID)
+
+task2=$(bd create "Phase 2.2: Parameter Substitution..." --priority 2 --json | jq -r '.id')
+# Returns: xasm++-def (standalone ID)
+
+# Link with dependencies
+bd dep add $task2 $task1  # task2 depends on task1
+
+# Spawn agents with standalone IDs
+agent engineer xasm++-abc --stream   # ✅ Works
+agent engineer xasm++-684.1 --stream  # ❌ FAILS - invalid format
+```
+
 ### Enforcement
 
 **BLOCKING GATE:** Cannot proceed without Beads tasks.
@@ -581,9 +622,14 @@ agent status xasm++-vp5 --json   # JSON for scripting
 agent logs xasm++-vp5 --follow   # Stream real-time logs
 agent metrics                     # Server health
 
-# Agent task packet (transient artifacts)
-ls .beads/tasks/task-engineer-*/
-cat .beads/tasks/task-engineer-*/30-results.md
+# Agent task packet (timestamped execution folders)
+# Format: {beads-id}-{timestamp}
+# Example: xasm++-vp5-20260206-143025/
+ls .beads/tasks/xasm++-vp5-*/
+cat .beads/tasks/xasm++-vp5-*/30-results.md
+
+# Each execution gets a unique timestamped folder
+# This preserves complete execution history for retries
 ```
 
 ### Available Agents
