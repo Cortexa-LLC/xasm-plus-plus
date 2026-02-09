@@ -121,6 +121,20 @@ target_link_libraries(test_cpu6809_indexed
 
 gtest_discover_tests(test_cpu6809_indexed)
 
+# CPU Z80 tests
+add_executable(test_cpu_z80
+    test_cpu_z80.cpp
+)
+
+target_link_libraries(test_cpu_z80
+    xasm_cpu
+    xasm_core
+    gtest_main
+    gtest
+)
+
+gtest_discover_tests(test_cpu_z80)
+
 # SimpleSyntax tests
 add_executable(test_simple_syntax
     test_simple_syntax.cpp
@@ -363,4 +377,77 @@ target_link_libraries(test_flex_syntax
 )
 
 gtest_discover_tests(test_flex_syntax)
+
+# FlexAsmSyntax Macro tests (Phase 2)
+add_executable(test_flex_macros
+    test_flex_macros.cpp
+)
+
+target_link_libraries(test_flex_macros
+    xasm_syntax
+    xasm_cpu
+    xasm_core
+    gtest_main
+    gtest
+)
+
+gtest_discover_tests(test_flex_macros)
+
+# MacroProcessor tests (Phase 2.1)
+add_executable(test_macro_processor
+    test_macro_processor.cpp
+)
+
+target_link_libraries(test_macro_processor
+    xasm_syntax
+    xasm_core
+    gtest_main
+    gtest
+)
+
+gtest_discover_tests(test_macro_processor)
+
+# FlexAsmSyntax Conditional Assembly tests (Phase 3)
+add_executable(test_flex_conditionals
+    test_flex_conditionals.cpp
+)
+
+target_link_libraries(test_flex_conditionals
+    xasm_syntax
+    xasm_cpu
+    xasm_core
+    gtest_main
+    gtest
+)
+
+gtest_discover_tests(test_flex_conditionals)
+
+# Z80 Universal Syntax tests
+add_executable(test_z80_universal_syntax
+    test_z80_universal_syntax.cpp
+)
+
+target_link_libraries(test_z80_universal_syntax
+    xasm_syntax
+    xasm_cpu
+    xasm_core
+    gtest_main
+    gtest
+)
+
+gtest_discover_tests(test_z80_universal_syntax)
+
+# Intel HEX Writer tests
+add_executable(test_intel_hex_writer
+    test_intel_hex_writer.cpp
+)
+
+target_link_libraries(test_intel_hex_writer
+    xasm_output
+    xasm_core
+    gtest_main
+    gtest
+)
+
+gtest_discover_tests(test_intel_hex_writer)
 

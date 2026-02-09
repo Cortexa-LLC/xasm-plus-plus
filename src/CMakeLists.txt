@@ -21,9 +21,9 @@ add_library(xasm_cpu STATIC
     cpu/m6502/cpu_65c02.cpp
     cpu/m6502/cpu_65816.cpp
     cpu/m6809/cpu_6809.cpp
+    cpu/z80/cpu_z80.cpp
     # Future CPUs:
     # cpu/m68k/cpu_68000.cpp
-    # cpu/z80/cpu_z80.cpp
     # cpu/intel/cpu_8080.cpp
     # cpu/intel/cpu_8085.cpp
     # cpu/m6800/cpu_6800.cpp
@@ -45,6 +45,8 @@ add_library(xasm_syntax STATIC
     syntax/scmasm/scmasm_syntax.cpp
     syntax/edtasm/edtasm_syntax.cpp
     syntax/motorola/flex_syntax.cpp
+    syntax/flex/macro_processor.cpp
+    syntax/z80_universal/z80_universal_syntax.cpp
     # Future syntax plugins:
     # syntax/mos/mos_base_syntax.cpp
     # syntax/motorola/motorola_base_syntax.cpp
@@ -66,6 +68,8 @@ add_library(xasm_output STATIC
   output/binary_output.cpp
   output/listing_output.cpp
   output/symbol_output.cpp
+  output/output_writer.cpp
+  output/intel_hex_writer.cpp
   # Future output plugins:
   # output/hex_output.cpp
   # output/apple2/dos33_output.cpp
