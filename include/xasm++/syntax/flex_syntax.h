@@ -13,6 +13,7 @@
 
 #include "xasm++/section.h"
 #include "xasm++/symbol.h"
+#include "xasm++/syntax/macro_processor.h"
 #include <memory>
 #include <stack>
 #include <string>
@@ -20,16 +21,6 @@
 #include <vector>
 
 namespace xasm {
-
-/**
- * @brief Macro definition for FLEX macro processor
- */
-struct MacroDefinition {
-  std::string name;                    ///< Macro name
-  std::vector<std::string> parameters; ///< Parameter names
-  std::vector<std::string> body;       ///< Macro body lines
-  int definition_line;                 ///< Line number where defined
-};
 
 /**
  * @brief FLEX ASM09 assembly syntax parser
@@ -115,6 +106,54 @@ public:
   void Parse(const std::string &source, Section &section,
              ConcreteSymbolTable &symbols);
 
+protected:
+  // ========== Macro Processor Methods (Protected for Testing) ==========
+
+  /**
+   * @brief Substitute parameters in macro line
+   *
+   * @param line Macro body line
+   * @param macro Macro definition
+   * @param arguments Argument values
+   * @return Line with parameters substituted
+   */
+  std::string SubstituteParameters(const std::string &line,
+                                   const MacroDefinition &macro,
+                                   const std::vector<std::string> &arguments);
+
+  /**
+   * @brief Make local label unique for this expansion
+   *
+   * @param label Label name (may start with .)
+   * @param expansion_id Unique expansion ID
+   * @return Unique label name
+   */
+  std::string MakeLocalLabelUnique(const std::string &label, int expansion_id);
+
+  /**
+   * @brief Expand macro with arguments
+   *
+   * @param name Macro name
+   * @param arguments Argument values
+   * @return Expanded source lines
+   */
+  std::vector<std::string>
+  ExpandMacro(const std::string &name,
+              const std::vector<std::string> &arguments);
+
+  /**
+   * @brief Check if macro is defined
+   *
+   * @param name Macro name
+   * @return true if macro exists
+   */
+  bool IsMacroDefined(const std::string &name) const;
+
+  // ========== Macro Processor State (Protected for Testing) ==========
+  
+  std::unordered_map<std::string, MacroDefinition> macros_; ///< Defined macros
+  int expansion_counter_ = 0;     ///< Unique ID for macro expansions
+
 private:
   /**
    * @brief Parser mode state machine
@@ -132,13 +171,13 @@ private:
   std::string title_;                    ///< Program title (NAM/TTL)
   std::string subtitle_;                 ///< Program subtitle (STTL)
 
-  // Macro processor state
-  std::unordered_map<std::string, MacroDefinition> macros_; ///< Defined macros
+  // Macro processor state (macros_ and expansion_counter_ moved to protected)
   MacroDefinition current_macro_; ///< Macro being defined
-  int expansion_counter_ = 0;     ///< Unique ID for macro expansions
+  MacroProcessor macro_processor_; ///< Macro processor instance
 
   // Conditional assembly state
   std::stack<bool> conditional_stack_; ///< Condition evaluation stack
+  ConcreteSymbolTable *current_symbols_ = nullptr; ///< Symbol table for current parse
 
   // Repeat block state
   struct RepeatBlock {
@@ -221,38 +260,6 @@ private:
    * @return true if macro is defined
    */
   bool IsMacro(const std::string &name) const;
-
-  /**
-   * @brief Expand macro with arguments
-   *
-   * @param name Macro name
-   * @param arguments Argument values
-   * @return Expanded source lines
-   */
-  std::vector<std::string>
-  ExpandMacro(const std::string &name,
-              const std::vector<std::string> &arguments);
-
-  /**
-   * @brief Substitute parameters in macro line
-   *
-   * @param line Macro body line
-   * @param macro Macro definition
-   * @param arguments Argument values
-   * @return Line with parameters substituted
-   */
-  std::string SubstituteParameters(const std::string &line,
-                                   const MacroDefinition &macro,
-                                   const std::vector<std::string> &arguments);
-
-  /**
-   * @brief Make local label unique for this expansion
-   *
-   * @param label Label name (may start with .)
-   * @param expansion_id Unique expansion ID
-   * @return Unique label name
-   */
-  std::string MakeLocalLabelUnique(const std::string &label, int expansion_id);
 
   // ========== Conditional Assembly Methods ==========
 
