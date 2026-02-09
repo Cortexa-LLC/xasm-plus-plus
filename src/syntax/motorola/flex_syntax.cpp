@@ -491,6 +491,13 @@ void FlexAsmSyntax::ParseLine(const std::string &line, Section &section,
     } else if (macro_processor_.IsMacro(opcode_upper)) {
       // It's a macro invocation - expand and parse
       
+      // Create label atom if label is present (before macro expansion)
+      if (!label.empty()) {
+        section.atoms.push_back(
+            std::make_shared<LabelAtom>(label, current_address_));
+        symbols.DefineLabel(label, static_cast<int64_t>(current_address_));
+      }
+      
       // Parse arguments from operands (comma-separated)
       std::vector<std::string> arguments;
       if (!operands.empty()) {
@@ -510,13 +517,6 @@ void FlexAsmSyntax::ParseLine(const std::string &line, Section &section,
       // Parse each expanded line recursively
       for (const std::string &expanded_line : expanded_lines) {
         ParseLine(expanded_line, section, symbols);
-      }
-      
-      // Create label atom if label is present (before macro expansion)
-      if (!label.empty()) {
-        section.atoms.push_back(
-            std::make_shared<LabelAtom>(label, current_address_));
-        symbols.DefineLabel(label, static_cast<int64_t>(current_address_));
       }
     } else {
       // It's an instruction - create a placeholder data atom for now
