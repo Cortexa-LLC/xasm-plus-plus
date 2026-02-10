@@ -6,20 +6,43 @@
  * developed by Bob Sander-Cederlof for the Apple II. SCMASM features
  * BASIC-style line numbering and distinctive dot-prefix directives.
  *
- * @note Phase 1: Foundation & Core Directives
+ * @note Phase 2: Integrated with shared ExpressionParser
  */
 
 #pragma once
 
+#include "xasm++/common/expression_parser.h"
 #include "xasm++/expression.h"
 #include "xasm++/section.h"
 #include "xasm++/symbol.h"
+#include <functional>
 #include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
 namespace xasm {
+
+/**
+ * @brief SCMASM-specific number parser
+ *
+ * Handles SCMASM number formats:
+ * - $hex (e.g., $1234)
+ * - %binary (e.g., %10101010, %1111.0000 with dot separators)
+ * - Decimal (e.g., 42)
+ * - Character constants with high-bit rule ('A, "A, etc.)
+ */
+class SCMASMNumberParser : public INumberParser {
+public:
+  /**
+   * @brief Attempt to parse an SCMASM-specific number format
+   *
+   * @param token The token to parse (e.g., "$FF", "%10101010", "'A")
+   * @param value Output parameter - receives the parsed value
+   * @return true if successfully parsed, false otherwise
+   */
+  bool TryParse(const std::string &token, int64_t &value) const override;
+};
 
 /**
  * @brief S-C Macro Assembler (SCMASM) syntax parser
@@ -111,6 +134,11 @@ public:
              ConcreteSymbolTable &symbols);
 
 private:
+  // Directive handler function signature
+  using DirectiveHandler =
+      std::function<void(const std::string &label, const std::string &operand,
+                         Section &section, ConcreteSymbolTable &symbols)>;
+
   // Macro definition structure
   struct MacroDef {
     std::string name;
@@ -135,6 +163,20 @@ private:
   std::vector<std::string>
       current_macro_body_;     ///< Lines of macro being defined
   int macro_invocation_depth_; ///< Nesting depth for macro invocations
+
+  // Directive registry
+  std::unordered_map<std::string, DirectiveHandler> directive_registry_;
+
+  // Expression and number parsing (Phase 2 integration)
+  SCMASMNumberParser scmasm_number_parser_; ///< SCMASM-specific number parser
+
+  /**
+   * @brief Initialize directive registry with all supported directives
+   *
+   * Populates directive_registry_ with handlers for all SCMASM directives.
+   * Called from constructor.
+   */
+  void InitializeDirectiveRegistry();
 
   /**
    * @brief Strip line number from beginning of line

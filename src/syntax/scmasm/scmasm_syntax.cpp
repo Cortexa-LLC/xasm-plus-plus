@@ -3,7 +3,7 @@
  * @brief S-C Macro Assembler (SCMASM) syntax parser implementation
  *
  * Implementation of SCMASM syntax parser for xasm++.
- * Phase 1: Foundation & Core Directives
+ * Phase 2: Integrated with shared ExpressionParser
  */
 
 #include "xasm++/syntax/scmasm_syntax.h"
@@ -18,12 +18,123 @@
 namespace xasm {
 
 // ============================================================================
+// SCMASMNumberParser Implementation
+// ============================================================================
+
+bool SCMASMNumberParser::TryParse(const std::string &token,
+                                   int64_t &value) const {
+  if (token.empty()) {
+    return false;
+  }
+
+  // Hexadecimal: $
+  if (token[0] == '$') {
+    if (token.length() < 2) {
+      return false;
+    }
+
+    std::string hex = token.substr(1);
+
+    // Validate hex digits
+    for (char c : hex) {
+      if (!std::isxdigit(static_cast<unsigned char>(c))) {
+        return false;
+      }
+    }
+
+    try {
+      value = std::stoll(hex, nullptr, 16);
+      return true;
+    } catch (...) {
+      return false;
+    }
+  }
+
+  // Binary: %
+  if (token[0] == '%') {
+    if (token.length() < 2) {
+      return false;
+    }
+
+    std::string binary = token.substr(1);
+
+    // Validate binary digits before removing separators
+    for (char c : binary) {
+      if (c != '0' && c != '1' && c != '.') {
+        return false;
+      }
+    }
+
+    // Remove . separators
+    binary.erase(std::remove(binary.begin(), binary.end(), '.'), binary.end());
+
+    if (binary.empty()) {
+      return false;
+    }
+
+    try {
+      value = std::stoll(binary, nullptr, 2);
+      return true;
+    } catch (...) {
+      return false;
+    }
+  }
+
+  // ASCII character constant: delimiter followed by character
+  // Delimiter determines high bit rule
+  // Must be exactly 2 characters (delimiter + char)
+  if (!std::isdigit(token[0]) && token.length() == 2) {
+    char delimiter = token[0];
+    char c = token[1];
+
+    // Apply high-bit rule:
+    // If delimiter ASCII < 0x27 (apostrophe '), high bit is SET
+    // Otherwise, high bit is CLEAR
+    uint8_t result = static_cast<uint8_t>(c);
+    if (delimiter < 0x27) {
+      result |= 0x80; // Set high bit
+    } else {
+      result &= 0x7F; // Clear high bit
+    }
+
+    value = result;
+    return true;
+  }
+
+  // If not a digit and not a 2-char constant, not a valid number for us
+  if (!std::isdigit(static_cast<unsigned char>(token[0]))) {
+    return false;
+  }
+
+  // Validate decimal digits
+  for (char c : token) {
+    if (!std::isdigit(static_cast<unsigned char>(c))) {
+      return false;
+    }
+  }
+
+  // Decimal
+  try {
+    value = std::stoll(token, nullptr, 10);
+    return true;
+  } catch (...) {
+    return false;
+  }
+}
+
+// ============================================================================
+// Constructor
+// ============================================================================
+
+// ============================================================================
 // Constructor
 // ============================================================================
 
 ScmasmSyntaxParser::ScmasmSyntaxParser()
     : current_address_(0), current_file_("<source>"), current_line_(0),
-      in_macro_definition_(false), macro_invocation_depth_(0) {}
+      in_macro_definition_(false), macro_invocation_depth_(0) {
+  InitializeDirectiveRegistry();
+}
 
 // ============================================================================
 // Main Parse Function
@@ -65,12 +176,12 @@ void ScmasmSyntaxParser::Parse(const std::string &source, Section &section,
 
     // If we're in a macro definition, collect lines
     if (in_macro_definition_) {
-      // Check for .EM
+      // Check for .EM or .ENDM
       std::string upper_line = line;
       std::transform(upper_line.begin(), upper_line.end(), upper_line.begin(),
                      ::toupper);
 
-      if (upper_line.find(".EM") == 0) {
+      if (upper_line.find(".EM") == 0 || upper_line.find(".ENDM") == 0) {
         // End macro definition
         HandleEm();
         line_idx++;
@@ -268,35 +379,13 @@ void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
       }
     }
 
-    if (opcode_upper == ".OR") {
-      HandleOr(operand, section, symbols);
-    } else if (opcode_upper == ".EQ") {
-      if (label.empty()) {
-        throw std::runtime_error(".EQ requires a label");
-      }
-      HandleEq(label, operand, symbols);
-    } else if (opcode_upper == ".SE") {
-      if (label.empty()) {
-        throw std::runtime_error(".SE requires a label");
-      }
-      HandleSe(label, operand, symbols);
-    } else if (opcode_upper == ".AS") {
-      HandleAs(operand, section, symbols);
-    } else if (opcode_upper == ".AT") {
-      HandleAt(operand, section, symbols);
-    } else if (opcode_upper == ".AZ") {
-      HandleAz(operand, section, symbols);
-    } else if (opcode_upper == ".DA" || opcode_upper == ".DFB") {
-      HandleDa(operand, section, symbols);
-    } else if (opcode_upper == ".HS") {
-      HandleHs(operand, section, symbols);
-    } else if (opcode_upper == ".BS") {
-      HandleBs(operand, section, symbols);
-    } else if (opcode_upper == ".MA") {
-      HandleMa(label, operand);
-    } else if (opcode_upper == ".EM") {
-      HandleEm();
-    } else if (opcode_upper == ".DO") {
+    // Special validation for directives that require labels
+    if ((opcode_upper == ".EQ" || opcode_upper == ".SE") && label.empty()) {
+      throw std::runtime_error(opcode_upper + " requires a label");
+    }
+
+    // Control flow directives require special handling (not in registry)
+    if (opcode_upper == ".DO") {
       HandleDo(operand, section, symbols, source, line_idx);
     } else if (opcode_upper == ".LU") {
       HandleLu(operand, section, symbols, source, line_idx);
@@ -306,7 +395,15 @@ void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
       // If we encounter them here, they're mismatched
       throw std::runtime_error("Mismatched " + opcode_upper);
     } else {
-      throw std::runtime_error("Unknown directive: " + opcode);
+      // Try to dispatch via registry
+      auto it = directive_registry_.find(opcode_upper);
+      if (it != directive_registry_.end()) {
+        // Found in registry - dispatch
+        it->second(label, operand, section, symbols);
+      } else {
+        // Not in registry and not a control flow directive
+        throw std::runtime_error("Unknown directive: " + opcode);
+      }
     }
   } else {
     // Not a directive - define label and create label atom for
@@ -618,194 +715,59 @@ uint32_t ScmasmSyntaxParser::EvaluateExpression(const std::string &str,
                                                 ConcreteSymbolTable &symbols) {
   std::string trimmed = Trim(str);
 
-  // Handle * (current address)
+  // Handle * (current address) - special case before general parsing
   if (trimmed == "*") {
     return current_address_;
   }
 
-  // Simple expression evaluation for Phase 1
-  // Supports: number, number+number, symbol, symbol+number, symbol*number
-
-  // Look for * operator (higher precedence, evaluate first)
-  size_t mult_pos = trimmed.find('*');
-  if (mult_pos != std::string::npos) {
-    std::string left = Trim(trimmed.substr(0, mult_pos));
-    std::string right = Trim(trimmed.substr(mult_pos + 1));
-
-    uint32_t left_val, right_val;
-
-    // Try to parse left as number, then as local label, then as symbol
-    try {
-      left_val = ParseNumber(left);
-    } catch (...) {
-      if (IsLocalLabel(left)) {
-        auto it = local_labels_.find(left);
-        if (it != local_labels_.end()) {
-          left_val = it->second;
-        } else {
-          throw std::runtime_error("Undefined local label: " + left);
-        }
-      } else {
-        int64_t sym_val;
-        if (symbols.Lookup(left, sym_val)) {
-          left_val = static_cast<uint32_t>(sym_val);
-        } else {
-          throw std::runtime_error("Undefined symbol: " + left);
-        }
-      }
+  // Handle local labels (.0-.9) - check if entire expression is a local label
+  if (IsLocalLabel(trimmed)) {
+    auto it = local_labels_.find(trimmed);
+    if (it != local_labels_.end()) {
+      return it->second;
+    } else {
+      throw std::runtime_error("Undefined local label: " + trimmed);
     }
-
-    // Try to parse right as number, then as local label, then as symbol
-    try {
-      right_val = ParseNumber(right);
-    } catch (...) {
-      if (IsLocalLabel(right)) {
-        auto it = local_labels_.find(right);
-        if (it != local_labels_.end()) {
-          right_val = it->second;
-        } else {
-          throw std::runtime_error("Undefined local label: " + right);
-        }
-      } else {
-        int64_t sym_val;
-        if (symbols.Lookup(right, sym_val)) {
-          right_val = static_cast<uint32_t>(sym_val);
-        } else {
-          throw std::runtime_error("Undefined symbol: " + right);
-        }
-      }
-    }
-
-    return left_val * right_val;
   }
 
-  // Look for + operator
-  size_t plus_pos = trimmed.find('+');
-  if (plus_pos != std::string::npos) {
-    std::string left = Trim(trimmed.substr(0, plus_pos));
-    std::string right = Trim(trimmed.substr(plus_pos + 1));
-
-    uint32_t left_val, right_val;
-
-    // Try to parse left as number, then as local label, then as symbol
-    try {
-      left_val = ParseNumber(left);
-    } catch (...) {
-      if (IsLocalLabel(left)) {
-        auto it = local_labels_.find(left);
-        if (it != local_labels_.end()) {
-          left_val = it->second;
-        } else {
-          throw std::runtime_error("Undefined local label: " + left);
-        }
-      } else {
-        int64_t sym_val;
-        if (symbols.Lookup(left, sym_val)) {
-          left_val = static_cast<uint32_t>(sym_val);
-        } else {
-          throw std::runtime_error("Undefined symbol: " + left);
-        }
+  // Handle SCMASM-specific number formats that ExpressionParser doesn't support:
+  // 1. Binary with . separators: %1111.0000
+  // 2. Character constants: 'A, "A, #A, /A, etc.
+  //
+  // These are detected by specific prefixes/patterns
+  if (!trimmed.empty()) {
+    // Binary with potential . separators
+    if (trimmed[0] == '%' && trimmed.find('.') != std::string::npos) {
+      try {
+        return ParseNumber(trimmed);
+      } catch (...) {
+        // Fall through to ExpressionParser
       }
     }
-
-    // Try to parse right as number, then as local label, then as symbol
-    try {
-      right_val = ParseNumber(right);
-    } catch (...) {
-      if (IsLocalLabel(right)) {
-        auto it = local_labels_.find(right);
-        if (it != local_labels_.end()) {
-          right_val = it->second;
-        } else {
-          throw std::runtime_error("Undefined local label: " + right);
-        }
-      } else {
-        int64_t sym_val;
-        if (symbols.Lookup(right, sym_val)) {
-          right_val = static_cast<uint32_t>(sym_val);
-        } else {
-          throw std::runtime_error("Undefined symbol: " + right);
-        }
+    
+    // Character constant: single non-alphanumeric followed by a character
+    // (delimiter + char, e.g., 'A, "A, #A, /A)
+    if (trimmed.length() == 2 && !std::isalnum(trimmed[0]) && 
+        trimmed[0] != '$' && trimmed[0] != '%') {
+      try {
+        return ParseNumber(trimmed);
+      } catch (...) {
+        // Fall through to ExpressionParser
       }
     }
-
-    return left_val + right_val;
   }
 
-  // Look for - operator
-  size_t minus_pos = trimmed.find('-');
-  if (minus_pos != std::string::npos && minus_pos > 0) { // Not negative number
-    std::string left = Trim(trimmed.substr(0, minus_pos));
-    std::string right = Trim(trimmed.substr(minus_pos + 1));
-
-    uint32_t left_val, right_val;
-
-    // Try to parse left as number, then as local label, then as symbol
-    try {
-      left_val = ParseNumber(left);
-    } catch (...) {
-      if (IsLocalLabel(left)) {
-        auto it = local_labels_.find(left);
-        if (it != local_labels_.end()) {
-          left_val = it->second;
-        } else {
-          throw std::runtime_error("Undefined local label: " + left);
-        }
-      } else {
-        int64_t sym_val;
-        if (symbols.Lookup(left, sym_val)) {
-          left_val = static_cast<uint32_t>(sym_val);
-        } else {
-          throw std::runtime_error("Undefined symbol: " + left);
-        }
-      }
-    }
-
-    // Try to parse right as number, then as local label, then as symbol
-    try {
-      right_val = ParseNumber(right);
-    } catch (...) {
-      if (IsLocalLabel(right)) {
-        auto it = local_labels_.find(right);
-        if (it != local_labels_.end()) {
-          right_val = it->second;
-        } else {
-          throw std::runtime_error("Undefined local label: " + right);
-        }
-      } else {
-        int64_t sym_val;
-        if (symbols.Lookup(right, sym_val)) {
-          right_val = static_cast<uint32_t>(sym_val);
-        } else {
-          throw std::runtime_error("Undefined symbol: " + right);
-        }
-      }
-    }
-
-    return left_val - right_val;
-  }
-
-  // No operator - try to parse as number first
-  try {
-    return ParseNumber(trimmed);
-  } catch (...) {
-    // Try as local label
-    if (IsLocalLabel(trimmed)) {
-      auto it = local_labels_.find(trimmed);
-      if (it != local_labels_.end()) {
-        return it->second;
-      } else {
-        throw std::runtime_error("Undefined local label: " + trimmed);
-      }
-    }
-
-    // Try as symbol
-    int64_t sym_val;
-    if (symbols.Lookup(trimmed, sym_val)) {
-      return static_cast<uint32_t>(sym_val);
-    }
-    throw std::runtime_error("Undefined symbol: " + trimmed);
-  }
+  // Phase 2: Use shared ExpressionParser for all other expressions
+  // This handles:
+  // - Numbers ($hex without dots, %binary without dots, decimal)
+  // - Symbol references
+  // - Binary operators (+, -, *, /, %, <<, >>, &, |, ^)
+  // - Comparison operators (==, !=, <, >, <=, >=)
+  // - Logical operators (&&, ||)
+  // - Unary operators (!, ~, +, -)
+  // - Parentheses for grouping
+  auto expr = ParseExpression(trimmed, symbols);
+  return static_cast<uint32_t>(expr->Evaluate(symbols));
 }
 
 uint8_t ScmasmSyntaxParser::ApplyHighBitRule(char c, char delimiter) {
@@ -828,11 +790,10 @@ uint8_t ScmasmSyntaxParser::ApplyHighBitRule(char c, char delimiter) {
 
 std::shared_ptr<Expression>
 ScmasmSyntaxParser::ParseExpression(const std::string &str,
-                                    ConcreteSymbolTable & /*symbols*/) {
-  // For Phase 1, we only need simple number parsing
-  // Expression parsing will be enhanced in later phases
-  uint32_t value = ParseNumber(str);
-  return std::make_shared<LiteralExpr>(value);
+                                    ConcreteSymbolTable &symbols) {
+  // Phase 2: Use shared ExpressionParser with SCMASM number parser
+  ExpressionParser parser(&symbols, &scmasm_number_parser_);
+  return parser.Parse(str);
 }
 
 // ============================================================================
@@ -1325,6 +1286,121 @@ void ScmasmSyntaxParser::HandleLu(const std::string &operand, Section &section,
 
   // Skip to after .ENDU
   line_idx = endu_line;
+}
+
+// ============================================================================
+// Directive Registry
+// ============================================================================
+
+void ScmasmSyntaxParser::InitializeDirectiveRegistry() {
+  // .OR - Set origin address
+  directive_registry_[".OR"] = [this](const std::string &label,
+                                       const std::string &operand,
+                                       Section &section,
+                                       ConcreteSymbolTable &symbols) {
+    (void)label; // Label handled separately before dispatch
+    HandleOr(operand, section, symbols);
+  };
+
+  // .EQ - Define constant
+  directive_registry_[".EQ"] = [this](const std::string &label,
+                                       const std::string &operand,
+                                       Section &section,
+                                       ConcreteSymbolTable &symbols) {
+    (void)section; // Not used by EQ
+    HandleEq(label, operand, symbols);
+  };
+
+  // .SE - Set variable (redefinable)
+  directive_registry_[".SE"] = [this](const std::string &label,
+                                       const std::string &operand,
+                                       Section &section,
+                                       ConcreteSymbolTable &symbols) {
+    (void)section; // Not used by SE
+    HandleSe(label, operand, symbols);
+  };
+
+  // .AS - ASCII string
+  directive_registry_[".AS"] = [this](const std::string &label,
+                                       const std::string &operand,
+                                       Section &section,
+                                       ConcreteSymbolTable &symbols) {
+    (void)label; // Label handled separately
+    HandleAs(operand, section, symbols);
+  };
+
+  // .AT - ASCII text (high bit on last char)
+  directive_registry_[".AT"] = [this](const std::string &label,
+                                       const std::string &operand,
+                                       Section &section,
+                                       ConcreteSymbolTable &symbols) {
+    (void)label; // Label handled separately
+    HandleAt(operand, section, symbols);
+  };
+
+  // .AZ - ASCII zero-terminated
+  directive_registry_[".AZ"] = [this](const std::string &label,
+                                       const std::string &operand,
+                                       Section &section,
+                                       ConcreteSymbolTable &symbols) {
+    (void)label; // Label handled separately
+    HandleAz(operand, section, symbols);
+  };
+
+  // .DA / .DFB - Define byte(s)
+  auto handle_da = [this](const std::string &label, const std::string &operand,
+                          Section &section, ConcreteSymbolTable &symbols) {
+    (void)label; // Label handled separately
+    HandleDa(operand, section, symbols);
+  };
+  directive_registry_[".DA"] = handle_da;
+  directive_registry_[".DFB"] = handle_da; // Alias
+
+  // .HS - Hex string
+  directive_registry_[".HS"] = [this](const std::string &label,
+                                       const std::string &operand,
+                                       Section &section,
+                                       ConcreteSymbolTable &symbols) {
+    (void)label; // Label handled separately
+    HandleHs(operand, section, symbols);
+  };
+
+  // .BS - Binary string
+  directive_registry_[".BS"] = [this](const std::string &label,
+                                       const std::string &operand,
+                                       Section &section,
+                                       ConcreteSymbolTable &symbols) {
+    (void)label; // Label handled separately
+    HandleBs(operand, section, symbols);
+  };
+
+  // .MA - Begin macro definition
+  directive_registry_[".MA"] = [this](const std::string &label,
+                                       const std::string &operand,
+                                       Section &section,
+                                       ConcreteSymbolTable &symbols) {
+    (void)section;
+    (void)symbols;
+    HandleMa(label, operand);
+  };
+
+  // .ENDM / .EM - End macro definition
+  auto handle_endm = [this](const std::string &label,
+                             const std::string &operand, Section &section,
+                             ConcreteSymbolTable &symbols) {
+    (void)label;
+    (void)operand;
+    (void)section;
+    (void)symbols;
+    HandleEm();
+  };
+  directive_registry_[".ENDM"] = handle_endm;
+  directive_registry_[".EM"] = handle_endm; // Alias
+
+  // Note: Control flow directives (.DO, .ELSE, .FIN, .LU, .ENDU) are NOT
+  // registered here because they require special handling in ParseLine with
+  // line skipping and nested scoping. They cannot be dispatched via the simple
+  // registry pattern.
 }
 
 } // namespace xasm
