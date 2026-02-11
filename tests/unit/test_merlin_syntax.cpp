@@ -1277,15 +1277,19 @@ TEST(MerlinSyntaxTest, HandleDsEmptyOperand) {
   EXPECT_EQ(space_atom->size, 0);
 }
 
-TEST(MerlinSyntaxTest, HandleDsMultiplicationEmpty) {
+TEST(MerlinSyntaxTest, HandleDsWithProgramCounter) {
   MerlinSyntaxParser parser;
   ConcreteSymbolTable symbols;
   Section section("test", 0);
 
-  // DS with * but no operands
-  EXPECT_THROW(parser.Parse("         DS *", section, symbols),
-               std::exception // Should throw
-  );
+  // DS with * (program counter) - should reserve 0 bytes (current_addr - current_addr)
+  parser.Parse("         DS *", section, symbols);
+
+  // Should create SpaceAtom with 0 size (current address is 0, so DS 0-0 = 0)
+  ASSERT_EQ(section.atoms.size(), 1);
+  auto space_atom = std::dynamic_pointer_cast<SpaceAtom>(section.atoms[0]);
+  ASSERT_NE(space_atom, nullptr);
+  EXPECT_EQ(space_atom->size, 0);
 }
 
 TEST(MerlinSyntaxTest, TrimEmptyString) {
