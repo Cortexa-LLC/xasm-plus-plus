@@ -4,6 +4,7 @@ add_library(xasm_core STATIC
     core/expression.cpp
     core/symbol.cpp
     core/section.cpp
+    core/segment_manager.cpp
     core/assembler.cpp
     core/parse_utils.cpp
     core/error_formatter.cpp
@@ -19,17 +20,17 @@ target_include_directories(xasm_core PUBLIC
 
 # CPU plugins library (Phase 1+)
 add_library(xasm_cpu STATIC
-    cpu/m6502/cpu_6502.cpp
-    cpu/m6502/cpu_6502_branch_handler.cpp
-    cpu/m6502/cpu_65c02.cpp
-    cpu/m6502/cpu_65816.cpp
-    cpu/m6809/cpu_6809.cpp
-    cpu/z80/cpu_z80.cpp
+    cpu/cpu_6502.cpp
+    cpu/cpu_6502_branch_handler.cpp
+    cpu/cpu_65c02.cpp
+    cpu/cpu_65816.cpp
+    cpu/cpu_6809.cpp
+    cpu/cpu_z80.cpp
     # Future CPUs:
-    # cpu/m68k/cpu_68000.cpp
-    # cpu/intel/cpu_8080.cpp
-    # cpu/intel/cpu_8085.cpp
-    # cpu/m6800/cpu_6800.cpp
+    # cpu/cpu_68000.cpp
+    # cpu/cpu_8080.cpp
+    # cpu/cpu_8085.cpp
+    # cpu/cpu_6800.cpp
 )
 
 target_include_directories(xasm_cpu PUBLIC
@@ -44,21 +45,21 @@ target_link_libraries(xasm_core PUBLIC
 # Syntax plugins library (Phase 1+)
 add_library(xasm_syntax STATIC
     syntax/simple_syntax.cpp
-    syntax/merlin/merlin_syntax.cpp
-    syntax/scmasm/scmasm_syntax.cpp
-    syntax/edtasm/edtasm_syntax.cpp
-    syntax/motorola/flex_syntax.cpp
+    syntax/merlin_syntax.cpp
+    syntax/merlin_directives.cpp
+    syntax/scmasm_syntax.cpp
+    syntax/scmasm_directive_handlers.cpp
+    syntax/edtasm_syntax.cpp
+    syntax/flex_syntax.cpp
     syntax/directive_registry.cpp
-    syntax/edtasm_m80_plusplus/edtasm_m80_plusplus_syntax.cpp
-    syntax/edtasm_m80_plusplus/edtasm_directive_handlers.cpp
+    syntax/edtasm_m80_plusplus_syntax.cpp
+    syntax/edtasm_directive_handlers.cpp
     syntax/core_directive_handlers.cpp
-    directives/merlin_directives.cpp
-    directives/scmasm/scmasm_directive_handlers.cpp
     # Future syntax plugins:
-    # syntax/mos/mos_base_syntax.cpp
-    # syntax/motorola/motorola_base_syntax.cpp
-    # syntax/zilog/zilog_base_syntax.cpp
-    # syntax/intel/intel_base_syntax.cpp
+    # syntax/mos_base_syntax.cpp
+    # syntax/motorola_base_syntax.cpp
+    # syntax/zilog_base_syntax.cpp
+    # syntax/intel_base_syntax.cpp
 )
 
 target_include_directories(xasm_syntax PUBLIC
