@@ -34,6 +34,9 @@ constexpr const char* ORG = "ORG";
 /// EQU directive - Define constant symbol
 constexpr const char* EQU = "EQU";
 
+/// SET directive - Define variable symbol (allows redefinition)
+constexpr const char* SET = "SET";
+
 // ============================================================================
 // Data Definition Directives
 // ============================================================================
@@ -60,6 +63,19 @@ constexpr const char* DEFW = "DEFW";
 constexpr const char* WORD = "WORD";
 
 // ============================================================================
+// FLEX ASM09-Specific Data Directives
+// ============================================================================
+
+/// FCB directive - Form Constant Byte (FLEX ASM09)
+constexpr const char* FCB = "FCB";
+
+/// FDB directive - Form Double Byte (FLEX ASM09 16-bit word)
+constexpr const char* FDB = "FDB";
+
+/// FCC directive - Form Constant Characters (FLEX ASM09 string)
+constexpr const char* FCC = "FCC";
+
+// ============================================================================
 // Space Reservation Directives
 // ============================================================================
 
@@ -74,6 +90,50 @@ constexpr const char* BLOCK = "BLOCK";
 
 /// RMB directive - Reserve memory bytes (alias for DS)
 constexpr const char* RMB = "RMB";
+
+// ============================================================================
+// FLEX ASM09-Specific Control Directives
+// ============================================================================
+
+/// SETDP directive - Set Direct Page register (FLEX ASM09)
+constexpr const char* SETDP = "SETDP";
+
+/// NAM directive - Set program name/title (FLEX ASM09)
+constexpr const char* NAM = "NAM";
+
+/// TTL directive - Set title (FLEX ASM09 alias for NAM)
+constexpr const char* TTL = "TTL";
+
+/// STTL directive - Set subtitle (FLEX ASM09)
+constexpr const char* STTL = "STTL";
+
+/// PAGE directive - Form feed / new page (FLEX ASM09)
+constexpr const char* PAGE = "PAGE";
+
+/// SPC directive - Space lines (FLEX ASM09)
+constexpr const char* SPC = "SPC";
+
+/// IFC directive - If Condition (FLEX ASM09 conditional assembly)
+constexpr const char* IFC = "IFC";
+
+/// ENDC directive - End Conditional (FLEX ASM09)
+constexpr const char* ENDC = "ENDC";
+
+/// RPT directive - Repeat block (FLEX ASM09)
+constexpr const char* RPT = "RPT";
+
+/// ENDR directive - End Repeat block (FLEX ASM09)
+constexpr const char* ENDR = "ENDR";
+
+// ============================================================================
+// Expression Functions
+// ============================================================================
+
+/// LOW function - Extract low byte of value
+constexpr const char* LOW_FUNC = "LOW";
+
+/// HIGH function - Extract high byte of value
+constexpr const char* HIGH_FUNC = "HIGH";
 
 // ============================================================================
 // Merlin-Specific Directives
@@ -105,6 +165,12 @@ constexpr const char* SAV = "SAV";
 
 /// XC directive - Toggle 65C02 mode
 constexpr const char* XC = "XC";
+
+/// ON option - Enable option
+constexpr const char* ON = "ON";
+
+/// OFF option - Disable option
+constexpr const char* OFF = "OFF";
 
 /// MX directive - Set 65816 register widths
 constexpr const char* MX = "MX";
@@ -147,6 +213,9 @@ constexpr const char* MAC = "MAC";
 
 /// EOM directive - End of macro definition
 constexpr const char* EOM = "EOM";
+
+/// MACRO_END_ALT directive - Alternative end of macro definition (Merlin style)
+constexpr const char* MACRO_END_ALT = "<<<";
 
 /// PMC directive - Print macro call
 constexpr const char* PMC = "PMC";

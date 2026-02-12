@@ -1298,12 +1298,12 @@ void MerlinSyntaxParser::ParseLine(const std::string &line, Section &section,
   std::string upper_trimmed = ToUpper(trimmed);
   if (in_macro_definition_) {
     // Check for EOM directive to end macro definition
-    if (upper_trimmed == "EOM") {
+    if (upper_trimmed == directives::EOM) {
       HandleEOM();
       return;
     }
     // Check for <<< to end macro definition (Merlin style)
-    if (upper_trimmed == "<<<") {
+    if (upper_trimmed == directives::MACRO_END_ALT) {
       HandleMacroEnd();
       return;
     }
@@ -1314,15 +1314,16 @@ void MerlinSyntaxParser::ParseLine(const std::string &line, Section &section,
 
   // Check for conditional assembly directives (DO/ELSE/FIN)
   // These must be processed even when inside a false conditional block
-  if (upper_trimmed.find("DO ") == 0 || upper_trimmed == "DO") {
+  std::string do_directive = std::string(directives::DO) + " ";
+  if (upper_trimmed.find(do_directive) == 0 || upper_trimmed == directives::DO) {
     // Extract operand after "DO"
     std::string operand = trimmed.length() > 3 ? Trim(trimmed.substr(3)) : "0";
     HandleDo(operand, symbols);
     return;
-  } else if (upper_trimmed == "ELSE") {
+  } else if (upper_trimmed == directives::ELSE) {
     HandleElse();
     return;
-  } else if (upper_trimmed == "FIN") {
+  } else if (upper_trimmed == directives::FIN) {
     HandleFin();
     return;
   }
