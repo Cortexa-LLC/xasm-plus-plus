@@ -426,14 +426,6 @@ void HandleIfdifDirective(const std::string &label, const std::string &operand,
 // Macro System Handlers
 // ============================================================================
 
-void HandleMacroDirective(const std::string &label, const std::string &operand,
-                         DirectiveContext &ctx) {
-  (void)label;
-  (void)operand;
-  (void)ctx;
-  throw std::runtime_error("MACRO directive not yet implemented");
-}
-
 void HandleEndmDirective(const std::string &label, const std::string &operand, 
                          DirectiveContext &ctx) {
   (void)label;

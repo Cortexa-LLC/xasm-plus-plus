@@ -541,16 +541,6 @@ void HandleUsrDirective() {
 }
 
 // ============================================================================
-// Loop Directive (Not Implemented)
-// ============================================================================
-
-void HandleLupDirective(const std::string & /* operand */) {
-  // LUP count - Loop directive (repeat following code count times)
-  throw std::runtime_error(
-      FormatError("LUP directive not yet implemented (deferred)"));
-}
-
-// ============================================================================
 // DirectiveRegistry Integration
 // ============================================================================
 
@@ -699,13 +689,7 @@ void RegisterMerlinDirectiveHandlers(DirectiveRegistry &registry,
       HandleUsrDirective();
     });
 
-  // LUP - Loop assembly (not implemented)
-  registry.Register(directives::LUP,
-    [](const std::string &label, const std::string &operand, DirectiveContext &ctx) {
-      (void)label;
-      (void)ctx;
-      HandleLupDirective(operand);
-    });
+  // LUP - Loop assembly (handled directly by MerlinSyntaxParser)
 }
 
 } // namespace xasm

@@ -524,7 +524,6 @@ std::vector<uint8_t> Cpu6809::EncodeBRA(int32_t offset,
   if (mode == AddressingMode6809::Relative8) {
     return {0x20, static_cast<uint8_t>(offset & 0xFF)};
   }
-  // TODO: Implement Relative16 (LBRA) in future
   return {};
 }
 
