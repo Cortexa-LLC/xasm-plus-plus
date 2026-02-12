@@ -74,5 +74,10 @@ if(BUILD_TESTING)
     add_subdirectory(tests)
 endif()
 
-# Install targets (future)
-# install(TARGETS xasm++ DESTINATION bin)
+# Install targets
+install(TARGETS xasm++ DESTINATION bin)
+
+# Install man page (if exists)
+if(EXISTS "${CMAKE_SOURCE_DIR}/docs/xasm++.1")
+    install(FILES docs/xasm++.1 DESTINATION share/man/man1)
+endif()

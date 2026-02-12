@@ -97,16 +97,15 @@ target_link_libraries(xasm_output PUBLIC
 )
 
 # Main executable (Phase 1+)
-# TODO: Re-enable once cli_parser.cpp exists
-# add_executable(xasm++
-#     main.cpp
-#     cli_parser.cpp
-# )
-# 
-# target_link_libraries(xasm++
-#     xasm_core
-#     xasm_cpu
-#     xasm_syntax
-#     xasm_output
-#     CLI11::CLI11
-# )
+add_executable(xasm++
+    main.cpp
+    cli_parser.cpp
+)
+
+target_link_libraries(xasm++
+    xasm_core
+    xasm_cpu
+    xasm_syntax
+    xasm_output
+    CLI11::CLI11
+)
