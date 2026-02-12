@@ -201,6 +201,69 @@ public:
    */
   std::vector<uint8_t> EncodeLD_SP_nn(uint16_t value) const;
 
+  /**
+   * @brief Encode LD A, (BC) instruction (load A from address in BC)
+   *
+   * @return Vector of encoded bytes {0x0A}
+   */
+  std::vector<uint8_t> EncodeLD_A_BC() const;
+
+  /**
+   * @brief Encode LD A, (DE) instruction (load A from address in DE)
+   *
+   * @return Vector of encoded bytes {0x1A}
+   */
+  std::vector<uint8_t> EncodeLD_A_DE() const;
+
+  /**
+   * @brief Encode LD (BC), A instruction (store A to address in BC)
+   *
+   * @return Vector of encoded bytes {0x02}
+   */
+  std::vector<uint8_t> EncodeLD_BC_A() const;
+
+  /**
+   * @brief Encode LD (DE), A instruction (store A to address in DE)
+   *
+   * @return Vector of encoded bytes {0x12}
+   */
+  std::vector<uint8_t> EncodeLD_DE_A() const;
+
+  /**
+   * @brief Encode LD (HL), n instruction (store immediate to address in HL)
+   *
+   * @param value Immediate 8-bit value
+   * @return Vector of encoded bytes {0x36, n}
+   */
+  std::vector<uint8_t> EncodeLD_HL_n(uint8_t value) const;
+
+  /**
+   * @brief Encode LD HL, (nn) instruction (load HL from memory address)
+   *
+   * @param address 16-bit memory address
+   * @return Vector of encoded bytes {0x2A, low_byte, high_byte}
+   *
+   * @note Uses little-endian byte order (LSB first)
+   */
+  std::vector<uint8_t> EncodeLD_HL_addr(uint16_t address) const;
+
+  /**
+   * @brief Encode LD (nn), HL instruction (store HL to memory address)
+   *
+   * @param address 16-bit memory address
+   * @return Vector of encoded bytes {0x22, low_byte, high_byte}
+   *
+   * @note Uses little-endian byte order (LSB first)
+   */
+  std::vector<uint8_t> EncodeLD_addr_HL(uint16_t address) const;
+
+  /**
+   * @brief Encode LD SP, HL instruction (copy HL to stack pointer)
+   *
+   * @return Vector of encoded bytes {0xF9}
+   */
+  std::vector<uint8_t> EncodeLD_SP_HL() const;
+
   /** @} */ // End of 16-bit Load Instructions
 
   /**
@@ -595,7 +658,182 @@ public:
    */
   std::vector<uint8_t> EncodeRRA() const;
 
+  /**
+   * @brief Encode RLD instruction (rotate left digit)
+   *
+   * Rotates the low 4 bits of (HL) into the low 4 bits of A,
+   * and the low 4 bits of A into the high 4 bits of (HL).
+   *
+   * @return Vector of encoded bytes {0xED, 0x6F}
+   */
+  std::vector<uint8_t> EncodeRLD() const;
+
+  /**
+   * @brief Encode RRD instruction (rotate right digit)
+   *
+   * Rotates the low 4 bits of A into the high 4 bits of (HL),
+   * and the low 4 bits of (HL) into the low 4 bits of A.
+   *
+   * @return Vector of encoded bytes {0xED, 0x67}
+   */
+  std::vector<uint8_t> EncodeRRD() const;
+
   /** @} */ // End of Rotate and Shift Instructions
+
+  // ==========================================================================
+  /**
+   * @name Input/Output Instructions
+   * @{
+   */
+  // ==========================================================================
+
+  /**
+   * @brief Encode IN A, (n) instruction
+   *
+   * Input from port n to accumulator A.
+   *
+   * @param port 8-bit port address
+   * @return Vector of encoded bytes {0xDB, port}
+   */
+  std::vector<uint8_t> EncodeIN_A_n(uint8_t port) const;
+
+  /**
+   * @brief Encode OUT (n), A instruction
+   *
+   * Output from accumulator A to port n.
+   *
+   * @param port 8-bit port address
+   * @return Vector of encoded bytes {0xD3, port}
+   */
+  std::vector<uint8_t> EncodeOUT_n_A(uint8_t port) const;
+
+  /**
+   * @brief Encode IN B, (C) instruction
+   *
+   * Input from port C to register B.
+   *
+   * @return Vector of encoded bytes {0xED, 0x40}
+   */
+  std::vector<uint8_t> EncodeIN_B_C() const;
+
+  /**
+   * @brief Encode IN C, (C) instruction
+   *
+   * Input from port C to register C.
+   *
+   * @return Vector of encoded bytes {0xED, 0x48}
+   */
+  std::vector<uint8_t> EncodeIN_C_C() const;
+
+  /**
+   * @brief Encode IN D, (C) instruction
+   *
+   * Input from port C to register D.
+   *
+   * @return Vector of encoded bytes {0xED, 0x50}
+   */
+  std::vector<uint8_t> EncodeIN_D_C() const;
+
+  /**
+   * @brief Encode IN E, (C) instruction
+   *
+   * Input from port C to register E.
+   *
+   * @return Vector of encoded bytes {0xED, 0x58}
+   */
+  std::vector<uint8_t> EncodeIN_E_C() const;
+
+  /**
+   * @brief Encode IN H, (C) instruction
+   *
+   * Input from port C to register H.
+   *
+   * @return Vector of encoded bytes {0xED, 0x60}
+   */
+  std::vector<uint8_t> EncodeIN_H_C() const;
+
+  /**
+   * @brief Encode IN L, (C) instruction
+   *
+   * Input from port C to register L.
+   *
+   * @return Vector of encoded bytes {0xED, 0x68}
+   */
+  std::vector<uint8_t> EncodeIN_L_C() const;
+
+  /**
+   * @brief Encode IN A, (C) instruction
+   *
+   * Input from port C to register A.
+   *
+   * @return Vector of encoded bytes {0xED, 0x78}
+   */
+  std::vector<uint8_t> EncodeIN_A_C() const;
+
+  /**
+   * @brief Encode OUT (C), B instruction
+   *
+   * Output from register B to port C.
+   *
+   * @return Vector of encoded bytes {0xED, 0x41}
+   */
+  std::vector<uint8_t> EncodeOUT_C_B() const;
+
+  /**
+   * @brief Encode OUT (C), C instruction
+   *
+   * Output from register C to port C.
+   *
+   * @return Vector of encoded bytes {0xED, 0x49}
+   */
+  std::vector<uint8_t> EncodeOUT_C_C() const;
+
+  /**
+   * @brief Encode OUT (C), D instruction
+   *
+   * Output from register D to port C.
+   *
+   * @return Vector of encoded bytes {0xED, 0x51}
+   */
+  std::vector<uint8_t> EncodeOUT_C_D() const;
+
+  /**
+   * @brief Encode OUT (C), E instruction
+   *
+   * Output from register E to port C.
+   *
+   * @return Vector of encoded bytes {0xED, 0x59}
+   */
+  std::vector<uint8_t> EncodeOUT_C_E() const;
+
+  /**
+   * @brief Encode OUT (C), H instruction
+   *
+   * Output from register H to port C.
+   *
+   * @return Vector of encoded bytes {0xED, 0x61}
+   */
+  std::vector<uint8_t> EncodeOUT_C_H() const;
+
+  /**
+   * @brief Encode OUT (C), L instruction
+   *
+   * Output from register L to port C.
+   *
+   * @return Vector of encoded bytes {0xED, 0x69}
+   */
+  std::vector<uint8_t> EncodeOUT_C_L() const;
+
+  /**
+   * @brief Encode OUT (C), A instruction
+   *
+   * Output from register A to port C.
+   *
+   * @return Vector of encoded bytes {0xED, 0x79}
+   */
+  std::vector<uint8_t> EncodeOUT_C_A() const;
+
+  /** @} */ // End of Input/Output Instructions
 
   /**
    * @name Extended Instructions (ED Prefix)

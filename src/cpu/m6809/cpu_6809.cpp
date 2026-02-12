@@ -8,6 +8,7 @@
  */
 
 #include "xasm++/cpu/cpu_6809.h"
+#include "xasm++/cpu/mnemonics_6809.h"
 #include <stdexcept>
 
 namespace xasm {
@@ -1409,9 +1410,9 @@ Cpu6809::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
       // Determine if 8-bit or 16-bit based on instruction
       // For now, assume 8-bit for A/B instructions, 16-bit for D/X/Y/U/S
       bool is_16bit =
-          (mnemonic == "LDD" || mnemonic == "LDX" || mnemonic == "LDY" ||
-           mnemonic == "LDU" || mnemonic == "LDS" || mnemonic == "CMPX" ||
-           mnemonic == "CMPY" || mnemonic == "CMPU" || mnemonic == "CMPS");
+          (mnemonic == M6809Mnemonics::LDD || mnemonic == M6809Mnemonics::LDX || mnemonic == M6809Mnemonics::LDY ||
+           mnemonic == M6809Mnemonics::LDU || mnemonic == M6809Mnemonics::LDS || mnemonic == M6809Mnemonics::CMPX ||
+           mnemonic == M6809Mnemonics::CMPY || mnemonic == M6809Mnemonics::CMPU || mnemonic == M6809Mnemonics::CMPS);
       mode = is_16bit ? AddressingMode6809::Immediate16
                       : AddressingMode6809::Immediate8;
     }
@@ -1448,211 +1449,211 @@ Cpu6809::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
 
   // Dispatch to appropriate Encode* method based on mnemonic
   // Load instructions
-  if (mnemonic == "LDA")
+  if (mnemonic == M6809Mnemonics::LDA)
     return EncodeLDA(operand, mode);
-  if (mnemonic == "LDB")
+  if (mnemonic == M6809Mnemonics::LDB)
     return EncodeLDB(operand, mode);
-  if (mnemonic == "LDD")
+  if (mnemonic == M6809Mnemonics::LDD)
     return EncodeLDD(operand, mode);
-  if (mnemonic == "LDX")
+  if (mnemonic == M6809Mnemonics::LDX)
     return EncodeLDX(operand, mode);
-  if (mnemonic == "LDY")
+  if (mnemonic == M6809Mnemonics::LDY)
     return EncodeLDY(operand, mode);
 
   // Store instructions
-  if (mnemonic == "STA")
+  if (mnemonic == M6809Mnemonics::STA)
     return EncodeSTA(operand, mode);
-  if (mnemonic == "STB")
+  if (mnemonic == M6809Mnemonics::STB)
     return EncodeSTB(operand, mode);
-  if (mnemonic == "STD")
+  if (mnemonic == M6809Mnemonics::STD)
     return EncodeSTD(operand, mode);
-  if (mnemonic == "STX")
+  if (mnemonic == M6809Mnemonics::STX)
     return EncodeSTX(operand, mode);
-  if (mnemonic == "STY")
+  if (mnemonic == M6809Mnemonics::STY)
     return EncodeSTY(operand, mode);
 
   // Arithmetic
-  if (mnemonic == "ADDA")
+  if (mnemonic == M6809Mnemonics::ADDA)
     return EncodeADDA(operand, mode);
-  if (mnemonic == "ADDB")
+  if (mnemonic == M6809Mnemonics::ADDB)
     return EncodeADDB(operand, mode);
-  if (mnemonic == "SUBA")
+  if (mnemonic == M6809Mnemonics::SUBA)
     return EncodeSUBA(operand, mode);
-  if (mnemonic == "SUBB")
+  if (mnemonic == M6809Mnemonics::SUBB)
     return EncodeSUBB(operand, mode);
 
   // Logical
-  if (mnemonic == "ANDA")
+  if (mnemonic == M6809Mnemonics::ANDA)
     return EncodeANDA(operand, mode);
-  if (mnemonic == "ANDB")
+  if (mnemonic == M6809Mnemonics::ANDB)
     return EncodeANDB(operand, mode);
-  if (mnemonic == "ORA")
+  if (mnemonic == M6809Mnemonics::ORA)
     return EncodeORA(operand, mode);
-  if (mnemonic == "ORB")
+  if (mnemonic == M6809Mnemonics::ORB)
     return EncodeORB(operand, mode);
-  if (mnemonic == "EORA")
+  if (mnemonic == M6809Mnemonics::EORA)
     return EncodeEORA(operand, mode);
-  if (mnemonic == "EORB")
+  if (mnemonic == M6809Mnemonics::EORB)
     return EncodeEORB(operand, mode);
-  if (mnemonic == "BITA")
+  if (mnemonic == M6809Mnemonics::BITA)
     return EncodeBITA(operand, mode);
-  if (mnemonic == "BITB")
+  if (mnemonic == M6809Mnemonics::BITB)
     return EncodeBITB(operand, mode);
 
   // Compare
-  if (mnemonic == "CMPA")
+  if (mnemonic == M6809Mnemonics::CMPA)
     return EncodeCMPA(operand, mode);
-  if (mnemonic == "CMPB")
+  if (mnemonic == M6809Mnemonics::CMPB)
     return EncodeCMPB(operand, mode);
-  if (mnemonic == "CMPX")
+  if (mnemonic == M6809Mnemonics::CMPX)
     return EncodeCMPX(operand, mode);
-  if (mnemonic == "CMPY")
+  if (mnemonic == M6809Mnemonics::CMPY)
     return EncodeCMPY(operand, mode);
 
   // Branches (8-bit relative)
-  if (mnemonic == "BRA")
+  if (mnemonic == M6809Mnemonics::BRA)
     return EncodeBRA(static_cast<int32_t>(operand), mode);
-  if (mnemonic == "BEQ")
+  if (mnemonic == M6809Mnemonics::BEQ)
     return EncodeBEQ(static_cast<int32_t>(operand), mode);
-  if (mnemonic == "BNE")
+  if (mnemonic == M6809Mnemonics::BNE)
     return EncodeBNE(static_cast<int32_t>(operand), mode);
-  if (mnemonic == "BCC" || mnemonic == "BHS")
+  if (mnemonic == M6809Mnemonics::BCC || mnemonic == M6809Mnemonics::BHS)
     return EncodeBCC(static_cast<int32_t>(operand), mode);
-  if (mnemonic == "BCS" || mnemonic == "BLO")
+  if (mnemonic == M6809Mnemonics::BCS || mnemonic == M6809Mnemonics::BLO)
     return EncodeBCS(static_cast<int32_t>(operand), mode);
-  if (mnemonic == "BMI")
+  if (mnemonic == M6809Mnemonics::BMI)
     return EncodeBMI(static_cast<int32_t>(operand), mode);
-  if (mnemonic == "BPL")
+  if (mnemonic == M6809Mnemonics::BPL)
     return EncodeBPL(static_cast<int32_t>(operand), mode);
-  if (mnemonic == "BVS")
+  if (mnemonic == M6809Mnemonics::BVS)
     return EncodeBVS(static_cast<int32_t>(operand), mode);
-  if (mnemonic == "BVC")
+  if (mnemonic == M6809Mnemonics::BVC)
     return EncodeBVC(static_cast<int32_t>(operand), mode);
-  if (mnemonic == "BGE")
+  if (mnemonic == M6809Mnemonics::BGE)
     return EncodeBGE(static_cast<int32_t>(operand), mode);
-  if (mnemonic == "BLT")
+  if (mnemonic == M6809Mnemonics::BLT)
     return EncodeBLT(static_cast<int32_t>(operand), mode);
-  if (mnemonic == "BGT")
+  if (mnemonic == M6809Mnemonics::BGT)
     return EncodeBGT(static_cast<int32_t>(operand), mode);
-  if (mnemonic == "BLE")
+  if (mnemonic == M6809Mnemonics::BLE)
     return EncodeBLE(static_cast<int32_t>(operand), mode);
-  if (mnemonic == "BHI")
+  if (mnemonic == M6809Mnemonics::BHI)
     return EncodeBHI(static_cast<int32_t>(operand), mode);
-  if (mnemonic == "BLS")
+  if (mnemonic == M6809Mnemonics::BLS)
     return EncodeBLS(static_cast<int32_t>(operand), mode);
-  if (mnemonic == "BSR")
+  if (mnemonic == M6809Mnemonics::BSR)
     return EncodeBSR(static_cast<int32_t>(operand), mode);
 
   // Long branches (16-bit relative)
-  if (mnemonic == "LBRA")
+  if (mnemonic == M6809Mnemonics::LBRA)
     return EncodeLBRA(static_cast<int16_t>(operand));
-  if (mnemonic == "LBRN")
+  if (mnemonic == M6809Mnemonics::LBRN)
     return EncodeLBRN(static_cast<int16_t>(operand));
-  if (mnemonic == "LBHI")
+  if (mnemonic == M6809Mnemonics::LBHI)
     return EncodeLBHI(static_cast<int16_t>(operand));
-  if (mnemonic == "LBLS")
+  if (mnemonic == M6809Mnemonics::LBLS)
     return EncodeLBLS(static_cast<int16_t>(operand));
-  if (mnemonic == "LBCC" || mnemonic == "LBHS")
+  if (mnemonic == M6809Mnemonics::LBCC || mnemonic == M6809Mnemonics::LBHS)
     return EncodeLBCC(static_cast<int16_t>(operand));
-  if (mnemonic == "LBCS" || mnemonic == "LBLO")
+  if (mnemonic == M6809Mnemonics::LBCS || mnemonic == M6809Mnemonics::LBLO)
     return EncodeLBCS(static_cast<int16_t>(operand));
-  if (mnemonic == "LBNE")
+  if (mnemonic == M6809Mnemonics::LBNE)
     return EncodeLBNE(static_cast<int16_t>(operand));
-  if (mnemonic == "LBEQ")
+  if (mnemonic == M6809Mnemonics::LBEQ)
     return EncodeLBEQ(static_cast<int16_t>(operand));
-  if (mnemonic == "LBVC")
+  if (mnemonic == M6809Mnemonics::LBVC)
     return EncodeLBVC(static_cast<int16_t>(operand));
-  if (mnemonic == "LBVS")
+  if (mnemonic == M6809Mnemonics::LBVS)
     return EncodeLBVS(static_cast<int16_t>(operand));
-  if (mnemonic == "LBPL")
+  if (mnemonic == M6809Mnemonics::LBPL)
     return EncodeLBPL(static_cast<int16_t>(operand));
-  if (mnemonic == "LBMI")
+  if (mnemonic == M6809Mnemonics::LBMI)
     return EncodeLBMI(static_cast<int16_t>(operand));
-  if (mnemonic == "LBGE")
+  if (mnemonic == M6809Mnemonics::LBGE)
     return EncodeLBGE(static_cast<int16_t>(operand));
-  if (mnemonic == "LBLT")
+  if (mnemonic == M6809Mnemonics::LBLT)
     return EncodeLBLT(static_cast<int16_t>(operand));
-  if (mnemonic == "LBGT")
+  if (mnemonic == M6809Mnemonics::LBGT)
     return EncodeLBGT(static_cast<int16_t>(operand));
-  if (mnemonic == "LBLE")
+  if (mnemonic == M6809Mnemonics::LBLE)
     return EncodeLBLE(static_cast<int16_t>(operand));
 
   // Jumps/Subroutines
-  if (mnemonic == "JMP")
+  if (mnemonic == M6809Mnemonics::JMP)
     return EncodeJMP(operand, mode);
-  if (mnemonic == "JSR")
+  if (mnemonic == M6809Mnemonics::JSR)
     return EncodeJSR(operand, mode);
-  if (mnemonic == "LEAX")
+  if (mnemonic == M6809Mnemonics::LEAX)
     return EncodeLEAX(operand, mode);
-  if (mnemonic == "LEAY")
+  if (mnemonic == M6809Mnemonics::LEAY)
     return EncodeLEAY(operand, mode);
-  if (mnemonic == "RTS")
+  if (mnemonic == M6809Mnemonics::RTS)
     return EncodeRTS();
 
   // Inherent instructions
-  if (mnemonic == "NOP")
+  if (mnemonic == M6809Mnemonics::NOP)
     return EncodeNOP();
-  if (mnemonic == "CLRA")
+  if (mnemonic == M6809Mnemonics::CLRA)
     return EncodeCLRA();
-  if (mnemonic == "CLRB")
+  if (mnemonic == M6809Mnemonics::CLRB)
     return EncodeCLRB();
-  if (mnemonic == "ASLA")
+  if (mnemonic == M6809Mnemonics::ASLA)
     return EncodeASLA();
-  if (mnemonic == "ASLB")
+  if (mnemonic == M6809Mnemonics::ASLB)
     return EncodeASLB();
-  if (mnemonic == "ASRA")
+  if (mnemonic == M6809Mnemonics::ASRA)
     return EncodeASRA();
-  if (mnemonic == "ASRB")
+  if (mnemonic == M6809Mnemonics::ASRB)
     return EncodeASRB();
-  if (mnemonic == "LSRA")
+  if (mnemonic == M6809Mnemonics::LSRA)
     return EncodeLSRA();
-  if (mnemonic == "LSRB")
+  if (mnemonic == M6809Mnemonics::LSRB)
     return EncodeLSRB();
-  if (mnemonic == "ROLA")
+  if (mnemonic == M6809Mnemonics::ROLA)
     return EncodeROLA();
-  if (mnemonic == "ROLB")
+  if (mnemonic == M6809Mnemonics::ROLB)
     return EncodeROLB();
-  if (mnemonic == "RORA")
+  if (mnemonic == M6809Mnemonics::RORA)
     return EncodeRORA();
-  if (mnemonic == "RORB")
+  if (mnemonic == M6809Mnemonics::RORB)
     return EncodeRORB();
-  if (mnemonic == "INCA")
+  if (mnemonic == M6809Mnemonics::INCA)
     return EncodeINCA();
-  if (mnemonic == "INCB")
+  if (mnemonic == M6809Mnemonics::INCB)
     return EncodeINCB();
-  if (mnemonic == "DECA")
+  if (mnemonic == M6809Mnemonics::DECA)
     return EncodeDECA();
-  if (mnemonic == "DECB")
+  if (mnemonic == M6809Mnemonics::DECB)
     return EncodeDECB();
-  if (mnemonic == "TSTA")
+  if (mnemonic == M6809Mnemonics::TSTA)
     return EncodeTSTA();
-  if (mnemonic == "TSTB")
+  if (mnemonic == M6809Mnemonics::TSTB)
     return EncodeTSTB();
-  if (mnemonic == "COMA")
+  if (mnemonic == M6809Mnemonics::COMA)
     return EncodeCOMA();
-  if (mnemonic == "COMB")
+  if (mnemonic == M6809Mnemonics::COMB)
     return EncodeCOMB();
-  if (mnemonic == "NEGA")
+  if (mnemonic == M6809Mnemonics::NEGA)
     return EncodeNEGA();
-  if (mnemonic == "NEGB")
+  if (mnemonic == M6809Mnemonics::NEGB)
     return EncodeNEGB();
 
   // Stack operations - need to parse register mask from operand_str
   // For now, default to common cases
-  if (mnemonic == "PSHS")
+  if (mnemonic == M6809Mnemonics::PSHS)
     return EncodePSHS(static_cast<uint8_t>(operand));
-  if (mnemonic == "PULS")
+  if (mnemonic == M6809Mnemonics::PULS)
     return EncodePULS(static_cast<uint8_t>(operand));
-  if (mnemonic == "PSHU")
+  if (mnemonic == M6809Mnemonics::PSHU)
     return EncodePSHU(static_cast<uint8_t>(operand));
-  if (mnemonic == "PULU")
+  if (mnemonic == M6809Mnemonics::PULU)
     return EncodePULU(static_cast<uint8_t>(operand));
 
   // Register transfers - need to parse src/dst registers
-  if (mnemonic == "TFR")
+  if (mnemonic == M6809Mnemonics::TFR)
     return EncodeTFR(static_cast<uint8_t>(operand >> 4),
                      static_cast<uint8_t>(operand & 0xF));
-  if (mnemonic == "EXG")
+  if (mnemonic == M6809Mnemonics::EXG)
     return EncodeEXG(static_cast<uint8_t>(operand >> 4),
                      static_cast<uint8_t>(operand & 0xF));
 

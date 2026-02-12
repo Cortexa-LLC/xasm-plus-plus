@@ -5,6 +5,9 @@
 
 namespace xasm {
 
+// Use mnemonic constants to eliminate magic strings
+using namespace M6502Mnemonics;
+
 // ============================================================================
 // Generic Encoding Helper - Reduces Duplication Across Encode Methods
 // ============================================================================
@@ -1582,211 +1585,366 @@ Cpu6502::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
 
   // Dispatch to appropriate Encode* method based on mnemonic
   // Load instructions
-  if (mnemonic == "LDA")
+  if (mnemonic == LDA)
     return EncodeLDA(operand, mode);
-  if (mnemonic == "LDX")
+  if (mnemonic == LDX)
     return EncodeLDX(operand, mode);
-  if (mnemonic == "LDY")
+  if (mnemonic == LDY)
     return EncodeLDY(operand, mode);
 
   // Store instructions
-  if (mnemonic == "STA")
+  if (mnemonic == STA)
     return EncodeSTA(operand, mode);
-  if (mnemonic == "STX")
+  if (mnemonic == STX)
     return EncodeSTX(operand, mode);
-  if (mnemonic == "STY")
+  if (mnemonic == STY)
     return EncodeSTY(operand, mode);
-  if (mnemonic == "STZ")
+  if (mnemonic == STZ)
     return EncodeSTZ(operand, mode);
 
   // Arithmetic
-  if (mnemonic == "ADC")
+  if (mnemonic == ADC)
     return EncodeADC(operand, mode);
-  if (mnemonic == "SBC")
+  if (mnemonic == SBC)
     return EncodeSBC(operand, mode);
-  if (mnemonic == "INC")
+  if (mnemonic == INC)
     return EncodeINC(operand, mode);
-  if (mnemonic == "DEC")
+  if (mnemonic == DEC)
     return EncodeDEC(operand, mode);
-  if (mnemonic == "INX")
+  if (mnemonic == INX)
     return EncodeINX();
-  if (mnemonic == "INY")
+  if (mnemonic == INY)
     return EncodeINY();
-  if (mnemonic == "DEX")
+  if (mnemonic == DEX)
     return EncodeDEX();
-  if (mnemonic == "DEY")
+  if (mnemonic == DEY)
     return EncodeDEY();
 
   // Logical
-  if (mnemonic == "AND")
+  if (mnemonic == AND)
     return EncodeAND(operand, mode);
-  if (mnemonic == "ORA")
+  if (mnemonic == ORA)
     return EncodeORA(operand, mode);
-  if (mnemonic == "EOR")
+  if (mnemonic == EOR)
     return EncodeEOR(operand, mode);
-  if (mnemonic == "BIT")
+  if (mnemonic == BIT)
     return EncodeBIT(operand, mode);
 
   // Compare
-  if (mnemonic == "CMP")
+  if (mnemonic == CMP)
     return EncodeCMP(operand, mode);
-  if (mnemonic == "CPX")
+  if (mnemonic == CPX)
     return EncodeCPX(operand, mode);
-  if (mnemonic == "CPY")
+  if (mnemonic == CPY)
     return EncodeCPY(operand, mode);
 
   // Branches
-  if (mnemonic == "BEQ")
+  if (mnemonic == BEQ)
     return EncodeBEQ(operand, mode);
-  if (mnemonic == "BNE")
+  if (mnemonic == BNE)
     return EncodeBNE(operand, mode);
-  if (mnemonic == "BCC")
+  if (mnemonic == BCC)
     return EncodeBCC(operand, mode);
-  if (mnemonic == "BCS")
+  if (mnemonic == BCS)
     return EncodeBCS(operand, mode);
-  if (mnemonic == "BMI")
+  if (mnemonic == BMI)
     return EncodeBMI(operand, mode);
-  if (mnemonic == "BPL")
+  if (mnemonic == BPL)
     return EncodeBPL(operand, mode);
-  if (mnemonic == "BVC")
+  if (mnemonic == BVC)
     return EncodeBVC(operand, mode);
-  if (mnemonic == "BVS")
+  if (mnemonic == BVS)
     return EncodeBVS(operand, mode);
-  if (mnemonic == "BRA")
+  if (mnemonic == BRA)
     return EncodeBRA(operand, mode);
 
   // Jumps/Subroutines
-  if (mnemonic == "JMP")
+  if (mnemonic == JMP)
     return EncodeJMP(operand, mode);
-  if (mnemonic == "JSR")
+  if (mnemonic == JSR)
     return EncodeJSR(operand, mode);
-  if (mnemonic == "RTS")
+  if (mnemonic == RTS)
     return EncodeRTS();
-  if (mnemonic == "RTI")
+  if (mnemonic == RTI)
     return EncodeRTI();
 
   // Stack
-  if (mnemonic == "PHA")
+  if (mnemonic == PHA)
     return EncodePHA();
-  if (mnemonic == "PLA")
+  if (mnemonic == PLA)
     return EncodePLA();
-  if (mnemonic == "PHP")
+  if (mnemonic == PHP)
     return EncodePHP();
-  if (mnemonic == "PLP")
+  if (mnemonic == PLP)
     return EncodePLP();
-  if (mnemonic == "PHX")
+  if (mnemonic == PHX)
     return EncodePHX();
-  if (mnemonic == "PLX")
+  if (mnemonic == PLX)
     return EncodePLX();
-  if (mnemonic == "PHY")
+  if (mnemonic == PHY)
     return EncodePHY();
-  if (mnemonic == "PLY")
+  if (mnemonic == PLY)
     return EncodePLY();
 
   // Shifts/Rotates
-  if (mnemonic == "ASL")
+  if (mnemonic == ASL)
     return EncodeASL(operand, mode);
-  if (mnemonic == "LSR")
+  if (mnemonic == LSR)
     return EncodeLSR(operand, mode);
-  if (mnemonic == "ROL")
+  if (mnemonic == ROL)
     return EncodeROL(operand, mode);
-  if (mnemonic == "ROR")
+  if (mnemonic == ROR)
     return EncodeROR(operand, mode);
 
   // Flags
-  if (mnemonic == "CLC")
+  if (mnemonic == CLC)
     return EncodeCLC();
-  if (mnemonic == "SEC")
+  if (mnemonic == SEC)
     return EncodeSEC();
-  if (mnemonic == "CLD")
+  if (mnemonic == CLD)
     return EncodeCLD();
-  if (mnemonic == "SED")
+  if (mnemonic == SED)
     return EncodeSED();
-  if (mnemonic == "CLI")
+  if (mnemonic == CLI)
     return EncodeCLI();
-  if (mnemonic == "SEI")
+  if (mnemonic == SEI)
     return EncodeSEI();
-  if (mnemonic == "CLV")
+  if (mnemonic == CLV)
     return EncodeCLV();
 
   // Transfers
-  if (mnemonic == "TAX")
+  if (mnemonic == TAX)
     return EncodeTAX();
-  if (mnemonic == "TAY")
+  if (mnemonic == TAY)
     return EncodeTAY();
-  if (mnemonic == "TXA")
+  if (mnemonic == TXA)
     return EncodeTXA();
-  if (mnemonic == "TYA")
+  if (mnemonic == TYA)
     return EncodeTYA();
-  if (mnemonic == "TSX")
+  if (mnemonic == TSX)
     return EncodeTSX();
-  if (mnemonic == "TXS")
+  if (mnemonic == TXS)
     return EncodeTXS();
 
   // Misc
-  if (mnemonic == "NOP")
+  if (mnemonic == NOP)
     return EncodeNOP();
-  if (mnemonic == "BRK")
+  if (mnemonic == BRK)
     return EncodeBRK();
 
   // 65C02 Bit test
-  if (mnemonic == "TRB")
+  if (mnemonic == TRB)
     return EncodeTRB(operand, mode);
-  if (mnemonic == "TSB")
+  if (mnemonic == TSB)
     return EncodeTSB(operand, mode);
 
   // 65816 instructions
-  if (mnemonic == "PHB")
+  if (mnemonic == PHB)
     return EncodePHB();
-  if (mnemonic == "PLB")
+  if (mnemonic == PLB)
     return EncodePLB();
-  if (mnemonic == "PHK")
+  if (mnemonic == PHK)
     return EncodePHK();
-  if (mnemonic == "PHD")
+  if (mnemonic == PHD)
     return EncodePHD();
-  if (mnemonic == "PLD")
+  if (mnemonic == PLD)
     return EncodePLD();
-  if (mnemonic == "TCD")
+  if (mnemonic == TCD)
     return EncodeTCD();
-  if (mnemonic == "TDC")
+  if (mnemonic == TDC)
     return EncodeTDC();
-  if (mnemonic == "TCS")
+  if (mnemonic == TCS)
     return EncodeTCS();
-  if (mnemonic == "TSC")
+  if (mnemonic == TSC)
     return EncodeTSC();
-  if (mnemonic == "JML")
+  if (mnemonic == JML)
     return EncodeJML(operand, mode);
-  if (mnemonic == "JSL")
+  if (mnemonic == JSL)
     return EncodeJSL(operand, mode);
-  if (mnemonic == "RTL")
+  if (mnemonic == RTL)
     return EncodeRTL();
-  if (mnemonic == "PEA")
+  if (mnemonic == PEA)
     return EncodePEA(operand, mode);
-  if (mnemonic == "PEI")
+  if (mnemonic == PEI)
     return EncodePEI(operand, mode);
-  if (mnemonic == "PER")
+  if (mnemonic == PER)
     return EncodePER(operand, mode);
-  if (mnemonic == "XBA")
+  if (mnemonic == XBA)
     return EncodeXBA();
-  if (mnemonic == "XCE")
+  if (mnemonic == XCE)
     return EncodeXCE();
-  if (mnemonic == "SEP")
+  if (mnemonic == SEP)
     return EncodeSEP(operand, mode);
-  if (mnemonic == "REP")
+  if (mnemonic == REP)
     return EncodeREP(operand, mode);
-  if (mnemonic == "COP")
+  if (mnemonic == COP)
     return EncodeCOP(operand, mode);
-  if (mnemonic == "WDM")
+  if (mnemonic == WDM)
     return EncodeWDM(operand, mode);
 
   // Rockwell 65C02 extensions
-  if (mnemonic == "WAI")
+  if (mnemonic == WAI)
     return EncodeWAI();
-  if (mnemonic == "STP")
+  if (mnemonic == STP)
     return EncodeSTP();
 
   // Unsupported instruction
   throw std::invalid_argument("Unsupported instruction: " + mnemonic);
+}
+
+// ============================================================================
+// CpuPlugin Interface Implementation - Special Encoding Support
+// ============================================================================
+
+/**
+ * @brief Check if an instruction requires special encoding
+ *
+ * Branch instructions with relaxation and MVN/MVP multi-byte instructions
+ * need special handling that requires context beyond standard operand values.
+ *
+ * @param mnemonic Instruction mnemonic to check
+ * @return true if the instruction requires special encoding
+ */
+bool Cpu6502::RequiresSpecialEncoding(const std::string &mnemonic) const {
+  // Branch instructions require special encoding (branch relaxation)
+  // Use mnemonic constants to avoid magic strings
+  if (mnemonic == M6502Mnemonics::BEQ || mnemonic == M6502Mnemonics::BNE ||
+      mnemonic == M6502Mnemonics::BCC || mnemonic == M6502Mnemonics::BCS ||
+      mnemonic == M6502Mnemonics::BMI || mnemonic == M6502Mnemonics::BPL ||
+      mnemonic == M6502Mnemonics::BVC || mnemonic == M6502Mnemonics::BVS ||
+      mnemonic == M6502Mnemonics::BLT || // BLT is an alias for BCC
+      mnemonic == M6502Mnemonics::BRA) { // BRA (65C02+)
+    return true;
+  }
+
+  // MVN/MVP (65816 block move instructions) require special encoding
+  if (mnemonic == M6502Mnemonics::MVN || mnemonic == M6502Mnemonics::MVP) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * @brief Encode an instruction with special handling
+ *
+ * Handles:
+ * - Branch instructions with relaxation (needs current address and target)
+ * - MVN/MVP instructions (needs two bank operands parsed from string)
+ *
+ * @param mnemonic Instruction mnemonic
+ * @param operand Operand string (unparsed, for special parsing)
+ * @param current_address Current instruction address (for relative branches)
+ * @return Vector of encoded bytes
+ *
+ * @throws std::invalid_argument if instruction not supported for special
+ * encoding
+ * @throws std::runtime_error if encoding fails
+ */
+std::vector<uint8_t>
+Cpu6502::EncodeInstructionSpecial(const std::string &mnemonic,
+                                  const std::string &operand,
+                                  uint16_t current_address) const {
+  // Helper to trim whitespace
+  auto trim = [](const std::string &s) {
+    size_t start = s.find_first_not_of(" \t\n\r");
+    if (start == std::string::npos)
+      return std::string("");
+    size_t end = s.find_last_not_of(" \t\n\r");
+    return s.substr(start, end - start + 1);
+  };
+
+  // Helper to parse hex value
+  auto parse_hex = [](const std::string &s) -> uint32_t {
+    if (s.empty() || s[0] != '$')
+      throw std::runtime_error("Expected hex value starting with $");
+    return std::stoul(s.substr(1), nullptr, 16);
+  };
+
+  // Branch instructions with relaxation
+  if (mnemonic == M6502Mnemonics::BEQ || mnemonic == M6502Mnemonics::BNE ||
+      mnemonic == M6502Mnemonics::BCC || mnemonic == M6502Mnemonics::BCS ||
+      mnemonic == M6502Mnemonics::BMI || mnemonic == M6502Mnemonics::BPL ||
+      mnemonic == M6502Mnemonics::BVC || mnemonic == M6502Mnemonics::BVS ||
+      mnemonic == M6502Mnemonics::BLT || mnemonic == M6502Mnemonics::BRA) {
+
+    // Parse target address from operand string
+    std::string trimmed = trim(operand);
+    uint16_t target_addr = 0;
+
+    if (!trimmed.empty() && trimmed[0] == '$') {
+      target_addr = static_cast<uint16_t>(parse_hex(trimmed));
+    } else {
+      // Should not reach here - label resolution happens in assembler
+      throw std::runtime_error("Branch target must be resolved address");
+    }
+
+    // Get branch opcode for this mnemonic
+    uint8_t branch_opcode = 0;
+    if (mnemonic == M6502Mnemonics::BEQ)
+      branch_opcode = Opcodes::BEQ;
+    else if (mnemonic == M6502Mnemonics::BNE)
+      branch_opcode = Opcodes::BNE;
+    else if (mnemonic == M6502Mnemonics::BCC || mnemonic == M6502Mnemonics::BLT)
+      branch_opcode = Opcodes::BCC;
+    else if (mnemonic == M6502Mnemonics::BCS)
+      branch_opcode = Opcodes::BCS;
+    else if (mnemonic == M6502Mnemonics::BMI)
+      branch_opcode = Opcodes::BMI;
+    else if (mnemonic == M6502Mnemonics::BPL)
+      branch_opcode = Opcodes::BPL;
+    else if (mnemonic == M6502Mnemonics::BVC)
+      branch_opcode = Opcodes::BVC;
+    else if (mnemonic == M6502Mnemonics::BVS)
+      branch_opcode = Opcodes::BVS;
+    else if (mnemonic == M6502Mnemonics::BRA)
+      branch_opcode = Opcodes::BRA;
+
+    // Use branch relaxation (handles both short and long branches)
+    return EncodeBranchWithRelaxation(branch_opcode, current_address,
+                                      target_addr);
+  }
+
+  // MVN/MVP (Block Move with two operands)
+  if (mnemonic == M6502Mnemonics::MVN || mnemonic == M6502Mnemonics::MVP) {
+    // Parse operands: "srcbank,destbank" or "$E1,$01"
+    std::string trimmed_operand = trim(operand);
+    size_t comma_pos = trimmed_operand.find(',');
+
+    if (comma_pos == std::string::npos) {
+      throw std::runtime_error(mnemonic +
+                               " requires two operands: srcbank,destbank");
+    }
+
+    // Extract source and dest banks
+    std::string src_str = trim(trimmed_operand.substr(0, comma_pos));
+    std::string dst_str = trim(trimmed_operand.substr(comma_pos + 1));
+
+    // Helper lambda to parse bank value
+    auto parse_bank = [&parse_hex](const std::string &str) -> uint8_t {
+      if (!str.empty() && str[0] == '$') {
+        return static_cast<uint8_t>(parse_hex(str) & 0xFF);
+      }
+      return static_cast<uint8_t>(std::stoul(str, nullptr, 10) & 0xFF);
+    };
+
+    try {
+      uint8_t srcbank = parse_bank(src_str);
+      uint8_t destbank = parse_bank(dst_str);
+
+      // Encode the instruction (MVN/MVP are 65816-specific)
+      return (mnemonic == M6502Mnemonics::MVN) ? EncodeMVN(srcbank, destbank)
+                                               : EncodeMVP(srcbank, destbank);
+
+    } catch (const std::exception &e) {
+      throw std::runtime_error("Invalid bank values for " + mnemonic + ": " +
+                               e.what());
+    }
+  }
+
+  // If we get here, instruction doesn't support special encoding
+  throw std::invalid_argument("Special encoding not supported for instruction: " +
+                              mnemonic);
 }
 
 } // namespace xasm

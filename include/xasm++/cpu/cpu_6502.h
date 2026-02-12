@@ -139,6 +139,14 @@ public:
   EncodeInstruction(const std::string &mnemonic, uint32_t operand,
                     const std::string &operand_str) const override;
 
+  // CpuPlugin special encoding interface (for branch relaxation and multi-byte
+  // instructions)
+  bool RequiresSpecialEncoding(const std::string &mnemonic) const override;
+  std::vector<uint8_t>
+  EncodeInstructionSpecial(const std::string &mnemonic,
+                           const std::string &operand,
+                           uint16_t current_address) const override;
+
   /**
    * @brief Set the CPU mode
    *

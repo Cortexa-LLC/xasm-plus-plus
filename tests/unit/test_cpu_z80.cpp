@@ -608,3 +608,309 @@ TEST_F(CpuZ80Test, RET_NZ) {
   ASSERT_EQ(1, bytes.size());
   EXPECT_EQ(0xC0, bytes[0]); // RET NZ opcode
 }
+
+// ============================================================================
+// Phase 19: Generic EncodeInstruction with Mnemonic Constants
+// ============================================================================
+
+TEST_F(CpuZ80Test, EncodeInstruction_LD_A_Immediate) {
+  // Test LD A, n using mnemonic string "LD"
+  auto bytes = cpu.EncodeInstruction("LD", 0x42, "A, #$42");
+  ASSERT_EQ(2, bytes.size());
+  EXPECT_EQ(0x3E, bytes[0]); // LD A, n opcode
+  EXPECT_EQ(0x42, bytes[1]); // Immediate value
+}
+
+TEST_F(CpuZ80Test, EncodeInstruction_ADD_A_Immediate) {
+  // Test ADD A, n using mnemonic string "ADD"
+  auto bytes = cpu.EncodeInstruction("ADD", 0x10, "A, #$10");
+  ASSERT_EQ(2, bytes.size());
+  EXPECT_EQ(0xC6, bytes[0]); // ADD A, n opcode
+  EXPECT_EQ(0x10, bytes[1]); // Immediate value
+}
+
+TEST_F(CpuZ80Test, EncodeInstruction_JP_Absolute) {
+  // Test JP nn using mnemonic string "JP"
+  auto bytes = cpu.EncodeInstruction("JP", 0x8000, "$8000");
+  ASSERT_EQ(3, bytes.size());
+  EXPECT_EQ(0xC3, bytes[0]); // JP nn opcode
+  EXPECT_EQ(0x00, bytes[1]); // Low byte
+  EXPECT_EQ(0x80, bytes[2]); // High byte
+}
+
+TEST_F(CpuZ80Test, EncodeInstruction_NOP) {
+  // Test NOP using mnemonic string "NOP"
+  auto bytes = cpu.EncodeInstruction("NOP", 0, "");
+  ASSERT_EQ(1, bytes.size());
+  EXPECT_EQ(0x00, bytes[0]); // NOP opcode
+}
+
+TEST_F(CpuZ80Test, EncodeInstruction_SUB_Immediate) {
+  // Test SUB n using mnemonic string "SUB"
+  auto bytes = cpu.EncodeInstruction("SUB", 0x05, "#$05");
+  ASSERT_EQ(2, bytes.size());
+  EXPECT_EQ(0xD6, bytes[0]); // SUB n opcode
+  EXPECT_EQ(0x05, bytes[1]); // Immediate value
+}
+
+TEST_F(CpuZ80Test, EncodeInstruction_INC_A) {
+  // Test INC A using mnemonic string "INC"
+  auto bytes = cpu.EncodeInstruction("INC", 0, "A");
+  ASSERT_EQ(1, bytes.size());
+  EXPECT_EQ(0x3C, bytes[0]); // INC A opcode
+}
+
+TEST_F(CpuZ80Test, EncodeInstruction_DEC_A) {
+  // Test DEC A using mnemonic string "DEC"
+  auto bytes = cpu.EncodeInstruction("DEC", 0, "A");
+  ASSERT_EQ(1, bytes.size());
+  EXPECT_EQ(0x3D, bytes[0]); // DEC A opcode
+}
+
+TEST_F(CpuZ80Test, EncodeInstruction_RET) {
+  // Test RET using mnemonic string "RET"
+  auto bytes = cpu.EncodeInstruction("RET", 0, "");
+  ASSERT_EQ(1, bytes.size());
+  EXPECT_EQ(0xC9, bytes[0]); // RET opcode
+}
+
+TEST_F(CpuZ80Test, EncodeInstruction_JR_Relative) {
+  // Test JR e using mnemonic string "JR"
+  auto bytes = cpu.EncodeInstruction("JR", 0x10, "$10");
+  ASSERT_EQ(2, bytes.size());
+  EXPECT_EQ(0x18, bytes[0]); // JR e opcode
+  EXPECT_EQ(0x10, bytes[1]); // Signed displacement
+}
+
+TEST_F(CpuZ80Test, EncodeInstruction_LD_BC_Immediate) {
+  // Test LD BC, nn using mnemonic string "LD"
+  auto bytes = cpu.EncodeInstruction("LD", 0x1234, "BC, #$1234");
+  ASSERT_EQ(3, bytes.size());
+  EXPECT_EQ(0x01, bytes[0]); // LD BC, nn opcode
+  EXPECT_EQ(0x34, bytes[1]); // Low byte
+  EXPECT_EQ(0x12, bytes[2]); // High byte
+}
+
+TEST_F(CpuZ80Test, EncodeInstruction_XOR_A) {
+  // Test XOR A using mnemonic string "XOR"
+  auto bytes = cpu.EncodeInstruction("XOR", 0, "A");
+  ASSERT_EQ(1, bytes.size());
+  EXPECT_EQ(0xAF, bytes[0]); // XOR A opcode
+}
+
+// ============================================================================
+// Phase 20: Missing LD Variants
+// ============================================================================
+
+TEST_F(CpuZ80Test, LD_A_BC_IndirectLoad) {
+  // LD A, (BC) -> 0x0A
+  auto bytes = cpu.EncodeLD_A_BC();
+  ASSERT_EQ(1, bytes.size());
+  EXPECT_EQ(0x0A, bytes[0]); // LD A, (BC) opcode
+}
+
+TEST_F(CpuZ80Test, LD_A_DE_IndirectLoad) {
+  // LD A, (DE) -> 0x1A
+  auto bytes = cpu.EncodeLD_A_DE();
+  ASSERT_EQ(1, bytes.size());
+  EXPECT_EQ(0x1A, bytes[0]); // LD A, (DE) opcode
+}
+
+TEST_F(CpuZ80Test, LD_BC_A_IndirectStore) {
+  // LD (BC), A -> 0x02
+  auto bytes = cpu.EncodeLD_BC_A();
+  ASSERT_EQ(1, bytes.size());
+  EXPECT_EQ(0x02, bytes[0]); // LD (BC), A opcode
+}
+
+TEST_F(CpuZ80Test, LD_DE_A_IndirectStore) {
+  // LD (DE), A -> 0x12
+  auto bytes = cpu.EncodeLD_DE_A();
+  ASSERT_EQ(1, bytes.size());
+  EXPECT_EQ(0x12, bytes[0]); // LD (DE), A opcode
+}
+
+TEST_F(CpuZ80Test, LD_HL_n_ImmediateToMemory) {
+  // LD (HL), n -> 0x36 nn
+  auto bytes = cpu.EncodeLD_HL_n(0x42);
+  ASSERT_EQ(2, bytes.size());
+  EXPECT_EQ(0x36, bytes[0]); // LD (HL), n opcode
+  EXPECT_EQ(0x42, bytes[1]); // Immediate value
+}
+
+TEST_F(CpuZ80Test, LD_HL_addr_LoadFromMemory) {
+  // LD HL, (nn) -> 0x2A nn nn (little-endian)
+  auto bytes = cpu.EncodeLD_HL_addr(0x1234);
+  ASSERT_EQ(3, bytes.size());
+  EXPECT_EQ(0x2A, bytes[0]); // LD HL, (nn) opcode
+  EXPECT_EQ(0x34, bytes[1]); // Low byte (little-endian)
+  EXPECT_EQ(0x12, bytes[2]); // High byte
+}
+
+TEST_F(CpuZ80Test, LD_addr_HL_StoreToMemory) {
+  // LD (nn), HL -> 0x22 nn nn (little-endian)
+  auto bytes = cpu.EncodeLD_addr_HL(0xABCD);
+  ASSERT_EQ(3, bytes.size());
+  EXPECT_EQ(0x22, bytes[0]); // LD (nn), HL opcode
+  EXPECT_EQ(0xCD, bytes[1]); // Low byte (little-endian)
+  EXPECT_EQ(0xAB, bytes[2]); // High byte
+}
+
+TEST_F(CpuZ80Test, LD_SP_HL_LoadStackPointer) {
+  // LD SP, HL -> 0xF9
+  auto bytes = cpu.EncodeLD_SP_HL();
+  ASSERT_EQ(1, bytes.size());
+  EXPECT_EQ(0xF9, bytes[0]); // LD SP, HL opcode
+}
+
+// ============================================================================
+// Phase 21: RLD/RRD Digit Rotate Instructions
+// ============================================================================
+
+TEST_F(CpuZ80Test, RLD_DigitRotateLeft) {
+  // RLD -> 0xED 0x6F (rotate left digit)
+  auto bytes = cpu.EncodeRLD();
+  ASSERT_EQ(2, bytes.size());
+  EXPECT_EQ(0xED, bytes[0]); // Extended opcode prefix
+  EXPECT_EQ(0x6F, bytes[1]); // RLD opcode
+}
+
+TEST_F(CpuZ80Test, RRD_DigitRotateRight) {
+  // RRD -> 0xED 0x67 (rotate right digit)
+  auto bytes = cpu.EncodeRRD();
+  ASSERT_EQ(2, bytes.size());
+  EXPECT_EQ(0xED, bytes[0]); // Extended opcode prefix
+  EXPECT_EQ(0x67, bytes[1]); // RRD opcode
+}
+
+// ============================================================================
+// Phase 22: IN/OUT Instructions
+// ============================================================================
+
+TEST_F(CpuZ80Test, IN_A_n_ReadFromPort) {
+  // IN A, (n) -> 0xDB n
+  auto bytes = cpu.EncodeIN_A_n(0x42);
+  ASSERT_EQ(2, bytes.size());
+  EXPECT_EQ(0xDB, bytes[0]); // IN A, (n) opcode
+  EXPECT_EQ(0x42, bytes[1]); // Port address
+}
+
+TEST_F(CpuZ80Test, OUT_n_A_WriteToPort) {
+  // OUT (n), A -> 0xD3 n
+  auto bytes = cpu.EncodeOUT_n_A(0x80);
+  ASSERT_EQ(2, bytes.size());
+  EXPECT_EQ(0xD3, bytes[0]); // OUT (n), A opcode
+  EXPECT_EQ(0x80, bytes[1]); // Port address
+}
+
+TEST_F(CpuZ80Test, IN_B_C_ReadFromPortC) {
+  // IN B, (C) -> 0xED 0x40
+  auto bytes = cpu.EncodeIN_B_C();
+  ASSERT_EQ(2, bytes.size());
+  EXPECT_EQ(0xED, bytes[0]); // Extended prefix
+  EXPECT_EQ(0x40, bytes[1]); // IN B, (C) opcode
+}
+
+TEST_F(CpuZ80Test, IN_C_C_ReadFromPortC) {
+  // IN C, (C) -> 0xED 0x48
+  auto bytes = cpu.EncodeIN_C_C();
+  ASSERT_EQ(2, bytes.size());
+  EXPECT_EQ(0xED, bytes[0]); // Extended prefix
+  EXPECT_EQ(0x48, bytes[1]); // IN C, (C) opcode
+}
+
+TEST_F(CpuZ80Test, IN_D_C_ReadFromPortC) {
+  // IN D, (C) -> 0xED 0x50
+  auto bytes = cpu.EncodeIN_D_C();
+  ASSERT_EQ(2, bytes.size());
+  EXPECT_EQ(0xED, bytes[0]); // Extended prefix
+  EXPECT_EQ(0x50, bytes[1]); // IN D, (C) opcode
+}
+
+TEST_F(CpuZ80Test, IN_E_C_ReadFromPortC) {
+  // IN E, (C) -> 0xED 0x58
+  auto bytes = cpu.EncodeIN_E_C();
+  ASSERT_EQ(2, bytes.size());
+  EXPECT_EQ(0xED, bytes[0]); // Extended prefix
+  EXPECT_EQ(0x58, bytes[1]); // IN E, (C) opcode
+}
+
+TEST_F(CpuZ80Test, IN_H_C_ReadFromPortC) {
+  // IN H, (C) -> 0xED 0x60
+  auto bytes = cpu.EncodeIN_H_C();
+  ASSERT_EQ(2, bytes.size());
+  EXPECT_EQ(0xED, bytes[0]); // Extended prefix
+  EXPECT_EQ(0x60, bytes[1]); // IN H, (C) opcode
+}
+
+TEST_F(CpuZ80Test, IN_L_C_ReadFromPortC) {
+  // IN L, (C) -> 0xED 0x68
+  auto bytes = cpu.EncodeIN_L_C();
+  ASSERT_EQ(2, bytes.size());
+  EXPECT_EQ(0xED, bytes[0]); // Extended prefix
+  EXPECT_EQ(0x68, bytes[1]); // IN L, (C) opcode
+}
+
+TEST_F(CpuZ80Test, IN_A_C_ReadFromPortC) {
+  // IN A, (C) -> 0xED 0x78
+  auto bytes = cpu.EncodeIN_A_C();
+  ASSERT_EQ(2, bytes.size());
+  EXPECT_EQ(0xED, bytes[0]); // Extended prefix
+  EXPECT_EQ(0x78, bytes[1]); // IN A, (C) opcode
+}
+
+TEST_F(CpuZ80Test, OUT_C_B_WriteToPortC) {
+  // OUT (C), B -> 0xED 0x41
+  auto bytes = cpu.EncodeOUT_C_B();
+  ASSERT_EQ(2, bytes.size());
+  EXPECT_EQ(0xED, bytes[0]); // Extended prefix
+  EXPECT_EQ(0x41, bytes[1]); // OUT (C), B opcode
+}
+
+TEST_F(CpuZ80Test, OUT_C_C_WriteToPortC) {
+  // OUT (C), C -> 0xED 0x49
+  auto bytes = cpu.EncodeOUT_C_C();
+  ASSERT_EQ(2, bytes.size());
+  EXPECT_EQ(0xED, bytes[0]); // Extended prefix
+  EXPECT_EQ(0x49, bytes[1]); // OUT (C), C opcode
+}
+
+TEST_F(CpuZ80Test, OUT_C_D_WriteToPortC) {
+  // OUT (C), D -> 0xED 0x51
+  auto bytes = cpu.EncodeOUT_C_D();
+  ASSERT_EQ(2, bytes.size());
+  EXPECT_EQ(0xED, bytes[0]); // Extended prefix
+  EXPECT_EQ(0x51, bytes[1]); // OUT (C), D opcode
+}
+
+TEST_F(CpuZ80Test, OUT_C_E_WriteToPortC) {
+  // OUT (C), E -> 0xED 0x59
+  auto bytes = cpu.EncodeOUT_C_E();
+  ASSERT_EQ(2, bytes.size());
+  EXPECT_EQ(0xED, bytes[0]); // Extended prefix
+  EXPECT_EQ(0x59, bytes[1]); // OUT (C), E opcode
+}
+
+TEST_F(CpuZ80Test, OUT_C_H_WriteToPortC) {
+  // OUT (C), H -> 0xED 0x61
+  auto bytes = cpu.EncodeOUT_C_H();
+  ASSERT_EQ(2, bytes.size());
+  EXPECT_EQ(0xED, bytes[0]); // Extended prefix
+  EXPECT_EQ(0x61, bytes[1]); // OUT (C), H opcode
+}
+
+TEST_F(CpuZ80Test, OUT_C_L_WriteToPortC) {
+  // OUT (C), L -> 0xED 0x69
+  auto bytes = cpu.EncodeOUT_C_L();
+  ASSERT_EQ(2, bytes.size());
+  EXPECT_EQ(0xED, bytes[0]); // Extended prefix
+  EXPECT_EQ(0x69, bytes[1]); // OUT (C), L opcode
+}
+
+TEST_F(CpuZ80Test, OUT_C_A_WriteToPortC) {
+  // OUT (C), A -> 0xED 0x79
+  auto bytes = cpu.EncodeOUT_C_A();
+  ASSERT_EQ(2, bytes.size());
+  EXPECT_EQ(0xED, bytes[0]); // Extended prefix
+  EXPECT_EQ(0x79, bytes[1]); // OUT (C), A opcode
+}

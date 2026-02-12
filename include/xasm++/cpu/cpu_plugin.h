@@ -9,6 +9,7 @@
 #pragma once
 
 #include <cstdint>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -78,6 +79,53 @@ public:
   virtual std::vector<uint8_t>
   EncodeInstruction(const std::string &mnemonic, uint32_t operand,
                     const std::string &operand_str) const = 0;
+
+  /**
+   * @brief Check if an instruction requires special encoding
+   *
+   * Some instructions (like branches with relaxation or multi-byte
+   * instructions) need special handling beyond the standard EncodeInstruction
+   * interface. This method allows the CPU plugin to identify such instructions.
+   *
+   * @param mnemonic Instruction mnemonic to check
+   * @return true if the instruction requires special encoding
+   *
+   * @note Default implementation returns false (no special handling needed)
+   */
+  virtual bool RequiresSpecialEncoding(const std::string &mnemonic) const {
+    (void)mnemonic; // Unused in default implementation
+    return false;
+  }
+
+  /**
+   * @brief Encode an instruction with special handling
+   *
+   * Handles instructions that require context beyond standard operand values,
+   * such as:
+   * - Branch instructions with relaxation (need current address and target)
+   * - Multi-operand instructions (like MVN/MVP with two operands)
+   * - Instructions with special parsing requirements
+   *
+   * @param mnemonic Instruction mnemonic
+   * @param operand Operand string (unparsed, for special parsing)
+   * @param current_address Current instruction address (for relative branches)
+   * @return Vector of encoded bytes
+   *
+   * @throws std::invalid_argument if instruction not supported for special
+   * encoding
+   * @throws std::runtime_error if encoding fails
+   *
+   * @note Default implementation throws exception (not supported)
+   */
+  virtual std::vector<uint8_t>
+  EncodeInstructionSpecial(const std::string &mnemonic,
+                           const std::string &operand,
+                           uint16_t current_address) const {
+    (void)operand;         // Unused in default implementation
+    (void)current_address; // Unused in default implementation
+    throw std::invalid_argument(
+        "Special encoding not supported for instruction: " + mnemonic);
+  }
 
 protected:
   /**
