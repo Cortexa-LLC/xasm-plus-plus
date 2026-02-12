@@ -10,12 +10,13 @@
 
 1. [Overview](#overview)
 2. [C++17/20 Language Features](#c1720-language-features)
-3. [Testing Requirements](#testing-requirements)
-4. [Build and Quality Requirements](#build-and-quality-requirements)
-5. [Code Organization Patterns](#code-organization-patterns)
-6. [Error Handling](#error-handling)
-7. [Plugin Architecture Patterns](#plugin-architecture-patterns)
-8. [Documentation Requirements](#documentation-requirements)
+3. [File Naming Conventions](#file-naming-conventions)
+4. [Testing Requirements](#testing-requirements)
+5. [Build and Quality Requirements](#build-and-quality-requirements)
+6. [Code Organization Patterns](#code-organization-patterns)
+7. [Error Handling](#error-handling)
+8. [Plugin Architecture Patterns](#plugin-architecture-patterns)
+9. [Documentation Requirements](#documentation-requirements)
 
 ---
 
@@ -379,6 +380,255 @@ void ProcessLabel(std::string_view label);
 - Adds complexity without measured benefit
 - String copies are not a bottleneck
 - Consider when profiling shows string copy overhead
+
+---
+
+## File Naming Conventions
+
+### Overview
+
+xasm++ uses **lowercase snake_case** for all file and directory names, following C++ best practices and ensuring consistency across the codebase.
+
+### General Rules
+
+**All files must use lowercase with underscores:**
+```
+✅ assembler.cpp / assembler.h
+✅ cpu_6502.cpp / cpu_6502.h
+✅ symbol_table.cpp / symbol_table.h
+✅ parse_utils.cpp / parse_utils.h
+
+❌ Assembler.cpp / Assembler.h         (PascalCase - wrong)
+❌ CPU6502.cpp / CPU6502.h              (mixed case - wrong)
+❌ symbolTable.cpp / symbolTable.h      (camelCase - wrong)
+```
+
+### Plugin File Naming
+
+#### CPU Plugin Files
+
+**Pattern:** `cpu_{name}.cpp` / `cpu_{name}.h`
+
+```
+✅ cpu_6502.cpp / cpu_6502.h
+✅ cpu_6809.cpp / cpu_6809.h
+✅ cpu_z80.cpp / cpu_z80.h
+✅ cpu_65816.cpp / cpu_65816.h
+✅ cpu_6502_branch_handler.cpp / cpu_6502_branch_handler.h
+
+❌ Cpu6502.cpp
+❌ 6502.cpp
+❌ cpu-6502.cpp (hyphens not allowed)
+```
+
+**Rationale:**
+- Prefix (`cpu_`) clearly identifies plugin type
+- Numeric identifiers readable (e.g., `6502`, `65816`)
+- Underscores separate logical components
+- Consistent with C++ file naming conventions
+
+#### Syntax Plugin Files
+
+**Pattern:** `{name}_syntax.cpp` / `{name}_syntax.h`
+
+```
+✅ merlin_syntax.cpp / merlin_syntax.h
+✅ scmasm_syntax.cpp / scmasm_syntax.h
+✅ edtasm_syntax.cpp / edtasm_syntax.h
+✅ flex_syntax.cpp / flex_syntax.h
+✅ simple_syntax.cpp / simple_syntax.h
+✅ edtasm_m80_plusplus_syntax.cpp / edtasm_m80_plusplus_syntax.h
+
+❌ Merlin.cpp (missing _syntax suffix)
+❌ merlinSyntax.cpp (camelCase)
+❌ merlin-syntax.cpp (hyphens not allowed)
+```
+
+**Rationale:**
+- Suffix (`_syntax`) clearly identifies plugin type
+- Multi-word names use underscores (e.g., `edtasm_m80_plusplus`)
+- Consistent with CPU plugin pattern
+- Easy to glob: `*_syntax.cpp`
+
+#### Directive Handler Files
+
+**Pattern:** `{name}_directive_handlers.cpp` / `{name}_directive_handlers.h`
+
+```
+✅ core_directive_handlers.cpp / core_directive_handlers.h
+✅ edtasm_directive_handlers.cpp / edtasm_directive_handlers.h
+✅ scmasm_directive_handlers.cpp / scmasm_directive_handlers.h
+
+❌ DirectiveHandlers.cpp
+❌ edtasm_directives.cpp (inconsistent suffix)
+```
+
+**Rationale:**
+- Descriptive suffix (`_directive_handlers`) explains purpose
+- Consistent pattern across different syntax plugins
+- Separates directive handling from main syntax parsing
+
+#### Output Plugin Files
+
+**Pattern:** `{name}_output.cpp` / `{name}_output.h`
+
+```
+✅ binary_output.cpp / binary_output.h
+✅ intel_hex_writer.cpp / intel_hex_writer.h
+✅ listing_output.cpp / listing_output.h
+✅ symbol_output.cpp / symbol_output.h
+
+❌ BinaryOutput.cpp
+❌ output_binary.cpp (suffix should be _output, not prefix)
+```
+
+### Core Module Files
+
+**Pattern:** `{module}.cpp` / `{module}.h`
+
+```
+✅ assembler.cpp / assembler.h
+✅ atom.cpp / atom.h
+✅ expression.cpp / expression.h
+✅ symbol.cpp / symbol.h
+✅ section.cpp / section.h
+✅ segment_manager.cpp / segment_manager.h
+✅ parse_utils.cpp / parse_utils.h
+✅ string_utils.cpp / string_utils.h
+
+❌ Assembler.cpp
+❌ parseUtils.cpp (camelCase)
+```
+
+### Header Guards
+
+**Use `#pragma once`** (modern C++) instead of traditional header guards:
+
+```cpp
+// ✅ Preferred: Modern approach
+#pragma once
+
+class Cpu6502 { ... };
+
+// ❌ Avoid: Traditional guards (verbose, error-prone)
+#ifndef XASM_CPU_6502_H
+#define XASM_CPU_6502_H
+
+class Cpu6502 { ... };
+
+#endif  // XASM_CPU_6502_H
+```
+
+**Rationale:**
+- Simpler and less error-prone
+- Compiler support universal (GCC, Clang, MSVC)
+- No name collision risk
+- Less maintenance burden
+
+### Directory Structure
+
+**Directories follow the same lowercase snake_case convention:**
+
+```
+src/
+├── core/               ✅ Lowercase
+├── cpu/                ✅ Lowercase
+├── syntax/             ✅ Lowercase
+├── output/             ✅ Lowercase
+├── common/             ✅ Lowercase
+└── utils/              ✅ Lowercase
+
+include/xasm++/
+├── core/               ✅ Lowercase
+├── cpu/                ✅ Lowercase
+├── syntax/             ✅ Lowercase
+└── output/             ✅ Lowercase
+```
+
+**Note:** Syntax plugins use **files**, not subdirectories. All syntax implementations live in `src/syntax/` directory.
+
+### Test File Naming
+
+**Pattern:** `test_{module}.cpp`
+
+```
+✅ test_assembler.cpp
+✅ test_cpu_6502.cpp
+✅ test_symbol_table.cpp
+✅ test_merlin_syntax.cpp
+✅ test_assembler_integration.cpp
+
+❌ TestAssembler.cpp
+❌ assembler_test.cpp (suffix should be test_ prefix)
+```
+
+**Rationale:**
+- Prefix (`test_`) clearly identifies test files
+- Easy to glob: `test_*.cpp`
+- Matches module under test
+
+### Configuration Files
+
+**Use lowercase with underscores or hyphens (per convention):**
+
+```
+✅ .clang-format       (tool convention: hyphens)
+✅ .clang-tidy         (tool convention: hyphens)
+✅ CMakeLists.txt      (CMake convention: PascalCase)
+✅ README.md           (documentation convention: uppercase)
+✅ CODING-STANDARDS.md (documentation convention: uppercase)
+```
+
+**Rationale:**
+- Follow each tool's established convention
+- Documentation files use UPPERCASE for visibility
+- Build files follow CMake conventions
+
+### Examples Summary
+
+**CPU Plugin:**
+```
+src/cpu/cpu_6502.cpp
+include/xasm++/cpu/cpu_6502.h
+tests/unit/test_cpu_6502.cpp
+```
+
+**Syntax Plugin:**
+```
+src/syntax/merlin_syntax.cpp
+src/syntax/merlin_directives.cpp
+include/xasm++/syntax/merlin_syntax.h
+tests/unit/test_merlin_syntax.cpp
+```
+
+**Core Module:**
+```
+src/core/assembler.cpp
+include/xasm++/core/assembler.h
+tests/unit/test_assembler.cpp
+tests/integration/test_assembler_integration.cpp
+```
+
+### Verification Commands
+
+**Check for naming consistency:**
+
+```bash
+# Find files that don't follow convention (should return empty)
+find src include -name "*[A-Z]*" -type f
+
+# Find directories that don't follow convention
+find src include -name "*[A-Z]*" -type d
+
+# List all syntax files
+ls -1 src/syntax/*_syntax.cpp
+
+# List all CPU files
+ls -1 src/cpu/cpu_*.cpp
+
+# List all test files
+ls -1 tests/unit/test_*.cpp
+```
 
 ---
 
@@ -1178,6 +1428,15 @@ if (CheckConvergence(previous_sizes, sizes)) {
 
 ## Changelog
 
+- **1.1.0** (2026-02-12) - Added file naming conventions
+  - Comprehensive file naming standards
+  - Plugin file naming patterns (CPU, Syntax, Output)
+  - Core module naming conventions
+  - Test file naming patterns
+  - Directory structure guidelines
+  - Header guard standards (#pragma once)
+  - Configuration file conventions
+  
 - **1.0.0** (2026-02-09) - Initial coding standards document
   - C++17/20 language features
   - Testing requirements (TDD, coverage)
