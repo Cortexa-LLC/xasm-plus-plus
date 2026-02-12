@@ -12,6 +12,7 @@
 
 #include "xasm++/section.h"
 #include "xasm++/symbol.h"
+#include "xasm++/syntax/directive_registry.h"
 #include <string>
 
 namespace xasm {
@@ -56,8 +57,10 @@ class SimpleSyntaxParser {
 public:
   /**
    * @brief Default constructor
+   *
+   * Initializes the directive registry with supported directives.
    */
-  SimpleSyntaxParser() = default;
+  SimpleSyntaxParser();
 
   /**
    * @brief Parse assembly source into atoms and symbols
@@ -75,6 +78,17 @@ public:
    */
   void Parse(const std::string &source, Section &section,
              ConcreteSymbolTable &symbols);
+
+private:
+  /**
+   * @brief Initialize directive handlers
+   *
+   * Registers all supported directives (.ORG, .DB, .DW) with the registry.
+   */
+  void InitializeDirectives();
+
+  /// Directive registry for O(1) directive dispatch
+  DirectiveRegistry directive_registry_;
 };
 
 } // namespace xasm

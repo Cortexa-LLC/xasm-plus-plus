@@ -42,6 +42,7 @@
 namespace xasm {
 
 // Forward declarations
+struct DirectiveContext;
 class DirectiveRegistry;
 class MerlinSyntaxParser;
 class ConditionalAssembler;
@@ -293,7 +294,8 @@ void HandleRevDirective(const std::string &label, const std::string &operand,
  * @endcode
  */
 void HandleDumDirective(const std::string &operand, ConcreteSymbolTable &symbols,
-                        bool &in_dum_block, uint32_t &dum_address);
+                        bool &in_dum_block, uint32_t &dum_address,
+                        const DirectiveContext *ctx = nullptr);
 
 /**
  * @brief Handle DEND directive - end dummy section

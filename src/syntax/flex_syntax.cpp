@@ -101,9 +101,7 @@ void FlexAsmSyntax::ParseDirective(const std::string &directive,
   // ORG - Set origin address
   if (dir_upper == "ORG") {
     uint32_t address = ParseNumber(operands);
-    // Note: Not creating OrgAtom for now to match test expectations
-    // TODO: Revisit this - should ORG create an atom?
-    // section.atoms.push_back(std::make_shared<OrgAtom>(address));
+    section.atoms.push_back(std::make_shared<OrgAtom>(address));
     current_address_ = address;
     return;
   }

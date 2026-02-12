@@ -7,11 +7,13 @@
 #include "xasm++/core/error_formatter.h"
 #include "xasm++/cpu/cpu_6502.h"
 #include "xasm++/cpu/cpu_6809.h"
+#include "xasm++/cpu/cpu_z80.h"
 #include "xasm++/cpu/cpu_constants.h"
 #include "xasm++/output/binary_output.h"
 #include "xasm++/output/listing_output.h"
 #include "xasm++/output/symbol_output.h"
 #include "xasm++/syntax/edtasm_syntax.h"
+#include "xasm++/syntax/edtasm_m80_plusplus_syntax.h"
 #include "xasm++/syntax/merlin_syntax.h"
 #include "xasm++/syntax/scmasm_syntax.h"
 #include "xasm++/syntax/simple_syntax.h"
@@ -73,9 +75,12 @@ int main(int argc, char **argv) {
     CpuPlugin *cpu = nullptr;
     Cpu6502 cpu6502;
     Cpu6809 cpu6809;
+    CpuZ80 cpu_z80;
 
     if (opts.cpu == cpu::CPU_6809) {
       cpu = &cpu6809;
+    } else if (opts.cpu == cpu::CPU_Z80) {
+      cpu = &cpu_z80;
     } else if (opts.cpu == cpu::CPU_6502) {
       cpu6502.SetCpuMode(CpuMode::Cpu6502);
       cpu = &cpu6502;
@@ -92,7 +97,7 @@ int main(int argc, char **argv) {
       std::cerr << "Error: Unknown CPU type: " << opts.cpu << "\n";
       std::cerr << "Supported: " << cpu::CPU_6502 << ", " << cpu::CPU_65C02
                 << ", " << cpu::CPU_65C02_ROCK << ", " << cpu::CPU_65816 << ", "
-                << cpu::CPU_6809 << "\n";
+                << cpu::CPU_6809 << ", " << cpu::CPU_Z80 << "\n";
       return 1;
     }
 
@@ -112,15 +117,26 @@ int main(int argc, char **argv) {
 
       if (opts.syntax == "merlin") {
         // Merlin syntax requires 6502 family CPU
-        if (opts.cpu == cpu::CPU_6809) {
+        if (opts.cpu == cpu::CPU_6809 || opts.cpu == cpu::CPU_Z80) {
           std::cerr << "Error: Merlin syntax is only compatible with 6502 "
                        "family CPUs\n";
           std::cerr << "For " << cpu::CPU_6809
                     << ", use --syntax edtasm or --syntax scmasm\n";
+          std::cerr << "For " << cpu::CPU_Z80
+                    << ", use --syntax edtasm_m80_plusplus\n";
           return 1;
         }
         MerlinSyntaxParser parser;
         parser.SetCpu(&cpu6502); // Merlin uses 6502-specific features
+        parser.Parse(source, section, symbols);
+      } else if (opts.syntax == "edtasm_m80_plusplus") {
+        // EDTASM-M80++ is Z80-specific
+        if (opts.cpu != cpu::CPU_Z80) {
+          std::cerr << "Error: EDTASM-M80++ syntax requires --cpu z80\n";
+          return 1;
+        }
+        EdtasmM80PlusPlusSyntaxParser parser;
+        parser.SetCpu(&cpu_z80);
         parser.Parse(source, section, symbols);
       } else if (opts.syntax == "scmasm") {
         // SCMASM works with both 6502 and 6809

@@ -30,7 +30,12 @@ Makefile
 *.swp
 *.swo
 *~
+*.bak
 .DS_Store
+
+# Cache directories
+.cache/
+.pytest_cache/
 
 # Test outputs
 tests/output/

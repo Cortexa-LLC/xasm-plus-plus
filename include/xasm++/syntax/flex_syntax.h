@@ -13,7 +13,7 @@
 
 #include "xasm++/section.h"
 #include "xasm++/symbol.h"
-#include "xasm++/syntax/macro_processor.h"
+#include "xasm++/common/macro_processor.h"
 #include <memory>
 #include <stack>
 #include <string>

@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cctype>
 #include <sstream>
+#include <vector>
 
 namespace xasm {
 
@@ -39,6 +40,59 @@ static std::string StripComments(const std::string &str) {
 // Helper: Check if character is valid identifier start
 static bool IsIdentifierStart(char c) {
   return std::isalpha(static_cast<unsigned char>(c)) || c == '_';
+}
+
+SimpleSyntaxParser::SimpleSyntaxParser() { InitializeDirectives(); }
+
+void SimpleSyntaxParser::InitializeDirectives() {
+  // Register .ORG directive
+  directive_registry_.Register("ORG", [](const std::string & /*label*/,
+                                         const std::string &operand,
+                                         DirectiveContext &context) {
+    uint32_t address = ParseHex(operand);
+    context.section->atoms.push_back(std::make_shared<OrgAtom>(address));
+    *context.current_address = address;
+  });
+
+  // Register .DB directive
+  directive_registry_.Register("DB", [](const std::string & /*label*/,
+                                        const std::string &operand,
+                                        DirectiveContext &context) {
+    std::vector<uint8_t> bytes;
+    std::istringstream ops(operand);
+    std::string value;
+
+    while (std::getline(ops, value, ',')) {
+      value = Trim(value);
+      if (!value.empty()) {
+        bytes.push_back(static_cast<uint8_t>(ParseHex(value)));
+      }
+    }
+
+    context.section->atoms.push_back(std::make_shared<DataAtom>(bytes));
+    *context.current_address += bytes.size();
+  });
+
+  // Register .DW directive
+  directive_registry_.Register("DW", [](const std::string & /*label*/,
+                                        const std::string &operand,
+                                        DirectiveContext &context) {
+    std::vector<uint8_t> bytes;
+    std::istringstream ops(operand);
+    std::string value;
+
+    while (std::getline(ops, value, ',')) {
+      value = Trim(value);
+      if (!value.empty()) {
+        uint32_t word = ParseHex(value);
+        bytes.push_back(static_cast<uint8_t>(word & 0xFF));         // Low byte
+        bytes.push_back(static_cast<uint8_t>((word >> 8) & 0xFF));  // High byte
+      }
+    }
+
+    context.section->atoms.push_back(std::make_shared<DataAtom>(bytes));
+    *context.current_address += bytes.size();
+  });
 }
 
 void SimpleSyntaxParser::Parse(const std::string &source, Section &section,
@@ -91,53 +145,22 @@ void SimpleSyntaxParser::Parse(const std::string &source, Section &section,
 
     // Parse directive
     if (line[0] == '.') {
-      // Extract directive name
+      // Extract directive name (without the leading '.')
       size_t space_pos = line.find(' ');
-      std::string directive = ToUpper(line.substr(0, space_pos));
+      std::string directive = ToUpper(line.substr(1, space_pos - 1));
       std::string operands;
       if (space_pos != std::string::npos) {
         operands = Trim(line.substr(space_pos + 1));
       }
 
-      if (directive == ".ORG") {
-        // Parse .org $8000
-        uint32_t address = ParseHex(operands);
-        section.atoms.push_back(std::make_shared<OrgAtom>(address));
-        current_address = address;
-      } else if (directive == ".DB") {
-        // Parse .db $01, $02, $03
-        std::vector<uint8_t> bytes;
-        std::istringstream ops(operands);
-        std::string value;
+      // Setup context for directive execution
+      DirectiveContext context;
+      context.section = &section;
+      context.symbols = &symbols;
+      context.current_address = &current_address;
 
-        while (std::getline(ops, value, ',')) {
-          value = Trim(value);
-          if (!value.empty()) {
-            bytes.push_back(static_cast<uint8_t>(ParseHex(value)));
-          }
-        }
-
-        section.atoms.push_back(std::make_shared<DataAtom>(bytes));
-        current_address += bytes.size();
-      } else if (directive == ".DW") {
-        // Parse .dw $1234 (little-endian)
-        std::vector<uint8_t> bytes;
-        std::istringstream ops(operands);
-        std::string value;
-
-        while (std::getline(ops, value, ',')) {
-          value = Trim(value);
-          if (!value.empty()) {
-            uint32_t word = ParseHex(value);
-            bytes.push_back(static_cast<uint8_t>(word & 0xFF)); // Low byte
-            bytes.push_back(
-                static_cast<uint8_t>((word >> 8) & 0xFF)); // High byte
-          }
-        }
-
-        section.atoms.push_back(std::make_shared<DataAtom>(bytes));
-        current_address += bytes.size();
-      }
+      // Execute directive via registry (throws on unknown directive)
+      directive_registry_.Execute(directive, "", operands, context);
     } else if (IsIdentifierStart(line[0])) {
       // Parse instruction: mnemonic [operands]
       size_t space_pos = line.find(' ');

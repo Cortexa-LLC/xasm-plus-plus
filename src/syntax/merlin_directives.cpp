@@ -471,7 +471,8 @@ void HandleRevDirective(const std::string &label, const std::string &operand,
 // ============================================================================
 
 void HandleDumDirective(const std::string &operand, ConcreteSymbolTable &symbols,
-                        bool &in_dum_block, uint32_t &dum_address) {
+                        bool &in_dum_block, uint32_t &dum_address,
+                        const DirectiveContext *ctx) {
   // DUM (Dummy section) - start variable definition block
   in_dum_block = true;
 
@@ -479,8 +480,11 @@ void HandleDumDirective(const std::string &operand, ConcreteSymbolTable &symbols
 
   // Check if operand is empty
   if (op.empty()) {
-    throw std::runtime_error(
-        FormatError("DUM directive requires an address operand"));
+    std::string error = "DUM directive requires an address operand";
+    if (ctx && !ctx->current_file.empty() && ctx->current_line > 0) {
+      error = FormatError(error, ctx->current_file, ctx->current_line);
+    }
+    throw std::runtime_error(error);
   }
 
   // Parse number (decimal, hex, or binary)
@@ -553,49 +557,49 @@ void HandleLupDirective(const std::string & /* operand */) {
 void RegisterMerlinDirectiveHandlers(DirectiveRegistry &registry,
                                      MerlinSyntaxParser *parser) {
   // HEX - Define hex bytes
-  registry.Register("HEX",
+  registry.Register(directives::HEX,
     [](const std::string &label, const std::string &operand, DirectiveContext &ctx) {
       (void)label; // HEX doesn't use label
       HandleHexDirective(operand, *ctx.section, *ctx.current_address);
     });
 
   // ASC - ASCII string with high bit set
-  registry.Register("ASC",
+  registry.Register(directives::ASC,
     [](const std::string &label, const std::string &operand, DirectiveContext &ctx) {
       (void)label; // ASC doesn't use label (could be added later)
       HandleAscDirective(operand, *ctx.section, *ctx.current_address);
     });
 
   // DCI - DCI string (last char with high bit set)
-  registry.Register("DCI",
+  registry.Register(directives::DCI,
     [](const std::string &label, const std::string &operand, DirectiveContext &ctx) {
       (void)label;
       HandleDciDirective(operand, *ctx.section, *ctx.current_address);
     });
 
   // INV - Inverse ASCII (all chars with high bit set)
-  registry.Register("INV",
+  registry.Register(directives::INV,
     [](const std::string &label, const std::string &operand, DirectiveContext &ctx) {
       (void)label;
       HandleInvDirective(operand, *ctx.section, *ctx.current_address);
     });
 
   // FLS - Flash ASCII (alternating high bit)
-  registry.Register("FLS",
+  registry.Register(directives::FLS,
     [](const std::string &label, const std::string &operand, DirectiveContext &ctx) {
       (void)label;
       HandleFlsDirective(operand, *ctx.section, *ctx.current_address);
     });
 
   // DA - Define address (word)
-  registry.Register("DA",
+  registry.Register(directives::DA,
     [](const std::string &label, const std::string &operand, DirectiveContext &ctx) {
       (void)label;
       HandleDaDirective(operand, *ctx.section, *ctx.symbols, *ctx.current_address);
     });
 
   // END - End of source
-  registry.Register("END",
+  registry.Register(directives::END,
     [parser](const std::string &label, const std::string &operand, DirectiveContext &ctx) {
       (void)label;
       (void)operand;
@@ -606,7 +610,7 @@ void RegisterMerlinDirectiveHandlers(DirectiveRegistry &registry,
     });
 
   // SAV - Save output filename (no-op)
-  registry.Register("SAV",
+  registry.Register(directives::SAV,
     [](const std::string &label, const std::string &operand, DirectiveContext &ctx) {
       (void)label;
       (void)ctx;
@@ -614,7 +618,7 @@ void RegisterMerlinDirectiveHandlers(DirectiveRegistry &registry,
     });
 
   // XC - Toggle 65C02 mode
-  registry.Register("XC",
+  registry.Register(directives::XC,
     [parser](const std::string &label, const std::string &operand, DirectiveContext &ctx) {
       (void)label;
       (void)ctx;
@@ -624,7 +628,7 @@ void RegisterMerlinDirectiveHandlers(DirectiveRegistry &registry,
     });
 
   // MX - Set 65816 register widths
-  registry.Register("MX",
+  registry.Register(directives::MX,
     [](const std::string &label, const std::string &operand, DirectiveContext &ctx) {
       (void)label;
       (void)ctx;
@@ -632,7 +636,7 @@ void RegisterMerlinDirectiveHandlers(DirectiveRegistry &registry,
     });
 
   // REV - Reverse ASCII string
-  registry.Register("REV",
+  registry.Register(directives::REV,
     [](const std::string &label, const std::string &operand, DirectiveContext &ctx) {
       if (label.empty()) {
         throw std::runtime_error(FormatError("REV requires a label", "", 0));
@@ -641,17 +645,17 @@ void RegisterMerlinDirectiveHandlers(DirectiveRegistry &registry,
     });
 
   // DUM - Start dummy section
-  registry.Register("DUM",
+  registry.Register(directives::DUM,
     [parser](const std::string &label, const std::string &operand, DirectiveContext &ctx) {
       (void)label;
       if (parser) {
         HandleDumDirective(operand, *ctx.symbols, parser->in_dum_block_,
-                          parser->dum_address_);
+                          parser->dum_address_, &ctx);
       }
     });
 
   // DEND - End dummy section
-  registry.Register("DEND",
+  registry.Register(directives::DEND,
     [parser](const std::string &label, const std::string &operand, DirectiveContext &ctx) {
       (void)label;
       (void)operand;
@@ -662,7 +666,7 @@ void RegisterMerlinDirectiveHandlers(DirectiveRegistry &registry,
     });
 
   // LST - Listing control (no-op)
-  registry.Register("LST",
+  registry.Register(directives::LST,
     [](const std::string &label, const std::string &operand, DirectiveContext &ctx) {
       (void)label;
       (void)ctx;
@@ -670,7 +674,7 @@ void RegisterMerlinDirectiveHandlers(DirectiveRegistry &registry,
     });
 
   // LSTDO - List during DO blocks (no-op)
-  registry.Register("LSTDO",
+  registry.Register(directives::LSTDO,
     [](const std::string &label, const std::string &operand, DirectiveContext &ctx) {
       (void)label;
       (void)operand;
@@ -679,7 +683,7 @@ void RegisterMerlinDirectiveHandlers(DirectiveRegistry &registry,
     });
 
   // TR - Truncate listing (no-op)
-  registry.Register("TR",
+  registry.Register(directives::TR,
     [](const std::string &label, const std::string &operand, DirectiveContext &ctx) {
       (void)label;
       (void)ctx;
@@ -687,7 +691,7 @@ void RegisterMerlinDirectiveHandlers(DirectiveRegistry &registry,
     });
 
   // USR - User-defined subroutine (no-op)
-  registry.Register("USR",
+  registry.Register(directives::USR,
     [](const std::string &label, const std::string &operand, DirectiveContext &ctx) {
       (void)label;
       (void)operand;
@@ -696,7 +700,7 @@ void RegisterMerlinDirectiveHandlers(DirectiveRegistry &registry,
     });
 
   // LUP - Loop assembly (not implemented)
-  registry.Register("LUP",
+  registry.Register(directives::LUP,
     [](const std::string &label, const std::string &operand, DirectiveContext &ctx) {
       (void)label;
       (void)ctx;
