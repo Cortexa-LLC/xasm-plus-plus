@@ -4,6 +4,8 @@
  */
 
 #include "xasm++/common/expression_parser.h"
+#include "xasm++/directives/directive_constants.h"
+#include <algorithm>
 #include <cctype>
 #include <stdexcept>
 
@@ -429,9 +431,12 @@ std::shared_ptr<Expression> ExpressionParser::ParsePrimary() {
       Consume();
       
       // Handle LOW and HIGH functions
-      if (ident == "LOW" || ident == "low" || ident == "Low") {
+      std::string ident_upper = ident;
+      std::transform(ident_upper.begin(), ident_upper.end(), ident_upper.begin(), ::toupper);
+      
+      if (ident_upper == directives::LOW_FUNC) {
         return std::make_shared<UnaryOpExpr>(UnaryOp::LowByte, arg);
-      } else if (ident == "HIGH" || ident == "high" || ident == "High") {
+      } else if (ident_upper == directives::HIGH_FUNC) {
         return std::make_shared<UnaryOpExpr>(UnaryOp::HighByte, arg);
       } else {
         throw std::runtime_error("Unknown function: " + ident);

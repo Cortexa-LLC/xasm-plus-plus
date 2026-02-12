@@ -6,6 +6,7 @@
  */
 
 #include "xasm++/syntax/flex_syntax.h"
+#include "xasm++/directives/directive_constants.h"
 #include "xasm++/parse_utils.h"
 #include <algorithm>
 #include <cctype>
@@ -16,6 +17,8 @@
 #include <unordered_set>
 
 namespace xasm {
+
+using namespace directives;
 
 // ============================================================================
 // Helper Functions
@@ -99,7 +102,7 @@ void FlexAsmSyntax::ParseDirective(const std::string &directive,
   std::string dir_upper = ToUpper(directive);
 
   // ORG - Set origin address
-  if (dir_upper == "ORG") {
+  if (dir_upper == ORG) {
     uint32_t address = ParseNumber(operands);
     section.atoms.push_back(std::make_shared<OrgAtom>(address));
     current_address_ = address;
@@ -107,13 +110,13 @@ void FlexAsmSyntax::ParseDirective(const std::string &directive,
   }
 
   // END - End of assembly
-  if (dir_upper == "END") {
+  if (dir_upper == END) {
     // END can have optional entry point, but we don't create an atom
     return;
   }
 
   // EQU - Equate (constant symbol)
-  if (dir_upper == "EQU") {
+  if (dir_upper == EQU) {
     if (label.empty()) {
       throw std::runtime_error("EQU requires a label");
     }
@@ -123,7 +126,7 @@ void FlexAsmSyntax::ParseDirective(const std::string &directive,
   }
 
   // SET - Set (variable symbol)
-  if (dir_upper == "SET") {
+  if (dir_upper == SET) {
     if (label.empty()) {
       throw std::runtime_error("SET requires a label");
     }
@@ -134,7 +137,7 @@ void FlexAsmSyntax::ParseDirective(const std::string &directive,
   }
 
   // FCB - Form Constant Byte
-  if (dir_upper == "FCB") {
+  if (dir_upper == FCB) {
     std::vector<uint8_t> data;
     std::istringstream iss(operands);
     std::string value_str;
@@ -154,7 +157,7 @@ void FlexAsmSyntax::ParseDirective(const std::string &directive,
   }
 
   // FDB - Form Double Byte (16-bit big-endian)
-  if (dir_upper == "FDB") {
+  if (dir_upper == FDB) {
     std::vector<uint8_t> data;
     std::istringstream iss(operands);
     std::string value_str;
@@ -176,7 +179,7 @@ void FlexAsmSyntax::ParseDirective(const std::string &directive,
   }
 
   // FCC - Form Constant Characters
-  if (dir_upper == "FCC") {
+  if (dir_upper == FCC) {
     std::string trimmed = Trim(operands);
     if (trimmed.length() < 2) {
       throw std::runtime_error("FCC requires delimited string");
@@ -195,14 +198,14 @@ void FlexAsmSyntax::ParseDirective(const std::string &directive,
   }
 
   // RMB - Reserve Memory Bytes
-  if (dir_upper == "RMB") {
+  if (dir_upper == RMB) {
     uint32_t count = ParseNumber(operands);
     section.atoms.push_back(std::make_shared<SpaceAtom>(count));
     return;
   }
 
   // SETDP - Set Direct Page
-  if (dir_upper == "SETDP") {
+  if (dir_upper == SETDP) {
     uint32_t value = ParseNumber(operands);
     direct_page_ = static_cast<uint8_t>(value & 0xFF);
     // SETDP is assembler directive, doesn't create atom
@@ -210,33 +213,33 @@ void FlexAsmSyntax::ParseDirective(const std::string &directive,
   }
 
   // NAM/TTL - Set program title
-  if (dir_upper == "NAM" || dir_upper == "TTL") {
+  if (dir_upper == NAM || dir_upper == TTL) {
     title_ = Trim(operands);
     // Listing control directive, no atom
     return;
   }
 
   // STTL - Set subtitle
-  if (dir_upper == "STTL") {
+  if (dir_upper == STTL) {
     subtitle_ = Trim(operands);
     // Listing control directive, no atom
     return;
   }
 
   // PAGE - Form feed
-  if (dir_upper == "PAGE") {
+  if (dir_upper == PAGE) {
     // Listing control directive, no atom
     return;
   }
 
   // SPC - Space lines
-  if (dir_upper == "SPC") {
+  if (dir_upper == SPC) {
     // Listing control directive, no atom
     return;
   }
 
   // IFC - Conditional assembly (If Condition)
-  if (dir_upper == "IFC") {
+  if (dir_upper == IFC) {
     // Check if we should evaluate condition or just track nesting
     bool should_evaluate = ShouldAssemble();
     
@@ -258,7 +261,7 @@ void FlexAsmSyntax::ParseDirective(const std::string &directive,
   }
 
   // ENDC - End conditional assembly
-  if (dir_upper == "ENDC") {
+  if (dir_upper == ENDC) {
     if (conditional_stack_.empty()) {
       throw std::runtime_error("ENDC without matching IFC");
     }
@@ -277,7 +280,7 @@ void FlexAsmSyntax::ParseDirective(const std::string &directive,
   }
 
   // MACRO - Begin macro definition
-  if (dir_upper == "MACRO") {
+  if (dir_upper == MACRO) {
     if (mode_ != ParserMode::Normal) {
       throw std::runtime_error("Nested MACRO not allowed");
     }
@@ -307,7 +310,7 @@ void FlexAsmSyntax::ParseDirective(const std::string &directive,
   }
 
   // ENDM - End macro definition
-  if (dir_upper == "ENDM") {
+  if (dir_upper == ENDM) {
     if (mode_ != ParserMode::InMacroDefinition) {
       throw std::runtime_error("ENDM without MACRO");
     }
@@ -384,7 +387,7 @@ void FlexAsmSyntax::ParseLine(const std::string &line, Section &section,
     std::string opcode_upper = ToUpper(opcode);
     
     // Only process IFC/ENDC while skipping
-    if (opcode_upper == "IFC" || opcode_upper == "ENDC") {
+    if (opcode_upper == IFC || opcode_upper == ENDC) {
       // Extract operands for IFC
       std::string operands;
       size_t opcode_pos = trimmed.find(opcode);
@@ -413,7 +416,7 @@ void FlexAsmSyntax::ParseLine(const std::string &line, Section &section,
     }
     
     std::string opcode_upper = ToUpper(opcode);
-    if (opcode_upper == "ENDM") {
+    if (opcode_upper == ENDM) {
       // Let ParseDirective handle ENDM
       // Continue with normal parsing
     } else {
@@ -466,16 +469,16 @@ void FlexAsmSyntax::ParseLine(const std::string &line, Section &section,
     std::string opcode_upper = ToUpper(opcode);
 
     // List of known directives
-    static const std::unordered_set<std::string> directives = {
-        "ORG",   "END",   "EQU", "SET",  "FCB",  "FDB",  "FCC",
-        "RMB",   "SETDP", "NAM", "TTL",  "STTL", "PAGE", "SPC",
-        "MACRO", "ENDM",  "IFC", "ENDC", "RPT",  "ENDR"};
+    static const std::unordered_set<std::string> directives_set = {
+        ORG,   END,   EQU, SET,  FCB,  FDB,  FCC,
+        RMB,   SETDP, NAM, TTL,  STTL, PAGE, SPC,
+        MACRO, ENDM,  IFC, ENDC, RPT,  ENDR};
 
     // Directives that define symbols but don't create label atoms
-    static const std::unordered_set<std::string> symbol_directives = {"EQU",
-                                                                      "SET"};
+    static const std::unordered_set<std::string> symbol_directives = {EQU,
+                                                                      SET};
 
-    if (directives.find(opcode_upper) != directives.end()) {
+    if (directives_set.find(opcode_upper) != directives_set.end()) {
       // For non-symbol-defining directives, create label atom BEFORE directive
       if (!label.empty() &&
           symbol_directives.find(opcode_upper) == symbol_directives.end()) {

@@ -357,10 +357,10 @@ void HandleXcDirective(const std::string &operand, Cpu6502 *cpu) {
 
   std::string op = ToUpper(Trim(operand));
 
-  if (op.empty() || op == "ON") {
+  if (op.empty() || op == directives::ON) {
     // Enable 65C02 mode
     cpu->SetCpuMode(CpuMode::Cpu65C02);
-  } else if (op == "OFF") {
+  } else if (op == directives::OFF) {
     // Disable 65C02 mode (back to 6502)
     cpu->SetCpuMode(CpuMode::Cpu6502);
   } else {

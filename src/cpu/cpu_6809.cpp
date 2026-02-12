@@ -8,6 +8,7 @@
  */
 
 #include "xasm++/cpu/cpu_6809.h"
+#include "xasm++/cpu/cpu_6809_constants.h"
 #include "xasm++/cpu/mnemonics_6809.h"
 #include <stdexcept>
 
@@ -1417,7 +1418,7 @@ Cpu6809::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
                       : AddressingMode6809::Immediate8;
     }
     // Direct page mode: <address or address < $100
-    else if (trimmed[0] == '<' || operand < 0x100) {
+    else if (trimmed[0] == '<' || operand < cpu6809::DIRECT_PAGE_MAX) {
       mode = AddressingMode6809::Direct;
     }
     // Indexed modes: ,X or ,Y or offset,X etc.

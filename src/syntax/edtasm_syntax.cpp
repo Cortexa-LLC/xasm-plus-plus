@@ -2,6 +2,7 @@
 // Supports standard 6809 directives and syntax
 
 #include "xasm++/syntax/edtasm_syntax.h"
+#include "xasm++/directives/directive_constants.h"
 #include "xasm++/parse_utils.h"
 #include <algorithm>
 #include <cctype>
@@ -91,7 +92,7 @@ void EdtasmSyntaxParser::ParseDirective(const std::string &directive,
   std::string dir_upper = ToUpper(directive);
 
   // ORG - Set origin address
-  if (dir_upper == "ORG") {
+  if (dir_upper == directives::ORG) {
     uint32_t address = ParseNumber(operands);
     section.atoms.push_back(std::make_shared<OrgAtom>(address));
     current_address_ = address;
@@ -99,13 +100,13 @@ void EdtasmSyntaxParser::ParseDirective(const std::string &directive,
   }
 
   // END - End assembly (may have entry point)
-  if (dir_upper == "END") {
+  if (dir_upper == directives::END) {
     // END directive produces no atoms, signals end of assembly
     return;
   }
 
   // EQU - Equate symbol (constant)
-  if (dir_upper == "EQU") {
+  if (dir_upper == directives::EQU) {
     if (label.empty()) {
       throw std::runtime_error("EQU requires a label");
     }
@@ -116,7 +117,7 @@ void EdtasmSyntaxParser::ParseDirective(const std::string &directive,
   }
 
   // SET - Set variable (can be redefined)
-  if (dir_upper == "SET") {
+  if (dir_upper == directives::SET) {
     if (label.empty()) {
       throw std::runtime_error("SET requires a label");
     }
@@ -128,7 +129,7 @@ void EdtasmSyntaxParser::ParseDirective(const std::string &directive,
   }
 
   // FCB - Form Constant Byte
-  if (dir_upper == "FCB") {
+  if (dir_upper == directives::FCB) {
     std::vector<uint8_t> bytes;
     std::istringstream ops(operands);
     std::string value;
@@ -146,7 +147,7 @@ void EdtasmSyntaxParser::ParseDirective(const std::string &directive,
   }
 
   // FDB - Form Double Byte (16-bit, big-endian)
-  if (dir_upper == "FDB") {
+  if (dir_upper == directives::FDB) {
     std::vector<uint8_t> bytes;
     std::istringstream ops(operands);
     std::string value;
@@ -167,7 +168,7 @@ void EdtasmSyntaxParser::ParseDirective(const std::string &directive,
   }
 
   // FCC - Form Constant Characters (flexible delimiter)
-  if (dir_upper == "FCC") {
+  if (dir_upper == directives::FCC) {
     std::string trimmed = Trim(operands);
     if (trimmed.empty()) {
       throw std::runtime_error("FCC requires operand");
@@ -190,7 +191,7 @@ void EdtasmSyntaxParser::ParseDirective(const std::string &directive,
   }
 
   // RMB - Reserve Memory Bytes
-  if (dir_upper == "RMB") {
+  if (dir_upper == directives::RMB) {
     uint32_t size = ParseNumber(operands);
     section.atoms.push_back(std::make_shared<SpaceAtom>(size));
     current_address_ += size;
@@ -198,7 +199,7 @@ void EdtasmSyntaxParser::ParseDirective(const std::string &directive,
   }
 
   // SETDP - Set Direct Page (assembler directive only)
-  if (dir_upper == "SETDP") {
+  if (dir_upper == directives::SETDP) {
     direct_page_ = static_cast<uint8_t>(ParseNumber(operands));
     // SETDP produces no atoms, just informs assembler
     return;
@@ -274,16 +275,16 @@ void EdtasmSyntaxParser::ParseLine(const std::string &line, Section &section,
 
   // Check if opcode is a directive
   std::string opcode_upper = ToUpper(opcode);
-  bool is_directive = (opcode_upper == "ORG" || opcode_upper == "END" ||
-                       opcode_upper == "EQU" || opcode_upper == "SET" ||
-                       opcode_upper == "FCB" || opcode_upper == "FDB" ||
-                       opcode_upper == "FCC" || opcode_upper == "RMB" ||
-                       opcode_upper == "SETDP");
+  bool is_directive = (opcode_upper == directives::ORG || opcode_upper == directives::END ||
+                       opcode_upper == directives::EQU || opcode_upper == directives::SET ||
+                       opcode_upper == directives::FCB || opcode_upper == directives::FDB ||
+                       opcode_upper == directives::FCC || opcode_upper == directives::RMB ||
+                       opcode_upper == directives::SETDP);
 
   // Create label atom for non-EQU/SET directives and instructions
   // EQU and SET handle their labels internally (they don't create address
   // labels)
-  if (!label.empty() && opcode_upper != "EQU" && opcode_upper != "SET") {
+  if (!label.empty() && opcode_upper != directives::EQU && opcode_upper != directives::SET) {
     symbols.Define(label, SymbolType::Label,
                    std::make_shared<LiteralExpr>(current_address_));
     section.atoms.push_back(
