@@ -167,6 +167,7 @@ private:
 
   ParserMode mode_ = ParserMode::Normal; ///< Current parser mode
   uint32_t current_address_ = 0;         ///< Current assembly address
+  uint32_t current_line_ = 0;            ///< Current line number
   uint8_t direct_page_ = 0;              ///< Current direct page value
   std::string title_;                    ///< Program title (NAM/TTL)
   std::string subtitle_;                 ///< Program subtitle (STTL)

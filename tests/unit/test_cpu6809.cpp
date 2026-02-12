@@ -986,6 +986,46 @@ TEST_F(Cpu6809Test, LBRN_Relative16) {
   EXPECT_EQ(0x64, bytes[3]); // Low byte
 }
 
+TEST_F(Cpu6809Test, LBSR_Relative16_Forward) {
+  // LBSR (Long Branch to Subroutine) with 16-bit offset (forward branch)
+  auto bytes = cpu.EncodeLBSR(1000);
+  ASSERT_EQ(4, bytes.size());
+  EXPECT_EQ(0x10, bytes[0]); // Page 2 prefix
+  EXPECT_EQ(0x17, bytes[1]); // LBSR opcode
+  EXPECT_EQ(0x03, bytes[2]); // High byte of 1000 (0x03E8)
+  EXPECT_EQ(0xE8, bytes[3]); // Low byte
+}
+
+TEST_F(Cpu6809Test, LBSR_Relative16_Backward) {
+  // LBSR with negative offset (backward branch)
+  auto bytes = cpu.EncodeLBSR(-1000);
+  ASSERT_EQ(4, bytes.size());
+  EXPECT_EQ(0x10, bytes[0]); // Page 2 prefix
+  EXPECT_EQ(0x17, bytes[1]); // LBSR opcode
+  EXPECT_EQ(0xFC, bytes[2]); // High byte of -1000 (0xFC18)
+  EXPECT_EQ(0x18, bytes[3]); // Low byte
+}
+
+TEST_F(Cpu6809Test, LBSR_Relative16_MaxPositive) {
+  // LBSR with maximum positive offset (+32767)
+  auto bytes = cpu.EncodeLBSR(32767);
+  ASSERT_EQ(4, bytes.size());
+  EXPECT_EQ(0x10, bytes[0]); // Page 2 prefix
+  EXPECT_EQ(0x17, bytes[1]); // LBSR opcode
+  EXPECT_EQ(0x7F, bytes[2]); // High byte of 32767 (0x7FFF)
+  EXPECT_EQ(0xFF, bytes[3]); // Low byte
+}
+
+TEST_F(Cpu6809Test, LBSR_Relative16_MaxNegative) {
+  // LBSR with maximum negative offset (-32768)
+  auto bytes = cpu.EncodeLBSR(-32768);
+  ASSERT_EQ(4, bytes.size());
+  EXPECT_EQ(0x10, bytes[0]); // Page 2 prefix
+  EXPECT_EQ(0x17, bytes[1]); // LBSR opcode
+  EXPECT_EQ(0x80, bytes[2]); // High byte of -32768 (0x8000)
+  EXPECT_EQ(0x00, bytes[3]); // Low byte
+}
+
 TEST_F(Cpu6809Test, LBHI_Relative16) {
   // LBHI (Long Branch if Higher - unsigned)
   auto bytes = cpu.EncodeLBHI(500);

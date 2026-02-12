@@ -592,3 +592,240 @@ TEST_F(CoreDirectiveRegistryTest, RegistryIsRegistered) {
   EXPECT_TRUE(registry_.IsRegistered(directives::RMB));
   EXPECT_FALSE(registry_.IsRegistered("UNKNOWN"));
 }
+
+// ============================================================================
+// Expression Arithmetic Tests
+// ============================================================================
+
+/**
+ * @test ORG with addition expression
+ */
+TEST_F(CoreDirectiveHandlersTest, OrgWithAdditionExpression) {
+  // Act
+  HandleOrgDirective("$1000+$100", *section_, *symbols_, current_address_);
+
+  // Assert
+  ASSERT_EQ(section_->atoms.size(), 1);
+  auto org_atom = std::dynamic_pointer_cast<OrgAtom>(section_->atoms[0]);
+  ASSERT_NE(org_atom, nullptr);
+  EXPECT_EQ(org_atom->address, 0x1100);
+  EXPECT_EQ(current_address_, 0x1100);
+}
+
+/**
+ * @test ORG with subtraction expression
+ */
+TEST_F(CoreDirectiveHandlersTest, OrgWithSubtractionExpression) {
+  // Act
+  HandleOrgDirective("$2000-$100", *section_, *symbols_, current_address_);
+
+  // Assert
+  ASSERT_EQ(section_->atoms.size(), 1);
+  auto org_atom = std::dynamic_pointer_cast<OrgAtom>(section_->atoms[0]);
+  ASSERT_NE(org_atom, nullptr);
+  EXPECT_EQ(org_atom->address, 0x1F00);
+  EXPECT_EQ(current_address_, 0x1F00);
+}
+
+/**
+ * @test ORG with multiplication expression
+ */
+TEST_F(CoreDirectiveHandlersTest, OrgWithMultiplicationExpression) {
+  // Act
+  HandleOrgDirective("$100*16", *section_, *symbols_, current_address_);
+
+  // Assert
+  ASSERT_EQ(section_->atoms.size(), 1);
+  auto org_atom = std::dynamic_pointer_cast<OrgAtom>(section_->atoms[0]);
+  ASSERT_NE(org_atom, nullptr);
+  EXPECT_EQ(org_atom->address, 0x1000);
+  EXPECT_EQ(current_address_, 0x1000);
+}
+
+/**
+ * @test ORG with division expression
+ */
+TEST_F(CoreDirectiveHandlersTest, OrgWithDivisionExpression) {
+  // Act
+  HandleOrgDirective("$4000/2", *section_, *symbols_, current_address_);
+
+  // Assert
+  ASSERT_EQ(section_->atoms.size(), 1);
+  auto org_atom = std::dynamic_pointer_cast<OrgAtom>(section_->atoms[0]);
+  ASSERT_NE(org_atom, nullptr);
+  EXPECT_EQ(org_atom->address, 0x2000);
+  EXPECT_EQ(current_address_, 0x2000);
+}
+
+/**
+ * @test ORG with modulo expression
+ */
+TEST_F(CoreDirectiveHandlersTest, OrgWithModuloExpression) {
+  // Act
+  HandleOrgDirective("1000%256", *section_, *symbols_, current_address_);
+
+  // Assert
+  ASSERT_EQ(section_->atoms.size(), 1);
+  auto org_atom = std::dynamic_pointer_cast<OrgAtom>(section_->atoms[0]);
+  ASSERT_NE(org_atom, nullptr);
+  EXPECT_EQ(org_atom->address, 232);
+  EXPECT_EQ(current_address_, 232);
+}
+
+/**
+ * @test ORG with nested expression
+ */
+TEST_F(CoreDirectiveHandlersTest, OrgWithNestedExpression) {
+  // Act
+  HandleOrgDirective("($1000+$100)*2", *section_, *symbols_, current_address_);
+
+  // Assert
+  ASSERT_EQ(section_->atoms.size(), 1);
+  auto org_atom = std::dynamic_pointer_cast<OrgAtom>(section_->atoms[0]);
+  ASSERT_NE(org_atom, nullptr);
+  EXPECT_EQ(org_atom->address, 0x2200);
+  EXPECT_EQ(current_address_, 0x2200);
+}
+
+/**
+ * @test ORG with complex nested expression
+ */
+TEST_F(CoreDirectiveHandlersTest, OrgWithComplexNestedExpression) {
+  // Act
+  HandleOrgDirective("(100+50)*2-20", *section_, *symbols_, current_address_);
+
+  // Assert
+  ASSERT_EQ(section_->atoms.size(), 1);
+  auto org_atom = std::dynamic_pointer_cast<OrgAtom>(section_->atoms[0]);
+  ASSERT_NE(org_atom, nullptr);
+  EXPECT_EQ(org_atom->address, 280); // (100+50)*2-20 = 150*2-20 = 300-20 = 280
+  EXPECT_EQ(current_address_, 280);
+}
+
+/**
+ * @test ORG with symbol in arithmetic expression
+ */
+TEST_F(CoreDirectiveHandlersTest, OrgWithSymbolArithmetic) {
+  // Arrange
+  symbols_->Define("BASE", SymbolType::Label, std::make_shared<LiteralExpr>(0x8000));
+
+  // Act
+  HandleOrgDirective("BASE+$100", *section_, *symbols_, current_address_);
+
+  // Assert
+  ASSERT_EQ(section_->atoms.size(), 1);
+  auto org_atom = std::dynamic_pointer_cast<OrgAtom>(section_->atoms[0]);
+  ASSERT_NE(org_atom, nullptr);
+  EXPECT_EQ(org_atom->address, 0x8100);
+  EXPECT_EQ(current_address_, 0x8100);
+}
+
+/**
+ * @test EQU with multiplication expression
+ */
+TEST_F(CoreDirectiveHandlersTest, EquWithMultiplicationExpression) {
+  // Act
+  HandleEquDirective("SIZE", "64*1024", *symbols_);
+
+  // Assert
+  int64_t value = 0;
+  ASSERT_TRUE(symbols_->Lookup("SIZE", value));
+  EXPECT_EQ(value, 65536);
+}
+
+/**
+ * @test EQU with complex expression
+ */
+TEST_F(CoreDirectiveHandlersTest, EquWithComplexExpression) {
+  // Arrange
+  symbols_->Define("WIDTH", SymbolType::Label, std::make_shared<LiteralExpr>(40));
+  symbols_->Define("HEIGHT", SymbolType::Label, std::make_shared<LiteralExpr>(25));
+
+  // Act
+  HandleEquDirective("SCREEN_SIZE", "WIDTH*HEIGHT", *symbols_);
+
+  // Assert
+  int64_t value = 0;
+  ASSERT_TRUE(symbols_->Lookup("SCREEN_SIZE", value));
+  EXPECT_EQ(value, 1000);
+}
+
+/**
+ * @test EQU with nested expression and symbols
+ */
+TEST_F(CoreDirectiveHandlersTest, EquWithNestedExpressionAndSymbols) {
+  // Arrange
+  symbols_->Define("BASE", SymbolType::Label, std::make_shared<LiteralExpr>(0x1000));
+  symbols_->Define("OFFSET", SymbolType::Label, std::make_shared<LiteralExpr>(0x10));
+
+  // Act
+  HandleEquDirective("ADDR", "(BASE+OFFSET)*2", *symbols_);
+
+  // Assert
+  int64_t value = 0;
+  ASSERT_TRUE(symbols_->Lookup("ADDR", value));
+  EXPECT_EQ(value, 0x2020);
+}
+
+/**
+ * @test DS with multiplication expression
+ */
+TEST_F(CoreDirectiveHandlersTest, DsWithMultiplicationExpression) {
+  // Act
+  HandleDsDirective("10*16", *section_, *symbols_, current_address_);
+
+  // Assert
+  ASSERT_EQ(section_->atoms.size(), 1);
+  auto space_atom = std::dynamic_pointer_cast<SpaceAtom>(section_->atoms[0]);
+  ASSERT_NE(space_atom, nullptr);
+  EXPECT_EQ(space_atom->count, 160);
+  EXPECT_EQ(current_address_, 0x1000 + 160);
+}
+
+/**
+ * @test DS with symbol and arithmetic
+ */
+TEST_F(CoreDirectiveHandlersTest, DsWithSymbolAndArithmetic) {
+  // Arrange
+  symbols_->Define("PAGE_SIZE", SymbolType::Label, std::make_shared<LiteralExpr>(256));
+
+  // Act
+  HandleDsDirective("PAGE_SIZE*4", *section_, *symbols_, current_address_);
+
+  // Assert
+  ASSERT_EQ(section_->atoms.size(), 1);
+  auto space_atom = std::dynamic_pointer_cast<SpaceAtom>(section_->atoms[0]);
+  ASSERT_NE(space_atom, nullptr);
+  EXPECT_EQ(space_atom->count, 1024);
+  EXPECT_EQ(current_address_, 0x1000 + 1024);
+}
+
+/**
+ * @test DS with division expression
+ */
+TEST_F(CoreDirectiveHandlersTest, DsWithDivisionExpression) {
+  // Act
+  HandleDsDirective("1024/4", *section_, *symbols_, current_address_);
+
+  // Assert
+  ASSERT_EQ(section_->atoms.size(), 1);
+  auto space_atom = std::dynamic_pointer_cast<SpaceAtom>(section_->atoms[0]);
+  ASSERT_NE(space_atom, nullptr);
+  EXPECT_EQ(space_atom->count, 256);
+  EXPECT_EQ(current_address_, 0x1000 + 256);
+}
+
+/**
+ * @test ORG with operator precedence (multiplication before addition)
+ */
+TEST_F(CoreDirectiveHandlersTest, OrgWithOperatorPrecedence) {
+  // Act - should evaluate as $1000 + ($10 * 2) = $1000 + $20 = $1020
+  HandleOrgDirective("$1000+$10*2", *section_, *symbols_, current_address_);
+
+  // Assert
+  ASSERT_EQ(section_->atoms.size(), 1);
+  auto org_atom = std::dynamic_pointer_cast<OrgAtom>(section_->atoms[0]);
+  ASSERT_NE(org_atom, nullptr);
+  EXPECT_EQ(org_atom->address, 0x1020);
+  EXPECT_EQ(current_address_, 0x1020);
+}

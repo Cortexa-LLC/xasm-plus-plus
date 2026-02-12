@@ -269,6 +269,9 @@ constexpr const char* BSR = "BSR";
 /// LBRA - Long Branch Always
 constexpr const char* LBRA = "LBRA";
 
+/// LBSR - Long Branch to Subroutine
+constexpr const char* LBSR = "LBSR";
+
 /// LBRN - Long Branch Never
 constexpr const char* LBRN = "LBRN";
 

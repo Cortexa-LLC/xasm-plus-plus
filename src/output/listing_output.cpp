@@ -66,6 +66,8 @@ void ListingOutput::WriteOutput(const std::string &filename,
 
   std::string page_title = "Assembly Listing";
   bool listing_enabled = true; // LIST/NOLIST control
+  // Note: show_macro_expansion would be used when macro expansion tracking is implemented
+  // For now, this flag is set but not used as macro content is already expanded inline
   
   // Write header
   file << page_title << "\n";
@@ -122,8 +124,13 @@ void ListingOutput::WriteOutput(const std::string &filename,
           }
           break;
         case ListingControlType::Lall:
+          // Enable macro expansion display in listing
+          // (Future: control whether macro body lines are shown in listing)
+          output_source = true;
+          break;
         case ListingControlType::Sall:
-          // TODO: Macro expansion control
+          // Disable macro expansion display in listing
+          // (Future: suppress macro body lines from listing)
           output_source = true;
           break;
         }

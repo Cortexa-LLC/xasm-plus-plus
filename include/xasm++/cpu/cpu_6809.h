@@ -630,6 +630,14 @@ public:
   std::vector<uint8_t> EncodeLBRA(int16_t offset) const;
 
   /**
+   * @brief Encode LBSR (Long Branch to Subroutine) instruction
+   *
+   * @param offset Signed 16-bit offset from PC (-32768 to +32767)
+   * @return Vector of encoded bytes (4 bytes: 0x10 0x17 offset_msb offset_lsb)
+   */
+  std::vector<uint8_t> EncodeLBSR(int16_t offset) const;
+
+  /**
    * @brief Encode LBRN (Long Branch Never) instruction
    *
    * @param offset Signed 16-bit offset from PC

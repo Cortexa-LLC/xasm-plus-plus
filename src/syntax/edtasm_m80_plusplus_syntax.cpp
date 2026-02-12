@@ -647,8 +647,73 @@ void EdtasmM80PlusPlusSyntaxParser::ParseLine(const std::string &line,
   inst_atom->source_line = original_line;
   section.atoms.push_back(inst_atom);
   
-  // TODO: Calculate instruction size (for now, assume 1 byte minimum)
-  current_address_++;
+  // Estimate instruction size based on mnemonic and operand
+  // This is a heuristic until CPU plugin provides exact encoding (Phase 9+)
+  uint32_t estimated_size = EstimateZ80InstructionSize(upper_mnemonic, operand);
+  current_address_ += estimated_size;
+}
+
+uint32_t EdtasmM80PlusPlusSyntaxParser::EstimateZ80InstructionSize(
+    const std::string &mnemonic, const std::string &operand) {
+  // Heuristic Z80 instruction size estimation
+  // Actual encoding will be done by CPU plugin (Phase 9+)
+  
+  // Extended instructions (ED prefix) - typically 2+ bytes
+  if (mnemonic.find("LD") == 0 && (operand.find("I,") != std::string::npos || 
+                                    operand.find("R,") != std::string::npos ||
+                                    operand.find(",I") != std::string::npos ||
+                                    operand.find(",R") != std::string::npos)) {
+    return 2; // ED-prefixed LD I/R instructions
+  }
+  
+  // Index register instructions (DD/FD prefix)
+  if (operand.find("IX") != std::string::npos || operand.find("IY") != std::string::npos) {
+    // With displacement: prefix + opcode + displacement
+    if (operand.find("(") != std::string::npos) {
+      return operand.find(",") != std::string::npos ? 4 : 3; // With or without immediate
+    }
+    return 2; // Without displacement
+  }
+  
+  // Immediate 16-bit operands (e.g., LD HL,nnnn)
+  if (operand.find(",") != std::string::npos && 
+      (operand.find("$") != std::string::npos || operand.find("0") != std::string::npos)) {
+    std::string trimmed_op = Trim(operand);
+    // Check if likely 16-bit value (hex with 3+ digits, or decimal > 255)
+    if (trimmed_op.find("$") != std::string::npos) {
+      size_t hex_start = trimmed_op.find("$") + 1;
+      size_t hex_end = hex_start;
+      while (hex_end < trimmed_op.size() && std::isxdigit(trimmed_op[hex_end])) {
+        hex_end++;
+      }
+      if (hex_end - hex_start > 2) {
+        return 3; // opcode + 16-bit immediate
+      }
+    }
+  }
+  
+  // Immediate 8-bit operands (e.g., LD A,n)
+  if (operand.find(",") != std::string::npos) {
+    return 2; // opcode + byte operand (default for immediate data)
+  }
+  
+  // Relative jumps (JR, DJNZ) - opcode + displacement
+  if (mnemonic == "JR" || mnemonic == "DJNZ") {
+    return 2;
+  }
+  
+  // Absolute jumps/calls - opcode + 16-bit address
+  if (mnemonic == "JP" || mnemonic == "CALL") {
+    return 3;
+  }
+  
+  // RST instructions - single byte
+  if (mnemonic == "RST") {
+    return 1;
+  }
+  
+  // Default: assume single-byte instruction (register-only, implicit, etc.)
+  return 1;
 }
 
 std::string EdtasmM80PlusPlusSyntaxParser::ParseLabel(const std::string &line,
@@ -677,15 +742,24 @@ std::string EdtasmM80PlusPlusSyntaxParser::ParseLabel(const std::string &line,
   }
 
   // Determine if public label (::) or private (:)
-  // TODO: Track public/private distinction for symbol visibility
+  bool is_public = false;
   if (colon_pos + 1 < line.size() && line[colon_pos + 1] == ':') {
     pos = colon_pos + 2; // Skip ::
+    is_public = true;
   } else {
     pos = colon_pos + 1; // Skip :
   }
 
   // Define symbol first
   symbols.DefineLabel(potential_label, current_address_);
+  
+  // Mark as public (exported) if double colon was used
+  if (is_public) {
+    Symbol *symbol = symbols.GetSymbol(potential_label);
+    if (symbol != nullptr) {
+      symbol->is_exported = true;
+    }
+  }
 
   // Create label atom ONLY if not a macro LOCAL label
   // Macro LOCAL labels should not create atoms (only used for references)
@@ -886,19 +960,26 @@ std::string EdtasmM80PlusPlusSyntaxParser::MakeLocalLabelUnique(
     }
     
     // Replace standalone label references
-    // TODO: More sophisticated word-boundary checking
+    // Check word boundaries considering Z80 identifier characters
     pos = 0;
     while ((pos = result.find(label, pos)) != std::string::npos) {
       // Check if it's a standalone reference (not part of another identifier)
       bool is_standalone = true;
-      if (pos > 0 && (std::isalnum(result[pos - 1]) || result[pos - 1] == '_')) {
-        is_standalone = false;
+      
+      // Check character before label (if any)
+      if (pos > 0) {
+        char prev = result[pos - 1];
+        if (std::isalnum(prev) || prev == '_' || prev == '$' || prev == '.' || prev == '?') {
+          is_standalone = false;
+        }
       }
-      if (pos + label.size() < result.size() &&
-          (std::isalnum(result[pos + label.size()]) ||
-           result[pos + label.size()] == '_' ||
-           result[pos + label.size()] == ':')) {
-        is_standalone = false;
+      
+      // Check character after label (if any)
+      if (pos + label.size() < result.size()) {
+        char next = result[pos + label.size()];
+        if (std::isalnum(next) || next == '_' || next == '$' || next == '.' || next == '?' || next == ':') {
+          is_standalone = false;
+        }
       }
       
       if (is_standalone) {

@@ -472,6 +472,10 @@ private:
   std::string ParseLabel(const std::string &line, size_t &pos, Section &section,
                          ConcreteSymbolTable &symbols);
 
+  // Instruction size estimation
+  uint32_t EstimateZ80InstructionSize(const std::string &mnemonic,
+                                      const std::string &operand);
+
   // Expression/number parsing
   uint32_t ParseNumber(const std::string &str);
 

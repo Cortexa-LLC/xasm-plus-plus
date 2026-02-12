@@ -292,7 +292,7 @@ void FlexAsmSyntax::ParseDirective(const std::string &directive,
     current_macro_.name = label;
     current_macro_.parameters.clear();
     current_macro_.body.clear();
-    current_macro_.definition_line = 0; // TODO: Track line numbers
+    current_macro_.definition_line = current_line_;
     
     // Parse parameters from operands (comma-separated)
     if (!operands.empty()) {
@@ -553,11 +553,15 @@ void FlexAsmSyntax::Parse(const std::string &source, Section &section,
   // Store symbol table pointer for conditional evaluation
   current_symbols_ = &symbols;
   
+  // Reset line counter
+  current_line_ = 0;
+  
   // Split source into lines
   std::istringstream iss(source);
   std::string line;
 
   while (std::getline(iss, line)) {
+    current_line_++;
     ParseLine(line, section, symbols);
   }
   

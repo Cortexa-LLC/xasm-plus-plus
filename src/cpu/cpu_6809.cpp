@@ -660,6 +660,14 @@ std::vector<uint8_t> Cpu6809::EncodeLBRA(int16_t offset) const {
   return result;
 }
 
+std::vector<uint8_t> Cpu6809::EncodeLBSR(int16_t offset) const {
+  // LBSR - Long Branch to Subroutine (Opcode: 0x10 0x17)
+  std::vector<uint8_t> result = {0x10, 0x17};
+  auto offset_bytes = ToBigEndian(static_cast<uint16_t>(offset));
+  result.insert(result.end(), offset_bytes.begin(), offset_bytes.end());
+  return result;
+}
+
 std::vector<uint8_t> Cpu6809::EncodeLBRN(int16_t offset) const {
   // LBRN - Long Branch Never (Opcode: 0x10 0x21)
   std::vector<uint8_t> result = {0x10, 0x21};
@@ -1548,6 +1556,8 @@ Cpu6809::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
   // Long branches (16-bit relative)
   if (mnemonic == M6809Mnemonics::LBRA)
     return EncodeLBRA(static_cast<int16_t>(operand));
+  if (mnemonic == M6809Mnemonics::LBSR)
+    return EncodeLBSR(static_cast<int16_t>(operand));
   if (mnemonic == M6809Mnemonics::LBRN)
     return EncodeLBRN(static_cast<int16_t>(operand));
   if (mnemonic == M6809Mnemonics::LBHI)
