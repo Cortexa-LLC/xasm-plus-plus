@@ -581,3 +581,19 @@ target_link_libraries(test_core_directive_handlers
 
 gtest_discover_tests(test_core_directive_handlers)
 
+# Encoding utilities tests (Common CPU encoding patterns)
+add_executable(test_encoding_utils
+    test_encoding_utils.cpp
+)
+
+target_link_libraries(test_encoding_utils
+    gtest_main
+    gtest
+)
+
+target_include_directories(test_encoding_utils PRIVATE
+    ${PROJECT_SOURCE_DIR}/include
+)
+
+gtest_discover_tests(test_encoding_utils)
+
