@@ -10,7 +10,7 @@
  * - Macro expansion
  */
 
-#include "xasm++/syntax/macro_processor.h"
+#include "xasm++/common/macro_processor.h"
 #include <gtest/gtest.h>
 
 using namespace xasm;

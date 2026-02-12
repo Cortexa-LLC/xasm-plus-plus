@@ -859,7 +859,16 @@ TEST(AssemblerTest, IntegrationZeroPageIndexedLoop) {
   assembler.AddSection(section);
   AssemblerResult result = assembler.Assemble();
 
-  EXPECT_TRUE(result.success);
+  if (!result.success) {
+    for (const auto& err : result.errors) {
+      std::cerr << "Error: " << err.message << std::endl;
+    }
+  }
+  ASSERT_TRUE(result.success) << "Assembly failed with " << result.errors.size() << " errors";
+  ASSERT_FALSE(ldx->encoded_bytes.empty());
+  ASSERT_FALSE(lda->encoded_bytes.empty());
+  ASSERT_FALSE(inx->encoded_bytes.empty());
+  ASSERT_FALSE(bne->encoded_bytes.empty());
   EXPECT_EQ(ldx->encoded_bytes[0], 0xA2); // LDX immediate
   EXPECT_EQ(lda->encoded_bytes[0], 0xB5); // LDA zero page,X
   EXPECT_EQ(inx->encoded_bytes[0], 0xE8); // INX
@@ -958,7 +967,17 @@ TEST(AssemblerTest, IntegrationIndexedIndirect) {
   assembler.AddSection(section);
   AssemblerResult result = assembler.Assemble();
 
-  EXPECT_TRUE(result.success);
+  if (!result.success) {
+    for (const auto& err : result.errors) {
+      std::cerr << "Error: " << err.message << std::endl;
+    }
+  }
+  ASSERT_TRUE(result.success) << "Assembly failed with " << result.errors.size() << " errors";
+  ASSERT_FALSE(ldy->encoded_bytes.empty());
+  ASSERT_FALSE(lda->encoded_bytes.empty());
+  ASSERT_FALSE(sta->encoded_bytes.empty());
+  ASSERT_FALSE(iny->encoded_bytes.empty());
+  ASSERT_FALSE(bne->encoded_bytes.empty());
   EXPECT_EQ(ldy->encoded_bytes[0], 0xA0); // LDY immediate
   EXPECT_EQ(lda->encoded_bytes[0], 0xA1); // LDA indexed indirect
   EXPECT_EQ(sta->encoded_bytes[0], 0x91); // STA indirect indexed
@@ -1048,9 +1067,15 @@ TEST(AssemblerTest, LongBranchNeedsRelaxation) {
   AssemblerResult result = assembler.Assemble();
 
   // Currently this throws an error - should succeed with relaxation
-  EXPECT_TRUE(result.success);
+  if (!result.success) {
+    for (const auto& err : result.errors) {
+      std::cerr << "Error: " << err.message << std::endl;
+    }
+  }
+  ASSERT_TRUE(result.success) << "Assembly failed with " << result.errors.size() << " errors";
 
   // Relaxed branch should be 5 bytes: BNE *+5; JMP target
+  ASSERT_FALSE(beq->encoded_bytes.empty());
   EXPECT_EQ(beq->encoded_bytes.size(), 5);
   EXPECT_EQ(beq->encoded_bytes[0], 0xD0); // BNE (complement of BEQ)
   EXPECT_EQ(beq->encoded_bytes[1], 0x03); // Skip 3 bytes (JMP instruction)
@@ -1081,9 +1106,15 @@ TEST(AssemblerTest, ShortBranchNoRelaxation) {
   assembler.AddSection(section);
   AssemblerResult result = assembler.Assemble();
 
-  EXPECT_TRUE(result.success);
+  if (!result.success) {
+    for (const auto& err : result.errors) {
+      std::cerr << "Error: " << err.message << std::endl;
+    }
+  }
+  ASSERT_TRUE(result.success) << "Assembly failed with " << result.errors.size() << " errors";
 
   // Short branch should be 2 bytes: BEQ offset
+  ASSERT_FALSE(beq->encoded_bytes.empty());
   EXPECT_EQ(beq->encoded_bytes.size(), 2);
   EXPECT_EQ(beq->encoded_bytes[0], 0xF0); // BEQ opcode
   EXPECT_EQ(beq->encoded_bytes[1], 0x0A); // Offset = +10
@@ -1111,9 +1142,15 @@ TEST(AssemblerTest, BackwardBranch) {
   assembler.AddSection(section);
   AssemblerResult result = assembler.Assemble();
 
-  EXPECT_TRUE(result.success);
+  if (!result.success) {
+    for (const auto& err : result.errors) {
+      std::cerr << "Error: " << err.message << std::endl;
+    }
+  }
+  ASSERT_TRUE(result.success) << "Assembly failed with " << result.errors.size() << " errors";
 
   // Backward branch should be 2 bytes: BNE offset
+  ASSERT_FALSE(bne->encoded_bytes.empty());
   EXPECT_EQ(bne->encoded_bytes.size(), 2);
   EXPECT_EQ(bne->encoded_bytes[0], 0xD0); // BNE opcode
   // Offset should be -4 (back to loop label)

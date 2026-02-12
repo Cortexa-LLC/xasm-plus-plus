@@ -98,7 +98,8 @@ TEST_F(ExceptionSafetyTest, Assembler_InvalidInstruction_MeaningfulError) {
 
   EXPECT_FALSE(result.success);
   EXPECT_FALSE(result.errors.empty());
-  EXPECT_NE(result.errors[0].message.find("Unknown instruction"),
+  // CPU throws "Unsupported instruction" for invalid mnemonics
+  EXPECT_NE(result.errors[0].message.find("Unsupported instruction"),
             std::string::npos);
   EXPECT_NE(result.errors[0].message.find("INVALID"), std::string::npos);
 }

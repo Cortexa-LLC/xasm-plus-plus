@@ -74,8 +74,8 @@ TEST(FlexConditionalTest, IfcUndefinedSymbolExcludesCode) {
 
   parser.Parse(program, section, symbols);
 
-  // Should have only 1 instruction: NOP (IFC block skipped)
-  EXPECT_EQ(section.atoms.size(), 1);
+  // Should have 2 atoms: ORG + NOP (IFC block skipped, LDA not assembled)
+  EXPECT_EQ(section.atoms.size(), 2);
 }
 
 /**
@@ -130,8 +130,8 @@ TEST(FlexConditionalTest, IfcExpressionZeroExcludesCode) {
 
   parser.Parse(program, section, symbols);
 
-  // Should have only 1 instruction: NOP (0 is false)
-  EXPECT_EQ(section.atoms.size(), 1);
+  // Should have 2 atoms: ORG + NOP (IFC block skipped because 5-5=0 is false)
+  EXPECT_EQ(section.atoms.size(), 2);
 }
 
 // ============================================================================
@@ -204,8 +204,8 @@ TEST(FlexConditionalTest, NestedIfcOuterTrueInnerFalse) {
 
   parser.Parse(program, section, symbols);
 
-  // Should have: LDA, LDX, NOP = 3 instructions (LDB skipped)
-  EXPECT_EQ(section.atoms.size(), 3);
+  // Should have: ORG, LDA, LDX, NOP = 4 atoms (LDB skipped)
+  EXPECT_EQ(section.atoms.size(), 4);
 }
 
 /**
@@ -239,8 +239,8 @@ TEST(FlexConditionalTest, NestedIfcOuterFalse) {
 
   parser.Parse(program, section, symbols);
 
-  // Should have only NOP (entire outer block skipped)
-  EXPECT_EQ(section.atoms.size(), 1);
+  // Should have: ORG + NOP = 2 atoms (entire IFC block skipped)
+  EXPECT_EQ(section.atoms.size(), 2);
 }
 
 // ============================================================================

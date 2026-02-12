@@ -172,3 +172,36 @@ loop:   JMP loop
   EXPECT_TRUE(symbols.IsDefined("start"));
   EXPECT_TRUE(symbols.IsDefined("loop"));
 }
+
+// Test 9: Unknown directive should throw exception
+TEST(SimpleSyntaxTest, UnknownDirectiveThrows) {
+  SimpleSyntaxParser parser;
+  ConcreteSymbolTable symbols;
+  Section section("test", 0);
+
+  // Unknown directive should throw
+  EXPECT_THROW(parser.Parse("    .unknown $1234", section, symbols),
+               std::runtime_error);
+}
+
+// Test 10: Case-insensitive directive matching
+TEST(SimpleSyntaxTest, DirectiveCaseInsensitive) {
+  SimpleSyntaxParser parser;
+  ConcreteSymbolTable symbols;
+  Section section("test", 0);
+
+  // Test lowercase directive
+  parser.Parse("    .org $8000", section, symbols);
+  ASSERT_EQ(section.atoms.size(), 1);
+  EXPECT_EQ(section.atoms[0]->type, AtomType::Org);
+
+  // Test uppercase directive
+  parser.Parse("    .ORG $9000", section, symbols);
+  ASSERT_EQ(section.atoms.size(), 2);
+  EXPECT_EQ(section.atoms[1]->type, AtomType::Org);
+
+  // Test mixed case directive
+  parser.Parse("    .Org $A000", section, symbols);
+  ASSERT_EQ(section.atoms.size(), 3);
+  EXPECT_EQ(section.atoms[2]->type, AtomType::Org);
+}

@@ -29,6 +29,10 @@ public:
     return false;
   }
 
+  int64_t GetCurrentLocation() const override {
+    return 0x8000; // Mock current address
+  }
+
 private:
   std::map<std::string, int64_t> symbols_;
 };

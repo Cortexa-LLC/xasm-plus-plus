@@ -419,6 +419,7 @@ forward_label rts
   Cpu6502 cpu;
   Assembler assembler;
   assembler.SetCpuPlugin(&cpu);
+  assembler.SetSymbolTable(&symbols);  // CRITICAL: Let assembler update symbol table
   assembler.AddSection(section);
   AssemblerResult asm_result = assembler.Assemble();
 
@@ -430,10 +431,18 @@ forward_label rts
 
   ASSERT_TRUE(asm_result.success) << "Assembly should succeed";
 
-  // Write output
+  // Get the assembled sections (with encoded bytes)
+  const std::vector<Section>& assembled_sections = assembler.GetSections();
+  ASSERT_EQ(assembled_sections.size(), 1) << "Should have one section";
+
+  // Write output using assembled section
   BinaryOutput output;
-  std::vector<Section *> sections = {&section};
-  output.WriteOutput("test_forward_ref.bin", sections, symbols);
+  std::vector<Section> sections_copy = assembled_sections; // Make mutable copy
+  std::vector<Section *> section_ptrs;
+  for (auto& s : sections_copy) {
+    section_ptrs.push_back(&s);
+  }
+  output.WriteOutput("test_forward_ref.bin", section_ptrs, symbols);
 
   // Verify: DW should contain address of forward_label ($3002), not zeros
   std::ifstream file("test_forward_ref.bin", std::ios::binary);
@@ -482,15 +491,24 @@ seq3     db $03
   Cpu6502 cpu;
   Assembler assembler;
   assembler.SetCpuPlugin(&cpu);
+  assembler.SetSymbolTable(&symbols);  // CRITICAL: Let assembler update symbol table
   assembler.AddSection(section);
   AssemblerResult asm_result = assembler.Assemble();
 
   ASSERT_TRUE(asm_result.success) << "Assembly should succeed";
 
-  // Write output
+  // Get the assembled sections (with encoded bytes)
+  const std::vector<Section>& assembled_sections = assembler.GetSections();
+  ASSERT_EQ(assembled_sections.size(), 1) << "Should have one section";
+
+  // Write output using assembled section
   BinaryOutput output;
-  std::vector<Section *> sections = {&section};
-  output.WriteOutput("test_multi_forward_ref.bin", sections, symbols);
+  std::vector<Section> sections_copy = assembled_sections; // Make mutable copy
+  std::vector<Section *> section_ptrs;
+  for (auto& s : sections_copy) {
+    section_ptrs.push_back(&s);
+  }
+  output.WriteOutput("test_multi_forward_ref.bin", section_ptrs, symbols);
 
   // Verify: Table should contain correct addresses (not zeros)
   std::ifstream file("test_multi_forward_ref.bin", std::ios::binary);
