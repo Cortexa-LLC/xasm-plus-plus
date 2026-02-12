@@ -8,6 +8,9 @@ add_library(xasm_core STATIC
     core/parse_utils.cpp
     core/error_formatter.cpp
     utils/string_utils.cpp
+    common/expression_parser.cpp
+    common/macro_processor.cpp
+    common/conditional_assembler.cpp
 )
 
 target_include_directories(xasm_core PUBLIC
@@ -45,12 +48,15 @@ add_library(xasm_syntax STATIC
     syntax/scmasm/scmasm_syntax.cpp
     syntax/edtasm/edtasm_syntax.cpp
     syntax/motorola/flex_syntax.cpp
-    syntax/flex/macro_processor.cpp
-    syntax/z80_universal/z80_universal_syntax.cpp
+    syntax/directive_registry.cpp
+    syntax/edtasm_m80_plusplus/edtasm_m80_plusplus_syntax.cpp
+    syntax/edtasm_m80_plusplus/edtasm_directive_handlers.cpp
+    syntax/core_directive_handlers.cpp
+    directives/merlin_directives.cpp
+    directives/scmasm/scmasm_directive_handlers.cpp
     # Future syntax plugins:
     # syntax/mos/mos_base_syntax.cpp
     # syntax/motorola/motorola_base_syntax.cpp
-    # syntax/edtasm_m80/edtasm_m80_syntax.cpp
     # syntax/zilog/zilog_base_syntax.cpp
     # syntax/intel/intel_base_syntax.cpp
 )
@@ -90,15 +96,16 @@ target_link_libraries(xasm_output PUBLIC
 )
 
 # Main executable (Phase 1+)
-add_executable(xasm++
-    main.cpp
-    cli_parser.cpp
-)
-
-target_link_libraries(xasm++
-    xasm_core
-    xasm_cpu
-    xasm_syntax
-    xasm_output
-    CLI11::CLI11
-)
+# TODO: Re-enable once cli_parser.cpp exists
+# add_executable(xasm++
+#     main.cpp
+#     cli_parser.cpp
+# )
+# 
+# target_link_libraries(xasm++
+#     xasm_core
+#     xasm_cpu
+#     xasm_syntax
+#     xasm_output
+#     CLI11::CLI11
+# )

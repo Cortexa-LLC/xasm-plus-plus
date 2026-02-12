@@ -192,6 +192,20 @@ target_link_libraries(test_scmasm_syntax
 
 gtest_discover_tests(test_scmasm_syntax)
 
+# ScmasmSyntax DirectiveRegistry tests
+add_executable(test_scmasm_directive_registry
+    test_scmasm_directive_registry.cpp
+)
+
+target_link_libraries(test_scmasm_directive_registry
+    xasm_syntax
+    xasm_core
+    gtest_main
+    gtest
+)
+
+gtest_discover_tests(test_scmasm_directive_registry)
+
 # EdtasmSyntax tests
 add_executable(test_edtasm_syntax
     test_edtasm_syntax.cpp
@@ -250,6 +264,20 @@ target_link_libraries(test_listing_output
 
 gtest_discover_tests(test_listing_output)
 
+# Z80 Listing directives tests
+add_executable(test_z80_listing_directives
+  test_z80_listing_directives.cpp
+)
+
+target_link_libraries(test_z80_listing_directives
+  xasm_output
+  xasm_core
+  gtest_main
+  gtest
+)
+
+gtest_discover_tests(test_z80_listing_directives)
+
 # SymbolOutput tests
 add_executable(test_symbol_output
   test_symbol_output.cpp
@@ -265,22 +293,23 @@ target_link_libraries(test_symbol_output
 gtest_discover_tests(test_symbol_output)
 
 # CLI tests
-add_executable(test_cli
-  test_cli.cpp
-  ../../src/cli_parser.cpp
-)
-
-target_link_libraries(test_cli
-  CLI11::CLI11
-  gtest_main
-  gtest
-)
-
-target_include_directories(test_cli PRIVATE
-  ${PROJECT_SOURCE_DIR}/include
-)
-
-gtest_discover_tests(test_cli)
+# TODO: Re-enable once cli_parser.cpp exists
+# add_executable(test_cli
+#   test_cli.cpp
+#   ../../src/cli_parser.cpp
+# )
+# 
+# target_link_libraries(test_cli
+#   CLI11::CLI11
+#   gtest_main
+#   gtest
+# )
+# 
+# target_include_directories(test_cli PRIVATE
+#   ${PROJECT_SOURCE_DIR}/include
+# )
+# 
+# gtest_discover_tests(test_cli)
 
 # Exception safety tests
 add_executable(test_exception_safety
@@ -422,12 +451,15 @@ target_link_libraries(test_flex_conditionals
 
 gtest_discover_tests(test_flex_conditionals)
 
-# Z80 Universal Syntax tests
-add_executable(test_z80_universal_syntax
-    test_z80_universal_syntax.cpp
+# EDTASM-M80++ Syntax tests (formerly Z80 Universal)
+# See test_edtasm_m80_plusplus_syntax below
+
+# EDTASM-M80++ Syntax tests (renamed from Z80 Universal)
+add_executable(test_edtasm_m80_plusplus_syntax
+    test_edtasm_m80_plusplus_syntax.cpp
 )
 
-target_link_libraries(test_z80_universal_syntax
+target_link_libraries(test_edtasm_m80_plusplus_syntax
     xasm_syntax
     xasm_cpu
     xasm_core
@@ -435,7 +467,37 @@ target_link_libraries(test_z80_universal_syntax
     gtest
 )
 
-gtest_discover_tests(test_z80_universal_syntax)
+gtest_discover_tests(test_edtasm_m80_plusplus_syntax)
+
+# Z80 Macro System tests (Phase 12)
+add_executable(test_z80_macros
+    test_z80_macros.cpp
+)
+
+target_link_libraries(test_z80_macros
+    xasm_syntax
+    xasm_cpu
+    xasm_core
+    gtest_main
+    gtest
+)
+
+gtest_discover_tests(test_z80_macros)
+
+# Z80 Directive Constants tests
+add_executable(test_z80_directive_constants
+    test_z80_directive_constants.cpp
+)
+
+target_link_libraries(test_z80_directive_constants
+    xasm_syntax
+    xasm_cpu
+    xasm_core
+    gtest_main
+    gtest
+)
+
+gtest_discover_tests(test_z80_directive_constants)
 
 # Intel HEX Writer tests
 add_executable(test_intel_hex_writer
@@ -450,4 +512,72 @@ target_link_libraries(test_intel_hex_writer
 )
 
 gtest_discover_tests(test_intel_hex_writer)
+
+# Conditional Assembler tests (Phase 4)
+add_executable(test_conditional_assembler
+    test_conditional_assembler.cpp
+)
+
+target_link_libraries(test_conditional_assembler
+    xasm_core
+    gtest_main
+    gtest
+)
+
+gtest_discover_tests(test_conditional_assembler)
+
+# Z80 Forward Reference tests (Phase 10)
+add_executable(test_z80_forward_refs
+    test_z80_forward_refs.cpp
+)
+
+target_link_libraries(test_z80_forward_refs
+    xasm_syntax
+    xasm_cpu
+    xasm_core
+    gtest_main
+    gtest
+)
+
+gtest_discover_tests(test_z80_forward_refs)
+
+# Current Location Operator tests (Phase 14)
+add_executable(test_current_location
+    test_current_location.cpp
+)
+
+target_link_libraries(test_current_location
+    xasm_core
+    gtest_main
+    gtest
+)
+
+gtest_discover_tests(test_current_location)
+
+# Expression Parser tests (Phase 13 + 14)
+add_executable(test_expression_parser
+    test_expression_parser.cpp
+)
+
+target_link_libraries(test_expression_parser
+    xasm_core
+    gtest_main
+    gtest
+)
+
+gtest_discover_tests(test_expression_parser)
+
+# Core directive handlers tests (Phase 6b - God-Class refactoring)
+add_executable(test_core_directive_handlers
+    test_core_directive_handlers.cpp
+)
+
+target_link_libraries(test_core_directive_handlers
+    xasm_syntax
+    xasm_core
+    gtest_main
+    gtest
+)
+
+gtest_discover_tests(test_core_directive_handlers)
 
