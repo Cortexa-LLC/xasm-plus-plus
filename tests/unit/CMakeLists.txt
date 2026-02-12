@@ -597,3 +597,21 @@ target_include_directories(test_encoding_utils PRIVATE
 
 gtest_discover_tests(test_encoding_utils)
 
+# Segment directives tests (ASEG/CSEG/DSEG)
+add_executable(test_segment_directives
+    test_segment_directives.cpp
+)
+
+target_link_libraries(test_segment_directives
+    xasm_syntax
+    xasm_core
+    gtest_main
+    gtest
+)
+
+target_include_directories(test_segment_directives PRIVATE
+    ${PROJECT_SOURCE_DIR}/include
+)
+
+gtest_discover_tests(test_segment_directives)
+

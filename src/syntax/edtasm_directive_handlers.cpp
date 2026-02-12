@@ -6,7 +6,7 @@
  * Part of God-Class Phase 6c.3 refactoring.
  */
 
-#include "edtasm_directive_handlers.h"
+#include "xasm++/syntax/edtasm_directive_handlers.h"
 #include "xasm++/atom.h"
 #include "xasm++/syntax/directive_registry.h"
 #include "xasm++/syntax/edtasm_m80_plusplus_syntax.h"
@@ -42,28 +42,55 @@ namespace xasm {
 void HandleAsegDirective(const std::string &label, const std::string &operand, 
                          DirectiveContext &ctx) {
   (void)label;
+  
+  // Get the parser from context
+  auto *parser = static_cast<EdtasmM80PlusPlusSyntaxParser *>(ctx.parser_state);
+  if (!parser) {
+    throw std::runtime_error("ASEG: Invalid parser state");
+  }
+  
+  // Switch to absolute segment
+  parser->GetSegmentManager().SwitchToSegment(SegmentType::Absolute);
+  
+  // If operand provided, set origin address
+  // (Not implementing operand parsing yet - that's a future enhancement)
   (void)operand;
-  (void)ctx;
-  // No-op stub - segment control not implemented yet
-  // TODO: Implement actual ASEG segment switching
 }
 
 void HandleCsegDirective(const std::string &label, const std::string &operand, 
                          DirectiveContext &ctx) {
   (void)label;
+  
+  // Get the parser from context
+  auto *parser = static_cast<EdtasmM80PlusPlusSyntaxParser *>(ctx.parser_state);
+  if (!parser) {
+    throw std::runtime_error("CSEG: Invalid parser state");
+  }
+  
+  // Switch to code segment
+  parser->GetSegmentManager().SwitchToSegment(SegmentType::Code);
+  
+  // If operand provided, set origin address
+  // (Not implementing operand parsing yet - that's a future enhancement)
   (void)operand;
-  (void)ctx;
-  // No-op stub - segment control not implemented yet
-  // TODO: Implement actual CSEG segment switching
 }
 
 void HandleDsegDirective(const std::string &label, const std::string &operand, 
                          DirectiveContext &ctx) {
   (void)label;
+  
+  // Get the parser from context
+  auto *parser = static_cast<EdtasmM80PlusPlusSyntaxParser *>(ctx.parser_state);
+  if (!parser) {
+    throw std::runtime_error("DSEG: Invalid parser state");
+  }
+  
+  // Switch to data segment
+  parser->GetSegmentManager().SwitchToSegment(SegmentType::Data);
+  
+  // If operand provided, set origin address
+  // (Not implementing operand parsing yet - that's a future enhancement)
   (void)operand;
-  (void)ctx;
-  // No-op stub - segment control not implemented yet
-  // TODO: Implement actual DSEG segment switching
 }
 
 // ============================================================================

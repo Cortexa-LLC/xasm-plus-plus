@@ -25,6 +25,7 @@ using namespace xasm::directives;
 
 MerlinSyntaxParser::MerlinSyntaxParser()
     : in_macro_definition_(false), macro_expansion_depth_(0),
+      in_lup_block_(false), lup_count_(0), lup_nesting_depth_(0),
       in_dum_block_(false), dum_address_(0), current_address_(0),
       end_directive_seen_(false), current_file_("<stdin>"), current_line_(0),
       cpu_(nullptr) {
@@ -1271,7 +1272,34 @@ void MerlinSyntaxParser::HandleRev(const std::string &label,
 }
 
 void MerlinSyntaxParser::HandleLup(const std::string &operand) {
-  HandleLupDirective(operand);
+  // LUP count - Loop directive (repeat following code count times)
+  // Syntax: LUP count
+  //         <lines>
+  //         --^
+  
+  // Parse repeat count
+  std::string count_str = Trim(operand);
+  if (count_str.empty()) {
+    throw std::runtime_error(FormatError("LUP requires a repeat count"));
+  }
+  
+  // Try to parse as number
+  int count = 0;
+  try {
+    count = static_cast<int>(ParseNumber(count_str));
+  } catch (...) {
+    throw std::runtime_error(FormatError("LUP count must be a number: " + count_str));
+  }
+  
+  if (count < 0) {
+    throw std::runtime_error(FormatError("LUP count cannot be negative: " + count_str));
+  }
+  
+  // Start capturing LUP block
+  in_lup_block_ = true;
+  lup_count_ = count;
+  lup_body_.clear();
+  lup_nesting_depth_ = 0; // Track nesting for nested LUP blocks
 }
 
 // ============================================================================
@@ -1309,6 +1337,47 @@ void MerlinSyntaxParser::ParseLine(const std::string &line, Section &section,
     }
     // Otherwise, add line to macro body
     current_macro_.body.push_back(code_line);
+    return;
+  }
+
+  // If in LUP block mode, capture lines (except --^)
+  if (in_lup_block_) {
+    // Check for --^ directive to end LUP block
+    if (upper_trimmed == "--^") {
+      // If nesting depth > 0, this ends an inner LUP
+      if (lup_nesting_depth_ > 0) {
+        lup_nesting_depth_--;
+        lup_body_.push_back(code_line);
+        return;
+      }
+      
+      // End of outermost LUP block - expand and parse
+      std::vector<std::string> body_copy = lup_body_; // Copy to avoid use-after-free
+      int count = lup_count_;
+      
+      // Reset LUP state BEFORE expansion (so lines can be parsed normally)
+      in_lup_block_ = false;
+      lup_body_.clear();
+      lup_count_ = 0;
+      lup_nesting_depth_ = 0;
+      
+      // Repeat the body count times
+      for (int i = 0; i < count; ++i) {
+        for (const auto &lup_line : body_copy) {
+          ParseLine(lup_line, section, symbols);
+        }
+      }
+      return;
+    }
+    
+    // Check if this line starts a nested LUP block
+    std::string lup_directive = std::string(directives::LUP) + " ";
+    if (upper_trimmed.find(lup_directive) == 0 || upper_trimmed == directives::LUP) {
+      lup_nesting_depth_++;
+    }
+    
+    // Add line to LUP body
+    lup_body_.push_back(code_line);
     return;
   }
 
@@ -1450,6 +1519,10 @@ void MerlinSyntaxParser::Parse(const std::string &source, Section &section,
   in_macro_definition_ = false;
   macro_expansion_depth_ = 0;
   macros_.clear(); // Clear macros from previous parse
+  in_lup_block_ = false;
+  lup_body_.clear();
+  lup_count_ = 0;
+  lup_nesting_depth_ = 0;
 
   // Split into lines and parse
   std::istringstream iss(source);
@@ -1470,6 +1543,12 @@ void MerlinSyntaxParser::Parse(const std::string &source, Section &section,
   if (in_macro_definition_) {
     throw std::runtime_error(
         FormatError("Unclosed macro definition (missing <<<)"));
+  }
+
+  // Validate that LUP blocks are closed
+  if (in_lup_block_) {
+    throw std::runtime_error(
+        FormatError("Unclosed LUP block (missing --^)"));
   }
 }
 

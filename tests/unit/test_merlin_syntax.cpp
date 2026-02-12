@@ -1770,16 +1770,147 @@ TEST(MerlinSyntaxTest, RevDirectiveWithSingleChar) {
   EXPECT_EQ(data_atom->data[0], 'X'); // 0x58
 }
 
-TEST(MerlinSyntaxTest, LupDirective) {
-  // LUP - Loop directive (should error - not yet implemented)
+// ============================================================================
+// LUP Directive (Loop/Repeat Block)
+// ============================================================================
+
+TEST(MerlinSyntaxTest, LupBasicRepeat) {
+  // LUP count - repeat following code count times until --^
   MerlinSyntaxParser parser;
   ConcreteSymbolTable symbols;
   Section section("test", 0);
 
-  std::string source = " lup 36\n";
+  std::string source = " lup 3\n"
+                       " nop\n"
+                       " --^\n";
 
-  // LUP should throw an error indicating it's not yet implemented
-  EXPECT_THROW({ parser.Parse(source, section, symbols); }, std::runtime_error);
+  parser.Parse(source, section, symbols);
+
+  // Should generate 3 NOP instructions
+  ASSERT_EQ(section.atoms.size(), 3);
+  EXPECT_EQ(section.atoms[0]->type, AtomType::Instruction);
+  EXPECT_EQ(section.atoms[1]->type, AtomType::Instruction);
+  EXPECT_EQ(section.atoms[2]->type, AtomType::Instruction);
+}
+
+TEST(MerlinSyntaxTest, LupZeroCount) {
+  // LUP 0 - should not repeat (no atoms)
+  MerlinSyntaxParser parser;
+  ConcreteSymbolTable symbols;
+  Section section("test", 0);
+
+  std::string source = " lup 0\n"
+                       " nop\n"
+                       " --^\n";
+
+  parser.Parse(source, section, symbols);
+
+  // Should generate no atoms
+  EXPECT_EQ(section.atoms.size(), 0);
+}
+
+TEST(MerlinSyntaxTest, LupMultipleInstructions) {
+  // LUP with multiple instructions in block
+  MerlinSyntaxParser parser;
+  ConcreteSymbolTable symbols;
+  Section section("test", 0);
+
+  std::string source = " lup 2\n"
+                       " lda #$00\n"
+                       " sta $80\n"
+                       " --^\n";
+
+  parser.Parse(source, section, symbols);
+
+  // Should generate 4 instructions (2 iterations * 2 instructions)
+  ASSERT_EQ(section.atoms.size(), 4);
+  EXPECT_EQ(section.atoms[0]->type, AtomType::Instruction);
+  EXPECT_EQ(section.atoms[1]->type, AtomType::Instruction);
+  EXPECT_EQ(section.atoms[2]->type, AtomType::Instruction);
+  EXPECT_EQ(section.atoms[3]->type, AtomType::Instruction);
+}
+
+TEST(MerlinSyntaxTest, LupWithData) {
+  // LUP with DB directive
+  MerlinSyntaxParser parser;
+  ConcreteSymbolTable symbols;
+  Section section("test", 0);
+
+  std::string source = " lup 4\n"
+                       " db $00\n"
+                       " --^\n";
+
+  parser.Parse(source, section, symbols);
+
+  // Should generate 4 data atoms
+  ASSERT_EQ(section.atoms.size(), 4);
+  for (size_t i = 0; i < 4; ++i) {
+    auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[i]);
+    ASSERT_NE(data_atom, nullptr);
+    EXPECT_EQ(data_atom->data[0], 0x00);
+  }
+}
+
+TEST(MerlinSyntaxTest, LupNested) {
+  // Nested LUP blocks
+  MerlinSyntaxParser parser;
+  ConcreteSymbolTable symbols;
+  Section section("test", 0);
+
+  std::string source = " lup 2\n"
+                       "  lup 2\n"
+                       "   nop\n"
+                       "  --^\n"
+                       " --^\n";
+
+  parser.Parse(source, section, symbols);
+
+  // Should generate 4 NOP instructions (2 outer * 2 inner)
+  ASSERT_EQ(section.atoms.size(), 4);
+  for (size_t i = 0; i < 4; ++i) {
+    EXPECT_EQ(section.atoms[i]->type, AtomType::Instruction);
+  }
+}
+
+TEST(MerlinSyntaxTest, LupMissingEnd) {
+  // LUP without --^ should error
+  MerlinSyntaxParser parser;
+  ConcreteSymbolTable symbols;
+  Section section("test", 0);
+
+  std::string source = " lup 3\n"
+                       " nop\n";
+
+  // Should throw error for unclosed LUP block
+  EXPECT_THROW(parser.Parse(source, section, symbols), std::runtime_error);
+}
+
+TEST(MerlinSyntaxTest, LupNegativeCount) {
+  // LUP with negative count should error
+  MerlinSyntaxParser parser;
+  ConcreteSymbolTable symbols;
+  Section section("test", 0);
+
+  std::string source = " lup -1\n"
+                       " nop\n"
+                       " --^\n";
+
+  // Should throw error for negative count
+  EXPECT_THROW(parser.Parse(source, section, symbols), std::runtime_error);
+}
+
+TEST(MerlinSyntaxTest, LupMissingCount) {
+  // LUP without count should error
+  MerlinSyntaxParser parser;
+  ConcreteSymbolTable symbols;
+  Section section("test", 0);
+
+  std::string source = " lup\n"
+                       " nop\n"
+                       " --^\n";
+
+  // Should throw error for missing count
+  EXPECT_THROW(parser.Parse(source, section, symbols), std::runtime_error);
 }
 
 // ============================================================================

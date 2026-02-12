@@ -175,6 +175,12 @@ private:
   std::unordered_map<std::string, MacroDefinition> macros_; ///< Defined macros
   int macro_expansion_depth_; ///< Prevent infinite recursion
 
+  // LUP (loop/repeat) block state
+  bool in_lup_block_;              ///< True if currently inside a LUP block
+  int lup_count_;                  ///< Number of times to repeat LUP block
+  std::vector<std::string> lup_body_; ///< Lines captured in LUP block
+  int lup_nesting_depth_;          ///< Track nested LUP blocks
+
   // DUM block state
   bool in_dum_block_;    ///< True if currently inside a DUM block
   uint32_t dum_address_; ///< Current address within DUM block

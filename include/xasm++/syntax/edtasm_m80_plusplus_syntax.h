@@ -20,6 +20,7 @@
 #include "xasm++/common/expression_parser.h"
 #include "xasm++/expression.h"
 #include "xasm++/section.h"
+#include "xasm++/segment_manager.h"
 #include "xasm++/symbol.h"
 #include "xasm++/syntax/directive_registry.h"
 #include <cctype>
@@ -277,6 +278,12 @@ public:
   void SetModuleName(const std::string& name) { module_name_ = name; }
 
   /**
+   * @brief Get segment manager
+   * @return Reference to segment manager
+   */
+  SegmentManager& GetSegmentManager() { return segment_manager_; }
+
+  /**
    * @brief Set number radix
    * @param radix Number base (2-16)
    * @throw std::runtime_error if radix out of range
@@ -443,6 +450,7 @@ private:
   CpuZ80 *cpu_ = nullptr; ///< CPU plugin for undocumented instructions
 
   DirectiveRegistry directive_registry_; ///< Registry for directive handlers
+  SegmentManager segment_manager_;       ///< Manages segments (CSEG/DSEG/ASEG/COMMON)
 
   // Expression and number parsing
   Z80NumberParser z80_number_parser_;      ///< Z80-specific number parser
