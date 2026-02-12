@@ -89,6 +89,9 @@ void BinaryOutput::WriteOutput(const std::string &filename,
       case AtomType::Label:
         // LabelAtom: No bytes generated
         break;
+      case AtomType::ListingControl:
+        // ListingControlAtom: No bytes generated (listing only)
+        break;
       }
     }
   }
