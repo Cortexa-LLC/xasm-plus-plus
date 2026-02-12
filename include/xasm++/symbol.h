@@ -209,8 +209,29 @@ public:
    */
   void Clear();
 
+  /**
+   * @brief Get the current assembly location counter
+   *
+   * Returns the current address during assembly. This is used by the
+   * current location operator ($) in expressions.
+   *
+   * @return Current assembly address
+   */
+  int64_t GetCurrentLocation() const override;
+
+  /**
+   * @brief Set the current assembly location counter
+   *
+   * Updates the current address during assembly. This should be called
+   * as atoms are processed and sized.
+   *
+   * @param location New assembly address
+   */
+  void SetCurrentLocation(int64_t location);
+
 private:
   std::unordered_map<std::string, Symbol> symbols_; ///< Internal symbol storage
+  int64_t current_location_ = 0; ///< Current assembly address for $ operator
 };
 
 } // namespace xasm

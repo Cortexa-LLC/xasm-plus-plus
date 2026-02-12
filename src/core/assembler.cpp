@@ -1,8 +1,6 @@
 // Assembler implementation
 
 #include "xasm++/assembler.h"
-#include "xasm++/cpu/cpu_6502.h"
-#include "xasm++/cpu/opcodes_6502.h"
 #include "xasm++/expression.h"
 #include "xasm++/parse_utils.h"
 #include "xasm++/symbol.h"
@@ -165,150 +163,6 @@ ParseExpression(const std::string &str, ConcreteSymbolTable &symbols) {
   return std::make_shared<SymbolExpr>(trimmed);
 }
 
-// Helper: Check if a string contains expression operators
-static bool ContainsExpressionOperators(const std::string &str) {
-  // Expression operators: + - * / < > & | ^ ~
-  return str.find_first_of("+-*/&|^~<>") != std::string::npos;
-}
-
-// Helper: Determine addressing mode from operands string
-static AddressingMode DetermineAddressingMode(const std::string &operands) {
-  if (operands.empty()) {
-    return AddressingMode::Implied;
-  }
-
-  std::string trimmed = Trim(operands);
-
-  // After trimming, check if empty (was all whitespace)
-  if (trimmed.empty()) {
-    return AddressingMode::Implied;
-  }
-
-  // Group 1: Accumulator addressing mode
-  // ASL A, LSR A, ROL A, ROR A
-  if (trimmed == "A") {
-    return AddressingMode::Accumulator;
-  }
-
-  // Group 3 & 4: Check for indirect addressing modes (parentheses)
-  // Must check before indexed modes since these have parens
-  if (trimmed[0] == '(') {
-    size_t open_paren = trimmed.find('(');
-    size_t close_paren = trimmed.find(')');
-
-    if (close_paren != std::string::npos) {
-      std::string inside_parens =
-          trimmed.substr(open_paren + 1, close_paren - open_paren - 1);
-      inside_parens = Trim(inside_parens);
-
-      // Check if there's a comma inside the parens: ($80,X) - IndexedIndirect
-      if (inside_parens.find(',') != std::string::npos) {
-        return AddressingMode::IndirectX;
-      }
-
-      // Check if there's content after closing paren: ($80),Y - IndirectIndexed
-      if (close_paren < trimmed.length() - 1) {
-        std::string after_parens = Trim(trimmed.substr(close_paren + 1));
-        if (after_parens == ",Y" || after_parens == ", Y") {
-          return AddressingMode::IndirectY;
-        }
-      }
-
-      // Simple Indirect: ($1234) - only for JMP
-      if (close_paren == trimmed.length() - 1) {
-        return AddressingMode::Indirect;
-      }
-    }
-  }
-
-  // Group 2: Check for indexed addressing modes (,X or ,Y)
-  // Need to check this before parsing hex values
-  size_t comma_x = trimmed.find(",X");
-  size_t comma_x_space = trimmed.find(", X");
-  size_t comma_y = trimmed.find(",Y");
-  size_t comma_y_space = trimmed.find(", Y");
-
-  if (comma_x != std::string::npos || comma_x_space != std::string::npos) {
-    // Extract address part (before comma)
-    size_t comma_pos = (comma_x != std::string::npos) ? comma_x : comma_x_space;
-    std::string addr_part = trimmed.substr(0, comma_pos);
-    addr_part = Trim(addr_part);
-
-    // Check for empty addr_part
-    if (addr_part.empty()) {
-      return AddressingMode::Absolute; // Default fallback
-    }
-
-    // Check if it's a hex address or label
-    if (addr_part[0] == '$') {
-      // If expression contains operators, can't evaluate yet - default to
-      // AbsoluteX
-      if (ContainsExpressionOperators(addr_part)) {
-        return AddressingMode::AbsoluteX; // Conservative choice
-      }
-      uint32_t value = ParseHex(addr_part);
-      if (value <= 0xFF) {
-        return AddressingMode::ZeroPageX;
-      }
-      return AddressingMode::AbsoluteX;
-    } else {
-      // Label with ,X indexing
-      return AddressingMode::AbsoluteX;
-    }
-  }
-
-  if (comma_y != std::string::npos || comma_y_space != std::string::npos) {
-    // Extract address part (before comma)
-    size_t comma_pos = (comma_y != std::string::npos) ? comma_y : comma_y_space;
-    std::string addr_part = trimmed.substr(0, comma_pos);
-    addr_part = Trim(addr_part);
-
-    // Check for empty addr_part
-    if (addr_part.empty()) {
-      return AddressingMode::Absolute; // Default fallback
-    }
-
-    // Check if it's a hex address or label
-    if (addr_part[0] == '$') {
-      // If expression contains operators, can't evaluate yet - default to
-      // AbsoluteY
-      if (ContainsExpressionOperators(addr_part)) {
-        return AddressingMode::AbsoluteY; // Conservative choice
-      }
-      uint32_t value = ParseHex(addr_part);
-      if (value <= 0xFF) {
-        return AddressingMode::ZeroPageY;
-      }
-      return AddressingMode::AbsoluteY;
-    } else {
-      // Label with ,Y indexing
-      return AddressingMode::AbsoluteY;
-    }
-  }
-
-  // Immediate: #$42
-  if (trimmed[0] == '#') {
-    return AddressingMode::Immediate;
-  }
-
-  // Absolute or zero page: $1234 or $80
-  if (trimmed[0] == '$') {
-    // If expression contains operators, can't evaluate yet - default to
-    // Absolute
-    if (ContainsExpressionOperators(trimmed)) {
-      return AddressingMode::Absolute; // Conservative choice
-    }
-    uint32_t value = ParseHex(trimmed);
-    if (value <= 0xFF) {
-      return AddressingMode::ZeroPage;
-    }
-    return AddressingMode::Absolute;
-  }
-
-  // Default to absolute (label reference)
-  return AddressingMode::Absolute;
-}
-
 Assembler::Assembler() {
   // CPU plugin handles instruction encoding - no handlers needed
 }
@@ -322,6 +176,10 @@ void Assembler::AddSection(const Section &section) {
 }
 
 size_t Assembler::GetSectionCount() const { return sections_.size(); }
+
+const std::vector<Section>& Assembler::GetSections() const {
+  return sections_;
+}
 
 void Assembler::Reset() { sections_.clear(); }
 
@@ -439,10 +297,72 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
           std::string mnemonic = inst->mnemonic;
           std::string operand = inst->operand;
 
-          // Parse operand to get addressing mode and value
-          AddressingMode mode = DetermineAddressingMode(operand);
+          // Check if instruction requires special encoding (e.g., branch
+          // relaxation, multi-byte instructions)
+          //
+          // WHY SPECIAL ENCODING?
+          // =====================
+          // Some instructions need context beyond standard operand values:
+          //
+          // 1. BRANCH RELAXATION (6502 branches):
+          //    - Branches use 8-bit signed relative offsets (-128 to +127 bytes)
+          //    - If target is farther, must "relax" into longer sequence:
+          //      Short form (2 bytes):  BEQ label
+          //      Long form (5 bytes):   BNE skip / JMP label / skip: ...
+          //    - Relaxation triggers cascading changes requiring multi-pass
+          //
+          // 2. MULTI-BYTE INSTRUCTIONS (MVN/MVP):
+          //    - 65816 block move instructions take two operands
+          //    - Need special parsing for "srcbank,destbank" format
+          //
+          // CPU plugin handles ALL special cases - core assembler stays agnostic
+          if (cpu_->RequiresSpecialEncoding(mnemonic)) {
+            try {
+              // Resolve labels in operand before passing to CPU plugin
+              // Branch instructions need target address, not label name
+              std::string resolved_operand = operand;
+              std::string trimmed = Trim(operand);
+              
+              // Check if operand is a label reference (not starting with $ or #)
+              if (!trimmed.empty() && trimmed[0] != '$' && trimmed[0] != '#' && trimmed[0] != '(') {
+                // Try to resolve as symbol
+                int64_t symbol_value;
+                if (symbols.Lookup(trimmed, symbol_value)) {
+                  // Convert resolved address to hex string format expected by CPU plugin
+                  std::ostringstream oss;
+                  oss << "$" << std::hex << symbol_value;
+                  resolved_operand = oss.str();
+                } else {
+                  // Label not yet defined - use placeholder $0000 for first pass
+                  // Multi-pass assembly will resolve on subsequent passes
+                  resolved_operand = "$0000";
+                }
+              }
+              
+              // Delegate to CPU plugin for special encoding
+              // Plugin handles branch relaxation, multi-byte instructions, etc.
+              inst->encoded_bytes = cpu_->EncodeInstructionSpecial(
+                  mnemonic, resolved_operand, static_cast<uint16_t>(current_address));
+
+              // Advance current address past this instruction
+              current_address += inst->encoded_bytes.size();
+              current_sizes.push_back(inst->encoded_bytes.size());
+              continue; // Skip to next atom
+            } catch (const std::exception &e) {
+              // Special encoding failed - report error
+              AssemblerError error;
+              error.location = inst->location;
+              error.message =
+                  "Special encoding failed for " + mnemonic + ": " + e.what();
+              result.errors.push_back(error);
+              result.success = false;
+              continue;
+            }
+          }
+
+          // Parse operand value for standard encoding
+          // Note: CPU plugin determines addressing mode from operand string
           uint16_t value = 0;
-          std::string label_name = operand; // Save for error messages
 
           // Extract operand value
           if (!operand.empty()) {
@@ -516,127 +436,6 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
                 }
               }
             }
-          }
-
-          // Special handling for branch instructions (relative addressing)
-          //
-          // WHY BRANCH RELAXATION?
-          // ======================
-          // 6502 branch instructions (BEQ, BNE, etc.) use 8-bit signed relative
-          // offsets, limiting range to -128 to +127 bytes. If the target is
-          // farther away, we must "relax" the branch into a longer sequence:
-          //
-          //   Short form (2 bytes):     BEQ label
-          //   Long form (5 bytes):      BNE skip / JMP label / skip: ...
-          //
-          // This relaxation can trigger cascading changes:
-          // - Short branch becomes long (adds 3 bytes)
-          // - Subsequent instructions shift by 3 bytes
-          // - Other branches may now be out of range
-          // - Requires another pass to re-encode
-          //
-          // This is why multi-pass assembly is essential for correct branch
-          // generation.
-          bool is_branch =
-              (mnemonic == "BEQ" || mnemonic == "BNE" || mnemonic == "BCC" ||
-               mnemonic == "BCS" || mnemonic == "BMI" || mnemonic == "BPL" ||
-               mnemonic == "BVC" || mnemonic == "BVS" || mnemonic == "BLT" ||
-               mnemonic == "BRA");
-
-          if (is_branch && mode == AddressingMode::Absolute) {
-            // Branch instructions use relative addressing
-            // Use EncodeBranchWithRelaxation which handles both short and long
-            // branches
-
-            // Get branch opcode for this mnemonic
-            uint8_t branch_opcode = 0;
-            if (mnemonic == "BEQ")
-              branch_opcode = Opcodes::BEQ;
-            else if (mnemonic == "BNE")
-              branch_opcode = Opcodes::BNE;
-            else if (mnemonic == "BCC")
-              branch_opcode = Opcodes::BCC;
-            else if (mnemonic == "BLT")
-              branch_opcode = Opcodes::BCC; // BLT is an alias for BCC
-            else if (mnemonic == "BCS")
-              branch_opcode = Opcodes::BCS;
-            else if (mnemonic == "BMI")
-              branch_opcode = Opcodes::BMI;
-            else if (mnemonic == "BPL")
-              branch_opcode = Opcodes::BPL;
-            else if (mnemonic == "BVC")
-              branch_opcode = Opcodes::BVC;
-            else if (mnemonic == "BVS")
-              branch_opcode = Opcodes::BVS;
-            else if (mnemonic == "BRA")
-              branch_opcode = Opcodes::BRA;
-
-            // Use branch relaxation (handles both short and long branches)
-            // This is 6502-specific, so cast from base CpuPlugin*
-            Cpu6502 *cpu6502 = static_cast<Cpu6502 *>(cpu_);
-            inst->encoded_bytes = cpu6502->EncodeBranchWithRelaxation(
-                branch_opcode, static_cast<uint16_t>(current_address),
-                static_cast<uint16_t>(value));
-
-            // Skip the normal encoding path for branches
-            // Advance current address past this instruction
-            current_address += inst->encoded_bytes.size();
-            current_sizes.push_back(inst->encoded_bytes.size());
-            continue; // Skip to next atom
-          }
-
-          // Special handling for MVN/MVP (Block Move with two operands)
-          if (mnemonic == "MVN" || mnemonic == "MVP") {
-            // Parse operands: "srcbank,destbank" or "$E1,$01"
-            std::string trimmed_operand = Trim(operand);
-            size_t comma_pos = trimmed_operand.find(',');
-
-            if (comma_pos == std::string::npos) {
-              AssemblerError error;
-              error.location = inst->location;
-              error.message =
-                  mnemonic + " requires two operands: srcbank,destbank";
-              result.errors.push_back(error);
-              result.success = false;
-              continue;
-            }
-
-            // Extract source and dest banks
-            std::string src_str = Trim(trimmed_operand.substr(0, comma_pos));
-            std::string dst_str = Trim(trimmed_operand.substr(comma_pos + 1));
-
-            // Helper lambda to parse bank value
-            auto parse_bank = [](const std::string &str) -> uint8_t {
-              if (!str.empty() && str[0] == '$') {
-                return static_cast<uint8_t>(ParseHex(str) & 0xFF);
-              }
-              return static_cast<uint8_t>(std::stoul(str, nullptr, 10) & 0xFF);
-            };
-
-            try {
-              uint8_t srcbank = parse_bank(src_str);
-              uint8_t destbank = parse_bank(dst_str);
-
-              // Encode the instruction (MVN/MVP are 65816-specific)
-              Cpu6502 *cpu6502 = static_cast<Cpu6502 *>(cpu_);
-              inst->encoded_bytes = (mnemonic == "MVN")
-                                        ? cpu6502->EncodeMVN(srcbank, destbank)
-                                        : cpu6502->EncodeMVP(srcbank, destbank);
-
-            } catch (const std::exception &e) {
-              AssemblerError error;
-              error.location = inst->location;
-              error.message =
-                  "Invalid bank values for " + mnemonic + ": " + e.what();
-              result.errors.push_back(error);
-              result.success = false;
-              continue;
-            }
-
-            // Advance current address past this instruction
-            current_address += inst->encoded_bytes.size();
-            current_sizes.push_back(inst->encoded_bytes.size());
-            continue; // Skip to next atom
           }
 
           // Use polymorphic CPU plugin interface for instruction encoding

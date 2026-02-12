@@ -29,12 +29,24 @@ class SymbolTable;
  * More operators will be added in future phases.
  */
 enum class BinaryOp {
-  Add,      ///< Addition: a + b
-  Subtract, ///< Subtraction: a - b
-  Multiply, ///< Multiplication: a * b
-  Divide,   ///< Division: a / b
-            // More operators to be added in future phases:
-  // Modulo, BitwiseAnd, BitwiseOr, BitwiseXor, ShiftLeft, ShiftRight, etc.
+  Add,            ///< Addition: a + b
+  Subtract,       ///< Subtraction: a - b
+  Multiply,       ///< Multiplication: a * b
+  Divide,         ///< Division: a / b
+  Modulo,         ///< Modulo: a % b
+  BitwiseAnd,     ///< Bitwise AND: a & b
+  BitwiseOr,      ///< Bitwise OR: a | b
+  BitwiseXor,     ///< Bitwise XOR: a ^ b
+  ShiftLeft,      ///< Shift left: a << b
+  ShiftRight,     ///< Shift right: a >> b
+  LogicalOr,      ///< Logical OR: a || b
+  LogicalAnd,     ///< Logical AND: a && b
+  Equal,          ///< Equal: a == b
+  NotEqual,       ///< Not equal: a != b
+  LessThan,       ///< Less than: a < b
+  LessOrEqual,    ///< Less or equal: a <= b
+  GreaterThan,    ///< Greater than: a > b
+  GreaterOrEqual, ///< Greater or equal: a >= b
 };
 
 /**
@@ -46,8 +58,9 @@ enum class BinaryOp {
 enum class UnaryOp {
   Negate,     ///< Negation: -a
   BitwiseNot, ///< Bitwise NOT: ~a
-              // More operators to be added in future phases:
-              // LogicalNot, etc.
+  LogicalNot, ///< Logical NOT: !a
+  LowByte,    ///< Low byte extraction: <a
+  HighByte,   ///< High byte extraction: >a
 };
 
 /**
@@ -134,6 +147,16 @@ public:
    * @return true if symbol was found, false otherwise
    */
   virtual bool Lookup(const std::string &name, int64_t &value) const = 0;
+
+  /**
+   * @brief Get the current assembly location counter
+   *
+   * Returns the current address during assembly. This is used by the
+   * current location operator ($) in expressions.
+   *
+   * @return Current assembly address
+   */
+  virtual int64_t GetCurrentLocation() const = 0;
 };
 
 /**
@@ -250,6 +273,50 @@ private:
 };
 
 /**
+ * @brief Current location expression - represents the current address ($)
+ *
+ * A current location expression evaluates to the current assembly address.
+ * It is never constant (changes as assembly progresses) and is always
+ * relocatable (it's an address).
+ *
+ * @par Example
+ * @code
+ * JR $+5        ; Jump to current location + 5
+ * DS $ & 255    ; Align to next page boundary
+ * DB ($-START)  ; Store size of data from START to here
+ * @endcode
+ */
+class CurrentLocationExpr : public Expression {
+public:
+  /**
+   * @brief Construct a current location expression
+   */
+  CurrentLocationExpr() = default;
+
+  /**
+   * @brief Evaluate - returns the current assembly location
+   *
+   * @param symbols Symbol table providing current location
+   * @return The current assembly address
+   */
+  int64_t Evaluate(const SymbolTable &symbols) const override {
+    return symbols.GetCurrentLocation();
+  }
+
+  /**
+   * @brief Check if constant - always returns false
+   * @return false (current location changes during assembly)
+   */
+  bool IsConstant() const override { return false; }
+
+  /**
+   * @brief Check if relocatable - always returns true
+   * @return true (current location is an address)
+   */
+  bool IsRelocatable() const override { return true; }
+};
+
+/**
  * @brief Binary operation expression - combines two expressions
  *
  * A binary operation expression applies an operator (add, subtract, etc.)
@@ -302,6 +369,37 @@ public:
         throw std::runtime_error("Division by zero");
       }
       return lval / rval;
+    case BinaryOp::Modulo:
+      if (rval == 0) {
+        throw std::runtime_error("Modulo by zero");
+      }
+      return lval % rval;
+    case BinaryOp::BitwiseAnd:
+      return lval & rval;
+    case BinaryOp::BitwiseOr:
+      return lval | rval;
+    case BinaryOp::BitwiseXor:
+      return lval ^ rval;
+    case BinaryOp::ShiftLeft:
+      return lval << rval;
+    case BinaryOp::ShiftRight:
+      return lval >> rval;
+    case BinaryOp::LogicalOr:
+      return lval || rval;
+    case BinaryOp::LogicalAnd:
+      return lval && rval;
+    case BinaryOp::Equal:
+      return lval == rval;
+    case BinaryOp::NotEqual:
+      return lval != rval;
+    case BinaryOp::LessThan:
+      return lval < rval;
+    case BinaryOp::LessOrEqual:
+      return lval <= rval;
+    case BinaryOp::GreaterThan:
+      return lval > rval;
+    case BinaryOp::GreaterOrEqual:
+      return lval >= rval;
     default:
       throw std::runtime_error("Unknown binary operator");
     }
@@ -389,6 +487,12 @@ public:
       return -val;
     case UnaryOp::BitwiseNot:
       return ~val;
+    case UnaryOp::LogicalNot:
+      return !val;
+    case UnaryOp::LowByte:
+      return val & 0xFF;
+    case UnaryOp::HighByte:
+      return (val >> 8) & 0xFF;
     default:
       throw std::runtime_error("Unknown unary operator");
     }

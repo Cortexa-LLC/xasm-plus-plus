@@ -25,12 +25,13 @@ namespace xasm {
  * Each atom type represents a different assembly language construct.
  */
 enum class AtomType {
-  Label,       ///< Symbol definition (e.g., "start:" or "loop:")
-  Instruction, ///< CPU instruction (e.g., "LDA #$42")
-  Data,        ///< Raw data bytes (e.g., ".byte $01, $02, $03")
-  Space,       ///< Reserved/uninitialized space (e.g., ".ds 100")
-  Align,       ///< Alignment directive (e.g., ".align 256")
-  Org,         ///< Origin directive (e.g., ".org $8000")
+  Label,          ///< Symbol definition (e.g., "start:" or "loop:")
+  Instruction,    ///< CPU instruction (e.g., "LDA #$42")
+  Data,           ///< Raw data bytes (e.g., ".byte $01, $02, $03")
+  Space,          ///< Reserved/uninitialized space (e.g., ".ds 100")
+  Align,          ///< Alignment directive (e.g., ".align 256")
+  Org,            ///< Origin directive (e.g., ".org $8000")
+  ListingControl, ///< Listing control directive (e.g., "TITLE", "PAGE", "LIST")
 };
 
 /**
@@ -84,6 +85,7 @@ public:
   size_t last_size;           ///< Size in bytes (previous pass)
   uint32_t changes;           ///< Number of times size has changed
   std::shared_ptr<Atom> next; ///< Next atom in linked list (nullptr if last)
+  std::string source_line;    ///< Original source line text (for listing output)
 
   /**
    * @brief Construct an atom of the given type
@@ -283,6 +285,73 @@ public:
    */
   explicit OrgAtom(uint32_t addr) : Atom(AtomType::Org), address(addr) {
     size = 0; // ORG doesn't generate bytes
+  }
+};
+
+/**
+ * @brief Listing control type for directives
+ */
+enum class ListingControlType {
+  Title,    ///< TITLE directive - sets page title
+  Subtitle, ///< SUBTTL directive - sets page subtitle
+  Page,     ///< PAGE/EJECT directive - forces page break
+  Space,    ///< SPACE directive - inserts blank lines
+  List,     ///< LIST directive - enables listing output
+  Nolist,   ///< NOLIST directive - disables listing output
+  Lall,     ///< LALL directive - list all macro expansions
+  Sall,     ///< SALL directive - suppress macro expansion listing
+};
+
+/**
+ * @brief Listing control atom - represents listing directives
+ *
+ * A listing control atom controls how the listing file is formatted and
+ * what content is included. These directives affect listing output only
+ * and do not generate any bytes in the binary.
+ *
+ * @par Example
+ * @code
+ * TITLE "My Program"    ; ListingControlAtom(type=Title, value="My Program")
+ * PAGE                  ; ListingControlAtom(type=Page)
+ * SPACE 3               ; ListingControlAtom(type=Space, count=3)
+ * LIST                  ; ListingControlAtom(type=List)
+ * NOLIST                ; ListingControlAtom(type=Nolist)
+ * @endcode
+ */
+class ListingControlAtom : public Atom {
+public:
+  ListingControlType control_type; ///< Type of listing control
+  std::string value;               ///< String value (for TITLE)
+  int count;                       ///< Numeric value (for SPACE)
+
+  /**
+   * @brief Construct a listing control atom with string value
+   * @param type Control type
+   * @param val String value
+   */
+  ListingControlAtom(ListingControlType type, const std::string &val)
+      : Atom(AtomType::ListingControl), control_type(type), value(val),
+        count(0) {
+    size = 0; // Listing control doesn't generate bytes
+  }
+
+  /**
+   * @brief Construct a listing control atom with numeric value
+   * @param type Control type
+   * @param cnt Numeric value
+   */
+  ListingControlAtom(ListingControlType type, int cnt)
+      : Atom(AtomType::ListingControl), control_type(type), count(cnt) {
+    size = 0; // Listing control doesn't generate bytes
+  }
+
+  /**
+   * @brief Construct a listing control atom with no value
+   * @param type Control type
+   */
+  explicit ListingControlAtom(ListingControlType type)
+      : Atom(AtomType::ListingControl), control_type(type), count(0) {
+    size = 0; // Listing control doesn't generate bytes
   }
 };
 

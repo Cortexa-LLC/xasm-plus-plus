@@ -8,7 +8,20 @@ namespace xasm {
 
 void ConcreteSymbolTable::Define(const std::string &name, SymbolType type,
                                  std::shared_ptr<Expression> value) {
+  // Preserve export/import flags if symbol already exists
+  bool was_exported = false;
+  bool was_imported = false;
+  auto it = symbols_.find(name);
+  if (it != symbols_.end()) {
+    was_exported = it->second.is_exported;
+    was_imported = it->second.is_imported;
+  }
+  
   symbols_[name] = Symbol(name, type, value);
+  
+  // Restore flags
+  symbols_[name].is_exported = was_exported;
+  symbols_[name].is_imported = was_imported;
 }
 
 void ConcreteSymbolTable::DefineLabel(const std::string &name, int64_t value) {
@@ -59,6 +72,17 @@ std::vector<std::string> ConcreteSymbolTable::GetAllSymbolNames() const {
   return names;
 }
 
-void ConcreteSymbolTable::Clear() { symbols_.clear(); }
+void ConcreteSymbolTable::Clear() {
+  symbols_.clear();
+  current_location_ = 0;
+}
+
+int64_t ConcreteSymbolTable::GetCurrentLocation() const {
+  return current_location_;
+}
+
+void ConcreteSymbolTable::SetCurrentLocation(int64_t location) {
+  current_location_ = location;
+}
 
 } // namespace xasm

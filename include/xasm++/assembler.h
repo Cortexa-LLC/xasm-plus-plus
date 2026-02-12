@@ -144,6 +144,18 @@ public:
    * @return Number of sections that will be assembled
    */
   size_t GetSectionCount() const;
+  
+  /**
+   * @brief Get the assembled sections
+   *
+   * Returns the sections after assembly. These sections contain the encoded
+   * instructions and resolved data.
+   *
+   * @return Const reference to the vector of assembled sections
+   *
+   * @note Should only be called after Assemble() has been called
+   */
+  const std::vector<Section>& GetSections() const;
 
   /**
    * @brief Reset the assembler state
