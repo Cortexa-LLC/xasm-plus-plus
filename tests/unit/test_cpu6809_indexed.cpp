@@ -427,3 +427,339 @@ TEST_F(Cpu6809IndexedTest, Indexed_ChoosesCorrectMode_ForOffset_Minus129) {
   EXPECT_EQ(0xFF, bytes[2]); // Offset high byte (two's complement)
   EXPECT_EQ(0x7F, bytes[3]); // Offset low byte
 }
+
+// ============================================================================
+// Phase 14: STA Indexed Addressing Modes
+// ============================================================================
+
+TEST_F(Cpu6809IndexedTest, STA_IndexedZeroOffset) {
+  // STA ,X -> opcode A7, post-byte 84
+  auto bytes = cpu.EncodeSTA(0, AddressingMode6809::IndexedZeroOffset);
+  ASSERT_EQ(2, bytes.size());
+  EXPECT_EQ(0xA7, bytes[0]); // STA indexed opcode
+  EXPECT_EQ(0x84, bytes[1]); // Post-byte: 10000100 (,X)
+}
+
+TEST_F(Cpu6809IndexedTest, STA_Indexed5BitOffset) {
+  // STA 10,X
+  auto bytes = cpu.EncodeSTA(10, AddressingMode6809::Indexed5BitOffset);
+  ASSERT_EQ(2, bytes.size());
+  EXPECT_EQ(0xA7, bytes[0]); // STA indexed opcode
+  EXPECT_EQ(0x0A, bytes[1]); // Post-byte: 00001010 (10,X)
+}
+
+TEST_F(Cpu6809IndexedTest, STA_Indexed8BitOffset) {
+  // STA 100,X
+  auto bytes = cpu.EncodeSTA(100, AddressingMode6809::Indexed8BitOffset);
+  ASSERT_EQ(3, bytes.size());
+  EXPECT_EQ(0xA7, bytes[0]); // STA indexed opcode
+  EXPECT_EQ(0x88, bytes[1]); // Post-byte: 10001000 (8-bit offset, X)
+  EXPECT_EQ(0x64, bytes[2]); // Offset: 100
+}
+
+TEST_F(Cpu6809IndexedTest, STA_Indexed16BitOffset) {
+  // STA 1000,X
+  auto bytes = cpu.EncodeSTA(1000, AddressingMode6809::Indexed16BitOffset);
+  ASSERT_EQ(4, bytes.size());
+  EXPECT_EQ(0xA7, bytes[0]); // STA indexed opcode
+  EXPECT_EQ(0x89, bytes[1]); // Post-byte: 10001001 (16-bit offset, X)
+  EXPECT_EQ(0x03, bytes[2]); // Offset high byte
+  EXPECT_EQ(0xE8, bytes[3]); // Offset low byte
+}
+
+// ============================================================================
+// Phase 15: STD Indexed Addressing Modes
+// ============================================================================
+
+TEST_F(Cpu6809IndexedTest, STD_IndexedZeroOffset) {
+  // STD ,X -> opcode ED, post-byte 84
+  auto bytes = cpu.EncodeSTD(0, AddressingMode6809::IndexedZeroOffset);
+  ASSERT_EQ(2, bytes.size());
+  EXPECT_EQ(0xED, bytes[0]); // STD indexed opcode
+  EXPECT_EQ(0x84, bytes[1]); // Post-byte: 10000100 (,X)
+}
+
+TEST_F(Cpu6809IndexedTest, STD_Indexed8BitOffset) {
+  // STD 50,X
+  auto bytes = cpu.EncodeSTD(50, AddressingMode6809::Indexed8BitOffset);
+  ASSERT_EQ(3, bytes.size());
+  EXPECT_EQ(0xED, bytes[0]); // STD indexed opcode
+  EXPECT_EQ(0x88, bytes[1]); // Post-byte: 10001000 (8-bit offset, X)
+  EXPECT_EQ(0x32, bytes[2]); // Offset: 50
+}
+
+TEST_F(Cpu6809IndexedTest, STD_IndexedAutoInc2) {
+  // STD ,X++
+  auto bytes = cpu.EncodeSTD(0, AddressingMode6809::IndexedAutoInc2);
+  ASSERT_EQ(2, bytes.size());
+  EXPECT_EQ(0xED, bytes[0]); // STD indexed opcode
+  EXPECT_EQ(0x81, bytes[1]); // Post-byte: 10000001 (,X++)
+}
+
+// ============================================================================
+// Phase 16: LDX Indexed Addressing Modes
+// ============================================================================
+
+TEST_F(Cpu6809IndexedTest, LDX_IndexedZeroOffset) {
+  // LDX ,X -> opcode AE, post-byte 84
+  auto bytes = cpu.EncodeLDX(0, AddressingMode6809::IndexedZeroOffset);
+  ASSERT_EQ(2, bytes.size());
+  EXPECT_EQ(0xAE, bytes[0]); // LDX indexed opcode
+  EXPECT_EQ(0x84, bytes[1]); // Post-byte: 10000100 (,X)
+}
+
+TEST_F(Cpu6809IndexedTest, LDX_Indexed8BitOffset) {
+  // LDX 100,X
+  auto bytes = cpu.EncodeLDX(100, AddressingMode6809::Indexed8BitOffset);
+  ASSERT_EQ(3, bytes.size());
+  EXPECT_EQ(0xAE, bytes[0]); // LDX indexed opcode
+  EXPECT_EQ(0x88, bytes[1]); // Post-byte: 10001000 (8-bit offset, X)
+  EXPECT_EQ(0x64, bytes[2]); // Offset: 100
+}
+
+TEST_F(Cpu6809IndexedTest, LDX_IndexedAccumD) {
+  // LDX D,X
+  auto bytes = cpu.EncodeLDX(0, AddressingMode6809::IndexedAccumD);
+  ASSERT_EQ(2, bytes.size());
+  EXPECT_EQ(0xAE, bytes[0]); // LDX indexed opcode
+  EXPECT_EQ(0x8B, bytes[1]); // Post-byte: 10001011 (D,X)
+}
+
+// ============================================================================
+// Phase 17: LDY Indexed Addressing Modes (Page 2)
+// ============================================================================
+
+TEST_F(Cpu6809IndexedTest, LDY_IndexedZeroOffset) {
+  // LDY ,X -> page 2 prefix 10, opcode AE, post-byte 84
+  auto bytes = cpu.EncodeLDY(0, AddressingMode6809::IndexedZeroOffset);
+  ASSERT_EQ(3, bytes.size());
+  EXPECT_EQ(0x10, bytes[0]); // Page 2 prefix
+  EXPECT_EQ(0xAE, bytes[1]); // LDY indexed opcode
+  EXPECT_EQ(0x84, bytes[2]); // Post-byte: 10000100 (,X)
+}
+
+TEST_F(Cpu6809IndexedTest, LDY_Indexed8BitOffset) {
+  // LDY 50,X
+  auto bytes = cpu.EncodeLDY(50, AddressingMode6809::Indexed8BitOffset);
+  ASSERT_EQ(4, bytes.size());
+  EXPECT_EQ(0x10, bytes[0]); // Page 2 prefix
+  EXPECT_EQ(0xAE, bytes[1]); // LDY indexed opcode
+  EXPECT_EQ(0x88, bytes[2]); // Post-byte: 10001000 (8-bit offset, X)
+  EXPECT_EQ(0x32, bytes[3]); // Offset: 50
+}
+
+TEST_F(Cpu6809IndexedTest, LDY_Indexed16BitOffset) {
+  // LDY 2000,X
+  auto bytes = cpu.EncodeLDY(2000, AddressingMode6809::Indexed16BitOffset);
+  ASSERT_EQ(5, bytes.size());
+  EXPECT_EQ(0x10, bytes[0]); // Page 2 prefix
+  EXPECT_EQ(0xAE, bytes[1]); // LDY indexed opcode
+  EXPECT_EQ(0x89, bytes[2]); // Post-byte: 10001001 (16-bit offset, X)
+  EXPECT_EQ(0x07, bytes[3]); // Offset high byte (2000 = 0x07D0)
+  EXPECT_EQ(0xD0, bytes[4]); // Offset low byte
+}
+
+// ============================================================================
+// Phase 18: STX Indexed Addressing Modes
+// ============================================================================
+
+TEST_F(Cpu6809IndexedTest, STX_IndexedZeroOffset) {
+  // STX ,X -> opcode AF, post-byte 84
+  auto bytes = cpu.EncodeSTX(0, AddressingMode6809::IndexedZeroOffset);
+  ASSERT_EQ(2, bytes.size());
+  EXPECT_EQ(0xAF, bytes[0]); // STX indexed opcode
+  EXPECT_EQ(0x84, bytes[1]); // Post-byte: 10000100 (,X)
+}
+
+TEST_F(Cpu6809IndexedTest, STX_Indexed8BitOffset) {
+  // STX 100,X
+  auto bytes = cpu.EncodeSTX(100, AddressingMode6809::Indexed8BitOffset);
+  ASSERT_EQ(3, bytes.size());
+  EXPECT_EQ(0xAF, bytes[0]); // STX indexed opcode
+  EXPECT_EQ(0x88, bytes[1]); // Post-byte: 10001000 (8-bit offset, X)
+  EXPECT_EQ(0x64, bytes[2]); // Offset: 100
+}
+
+TEST_F(Cpu6809IndexedTest, STX_IndexedAutoDec2) {
+  // STX ,--X
+  auto bytes = cpu.EncodeSTX(0, AddressingMode6809::IndexedAutoDec2);
+  ASSERT_EQ(2, bytes.size());
+  EXPECT_EQ(0xAF, bytes[0]); // STX indexed opcode
+  EXPECT_EQ(0x83, bytes[1]); // Post-byte: 10000011 (,--X)
+}
+
+// ============================================================================
+// Phase 19: STY Indexed Addressing Modes (Page 2)
+// ============================================================================
+
+TEST_F(Cpu6809IndexedTest, STY_IndexedZeroOffset) {
+  // STY ,X -> page 2 prefix 10, opcode AF, post-byte 84
+  auto bytes = cpu.EncodeSTY(0, AddressingMode6809::IndexedZeroOffset);
+  ASSERT_EQ(3, bytes.size());
+  EXPECT_EQ(0x10, bytes[0]); // Page 2 prefix
+  EXPECT_EQ(0xAF, bytes[1]); // STY indexed opcode
+  EXPECT_EQ(0x84, bytes[2]); // Post-byte: 10000100 (,X)
+}
+
+TEST_F(Cpu6809IndexedTest, STY_Indexed8BitOffset) {
+  // STY 50,X
+  auto bytes = cpu.EncodeSTY(50, AddressingMode6809::Indexed8BitOffset);
+  ASSERT_EQ(4, bytes.size());
+  EXPECT_EQ(0x10, bytes[0]); // Page 2 prefix
+  EXPECT_EQ(0xAF, bytes[1]); // STY indexed opcode
+  EXPECT_EQ(0x88, bytes[2]); // Post-byte: 10001000 (8-bit offset, X)
+  EXPECT_EQ(0x32, bytes[3]); // Offset: 50
+}
+
+TEST_F(Cpu6809IndexedTest, STY_IndexedAutoInc2) {
+  // STY ,X++
+  auto bytes = cpu.EncodeSTY(0, AddressingMode6809::IndexedAutoInc2);
+  ASSERT_EQ(3, bytes.size());
+  EXPECT_EQ(0x10, bytes[0]); // Page 2 prefix
+  EXPECT_EQ(0xAF, bytes[1]); // STY indexed opcode
+  EXPECT_EQ(0x81, bytes[2]); // Post-byte: 10000001 (,X++)
+}
+
+// ============================================================================
+// Phase 20: ADDA Indexed Addressing Modes
+// ============================================================================
+
+TEST_F(Cpu6809IndexedTest, ADDA_IndexedZeroOffset) {
+  // ADDA ,X -> opcode AB, post-byte 84
+  auto bytes = cpu.EncodeADDA(0, AddressingMode6809::IndexedZeroOffset);
+  ASSERT_EQ(2, bytes.size());
+  EXPECT_EQ(0xAB, bytes[0]); // ADDA indexed opcode
+  EXPECT_EQ(0x84, bytes[1]); // Post-byte: 10000100 (,X)
+}
+
+TEST_F(Cpu6809IndexedTest, ADDA_Indexed5BitOffset) {
+  // ADDA 10,X
+  auto bytes = cpu.EncodeADDA(10, AddressingMode6809::Indexed5BitOffset);
+  ASSERT_EQ(2, bytes.size());
+  EXPECT_EQ(0xAB, bytes[0]); // ADDA indexed opcode
+  EXPECT_EQ(0x0A, bytes[1]); // Post-byte: 00001010 (10,X)
+}
+
+TEST_F(Cpu6809IndexedTest, ADDA_Indexed8BitOffset) {
+  // ADDA 100,X
+  auto bytes = cpu.EncodeADDA(100, AddressingMode6809::Indexed8BitOffset);
+  ASSERT_EQ(3, bytes.size());
+  EXPECT_EQ(0xAB, bytes[0]); // ADDA indexed opcode
+  EXPECT_EQ(0x88, bytes[1]); // Post-byte: 10001000 (8-bit offset, X)
+  EXPECT_EQ(0x64, bytes[2]); // Offset: 100
+}
+
+TEST_F(Cpu6809IndexedTest, ADDA_IndexedAccumB) {
+  // ADDA B,X
+  auto bytes = cpu.EncodeADDA(0, AddressingMode6809::IndexedAccumB);
+  ASSERT_EQ(2, bytes.size());
+  EXPECT_EQ(0xAB, bytes[0]); // ADDA indexed opcode
+  EXPECT_EQ(0x85, bytes[1]); // Post-byte: 10000101 (B,X)
+}
+
+// ============================================================================
+// Phase 21: ADDB Indexed Addressing Modes
+// ============================================================================
+
+TEST_F(Cpu6809IndexedTest, ADDB_IndexedZeroOffset) {
+  // ADDB ,X -> opcode EB, post-byte 84
+  auto bytes = cpu.EncodeADDB(0, AddressingMode6809::IndexedZeroOffset);
+  ASSERT_EQ(2, bytes.size());
+  EXPECT_EQ(0xEB, bytes[0]); // ADDB indexed opcode
+  EXPECT_EQ(0x84, bytes[1]); // Post-byte: 10000100 (,X)
+}
+
+TEST_F(Cpu6809IndexedTest, ADDB_Indexed8BitOffset) {
+  // ADDB 50,X
+  auto bytes = cpu.EncodeADDB(50, AddressingMode6809::Indexed8BitOffset);
+  ASSERT_EQ(3, bytes.size());
+  EXPECT_EQ(0xEB, bytes[0]); // ADDB indexed opcode
+  EXPECT_EQ(0x88, bytes[1]); // Post-byte: 10001000 (8-bit offset, X)
+  EXPECT_EQ(0x32, bytes[2]); // Offset: 50
+}
+
+TEST_F(Cpu6809IndexedTest, ADDB_IndexedPCRelative8) {
+  // ADDB 50,PCR
+  auto bytes = cpu.EncodeADDB(50, AddressingMode6809::IndexedPCRelative8);
+  ASSERT_EQ(3, bytes.size());
+  EXPECT_EQ(0xEB, bytes[0]); // ADDB indexed opcode
+  EXPECT_EQ(0x8C, bytes[1]); // Post-byte: 10001100 (8-bit PC-relative)
+  EXPECT_EQ(0x32, bytes[2]); // Offset: 50
+}
+
+// ============================================================================
+// Phase 22: SUBA Indexed Addressing Modes
+// ============================================================================
+
+TEST_F(Cpu6809IndexedTest, SUBA_IndexedZeroOffset) {
+  // SUBA ,X -> opcode A0, post-byte 84
+  auto bytes = cpu.EncodeSUBA(0, AddressingMode6809::IndexedZeroOffset);
+  ASSERT_EQ(2, bytes.size());
+  EXPECT_EQ(0xA0, bytes[0]); // SUBA indexed opcode
+  EXPECT_EQ(0x84, bytes[1]); // Post-byte: 10000100 (,X)
+}
+
+TEST_F(Cpu6809IndexedTest, SUBA_Indexed5BitOffset_Negative) {
+  // SUBA -5,X
+  auto bytes = cpu.EncodeSUBA(-5, AddressingMode6809::Indexed5BitOffset);
+  ASSERT_EQ(2, bytes.size());
+  EXPECT_EQ(0xA0, bytes[0]); // SUBA indexed opcode
+  EXPECT_EQ(0x1B, bytes[1]); // Post-byte: 00011011 (-5,X in 5-bit two's complement)
+}
+
+TEST_F(Cpu6809IndexedTest, SUBA_Indexed8BitOffset) {
+  // SUBA 100,X
+  auto bytes = cpu.EncodeSUBA(100, AddressingMode6809::Indexed8BitOffset);
+  ASSERT_EQ(3, bytes.size());
+  EXPECT_EQ(0xA0, bytes[0]); // SUBA indexed opcode
+  EXPECT_EQ(0x88, bytes[1]); // Post-byte: 10001000 (8-bit offset, X)
+  EXPECT_EQ(0x64, bytes[2]); // Offset: 100
+}
+
+TEST_F(Cpu6809IndexedTest, SUBA_IndexedIndirect) {
+  // SUBA [10,X]
+  auto bytes = cpu.EncodeSUBA(10, AddressingMode6809::IndexedIndirect);
+  ASSERT_EQ(3, bytes.size());
+  EXPECT_EQ(0xA0, bytes[0]); // SUBA indexed opcode
+  EXPECT_EQ(0x98, bytes[1]); // Post-byte: 10011000 ([8-bit offset, X])
+  EXPECT_EQ(0x0A, bytes[2]); // Offset: 10
+}
+
+// ============================================================================
+// Phase 23: SUBB Indexed Addressing Modes
+// ============================================================================
+
+TEST_F(Cpu6809IndexedTest, SUBB_IndexedZeroOffset) {
+  // SUBB ,X -> opcode E0, post-byte 84
+  auto bytes = cpu.EncodeSUBB(0, AddressingMode6809::IndexedZeroOffset);
+  ASSERT_EQ(2, bytes.size());
+  EXPECT_EQ(0xE0, bytes[0]); // SUBB indexed opcode
+  EXPECT_EQ(0x84, bytes[1]); // Post-byte: 10000100 (,X)
+}
+
+TEST_F(Cpu6809IndexedTest, SUBB_Indexed8BitOffset) {
+  // SUBB 50,X
+  auto bytes = cpu.EncodeSUBB(50, AddressingMode6809::Indexed8BitOffset);
+  ASSERT_EQ(3, bytes.size());
+  EXPECT_EQ(0xE0, bytes[0]); // SUBB indexed opcode
+  EXPECT_EQ(0x88, bytes[1]); // Post-byte: 10001000 (8-bit offset, X)
+  EXPECT_EQ(0x32, bytes[2]); // Offset: 50
+}
+
+TEST_F(Cpu6809IndexedTest, SUBB_Indexed16BitOffset_Negative) {
+  // SUBB -1000,X
+  auto bytes = cpu.EncodeSUBB(-1000, AddressingMode6809::Indexed16BitOffset);
+  ASSERT_EQ(4, bytes.size());
+  EXPECT_EQ(0xE0, bytes[0]); // SUBB indexed opcode
+  EXPECT_EQ(0x89, bytes[1]); // Post-byte: 10001001 (16-bit offset, X)
+  EXPECT_EQ(0xFC, bytes[2]); // Offset high byte (two's complement)
+  EXPECT_EQ(0x18, bytes[3]); // Offset low byte
+}
+
+TEST_F(Cpu6809IndexedTest, SUBB_IndexedAutoInc1) {
+  // SUBB ,X+
+  auto bytes = cpu.EncodeSUBB(0, AddressingMode6809::IndexedAutoInc1);
+  ASSERT_EQ(2, bytes.size());
+  EXPECT_EQ(0xE0, bytes[0]); // SUBB indexed opcode
+  EXPECT_EQ(0x80, bytes[1]); // Post-byte: 10000000 (,X+)
+}

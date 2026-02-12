@@ -260,8 +260,31 @@ std::vector<uint8_t> Cpu6809::EncodeSTA(uint32_t operand,
     return result;
   }
 
+  // Indexed addressing modes
+  case AddressingMode6809::IndexedZeroOffset:
+  case AddressingMode6809::Indexed5BitOffset:
+  case AddressingMode6809::Indexed8BitOffset:
+  case AddressingMode6809::Indexed16BitOffset:
+  case AddressingMode6809::IndexedAccumA:
+  case AddressingMode6809::IndexedAccumB:
+  case AddressingMode6809::IndexedAccumD:
+  case AddressingMode6809::IndexedAutoInc1:
+  case AddressingMode6809::IndexedAutoInc2:
+  case AddressingMode6809::IndexedAutoDec1:
+  case AddressingMode6809::IndexedAutoDec2:
+  case AddressingMode6809::IndexedPCRelative8:
+  case AddressingMode6809::IndexedPCRelative16:
+  case AddressingMode6809::IndexedIndirect:
+  case AddressingMode6809::IndexedExtendedIndirect: {
+    // STA indexed opcode is 0xA7
+    auto result = std::vector<uint8_t>{0xA7};
+    auto postbyte =
+        EncodeIndexedPostByte(mode, static_cast<int32_t>(operand), 0);
+    result.insert(result.end(), postbyte.begin(), postbyte.end());
+    return result;
+  }
+
   default:
-    // TODO: Implement indexed modes
     return {};
   }
 }
@@ -321,8 +344,31 @@ std::vector<uint8_t> Cpu6809::EncodeSTD(uint32_t operand,
     return result;
   }
 
+  // Indexed addressing modes
+  case AddressingMode6809::IndexedZeroOffset:
+  case AddressingMode6809::Indexed5BitOffset:
+  case AddressingMode6809::Indexed8BitOffset:
+  case AddressingMode6809::Indexed16BitOffset:
+  case AddressingMode6809::IndexedAccumA:
+  case AddressingMode6809::IndexedAccumB:
+  case AddressingMode6809::IndexedAccumD:
+  case AddressingMode6809::IndexedAutoInc1:
+  case AddressingMode6809::IndexedAutoInc2:
+  case AddressingMode6809::IndexedAutoDec1:
+  case AddressingMode6809::IndexedAutoDec2:
+  case AddressingMode6809::IndexedPCRelative8:
+  case AddressingMode6809::IndexedPCRelative16:
+  case AddressingMode6809::IndexedIndirect:
+  case AddressingMode6809::IndexedExtendedIndirect: {
+    // STD indexed opcode is 0xED
+    auto result = std::vector<uint8_t>{0xED};
+    auto postbyte =
+        EncodeIndexedPostByte(mode, static_cast<int32_t>(operand), 0);
+    result.insert(result.end(), postbyte.begin(), postbyte.end());
+    return result;
+  }
+
   default:
-    // TODO: Implement indexed modes
     return {};
   }
 }
@@ -351,8 +397,31 @@ std::vector<uint8_t> Cpu6809::EncodeLDX(uint32_t operand,
     return result;
   }
 
+  // Indexed addressing modes
+  case AddressingMode6809::IndexedZeroOffset:
+  case AddressingMode6809::Indexed5BitOffset:
+  case AddressingMode6809::Indexed8BitOffset:
+  case AddressingMode6809::Indexed16BitOffset:
+  case AddressingMode6809::IndexedAccumA:
+  case AddressingMode6809::IndexedAccumB:
+  case AddressingMode6809::IndexedAccumD:
+  case AddressingMode6809::IndexedAutoInc1:
+  case AddressingMode6809::IndexedAutoInc2:
+  case AddressingMode6809::IndexedAutoDec1:
+  case AddressingMode6809::IndexedAutoDec2:
+  case AddressingMode6809::IndexedPCRelative8:
+  case AddressingMode6809::IndexedPCRelative16:
+  case AddressingMode6809::IndexedIndirect:
+  case AddressingMode6809::IndexedExtendedIndirect: {
+    // LDX indexed opcode is 0xAE
+    auto result = std::vector<uint8_t>{0xAE};
+    auto postbyte =
+        EncodeIndexedPostByte(mode, static_cast<int32_t>(operand), 0);
+    result.insert(result.end(), postbyte.begin(), postbyte.end());
+    return result;
+  }
+
   default:
-    // TODO: Implement indexed modes
     return {};
   }
 }
@@ -378,8 +447,31 @@ std::vector<uint8_t> Cpu6809::EncodeLDY(uint32_t operand,
     return result;
   }
 
+  // Indexed addressing modes (with page 2 prefix)
+  case AddressingMode6809::IndexedZeroOffset:
+  case AddressingMode6809::Indexed5BitOffset:
+  case AddressingMode6809::Indexed8BitOffset:
+  case AddressingMode6809::Indexed16BitOffset:
+  case AddressingMode6809::IndexedAccumA:
+  case AddressingMode6809::IndexedAccumB:
+  case AddressingMode6809::IndexedAccumD:
+  case AddressingMode6809::IndexedAutoInc1:
+  case AddressingMode6809::IndexedAutoInc2:
+  case AddressingMode6809::IndexedAutoDec1:
+  case AddressingMode6809::IndexedAutoDec2:
+  case AddressingMode6809::IndexedPCRelative8:
+  case AddressingMode6809::IndexedPCRelative16:
+  case AddressingMode6809::IndexedIndirect:
+  case AddressingMode6809::IndexedExtendedIndirect: {
+    // LDY indexed opcode is 0x10 0xAE (page 2)
+    auto result = std::vector<uint8_t>{0x10, 0xAE};
+    auto postbyte =
+        EncodeIndexedPostByte(mode, static_cast<int32_t>(operand), 0);
+    result.insert(result.end(), postbyte.begin(), postbyte.end());
+    return result;
+  }
+
   default:
-    // TODO: Implement indexed modes
     return {};
   }
 }
@@ -397,8 +489,31 @@ std::vector<uint8_t> Cpu6809::EncodeSTX(uint32_t operand,
     return result;
   }
 
+  // Indexed addressing modes
+  case AddressingMode6809::IndexedZeroOffset:
+  case AddressingMode6809::Indexed5BitOffset:
+  case AddressingMode6809::Indexed8BitOffset:
+  case AddressingMode6809::Indexed16BitOffset:
+  case AddressingMode6809::IndexedAccumA:
+  case AddressingMode6809::IndexedAccumB:
+  case AddressingMode6809::IndexedAccumD:
+  case AddressingMode6809::IndexedAutoInc1:
+  case AddressingMode6809::IndexedAutoInc2:
+  case AddressingMode6809::IndexedAutoDec1:
+  case AddressingMode6809::IndexedAutoDec2:
+  case AddressingMode6809::IndexedPCRelative8:
+  case AddressingMode6809::IndexedPCRelative16:
+  case AddressingMode6809::IndexedIndirect:
+  case AddressingMode6809::IndexedExtendedIndirect: {
+    // STX indexed opcode is 0xAF
+    auto result = std::vector<uint8_t>{0xAF};
+    auto postbyte =
+        EncodeIndexedPostByte(mode, static_cast<int32_t>(operand), 0);
+    result.insert(result.end(), postbyte.begin(), postbyte.end());
+    return result;
+  }
+
   default:
-    // TODO: Implement indexed modes
     return {};
   }
 }
@@ -417,8 +532,31 @@ std::vector<uint8_t> Cpu6809::EncodeSTY(uint32_t operand,
     return result;
   }
 
+  // Indexed addressing modes (with page 2 prefix)
+  case AddressingMode6809::IndexedZeroOffset:
+  case AddressingMode6809::Indexed5BitOffset:
+  case AddressingMode6809::Indexed8BitOffset:
+  case AddressingMode6809::Indexed16BitOffset:
+  case AddressingMode6809::IndexedAccumA:
+  case AddressingMode6809::IndexedAccumB:
+  case AddressingMode6809::IndexedAccumD:
+  case AddressingMode6809::IndexedAutoInc1:
+  case AddressingMode6809::IndexedAutoInc2:
+  case AddressingMode6809::IndexedAutoDec1:
+  case AddressingMode6809::IndexedAutoDec2:
+  case AddressingMode6809::IndexedPCRelative8:
+  case AddressingMode6809::IndexedPCRelative16:
+  case AddressingMode6809::IndexedIndirect:
+  case AddressingMode6809::IndexedExtendedIndirect: {
+    // STY indexed opcode is 0x10 0xAF (page 2)
+    auto result = std::vector<uint8_t>{0x10, 0xAF};
+    auto postbyte =
+        EncodeIndexedPostByte(mode, static_cast<int32_t>(operand), 0);
+    result.insert(result.end(), postbyte.begin(), postbyte.end());
+    return result;
+  }
+
   default:
-    // TODO: Implement indexed modes
     return {};
   }
 }
@@ -443,8 +581,31 @@ std::vector<uint8_t> Cpu6809::EncodeADDA(uint32_t operand,
     return result;
   }
 
+  // Indexed addressing modes
+  case AddressingMode6809::IndexedZeroOffset:
+  case AddressingMode6809::Indexed5BitOffset:
+  case AddressingMode6809::Indexed8BitOffset:
+  case AddressingMode6809::Indexed16BitOffset:
+  case AddressingMode6809::IndexedAccumA:
+  case AddressingMode6809::IndexedAccumB:
+  case AddressingMode6809::IndexedAccumD:
+  case AddressingMode6809::IndexedAutoInc1:
+  case AddressingMode6809::IndexedAutoInc2:
+  case AddressingMode6809::IndexedAutoDec1:
+  case AddressingMode6809::IndexedAutoDec2:
+  case AddressingMode6809::IndexedPCRelative8:
+  case AddressingMode6809::IndexedPCRelative16:
+  case AddressingMode6809::IndexedIndirect:
+  case AddressingMode6809::IndexedExtendedIndirect: {
+    // ADDA indexed opcode is 0xAB
+    auto result = std::vector<uint8_t>{0xAB};
+    auto postbyte =
+        EncodeIndexedPostByte(mode, static_cast<int32_t>(operand), 0);
+    result.insert(result.end(), postbyte.begin(), postbyte.end());
+    return result;
+  }
+
   default:
-    // TODO: Implement indexed modes
     return {};
   }
 }
@@ -465,8 +626,31 @@ std::vector<uint8_t> Cpu6809::EncodeADDB(uint32_t operand,
     return result;
   }
 
+  // Indexed addressing modes
+  case AddressingMode6809::IndexedZeroOffset:
+  case AddressingMode6809::Indexed5BitOffset:
+  case AddressingMode6809::Indexed8BitOffset:
+  case AddressingMode6809::Indexed16BitOffset:
+  case AddressingMode6809::IndexedAccumA:
+  case AddressingMode6809::IndexedAccumB:
+  case AddressingMode6809::IndexedAccumD:
+  case AddressingMode6809::IndexedAutoInc1:
+  case AddressingMode6809::IndexedAutoInc2:
+  case AddressingMode6809::IndexedAutoDec1:
+  case AddressingMode6809::IndexedAutoDec2:
+  case AddressingMode6809::IndexedPCRelative8:
+  case AddressingMode6809::IndexedPCRelative16:
+  case AddressingMode6809::IndexedIndirect:
+  case AddressingMode6809::IndexedExtendedIndirect: {
+    // ADDB indexed opcode is 0xEB
+    auto result = std::vector<uint8_t>{0xEB};
+    auto postbyte =
+        EncodeIndexedPostByte(mode, static_cast<int32_t>(operand), 0);
+    result.insert(result.end(), postbyte.begin(), postbyte.end());
+    return result;
+  }
+
   default:
-    // TODO: Implement indexed modes
     return {};
   }
 }
@@ -487,8 +671,31 @@ std::vector<uint8_t> Cpu6809::EncodeSUBA(uint32_t operand,
     return result;
   }
 
+  // Indexed addressing modes
+  case AddressingMode6809::IndexedZeroOffset:
+  case AddressingMode6809::Indexed5BitOffset:
+  case AddressingMode6809::Indexed8BitOffset:
+  case AddressingMode6809::Indexed16BitOffset:
+  case AddressingMode6809::IndexedAccumA:
+  case AddressingMode6809::IndexedAccumB:
+  case AddressingMode6809::IndexedAccumD:
+  case AddressingMode6809::IndexedAutoInc1:
+  case AddressingMode6809::IndexedAutoInc2:
+  case AddressingMode6809::IndexedAutoDec1:
+  case AddressingMode6809::IndexedAutoDec2:
+  case AddressingMode6809::IndexedPCRelative8:
+  case AddressingMode6809::IndexedPCRelative16:
+  case AddressingMode6809::IndexedIndirect:
+  case AddressingMode6809::IndexedExtendedIndirect: {
+    // SUBA indexed opcode is 0xA0
+    auto result = std::vector<uint8_t>{0xA0};
+    auto postbyte =
+        EncodeIndexedPostByte(mode, static_cast<int32_t>(operand), 0);
+    result.insert(result.end(), postbyte.begin(), postbyte.end());
+    return result;
+  }
+
   default:
-    // TODO: Implement indexed modes
     return {};
   }
 }
@@ -509,8 +716,31 @@ std::vector<uint8_t> Cpu6809::EncodeSUBB(uint32_t operand,
     return result;
   }
 
+  // Indexed addressing modes
+  case AddressingMode6809::IndexedZeroOffset:
+  case AddressingMode6809::Indexed5BitOffset:
+  case AddressingMode6809::Indexed8BitOffset:
+  case AddressingMode6809::Indexed16BitOffset:
+  case AddressingMode6809::IndexedAccumA:
+  case AddressingMode6809::IndexedAccumB:
+  case AddressingMode6809::IndexedAccumD:
+  case AddressingMode6809::IndexedAutoInc1:
+  case AddressingMode6809::IndexedAutoInc2:
+  case AddressingMode6809::IndexedAutoDec1:
+  case AddressingMode6809::IndexedAutoDec2:
+  case AddressingMode6809::IndexedPCRelative8:
+  case AddressingMode6809::IndexedPCRelative16:
+  case AddressingMode6809::IndexedIndirect:
+  case AddressingMode6809::IndexedExtendedIndirect: {
+    // SUBB indexed opcode is 0xE0
+    auto result = std::vector<uint8_t>{0xE0};
+    auto postbyte =
+        EncodeIndexedPostByte(mode, static_cast<int32_t>(operand), 0);
+    result.insert(result.end(), postbyte.begin(), postbyte.end());
+    return result;
+  }
+
   default:
-    // TODO: Implement indexed modes
     return {};
   }
 }
