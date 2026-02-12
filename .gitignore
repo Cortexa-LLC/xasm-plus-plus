@@ -87,3 +87,8 @@ pop_analysis_output/
 
 # Test output binaries
 tests/e2e/**/output/*.bin
+
+# Build artifacts
+cmake_test_discovery_*.json
+__pycache__/
+_deps/
