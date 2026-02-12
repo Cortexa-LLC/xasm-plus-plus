@@ -67,6 +67,38 @@ TEST_F(CpuZ80Test, LD_C_n_ImmediateMode) {
   EXPECT_EQ(0xAA, bytes[1]); // Immediate value
 }
 
+TEST_F(CpuZ80Test, LD_D_n_ImmediateMode) {
+  // LD D, n -> 0x16 nn
+  auto bytes = cpu.EncodeLD_D_n(0x77);
+  ASSERT_EQ(2, bytes.size());
+  EXPECT_EQ(0x16, bytes[0]); // LD D, n opcode
+  EXPECT_EQ(0x77, bytes[1]); // Immediate value
+}
+
+TEST_F(CpuZ80Test, LD_E_n_ImmediateMode) {
+  // LD E, n -> 0x1E nn
+  auto bytes = cpu.EncodeLD_E_n(0x88);
+  ASSERT_EQ(2, bytes.size());
+  EXPECT_EQ(0x1E, bytes[0]); // LD E, n opcode
+  EXPECT_EQ(0x88, bytes[1]); // Immediate value
+}
+
+TEST_F(CpuZ80Test, LD_H_n_ImmediateMode) {
+  // LD H, n -> 0x26 nn
+  auto bytes = cpu.EncodeLD_H_n(0x99);
+  ASSERT_EQ(2, bytes.size());
+  EXPECT_EQ(0x26, bytes[0]); // LD H, n opcode
+  EXPECT_EQ(0x99, bytes[1]); // Immediate value
+}
+
+TEST_F(CpuZ80Test, LD_L_n_ImmediateMode) {
+  // LD L, n -> 0x2E nn
+  auto bytes = cpu.EncodeLD_L_n(0xBB);
+  ASSERT_EQ(2, bytes.size());
+  EXPECT_EQ(0x2E, bytes[0]); // LD L, n opcode
+  EXPECT_EQ(0xBB, bytes[1]); // Immediate value
+}
+
 // ============================================================================
 // Phase 3: 16-bit Loads
 // ============================================================================
@@ -913,4 +945,100 @@ TEST_F(CpuZ80Test, OUT_C_A_WriteToPortC) {
   ASSERT_EQ(2, bytes.size());
   EXPECT_EQ(0xED, bytes[0]); // Extended prefix
   EXPECT_EQ(0x79, bytes[1]); // OUT (C), A opcode
+}
+
+// ============================================================================
+// Phase 23: Edge Cases - Boundary Value Testing
+// ============================================================================
+
+TEST_F(CpuZ80Test, LD_A_n_EdgeCase_Zero) {
+  // LD A, 0x00 -> 0x3E 0x00 (boundary: minimum value)
+  auto bytes = cpu.EncodeLD_A_n(0x00);
+  ASSERT_EQ(2, bytes.size());
+  EXPECT_EQ(0x3E, bytes[0]); // LD A, n opcode
+  EXPECT_EQ(0x00, bytes[1]); // Zero value
+}
+
+TEST_F(CpuZ80Test, LD_A_n_EdgeCase_Max) {
+  // LD A, 0xFF -> 0x3E 0xFF (boundary: maximum value)
+  auto bytes = cpu.EncodeLD_A_n(0xFF);
+  ASSERT_EQ(2, bytes.size());
+  EXPECT_EQ(0x3E, bytes[0]); // LD A, n opcode
+  EXPECT_EQ(0xFF, bytes[1]); // Max value
+}
+
+TEST_F(CpuZ80Test, LD_BC_nn_EdgeCase_Zero) {
+  // LD BC, 0x0000 -> 0x01 0x00 0x00 (boundary: minimum 16-bit value)
+  auto bytes = cpu.EncodeLD_BC_nn(0x0000);
+  ASSERT_EQ(3, bytes.size());
+  EXPECT_EQ(0x01, bytes[0]); // LD BC, nn opcode
+  EXPECT_EQ(0x00, bytes[1]); // Low byte
+  EXPECT_EQ(0x00, bytes[2]); // High byte
+}
+
+TEST_F(CpuZ80Test, LD_BC_nn_EdgeCase_Max) {
+  // LD BC, 0xFFFF -> 0x01 0xFF 0xFF (boundary: maximum 16-bit value)
+  auto bytes = cpu.EncodeLD_BC_nn(0xFFFF);
+  ASSERT_EQ(3, bytes.size());
+  EXPECT_EQ(0x01, bytes[0]); // LD BC, nn opcode
+  EXPECT_EQ(0xFF, bytes[1]); // Low byte
+  EXPECT_EQ(0xFF, bytes[2]); // High byte
+}
+
+TEST_F(CpuZ80Test, ADD_A_n_EdgeCase_Zero) {
+  // ADD A, 0x00 -> 0xC6 0x00 (edge case: adding zero)
+  auto bytes = cpu.EncodeADD_A_n(0x00);
+  ASSERT_EQ(2, bytes.size());
+  EXPECT_EQ(0xC6, bytes[0]); // ADD A, n opcode
+  EXPECT_EQ(0x00, bytes[1]); // Zero operand
+}
+
+TEST_F(CpuZ80Test, ADD_A_n_EdgeCase_Max) {
+  // ADD A, 0xFF -> 0xC6 0xFF (edge case: maximum value, tests overflow)
+  auto bytes = cpu.EncodeADD_A_n(0xFF);
+  ASSERT_EQ(2, bytes.size());
+  EXPECT_EQ(0xC6, bytes[0]); // ADD A, n opcode
+  EXPECT_EQ(0xFF, bytes[1]); // Max operand
+}
+
+TEST_F(CpuZ80Test, JP_nn_EdgeCase_Zero) {
+  // JP 0x0000 -> 0xC3 0x00 0x00 (edge case: jump to address zero)
+  auto bytes = cpu.EncodeJP_nn(0x0000);
+  ASSERT_EQ(3, bytes.size());
+  EXPECT_EQ(0xC3, bytes[0]); // JP nn opcode
+  EXPECT_EQ(0x00, bytes[1]); // Low byte
+  EXPECT_EQ(0x00, bytes[2]); // High byte
+}
+
+TEST_F(CpuZ80Test, JP_nn_EdgeCase_Max) {
+  // JP 0xFFFF -> 0xC3 0xFF 0xFF (edge case: maximum address)
+  auto bytes = cpu.EncodeJP_nn(0xFFFF);
+  ASSERT_EQ(3, bytes.size());
+  EXPECT_EQ(0xC3, bytes[0]); // JP nn opcode
+  EXPECT_EQ(0xFF, bytes[1]); // Low byte
+  EXPECT_EQ(0xFF, bytes[2]); // High byte
+}
+
+TEST_F(CpuZ80Test, JR_e_EdgeCase_NegativeOffset) {
+  // JR -1 -> 0x18 0xFF (edge case: negative displacement, backward jump)
+  auto bytes = cpu.EncodeJR_e(0xFF); // -1 in two's complement
+  ASSERT_EQ(2, bytes.size());
+  EXPECT_EQ(0x18, bytes[0]); // JR e opcode
+  EXPECT_EQ(0xFF, bytes[1]); // -1 signed displacement
+}
+
+TEST_F(CpuZ80Test, JR_e_EdgeCase_MaxForward) {
+  // JR +127 -> 0x18 0x7F (edge case: maximum forward displacement)
+  auto bytes = cpu.EncodeJR_e(0x7F);
+  ASSERT_EQ(2, bytes.size());
+  EXPECT_EQ(0x18, bytes[0]); // JR e opcode
+  EXPECT_EQ(0x7F, bytes[1]); // Max positive displacement
+}
+
+TEST_F(CpuZ80Test, JR_e_EdgeCase_MaxBackward) {
+  // JR -128 -> 0x18 0x80 (edge case: maximum backward displacement)
+  auto bytes = cpu.EncodeJR_e(0x80); // -128 in two's complement
+  ASSERT_EQ(2, bytes.size());
+  EXPECT_EQ(0x18, bytes[0]); // JR e opcode
+  EXPECT_EQ(0x80, bytes[1]); // Max negative displacement
 }
