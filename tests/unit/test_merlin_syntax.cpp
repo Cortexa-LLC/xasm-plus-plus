@@ -308,9 +308,10 @@ TEST(MerlinSyntaxTest, DwSingleWord) {
   ASSERT_EQ(section.atoms.size(), 1);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 2);
-  EXPECT_EQ(data_atom->data[0], 0x34); // Low byte (little-endian)
-  EXPECT_EQ(data_atom->data[1], 0x12); // High byte
+  // DW stores expressions for multi-pass evaluation (supports forward refs)
+  ASSERT_EQ(data_atom->expressions.size(), 1);
+  EXPECT_EQ(data_atom->expressions[0], "$1234");
+  EXPECT_EQ(data_atom->data_size, DataSize::Word);
 }
 
 TEST(MerlinSyntaxTest, DwMultipleWords) {
@@ -323,11 +324,11 @@ TEST(MerlinSyntaxTest, DwMultipleWords) {
   ASSERT_EQ(section.atoms.size(), 1);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 4);
-  EXPECT_EQ(data_atom->data[0], 0xCD); // Low byte of $ABCD
-  EXPECT_EQ(data_atom->data[1], 0xAB); // High byte of $ABCD
-  EXPECT_EQ(data_atom->data[2], 0x01); // Low byte of $EF01
-  EXPECT_EQ(data_atom->data[3], 0xEF); // High byte of $EF01
+  // DW stores expressions for multi-pass evaluation (supports forward refs)
+  ASSERT_EQ(data_atom->expressions.size(), 2);
+  EXPECT_EQ(data_atom->expressions[0], "$ABCD");
+  EXPECT_EQ(data_atom->expressions[1], "$EF01");
+  EXPECT_EQ(data_atom->data_size, DataSize::Word);
 }
 
 TEST(MerlinSyntaxTest, DwWithSymbolReference) {
@@ -352,19 +353,16 @@ TEST(MerlinSyntaxTest, DwWithSymbolReference) {
   for (const auto &atom : section.atoms) {
     if (atom->type == AtomType::Data) {
       data_atom = std::dynamic_pointer_cast<DataAtom>(atom);
-      if (data_atom && data_atom->data.size() == 2) {
-        break; // Found the DW data (2 bytes = 1 word)
+      if (data_atom && !data_atom->expressions.empty()) {
+        break; // Found the DW data with expressions
       }
     }
   }
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 2);
-
-  // The word should be the address of startrun (which is 0 after ORG)
-  // Low byte first (little-endian)
-  // Since startrun is at address 0, the word should be $0000
-  EXPECT_EQ(data_atom->data[0], 0x00); // Low byte
-  EXPECT_EQ(data_atom->data[1], 0x00); // High byte
+  // DW stores expressions for multi-pass evaluation (supports forward refs)
+  ASSERT_EQ(data_atom->expressions.size(), 1);
+  EXPECT_EQ(data_atom->expressions[0], "startrun");
+  EXPECT_EQ(data_atom->data_size, DataSize::Word);
 }
 
 // ============================================================================

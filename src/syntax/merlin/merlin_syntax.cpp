@@ -4,6 +4,8 @@
 #include "xasm++/syntax/merlin_syntax.h"
 #include "xasm++/cpu/cpu_6502.h"
 #include "xasm++/util/string_utils.h"
+#include "xasm++/directives/merlin_directives.h"
+#include "xasm++/directives/directive_constants.h"
 #include <algorithm>
 #include <cctype>
 #include <fstream>
@@ -15,6 +17,7 @@ namespace xasm {
 
 using xasm::util::ToUpper;
 using xasm::util::Trim;
+using namespace xasm::directives;
 
 // ============================================================================
 // Constructor
@@ -24,9 +27,405 @@ MerlinSyntaxParser::MerlinSyntaxParser()
     : in_macro_definition_(false), macro_expansion_depth_(0),
       in_dum_block_(false), dum_address_(0), current_address_(0),
       end_directive_seen_(false), current_file_("<stdin>"), current_line_(0),
-      cpu_(nullptr) {}
+      cpu_(nullptr) {
+  InitializeDirectiveRegistry();
+}
 
 void MerlinSyntaxParser::SetCpu(Cpu6502 *cpu) { cpu_ = cpu; }
+
+// ============================================================================
+// Directive Registry
+// ============================================================================
+
+void MerlinSyntaxParser::InitializeDirectiveRegistry() {
+  // ORG - Set origin address
+  directive_registry_[ORG] = [this](const std::string &label,
+                                       const std::string &operand,
+                                       DirectiveContext &ctx) {
+    (void)label;
+    HandleOrg(operand, *ctx.section, *ctx.symbols);
+  };
+
+  // EQU - Define constant (label is handled separately)
+  directive_registry_[EQU] = [this](const std::string &label,
+                                       const std::string &operand,
+                                       DirectiveContext &ctx) {
+    (void)ctx.section;
+    HandleEqu(label, operand, *ctx.symbols);
+  };
+
+  // DB/DFB - Define byte data
+  auto handle_db_with_label = [this](const std::string &label,
+                                      const std::string &operand,
+                                      DirectiveContext &ctx) {
+    // Create label atom first if label present
+    if (!label.empty()) {
+      ctx.symbols->Define(label, SymbolType::Label,
+                     std::make_shared<LiteralExpr>(current_address_));
+      ctx.section->atoms.push_back(
+          std::make_shared<LabelAtom>(label, current_address_));
+      current_scope_.global_label = label;
+      current_scope_.local_labels.clear();
+    }
+    HandleDB(operand, *ctx.section, *ctx.symbols);
+  };
+  directive_registry_[DB] = handle_db_with_label;
+  directive_registry_[DFB] = handle_db_with_label;
+
+  // DW - Define word data
+  directive_registry_[DW] = [this](const std::string &label,
+                                      const std::string &operand,
+                                      DirectiveContext &ctx) {
+    // Create label atom first if label present
+    if (!label.empty()) {
+      ctx.symbols->Define(label, SymbolType::Label,
+                     std::make_shared<LiteralExpr>(current_address_));
+      ctx.section->atoms.push_back(
+          std::make_shared<LabelAtom>(label, current_address_));
+      current_scope_.global_label = label;
+      current_scope_.local_labels.clear();
+    }
+    HandleDW(operand, *ctx.section, *ctx.symbols);
+  };
+
+  // HEX - Define hex bytes
+  directive_registry_[HEX] = [this](const std::string &label,
+                                       const std::string &operand,
+                                       DirectiveContext &ctx) {
+    // Create label atom first if label present
+    if (!label.empty()) {
+      ctx.symbols->Define(label, SymbolType::Label,
+                     std::make_shared<LiteralExpr>(current_address_));
+      ctx.section->atoms.push_back(
+          std::make_shared<LabelAtom>(label, current_address_));
+      current_scope_.global_label = label;
+      current_scope_.local_labels.clear();
+    }
+    HandleHex(operand, *ctx.section);
+  };
+
+  // DS - Define space
+  directive_registry_[DS] = [this](const std::string &label,
+                                      const std::string &operand,
+                                      DirectiveContext &ctx) {
+    // Create label atom first if label present
+    if (!label.empty()) {
+      // Use dum_address_ if in DUM block, otherwise current_address_
+      uint32_t label_address = in_dum_block_ ? dum_address_ : current_address_;
+      ctx.symbols->Define(label, SymbolType::Label,
+                     std::make_shared<LiteralExpr>(label_address));
+      ctx.section->atoms.push_back(
+          std::make_shared<LabelAtom>(label, label_address));
+      current_scope_.global_label = label;
+      current_scope_.local_labels.clear();
+    }
+    HandleDS(operand, *ctx.section, *ctx.symbols);
+  };
+
+  // DUM/DEND - Dummy section
+  directive_registry_[DUM] = [this](const std::string &label,
+                                       const std::string &operand,
+                                       DirectiveContext &ctx) {
+    (void)label;
+    HandleDumDirective(operand, *ctx.symbols, in_dum_block_, dum_address_, &ctx);
+  };
+  directive_registry_[DEND] = [this](const std::string &label,
+                                        const std::string &operand,
+                                        DirectiveContext &ctx) {
+    (void)label;
+    (void)operand;
+    (void)ctx.section;
+    (void)ctx.symbols;
+    HandleDend();
+  };
+
+  // PUT - Include file
+  directive_registry_[PUT] = [this](const std::string &label,
+                                       const std::string &operand,
+                                       DirectiveContext &ctx) {
+    (void)label;
+    HandlePut(operand, *ctx.section, *ctx.symbols);
+  };
+
+  // Conditional assembly
+  directive_registry_[DO] = [this](const std::string &label,
+                                      const std::string &operand,
+                                      DirectiveContext &ctx) {
+    (void)label;
+    (void)ctx.section;
+    HandleDo(operand, *ctx.symbols);
+  };
+  directive_registry_[ELSE] = [this](const std::string &label,
+                                        const std::string &operand,
+                                        DirectiveContext &ctx) {
+    (void)label;
+    (void)operand;
+    (void)ctx.section;
+    (void)ctx.symbols;
+    HandleElse();
+  };
+  directive_registry_[FIN] = [this](const std::string &label,
+                                       const std::string &operand,
+                                       DirectiveContext &ctx) {
+    (void)label;
+    (void)operand;
+    (void)ctx.section;
+    (void)ctx.symbols;
+    HandleFin();
+  };
+
+  // Listing control
+  directive_registry_[LST] = [this](const std::string &label,
+                                       const std::string &operand,
+                                       DirectiveContext &ctx) {
+    (void)label;
+    (void)ctx.section;
+    (void)ctx.symbols;
+    HandleLst(operand);
+  };
+  directive_registry_[LSTDO] = [this](const std::string &label,
+                                         const std::string &operand,
+                                         DirectiveContext &ctx) {
+    (void)label;
+    (void)operand;
+    (void)ctx.section;
+    (void)ctx.symbols;
+    HandleLstdo();
+  };
+
+  // TR - Truncate listing
+  directive_registry_[TR] = [this](const std::string &label,
+                                      const std::string &operand,
+                                      DirectiveContext &ctx) {
+    (void)label;
+    (void)ctx.section;
+    (void)ctx.symbols;
+    HandleTr(operand);
+  };
+
+  // String directives (with label support)
+  auto handle_string_with_label = [this](
+      const std::string &label, const std::string &operand,
+      DirectiveContext &ctx,
+      void (MerlinSyntaxParser::*handler)(const std::string &, Section &)) {
+    // Create label atom first if label present
+    if (!label.empty()) {
+      ctx.symbols->Define(label, SymbolType::Label,
+                     std::make_shared<LiteralExpr>(current_address_));
+      ctx.section->atoms.push_back(
+          std::make_shared<LabelAtom>(label, current_address_));
+      current_scope_.global_label = label;
+      current_scope_.local_labels.clear();
+    }
+    (this->*handler)(operand, *ctx.section);
+  };
+
+  directive_registry_[ASC] = [handle_string_with_label](
+                                    const std::string &label,
+                                    const std::string &operand,
+                                    DirectiveContext &ctx) {
+    handle_string_with_label(label, operand, ctx,
+                             &MerlinSyntaxParser::HandleAsc);
+  };
+
+  directive_registry_[DCI] = [handle_string_with_label](
+                                    const std::string &label,
+                                    const std::string &operand,
+                                    DirectiveContext &ctx) {
+    handle_string_with_label(label, operand, ctx,
+                             &MerlinSyntaxParser::HandleDCI);
+  };
+
+  directive_registry_[INV] = [handle_string_with_label](
+                                    const std::string &label,
+                                    const std::string &operand,
+                                    DirectiveContext &ctx) {
+    handle_string_with_label(label, operand, ctx,
+                             &MerlinSyntaxParser::HandleINV);
+  };
+
+  directive_registry_[FLS] = [handle_string_with_label](
+                                    const std::string &label,
+                                    const std::string &operand,
+                                    DirectiveContext &ctx) {
+    handle_string_with_label(label, operand, ctx,
+                             &MerlinSyntaxParser::HandleFLS);
+  };
+
+  // DA - Define address
+  directive_registry_[DA] = [this](const std::string &label,
+                                      const std::string &operand,
+                                      DirectiveContext &ctx) {
+    // Create label atom first if label present
+    if (!label.empty()) {
+      ctx.symbols->Define(label, SymbolType::Label,
+                     std::make_shared<LiteralExpr>(current_address_));
+      ctx.section->atoms.push_back(
+          std::make_shared<LabelAtom>(label, current_address_));
+      current_scope_.global_label = label;
+      current_scope_.local_labels.clear();
+    }
+    HandleDA(operand, *ctx.section, *ctx.symbols);
+  };
+
+  // Macro directives
+  directive_registry_[PMC] = [this](const std::string &label,
+                                       const std::string &operand,
+                                       DirectiveContext &ctx) {
+    (void)ctx.section;
+    (void)ctx.symbols;
+    HandlePMC(label.empty() ? operand : label);
+  };
+
+  directive_registry_[EOM] = [this](const std::string &label,
+                                       const std::string &operand,
+                                       DirectiveContext &ctx) {
+    (void)label;
+    (void)operand;
+    (void)ctx.section;
+    (void)ctx.symbols;
+    HandleEOM();
+  };
+
+  // MAC - Macro definition or invocation (complex logic)
+  directive_registry_[MAC] = [this](const std::string &label,
+                                       const std::string &operand,
+                                       DirectiveContext &ctx) {
+    std::string macro_name;
+    std::string params_str;
+
+    // Check if label is present - if so, it's the macro name
+    if (!label.empty()) {
+      macro_name = ToUpper(label);
+      params_str = operand;
+    } else {
+      // Parse macro name and parameters from operand
+      size_t semicolon_pos = operand.find(';');
+      if (semicolon_pos != std::string::npos) {
+        macro_name = ToUpper(Trim(operand.substr(0, semicolon_pos)));
+        params_str = Trim(operand.substr(semicolon_pos + 1));
+      } else {
+        macro_name = ToUpper(Trim(operand));
+        params_str = "";
+      }
+    }
+
+    if (macro_name.empty()) {
+      throw std::runtime_error(FormatError("MAC requires macro name"));
+    }
+
+    // Check if macro exists (invocation) or is being defined
+    if (macros_.find(macro_name) != macros_.end()) {
+      // Macro exists - invoke it
+      ExpandMacro(macro_name, params_str, *ctx.section, *ctx.symbols);
+    } else {
+      // Macro doesn't exist - start definition
+      if (in_macro_definition_) {
+        throw std::runtime_error(
+            FormatError("Nested macro definitions not allowed"));
+      }
+      in_macro_definition_ = true;
+      current_macro_.name = macro_name;
+      current_macro_.body.clear();
+      current_macro_.param_count = 0;
+    }
+  };
+
+  // USR - User-defined subroutine (no-op with optional label)
+  directive_registry_[USR] = [this](const std::string &label,
+                                       const std::string &operand,
+                                       DirectiveContext &ctx) {
+    (void)operand;
+    if (!label.empty()) {
+      ctx.symbols->Define(label, SymbolType::Label,
+                     std::make_shared<LiteralExpr>(current_address_));
+      ctx.section->atoms.push_back(
+          std::make_shared<LabelAtom>(label, current_address_));
+      current_scope_.global_label = label;
+      current_scope_.local_labels.clear();
+    }
+    // USR is a no-op - no atoms generated
+  };
+
+  // END - End of source
+  directive_registry_[END] = [this](const std::string &label,
+                                       const std::string &operand,
+                                       DirectiveContext &ctx) {
+    (void)operand;
+    if (!label.empty()) {
+      ctx.symbols->Define(label, SymbolType::Label,
+                     std::make_shared<LiteralExpr>(current_address_));
+      ctx.section->atoms.push_back(
+          std::make_shared<LabelAtom>(label, current_address_));
+      current_scope_.global_label = label;
+      current_scope_.local_labels.clear();
+    }
+    HandleEnd();
+  };
+
+  // SAV - Save output filename
+  directive_registry_[SAV] = [this](const std::string &label,
+                                       const std::string &operand,
+                                       DirectiveContext &ctx) {
+    (void)label;
+    (void)ctx.section;
+    (void)ctx.symbols;
+    HandleSav(operand);
+  };
+
+  // XC - Toggle 65C02 mode
+  directive_registry_[XC] = [this](const std::string &label,
+                                      const std::string &operand,
+                                      DirectiveContext &ctx) {
+    (void)label;
+    (void)ctx.section;
+    (void)ctx.symbols;
+    HandleXc(operand);
+  };
+
+  // MX - Set 65816 register widths
+  directive_registry_[MX] = [this](const std::string &label,
+                                      const std::string &operand,
+                                      DirectiveContext &ctx) {
+    (void)label;
+    (void)ctx.section;
+    (void)ctx.symbols;
+    HandleMx(operand);
+  };
+
+  // REV - Reverse ASCII string (requires label)
+  directive_registry_[REV] = [this](const std::string &label,
+                                       const std::string &operand,
+                                       DirectiveContext &ctx) {
+    if (label.empty()) {
+      throw std::runtime_error(FormatError("REV requires a label"));
+    }
+    HandleRev(label, operand, *ctx.section, *ctx.symbols);
+  };
+
+  // LUP - Loop assembly
+  directive_registry_[LUP] = [this](const std::string &label,
+                                       const std::string &operand,
+                                       DirectiveContext &ctx) {
+    (void)label;
+    (void)ctx.section;
+    (void)ctx.symbols;
+    HandleLup(operand);
+  };
+}
+
+bool MerlinSyntaxParser::DispatchDirective(const std::string &directive,
+                                            const std::string &label,
+                                            const std::string &operand,
+                                            DirectiveContext &context) {
+  auto it = directive_registry_.find(directive);
+  if (it != directive_registry_.end()) {
+    // Found directive - invoke handler
+    it->second(label, operand, context);
+    return true;
+  }
+  return false; // Unknown directive
+}
 
 // ============================================================================
 // Helper Functions
@@ -312,12 +711,12 @@ MerlinSyntaxParser::ParseExpression(const std::string &str,
              (expr[0] == '$' || expr[0] == '%' || std::isdigit(expr[0]))) {
     // Pure number
     return std::make_shared<LiteralExpr>(ParseNumber(expr));
-  } else if (!expr.empty() && symbols.IsDefined(expr)) {
-    // Symbol reference
+  } else if (!expr.empty()) {
+    // Symbol reference (defined or not - let Evaluate() throw if undefined)
     return std::make_shared<SymbolExpr>(expr);
   }
 
-  // Unknown or empty - return literal 0 for now
+  // Empty expression - return literal 0
   return std::make_shared<LiteralExpr>(0);
 }
 
@@ -358,26 +757,25 @@ std::string MerlinSyntaxParser::ParseLabel(const std::string &line, size_t &pos,
 
 void MerlinSyntaxParser::HandleOrg(const std::string &operand, Section &section,
                                    ConcreteSymbolTable &symbols) {
+  // ORG directive - set assembly origin address
   std::string op = Trim(operand);
   uint32_t address = 0;
 
-  // Check if operand is empty
   if (op.empty()) {
-    throw std::runtime_error(
-        FormatError("ORG directive requires an address operand"));
+    throw std::runtime_error(FormatError("ORG directive requires an address operand"));
   }
 
-  // Check if operand is a symbol or a number
+  // Parse address (number or symbol)
   if (op[0] == '$' || op[0] == '%' || std::isdigit(op[0])) {
-    // It's a number
+    // Numeric literal
     address = ParseNumber(op);
   } else {
-    // It's a symbol - look it up
+    // Symbol - look it up
     int64_t value = 0;
     if (symbols.Lookup(op, value)) {
       address = static_cast<uint32_t>(value);
     } else {
-      // Symbol not found - this should throw an error in proper assembly
+      // Undefined symbol - use 0 (forward reference issue)
       address = 0;
     }
   }
@@ -389,112 +787,25 @@ void MerlinSyntaxParser::HandleOrg(const std::string &operand, Section &section,
 void MerlinSyntaxParser::HandleEqu(const std::string &label,
                                    const std::string &operand,
                                    ConcreteSymbolTable &symbols) {
+  // EQU directive - define symbolic constant (no code generated)
   auto expr = ParseExpression(operand, symbols);
   symbols.Define(label, SymbolType::Label, expr);
-  // EQU doesn't create atoms
 }
 
 void MerlinSyntaxParser::HandleDB(const std::string &operand, Section &section,
-                                  ConcreteSymbolTable & /* symbols */) {
-  // Store expression strings for multi-pass evaluation
-  std::vector<std::string> expressions;
-  std::istringstream iss(operand);
-  std::string value;
-
-  while (std::getline(iss, value, ',')) {
-    value = Trim(value);
-    if (!value.empty()) {
-      expressions.push_back(value);
-    }
-  }
-
-  // Create DataAtom with expressions (will be evaluated during assembly)
-  auto atom = std::make_shared<DataAtom>(expressions, DataSize::Byte);
-  section.atoms.push_back(atom);
-
-  // Update address (1 byte per expression)
-  current_address_ += expressions.size();
-}
-
-void MerlinSyntaxParser::HandleDW(const std::string &operand, Section &section,
-                                  ConcreteSymbolTable & /* symbols */) {
-  // Store expression strings for multi-pass evaluation
-  std::vector<std::string> expressions;
-  std::istringstream iss(operand);
-  std::string value;
-
-  while (std::getline(iss, value, ',')) {
-    value = Trim(value);
-    if (!value.empty()) {
-      expressions.push_back(value);
-    }
-  }
-
-  // Create DataAtom with expressions (will be evaluated during assembly)
-  auto atom = std::make_shared<DataAtom>(expressions, DataSize::Word);
-  section.atoms.push_back(atom);
-
-  // Update address (2 bytes per word expression)
-  current_address_ += expressions.size() * 2;
-}
-
-void MerlinSyntaxParser::HandleHex(const std::string &operand,
-                                   Section &section) {
+                                  ConcreteSymbolTable &symbols) {
+  // DB directive - define byte(s)
+  // Parse comma-separated expressions and evaluate immediately
   std::vector<uint8_t> bytes;
-  std::string hex_str = Trim(operand);
+  std::istringstream iss(operand);
+  std::string value;
 
-  // Check if operand contains commas (comma-separated format)
-  if (hex_str.find(',') != std::string::npos) {
-    // Comma-separated format: "01,02,03" or "01, 02, 03"
-    std::istringstream iss(hex_str);
-    std::string token;
-
-    while (std::getline(iss, token, ',')) {
-      token = Trim(token); // Remove whitespace around token
-      if (!token.empty()) {
-        // Validate hex digits before calling stoul
-        for (char c : token) {
-          if (!std::isxdigit(static_cast<unsigned char>(c))) {
-            throw std::runtime_error(
-                FormatError("Invalid hex digit '" + std::string(1, c) +
-                            "' in HEX directive: '" + token + "'"));
-          }
-        }
-        try {
-          bytes.push_back(static_cast<uint8_t>(std::stoul(token, nullptr, 16)));
-        } catch (const std::exception &e) {
-          throw std::runtime_error(
-              FormatError("Invalid hex value in HEX directive: '" + token +
-                          "' - " + e.what()));
-        }
-      }
-    }
-  } else {
-    // Concatenated format: "010203" or "AB CD EF"
-    // Remove all spaces from hex string
-    hex_str.erase(std::remove_if(hex_str.begin(), hex_str.end(), ::isspace),
-                  hex_str.end());
-
-    // Validate all characters are hex digits
-    for (char c : hex_str) {
-      if (!std::isxdigit(static_cast<unsigned char>(c))) {
-        throw std::runtime_error(
-            FormatError("Invalid hex digit '" + std::string(1, c) +
-                        "' in HEX directive: '" + operand + "'"));
-      }
-    }
-
-    // Parse pairs of hex digits
-    for (size_t i = 0; i + 1 < hex_str.length(); i += 2) {
-      std::string byte_str = hex_str.substr(i, 2);
-      try {
-        bytes.push_back(
-            static_cast<uint8_t>(std::stoul(byte_str, nullptr, 16)));
-      } catch (const std::exception &e) {
-        throw std::runtime_error(
-            FormatError("Invalid hex value in HEX directive: '" + byte_str +
-                        "' - " + e.what()));
-      }
+  while (std::getline(iss, value, ',')) {
+    value = Trim(value);
+    if (!value.empty()) {
+      auto expr = ParseExpression(value, symbols);
+      int64_t result = expr->Evaluate(symbols);
+      bytes.push_back(static_cast<uint8_t>(result & 0xFF));
     }
   }
 
@@ -502,120 +813,145 @@ void MerlinSyntaxParser::HandleHex(const std::string &operand,
   current_address_ += bytes.size();
 }
 
+void MerlinSyntaxParser::HandleDW(const std::string &operand, Section &section,
+                                  ConcreteSymbolTable & /*symbols*/) {
+  // DW directive - define word(s) (16-bit values)
+  // Store expressions for multi-pass evaluation (support forward references)
+  std::vector<std::string> expressions;
+  std::istringstream iss(operand);
+  std::string value;
+
+  while (std::getline(iss, value, ',')) {
+    value = Trim(value);
+    if (!value.empty()) {
+      expressions.push_back(value);
+    }
+  }
+
+  // Create DataAtom with expressions (assembler will evaluate in multi-pass)
+  auto data_atom = std::make_shared<DataAtom>(expressions, DataSize::Word);
+  section.atoms.push_back(data_atom);
+  
+  // Reserve space (2 bytes per word expression)
+  current_address_ += expressions.size() * 2;
+}
+
+void MerlinSyntaxParser::HandleHex(const std::string &operand,
+                                   Section &section) {
+  HandleHexDirective(operand, section, current_address_);
+}
+
 void MerlinSyntaxParser::HandleDS(const std::string &operand, Section &section,
                                   ConcreteSymbolTable &symbols) {
-  // DS (Define Space) - reserve bytes
-  // Can be a number, symbol, or expression
+  // DS directive - define space (reserve bytes)
+  // Supports: DS 100        (literal)
+  //           DS COUNT      (symbol)
+  //           DS *+10       (program counter arithmetic)
+  
   std::string op = Trim(operand);
 
-  // Substitute * (program counter) with current address BEFORE parsing
-  // In Merlin syntax, * represents the current program counter
-  // BUT: Don't substitute when * is multiplication (between two operands)
+  // Substitute * (program counter) with current address
+  // But NOT when * is multiplication operator (between operands)
   if (op.find('*') != std::string::npos) {
     std::ostringstream hex_stream;
     hex_stream << "$" << std::hex
                << (in_dum_block_ ? dum_address_ : current_address_);
     std::string pc_hex = hex_stream.str();
 
-    // Replace * with address, but only when it's program counter (not
-    // multiplication)
+    // Replace * with address, checking context
     size_t pos = 0;
     while ((pos = op.find('*', pos)) != std::string::npos) {
-      // Check if * is multiplication by examining characters before and after
       bool is_multiplication = false;
 
-      // Check character before *
+      // Check operand before *
       bool has_operand_before = false;
       if (pos > 0) {
         char before = op[pos - 1];
-        // Operand before: digit, letter, or closing paren
         if (std::isalnum(static_cast<unsigned char>(before)) || before == ')') {
           has_operand_before = true;
         }
       }
 
-      // Check character after *
+      // Check operand after *
       bool has_operand_after = false;
       if (pos + 1 < op.length()) {
         char after = op[pos + 1];
-        // Operand after: digit, letter, or opening paren
         if (std::isalnum(static_cast<unsigned char>(after)) || after == '(' ||
             after == '$' || after == '%') {
           has_operand_after = true;
         }
       }
 
-      // It's multiplication if there are operands on BOTH sides
+      // Multiplication only if operands on BOTH sides
       is_multiplication = has_operand_before && has_operand_after;
 
       if (is_multiplication) {
-        // Skip this *, it's multiplication
-        pos++;
+        pos++; // Skip multiplication operator
       } else {
-        // This is program counter, substitute it
+        // Program counter - substitute
         op.replace(pos, 1, pc_hex);
         pos += pc_hex.length();
       }
     }
   }
 
-  // Use ParseExpression to handle all cases (numbers, symbols, arithmetic)
+  // Parse expression (supports arithmetic, symbols, literals)
   uint32_t count = 0;
   if (!op.empty()) {
     auto expr = ParseExpression(op, symbols);
-    int64_t value = expr->Evaluate(symbols);
-    if (value < 0) {
-      throw std::runtime_error(FormatError("DS: Negative count not allowed: " +
-                                           std::to_string(value)));
+    try {
+      int64_t value = expr->Evaluate(symbols);
+      if (value < 0) {
+        throw std::runtime_error(FormatError("DS: Negative count not allowed: " +
+                                 std::to_string(value)));
+      }
+      count = static_cast<uint32_t>(value);
+    } catch (const std::runtime_error &e) {
+      // Re-throw with location information if not already formatted
+      std::string msg = e.what();
+      // Check if message already has file:line: format
+      // Format is: filename:number: error: message
+      size_t first_colon = msg.find(':');
+      bool has_location = false;
+      if (first_colon != std::string::npos && first_colon < msg.length() - 1) {
+        size_t second_colon = msg.find(':', first_colon + 1);
+        if (second_colon != std::string::npos && second_colon > first_colon + 1) {
+          // Check if there's a digit between the two colons (line number)
+          bool has_digit = false;
+          for (size_t i = first_colon + 1; i < second_colon; ++i) {
+            if (std::isdigit(static_cast<unsigned char>(msg[i]))) {
+              has_digit = true;
+              break;
+            }
+          }
+          has_location = has_digit;
+        }
+      }
+      
+      if (!has_location) {
+        throw std::runtime_error(FormatError(msg));
+      } else {
+        throw;
+      }
     }
-    count = static_cast<uint32_t>(value);
   }
 
-  // Only emit SpaceAtom if NOT in DUM block
-  // DUM blocks define symbols without generating output (vasm compatibility)
+  // DUM blocks: advance address without emitting bytes
   if (!in_dum_block_) {
     section.atoms.push_back(std::make_shared<SpaceAtom>(count));
     current_address_ += count;
   } else {
-    // In DUM block: advance address counter but don't emit bytes
     dum_address_ += count;
   }
 }
 
 void MerlinSyntaxParser::HandleDum(const std::string &operand,
                                    ConcreteSymbolTable &symbols) {
-  // DUM (Dummy section) - start variable definition block
-  in_dum_block_ = true;
-
-  std::string op = Trim(operand);
-
-  // Check if operand is empty
-  if (op.empty()) {
-    throw std::runtime_error(
-        FormatError("DUM directive requires an address operand"));
-  }
-
-  // Check if operand is a symbol or a number
-  if (op[0] == '$' || op[0] == '%' || std::isdigit(op[0])) {
-    // It's a number
-    dum_address_ = ParseNumber(op);
-  } else {
-    // It's a symbol - look it up
-    int64_t value = 0;
-    if (symbols.Lookup(op, value)) {
-      dum_address_ = static_cast<uint32_t>(value);
-    } else {
-      // Symbol not found - use 0 for now (forward reference issue)
-      dum_address_ = 0;
-    }
-  }
+  HandleDumDirective(operand, symbols, in_dum_block_, dum_address_, nullptr);
 }
 
 void MerlinSyntaxParser::HandleDend() {
-  // DEND - end dummy section
-  // TODO: Phase 3 implementation
-  in_dum_block_ = false;
-  variable_labels_.clear();
+  HandleDendDirective(in_dum_block_);
 }
 
 void MerlinSyntaxParser::HandlePut(const std::string &operand, Section &section,
@@ -624,7 +960,6 @@ void MerlinSyntaxParser::HandlePut(const std::string &operand, Section &section,
   std::string filename = Trim(operand);
 
   // Auto-append .S extension if no extension present
-  // Check if filename contains a dot (has extension)
   if (filename.find('.') == std::string::npos) {
     filename += ".S";
   }
@@ -632,8 +967,7 @@ void MerlinSyntaxParser::HandlePut(const std::string &operand, Section &section,
   // Check for circular includes
   for (const auto &included_file : include_stack_) {
     if (included_file == filename) {
-      throw std::runtime_error(
-          FormatError("Circular include detected: " + filename));
+      throw std::runtime_error(FormatError("Circular include detected: " + filename));
     }
   }
 
@@ -652,113 +986,111 @@ void MerlinSyntaxParser::HandlePut(const std::string &operand, Section &section,
 
   if (!file.is_open()) {
     include_stack_.pop_back(); // Remove from stack on error
-    throw std::runtime_error(
-        FormatError("Cannot open file: " +
-                    Trim(operand))); // Report original filename in error
+    throw std::runtime_error(FormatError("Cannot open file: " + Trim(operand)));
   }
 
-  // Read entire file content
-  std::stringstream buffer;
-  buffer << file.rdbuf();
-  std::string file_content = buffer.str();
-  file.close();
-
-  // Parse the included file content
-  std::istringstream iss(file_content);
+  // Read and parse each line
   std::string line;
-  while (std::getline(iss, line)) {
+  while (std::getline(file, line)) {
     ParseLine(line, section, symbols);
   }
 
-  // Remove from include stack when done
+  // Pop from include stack
   include_stack_.pop_back();
 }
 
 void MerlinSyntaxParser::HandleDo(const std::string &operand,
                                   ConcreteSymbolTable &symbols) {
-  // DO condition - start conditional assembly block
-  auto expr = ParseExpression(operand, symbols);
-  int64_t condition = expr->Evaluate(symbols);
+  // DO directive - begin conditional assembly block
+  // Evaluate operand expression: non-zero = true, zero = false
+  
+  std::string op = Trim(operand);
+  if (op.empty()) {
+    throw std::runtime_error("DO directive requires an operand expression");
+  }
 
-  // Determine if code should be emitted based on parent blocks and current
-  // condition
-  bool parent_should_emit =
-      conditional_stack_.empty() ? true : conditional_stack_.back().should_emit;
-  bool should_emit = parent_should_emit && (condition != 0);
+  // Evaluate the expression to determine condition
+  uint32_t value = 0;
+  if (op[0] == '$') {
+    // Hex literal
+    value = std::stoul(op.substr(1), nullptr, 16);
+  } else if (op[0] == '%') {
+    // Binary literal
+    value = std::stoul(op.substr(1), nullptr, 2);
+  } else if (std::isdigit(op[0])) {
+    // Decimal literal
+    value = std::stoul(op, nullptr, 10);
+  } else {
+    // Symbol - look it up
+    int64_t sym_value = 0;
+    if (symbols.Lookup(op, sym_value)) {
+      value = static_cast<uint32_t>(sym_value);
+    } else {
+      // Undefined symbol evaluates to 0 (false)
+      value = 0;
+    }
+  }
 
-  conditional_stack_.push_back({
-      condition != 0, // condition
-      false,          // in_else_block
-      should_emit     // should_emit
-  });
+  // Begin conditional block (non-zero = true)
+  conditional_.BeginIf(value != 0);
 }
 
 void MerlinSyntaxParser::HandleElse() {
-  // ELSE - switch to alternative branch in conditional block
-  if (conditional_stack_.empty()) {
-    throw std::runtime_error(FormatError("ELSE without matching DO"));
+  // ELSE directive - toggle conditional assembly state
+  try {
+    conditional_.BeginElse();
+  } catch (const std::runtime_error &e) {
+    // Re-throw with location information and Merlin-specific terminology
+    std::string msg = e.what();
+    // Replace "IF" with "DO" for Merlin syntax
+    size_t pos = msg.find("IF");
+    if (pos != std::string::npos) {
+      msg.replace(pos, 2, "DO");
+    }
+    throw std::runtime_error(FormatError(msg));
   }
-
-  ConditionalBlock &block = conditional_stack_.back();
-  if (block.in_else_block) {
-    throw std::runtime_error(FormatError("Multiple ELSE in same DO block"));
-  }
-
-  block.in_else_block = true;
-
-  // Determine if code in ELSE branch should be emitted
-  bool parent_should_emit =
-      conditional_stack_.size() > 1
-          ? conditional_stack_[conditional_stack_.size() - 2].should_emit
-          : true;
-  block.should_emit = parent_should_emit && !block.condition;
 }
 
 void MerlinSyntaxParser::HandleFin() {
-  // FIN - end conditional assembly block
-  if (conditional_stack_.empty()) {
-    // Merlin quirk: FIN without DO is a warning, not an error
-    // This is needed for Prince of Persia source (SPECIALK.S has extra FINs)
-    // vasm treats this as WARNING and continues processing
-    // We'll do the same - just ignore the extra FIN
-    std::cerr
-        << "Warning: "
-        << FormatError(
-               "FIN without matching DO (ignored for Merlin compatibility)")
-        << std::endl;
-    return;
+  // FIN directive - end conditional assembly block
+  try {
+    conditional_.EndIf();
+  } catch (const std::runtime_error &e) {
+    // Re-throw with location information and Merlin-specific terminology
+    std::string msg = e.what();
+    // Replace "ENDIF" with "FIN" and "IF" with "DO" for Merlin syntax
+    size_t pos = msg.find("ENDIF");
+    if (pos != std::string::npos) {
+      msg.replace(pos, 5, "FIN");
+    }
+    pos = msg.find("IF");
+    if (pos != std::string::npos) {
+      msg.replace(pos, 2, "DO");
+    }
+    throw std::runtime_error(FormatError(msg));
   }
-
-  conditional_stack_.pop_back();
 }
 
 void MerlinSyntaxParser::HandleEnd() {
-  // END - mark end of source (stop processing further lines)
-  // This is a no-op directive - doesn't generate atoms
-  // Just sets flag to stop processing
-  end_directive_seen_ = true;
+  HandleEndDirective(end_directive_seen_);
 }
 
 // ============================================================================
 // Macro Directives
 // ============================================================================
 
+// Macro-related member functions - NOT extracted to merlin_directives.cpp
+// because they are tightly coupled to parser state (macros_, current_macro_,
+// in_macro_definition_) and require complex interaction with macro expansion.
+
 void MerlinSyntaxParser::HandlePMC(const std::string &operand) {
-  // PMC MacroName - Start macro definition
-  std::string macro_name = ToUpper(Trim(operand));
-
-  if (macro_name.empty()) {
-    throw std::runtime_error(FormatError("PMC requires macro name"));
-  }
-
+  // PMC - Start macro definition
   if (in_macro_definition_) {
     throw std::runtime_error(
         FormatError("Nested macro definitions not allowed"));
   }
-
-  // Start macro definition
   in_macro_definition_ = true;
-  current_macro_.name = macro_name;
+  current_macro_.name = ToUpper(Trim(operand));  // Normalize macro name
   current_macro_.body.clear();
   current_macro_.param_count = 0;
 }
@@ -766,77 +1098,28 @@ void MerlinSyntaxParser::HandlePMC(const std::string &operand) {
 void MerlinSyntaxParser::HandleEOM() {
   // EOM - End macro definition
   if (!in_macro_definition_) {
-    throw std::runtime_error(FormatError("EOM without PMC"));
+    throw std::runtime_error(
+        FormatError("EOM without matching PMC"));
   }
-
-  // Scan macro body to count parameters
-  int max_param = 0;
-  for (const auto &line : current_macro_.body) {
-    // Look for ]1, ]2, etc.
-    for (size_t i = 0; i < line.length(); ++i) {
-      if (line[i] == ']' && i + 1 < line.length() &&
-          std::isdigit(line[i + 1])) {
-        int param_num = line[i + 1] - '0';
-        max_param = std::max(max_param, param_num);
-      }
-    }
-  }
-  current_macro_.param_count = max_param;
-
-  // Store macro definition
   macros_[current_macro_.name] = current_macro_;
-
-  // End macro definition mode
   in_macro_definition_ = false;
-  current_macro_ = MacroDefinition();
 }
 
 void MerlinSyntaxParser::HandleMAC(const std::string &macro_name,
                                    const std::string &params, Section &section,
                                    ConcreteSymbolTable &symbols) {
-  // MAC MacroName - Invoke/expand macro (Merlin syntax)
-  // MAC is ALWAYS invocation, PMC is ALWAYS definition
-  std::string upper_name = ToUpper(Trim(macro_name));
-
-  if (upper_name.empty()) {
-    throw std::runtime_error(FormatError("MAC requires macro name"));
-  }
-
-  // Look up macro - if not found, throw error
-  if (macros_.find(upper_name) == macros_.end()) {
-    throw std::runtime_error(FormatError("Undefined macro: " + macro_name));
-  }
-
-  // Expand the macro
+  // MAC - Invoke macro (expand and execute)
   ExpandMacro(macro_name, params, section, symbols);
 }
 
 void MerlinSyntaxParser::HandleMacroEnd() {
-  // <<< - End macro definition (Merlin syntax)
+  // <<< - End macro definition (Merlin style)
   if (!in_macro_definition_) {
-    throw std::runtime_error(FormatError("<<< without MAC"));
+    throw std::runtime_error(
+        FormatError("<<< without matching PMC"));
   }
-
-  // Scan macro body to count parameters
-  int max_param = 0;
-  for (const auto &line : current_macro_.body) {
-    // Look for ]1, ]2, etc.
-    for (size_t i = 0; i < line.length(); ++i) {
-      if (line[i] == ']' && i + 1 < line.length() &&
-          std::isdigit(line[i + 1])) {
-        int param_num = line[i + 1] - '0';
-        max_param = std::max(max_param, param_num);
-      }
-    }
-  }
-  current_macro_.param_count = max_param;
-
-  // Store macro definition
   macros_[current_macro_.name] = current_macro_;
-
-  // End macro definition mode
   in_macro_definition_ = false;
-  current_macro_ = MacroDefinition();
 }
 
 void MerlinSyntaxParser::ExpandMacro(const std::string &macro_name,
@@ -933,378 +1216,62 @@ std::string MerlinSyntaxParser::SubstituteParameters(
 }
 
 void MerlinSyntaxParser::HandleLst(const std::string &operand) {
-  // LST/LST OFF - listing control directives
-  // These control assembler output, not code generation
-  // No atoms created
-  (void)operand; // Unused parameter
+  HandleLstDirective(operand);
 }
 
 void MerlinSyntaxParser::HandleLstdo() {
-  // LSTDO - list during DO blocks
-  // Listing control directive
-  // No atoms created
+  HandleLstdoDirective();
 }
 
 void MerlinSyntaxParser::HandleTr(const std::string &operand) {
-  // TR [ADR|ON|OFF] - truncate listing
-  // Listing control directive
-  // No atoms created
-  (void)operand; // Unused parameter
+  HandleTrDirective(operand);
 }
 
 void MerlinSyntaxParser::HandleAsc(const std::string &operand,
                                    Section &section) {
-  // ASC 'string' or ASC "string" - ASCII string directive
-  // Apple II/Merlin standard: Sets high bit on ALL characters (0x80 | char)
-  // This produces "high-bit ASCII" for Apple II text display
-
-  std::vector<uint8_t> bytes;
-  std::string op = Trim(operand);
-
-  if (op.empty()) {
-    section.atoms.push_back(std::make_shared<DataAtom>(bytes));
-    return;
-  }
-
-  // Find string delimiter (single or double quote)
-  char quote = '\0';
-  size_t start_pos = 0;
-
-  if (op[0] == '\'' || op[0] == '"') {
-    quote = op[0];
-    start_pos = 1;
-  } else {
-    // No quote found - empty string
-    section.atoms.push_back(std::make_shared<DataAtom>(bytes));
-    return;
-  }
-
-  // Find closing quote
-  size_t end_pos = op.find(quote, start_pos);
-  if (end_pos == std::string::npos) {
-    // No closing quote - treat rest as string
-    end_pos = op.length();
-  }
-
-  // Extract string content
-  std::string text = op.substr(start_pos, end_pos - start_pos);
-
-  // Convert string to bytes with high bit set (Apple II standard)
-  for (size_t i = 0; i < text.length(); ++i) {
-    uint8_t byte = static_cast<uint8_t>(text[i]);
-
-    // Set high bit on ALL characters (Apple II/Merlin compatibility)
-    byte |= 0x80;
-
-    bytes.push_back(byte);
-  }
-
-  section.atoms.push_back(std::make_shared<DataAtom>(bytes));
-  current_address_ += bytes.size();
+  HandleAscDirective(operand, section, current_address_);
 }
 
 void MerlinSyntaxParser::HandleDA(const std::string &operand, Section &section,
                                   ConcreteSymbolTable &symbols) {
-  // DA (Define Address) - same as DW, word definitions in little-endian
-  HandleDW(operand, section, symbols);
+  HandleDaDirective(operand, section, symbols, current_address_);
 }
 
 void MerlinSyntaxParser::HandleDCI(const std::string &operand,
                                    Section &section) {
-  // DCI 'string' - DCI string (last character with high bit set)
-
-  std::vector<uint8_t> bytes;
-  std::string op = Trim(operand);
-
-  if (op.empty()) {
-    section.atoms.push_back(std::make_shared<DataAtom>(bytes));
-    return;
-  }
-
-  // Find string delimiter (single or double quote)
-  char quote = '\0';
-  size_t start_pos = 0;
-
-  if (op[0] == '\'' || op[0] == '"') {
-    quote = op[0];
-    start_pos = 1;
-  } else {
-    // No quote found - empty string
-    section.atoms.push_back(std::make_shared<DataAtom>(bytes));
-    return;
-  }
-
-  // Find closing quote
-  size_t end_pos = op.find(quote, start_pos);
-  if (end_pos == std::string::npos) {
-    // No closing quote - treat rest as string
-    end_pos = op.length();
-  }
-
-  // Extract string content
-  std::string text = op.substr(start_pos, end_pos - start_pos);
-
-  // Convert string to bytes, setting high bit on last character
-  for (size_t i = 0; i < text.length(); ++i) {
-    uint8_t byte = static_cast<uint8_t>(text[i]);
-
-    // Set high bit on last character
-    if (i == text.length() - 1) {
-      byte |= 0x80;
-    }
-
-    bytes.push_back(byte);
-  }
-
-  section.atoms.push_back(std::make_shared<DataAtom>(bytes));
-  current_address_ += bytes.size();
+  HandleDciDirective(operand, section, current_address_);
 }
 
 void MerlinSyntaxParser::HandleINV(const std::string &operand,
                                    Section &section) {
-  // INV 'string' - Inverse ASCII (all characters with high bit set)
-
-  std::vector<uint8_t> bytes;
-  std::string op = Trim(operand);
-
-  if (op.empty()) {
-    section.atoms.push_back(std::make_shared<DataAtom>(bytes));
-    return;
-  }
-
-  // Find string delimiter (single or double quote)
-  char quote = '\0';
-  size_t start_pos = 0;
-
-  if (op[0] == '\'' || op[0] == '"') {
-    quote = op[0];
-    start_pos = 1;
-  } else {
-    // No quote found - empty string
-    section.atoms.push_back(std::make_shared<DataAtom>(bytes));
-    return;
-  }
-
-  // Find closing quote
-  size_t end_pos = op.find(quote, start_pos);
-  if (end_pos == std::string::npos) {
-    // No closing quote - treat rest as string
-    end_pos = op.length();
-  }
-
-  // Extract string content
-  std::string text = op.substr(start_pos, end_pos - start_pos);
-
-  // Convert string to bytes, setting high bit on all characters
-  for (size_t i = 0; i < text.length(); ++i) {
-    uint8_t byte = static_cast<uint8_t>(text[i]) | 0x80;
-    bytes.push_back(byte);
-  }
-
-  section.atoms.push_back(std::make_shared<DataAtom>(bytes));
-  current_address_ += bytes.size();
+  HandleInvDirective(operand, section, current_address_);
 }
 
 void MerlinSyntaxParser::HandleFLS(const std::string &operand,
                                    Section &section) {
-  // FLS 'string' - Flash ASCII (alternating high bit for flashing effect)
-  // On Apple II, "flash" text alternates between normal and inverse characters
-  // This directive sets high bit on every OTHER character (even indices: 0,
-  // 2, 4...)
-
-  std::vector<uint8_t> bytes;
-  std::string op = Trim(operand);
-
-  if (op.empty()) {
-    section.atoms.push_back(std::make_shared<DataAtom>(bytes));
-    return;
-  }
-
-  // Find string delimiter (single or double quote)
-  char quote = '\0';
-  size_t start_pos = 0;
-
-  if (op[0] == '\'' || op[0] == '"') {
-    quote = op[0];
-    start_pos = 1;
-  } else {
-    // No quote found - empty string
-    section.atoms.push_back(std::make_shared<DataAtom>(bytes));
-    return;
-  }
-
-  // Find closing quote
-  size_t end_pos = op.find(quote, start_pos);
-  if (end_pos == std::string::npos) {
-    // No closing quote - treat rest as string
-    end_pos = op.length();
-  }
-
-  // Extract string content
-  std::string text = op.substr(start_pos, end_pos - start_pos);
-
-  // Convert string to bytes, alternating high bit on every other character
-  for (size_t i = 0; i < text.length(); ++i) {
-    uint8_t byte = static_cast<uint8_t>(text[i]);
-
-    // Set high bit on ODD-indexed characters (1, 3, 5...)
-    if (i % 2 == 1) {
-      byte |= 0x80;
-    }
-
-    bytes.push_back(byte);
-  }
-
-  section.atoms.push_back(std::make_shared<DataAtom>(bytes));
-  current_address_ += bytes.size();
+  HandleFlsDirective(operand, section, current_address_);
 }
 
-void MerlinSyntaxParser::HandleSav(const std::string & /* operand */) {
-  // SAV filename - Save output filename directive
-  // This is a no-op for now - output filename is controlled by command-line
-  // args Used in BOOT.S: "sav boot" No atoms created, no state changed
+void MerlinSyntaxParser::HandleSav(const std::string &operand) {
+  HandleSavDirective(operand);
 }
 
 void MerlinSyntaxParser::HandleXc(const std::string &operand) {
-  // XC [ON|OFF] - Toggle 65C02 CPU instruction set
-  // xc or xc on  = enable 65C02 mode
-  // xc off       = disable 65C02 mode (back to 6502)
-
-  if (!cpu_) {
-    // No CPU set - silently ignore (for tests that don't need CPU)
-    return;
-  }
-
-  std::string op = ToUpper(Trim(operand));
-
-  if (op.empty() || op == "ON") {
-    // Enable 65C02 mode
-    cpu_->SetCpuMode(CpuMode::Cpu65C02);
-  } else if (op == "OFF") {
-    // Disable 65C02 mode (back to 6502)
-    cpu_->SetCpuMode(CpuMode::Cpu6502);
-  } else {
-    throw std::runtime_error(
-        FormatError("XC: invalid operand (expected ON or OFF)"));
-  }
-
-  // No atoms created
+  HandleXcDirective(operand, cpu_);
 }
 
 void MerlinSyntaxParser::HandleMx(const std::string &operand) {
-  // MX mode - Set 65816 accumulator and index register widths
-  // mx %00 or mx 0 = 16-bit A, 16-bit X/Y (native mode)
-  // mx %01 or mx 1 = 16-bit A, 8-bit X/Y
-  // mx %10 or mx 2 = 8-bit A, 16-bit X/Y
-  // mx %11 or mx 3 = 8-bit A, 8-bit X/Y (emulation mode)
-  // This is a directive only - tracks state but doesn't change CPU encoding
-  // (Actual 65816 instruction encoding changes based on MX are out of scope)
-
-  std::string op = Trim(operand);
-  if (op.empty()) {
-    throw std::runtime_error(FormatError("MX directive requires an operand"));
-  }
-
-  int mode = -1;
-
-  // Check for binary format %00-%11
-  if (op[0] == '%') {
-    std::string binary = op.substr(1);
-    if (binary == "00")
-      mode = 0;
-    else if (binary == "01")
-      mode = 1;
-    else if (binary == "10")
-      mode = 2;
-    else if (binary == "11")
-      mode = 3;
-    else {
-      throw std::runtime_error(
-          FormatError("MX directive expects binary %00-%11 or decimal 0-3"));
-    }
-  }
-  // Check for decimal format 0-3
-  else if (op.length() == 1 && op[0] >= '0' && op[0] <= '3') {
-    mode = op[0] - '0';
-  } else {
-    throw std::runtime_error(
-        FormatError("MX directive expects binary %00-%11 or decimal 0-3"));
-  }
-
-  // Store mode (no atoms created, just state tracking)
-  // In a full implementation, this would affect how 65816 instructions are
-  // encoded For now, just validate and accept the directive
-  (void)mode; // Suppress unused variable warning
+  HandleMxDirective(operand);
 }
 
 void MerlinSyntaxParser::HandleRev(const std::string &label,
                                    const std::string &operand, Section &section,
                                    ConcreteSymbolTable &symbols) {
-  // REV "string" - Reverse ASCII string
-  // Used in SPECIALK.S: C_skip rev "SKIP"
-  // Reverses the string bytes and emits them to the output
-  // Creates a label at the start of the reversed string
-
-  std::string op = Trim(operand);
-
-  if (op.empty()) {
-    throw std::runtime_error(FormatError("REV requires a string operand"));
-  }
-
-  // Find string delimiter (single or double quote)
-  char quote = '\0';
-  size_t start_pos = 0;
-
-  if (op[0] == '\'' || op[0] == '"') {
-    quote = op[0];
-    start_pos = 1;
-  } else {
-    throw std::runtime_error(FormatError("REV requires quoted string"));
-  }
-
-  // Find closing quote
-  size_t end_pos = op.find(quote, start_pos);
-  if (end_pos == std::string::npos) {
-    // No closing quote - treat rest as string
-    end_pos = op.length();
-  }
-
-  // Extract string content
-  std::string text = op.substr(start_pos, end_pos - start_pos);
-
-  if (text.empty()) {
-    throw std::runtime_error(FormatError("REV requires non-empty string"));
-  }
-
-  // Create label at current address (before emitting bytes)
-  if (!label.empty()) {
-    symbols.Define(label, SymbolType::Label,
-                   std::make_shared<LiteralExpr>(current_address_));
-    section.atoms.push_back(
-        std::make_shared<LabelAtom>(label, current_address_));
-    current_scope_.global_label = label;
-    current_scope_.local_labels.clear();
-  }
-
-  // Reverse the string
-  std::string reversed(text.rbegin(), text.rend());
-
-  // Emit reversed bytes as data
-  std::vector<uint8_t> bytes;
-  for (char ch : reversed) {
-    bytes.push_back(static_cast<uint8_t>(ch));
-  }
-
-  section.atoms.push_back(std::make_shared<DataAtom>(bytes));
-  current_address_ += bytes.size();
+  HandleRevDirective(label, operand, section, symbols, current_address_);
 }
 
-void MerlinSyntaxParser::HandleLup(const std::string & /* operand */) {
-  // LUP count - Loop directive (repeat following code count times)
-  // This is deferred for now - requires complex loop expansion
-  // Used in TABLES.S: "lup 36"
-  throw std::runtime_error(
-      FormatError("LUP directive not yet implemented (deferred)"));
+void MerlinSyntaxParser::HandleLup(const std::string &operand) {
+  HandleLupDirective(operand);
 }
 
 // ============================================================================
@@ -1360,8 +1327,8 @@ void MerlinSyntaxParser::ParseLine(const std::string &line, Section &section,
     return;
   }
 
-  // Check if we should skip this line due to conditional assembly
-  if (!conditional_stack_.empty() && !conditional_stack_.back().should_emit) {
+  // Check if we should skip this line due to conditional assembly (Phase 4: use shared component)
+  if (!conditional_.ShouldEmit()) {
     return; // Skip this line - we're in a false conditional block
   }
 
@@ -1414,307 +1381,51 @@ void MerlinSyntaxParser::ParseLine(const std::string &line, Section &section,
     operands = "";
   }
 
-  // Handle directives
-  if (directive == "ORG") {
-    HandleOrg(operands, section, symbols);
+  // Handle directives using DirectiveRegistry pattern
+  // Build DirectiveContext for the handler
+  DirectiveContext ctx;
+  ctx.section = &section;
+  ctx.symbols = &symbols;
+  ctx.current_address = &current_address_;
+  ctx.parser_state = this;  // For accessing Merlin-specific state if needed
+  ctx.current_file = current_file_;
+  ctx.current_line = current_line_;
+  
+  if (DispatchDirective(directive, label, operands, ctx)) {
+    // Directive was handled by registry
     return;
-  } else if (directive == "EQU") {
-    // EQU: Define symbol but don't create label atom
-    HandleEqu(label, operands, symbols);
-    return;
-  } else if (directive == "DB" || directive == "DFB") {
-    // DB/DFB (Define Byte / Define Font Byte) - emit byte data
-    // DFB is Merlin's name for DB (used in Prince of Persia source)
-    // Create label atom first if label present
-    if (!label.empty()) {
-      symbols.Define(label, SymbolType::Label,
-                     std::make_shared<LiteralExpr>(current_address_));
-      section.atoms.push_back(
-          std::make_shared<LabelAtom>(label, current_address_));
-      current_scope_.global_label = label;
-      current_scope_.local_labels.clear();
-    }
-    HandleDB(operands, section, symbols);
-    return;
-  } else if (directive == "DW") {
-    // Create label atom first if label present
-    if (!label.empty()) {
-      symbols.Define(label, SymbolType::Label,
-                     std::make_shared<LiteralExpr>(current_address_));
-      section.atoms.push_back(
-          std::make_shared<LabelAtom>(label, current_address_));
-      current_scope_.global_label = label;
-      current_scope_.local_labels.clear();
-    }
-    HandleDW(operands, section, symbols);
-    return;
-  } else if (directive == "HEX") {
-    // Create label atom first if label present
-    if (!label.empty()) {
-      symbols.Define(label, SymbolType::Label,
-                     std::make_shared<LiteralExpr>(current_address_));
-      section.atoms.push_back(
-          std::make_shared<LabelAtom>(label, current_address_));
-      current_scope_.global_label = label;
-      current_scope_.local_labels.clear();
-    }
-    HandleHex(operands, section);
-    return;
-  } else if (directive == "DS") {
-    // Create label atom first if label present
-    if (!label.empty()) {
-      // Use dum_address_ if in DUM block, otherwise current_address_
-      uint32_t label_address = in_dum_block_ ? dum_address_ : current_address_;
-      symbols.Define(label, SymbolType::Label,
-                     std::make_shared<LiteralExpr>(label_address));
-      section.atoms.push_back(
-          std::make_shared<LabelAtom>(label, label_address));
-      current_scope_.global_label = label;
-      current_scope_.local_labels.clear();
-    }
-    HandleDS(operands, section, symbols);
-    return;
-  } else if (directive == "DUM") {
-    HandleDum(operands, symbols);
-    return;
-  } else if (directive == "DEND") {
-    HandleDend();
-    return;
-  } else if (directive == "PUT") {
-    HandlePut(operands, section, symbols);
-    return;
-  } else if (directive == "DO") {
-    HandleDo(operands, symbols);
-    return;
-  } else if (directive == "ELSE") {
-    HandleElse();
-    return;
-  } else if (directive == "FIN") {
-    HandleFin();
-    return;
-  } else if (directive == "LST") {
-    HandleLst(operands);
-    return;
-  } else if (directive == "LSTDO") {
-    HandleLstdo();
-    return;
-  } else if (directive == "TR") {
-    HandleTr(operands);
-    return;
-  } else if (directive == "ASC") {
-    // Create label atom first if label present
-    if (!label.empty()) {
-      symbols.Define(label, SymbolType::Label,
-                     std::make_shared<LiteralExpr>(current_address_));
-      section.atoms.push_back(
-          std::make_shared<LabelAtom>(label, current_address_));
-      current_scope_.global_label = label;
-      current_scope_.local_labels.clear();
-    }
-    HandleAsc(operands, section);
-    return;
-  } else if (directive == "DA") {
-    // Create label atom first if label present
-    if (!label.empty()) {
-      symbols.Define(label, SymbolType::Label,
-                     std::make_shared<LiteralExpr>(current_address_));
-      section.atoms.push_back(
-          std::make_shared<LabelAtom>(label, current_address_));
-      current_scope_.global_label = label;
-      current_scope_.local_labels.clear();
-    }
-    HandleDA(operands, section, symbols);
-    return;
-  } else if (directive == "DCI") {
-    // Create label atom first if label present
-    if (!label.empty()) {
-      symbols.Define(label, SymbolType::Label,
-                     std::make_shared<LiteralExpr>(current_address_));
-      section.atoms.push_back(
-          std::make_shared<LabelAtom>(label, current_address_));
-      current_scope_.global_label = label;
-      current_scope_.local_labels.clear();
-    }
-    HandleDCI(operands, section);
-    return;
-  } else if (directive == "INV") {
-    // Create label atom first if label present
-    if (!label.empty()) {
-      symbols.Define(label, SymbolType::Label,
-                     std::make_shared<LiteralExpr>(current_address_));
-      section.atoms.push_back(
-          std::make_shared<LabelAtom>(label, current_address_));
-      current_scope_.global_label = label;
-      current_scope_.local_labels.clear();
-    }
-    HandleINV(operands, section);
-    return;
-  } else if (directive == "FLS") {
-    // Create label atom first if label present
-    if (!label.empty()) {
-      symbols.Define(label, SymbolType::Label,
-                     std::make_shared<LiteralExpr>(current_address_));
-      section.atoms.push_back(
-          std::make_shared<LabelAtom>(label, current_address_));
-      current_scope_.global_label = label;
-      current_scope_.local_labels.clear();
-    }
-    HandleFLS(operands, section);
-    return;
-  } else if (directive == "PMC") {
-    // PMC - Start macro definition
-    HandlePMC(label.empty() ? operands : label);
-    return;
-  } else if (directive == "EOM") {
-    // EOM - End macro definition
-    HandleEOM();
-    return;
-  } else if (directive == "MAC") {
-    // MAC MacroName - Can be either:
-    // 1. Macro invocation (if macro already exists):
-    //    Format: MAC MacroName;param1;param2;... OR  MacroName;param1;param2
-    // 2. Macro definition (if macro doesn't exist) - Merlin style, terminated
-    // with <<<
-    //    Format: MacroName MAC param1;param2  (label is macro name)
-
-    std::string macro_name;
-    std::string params_str;
-
-    // Check if label is present - if so, it's the macro name (Merlin
-    // label-based syntax)
-    if (!label.empty()) {
-      // Label-based definition: stlx mac bank;addr
-      // Label = "stlx" (macro name)
-      // Operands = "bank;addr" (parameter names)
-      macro_name = ToUpper(label);
-      params_str =
-          operands; // These are parameter names for definition, not values
-    } else {
-      // No label - macro name must be in operands
-      // Parse macro name and parameters from operands
-      // Parameters are separated by semicolons: MAC LoadValue;#$42
-      size_t semicolon_pos = operands.find(';');
-
-      if (semicolon_pos != std::string::npos) {
-        macro_name = ToUpper(Trim(operands.substr(0, semicolon_pos)));
-        params_str = Trim(operands.substr(semicolon_pos + 1));
-      } else {
-        macro_name = ToUpper(Trim(operands));
-        params_str = "";
-      }
-    }
-
-    if (macro_name.empty()) {
-      throw std::runtime_error(FormatError("MAC requires macro name"));
-    }
-
-    // Check if this macro already exists (was defined with PMC/EOM or previous
-    // MAC)
-    if (macros_.find(macro_name) != macros_.end()) {
-      // Macro exists - this is an INVOCATION
-      // (No label should be present for invocation - it was already handled
-      // above) Expand the macro with parameters
-      ExpandMacro(macro_name, params_str, section, symbols);
-      return;
-    }
-
-    // Macro doesn't exist - this is a DEFINITION (Merlin style)
-    if (in_macro_definition_) {
-      throw std::runtime_error(
-          FormatError("Nested macro definitions not allowed"));
-    }
-
-    // Start macro definition (similar to PMC, but ended with <<< instead of
-    // EOM)
-    in_macro_definition_ = true;
-    current_macro_.name = macro_name;
-    current_macro_.body.clear();
-    current_macro_.param_count = 0;
-    return;
-  } else if (directive == "USR") {
-    // USR directive - user-defined subroutine (no-op)
-    // USR doesn't generate bytes - it's for calling user-defined routines
-    // during assembly The actual routine is provided by the assembler
-    // environment, not the source code Create label atom if present (label
-    // definition still happens)
-    if (!label.empty()) {
-      symbols.Define(label, SymbolType::Label,
-                     std::make_shared<LiteralExpr>(current_address_));
-      section.atoms.push_back(
-          std::make_shared<LabelAtom>(label, current_address_));
-      current_scope_.global_label = label;
-      current_scope_.local_labels.clear();
-    }
-    // USR is a no-op - no atoms generated
-    return;
-  } else if (directive == "END") {
-    // END - mark end of source (no more processing)
-    // Create label atom if present (label definition still happens)
-    if (!label.empty()) {
-      symbols.Define(label, SymbolType::Label,
-                     std::make_shared<LiteralExpr>(current_address_));
-      section.atoms.push_back(
-          std::make_shared<LabelAtom>(label, current_address_));
-      current_scope_.global_label = label;
-      current_scope_.local_labels.clear();
-    }
-    HandleEnd();
-    return;
-  } else if (directive == "SAV") {
-    // SAV filename - Save output filename (no-op)
-    HandleSav(operands);
-    return;
-  } else if (directive == "XC") {
-    // XC [ON|OFF] - Toggle 65C02 CPU mode (no-op)
-    HandleXc(operands);
-    return;
-  } else if (directive == "MX") {
-    // MX mode - Set 65816 register widths (state tracking only)
-    HandleMx(operands);
-    return;
-  } else if (directive == "REV") {
-    // REV "string" - Reverse ASCII string
-    if (label.empty()) {
-      throw std::runtime_error(FormatError("REV requires a label"));
-    }
-    HandleRev(label, operands, section, symbols);
-    return;
-  } else if (directive == "LUP") {
-    // LUP count - Loop directive (not implemented yet)
-    HandleLup(operands);
-    return;
-  } else {
-    // Check if it's a macro invocation
-    std::string upper_directive = ToUpper(directive);
-    if (macros_.find(upper_directive) != macros_.end()) {
-      // Create label atom first if label present
-      if (!label.empty()) {
-        symbols.Define(label, SymbolType::Label,
-                       std::make_shared<LiteralExpr>(current_address_));
-        section.atoms.push_back(
-            std::make_shared<LabelAtom>(label, current_address_));
-        current_scope_.global_label = label;
-        current_scope_.local_labels.clear();
-      }
-      // Expand macro
-      ExpandMacro(directive, operands, section, symbols);
-      return;
-    }
-
-    // Assume it's an instruction
-    // Create label atom first if label present
-    if (!label.empty()) {
-      symbols.Define(label, SymbolType::Label,
-                     std::make_shared<LiteralExpr>(current_address_));
-      section.atoms.push_back(
-          std::make_shared<LabelAtom>(label, current_address_));
-      current_scope_.global_label = label;
-      current_scope_.local_labels.clear();
-    }
-    section.atoms.push_back(
-        std::make_shared<InstructionAtom>(directive, operands));
-    current_address_ += 1; // Placeholder size
   }
+
+  // Not a directive - check if it's a macro invocation
+  std::string upper_directive = ToUpper(directive);
+  if (macros_.find(upper_directive) != macros_.end()) {
+    // Create label atom first if label present
+    if (!label.empty()) {
+      symbols.Define(label, SymbolType::Label,
+                     std::make_shared<LiteralExpr>(current_address_));
+      section.atoms.push_back(
+          std::make_shared<LabelAtom>(label, current_address_));
+      current_scope_.global_label = label;
+      current_scope_.local_labels.clear();
+    }
+    // Expand macro
+    ExpandMacro(directive, operands, section, symbols);
+    return;
+  }
+
+  // Assume it's an instruction
+  // Create label atom first if label present
+  if (!label.empty()) {
+    symbols.Define(label, SymbolType::Label,
+                   std::make_shared<LiteralExpr>(current_address_));
+    section.atoms.push_back(
+        std::make_shared<LabelAtom>(label, current_address_));
+    current_scope_.global_label = label;
+    current_scope_.local_labels.clear();
+  }
+  section.atoms.push_back(
+      std::make_shared<InstructionAtom>(directive, operands));
+  current_address_ += 1; // Placeholder size
 }
 
 // ============================================================================
@@ -1748,8 +1459,8 @@ void MerlinSyntaxParser::Parse(const std::string &source, Section &section,
     ParseLine(line, section, symbols);
   }
 
-  // Validate that all DO blocks are closed
-  if (!conditional_stack_.empty()) {
+  // Validate that all DO blocks are closed (Phase 4: use shared component)
+  if (!conditional_.IsBalanced()) {
     throw std::runtime_error(
         FormatError("Unmatched DO directive (missing FIN)"));
   }

@@ -4,10 +4,14 @@
  *
  * Implementation of SCMASM syntax parser for xasm++.
  * Phase 2: Integrated with shared ExpressionParser
+ * Phase 6c.2: Handler extraction with free functions
  */
 
 #include "xasm++/syntax/scmasm_syntax.h"
 #include "xasm++/atom.h"
+#include "xasm++/directives/scmasm_directive_handlers.h"
+#include "xasm++/directives/scmasm_directive_constants.h"
+#include "xasm++/directives/scmasm_constants.h"
 #include <algorithm>
 #include <cctype>
 #include <iostream>
@@ -398,8 +402,15 @@ void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
       // Try to dispatch via registry
       auto it = directive_registry_.find(opcode_upper);
       if (it != directive_registry_.end()) {
-        // Found in registry - dispatch
-        it->second(label, operand, section, symbols);
+        // Found in registry - dispatch with DirectiveContext
+        DirectiveContext context;
+        context.section = &section;
+        context.symbols = &symbols;
+        context.current_address = &current_address_;
+        context.parser_state = this;  // Phase 6c.2: Set parser for handler access
+        context.current_file = current_file_;
+        context.current_line = current_line_;
+        it->second(label, operand, context);
       } else {
         // Not in registry and not a control flow directive
         throw std::runtime_error("Unknown directive: " + opcode);
@@ -1293,109 +1304,43 @@ void ScmasmSyntaxParser::HandleLu(const std::string &operand, Section &section,
 // ============================================================================
 
 void ScmasmSyntaxParser::InitializeDirectiveRegistry() {
+  // Phase 6c.2: Use extracted free functions with directive name constants
+  using namespace scmasm::directives;
+
   // .OR - Set origin address
-  directive_registry_[".OR"] = [this](const std::string &label,
-                                       const std::string &operand,
-                                       Section &section,
-                                       ConcreteSymbolTable &symbols) {
-    (void)label; // Label handled separately before dispatch
-    HandleOr(operand, section, symbols);
-  };
+  directive_registry_[OR] = scmasm::HandleOr;
 
   // .EQ - Define constant
-  directive_registry_[".EQ"] = [this](const std::string &label,
-                                       const std::string &operand,
-                                       Section &section,
-                                       ConcreteSymbolTable &symbols) {
-    (void)section; // Not used by EQ
-    HandleEq(label, operand, symbols);
-  };
+  directive_registry_[EQ] = scmasm::HandleEq;
 
   // .SE - Set variable (redefinable)
-  directive_registry_[".SE"] = [this](const std::string &label,
-                                       const std::string &operand,
-                                       Section &section,
-                                       ConcreteSymbolTable &symbols) {
-    (void)section; // Not used by SE
-    HandleSe(label, operand, symbols);
-  };
+  directive_registry_[SE] = scmasm::HandleSe;
 
   // .AS - ASCII string
-  directive_registry_[".AS"] = [this](const std::string &label,
-                                       const std::string &operand,
-                                       Section &section,
-                                       ConcreteSymbolTable &symbols) {
-    (void)label; // Label handled separately
-    HandleAs(operand, section, symbols);
-  };
+  directive_registry_[AS] = scmasm::HandleAs;
 
   // .AT - ASCII text (high bit on last char)
-  directive_registry_[".AT"] = [this](const std::string &label,
-                                       const std::string &operand,
-                                       Section &section,
-                                       ConcreteSymbolTable &symbols) {
-    (void)label; // Label handled separately
-    HandleAt(operand, section, symbols);
-  };
+  directive_registry_[AT] = scmasm::HandleAt;
 
   // .AZ - ASCII zero-terminated
-  directive_registry_[".AZ"] = [this](const std::string &label,
-                                       const std::string &operand,
-                                       Section &section,
-                                       ConcreteSymbolTable &symbols) {
-    (void)label; // Label handled separately
-    HandleAz(operand, section, symbols);
-  };
+  directive_registry_[AZ] = scmasm::HandleAz;
 
   // .DA / .DFB - Define byte(s)
-  auto handle_da = [this](const std::string &label, const std::string &operand,
-                          Section &section, ConcreteSymbolTable &symbols) {
-    (void)label; // Label handled separately
-    HandleDa(operand, section, symbols);
-  };
-  directive_registry_[".DA"] = handle_da;
-  directive_registry_[".DFB"] = handle_da; // Alias
+  directive_registry_[DA] = scmasm::HandleDa;
+  directive_registry_[DFB] = scmasm::HandleDa;  // Alias
 
   // .HS - Hex string
-  directive_registry_[".HS"] = [this](const std::string &label,
-                                       const std::string &operand,
-                                       Section &section,
-                                       ConcreteSymbolTable &symbols) {
-    (void)label; // Label handled separately
-    HandleHs(operand, section, symbols);
-  };
+  directive_registry_[HS] = scmasm::HandleHs;
 
   // .BS - Binary string
-  directive_registry_[".BS"] = [this](const std::string &label,
-                                       const std::string &operand,
-                                       Section &section,
-                                       ConcreteSymbolTable &symbols) {
-    (void)label; // Label handled separately
-    HandleBs(operand, section, symbols);
-  };
+  directive_registry_[BS] = scmasm::HandleBs;
 
   // .MA - Begin macro definition
-  directive_registry_[".MA"] = [this](const std::string &label,
-                                       const std::string &operand,
-                                       Section &section,
-                                       ConcreteSymbolTable &symbols) {
-    (void)section;
-    (void)symbols;
-    HandleMa(label, operand);
-  };
+  directive_registry_[MA] = scmasm::HandleMa;
 
   // .ENDM / .EM - End macro definition
-  auto handle_endm = [this](const std::string &label,
-                             const std::string &operand, Section &section,
-                             ConcreteSymbolTable &symbols) {
-    (void)label;
-    (void)operand;
-    (void)section;
-    (void)symbols;
-    HandleEm();
-  };
-  directive_registry_[".ENDM"] = handle_endm;
-  directive_registry_[".EM"] = handle_endm; // Alias
+  directive_registry_[ENDM] = scmasm::HandleEndm;
+  directive_registry_[EM] = scmasm::HandleEndm;  // Alias
 
   // Note: Control flow directives (.DO, .ELSE, .FIN, .LU, .ENDU) are NOT
   // registered here because they require special handling in ParseLine with

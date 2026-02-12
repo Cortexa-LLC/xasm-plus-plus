@@ -15,6 +15,7 @@
 #include "xasm++/expression.h"
 #include "xasm++/section.h"
 #include "xasm++/symbol.h"
+#include "xasm++/syntax/directive_registry.h"
 #include <functional>
 #include <memory>
 #include <string>
@@ -133,11 +134,46 @@ public:
   void Parse(const std::string &source, Section &section,
              ConcreteSymbolTable &symbols);
 
+  // Phase 6c.2: Public methods for handler access
+  // These are called by extracted directive handlers
+
+  /**
+   * @brief Evaluate expression with symbol resolution
+   *
+   * Public for use by extracted directive handlers.
+   * Supports all SCMASM expression features.
+   *
+   * @param str Expression string
+   * @param symbols Symbol table for lookups
+   * @return Evaluated value
+   * @throws std::runtime_error on undefined symbols or invalid expressions
+   */
+  uint32_t EvaluateExpression(const std::string &str,
+                              ConcreteSymbolTable &symbols);
+
+  /**
+   * @brief Parse .MA directive (macro definition start)
+   *
+   * Public for use by extracted directive handlers.
+   * Begins macro definition. Macro name can be specified as operand or label.
+   *
+   * @param label Optional label before directive
+   * @param operand Macro name (if not in label)
+   */
+  void HandleMa(const std::string &label, const std::string &operand);
+
+  /**
+   * @brief Parse .EM directive (end macro definition)
+   *
+   * Public for use by extracted directive handlers.
+   */
+  void HandleEm();
+
 private:
-  // Directive handler function signature
+  // Directive handler function signature (DirectiveContext pattern)
   using DirectiveHandler =
       std::function<void(const std::string &label, const std::string &operand,
-                         Section &section, ConcreteSymbolTable &symbols)>;
+                         DirectiveContext &context)>;
 
   // Macro definition structure
   struct MacroDef {
@@ -329,21 +365,6 @@ private:
                 ConcreteSymbolTable &symbols);
 
   /**
-   * @brief Parse .MA directive (macro definition start)
-   *
-   * Begins macro definition. Macro name can be specified as operand or label.
-   *
-   * @param label Optional label before directive
-   * @param operand Macro name (if not in label)
-   */
-  void HandleMa(const std::string &label, const std::string &operand);
-
-  /**
-   * @brief Parse .EM directive (end macro definition)
-   */
-  void HandleEm();
-
-  /**
    * @brief Invoke a macro by name
    *
    * Expands macro body, substituting \0-\9 parameters.
@@ -413,23 +434,6 @@ private:
    * @throws std::runtime_error on invalid format
    */
   uint32_t ParseNumber(const std::string &str);
-
-  /**
-   * @brief Evaluate expression with symbol resolution
-   *
-   * Supports:
-   * - Numbers (all formats)
-   * - Symbol references
-   * - Addition: value1 + value2
-   * - Subtraction: value1 - value2
-   *
-   * @param str Expression string
-   * @param symbols Symbol table for lookups
-   * @return Evaluated value
-   * @throws std::runtime_error on undefined symbols or invalid expressions
-   */
-  uint32_t EvaluateExpression(const std::string &str,
-                              ConcreteSymbolTable &symbols);
 
   /**
    * @brief Parse expression

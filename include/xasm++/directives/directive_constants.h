@@ -44,6 +44,9 @@ constexpr const char* DB = "DB";
 /// DEFB directive - Define byte data (alias for DB)
 constexpr const char* DEFB = "DEFB";
 
+/// DFB directive - Define byte data (Merlin alias for DB)
+constexpr const char* DFB = "DFB";
+
 /// BYTE directive - Define byte data (alias for DB)
 constexpr const char* BYTE = "BYTE";
 
@@ -129,6 +132,24 @@ constexpr const char* USR = "USR";
 
 /// LUP directive - Loop assembly
 constexpr const char* LUP = "LUP";
+
+/// DO directive - Start conditional assembly block
+constexpr const char* DO = "DO";
+
+/// FIN directive - End DO block
+constexpr const char* FIN = "FIN";
+
+/// PUT directive - Include source file
+constexpr const char* PUT = "PUT";
+
+/// MAC directive - Define macro
+constexpr const char* MAC = "MAC";
+
+/// EOM directive - End of macro definition
+constexpr const char* EOM = "EOM";
+
+/// PMC directive - Print macro call
+constexpr const char* PMC = "PMC";
 
 // ============================================================================
 // EDTASM-M80++ Specific Directives
@@ -227,6 +248,12 @@ constexpr const char* NOLIST = "NOLIST";
 
 /// XLIST directive - Disable listing (alias for NOLIST)
 constexpr const char* XLIST = "XLIST";
+
+/// LALL directive - List all (including macro expansions)
+constexpr const char* LALL = "LALL";
+
+/// SALL directive - Suppress all listing
+constexpr const char* SALL = "SALL";
 
 /// TITLE directive - Set listing title
 constexpr const char* TITLE = "TITLE";

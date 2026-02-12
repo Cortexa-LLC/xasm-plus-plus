@@ -14,6 +14,9 @@
 #include "xasm++/expression.h"
 #include "xasm++/section.h"
 #include "xasm++/symbol.h"
+#include "xasm++/syntax/directive_registry.h"
+#include "xasm++/common/conditional_assembler.h"
+#include <functional>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -103,6 +106,16 @@ class Cpu6502;
  */
 class MerlinSyntaxParser {
 public:
+  // Friend declarations for extracted directive handlers
+  friend void RegisterMerlinDirectiveHandlers(DirectiveRegistry &registry,
+                                              MerlinSyntaxParser *parser);
+  friend void HandleEndDirective(bool &end_directive_seen);
+  friend void HandleXcDirective(const std::string &operand, Cpu6502 *cpu);
+  friend void HandleDumDirective(const std::string &operand,
+                                 ConcreteSymbolTable &symbols,
+                                 bool &in_dum_block, uint32_t &dum_address);
+  friend void HandleDendDirective(bool &in_dum_block);
+
   /**
    * @brief Constructor - initializes parser state
    */
@@ -181,17 +194,52 @@ private:
   Cpu6502 *cpu_ = nullptr; ///< CPU plugin for mode switching (XC directive)
 
   /**
-   * @brief Conditional assembly block state
+   * @brief Conditional assembly manager (Phase 4: shared component)
    *
-   * Tracks DO/ELSE/FIN conditional assembly blocks.
+   * Replaces local ConditionalBlock struct and conditional_stack_
+   * with shared ConditionalAssembler component.
    */
-  struct ConditionalBlock {
-    bool condition;     ///< True if condition is met
-    bool in_else_block; ///< True if currently in ELSE block
-    bool should_emit;   ///< True if code should be emitted
-  };
-  std::vector<ConditionalBlock>
-      conditional_stack_; ///< Stack of nested conditionals
+  ConditionalAssembler conditional_; ///< Shared conditional assembly logic
+
+  /**
+   * @brief Directive handler function type (NEW signature using DirectiveContext)
+   *
+   * Lambda/function type for directive handlers. Each handler is a lambda
+   * that captures 'this' and handles the directive-specific logic.
+   * 
+   * Updated to use DirectiveContext pattern for better extensibility.
+   */
+  using DirectiveHandler = std::function<void(
+      const std::string &label, const std::string &operand,
+      DirectiveContext &context)>;
+
+  /**
+   * @brief Directive registry mapping directive names to handlers
+   */
+  std::unordered_map<std::string, DirectiveHandler> directive_registry_;
+
+  /**
+   * @brief Initialize directive registry with all supported directives
+   *
+   * Populates directive_registry_ with lambdas that adapt each Handle*
+   * method to the common DirectiveHandler signature.
+   */
+  void InitializeDirectiveRegistry();
+
+  /**
+   * @brief Dispatch directive to appropriate handler via registry
+   *
+   * @param directive Directive name (e.g., "ORG", "DB")
+   * @param label Associated label (may be empty)
+   * @param operands Directive operands
+   * @param section Section to populate
+   * @param symbols Symbol table
+   * @return true if directive was handled, false if unknown directive
+   */
+  bool DispatchDirective(const std::string &directive,
+                          const std::string &label,
+                          const std::string &operand,
+                          DirectiveContext &context);
 
   // Parsing helpers
   std::string StripComments(const std::string &line);
