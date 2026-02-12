@@ -345,17 +345,6 @@ void HandleTrDirective(const std::string &operand);
  */
 void HandleUsrDirective();
 
-/**
- * @brief Handle LUP directive - loop assembly (not implemented)
- *
- * Loop directive for repeating code. Currently not implemented (deferred).
- *
- * @param operand Loop count operand
- *
- * @throws std::runtime_error Always (not yet implemented)
- */
-void HandleLupDirective(const std::string &operand);
-
 // ============================================================================
 // DirectiveRegistry Integration
 // ============================================================================
