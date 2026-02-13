@@ -8,8 +8,10 @@
  */
 
 #include "xasm++/cpu/cpu_6809.h"
+#include <algorithm>
+#include <unordered_set>
 #include "xasm++/cpu/cpu_6809_constants.h"
-#include "xasm++/cpu/mnemonics_6809.h"
+#include "xasm++/cpu/opcodes_6809.h"
 #include <stdexcept>
 
 namespace xasm {
@@ -1903,6 +1905,111 @@ Cpu6809::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
 
   // Unsupported instruction
   throw std::invalid_argument("Unsupported instruction: " + mnemonic);
+}
+
+// ============================================================================
+// CpuPlugin Interface Implementation - HasOpcode()
+// ============================================================================
+
+/**
+ * @brief Check if a mnemonic is a valid opcode for the 6809
+ *
+ * @param mnemonic Instruction mnemonic (e.g., "LDA", "JMP")
+ * @return true if mnemonic is a valid opcode, false otherwise
+ */
+bool Cpu6809::HasOpcode(const std::string &mnemonic) const {
+  // Convert to uppercase for case-insensitive comparison
+  std::string upper = mnemonic;
+  std::transform(upper.begin(), upper.end(), upper.begin(), ::toupper);
+
+  // Create static set of all 6809 mnemonics for O(1) lookup
+  static const std::unordered_set<std::string> valid_opcodes = {
+      // Load/Store
+      M6809Mnemonics::LDA, M6809Mnemonics::LDB, M6809Mnemonics::LDD,
+      M6809Mnemonics::LDX, M6809Mnemonics::LDY, M6809Mnemonics::LDU,
+      M6809Mnemonics::LDS, M6809Mnemonics::STA, M6809Mnemonics::STB,
+      M6809Mnemonics::STD, M6809Mnemonics::STX, M6809Mnemonics::STY,
+      M6809Mnemonics::STU, M6809Mnemonics::STS,
+
+      // Arithmetic
+      M6809Mnemonics::ADDA, M6809Mnemonics::ADDB, M6809Mnemonics::ADDD,
+      M6809Mnemonics::SUBA, M6809Mnemonics::SUBB, M6809Mnemonics::SUBD,
+      M6809Mnemonics::INCA, M6809Mnemonics::INCB, M6809Mnemonics::INC,
+      M6809Mnemonics::DECA, M6809Mnemonics::DECB, M6809Mnemonics::DEC,
+      M6809Mnemonics::NEGA, M6809Mnemonics::NEGB, M6809Mnemonics::NEG,
+
+      // Logical
+      M6809Mnemonics::ANDA, M6809Mnemonics::ANDB, M6809Mnemonics::ORA,
+      M6809Mnemonics::ORB, M6809Mnemonics::EORA, M6809Mnemonics::EORB,
+      M6809Mnemonics::BITA, M6809Mnemonics::BITB, M6809Mnemonics::COMA,
+      M6809Mnemonics::COMB, M6809Mnemonics::COM,
+
+      // Compare
+      M6809Mnemonics::CMPA, M6809Mnemonics::CMPB, M6809Mnemonics::CMPD,
+      M6809Mnemonics::CMPX, M6809Mnemonics::CMPY, M6809Mnemonics::CMPU,
+      M6809Mnemonics::CMPS,
+
+      // Shift/Rotate
+      M6809Mnemonics::ASLA, M6809Mnemonics::ASLB, M6809Mnemonics::ASL,
+      M6809Mnemonics::ASRA, M6809Mnemonics::ASRB, M6809Mnemonics::ASR,
+      M6809Mnemonics::LSRA, M6809Mnemonics::LSRB, M6809Mnemonics::LSR,
+      M6809Mnemonics::ROLA, M6809Mnemonics::ROLB, M6809Mnemonics::ROL,
+      M6809Mnemonics::RORA, M6809Mnemonics::RORB, M6809Mnemonics::ROR,
+
+      // Test/Clear
+      M6809Mnemonics::TSTA, M6809Mnemonics::TSTB, M6809Mnemonics::TST,
+      M6809Mnemonics::CLRA, M6809Mnemonics::CLRB, M6809Mnemonics::CLR,
+
+      // Branch (8-bit)
+      M6809Mnemonics::BRA, M6809Mnemonics::BRN, M6809Mnemonics::BHI,
+      M6809Mnemonics::BLS, M6809Mnemonics::BCC, M6809Mnemonics::BHS,
+      M6809Mnemonics::BCS, M6809Mnemonics::BLO, M6809Mnemonics::BNE,
+      M6809Mnemonics::BEQ, M6809Mnemonics::BVC, M6809Mnemonics::BVS,
+      M6809Mnemonics::BPL, M6809Mnemonics::BMI, M6809Mnemonics::BGE,
+      M6809Mnemonics::BLT, M6809Mnemonics::BGT, M6809Mnemonics::BLE,
+      M6809Mnemonics::BSR,
+
+      // Long Branch (16-bit)
+      M6809Mnemonics::LBRA, M6809Mnemonics::LBRN, M6809Mnemonics::LBHI,
+      M6809Mnemonics::LBLS, M6809Mnemonics::LBCC, M6809Mnemonics::LBHS,
+      M6809Mnemonics::LBCS, M6809Mnemonics::LBLO, M6809Mnemonics::LBNE,
+      M6809Mnemonics::LBEQ, M6809Mnemonics::LBVC, M6809Mnemonics::LBVS,
+      M6809Mnemonics::LBPL, M6809Mnemonics::LBMI, M6809Mnemonics::LBGE,
+      M6809Mnemonics::LBLT, M6809Mnemonics::LBGT, M6809Mnemonics::LBLE,
+
+      // Jump/Subroutine
+      M6809Mnemonics::JMP, M6809Mnemonics::JSR, M6809Mnemonics::RTS,
+
+      // Load Effective Address
+      M6809Mnemonics::LEAX, M6809Mnemonics::LEAY, M6809Mnemonics::LEAS,
+      M6809Mnemonics::LEAU,
+
+      // Stack
+      M6809Mnemonics::PSHS, M6809Mnemonics::PULS, M6809Mnemonics::PSHU,
+      M6809Mnemonics::PULU,
+
+      // Register Transfer/Exchange
+      M6809Mnemonics::TFR, M6809Mnemonics::EXG,
+
+      // Special
+      M6809Mnemonics::NOP, M6809Mnemonics::SWI, M6809Mnemonics::SWI2,
+      M6809Mnemonics::SWI3, M6809Mnemonics::CWAI, M6809Mnemonics::SYNC,
+      M6809Mnemonics::RTI,
+
+      // Multiply
+      M6809Mnemonics::MUL,
+
+      // Sign Extend
+      M6809Mnemonics::SEX,
+
+      // Decimal Adjust
+      M6809Mnemonics::DAA,
+
+      // Alternate Mnemonics
+      M6809Mnemonics::ASLD, M6809Mnemonics::LSLD, M6809Mnemonics::CLRD,
+      M6809Mnemonics::TSTD};
+
+  return valid_opcodes.find(upper) != valid_opcodes.end();
 }
 
 } // namespace xasm

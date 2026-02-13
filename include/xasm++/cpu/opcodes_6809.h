@@ -139,6 +139,7 @@ constexpr const char *LBGE = "LBGE";
 constexpr const char *LBLT = "LBLT";
 constexpr const char *LBGT = "LBGT";
 constexpr const char *LBLE = "LBLE";
+constexpr const char *LBSR = "LBSR";
 
 // Jump/Subroutine Instructions
 constexpr const char *JMP = "JMP";

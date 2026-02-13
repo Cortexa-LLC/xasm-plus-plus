@@ -601,5 +601,264 @@ void HandleOp(const std::string &label, const std::string &operand,
   (void)context;
 }
 
+// ============================================================================
+// Phase 3: 100% Coverage Directive Handlers
+// ============================================================================
+
+namespace {
+
+/**
+ * @brief Parse escape sequence in C-style string
+ * @param s Input string pointer (will be advanced)
+ * @return Parsed byte value
+ */
+uint8_t ParseEscapeSequence(const char *&s) {
+  if (*s != '\\') {
+    return static_cast<uint8_t>(*s++);
+  }
+
+  s++; // Skip backslash
+
+  switch (*s) {
+  case 'a':
+    s++;
+    return constants::ascii::BELL;
+  case 'b':
+    s++;
+    return constants::ascii::BACKSPACE;
+  case 'e':
+    s++;
+    return constants::ascii::ESCAPE;
+  case 'f':
+    s++;
+    return constants::ascii::FORMFEED;
+  case 'n':
+    s++;
+    return constants::ascii::NEWLINE;
+  case 'r':
+    s++;
+    return constants::ascii::CR;
+  case 't':
+    s++;
+    return constants::ascii::TAB;
+  case 'v':
+    s++;
+    return constants::ascii::VTAB;
+  case '0':
+    s++;
+    return constants::ascii::NULL_CHAR;
+  case '\\':
+    s++;
+    return '\\'; // Backslash
+  case '"':
+    s++;
+    return '"'; // Double quote
+  case '\'':
+    s++;
+    return '\''; // Single quote
+  case 'x': {
+    // Hex escape: \xHH
+    s++;
+    if (std::isxdigit(*s) && std::isxdigit(*(s + 1))) {
+      int hi = std::isdigit(*s) ? (*s - '0') : (std::toupper(*s) - 'A' + 10);
+      s++;
+      int lo =
+          std::isdigit(*s) ? (*s - '0') : (std::toupper(*s) - 'A' + 10);
+      s++;
+      return static_cast<uint8_t>((hi << 4) | lo);
+    } else {
+      // Invalid hex escape - just return 'x'
+      return 'x';
+    }
+  }
+  default:
+    // Unknown escape - return character as-is
+    return static_cast<uint8_t>(*s++);
+  }
+}
+
+/**
+ * @brief Parse C-style string with escape sequences
+ * @param operand String operand (with delimiters)
+ * @param result Output vector of bytes
+ */
+void ParseCString(const std::string &operand, std::vector<uint8_t> &result) {
+  result.clear();
+
+  std::string trimmed = Trim(operand);
+  if (trimmed.empty()) {
+    throw std::runtime_error("String directive requires operand");
+  }
+
+  // Find delimiter (first character)
+  char delimiter = trimmed[0];
+
+  // Find closing delimiter (skip escaped ones)
+  size_t end = std::string::npos;
+  for (size_t i = 1; i < trimmed.length(); ++i) {
+    if (trimmed[i] == delimiter && trimmed[i - 1] != '\\') {
+      end = i;
+      break;
+    }
+    // Handle escaped backslash before delimiter: \\"
+    if (trimmed[i] == delimiter && i >= 2 && trimmed[i - 1] == '\\' &&
+        trimmed[i - 2] == '\\') {
+      end = i;
+      break;
+    }
+  }
+
+  if (end == std::string::npos) {
+    throw std::runtime_error("Unterminated string");
+  }
+
+  // Parse string content with escape sequences
+  const char *s = trimmed.c_str() + 1; // Start after opening delimiter
+  const char *s_end = trimmed.c_str() + end;
+
+  while (s < s_end) {
+    uint8_t byte = ParseEscapeSequence(s);
+    result.push_back(byte);
+  }
+}
+
+} // anonymous namespace
+
+void HandleCs(const std::string &label, const std::string &operand,
+              DirectiveContext &context) {
+  (void)label; // Label handled separately
+
+  std::vector<uint8_t> data;
+  ParseCString(operand, data);
+
+  auto atom = std::make_shared<DataAtom>(data);
+  context.section->atoms.push_back(atom);
+
+  // Update address counter
+  *context.current_address += data.size();
+}
+
+void HandleCz(const std::string &label, const std::string &operand,
+              DirectiveContext &context) {
+  (void)label; // Label handled separately
+
+  std::vector<uint8_t> data;
+  ParseCString(operand, data);
+
+  // Add null terminator
+  data.push_back(constants::NULL_TERMINATOR);
+
+  auto atom = std::make_shared<DataAtom>(data);
+  context.section->atoms.push_back(atom);
+
+  // Update address counter
+  *context.current_address += data.size();
+}
+
+void HandleTf(const std::string &label, const std::string &operand,
+              DirectiveContext &context) {
+  (void)label;   // Label handled separately
+  (void)operand; // File path or title metadata
+  (void)context; // No state changes needed
+
+  // Stub implementation - .TF is metadata directive
+  // Used to specify target filename or title in SCMASM
+  // Has no effect on code generation in cross-assembler
+}
+
+void HandleEp(const std::string &label, const std::string &operand,
+              DirectiveContext &context) {
+  (void)label;   // Label handled separately
+  (void)context; // State not needed for validation
+
+  if (operand.empty()) {
+    throw std::runtime_error(".EP requires an address");
+  }
+
+  // Evaluate entry point address
+  uint32_t address =
+      EvaluateExpression(operand, *context.symbols, context.parser_state);
+
+  // TODO: Store entry point in section metadata
+  // For now, just validate the expression
+  (void)address;
+}
+
+void HandleHx(const std::string &label, const std::string &operand,
+              DirectiveContext &context) {
+  (void)label; // Label handled separately
+
+  std::vector<uint8_t> data;
+  std::string trimmed = Trim(operand);
+
+  // Parse hex nibbles (single hex digits)
+  // Whitespace, dots, and commas are allowed as separators
+  for (char c : trimmed) {
+    if (std::isspace(c) || c == '.' || c == ',') {
+      continue; // Skip separators
+    }
+
+    if (!std::isxdigit(c)) {
+      throw std::runtime_error("Invalid hex digit in .HX: " +
+                               std::string(1, c));
+    }
+
+    // Convert single hex digit to nibble value (0-15)
+    int val = std::isdigit(c) ? (c - '0') : (std::toupper(c) - 'A' + 10);
+    data.push_back(static_cast<uint8_t>(val));
+  }
+
+  auto atom = std::make_shared<DataAtom>(data);
+  context.section->atoms.push_back(atom);
+
+  // Update address counter
+  *context.current_address += data.size();
+}
+
+void HandleTa(const std::string &label, const std::string &operand,
+              DirectiveContext &context) {
+  (void)label;   // Label handled separately
+  (void)operand; // Target address
+  (void)context; // No-op
+
+  // .TA (Target Address) is a no-op in cross-assemblers
+  // Used by SCMASM editor to set assembly target on Apple II
+  // In cross-assembly, has no effect
+}
+
+void HandleDo(const std::string &label, const std::string &operand,
+              DirectiveContext &context) {
+  (void)label;   // Label handled separately
+  (void)operand; // Condition expression
+  (void)context; // State management
+
+  // TODO: Implement conditional assembly
+  // .DO/.FIN require special handling in ParseLine (not registry dispatch)
+  // For now, stub implementation
+  throw std::runtime_error(".DO conditional assembly not yet implemented");
+}
+
+void HandleFin(const std::string &label, const std::string &operand,
+               DirectiveContext &context) {
+  (void)label;   // Label handled separately
+  (void)operand; // Unused
+  (void)context; // State management
+
+  // TODO: Implement conditional assembly
+  // For now, stub implementation
+  throw std::runtime_error(".FIN conditional assembly not yet implemented");
+}
+
+void HandleAc(const std::string &label, const std::string &operand,
+              DirectiveContext &context) {
+  (void)label;   // Label handled separately
+  (void)operand; // String with optional prefix
+  (void)context; // State management
+
+  // TODO: Implement .AC directive (ASCII string with optional numeric prefix)
+  // For now, stub implementation
+  throw std::runtime_error(".AC directive not yet implemented");
+}
+
 } // namespace scmasm
 } // namespace xasm

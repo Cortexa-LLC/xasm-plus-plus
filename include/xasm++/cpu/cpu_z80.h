@@ -81,6 +81,7 @@ public:
   std::vector<std::string> GetSupportedVariants() const override {
     return {"Z80", "GameBoy"};
   }
+  bool HasOpcode(const std::string &mnemonic) const override;
 
   /**
    * @brief Get the CPU plugin name

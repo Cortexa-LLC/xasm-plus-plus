@@ -59,6 +59,21 @@ public:
   virtual std::vector<std::string> GetSupportedVariants() const = 0;
 
   /**
+   * @brief Check if a mnemonic is a valid opcode for this CPU
+   *
+   * Determines whether the given mnemonic represents a valid instruction
+   * for this CPU architecture. Used by syntax parsers to distinguish
+   * between opcodes and labels in ambiguous contexts.
+   *
+   * @param mnemonic Instruction mnemonic (e.g., "LDA", "JMP", "ADD")
+   * @return true if mnemonic is a valid opcode for this CPU, false otherwise
+   *
+   * @note Comparison should be case-insensitive (accepts "lda", "LDA", "Lda")
+   * @note This does NOT check addressing mode validity, only mnemonic validity
+   */
+  virtual bool HasOpcode(const std::string &mnemonic) const = 0;
+
+  /**
    * @brief Encode an instruction into machine code
    *
    * This is the primary interface for instruction encoding. Each CPU plugin

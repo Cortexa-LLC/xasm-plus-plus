@@ -2,6 +2,8 @@
 
 #include "xasm++/cpu/cpu_6502.h"
 #include "xasm++/cpu/opcodes_6502.h"
+#include <algorithm>
+#include <unordered_set>
 
 namespace xasm {
 
@@ -1945,6 +1947,93 @@ Cpu6502::EncodeInstructionSpecial(const std::string &mnemonic,
   // If we get here, instruction doesn't support special encoding
   throw std::invalid_argument(
       "Special encoding not supported for instruction: " + mnemonic);
+}
+
+// ============================================================================
+// CpuPlugin Interface Implementation - HasOpcode()
+// ============================================================================
+
+/**
+ * @brief Check if a mnemonic is a valid opcode for the 6502 family
+ *
+ * Determines whether the given mnemonic represents a valid instruction
+ * for the 6502 family (6502/65C02/65816). Used by syntax parsers to
+ * distinguish between opcodes and labels.
+ *
+ * @param mnemonic Instruction mnemonic (e.g., "LDA", "JMP", "ADD")
+ * @return true if mnemonic is a valid opcode, false otherwise
+ *
+ * @note Case-insensitive comparison (accepts "lda", "LDA", "Lda")
+ * @note Does NOT check addressing mode validity, only mnemonic validity
+ * @note Includes all 6502/65C02/65816 opcodes regardless of current cpu_mode_
+ */
+bool Cpu6502::HasOpcode(const std::string &mnemonic) const {
+  // Convert to uppercase for case-insensitive comparison
+  std::string upper = mnemonic;
+  std::transform(upper.begin(), upper.end(), upper.begin(), ::toupper);
+
+  // Create static set of all 6502 family mnemonics for O(1) lookup
+  // Includes: 6502 base, 65C02 additions, 65C02 Rockwell extensions, 65816 additions
+  static const std::unordered_set<std::string> valid_opcodes = {
+      // Base 6502 opcodes
+      M6502Mnemonics::LDA, M6502Mnemonics::LDX, M6502Mnemonics::LDY,
+      M6502Mnemonics::STA, M6502Mnemonics::STX, M6502Mnemonics::STY,
+      M6502Mnemonics::ADC, M6502Mnemonics::SBC,
+      M6502Mnemonics::INC, M6502Mnemonics::DEC,
+      M6502Mnemonics::INX, M6502Mnemonics::INY,
+      M6502Mnemonics::DEX, M6502Mnemonics::DEY,
+      M6502Mnemonics::AND, M6502Mnemonics::ORA, M6502Mnemonics::EOR,
+      M6502Mnemonics::BIT,
+      M6502Mnemonics::CMP, M6502Mnemonics::CPX, M6502Mnemonics::CPY,
+      M6502Mnemonics::BEQ, M6502Mnemonics::BNE,
+      M6502Mnemonics::BCS, M6502Mnemonics::BCC,
+      M6502Mnemonics::BMI, M6502Mnemonics::BPL,
+      M6502Mnemonics::BVS, M6502Mnemonics::BVC,
+      M6502Mnemonics::BLT, // Alias for BCC
+      M6502Mnemonics::JMP, M6502Mnemonics::JSR,
+      M6502Mnemonics::RTS, M6502Mnemonics::RTI,
+      M6502Mnemonics::PHA, M6502Mnemonics::PLA,
+      M6502Mnemonics::PHP, M6502Mnemonics::PLP,
+      M6502Mnemonics::ASL, M6502Mnemonics::LSR,
+      M6502Mnemonics::ROL, M6502Mnemonics::ROR,
+      M6502Mnemonics::CLC, M6502Mnemonics::SEC,
+      M6502Mnemonics::CLD, M6502Mnemonics::SED,
+      M6502Mnemonics::CLI, M6502Mnemonics::SEI,
+      M6502Mnemonics::CLV,
+      M6502Mnemonics::TAX, M6502Mnemonics::TXA,
+      M6502Mnemonics::TAY, M6502Mnemonics::TYA,
+      M6502Mnemonics::TSX, M6502Mnemonics::TXS,
+      M6502Mnemonics::NOP, M6502Mnemonics::BRK,
+
+      // 65C02 additions
+      M6502Mnemonics::PHX, M6502Mnemonics::PLX,
+      M6502Mnemonics::PHY, M6502Mnemonics::PLY,
+      M6502Mnemonics::STZ,
+      M6502Mnemonics::TRB, M6502Mnemonics::TSB,
+      M6502Mnemonics::BRA,
+      M6502Mnemonics::STP, M6502Mnemonics::WAI,
+
+      // 65C02 Rockwell extensions (RMB, SMB, BBR, BBS)
+      "RMB0", "RMB1", "RMB2", "RMB3", "RMB4", "RMB5", "RMB6", "RMB7",
+      "SMB0", "SMB1", "SMB2", "SMB3", "SMB4", "SMB5", "SMB6", "SMB7",
+      "BBR0", "BBR1", "BBR2", "BBR3", "BBR4", "BBR5", "BBR6", "BBR7",
+      "BBS0", "BBS1", "BBS2", "BBS3", "BBS4", "BBS5", "BBS6", "BBS7",
+
+      // 65816 additions
+      M6502Mnemonics::PHB, M6502Mnemonics::PLB,
+      M6502Mnemonics::PHD, M6502Mnemonics::PLD,
+      M6502Mnemonics::PHK,
+      M6502Mnemonics::TCD, M6502Mnemonics::TCS,
+      M6502Mnemonics::TDC, M6502Mnemonics::TSC,
+      M6502Mnemonics::JML, M6502Mnemonics::JSL, M6502Mnemonics::RTL,
+      M6502Mnemonics::PEA, M6502Mnemonics::PEI, M6502Mnemonics::PER,
+      M6502Mnemonics::MVN, M6502Mnemonics::MVP,
+      M6502Mnemonics::COP, M6502Mnemonics::WDM,
+      M6502Mnemonics::XBA, M6502Mnemonics::XCE,
+      M6502Mnemonics::REP, M6502Mnemonics::SEP
+  };
+
+  return valid_opcodes.find(upper) != valid_opcodes.end();
 }
 
 } // namespace xasm

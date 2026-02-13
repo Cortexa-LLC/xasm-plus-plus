@@ -109,6 +109,7 @@ public:
   std::vector<std::string> GetSupportedVariants() const override {
     return {"6809"};
   }
+  bool HasOpcode(const std::string &mnemonic) const override;
 
   /**
    * @brief Get the CPU plugin name

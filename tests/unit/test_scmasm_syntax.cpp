@@ -1,6 +1,7 @@
 // SCMASM Syntax Parser Tests - Phase 1: Foundation
 // TDD approach: Tests written first
 
+#include "xasm++/cpu/cpu_6502.h"
 #include "xasm++/section.h"
 #include "xasm++/symbol.h"
 #include "xasm++/syntax/scmasm_syntax.h"
@@ -17,11 +18,14 @@ class ScmasmSyntaxTest : public ::testing::Test {
 protected:
   void SetUp() override {
     parser = std::make_unique<ScmasmSyntaxParser>();
+    cpu = std::make_unique<Cpu6502>();
+    parser->SetCpu(cpu.get());
     section = Section();
     symbols = ConcreteSymbolTable();
   }
 
   std::unique_ptr<ScmasmSyntaxParser> parser;
+  std::unique_ptr<Cpu6502> cpu;
   Section section;
   ConcreteSymbolTable symbols;
 };
@@ -1546,4 +1550,214 @@ TEST_F(ScmasmSyntaxTest, LIST_CaseInsensitive) {
 
   EXPECT_NO_THROW(parser->Parse(source, section, symbols));
   ASSERT_GE(section.atoms.size(), 2u);
+}
+
+// ============================================================================
+// .CS (C-String with Escape Sequences) Directive Tests
+// ============================================================================
+
+TEST_F(ScmasmSyntaxTest, CS_BasicString) {
+  std::string source = R"(
+        .OR $0800
+        .CS "Hello"
+)";
+
+  parser->Parse(source, section, symbols);
+
+  // Should have OrgAtom and DataAtom
+  ASSERT_GE(section.atoms.size(), 2u);
+
+  auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[1]);
+  ASSERT_NE(data_atom, nullptr);
+
+  // "Hello" - no escape sequences, no high-bit manipulation
+  std::vector<uint8_t> expected = {'H', 'e', 'l', 'l', 'o'};
+  EXPECT_EQ(data_atom->data, expected);
+}
+
+TEST_F(ScmasmSyntaxTest, CS_EscapeSequenceNewline) {
+  std::string source = R"(
+        .OR $0800
+        .CS "Line1\nLine2"
+)";
+
+  parser->Parse(source, section, symbols);
+
+  auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[1]);
+  ASSERT_NE(data_atom, nullptr);
+
+  // \n should become 0x0A
+  std::vector<uint8_t> expected = {'L', 'i', 'n', 'e', '1', 0x0A, 'L', 'i', 'n', 'e', '2'};
+  EXPECT_EQ(data_atom->data, expected);
+}
+
+TEST_F(ScmasmSyntaxTest, CS_EscapeSequenceTab) {
+  std::string source = R"(
+        .OR $0800
+        .CS "A\tB"
+)";
+
+  parser->Parse(source, section, symbols);
+
+  auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[1]);
+  ASSERT_NE(data_atom, nullptr);
+
+  // \t should become 0x09
+  std::vector<uint8_t> expected = {'A', 0x09, 'B'};
+  EXPECT_EQ(data_atom->data, expected);
+}
+
+TEST_F(ScmasmSyntaxTest, CS_EscapeSequenceNull) {
+  std::string source = R"(
+        .OR $0800
+        .CS "A\0B"
+)";
+
+  parser->Parse(source, section, symbols);
+
+  auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[1]);
+  ASSERT_NE(data_atom, nullptr);
+
+  // \0 should become 0x00
+  std::vector<uint8_t> expected = {'A', 0x00, 'B'};
+  EXPECT_EQ(data_atom->data, expected);
+}
+
+TEST_F(ScmasmSyntaxTest, CS_EscapeSequenceBackslash) {
+  std::string source = R"(
+        .OR $0800
+        .CS "A\\B"
+)";
+
+  parser->Parse(source, section, symbols);
+
+  auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[1]);
+  ASSERT_NE(data_atom, nullptr);
+
+  // \\ should become single backslash
+  std::vector<uint8_t> expected = {'A', '\\', 'B'};
+  EXPECT_EQ(data_atom->data, expected);
+}
+
+TEST_F(ScmasmSyntaxTest, CS_EscapeSequenceQuote) {
+  std::string source = R"(
+        .OR $0800
+        .CS "Say \"Hi\""
+)";
+
+  parser->Parse(source, section, symbols);
+
+  auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[1]);
+  ASSERT_NE(data_atom, nullptr);
+
+  // \" should become double quote
+  std::vector<uint8_t> expected = {'S', 'a', 'y', ' ', '"', 'H', 'i', '"'};
+  EXPECT_EQ(data_atom->data, expected);
+}
+
+TEST_F(ScmasmSyntaxTest, CS_EscapeSequenceHexByte) {
+  std::string source = R"(
+        .OR $0800
+        .CS "\x41\x42\x43"
+)";
+
+  parser->Parse(source, section, symbols);
+
+  auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[1]);
+  ASSERT_NE(data_atom, nullptr);
+
+  // \xHH should become hex byte value
+  std::vector<uint8_t> expected = {0x41, 0x42, 0x43}; // "ABC"
+  EXPECT_EQ(data_atom->data, expected);
+}
+
+TEST_F(ScmasmSyntaxTest, CS_AllEscapeSequences) {
+  std::string source = R"(
+        .OR $0800
+        .CS "\a\b\e\f\n\r\t\v"
+)";
+
+  parser->Parse(source, section, symbols);
+
+  auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[1]);
+  ASSERT_NE(data_atom, nullptr);
+
+  // All escape sequences
+  std::vector<uint8_t> expected = {
+    0x07,  // \a (bell)
+    0x08,  // \b (backspace)
+    0x1B,  // \e (escape)
+    0x0C,  // \f (form feed)
+    0x0A,  // \n (newline)
+    0x0D,  // \r (carriage return)
+    0x09,  // \t (tab)
+    0x0B   // \v (vertical tab)
+  };
+  EXPECT_EQ(data_atom->data, expected);
+}
+
+TEST_F(ScmasmSyntaxTest, CS_EmptyString) {
+  std::string source = R"(
+        .OR $0800
+        .CS ""
+)";
+
+  parser->Parse(source, section, symbols);
+
+  auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[1]);
+  ASSERT_NE(data_atom, nullptr);
+
+  EXPECT_TRUE(data_atom->data.empty());
+}
+
+// ============================================================================
+// .CZ (C-String Zero-Terminated) Directive Tests
+// ============================================================================
+
+TEST_F(ScmasmSyntaxTest, CZ_BasicString) {
+  std::string source = R"(
+        .OR $0800
+        .CZ "Hello"
+)";
+
+  parser->Parse(source, section, symbols);
+
+  auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[1]);
+  ASSERT_NE(data_atom, nullptr);
+
+  // "Hello" with null terminator
+  std::vector<uint8_t> expected = {'H', 'e', 'l', 'l', 'o', 0x00};
+  EXPECT_EQ(data_atom->data, expected);
+}
+
+TEST_F(ScmasmSyntaxTest, CZ_WithEscapeSequences) {
+  std::string source = R"(
+        .OR $0800
+        .CZ "Line\n"
+)";
+
+  parser->Parse(source, section, symbols);
+
+  auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[1]);
+  ASSERT_NE(data_atom, nullptr);
+
+  // "Line\n" with null terminator
+  std::vector<uint8_t> expected = {'L', 'i', 'n', 'e', 0x0A, 0x00};
+  EXPECT_EQ(data_atom->data, expected);
+}
+
+TEST_F(ScmasmSyntaxTest, CZ_EmptyString) {
+  std::string source = R"(
+        .OR $0800
+        .CZ ""
+)";
+
+  parser->Parse(source, section, symbols);
+
+  auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[1]);
+  ASSERT_NE(data_atom, nullptr);
+
+  // Empty string still gets null terminator
+  std::vector<uint8_t> expected = {0x00};
+  EXPECT_EQ(data_atom->data, expected);
 }

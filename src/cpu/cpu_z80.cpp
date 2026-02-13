@@ -8,6 +8,8 @@
  */
 
 #include "xasm++/cpu/cpu_z80.h"
+#include <algorithm>
+#include <unordered_set>
 #include "xasm++/cpu/opcodes_z80.h"
 
 namespace xasm {
@@ -581,5 +583,70 @@ std::vector<uint8_t> CpuZ80::EncodeCALL_NZ_nn(uint16_t address) const {
 std::vector<uint8_t> CpuZ80::EncodeRET_Z() const { return {Opcodes::RET_Z}; }
 
 std::vector<uint8_t> CpuZ80::EncodeRET_NZ() const { return {Opcodes::RET_NZ}; }
+
+// ============================================================================
+// CpuPlugin Interface Implementation - HasOpcode()
+// ============================================================================
+
+/**
+ * @brief Check if a mnemonic is a valid opcode for the Z80
+ *
+ * @param mnemonic Instruction mnemonic (e.g., "LD", "ADD", "JP")
+ * @return true if mnemonic is a valid opcode, false otherwise
+ */
+bool CpuZ80::HasOpcode(const std::string &mnemonic) const {
+  // Convert to uppercase for case-insensitive comparison
+  std::string upper = mnemonic;
+  std::transform(upper.begin(), upper.end(), upper.begin(), ::toupper);
+
+  // Create static set of all Z80 mnemonics for O(1) lookup
+  static const std::unordered_set<std::string> valid_opcodes = {
+      // Load/Store
+      Z80Mnemonics::LD, Z80Mnemonics::PUSH, Z80Mnemonics::POP,
+
+      // Arithmetic
+      Z80Mnemonics::ADD, Z80Mnemonics::ADC, Z80Mnemonics::SUB,
+      Z80Mnemonics::SBC, Z80Mnemonics::INC, Z80Mnemonics::DEC,
+
+      // Logical
+      Z80Mnemonics::AND, Z80Mnemonics::OR, Z80Mnemonics::XOR, Z80Mnemonics::CP,
+
+      // Branch/Jump
+      Z80Mnemonics::JP, Z80Mnemonics::JR, Z80Mnemonics::CALL,
+      Z80Mnemonics::RET, Z80Mnemonics::RST, Z80Mnemonics::DJNZ,
+
+      // Rotate/Shift
+      Z80Mnemonics::RLCA, Z80Mnemonics::RRCA, Z80Mnemonics::RLA,
+      Z80Mnemonics::RRA, Z80Mnemonics::RLC, Z80Mnemonics::RRC,
+      Z80Mnemonics::RL, Z80Mnemonics::RR, Z80Mnemonics::SLA,
+      Z80Mnemonics::SRA, Z80Mnemonics::SRL,
+
+      // Bit Manipulation
+      Z80Mnemonics::BIT, Z80Mnemonics::SET, Z80Mnemonics::RES,
+
+      // Miscellaneous
+      Z80Mnemonics::NOP, Z80Mnemonics::HALT, Z80Mnemonics::DI,
+      Z80Mnemonics::EI, Z80Mnemonics::NEG, Z80Mnemonics::CPL,
+      Z80Mnemonics::CCF, Z80Mnemonics::SCF, Z80Mnemonics::DAA,
+
+      // Block Transfer/Search
+      Z80Mnemonics::LDI, Z80Mnemonics::LDIR, Z80Mnemonics::LDD,
+      Z80Mnemonics::LDDR, Z80Mnemonics::CPI, Z80Mnemonics::CPIR,
+      Z80Mnemonics::CPD, Z80Mnemonics::CPDR,
+
+      // Input/Output
+      Z80Mnemonics::IN, Z80Mnemonics::OUT, Z80Mnemonics::INI,
+      Z80Mnemonics::INIR, Z80Mnemonics::IND, Z80Mnemonics::INDR,
+      Z80Mnemonics::OUTI, Z80Mnemonics::OTIR, Z80Mnemonics::OUTD,
+      Z80Mnemonics::OTDR,
+
+      // Exchange
+      Z80Mnemonics::EX, Z80Mnemonics::EXX,
+
+      // Interrupt
+      Z80Mnemonics::RETI, Z80Mnemonics::RETN, Z80Mnemonics::IM};
+
+  return valid_opcodes.find(upper) != valid_opcodes.end();
+}
 
 } // namespace xasm

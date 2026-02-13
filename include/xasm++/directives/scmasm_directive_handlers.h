@@ -163,6 +163,91 @@ void HandleDummy(const std::string &label, const std::string &operand,
 void HandleOp(const std::string &label, const std::string &operand,
               DirectiveContext &context);
 
+// ============================================================================
+// Phase 3: 100% Coverage Directives
+// ============================================================================
+
+/**
+ * @brief Handle .CS directive (C-string with escape sequences)
+ * @param label Label (unused)
+ * @param operand String with delimiter
+ * @param context Directive execution context
+ */
+void HandleCs(const std::string &label, const std::string &operand,
+              DirectiveContext &context);
+
+/**
+ * @brief Handle .CZ directive (C-string zero-terminated)
+ * @param label Label (unused)
+ * @param operand String with delimiter
+ * @param context Directive execution context
+ */
+void HandleCz(const std::string &label, const std::string &operand,
+              DirectiveContext &context);
+
+/**
+ * @brief Handle .TF directive (text file/title metadata)
+ * @param label Label (unused)
+ * @param operand File path or title
+ * @param context Directive execution context
+ */
+void HandleTf(const std::string &label, const std::string &operand,
+              DirectiveContext &context);
+
+/**
+ * @brief Handle .EP directive (entry point)
+ * @param label Label (unused)
+ * @param operand Entry address expression
+ * @param context Directive execution context
+ */
+void HandleEp(const std::string &label, const std::string &operand,
+              DirectiveContext &context);
+
+/**
+ * @brief Handle .HX directive (hex nibble storage)
+ * @param label Label (unused)
+ * @param operand Hex digits (whitespace/dots/commas allowed)
+ * @param context Directive execution context
+ */
+void HandleHx(const std::string &label, const std::string &operand,
+              DirectiveContext &context);
+
+/**
+ * @brief Handle .TA directive (target address - no-op)
+ * @param label Label (unused)
+ * @param operand Address expression
+ * @param context Directive execution context
+ */
+void HandleTa(const std::string &label, const std::string &operand,
+              DirectiveContext &context);
+
+/**
+ * @brief Handle .DO directive (conditional assembly start)
+ * @param label Label (unused)
+ * @param operand Condition expression
+ * @param context Directive execution context
+ */
+void HandleDo(const std::string &label, const std::string &operand,
+              DirectiveContext &context);
+
+/**
+ * @brief Handle .FIN directive (conditional assembly end)
+ * @param label Label (unused)
+ * @param operand Operand (unused)
+ * @param context Directive execution context
+ */
+void HandleFin(const std::string &label, const std::string &operand,
+               DirectiveContext &context);
+
+/**
+ * @brief Handle .AC directive (ASCII string with optional numeric prefix)
+ * @param label Label (unused)
+ * @param operand String with optional prefix
+ * @param context Directive execution context
+ */
+void HandleAc(const std::string &label, const std::string &operand,
+              DirectiveContext &context);
+
 } // namespace scmasm
 } // namespace xasm
 

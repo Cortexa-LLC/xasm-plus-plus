@@ -24,6 +24,9 @@
 
 namespace xasm {
 
+// Forward declaration
+class CpuPlugin;
+
 /**
  * @brief SCMASM-specific number parser
  *
@@ -119,6 +122,13 @@ public:
   ScmasmSyntaxParser();
 
   /**
+   * @brief Set CPU plugin for opcode validation
+   *
+   * @param cpu Pointer to CPU plugin (must remain valid during parsing)
+   */
+  void SetCpu(CpuPlugin *cpu);
+
+  /**
    * @brief Parse SCMASM assembly source into atoms and symbols
    *
    * Parses the provided SCMASM-format assembly source and populates
@@ -185,6 +195,9 @@ private:
   uint32_t current_address_; ///< Current assembly address
   std::string current_file_; ///< Current source filename
   int current_line_;         ///< Current line number (for errors)
+
+  // CPU plugin for opcode validation
+  CpuPlugin *cpu_; ///< CPU plugin for opcode validation (nullable)
 
   // Symbol tracking for .SE (redefinable)
   std::unordered_map<std::string, bool>

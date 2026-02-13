@@ -9,6 +9,7 @@
 
 #include "xasm++/syntax/scmasm_syntax.h"
 #include "xasm++/atom.h"
+#include "xasm++/cpu/cpu_plugin.h"
 #include "xasm++/directives/scmasm_constants.h"
 #include "xasm++/directives/scmasm_directive_constants.h"
 #include "xasm++/directives/scmasm_directive_handlers.h"
@@ -136,9 +137,15 @@ bool SCMASMNumberParser::TryParse(const std::string &token,
 
 ScmasmSyntaxParser::ScmasmSyntaxParser()
     : current_address_(0), current_file_("<source>"), current_line_(0),
-      in_macro_definition_(false), macro_invocation_depth_(0) {
+      cpu_(nullptr), in_macro_definition_(false), macro_invocation_depth_(0) {
   InitializeDirectiveRegistry();
 }
+
+// ============================================================================
+// CPU Plugin Configuration
+// ============================================================================
+
+void ScmasmSyntaxParser::SetCpu(CpuPlugin *cpu) { cpu_ = cpu; }
 
 // ============================================================================
 // Main Parse Function
@@ -389,12 +396,13 @@ void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
     }
 
     // Control flow directives require special handling (not in registry)
-    if (opcode_upper == ".DO") {
+    using namespace scmasm::directives;
+    if (opcode_upper == DO) {
       HandleDo(operand, section, symbols, source, line_idx);
-    } else if (opcode_upper == ".LU") {
+    } else if (opcode_upper == LU) {
       HandleLu(operand, section, symbols, source, line_idx);
-    } else if (opcode_upper == ".ELSE" || opcode_upper == ".FIN" ||
-               opcode_upper == ".ENDU") {
+    } else if (opcode_upper == ELSE || opcode_upper == FIN ||
+               opcode_upper == ENDU) {
       // These are handled by their opening directives (.DO, .LU)
       // If we encounter them here, they're mismatched
       throw std::runtime_error("Mismatched " + opcode_upper);
@@ -525,22 +533,19 @@ std::string ScmasmSyntaxParser::ParseLabel(const std::string &line, size_t &pos,
     return "";
   }
 
-  // Check if this is a known 6502 opcode (not a label)
-  // Common 6502/65C02 opcodes that might appear at start of line
-  static const std::unordered_set<std::string> known_opcodes = {
-      "ADC", "AND", "ASL", "BCC", "BCS", "BEQ", "BIT", "BMI", "BNE", "BPL",
-      "BRK", "BVC", "BVS", "CLC", "CLD", "CLI", "CLV", "CMP", "CPX", "CPY",
-      "DEC", "DEX", "DEY", "EOR", "INC", "INX", "INY", "JMP", "JSR", "LDA",
-      "LDX", "LDY", "LSR", "NOP", "ORA", "PHA", "PHP", "PLA", "PLP", "ROL",
-      "ROR", "RTI", "RTS", "SBC", "SEC", "SED", "SEI", "STA", "STX", "STY",
-      "TAX", "TAY", "TSX", "TXA", "TXS", "TYA",
-      // 65C02 additions
-      "BRA", "PHX", "PHY", "PLX", "PLY", "STZ", "TRB", "TSB",
-      // Common pseudo-ops
-      "DB", "DW", "DS"};
+  // Check if this is a known opcode (not a label)
+  // Query CPU plugin for real opcodes, or check pseudo-ops
+  if (cpu_ != nullptr && cpu_->HasOpcode(label_upper)) {
+    // This is a CPU opcode, not a label
+    pos = label_start;
+    return "";
+  }
 
-  if (known_opcodes.find(label_upper) != known_opcodes.end()) {
-    // This is an opcode, not a label
+  // Check for pseudo-ops (not real CPU opcodes, but assembler directives)
+  // These are common mnemonics that define data/storage
+  static const std::unordered_set<std::string> pseudo_ops = {"DB", "DW", "DS"};
+  if (pseudo_ops.find(label_upper) != pseudo_ops.end()) {
+    // This is a pseudo-op, not a label
     pos = label_start;
     return "";
   }
@@ -1180,12 +1185,13 @@ void ScmasmSyntaxParser::HandleDo(const std::string &operand, Section &section,
     std::transform(first_token.begin(), first_token.end(), first_token.begin(),
                    ::toupper);
 
-    if (first_token == ".DO" || directive == ".DO") {
+    using namespace scmasm::directives;
+    if (first_token == DO || directive == DO) {
       nesting++;
-    } else if ((first_token == ".ELSE" || directive == ".ELSE") &&
+    } else if ((first_token == ELSE || directive == ELSE) &&
                nesting == 1) {
       else_line = i;
-    } else if (first_token == ".FIN" || directive == ".FIN") {
+    } else if (first_token == FIN || directive == FIN) {
       nesting--;
       if (nesting == 0) {
         fin_line = i;
@@ -1259,9 +1265,10 @@ void ScmasmSyntaxParser::HandleLu(const std::string &operand, Section &section,
     std::string upper = line;
     std::transform(upper.begin(), upper.end(), upper.begin(), ::toupper);
 
-    if (upper.find(".LU") == 0) {
+    using namespace scmasm::directives;
+    if (upper.find(LU) == 0) {
       nesting++;
-    } else if (upper.find(".ENDU") == 0) {
+    } else if (upper.find(ENDU) == 0) {
       nesting--;
       if (nesting == 0) {
         endu_line = i;
@@ -1351,6 +1358,15 @@ void ScmasmSyntaxParser::InitializeDirectiveRegistry() {
   directive_registry_[DUMMY] = scmasm::HandleDummy; // Dummy section
   directive_registry_[OP] = scmasm::HandleOp;       // CPU operation mode
 
+  // Phase 3: 100% Coverage Directives
+  directive_registry_[CS] = scmasm::HandleCs;   // C-string with escapes
+  directive_registry_[CZ] = scmasm::HandleCz;   // C-string zero-terminated
+  directive_registry_[TF] = scmasm::HandleTf;   // Text file/title metadata
+  directive_registry_[EP] = scmasm::HandleEp;   // Entry point
+  directive_registry_[HX] = scmasm::HandleHx;   // Hex nibble storage
+  directive_registry_[TA] = scmasm::HandleTa;   // Target address (no-op)
+  directive_registry_[AC] = scmasm::HandleAc;   // ASCII with prefix
+  
   // Note: Control flow directives (.DO, .ELSE, .FIN, .LU, .ENDU) are NOT
   // registered here because they require special handling in ParseLine with
   // line skipping and nested scoping. They cannot be dispatched via the simple

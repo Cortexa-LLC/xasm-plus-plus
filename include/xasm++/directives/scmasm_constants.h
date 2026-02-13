@@ -48,6 +48,19 @@ constexpr size_t HEX_DIGITS_PER_BYTE = 2;
 // Macro limits
 constexpr size_t MAX_MACRO_DEPTH = 63;
 
+// ASCII Control Characters for escape sequences
+namespace ascii {
+constexpr uint8_t NULL_CHAR = 0x00;   // \0
+constexpr uint8_t BELL = 0x07;        // \a
+constexpr uint8_t BACKSPACE = 0x08;   // \b
+constexpr uint8_t TAB = 0x09;         // \t
+constexpr uint8_t NEWLINE = 0x0A;     // \n
+constexpr uint8_t VTAB = 0x0B;        // \v
+constexpr uint8_t FORMFEED = 0x0C;    // \f
+constexpr uint8_t CR = 0x0D;          // \r
+constexpr uint8_t ESCAPE = 0x1B;      // \e (non-standard)
+} // namespace ascii
+
 } // namespace constants
 } // namespace scmasm
 } // namespace xasm
