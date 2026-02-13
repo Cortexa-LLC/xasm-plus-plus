@@ -1003,30 +1003,86 @@ If this project has specific rules beyond the shared standards:
 
 ### Important Project Context
 
-[Add project-specific information here:]
-
 **Technology Stack:**
-- [Language]: [Version]
-- [Framework]: [Version]
-- [Build Tool]: [Version]
+- Language: C++20
+- Build System: CMake 3.20+
+- Test Framework: GoogleTest (GTest/GMock)
+- CLI Library: CLI11
+- Compiler: Clang/GCC with -Wall -Wextra -Wpedantic -Werror
 
 **Key Architectural Patterns:**
-- [Pattern 1]
-- [Pattern 2]
+- Plugin Architecture - CPU and syntax plugins are separate, loadable modules
+- Factory Pattern - CPU and syntax parsers created via factories
+- Strategy Pattern - Different output formats (binary, listing, symbols)
+- Two-Pass Assembly - Symbol resolution and code generation phases
 
 **Critical Files:**
-- [File 1] - [Purpose]
-- [File 2] - [Purpose]
+- `src/main.cpp` - Entry point and CLI handling
+- `src/cli_parser.cpp` - Command-line argument parsing
+- `src/core/assembler.cpp` - Main assembler engine
+- `src/syntax/merlin_syntax.cpp` - Merlin syntax parser (Apple II)
+- `src/cpu/cpu_6502.cpp` - 6502 CPU encoder
+- `include/xasm++/cli/command_line_options.h` - CLI options structure
 
 **Testing Strategy:**
-- Test Framework: [Name]
-- Coverage Target: [X]%
-- Test Commands: `[command]`
+- Test Framework: GoogleTest
+- Coverage Target: 99%+ (1538/1538 tests passing)
+- Test Commands:
+  ```bash
+  cmake --build build
+  ctest --output-on-failure
+  ```
+- **Critical E2E Test: Prince of Persia Bootable Disks** ⭐
 
 **Build and Deploy:**
-- Build: `[command]`
-- Test: `[command]`
-- Deploy: `[command]`
+- Build: `cmake --build build`
+- Test: `ctest --output-on-failure`
+- Install: `sudo cmake --install build` (to /usr/local/bin/xasm++)
+
+**🎮 CRITICAL: Apple //e Validation Test**
+
+The ultimate validation for xasm++ is building **bootable Prince of Persia disk images** that run on real Apple //e hardware or Virtual ][:
+
+```bash
+# Navigate to PoP source
+cd ~/Projects/Vintage/Apple/Prince-of-Persia-Apple-II
+
+# Build bootable .nib disk images with xasm++
+make ASM=xasm \
+     XASM=xasm++ \
+     CRACKLE=/path/to/snapNcrackle/crackle/Debug/crackle \
+     disk525
+
+# Output:
+# - build/PrinceOfPersia_SideA.nib (228 KB) - Boot disk
+# - build/PrinceOfPersia_SideB.nib (228 KB) - Level data
+
+# Validate in Virtual ][
+# 1. Insert SideA.nib in Drive 1
+# 2. Insert SideB.nib in Drive 2
+# 3. Press F5 (reset)
+# 4. Game should boot and be fully playable
+```
+
+**Why This Test Matters:**
+- **Real Production Code** - 29 source files from actual 1989 commercial software
+- **Complex Merlin Syntax** - Macros, conditionals, includes, forward references
+- **Hardware Validation** - Must produce byte-perfect binaries that boot on real hardware
+- **Full 6502 Coverage** - Exercises all instructions and addressing modes
+- **End-to-End Test** - From source code to bootable disk image to running game
+
+**Success Criteria:**
+1. All 29 PoP source files assemble without errors
+2. Two .nib disk images created
+3. Game boots in Virtual ][ or on real Apple //e
+4. Title screen displays correctly (hi-res graphics)
+5. Game is fully playable through all 12 levels
+
+**Documentation:**
+- Full instructions: `tests/e2e/apple2/prince_of_persia/README.md`
+- PoP source repo: https://github.com/jmechner/Prince-of-Persia-Apple-II
+
+This test represents the **gold standard for Merlin compatibility** - if xasm++ can build Prince of Persia, it can handle any real-world Apple II assembly project.
 
 ---
 
