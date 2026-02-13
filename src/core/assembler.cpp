@@ -28,6 +28,27 @@ static std::shared_ptr<Expression>
 ParseExpression(const std::string &str, ConcreteSymbolTable &symbols) {
   std::string trimmed = Trim(str);
 
+  // Strip outer parentheses for grouping: (EXPR)
+  // BUG-003 FIX: Support parentheses in complex expressions like <(MESSAGE+$10)
+  if (!trimmed.empty() && trimmed[0] == '(' && trimmed[trimmed.length() - 1] == ')') {
+    // Check if these are matching outer parentheses
+    int depth = 0;
+    bool is_outer = true;
+    for (size_t i = 0; i < trimmed.length(); ++i) {
+      if (trimmed[i] == '(') depth++;
+      if (trimmed[i] == ')') depth--;
+      // If depth hits 0 before the end, these aren't outer parens
+      if (depth == 0 && i < trimmed.length() - 1) {
+        is_outer = false;
+        break;
+      }
+    }
+    if (is_outer && depth == 0) {
+      // Strip outer parentheses and recurse
+      trimmed = Trim(trimmed.substr(1, trimmed.length() - 2));
+    }
+  }
+
   // Check for low byte operator (# or <) BEFORE checking for operators
   if (!trimmed.empty() && (trimmed[0] == '#' || trimmed[0] == '<')) {
     if (trimmed.length() < 2) {
@@ -430,13 +451,23 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
                 }
               }
             } else if (value_str != "A") {
-              // Label reference - look up in symbol table (skip if accumulator
-              // "A")
-              SymbolTable *lookup_table = symbols_ ? symbols_ : &symbols;
-              if (lookup_table != nullptr) {
-                int64_t symbol_value;
-                if (lookup_table->Lookup(value_str, symbol_value)) {
-                  value = static_cast<uint16_t>(symbol_value);
+              // Label reference or expression - use ParseExpression to handle
+              // both simple symbols and expressions like ZPPTR+1
+              // BUG-003 FIX: Support expressions with +, -, <, > operators
+              try {
+                auto expr = ParseExpression(value_str, symbols);
+                int64_t expr_value = expr->Evaluate(symbols);
+                value = static_cast<uint16_t>(expr_value);
+              } catch (const std::exception &e) {
+                // Check if this is a parse error or an undefined symbol
+                std::string msg(e.what());
+                if (msg.find("Undefined symbol") != std::string::npos) {
+                  // Symbol undefined (forward reference) - use placeholder 0
+                  // Multi-pass assembly will resolve on subsequent passes
+                  value = 0;
+                } else {
+                  // Parse error - propagate the exception
+                  throw;
                 }
               }
             }

@@ -629,48 +629,64 @@ TEST_F(ScmasmSyntaxTest, HsDirectiveOddDigits) {
 }
 
 // ============================================================================
-// .BS Directive Tests (Bit String)
+// .BS Directive Tests (Block Storage)
 // ============================================================================
 
 TEST_F(ScmasmSyntaxTest, BsDirectiveSimple) {
-  // .BS converts binary strings to bytes
-  parser->Parse("        .BS 10101010\n", section, symbols);
+  // .BS reserves N bytes filled with zeros
+  parser->Parse("        .BS 10\n", section, symbols);
 
   ASSERT_EQ(section.atoms.size(), 1u);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 1u);
-  EXPECT_EQ(data_atom->data[0], 0xAA);
+  ASSERT_EQ(data_atom->data.size(), 10u);
+  // All bytes should be zero
+  for (size_t i = 0; i < 10; ++i) {
+    EXPECT_EQ(data_atom->data[i], 0x00);
+  }
 }
 
-TEST_F(ScmasmSyntaxTest, BsDirectiveMultipleBytes) {
-  // .BS with multiple bytes
-  parser->Parse("        .BS 11111111 00000000\n", section, symbols);
+TEST_F(ScmasmSyntaxTest, BsDirectiveHex) {
+  // .BS with hex byte count
+  parser->Parse("        .BS $100\n", section, symbols);
 
   ASSERT_EQ(section.atoms.size(), 1u);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 2u);
-  EXPECT_EQ(data_atom->data[0], 0xFF);
-  EXPECT_EQ(data_atom->data[1], 0x00);
+  ASSERT_EQ(data_atom->data.size(), 256u);
+  // All bytes should be zero
+  for (size_t i = 0; i < 256; ++i) {
+    EXPECT_EQ(data_atom->data[i], 0x00);
+  }
 }
 
-TEST_F(ScmasmSyntaxTest, BsDirectiveNoSpaces) {
-  // .BS can have no spaces
-  parser->Parse("        .BS 1111000010101010\n", section, symbols);
+TEST_F(ScmasmSyntaxTest, BsDirectiveBinary) {
+  // .BS with binary byte count (%1000 = 8 decimal)
+  parser->Parse("        .BS %1000\n", section, symbols);
 
   ASSERT_EQ(section.atoms.size(), 1u);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 2u);
-  EXPECT_EQ(data_atom->data[0], 0xF0);
-  EXPECT_EQ(data_atom->data[1], 0xAA);
+  ASSERT_EQ(data_atom->data.size(), 8u);
+  // All bytes should be zero
+  for (size_t i = 0; i < 8; ++i) {
+    EXPECT_EQ(data_atom->data[i], 0x00);
+  }
 }
 
-TEST_F(ScmasmSyntaxTest, BsDirectivePartialByte) {
-  // .BS with non-multiple of 8 bits should error
-  EXPECT_THROW(parser->Parse("        .BS 101\n", section, symbols),
-               std::runtime_error);
+TEST_F(ScmasmSyntaxTest, BsDirectiveWithSymbol) {
+  // .BS with symbol reference
+  symbols.Define("BUFSIZE", SymbolType::Equate, std::make_shared<LiteralExpr>(64));
+  parser->Parse("        .BS BUFSIZE\n", section, symbols);
+
+  ASSERT_EQ(section.atoms.size(), 1u);
+  auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
+  ASSERT_NE(data_atom, nullptr);
+  ASSERT_EQ(data_atom->data.size(), 64u);
+  // All bytes should be zero
+  for (size_t i = 0; i < 64; ++i) {
+    EXPECT_EQ(data_atom->data[i], 0x00);
+  }
 }
 
 // ============================================================================
@@ -697,7 +713,7 @@ TEST_F(ScmasmSyntaxTest, Phase2DataProgram) {
         .DA $01,$02,$03
         .DFB $FF
         .HS DEADBEEF
-        .BS 11110000
+        .BS 256
 )";
 
   parser->Parse(source, section, symbols);
@@ -715,7 +731,7 @@ MSG2    .AT 'SCMASM'
 NULLMSG .AZ 'END'
 TABLE   .DA $00,$01,$02,$03
 HEX     .HS CAFEBABE
-BITS    .BS 10101010 11110000
+BUFFER  .BS 64
 )";
 
   parser->Parse(source, section, symbols);

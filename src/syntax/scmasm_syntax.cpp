@@ -993,37 +993,34 @@ void ScmasmSyntaxParser::HandleHs(const std::string &operand, Section &section,
 }
 
 void ScmasmSyntaxParser::HandleBs(const std::string &operand, Section &section,
-                                  ConcreteSymbolTable & /*symbols*/) {
-  std::vector<uint8_t> data;
+                                  ConcreteSymbolTable &symbols) {
+  // .BS (Block Storage) - Reserve N bytes of space
+  // SCMASM syntax: .BS count
+  // Where count is a decimal or hex number ($hex, %binary)
+  // This reserves 'count' bytes filled with zeros
+  
+  if (operand.empty()) {
+    throw std::runtime_error(".BS requires a byte count");
+  }
 
   std::string trimmed = Trim(operand);
+  
+  // Evaluate the byte count expression (supports symbols, hex, decimal)
+  uint32_t byte_count = EvaluateExpression(trimmed, symbols);
 
-  // Remove all whitespace
-  std::string bin_digits;
-  for (char c : trimmed) {
-    if (!std::isspace(c)) {
-      if (c != '0' && c != '1') {
-        throw std::runtime_error("Invalid binary digit in .BS: " +
-                                 std::string(1, c));
-      }
-      bin_digits += c;
-    }
+  // Validate byte count (reasonable limit: 64KB)
+  if (byte_count > 65536) {
+    throw std::runtime_error(".BS byte count too large (max 65536)");
   }
 
-  // Must have multiple of 8 bits
-  if (bin_digits.length() % 8 != 0) {
-    throw std::runtime_error(".BS requires multiple of 8 bits");
-  }
-
-  // Convert 8-bit groups to bytes
-  for (size_t i = 0; i < bin_digits.length(); i += 8) {
-    std::string byte_str = bin_digits.substr(i, 8);
-    uint8_t byte = static_cast<uint8_t>(std::stoi(byte_str, nullptr, 2));
-    data.push_back(byte);
-  }
+  // Create data filled with zeros
+  std::vector<uint8_t> data(byte_count, 0x00);
 
   auto atom = std::make_shared<DataAtom>(data);
   section.atoms.push_back(atom);
+  
+  // Update address counter
+  current_address_ += byte_count;
 }
 
 // ============================================================================

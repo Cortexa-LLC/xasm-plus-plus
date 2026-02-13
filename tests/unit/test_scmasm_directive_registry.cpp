@@ -111,10 +111,10 @@ TEST_F(DirectiveRegistryTest, HsDirectiveRegistered) {
 }
 
 /**
- * @brief Test that .BS (bit string) directive is registered and works
+ * @brief Test that .BS (block storage) directive is registered and works
  */
 TEST_F(DirectiveRegistryTest, BsDirectiveRegistered) {
-  std::string source = "  .BS 10101010\n"; // Binary string (8 bits = 1 byte)
+  std::string source = "  .BS 256\n"; // Block storage - reserve 256 bytes
   parser->Parse(source, section, symbols);
 
   // .BS should create a data atom

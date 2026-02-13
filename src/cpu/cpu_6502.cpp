@@ -2009,7 +2009,9 @@ Cpu6502::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
         mode = (val <= 0xFF) ? AddressingMode::ZeroPageX
                              : AddressingMode::AbsoluteX;
       } else {
-        mode = AddressingMode::AbsoluteX; // Label
+        // BUG-001 FIX: Symbol - use resolved operand value to determine mode
+        mode = (operand <= 0xFF) ? AddressingMode::ZeroPageX
+                                 : AddressingMode::AbsoluteX;
       }
     } else if (trimmed.find(",Y") != std::string::npos ||
                trimmed.find(", Y") != std::string::npos) {
@@ -2023,7 +2025,9 @@ Cpu6502::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
         mode = (val <= 0xFF) ? AddressingMode::ZeroPageY
                              : AddressingMode::AbsoluteY;
       } else {
-        mode = AddressingMode::AbsoluteY; // Label
+        // BUG-001 FIX: Symbol - use resolved operand value to determine mode
+        mode = (operand <= 0xFF) ? AddressingMode::ZeroPageY
+                                 : AddressingMode::AbsoluteY;
       }
     }
     // Absolute or ZeroPage
@@ -2033,7 +2037,9 @@ Cpu6502::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
         mode =
             (val <= 0xFF) ? AddressingMode::ZeroPage : AddressingMode::Absolute;
       } else {
-        mode = AddressingMode::Absolute; // Label - assume absolute
+        // BUG-001 FIX: Symbol - use resolved operand value to determine mode
+        mode = (operand <= 0xFF) ? AddressingMode::ZeroPage
+                                 : AddressingMode::Absolute;
       }
     }
   }

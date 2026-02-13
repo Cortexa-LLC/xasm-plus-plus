@@ -141,6 +141,7 @@ int main(int argc, char **argv) {
       } else if (opts.syntax == "scmasm") {
         // SCMASM works with both 6502 and 6809
         ScmasmSyntaxParser parser;
+        parser.SetCpu(cpu);
         parser.Parse(source, section, symbols);
       } else if (opts.syntax == "edtasm") {
         // EDTASM works with both 6502 and 6809
