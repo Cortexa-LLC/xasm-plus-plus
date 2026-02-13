@@ -37,7 +37,7 @@ TEST(Z80ConditionalsTest, IfTrueCondition) {
                section, symbols);
 
   // IF 1 (true) - DB should be assembled
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data[0], 0x42);
@@ -56,7 +56,7 @@ TEST(Z80ConditionalsTest, IfFalseCondition) {
                section, symbols);
 
   // IF 0 (false) - DB should be skipped
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 TEST(Z80ConditionalsTest, IfElseTrue) {
@@ -74,7 +74,7 @@ TEST(Z80ConditionalsTest, IfElseTrue) {
                section, symbols);
 
   // IF 1 (true) - first DB should be assembled, second skipped
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data[0], 0x11);
@@ -95,7 +95,7 @@ TEST(Z80ConditionalsTest, IfElseFalse) {
                section, symbols);
 
   // IF 0 (false) - second DB should be assembled, first skipped
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data[0], 0x22);
@@ -120,7 +120,7 @@ SYM      EQU 100
 
   // SYM is defined - DB should be assembled
   // EQU creates a label atom, so expect 2 atoms (label + data)
-  ASSERT_EQ(section.atoms.size(), 2);
+  ASSERT_EQ(section.atoms.size(), 2UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[1]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data[0], 0x42);
@@ -139,7 +139,7 @@ TEST(Z80ConditionalsTest, IfdefSymbolNotDefined) {
                section, symbols);
 
   // UNDEFINED_SYM not defined - DB should be skipped
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 TEST(Z80ConditionalsTest, IfndefSymbolNotDefined) {
@@ -155,7 +155,7 @@ TEST(Z80ConditionalsTest, IfndefSymbolNotDefined) {
                section, symbols);
 
   // UNDEFINED_SYM not defined - DB should be assembled
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data[0], 0x42);
@@ -176,7 +176,7 @@ SYM      EQU 100
 
   // SYM is defined - DB should be skipped
   // Only the EQU label atom should be present
-  EXPECT_EQ(section.atoms.size(), 1);
+  EXPECT_EQ(section.atoms.size(), 1UL);
   auto label_atom = std::dynamic_pointer_cast<LabelAtom>(section.atoms[0]);
   EXPECT_NE(label_atom, nullptr);
 }
@@ -198,7 +198,7 @@ TEST(Z80ConditionalsTest, IfeqEqual) {
                section, symbols);
 
   // 5 == 5 (true) - DB should be assembled
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data[0], 0x42);
@@ -217,7 +217,7 @@ TEST(Z80ConditionalsTest, IfeqNotEqual) {
                section, symbols);
 
   // 5 == 3 (false) - DB should be skipped
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 TEST(Z80ConditionalsTest, IfneNotEqual) {
@@ -233,7 +233,7 @@ TEST(Z80ConditionalsTest, IfneNotEqual) {
                section, symbols);
 
   // 5 != 3 (true) - DB should be assembled
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data[0], 0x42);
@@ -252,7 +252,7 @@ TEST(Z80ConditionalsTest, IfneEqual) {
                section, symbols);
 
   // 5 != 5 (false) - DB should be skipped
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 // ============================================================================
@@ -272,7 +272,7 @@ TEST(Z80ConditionalsTest, IfltLessThan) {
                section, symbols);
 
   // 3 < 5 (true) - DB should be assembled
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data[0], 0x42);
@@ -291,7 +291,7 @@ TEST(Z80ConditionalsTest, IfltNotLessThan) {
                section, symbols);
 
   // 5 < 3 (false) - DB should be skipped
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 TEST(Z80ConditionalsTest, IfgtGreaterThan) {
@@ -307,7 +307,7 @@ TEST(Z80ConditionalsTest, IfgtGreaterThan) {
                section, symbols);
 
   // 5 > 3 (true) - DB should be assembled
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data[0], 0x42);
@@ -326,7 +326,7 @@ TEST(Z80ConditionalsTest, IfgtNotGreaterThan) {
                section, symbols);
 
   // 3 > 5 (false) - DB should be skipped
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 TEST(Z80ConditionalsTest, IfleLessOrEqual) {
@@ -342,7 +342,7 @@ TEST(Z80ConditionalsTest, IfleLessOrEqual) {
                section, symbols);
 
   // 5 <= 5 (true) - DB should be assembled
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data[0], 0x42);
@@ -361,7 +361,7 @@ TEST(Z80ConditionalsTest, IfleNotLessOrEqual) {
                section, symbols);
 
   // 5 <= 3 (false) - DB should be skipped
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 TEST(Z80ConditionalsTest, IfgeGreaterOrEqual) {
@@ -377,7 +377,7 @@ TEST(Z80ConditionalsTest, IfgeGreaterOrEqual) {
                section, symbols);
 
   // 5 >= 5 (true) - DB should be assembled
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data[0], 0x42);
@@ -396,7 +396,7 @@ TEST(Z80ConditionalsTest, IfgeNotGreaterOrEqual) {
                section, symbols);
 
   // 3 >= 5 (false) - DB should be skipped
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 // ============================================================================
@@ -416,7 +416,7 @@ TEST(Z80ConditionalsTest, If1FirstPass) {
                section, symbols);
 
   // IF1 - true on first pass (we're always first pass in single-pass)
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data[0], 0x42);
@@ -436,7 +436,7 @@ TEST(Z80ConditionalsTest, If2SecondPass) {
 
   // IF2 - false on first pass (we don't do second pass by default)
   // Single-pass assembler treats IF2 as false
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 // ============================================================================
@@ -456,7 +456,7 @@ TEST(Z80ConditionalsTest, IfbBlankArgument) {
                section, symbols);
 
   // IFB <> (blank) - DB should be assembled
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data[0], 0x42);
@@ -475,7 +475,7 @@ TEST(Z80ConditionalsTest, IfbNonBlankArgument) {
                section, symbols);
 
   // IFB <NOTBLANK> (not blank) - DB should be skipped
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 TEST(Z80ConditionalsTest, IfnbNonBlankArgument) {
@@ -491,7 +491,7 @@ TEST(Z80ConditionalsTest, IfnbNonBlankArgument) {
                section, symbols);
 
   // IFNB <NOTBLANK> (not blank) - DB should be assembled
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data[0], 0x42);
@@ -510,7 +510,7 @@ TEST(Z80ConditionalsTest, IfnbBlankArgument) {
                section, symbols);
 
   // IFNB <> (blank) - DB should be skipped
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 // ============================================================================
@@ -530,7 +530,7 @@ TEST(Z80ConditionalsTest, IfidnIdenticalStrings) {
                section, symbols);
 
   // IFIDN <ABC>, <ABC> (identical) - DB should be assembled
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data[0], 0x42);
@@ -549,7 +549,7 @@ TEST(Z80ConditionalsTest, IfidnDifferentStrings) {
                section, symbols);
 
   // IFIDN <ABC>, <XYZ> (different) - DB should be skipped
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 TEST(Z80ConditionalsTest, IfdifDifferentStrings) {
@@ -565,7 +565,7 @@ TEST(Z80ConditionalsTest, IfdifDifferentStrings) {
                section, symbols);
 
   // IFDIF <ABC>, <XYZ> (different) - DB should be assembled
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data[0], 0x42);
@@ -584,7 +584,7 @@ TEST(Z80ConditionalsTest, IfdifIdenticalStrings) {
                section, symbols);
 
   // IFDIF <ABC>, <ABC> (identical) - DB should be skipped
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 // ============================================================================
@@ -606,7 +606,7 @@ TEST(Z80ConditionalsTest, NestedIfBothTrue) {
                section, symbols);
 
   // Both IF conditions true - DB should be assembled
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data[0], 0x42);
@@ -627,7 +627,7 @@ TEST(Z80ConditionalsTest, NestedIfOuterFalse) {
                section, symbols);
 
   // Outer IF false - inner block skipped entirely
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 TEST(Z80ConditionalsTest, NestedIfInnerFalse) {
@@ -646,7 +646,7 @@ TEST(Z80ConditionalsTest, NestedIfInnerFalse) {
                section, symbols);
 
   // Outer IF true, inner IF false - only outer DB assembled
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data[0], 0x55);
@@ -671,7 +671,7 @@ TEST(Z80ConditionalsTest, NestedIfElse) {
                section, symbols);
 
   // Outer IF true, inner IF false, inner ELSE taken
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data[0], 0x22);
@@ -694,7 +694,7 @@ TEST(Z80ConditionalsTest, NestedConditionalThreeLevels) {
                section, symbols);
 
   // Three levels of true conditionals
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data[0], 0x42);
@@ -719,7 +719,7 @@ SYM      EQU 5
 
   // IFDEF SYM (true), IFEQ 5,5 (true), IFGT 10,3 (true)
   // EQU creates a label atom, so expect 2 atoms (label + data)
-  ASSERT_EQ(section.atoms.size(), 2);
+  ASSERT_EQ(section.atoms.size(), 2UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[1]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data[0], 0x42);
@@ -800,7 +800,7 @@ VAL      EQU 10
                section, symbols);
 
   // VAL > 5 (10 > 5 = true) - DB should be assembled
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data[0], 0x42);
@@ -822,7 +822,7 @@ VAL2     EQU 5
 
   // VAL1 == VAL2 (5 == 5 = true) - DB should be assembled
   // Two EQU labels + data atom = 3 atoms
-  ASSERT_EQ(section.atoms.size(), 3);
+  ASSERT_EQ(section.atoms.size(), 3UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[2]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data[0], 0x42);
@@ -843,7 +843,7 @@ BASE     EQU 100
 
   // (BASE + 50) < 200 (150 < 200 = true) - DB should be assembled
   // EQU label + data atom = 2 atoms
-  ASSERT_EQ(section.atoms.size(), 2);
+  ASSERT_EQ(section.atoms.size(), 2UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[1]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data[0], 0x42);

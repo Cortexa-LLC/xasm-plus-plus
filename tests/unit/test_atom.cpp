@@ -22,9 +22,9 @@ TEST(AtomTest, AtomTypeEnum) {
 TEST(AtomTest, BaseAtomCreation) {
   Atom atom(AtomType::Label);
   EXPECT_EQ(atom.type, AtomType::Label);
-  EXPECT_EQ(atom.size, 0);
-  EXPECT_EQ(atom.last_size, 0);
-  EXPECT_EQ(atom.changes, 0);
+  EXPECT_EQ(atom.size, 0U);
+  EXPECT_EQ(atom.last_size, 0U);
+  EXPECT_EQ(atom.changes, 0U);
   EXPECT_EQ(atom.next, nullptr);
 }
 
@@ -33,7 +33,7 @@ TEST(AtomTest, LabelAtomCreation) {
   LabelAtom label("start", 0x8000);
   EXPECT_EQ(label.type, AtomType::Label);
   EXPECT_EQ(label.name, "start");
-  EXPECT_EQ(label.address, 0x8000);
+  EXPECT_EQ(label.address, 0x8000UL);
 }
 
 // Test InstructionAtom
@@ -49,31 +49,31 @@ TEST(AtomTest, DataAtomCreation) {
   std::vector<uint8_t> data = {0x42, 0x43, 0x44};
   DataAtom dataAtom(data);
   EXPECT_EQ(dataAtom.type, AtomType::Data);
-  EXPECT_EQ(dataAtom.data.size(), 3);
+  EXPECT_EQ(dataAtom.data.size(), 3UL);
   EXPECT_EQ(dataAtom.data[0], 0x42);
-  EXPECT_EQ(dataAtom.size, 3);
+  EXPECT_EQ(dataAtom.size, 3U);
 }
 
 // Test SpaceAtom
 TEST(AtomTest, SpaceAtomCreation) {
   SpaceAtom space(256);
   EXPECT_EQ(space.type, AtomType::Space);
-  EXPECT_EQ(space.count, 256);
-  EXPECT_EQ(space.size, 256);
+  EXPECT_EQ(space.count, 256U);
+  EXPECT_EQ(space.size, 256U);
 }
 
 // Test AlignAtom
 TEST(AtomTest, AlignAtomCreation) {
   AlignAtom align(16);
   EXPECT_EQ(align.type, AtomType::Align);
-  EXPECT_EQ(align.alignment, 16);
+  EXPECT_EQ(align.alignment, 16UL);
 }
 
 // Test OrgAtom
 TEST(AtomTest, OrgAtomCreation) {
   OrgAtom org(0x8000);
   EXPECT_EQ(org.type, AtomType::Org);
-  EXPECT_EQ(org.address, 0x8000);
+  EXPECT_EQ(org.address, 0x8000UL);
 }
 
 // Test atom chaining (linked list)

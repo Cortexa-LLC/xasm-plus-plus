@@ -157,7 +157,7 @@ TEST_F(IntelHexWriterTest, EmptyOutput) {
   std::string result = output.str();
   auto lines = SplitLines(result);
 
-  ASSERT_EQ(lines.size(), 1);
+  ASSERT_EQ(lines.size(), 1UL);
   EXPECT_EQ(lines[0], ":00000001FF"); // EOF record
 }
 
@@ -171,7 +171,7 @@ TEST_F(IntelHexWriterTest, SingleByteAtZero) {
   writer.Write(sections, output);
 
   auto lines = SplitLines(output.str());
-  ASSERT_GE(lines.size(), 2); // At least data + EOF
+  ASSERT_GE(lines.size(), 2UL); // At least data + EOF
 
   // Validate data record
   uint8_t byte_count, record_type, checksum;
@@ -180,10 +180,10 @@ TEST_F(IntelHexWriterTest, SingleByteAtZero) {
 
   ASSERT_TRUE(ValidateIntelHexRecord(lines[0], byte_count, address, record_type,
                                      data, checksum));
-  EXPECT_EQ(byte_count, 1);
+  EXPECT_EQ(byte_count, 1U);
   EXPECT_EQ(address, 0x0000);
   EXPECT_EQ(record_type, 0x00); // Data record
-  EXPECT_EQ(data.size(), 1);
+  EXPECT_EQ(data.size(), 1UL);
   EXPECT_EQ(data[0], 0x42);
 
   // Validate EOF record
@@ -201,7 +201,7 @@ TEST_F(IntelHexWriterTest, MultipleBytes) {
   writer.Write(sections, output);
 
   auto lines = SplitLines(output.str());
-  ASSERT_GE(lines.size(), 2);
+  ASSERT_GE(lines.size(), 2UL);
 
   uint8_t byte_count, record_type, checksum;
   uint16_t address;
@@ -209,7 +209,7 @@ TEST_F(IntelHexWriterTest, MultipleBytes) {
 
   ASSERT_TRUE(ValidateIntelHexRecord(lines[0], byte_count, address, record_type,
                                      data, checksum));
-  EXPECT_EQ(byte_count, 5);
+  EXPECT_EQ(byte_count, 5U);
   EXPECT_EQ(address, 0x1000);
   EXPECT_EQ(record_type, 0x00);
   EXPECT_EQ(data, test_data);
@@ -231,7 +231,7 @@ TEST_F(IntelHexWriterTest, MultipleRecords) {
   writer.Write(sections, output);
 
   auto lines = SplitLines(output.str());
-  ASSERT_EQ(lines.size(), 4); // 3 data records + EOF
+  ASSERT_EQ(lines.size(), 4UL); // 3 data records + EOF
 
   // Verify first record
   uint8_t byte_count, record_type, checksum;
@@ -240,19 +240,19 @@ TEST_F(IntelHexWriterTest, MultipleRecords) {
 
   ASSERT_TRUE(ValidateIntelHexRecord(lines[0], byte_count, address, record_type,
                                      data, checksum));
-  EXPECT_EQ(byte_count, 16);
+  EXPECT_EQ(byte_count, 16U);
   EXPECT_EQ(address, 0x2000);
 
   // Verify second record
   ASSERT_TRUE(ValidateIntelHexRecord(lines[1], byte_count, address, record_type,
                                      data, checksum));
-  EXPECT_EQ(byte_count, 16);
+  EXPECT_EQ(byte_count, 16U);
   EXPECT_EQ(address, 0x2010);
 
   // Verify third record
   ASSERT_TRUE(ValidateIntelHexRecord(lines[2], byte_count, address, record_type,
                                      data, checksum));
-  EXPECT_EQ(byte_count, 16);
+  EXPECT_EQ(byte_count, 16U);
   EXPECT_EQ(address, 0x2020);
 }
 
@@ -270,7 +270,7 @@ TEST_F(IntelHexWriterTest, ExtendedLinearAddress) {
   writer.Write(sections, output);
 
   auto lines = SplitLines(output.str());
-  ASSERT_GE(lines.size(), 3); // Extended address + data + EOF
+  ASSERT_GE(lines.size(), 3UL); // Extended address + data + EOF
 
   // First line should be extended linear address record
   uint8_t byte_count, record_type, checksum;
@@ -279,10 +279,10 @@ TEST_F(IntelHexWriterTest, ExtendedLinearAddress) {
 
   ASSERT_TRUE(ValidateIntelHexRecord(lines[0], byte_count, address, record_type,
                                      data, checksum));
-  EXPECT_EQ(byte_count, 2);
+  EXPECT_EQ(byte_count, 2U);
   EXPECT_EQ(address, 0x0000);
   EXPECT_EQ(record_type, 0x04); // Extended linear address
-  EXPECT_EQ(data.size(), 2);
+  EXPECT_EQ(data.size(), 2UL);
   EXPECT_EQ((data[0] << 8) | data[1], 0x0001); // Upper 16 bits
 
   // Second line should be data record
@@ -308,14 +308,14 @@ TEST_F(IntelHexWriterTest, MultipleExtendedAddresses) {
 
   // Should have: data (LOW) + data (MED) + ext addr + data (HIGH) + ext addr +
   // data (HIGHER) + EOF
-  ASSERT_GE(lines.size(), 7);
+  ASSERT_GE(lines.size(), 7UL);
 
   uint8_t byte_count, record_type, checksum;
   uint16_t address;
   std::vector<uint8_t> data;
 
   // Verify there are extended address records before HIGH and HIGHER sections
-  int ext_addr_count = 0;
+  unsigned int ext_addr_count = 0;
   for (const auto &line : lines) {
     if (ValidateIntelHexRecord(line, byte_count, address, record_type, data,
                                checksum)) {
@@ -325,7 +325,7 @@ TEST_F(IntelHexWriterTest, MultipleExtendedAddresses) {
     }
   }
 
-  EXPECT_EQ(ext_addr_count, 2); // One for 0x10000, one for 0x20000
+  EXPECT_EQ(ext_addr_count, 2U); // One for 0x10000, one for 0x20000
 }
 
 // ============================================================================
@@ -373,7 +373,7 @@ TEST_F(IntelHexWriterTest, CustomBytesPerLine_8) {
   writer.Write(sections, output);
 
   auto lines = SplitLines(output.str());
-  ASSERT_EQ(lines.size(), 4); // 3 data records + EOF
+  ASSERT_EQ(lines.size(), 4UL); // 3 data records + EOF
 
   uint8_t byte_count, record_type, checksum;
   uint16_t address;
@@ -383,7 +383,7 @@ TEST_F(IntelHexWriterTest, CustomBytesPerLine_8) {
   for (size_t i = 0; i < 3; ++i) {
     ASSERT_TRUE(ValidateIntelHexRecord(lines[i], byte_count, address,
                                        record_type, data, checksum));
-    EXPECT_EQ(byte_count, 8) << "Record " << i << " should have 8 bytes";
+    EXPECT_EQ(byte_count, 8U) << "Record " << i << " should have 8 bytes";
   }
 }
 
@@ -400,7 +400,7 @@ TEST_F(IntelHexWriterTest, CustomBytesPerLine_32) {
   writer.Write(sections, output);
 
   auto lines = SplitLines(output.str());
-  ASSERT_EQ(lines.size(), 3); // 2 data records + EOF
+  ASSERT_EQ(lines.size(), 3UL); // 2 data records + EOF
 
   uint8_t byte_count, record_type, checksum;
   uint16_t address;
@@ -410,7 +410,7 @@ TEST_F(IntelHexWriterTest, CustomBytesPerLine_32) {
   for (size_t i = 0; i < 2; ++i) {
     ASSERT_TRUE(ValidateIntelHexRecord(lines[i], byte_count, address,
                                        record_type, data, checksum));
-    EXPECT_EQ(byte_count, 32) << "Record " << i << " should have 32 bytes";
+    EXPECT_EQ(byte_count, 32U) << "Record " << i << " should have 32 bytes";
   }
 }
 
@@ -438,7 +438,7 @@ TEST_F(IntelHexWriterTest, MultipleSectionsWithDifferentTypes) {
   writer.Write(sections, output);
 
   auto lines = SplitLines(output.str());
-  ASSERT_GE(lines.size(), 4); // At least 3 data records + EOF
+  ASSERT_GE(lines.size(), 4UL); // At least 3 data records + EOF
 
   // Verify we have data from all three sections
   uint8_t byte_count, record_type, checksum;
@@ -492,7 +492,7 @@ TEST_F(IntelHexWriterTest, SectionWithNoAtoms) {
   writer.Write(sections, output);
 
   auto lines = SplitLines(output.str());
-  ASSERT_EQ(lines.size(), 1); // Only EOF
+  ASSERT_EQ(lines.size(), 1UL); // Only EOF
   EXPECT_EQ(lines[0], ":00000001FF");
 }
 
@@ -512,7 +512,7 @@ TEST_F(IntelHexWriterTest, SectionWithSpaceAtom) {
   writer.Write(sections, output);
 
   auto lines = SplitLines(output.str());
-  ASSERT_EQ(lines.size(), 1); // Only EOF
+  ASSERT_EQ(lines.size(), 1UL); // Only EOF
   EXPECT_EQ(lines[0], ":00000001FF");
 }
 
@@ -538,7 +538,7 @@ TEST_F(IntelHexWriterTest, MixedAtomsWithSpace) {
 
   // Should have at least 2 data records (potentially 3 if space causes address
   // gap) and EOF
-  ASSERT_GE(lines.size(), 3);
+  ASSERT_GE(lines.size(), 3UL);
 
   uint8_t byte_count, record_type, checksum;
   uint16_t address;

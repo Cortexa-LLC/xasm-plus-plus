@@ -95,11 +95,11 @@ TEST(XcDirectiveTest, XcDoesNotGenerateAtoms) {
 
   // XC directive should not generate any atoms
   parser.Parse(" xc", section, symbols);
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 
   Section section2("test", 0);
   parser.Parse(" xc off", section2, symbols);
-  EXPECT_EQ(section2.atoms.size(), 0);
+  EXPECT_EQ(section2.atoms.size(), 0UL);
 }
 
 TEST(XcDirectiveTest, XcMultipleToggles) {
@@ -145,7 +145,7 @@ TEST(XcDirectiveTest, Enable65C02InstructionsTSB) {
   parser.Parse(" TSB $80", section, symbols);
 
   // Should create instruction atom (not throw error)
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto inst = std::dynamic_pointer_cast<InstructionAtom>(section.atoms[0]);
   ASSERT_NE(inst, nullptr);
   EXPECT_EQ(inst->mnemonic, "TSB");
@@ -166,7 +166,7 @@ TEST(XcDirectiveTest, Enable65C02InstructionsTRB) {
   parser.Parse(" TRB $80", section, symbols);
 
   // Should create instruction atom (not throw error)
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto inst = std::dynamic_pointer_cast<InstructionAtom>(section.atoms[0]);
   ASSERT_NE(inst, nullptr);
   EXPECT_EQ(inst->mnemonic, "TRB");
@@ -187,7 +187,7 @@ TEST(XcDirectiveTest, Enable65C02InstructionsPHY) {
   parser.Parse(" PHY", section, symbols);
 
   // Should create instruction atom (not throw error)
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto inst = std::dynamic_pointer_cast<InstructionAtom>(section.atoms[0]);
   ASSERT_NE(inst, nullptr);
   EXPECT_EQ(inst->mnemonic, "PHY");
@@ -214,7 +214,7 @@ TEST(XcDirectiveTest, GrafixSUsagePattern) {
   parser.Parse(source, section, symbols);
 
   // Should have 4 instruction atoms (TSB, TRB, PHY, LDA)
-  EXPECT_EQ(section.atoms.size(), 4);
+  EXPECT_EQ(section.atoms.size(), 4UL);
 }
 
 TEST(XcDirectiveTest, Cpu65C02InstructionWithoutXcReturnsEmptyVector) {

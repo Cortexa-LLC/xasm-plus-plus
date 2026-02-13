@@ -183,11 +183,11 @@ TEST(ErrorFormatterTest, LevenshteinDistance) {
   // This is a unit test for internal functionality
 
   // Note: We'll implement this as a static helper in ErrorFormatter
-  EXPECT_EQ(ErrorFormatter::CalculateEditDistance("", ""), 0);
-  EXPECT_EQ(ErrorFormatter::CalculateEditDistance("abc", "abc"), 0);
-  EXPECT_EQ(ErrorFormatter::CalculateEditDistance("abc", "abd"), 1);
-  EXPECT_EQ(ErrorFormatter::CalculateEditDistance("abc", "def"), 3);
-  EXPECT_EQ(ErrorFormatter::CalculateEditDistance("kitten", "sitting"), 3);
+  EXPECT_EQ(ErrorFormatter::CalculateEditDistance("", ""), 0UL);
+  EXPECT_EQ(ErrorFormatter::CalculateEditDistance("abc", "abc"), 0UL);
+  EXPECT_EQ(ErrorFormatter::CalculateEditDistance("abc", "abd"), 1UL);
+  EXPECT_EQ(ErrorFormatter::CalculateEditDistance("abc", "def"), 3UL);
+  EXPECT_EQ(ErrorFormatter::CalculateEditDistance("kitten", "sitting"), 3UL);
 }
 
 TEST(ErrorFormatterTest, FindSimilarSymbols) {
@@ -258,7 +258,7 @@ TEST(ErrorFormatterTest, MultipleSuggestions) {
   std::string formatted = formatter.FormatError(error, &symbols);
 
   // Should show multiple suggestions or at least one
-  int suggestion_count = 0;
+  unsigned int suggestion_count = 0;
   if (formatted.find("PLAYER_A") != std::string::npos)
     suggestion_count++;
   if (formatted.find("PLAYER_B") != std::string::npos)
@@ -266,7 +266,7 @@ TEST(ErrorFormatterTest, MultipleSuggestions) {
   if (formatted.find("PLAYER_C") != std::string::npos)
     suggestion_count++;
 
-  EXPECT_GE(suggestion_count, 1); // At least one suggestion
+  EXPECT_GE(suggestion_count, 1U); // At least one suggestion
 }
 
 // ============================================================================

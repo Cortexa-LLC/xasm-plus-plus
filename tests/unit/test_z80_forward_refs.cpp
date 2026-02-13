@@ -37,14 +37,14 @@ TEST_F(Z80ForwardReferenceTest, DWWithForwardReference) {
   EXPECT_TRUE(symbols.IsDefined("LABEL"));
 
   // DW atom should exist with expression string
-  ASSERT_GE(section.atoms.size(), 2);
+  ASSERT_GE(section.atoms.size(), 2UL);
 
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[1]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data_size, DataSize::Word);
 
   // Expression should be stored for later evaluation
-  EXPECT_EQ(data_atom->expressions.size(), 1);
+  EXPECT_EQ(data_atom->expressions.size(), 1UL);
   EXPECT_FALSE(data_atom->expressions[0].empty());
 }
 
@@ -70,7 +70,7 @@ TEST_F(Z80ForwardReferenceTest, DWWithMultipleForwardReferences) {
   // DW atom should have 3 expressions
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[1]);
   ASSERT_NE(data_atom, nullptr);
-  EXPECT_EQ(data_atom->expressions.size(), 3);
+  EXPECT_EQ(data_atom->expressions.size(), 3UL);
   EXPECT_EQ(data_atom->data_size, DataSize::Word);
 }
 
@@ -90,7 +90,7 @@ TEST_F(Z80ForwardReferenceTest, DBWithForwardReference) {
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data_size, DataSize::Byte);
-  EXPECT_EQ(data_atom->expressions.size(), 1);
+  EXPECT_EQ(data_atom->expressions.size(), 1UL);
 }
 
 // Test backward reference still works
@@ -131,5 +131,5 @@ TEST_F(Z80ForwardReferenceTest, DWWithMixedReferences) {
   // Data atom is at index 3 (after START label, instruction, TABLE label)
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[3]);
   ASSERT_NE(data_atom, nullptr);
-  EXPECT_EQ(data_atom->expressions.size(), 2);
+  EXPECT_EQ(data_atom->expressions.size(), 2UL);
 }

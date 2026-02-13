@@ -174,7 +174,7 @@ TEST(SymbolOutputTest, LargeSymbolTable) {
   ASSERT_TRUE(file.is_open());
 
   // Count lines
-  int line_count = 0;
+  unsigned int line_count = 0;
   std::string line;
   while (std::getline(file, line)) {
     ++line_count;
@@ -182,7 +182,7 @@ TEST(SymbolOutputTest, LargeSymbolTable) {
   file.close();
 
   // Should have at least 100 symbols
-  EXPECT_GE(line_count, 100);
+  EXPECT_GE(line_count, 100U);
 
   std::remove("test.sym");
 }

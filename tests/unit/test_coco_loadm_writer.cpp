@@ -71,7 +71,7 @@ TEST_F(CocoLoadmWriterTest, EmptyOutput) {
 
   auto bytes = GetOutputBytes();
   // Empty should produce preamble + postamble
-  ASSERT_EQ(bytes.size(), 7); // preamble (5) + postamble (2)
+  ASSERT_EQ(bytes.size(), 7UL); // preamble (5) + postamble (2)
 
   // Check preamble
   EXPECT_EQ(bytes[0], 0x00);        // Preamble type
@@ -95,7 +95,7 @@ TEST_F(CocoLoadmWriterTest, SingleByteAtAddress) {
   auto bytes = GetOutputBytes();
 
   // Format: preamble (5) + data block (5 + 1) + postamble (2) = 13
-  ASSERT_EQ(bytes.size(), 13);
+  ASSERT_EQ(bytes.size(), 13UL);
 
   // Check preamble
   EXPECT_EQ(bytes[0], 0x00);
@@ -125,7 +125,7 @@ TEST_F(CocoLoadmWriterTest, MultipleBytes) {
   auto bytes = GetOutputBytes();
 
   // preamble (5) + data block (5 + 5) + postamble (2) = 17
-  ASSERT_EQ(bytes.size(), 17);
+  ASSERT_EQ(bytes.size(), 17UL);
 
   // Check data block
   size_t data_offset = 5;
@@ -156,7 +156,7 @@ TEST_F(CocoLoadmWriterTest, MultipleSections) {
   auto bytes = GetOutputBytes();
 
   // preamble (5) + block1 (5+2) + block2 (5+2) + postamble (2) = 21
-  ASSERT_EQ(bytes.size(), 21);
+  ASSERT_EQ(bytes.size(), 21UL);
 
   // First block
   size_t offset1 = 5;
@@ -192,7 +192,7 @@ TEST_F(CocoLoadmWriterTest, WithEntryPoint) {
   auto bytes = GetOutputBytes();
 
   // preamble (5) + data (5+2) + postamble_with_entry (5) = 17
-  ASSERT_EQ(bytes.size(), 17);
+  ASSERT_EQ(bytes.size(), 17UL);
 
   // Check postamble with entry
   size_t post_offset = bytes.size() - 5;
@@ -243,7 +243,7 @@ TEST_F(CocoLoadmWriterTest, SectionWithSpaceAtom) {
   auto bytes = GetOutputBytes();
 
   // preamble (5) + block1 (5+1) + block2 (5+1) + postamble (2) = 19
-  ASSERT_EQ(bytes.size(), 19);
+  ASSERT_EQ(bytes.size(), 19UL);
 
   // First block: 0xAA at 0x2000
   size_t offset1 = 5;

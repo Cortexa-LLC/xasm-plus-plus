@@ -225,7 +225,7 @@ TEST(Z80ListingDirectivesTest, SpaceDirective) {
   size_t newline_count = std::count(between.begin(), between.end(), '\n');
 
   // Should have at least 3 extra newlines from SPACE directive
-  EXPECT_GE(newline_count, 3);
+  EXPECT_GE(newline_count, 3UL);
 
   std::remove("test_space.lst");
 }

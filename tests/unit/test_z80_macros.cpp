@@ -64,7 +64,7 @@ TEST_F(Z80MacrosTest, ReptBasic) {
   }
 
   // Check for NOP instructions (by mnemonic, not encoded bytes)
-  int nop_count = 0;
+  unsigned int nop_count = 0;
   for (const auto &atom : atoms) {
     if (auto inst = std::dynamic_pointer_cast<xasm::InstructionAtom>(atom)) {
       if (inst->mnemonic == "NOP") {
@@ -72,7 +72,7 @@ TEST_F(Z80MacrosTest, ReptBasic) {
       }
     }
   }
-  EXPECT_EQ(nop_count, 3);
+  EXPECT_EQ(nop_count, 3U);
 }
 
 TEST_F(Z80MacrosTest, ReptZero) {
@@ -88,7 +88,7 @@ TEST_F(Z80MacrosTest, ReptZero) {
   auto atoms = section.atoms;
 
   // Should have origin + LD A,1 but no NOP
-  int nop_count = 0;
+  unsigned int nop_count = 0;
   for (const auto &atom : atoms) {
     if (auto inst = std::dynamic_pointer_cast<xasm::InstructionAtom>(atom)) {
       if (inst->encoded_bytes.size() == 1 && inst->encoded_bytes[0] == 0x00) {
@@ -96,7 +96,7 @@ TEST_F(Z80MacrosTest, ReptZero) {
       }
     }
   }
-  EXPECT_EQ(nop_count, 0);
+  EXPECT_EQ(nop_count, 0U);
 }
 
 TEST_F(Z80MacrosTest, ReptWithInstructions) {
@@ -112,13 +112,13 @@ TEST_F(Z80MacrosTest, ReptWithInstructions) {
   auto atoms = section.atoms;
 
   // Should have origin + 4 instructions (2 reps * 2 instructions)
-  int ld_count = 0;
+  unsigned int ld_count = 0;
   for (const auto &atom : atoms) {
     if (auto inst = std::dynamic_pointer_cast<xasm::InstructionAtom>(atom)) {
       ld_count++;
     }
   }
-  EXPECT_EQ(ld_count, 4);
+  EXPECT_EQ(ld_count, 4U);
 }
 
 // ============================================================================
@@ -137,13 +137,13 @@ TEST_F(Z80MacrosTest, IrpBasic) {
   auto atoms = section.atoms;
 
   // Should generate: LD A,0; LD B,0; LD C,0
-  int ld_count = 0;
+  unsigned int ld_count = 0;
   for (const auto &atom : atoms) {
     if (auto inst = std::dynamic_pointer_cast<xasm::InstructionAtom>(atom)) {
       ld_count++;
     }
   }
-  EXPECT_EQ(ld_count, 3);
+  EXPECT_EQ(ld_count, 3U);
 }
 
 TEST_F(Z80MacrosTest, IrpWithPercent) {
@@ -158,13 +158,13 @@ TEST_F(Z80MacrosTest, IrpWithPercent) {
   auto atoms = section.atoms;
 
   // Should generate: DB 1; DB 2; DB 3
-  int db_count = 0;
+  unsigned int db_count = 0;
   for (const auto &atom : atoms) {
     if (auto data = std::dynamic_pointer_cast<xasm::DataAtom>(atom)) {
       db_count++;
     }
   }
-  EXPECT_EQ(db_count, 3);
+  EXPECT_EQ(db_count, 3U);
 }
 
 TEST_F(Z80MacrosTest, IrpEmpty) {
@@ -180,8 +180,8 @@ TEST_F(Z80MacrosTest, IrpEmpty) {
   auto atoms = section.atoms;
 
   // Should only have NOP (IRP with empty list generates nothing)
-  int ld_count = 0;
-  int nop_count = 0;
+  unsigned int ld_count = 0;
+  unsigned int nop_count = 0;
   for (const auto &atom : atoms) {
     if (auto inst = std::dynamic_pointer_cast<xasm::InstructionAtom>(atom)) {
       if (inst->mnemonic == "NOP") {
@@ -191,8 +191,8 @@ TEST_F(Z80MacrosTest, IrpEmpty) {
       }
     }
   }
-  EXPECT_EQ(ld_count, 0);
-  EXPECT_EQ(nop_count, 1);
+  EXPECT_EQ(ld_count, 0U);
+  EXPECT_EQ(nop_count, 1U);
 }
 
 // ============================================================================
@@ -211,13 +211,13 @@ TEST_F(Z80MacrosTest, IrpcBasic) {
   auto atoms = section.atoms;
 
   // Should generate: DB 'A'; DB 'B'; DB 'C'
-  int db_count = 0;
+  unsigned int db_count = 0;
   for (const auto &atom : atoms) {
     if (auto data = std::dynamic_pointer_cast<xasm::DataAtom>(atom)) {
       db_count++;
     }
   }
-  EXPECT_EQ(db_count, 3);
+  EXPECT_EQ(db_count, 3U);
 }
 
 TEST_F(Z80MacrosTest, IrpcWithAngleBrackets) {
@@ -232,13 +232,13 @@ TEST_F(Z80MacrosTest, IrpcWithAngleBrackets) {
   auto atoms = section.atoms;
 
   // Should generate: DB 'X'; DB 'Y'; DB 'Z'
-  int db_count = 0;
+  unsigned int db_count = 0;
   for (const auto &atom : atoms) {
     if (auto data = std::dynamic_pointer_cast<xasm::DataAtom>(atom)) {
       db_count++;
     }
   }
-  EXPECT_EQ(db_count, 3);
+  EXPECT_EQ(db_count, 3U);
 }
 
 TEST_F(Z80MacrosTest, IrpcEmpty) {
@@ -254,13 +254,13 @@ TEST_F(Z80MacrosTest, IrpcEmpty) {
   auto atoms = section.atoms;
 
   // Should only have NOP
-  int db_count = 0;
+  unsigned int db_count = 0;
   for (const auto &atom : atoms) {
     if (auto data = std::dynamic_pointer_cast<xasm::DataAtom>(atom)) {
       db_count++;
     }
   }
-  EXPECT_EQ(db_count, 0);
+  EXPECT_EQ(db_count, 0U);
 }
 
 // ============================================================================
@@ -282,13 +282,13 @@ TEST_F(Z80MacrosTest, MacroBasic) {
   auto atoms = section.atoms;
 
   // Should have 2 LD instructions
-  int ld_count = 0;
+  unsigned int ld_count = 0;
   for (const auto &atom : atoms) {
     if (auto inst = std::dynamic_pointer_cast<xasm::InstructionAtom>(atom)) {
       ld_count++;
     }
   }
-  EXPECT_EQ(ld_count, 2);
+  EXPECT_EQ(ld_count, 2U);
 }
 
 TEST_F(Z80MacrosTest, MacroNoParams) {
@@ -307,7 +307,7 @@ TEST_F(Z80MacrosTest, MacroNoParams) {
   auto atoms = section.atoms;
 
   // Should have 3 PUSH instructions
-  int push_count = 0;
+  unsigned int push_count = 0;
   for (const auto &atom : atoms) {
     if (auto inst = std::dynamic_pointer_cast<xasm::InstructionAtom>(atom)) {
       // Check for PUSH mnemonic
@@ -316,7 +316,7 @@ TEST_F(Z80MacrosTest, MacroNoParams) {
       }
     }
   }
-  EXPECT_EQ(push_count, 3);
+  EXPECT_EQ(push_count, 3U);
 }
 
 TEST_F(Z80MacrosTest, MacroWithLabel) {
@@ -334,13 +334,13 @@ LOOP    DJNZ LOOP
   auto atoms = section.atoms;
 
   // Should have LD and DJNZ
-  int inst_count = 0;
+  unsigned int inst_count = 0;
   for (const auto &atom : atoms) {
     if (auto inst = std::dynamic_pointer_cast<xasm::InstructionAtom>(atom)) {
       inst_count++;
     }
   }
-  EXPECT_GE(inst_count, 2);
+  EXPECT_GE(inst_count, 2U);
 }
 
 // ============================================================================
@@ -369,7 +369,7 @@ SKIP    NOP
   // Each macro invocation should create unique local labels
   // We should have 2 invocations with different local labels
   // The test mainly checks that it parses without duplicate label errors
-  EXPECT_GT(atoms.size(), 0);
+  EXPECT_GT(atoms.size(), 0UL);
 }
 
 // ============================================================================
@@ -394,8 +394,8 @@ TEST MACRO
   auto atoms = section.atoms;
 
   // Should only have NOP (EXITM exits before RET)
-  int nop_count = 0;
-  int ret_count = 0;
+  unsigned int nop_count = 0;
+  unsigned int ret_count = 0;
   for (const auto &atom : atoms) {
     if (auto inst = std::dynamic_pointer_cast<xasm::InstructionAtom>(atom)) {
       if (inst->mnemonic == "NOP") {
@@ -405,8 +405,8 @@ TEST MACRO
       }
     }
   }
-  EXPECT_EQ(nop_count, 1);
-  EXPECT_EQ(ret_count, 0);
+  EXPECT_EQ(nop_count, 1U);
+  EXPECT_EQ(ret_count, 0U);
 }
 
 // ============================================================================
@@ -432,13 +432,13 @@ INIT    MACRO
   auto atoms = section.atoms;
 
   // Should expand INIT which calls SET_REG twice
-  int ld_count = 0;
+  unsigned int ld_count = 0;
   for (const auto &atom : atoms) {
     if (auto inst = std::dynamic_pointer_cast<xasm::InstructionAtom>(atom)) {
       ld_count++;
     }
   }
-  EXPECT_EQ(ld_count, 2);
+  EXPECT_EQ(ld_count, 2U);
 }
 
 TEST_F(Z80MacrosTest, ReptInsideMacro) {
@@ -457,13 +457,13 @@ FILL_ZERO MACRO COUNT
   auto atoms = section.atoms;
 
   // Should generate 5 DB 0
-  int db_count = 0;
+  unsigned int db_count = 0;
   for (const auto &atom : atoms) {
     if (auto data = std::dynamic_pointer_cast<xasm::DataAtom>(atom)) {
       db_count++;
     }
   }
-  EXPECT_EQ(db_count, 5);
+  EXPECT_EQ(db_count, 5U);
 }
 
 // ============================================================================
@@ -549,8 +549,8 @@ TEST MACRO
   auto atoms = section.atoms;
 
   // Should have one RET instruction (second macro definition)
-  int ret_count = 0;
-  int nop_count = 0;
+  unsigned int ret_count = 0;
+  unsigned int nop_count = 0;
   for (const auto &atom : atoms) {
     if (auto inst = std::dynamic_pointer_cast<xasm::InstructionAtom>(atom)) {
       if (inst->mnemonic == "RET") {
@@ -560,6 +560,6 @@ TEST MACRO
       }
     }
   }
-  EXPECT_EQ(ret_count, 1);
-  EXPECT_EQ(nop_count, 0);
+  EXPECT_EQ(ret_count, 1U);
+  EXPECT_EQ(nop_count, 0U);
 }

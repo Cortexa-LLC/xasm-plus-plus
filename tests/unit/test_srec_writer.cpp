@@ -153,7 +153,7 @@ TEST_F(SRecordWriterTest, EmptyOutput) {
   std::string result = output.str();
   auto lines = SplitLines(result);
 
-  ASSERT_EQ(lines.size(), 2); // Header (S0) + Terminator (S9)
+  ASSERT_EQ(lines.size(), 2UL); // Header (S0) + Terminator (S9)
   EXPECT_EQ(lines[0][0], 'S');
   EXPECT_EQ(lines[0][1], '0'); // Header record
   EXPECT_EQ(lines[1][0], 'S');
@@ -170,7 +170,7 @@ TEST_F(SRecordWriterTest, SingleByteAtZero_S19) {
   writer.Write(sections, output);
 
   auto lines = SplitLines(output.str());
-  ASSERT_GE(lines.size(), 3); // Header + Data + Terminator
+  ASSERT_GE(lines.size(), 3UL); // Header + Data + Terminator
 
   // Validate data record (should be S1)
   char type_char;
@@ -183,7 +183,7 @@ TEST_F(SRecordWriterTest, SingleByteAtZero_S19) {
                               address, data, checksum));
   EXPECT_EQ(type_num, 1); // S1 record
   EXPECT_EQ(address, 0x0000);
-  EXPECT_EQ(data.size(), 1);
+  EXPECT_EQ(data.size(), 1UL);
   EXPECT_EQ(data[0], 0x42);
 }
 
@@ -198,7 +198,7 @@ TEST_F(SRecordWriterTest, MultipleBytes_S19) {
   writer.Write(sections, output);
 
   auto lines = SplitLines(output.str());
-  ASSERT_GE(lines.size(), 3);
+  ASSERT_GE(lines.size(), 3UL);
 
   char type_char;
   int type_num;
@@ -227,7 +227,7 @@ TEST_F(SRecordWriterTest, AutoSelectS28Format) {
   writer.Write(sections, output);
 
   auto lines = SplitLines(output.str());
-  ASSERT_GE(lines.size(), 3);
+  ASSERT_GE(lines.size(), 3UL);
 
   // Data record should be S2
   char type_char;
@@ -240,7 +240,7 @@ TEST_F(SRecordWriterTest, AutoSelectS28Format) {
                               address, data, checksum));
   EXPECT_EQ(type_num, 2); // S2 record
   EXPECT_EQ(address, 0x10000);
-  EXPECT_EQ(data.size(), 2);
+  EXPECT_EQ(data.size(), 2UL);
   EXPECT_EQ(data[0], 0xAA);
   EXPECT_EQ(data[1], 0xBB);
 
@@ -264,7 +264,7 @@ TEST_F(SRecordWriterTest, AutoSelectS37Format) {
   writer.Write(sections, output);
 
   auto lines = SplitLines(output.str());
-  ASSERT_GE(lines.size(), 3);
+  ASSERT_GE(lines.size(), 3UL);
 
   // Data record should be S3
   char type_char;
@@ -277,7 +277,7 @@ TEST_F(SRecordWriterTest, AutoSelectS37Format) {
                               address, data, checksum));
   EXPECT_EQ(type_num, 3); // S3 record
   EXPECT_EQ(address, 0x1000000);
-  EXPECT_EQ(data.size(), 2);
+  EXPECT_EQ(data.size(), 2UL);
   EXPECT_EQ(data[0], 0xCC);
   EXPECT_EQ(data[1], 0xDD);
 
@@ -301,7 +301,7 @@ TEST_F(SRecordWriterTest, HeaderRecord) {
   writer.Write(sections, output);
 
   auto lines = SplitLines(output.str());
-  ASSERT_GE(lines.size(), 1);
+  ASSERT_GE(lines.size(), 1UL);
 
   // First line should be S0 header
   char type_char;
@@ -364,7 +364,7 @@ TEST_F(SRecordWriterTest, CustomBytesPerLine_16) {
 
   auto lines = SplitLines(output.str());
   // Header + 3 data records + Terminator
-  ASSERT_EQ(lines.size(), 5);
+  ASSERT_EQ(lines.size(), 5UL);
 
   char type_char;
   int type_num;
@@ -376,7 +376,7 @@ TEST_F(SRecordWriterTest, CustomBytesPerLine_16) {
   for (size_t i = 1; i <= 3; ++i) {
     ASSERT_TRUE(ValidateSRecord(lines[i], type_char, type_num, byte_count,
                                 address, data, checksum));
-    EXPECT_EQ(data.size(), 16) << "Record " << i << " should have 16 bytes";
+    EXPECT_EQ(data.size(), 16UL) << "Record " << i << " should have 16 bytes";
   }
 }
 
@@ -413,7 +413,7 @@ TEST_F(SRecordWriterTest, MultipleSectionsWithMixedAddressRanges) {
   writer.Write(sections, output);
 
   auto lines = SplitLines(output.str());
-  ASSERT_GE(lines.size(), 4); // Header + 2 data + Terminator
+  ASSERT_GE(lines.size(), 4UL); // Header + 2 data + Terminator
 
   char type_char;
   int type_num;
@@ -444,7 +444,7 @@ TEST_F(SRecordWriterTest, SectionWithNoAtoms) {
   writer.Write(sections, output);
 
   auto lines = SplitLines(output.str());
-  ASSERT_EQ(lines.size(), 2); // Header + Terminator only
+  ASSERT_EQ(lines.size(), 2UL); // Header + Terminator only
 }
 
 /**
@@ -462,5 +462,5 @@ TEST_F(SRecordWriterTest, SectionWithSpaceAtom) {
   writer.Write(sections, output);
 
   auto lines = SplitLines(output.str());
-  ASSERT_EQ(lines.size(), 2); // Header + Terminator only
+  ASSERT_EQ(lines.size(), 2UL); // Header + Terminator only
 }

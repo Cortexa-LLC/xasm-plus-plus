@@ -20,7 +20,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, CommentWithSemicolon) {
   parser.Parse("; This is a comment", section, symbols);
 
   // Comment lines should produce no atoms
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 TEST(EdtasmM80PlusPlusSyntaxTest, InlineComment) {
@@ -31,7 +31,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, InlineComment) {
   parser.Parse("         ORG 8000H  ; Set origin", section, symbols);
 
   // Should create ORG atom, ignoring comment
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto atom = section.atoms[0];
   EXPECT_EQ(atom->type, AtomType::Org);
 }
@@ -50,7 +50,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, GlobalLabelPrivate) {
   // Should create label symbol and LabelAtom
   EXPECT_TRUE(symbols.IsDefined("START"));
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto atom = section.atoms[0];
   EXPECT_EQ(atom->type, AtomType::Label);
 
@@ -69,7 +69,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, GlobalLabelPublic) {
   // Should create public label (M80 style)
   EXPECT_TRUE(symbols.IsDefined("START"));
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto atom = section.atoms[0];
   EXPECT_EQ(atom->type, AtomType::Label);
 }
@@ -119,14 +119,14 @@ TEST(EdtasmM80PlusPlusSyntaxTest, OrgDirectiveHexH) {
   parser.Parse("         ORG 8000H", section, symbols);
 
   // Should create OrgAtom
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
 
   auto atom = section.atoms[0];
   EXPECT_EQ(atom->type, AtomType::Org);
 
   auto org_atom = std::dynamic_pointer_cast<OrgAtom>(atom);
   ASSERT_NE(org_atom, nullptr);
-  EXPECT_EQ(org_atom->address, 0x8000);
+  EXPECT_EQ(org_atom->address, 0x8000U);
 }
 
 TEST(EdtasmM80PlusPlusSyntaxTest, OrgDirectiveDollar) {
@@ -136,10 +136,10 @@ TEST(EdtasmM80PlusPlusSyntaxTest, OrgDirectiveDollar) {
 
   parser.Parse("         ORG $8000", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto org_atom = std::dynamic_pointer_cast<OrgAtom>(section.atoms[0]);
   ASSERT_NE(org_atom, nullptr);
-  EXPECT_EQ(org_atom->address, 0x8000);
+  EXPECT_EQ(org_atom->address, 0x8000U);
 }
 
 TEST(EdtasmM80PlusPlusSyntaxTest, OrgDirectiveDecimal) {
@@ -149,10 +149,10 @@ TEST(EdtasmM80PlusPlusSyntaxTest, OrgDirectiveDecimal) {
 
   parser.Parse("         ORG 32768", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto org_atom = std::dynamic_pointer_cast<OrgAtom>(section.atoms[0]);
   ASSERT_NE(org_atom, nullptr);
-  EXPECT_EQ(org_atom->address, 32768);
+  EXPECT_EQ(org_atom->address, 32768U);
 }
 
 // ============================================================================
@@ -166,10 +166,10 @@ TEST(EdtasmM80PlusPlusSyntaxTest, HexNumberDollarPrefix) {
 
   parser.Parse("         DB $FF", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 1);
+  ASSERT_EQ(data_atom->data.size(), 1UL);
   EXPECT_EQ(data_atom->data[0], 0xFF);
 }
 
@@ -180,10 +180,10 @@ TEST(EdtasmM80PlusPlusSyntaxTest, HexNumberHSuffix) {
 
   parser.Parse("         DB 0FFH", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 1);
+  ASSERT_EQ(data_atom->data.size(), 1UL);
   EXPECT_EQ(data_atom->data[0], 0xFF);
 }
 
@@ -194,10 +194,10 @@ TEST(EdtasmM80PlusPlusSyntaxTest, HexNumber0xPrefix) {
 
   parser.Parse("         DB 0xFF", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 1);
+  ASSERT_EQ(data_atom->data.size(), 1UL);
   EXPECT_EQ(data_atom->data[0], 0xFF);
 }
 
@@ -208,10 +208,10 @@ TEST(EdtasmM80PlusPlusSyntaxTest, BinaryNumberBSuffix) {
 
   parser.Parse("         DB 11110000B", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 1);
+  ASSERT_EQ(data_atom->data.size(), 1UL);
   EXPECT_EQ(data_atom->data[0], 0xF0);
 }
 
@@ -222,10 +222,10 @@ TEST(EdtasmM80PlusPlusSyntaxTest, OctalNumberOSuffix) {
 
   parser.Parse("         DB 377O", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 1);
+  ASSERT_EQ(data_atom->data.size(), 1UL);
   EXPECT_EQ(data_atom->data[0], 0xFF); // 377 octal = FF hex
 }
 
@@ -236,11 +236,11 @@ TEST(EdtasmM80PlusPlusSyntaxTest, DecimalNumber) {
 
   parser.Parse("         DB 255", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 1);
-  EXPECT_EQ(data_atom->data[0], 255);
+  ASSERT_EQ(data_atom->data.size(), 1UL);
+  EXPECT_EQ(data_atom->data[0], 255U);
 }
 
 // ============================================================================
@@ -256,7 +256,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, EquDirective) {
 
   // Should define symbol, but create no atoms
   EXPECT_TRUE(symbols.IsDefined("CONST"));
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 TEST(EdtasmM80PlusPlusSyntaxTest, EqualsDirective) {
@@ -268,7 +268,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, EqualsDirective) {
 
   // Should define symbol using = syntax
   EXPECT_TRUE(symbols.IsDefined("CONST"));
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 // ============================================================================
@@ -282,10 +282,10 @@ TEST(EdtasmM80PlusPlusSyntaxTest, DbSingleByte) {
 
   parser.Parse("         DB $42", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 1);
+  ASSERT_EQ(data_atom->data.size(), 1UL);
   EXPECT_EQ(data_atom->data[0], 0x42);
 }
 
@@ -296,10 +296,10 @@ TEST(EdtasmM80PlusPlusSyntaxTest, DefbSingleByte) {
 
   parser.Parse("         DEFB $42", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 1);
+  ASSERT_EQ(data_atom->data.size(), 1UL);
   EXPECT_EQ(data_atom->data[0], 0x42);
 }
 
@@ -310,10 +310,10 @@ TEST(EdtasmM80PlusPlusSyntaxTest, DbMultipleBytes) {
 
   parser.Parse("         DB $01,$02,$03", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 3);
+  ASSERT_EQ(data_atom->data.size(), 3UL);
   EXPECT_EQ(data_atom->data[0], 0x01);
   EXPECT_EQ(data_atom->data[1], 0x02);
   EXPECT_EQ(data_atom->data[2], 0x03);
@@ -330,12 +330,12 @@ TEST(EdtasmM80PlusPlusSyntaxTest, DwSingleWord) {
 
   parser.Parse("         DW $1234", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
 
   // DW now stores as expressions for consistent forward/backward ref handling
-  ASSERT_EQ(data_atom->expressions.size(), 1);
+  ASSERT_EQ(data_atom->expressions.size(), 1UL);
   EXPECT_EQ(data_atom->expressions[0], "$1234");
   EXPECT_EQ(data_atom->data_size, DataSize::Word);
 }
@@ -347,12 +347,12 @@ TEST(EdtasmM80PlusPlusSyntaxTest, DefwSingleWord) {
 
   parser.Parse("         DEFW $ABCD", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
 
   // DEFW now stores as expressions for consistent forward/backward ref handling
-  ASSERT_EQ(data_atom->expressions.size(), 1);
+  ASSERT_EQ(data_atom->expressions.size(), 1UL);
   EXPECT_EQ(data_atom->expressions[0], "$ABCD");
   EXPECT_EQ(data_atom->data_size, DataSize::Word);
 }
@@ -368,10 +368,10 @@ TEST(EdtasmM80PlusPlusSyntaxTest, DsReserveSpace) {
 
   parser.Parse("         DS 10", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto space_atom = std::dynamic_pointer_cast<SpaceAtom>(section.atoms[0]);
   ASSERT_NE(space_atom, nullptr);
-  EXPECT_EQ(space_atom->size, 10);
+  EXPECT_EQ(space_atom->size, 10UL);
 }
 
 TEST(EdtasmM80PlusPlusSyntaxTest, DefsReserveSpace) {
@@ -381,10 +381,10 @@ TEST(EdtasmM80PlusPlusSyntaxTest, DefsReserveSpace) {
 
   parser.Parse("         DEFS 20", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto space_atom = std::dynamic_pointer_cast<SpaceAtom>(section.atoms[0]);
   ASSERT_NE(space_atom, nullptr);
-  EXPECT_EQ(space_atom->size, 20);
+  EXPECT_EQ(space_atom->size, 20UL);
 }
 
 // ============================================================================
@@ -399,7 +399,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, EndDirective) {
   parser.Parse("         END", section, symbols);
 
   // END directive should be a no-op - no atoms generated
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 TEST(EdtasmM80PlusPlusSyntaxTest, EndDirectiveIgnoresAfter) {
@@ -414,7 +414,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, EndDirectiveIgnoresAfter) {
   parser.Parse(source, section, symbols);
 
   // Should only have first DB - code after END should be ignored
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data[0], 0x01);
@@ -580,7 +580,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, IfEndifTrueCondition) {
   parser.Parse(source, section, symbols);
 
   // Should include the DB since condition is true
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data[0], 0x42);
@@ -598,7 +598,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, IfEndifFalseCondition) {
   parser.Parse(source, section, symbols);
 
   // Should exclude the DB since condition is false
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 TEST(EdtasmM80PlusPlusSyntaxTest, IfElseEndifTrueBranch) {
@@ -615,7 +615,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, IfElseEndifTrueBranch) {
   parser.Parse(source, section, symbols);
 
   // Should include first DB (true branch)
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data[0], 0x42);
@@ -635,7 +635,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, IfElseEndifFalseBranch) {
   parser.Parse(source, section, symbols);
 
   // Should include second DB (else branch)
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data[0], 0x99);
@@ -658,7 +658,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, IfdefSymbolDefined) {
   parser.Parse(source, section, symbols);
 
   // Should include DB since SYMBOL is defined
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data[0], 0x42);
@@ -676,7 +676,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, IfdefSymbolUndefined) {
   parser.Parse(source, section, symbols);
 
   // Should exclude DB since SYMBOL is not defined
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 TEST(EdtasmM80PlusPlusSyntaxTest, IfndefSymbolUndefined) {
@@ -691,7 +691,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, IfndefSymbolUndefined) {
   parser.Parse(source, section, symbols);
 
   // Should include DB since SYMBOL is not defined
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data[0], 0x42);
@@ -710,7 +710,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, IfndefSymbolDefined) {
   parser.Parse(source, section, symbols);
 
   // Should exclude DB since SYMBOL is defined
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 // ============================================================================
@@ -729,7 +729,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, IfeqZero) {
   parser.Parse(source, section, symbols);
 
   // Should include DB since 0 == 0
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data[0], 0x42);
@@ -747,7 +747,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, IfeqNonZero) {
   parser.Parse(source, section, symbols);
 
   // Should exclude DB since 5 != 0
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 TEST(EdtasmM80PlusPlusSyntaxTest, IfneZero) {
@@ -762,7 +762,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, IfneZero) {
   parser.Parse(source, section, symbols);
 
   // Should exclude DB since 0 == 0 (not != 0)
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 TEST(EdtasmM80PlusPlusSyntaxTest, IfneNonZero) {
@@ -777,7 +777,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, IfneNonZero) {
   parser.Parse(source, section, symbols);
 
   // Should include DB since 5 != 0
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data[0], 0x42);
@@ -795,7 +795,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, IfltNegative) {
   parser.Parse(source, section, symbols);
 
   // Should include DB since -5 < 0
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data[0], 0x42);
@@ -813,7 +813,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, IfltPositive) {
   parser.Parse(source, section, symbols);
 
   // Should exclude DB since 5 >= 0
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 TEST(EdtasmM80PlusPlusSyntaxTest, IfgtPositive) {
@@ -828,7 +828,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, IfgtPositive) {
   parser.Parse(source, section, symbols);
 
   // Should include DB since 5 > 0
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data[0], 0x42);
@@ -846,7 +846,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, IfgtNegative) {
   parser.Parse(source, section, symbols);
 
   // Should exclude DB since -5 <= 0
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 TEST(EdtasmM80PlusPlusSyntaxTest, IfleZero) {
@@ -861,7 +861,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, IfleZero) {
   parser.Parse(source, section, symbols);
 
   // Should include DB since 0 <= 0
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data[0], 0x42);
@@ -879,7 +879,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, IfgeZero) {
   parser.Parse(source, section, symbols);
 
   // Should include DB since 0 >= 0
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data[0], 0x42);
@@ -901,7 +901,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, If1AlwaysFalse) {
   parser.Parse(source, section, symbols);
 
   // Should exclude DB since this is a single-pass assembler
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 TEST(EdtasmM80PlusPlusSyntaxTest, If2AlwaysFalse) {
@@ -916,7 +916,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, If2AlwaysFalse) {
   parser.Parse(source, section, symbols);
 
   // Should exclude DB since this is a single-pass assembler
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 // ============================================================================
@@ -935,7 +935,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, IfbEmpty) {
   parser.Parse(source, section, symbols);
 
   // Should include DB since operand is blank
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data[0], 0x42);
@@ -953,7 +953,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, IfbNonEmpty) {
   parser.Parse(source, section, symbols);
 
   // Should exclude DB since operand is not blank
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 TEST(EdtasmM80PlusPlusSyntaxTest, IfnbNonEmpty) {
@@ -968,7 +968,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, IfnbNonEmpty) {
   parser.Parse(source, section, symbols);
 
   // Should include DB since operand is not blank
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data[0], 0x42);
@@ -986,7 +986,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, IfnbEmpty) {
   parser.Parse(source, section, symbols);
 
   // Should exclude DB since operand is blank
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 // ============================================================================
@@ -1005,7 +1005,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, IfidnIdentical) {
   parser.Parse(source, section, symbols);
 
   // Should include DB since strings are identical
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data[0], 0x42);
@@ -1023,7 +1023,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, IfidnCaseInsensitive) {
   parser.Parse(source, section, symbols);
 
   // Should include DB since comparison is case-insensitive
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data[0], 0x42);
@@ -1041,7 +1041,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, IfidnDifferent) {
   parser.Parse(source, section, symbols);
 
   // Should exclude DB since strings are different
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 TEST(EdtasmM80PlusPlusSyntaxTest, IfdifDifferent) {
@@ -1056,7 +1056,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, IfdifDifferent) {
   parser.Parse(source, section, symbols);
 
   // Should include DB since strings are different
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data[0], 0x42);
@@ -1074,7 +1074,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, IfdifIdentical) {
   parser.Parse(source, section, symbols);
 
   // Should exclude DB since strings are identical
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 // ============================================================================
@@ -1095,7 +1095,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, NestedIfBothTrue) {
   parser.Parse(source, section, symbols);
 
   // Should include DB since both conditions are true
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data[0], 0x42);
@@ -1115,7 +1115,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, NestedIfOuterFalse) {
   parser.Parse(source, section, symbols);
 
   // Should exclude DB since outer condition is false
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 TEST(EdtasmM80PlusPlusSyntaxTest, NestedIfInnerFalse) {
@@ -1132,7 +1132,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, NestedIfInnerFalse) {
   parser.Parse(source, section, symbols);
 
   // Should exclude DB since inner condition is false
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 TEST(EdtasmM80PlusPlusSyntaxTest, NestedIfElse) {
@@ -1153,7 +1153,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, NestedIfElse) {
 
   // Should include DB $22 and DB $33 (outer true, inner false -> else, outer
   // continues)
-  ASSERT_EQ(section.atoms.size(), 2);
+  ASSERT_EQ(section.atoms.size(), 2UL);
   auto data_atom1 = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom1, nullptr);
   EXPECT_EQ(data_atom1->data[0], 0x22);
@@ -1179,7 +1179,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, TripleNested) {
   parser.Parse(source, section, symbols);
 
   // Should include DB since all conditions are true
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data[0], 0x42);
@@ -1200,7 +1200,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, MixedConditionals) {
   parser.Parse(source, section, symbols);
 
   // SYMBOL is defined and equals 1, so IFDEF true and IFGT (1 > 0) true
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data[0], 0x42);
@@ -1228,7 +1228,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, ListXlistDirectives) {
 
   // Should generate: LIST atom, DB atom, XLIST atom, DB atom, LIST atom, DB
   // atom = 6 atoms
-  ASSERT_EQ(section.atoms.size(), 6);
+  ASSERT_EQ(section.atoms.size(), 6UL);
 
   // Check that listing control atoms are present
   auto list1 = std::dynamic_pointer_cast<ListingControlAtom>(section.atoms[0]);
@@ -1273,7 +1273,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, StarListDirective) {
 
   // Should generate: *LIST atom, DB atom, *LIST atom, DB atom, *LIST atom, DB
   // atom = 6 atoms
-  ASSERT_EQ(section.atoms.size(), 6);
+  ASSERT_EQ(section.atoms.size(), 6UL);
 
   // Check that listing control atoms are present
   auto list1 = std::dynamic_pointer_cast<ListingControlAtom>(section.atoms[0]);
@@ -1314,7 +1314,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, TitleDirective) {
   parser.Parse(source, section, symbols);
 
   // Should create title atom and data atom
-  ASSERT_EQ(section.atoms.size(), 2);
+  ASSERT_EQ(section.atoms.size(), 2UL);
   auto title_atom =
       std::dynamic_pointer_cast<ListingControlAtom>(section.atoms[0]);
   ASSERT_NE(title_atom, nullptr);
@@ -1336,7 +1336,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, SubttlDirective) {
 
   parser.Parse(source, section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 2);
+  ASSERT_EQ(section.atoms.size(), 2UL);
   auto subtitle_atom =
       std::dynamic_pointer_cast<ListingControlAtom>(section.atoms[0]);
   ASSERT_NE(subtitle_atom, nullptr);
@@ -1359,7 +1359,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, EjectDirective) {
 
   parser.Parse(source, section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 3);
+  ASSERT_EQ(section.atoms.size(), 3UL);
   auto data1 = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data1, nullptr);
   EXPECT_EQ(data1->data[0], 0x42);
@@ -1386,7 +1386,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, SpaceDirective) {
 
   parser.Parse(source, section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 3);
+  ASSERT_EQ(section.atoms.size(), 3UL);
   auto data1 = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data1, nullptr);
   EXPECT_EQ(data1->data[0], 0x42);
@@ -1412,7 +1412,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, NameDirective) {
 
   parser.Parse(source, section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data[0], 0x42);
@@ -1433,10 +1433,10 @@ TEST(EdtasmM80PlusPlusSyntaxTest, RadixBinary) {
 
   parser.Parse(source, section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 1);
+  ASSERT_EQ(data_atom->data.size(), 1UL);
   EXPECT_EQ(data_atom->data[0], 0xF0);
 }
 
@@ -1451,10 +1451,10 @@ TEST(EdtasmM80PlusPlusSyntaxTest, RadixOctal) {
 
   parser.Parse(source, section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 1);
+  ASSERT_EQ(data_atom->data.size(), 1UL);
   EXPECT_EQ(data_atom->data[0], 0xFF);
 }
 
@@ -1469,11 +1469,11 @@ TEST(EdtasmM80PlusPlusSyntaxTest, RadixDecimal) {
 
   parser.Parse(source, section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 1);
-  EXPECT_EQ(data_atom->data[0], 255);
+  ASSERT_EQ(data_atom->data.size(), 1UL);
+  EXPECT_EQ(data_atom->data[0], 255U);
 }
 
 TEST(EdtasmM80PlusPlusSyntaxTest, RadixHexadecimal) {
@@ -1487,10 +1487,10 @@ TEST(EdtasmM80PlusPlusSyntaxTest, RadixHexadecimal) {
 
   parser.Parse(source, section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 1);
+  ASSERT_EQ(data_atom->data.size(), 1UL);
   EXPECT_EQ(data_atom->data[0], 0xFF);
 }
 
@@ -1509,7 +1509,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, RadixChangeMidAssembly) {
 
   parser.Parse(source, section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 3);
+  ASSERT_EQ(section.atoms.size(), 3UL);
   auto data1 = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   auto data2 = std::dynamic_pointer_cast<DataAtom>(section.atoms[1]);
   auto data3 = std::dynamic_pointer_cast<DataAtom>(section.atoms[2]);
@@ -1519,7 +1519,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, RadixChangeMidAssembly) {
   ASSERT_NE(data3, nullptr);
 
   EXPECT_EQ(data1->data[0], 0xFF);
-  EXPECT_EQ(data2->data[0], 42);
+  EXPECT_EQ(data2->data[0], 42U);
   EXPECT_EQ(data3->data[0], 0x2A); // 101010 binary = 42 decimal
 }
 
@@ -1572,7 +1572,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, UndocumentedIxhRegister) {
   parser.Parse(source, section, symbols);
 
   // Should create instruction atom (encoding verified by CPU plugin tests)
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto inst_atom = std::dynamic_pointer_cast<InstructionAtom>(section.atoms[0]);
   ASSERT_NE(inst_atom, nullptr);
   EXPECT_EQ(inst_atom->mnemonic, "LD");
@@ -1592,7 +1592,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, UndocumentedIxlRegister) {
   parser.Parse(source, section, symbols);
 
   // Should create instruction atom (encoding verified by CPU plugin tests)
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto inst_atom = std::dynamic_pointer_cast<InstructionAtom>(section.atoms[0]);
   ASSERT_NE(inst_atom, nullptr);
   EXPECT_EQ(inst_atom->mnemonic, "LD");
@@ -1612,7 +1612,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, UndocumentedIyhRegister) {
   parser.Parse(source, section, symbols);
 
   // Should create instruction atom (encoding verified by CPU plugin tests)
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto inst_atom = std::dynamic_pointer_cast<InstructionAtom>(section.atoms[0]);
   ASSERT_NE(inst_atom, nullptr);
   EXPECT_EQ(inst_atom->mnemonic, "LD");
@@ -1632,7 +1632,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, UndocumentedIylRegister) {
   parser.Parse(source, section, symbols);
 
   // Should create instruction atom (encoding verified by CPU plugin tests)
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto inst_atom = std::dynamic_pointer_cast<InstructionAtom>(section.atoms[0]);
   ASSERT_NE(inst_atom, nullptr);
   EXPECT_EQ(inst_atom->mnemonic, "LD");
@@ -1652,7 +1652,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, UndocumentedSl1Instruction) {
   parser.Parse(source, section, symbols);
 
   // Should create instruction atom (encoding verified by CPU plugin tests)
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto inst_atom = std::dynamic_pointer_cast<InstructionAtom>(section.atoms[0]);
   ASSERT_NE(inst_atom, nullptr);
   EXPECT_EQ(inst_atom->mnemonic, "SL1");
@@ -1670,10 +1670,10 @@ TEST(EdtasmM80PlusPlusSyntaxTest, DbStringSingleQuote) {
 
   parser.Parse("         DB 'Hello'", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 5);
+  ASSERT_EQ(data_atom->data.size(), 5UL);
   EXPECT_EQ(data_atom->data[0], 'H');
   EXPECT_EQ(data_atom->data[1], 'e');
   EXPECT_EQ(data_atom->data[2], 'l');
@@ -1688,10 +1688,10 @@ TEST(EdtasmM80PlusPlusSyntaxTest, DbStringDoubleQuote) {
 
   parser.Parse("         DB \"World\"", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 5);
+  ASSERT_EQ(data_atom->data.size(), 5UL);
   EXPECT_EQ(data_atom->data[0], 'W');
   EXPECT_EQ(data_atom->data[1], 'o');
   EXPECT_EQ(data_atom->data[2], 'r');
@@ -1706,15 +1706,15 @@ TEST(EdtasmM80PlusPlusSyntaxTest, DbMixedStringAndNumbers) {
 
   parser.Parse("         DB 'Hi',13,10,0", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 5);
+  ASSERT_EQ(data_atom->data.size(), 5UL);
   EXPECT_EQ(data_atom->data[0], 'H');
   EXPECT_EQ(data_atom->data[1], 'i');
-  EXPECT_EQ(data_atom->data[2], 13); // CR
-  EXPECT_EQ(data_atom->data[3], 10); // LF
-  EXPECT_EQ(data_atom->data[4], 0);  // NULL
+  EXPECT_EQ(data_atom->data[2], 13U); // CR
+  EXPECT_EQ(data_atom->data[3], 10U); // LF
+  EXPECT_EQ(data_atom->data[4], 0U);  // NULL
 }
 
 TEST(EdtasmM80PlusPlusSyntaxTest, DbEscapeNewline) {
@@ -1724,10 +1724,10 @@ TEST(EdtasmM80PlusPlusSyntaxTest, DbEscapeNewline) {
 
   parser.Parse("         DB 'Line1\\nLine2'", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 11);
+  ASSERT_EQ(data_atom->data.size(), 11UL);
   EXPECT_EQ(data_atom->data[0], 'L');
   EXPECT_EQ(data_atom->data[1], 'i');
   EXPECT_EQ(data_atom->data[2], 'n');
@@ -1748,10 +1748,10 @@ TEST(EdtasmM80PlusPlusSyntaxTest, DbEscapeCarriageReturn) {
 
   parser.Parse("         DB 'CR:\\r'", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 4);
+  ASSERT_EQ(data_atom->data.size(), 4UL);
   EXPECT_EQ(data_atom->data[0], 'C');
   EXPECT_EQ(data_atom->data[1], 'R');
   EXPECT_EQ(data_atom->data[2], ':');
@@ -1765,10 +1765,10 @@ TEST(EdtasmM80PlusPlusSyntaxTest, DbEscapeTab) {
 
   parser.Parse("         DB 'A\\tB'", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 3);
+  ASSERT_EQ(data_atom->data.size(), 3UL);
   EXPECT_EQ(data_atom->data[0], 'A');
   EXPECT_EQ(data_atom->data[1], '\t');
   EXPECT_EQ(data_atom->data[2], 'B');
@@ -1781,10 +1781,10 @@ TEST(EdtasmM80PlusPlusSyntaxTest, DbEscapeBackslash) {
 
   parser.Parse("         DB 'C:\\\\path'", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 7);
+  ASSERT_EQ(data_atom->data.size(), 7UL);
   EXPECT_EQ(data_atom->data[0], 'C');
   EXPECT_EQ(data_atom->data[1], ':');
   EXPECT_EQ(data_atom->data[2], '\\');
@@ -1801,10 +1801,10 @@ TEST(EdtasmM80PlusPlusSyntaxTest, DbEscapeSingleQuote) {
 
   parser.Parse("         DB 'It\\'s'", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 4);
+  ASSERT_EQ(data_atom->data.size(), 4UL);
   EXPECT_EQ(data_atom->data[0], 'I');
   EXPECT_EQ(data_atom->data[1], 't');
   EXPECT_EQ(data_atom->data[2], '\'');
@@ -1818,10 +1818,10 @@ TEST(EdtasmM80PlusPlusSyntaxTest, DbEscapeDoubleQuote) {
 
   parser.Parse("         DB \"Say \\\"Hi\\\"\"", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 8);
+  ASSERT_EQ(data_atom->data.size(), 8UL);
   EXPECT_EQ(data_atom->data[0], 'S');
   EXPECT_EQ(data_atom->data[1], 'a');
   EXPECT_EQ(data_atom->data[2], 'y');
@@ -1839,10 +1839,10 @@ TEST(EdtasmM80PlusPlusSyntaxTest, DbEmptyString) {
 
   parser.Parse("         DB ''", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  EXPECT_EQ(data_atom->data.size(), 0); // Empty string produces no bytes
+  EXPECT_EQ(data_atom->data.size(), 0UL); // Empty string produces no bytes
 }
 
 TEST(EdtasmM80PlusPlusSyntaxTest, DbMultipleStringsWithEscapes) {
@@ -1852,10 +1852,10 @@ TEST(EdtasmM80PlusPlusSyntaxTest, DbMultipleStringsWithEscapes) {
 
   parser.Parse("         DB 'Hello\\n','World\\n',0", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 13);
+  ASSERT_EQ(data_atom->data.size(), 13UL);
   // 'Hello\n' = 6 bytes
   EXPECT_EQ(data_atom->data[0], 'H');
   EXPECT_EQ(data_atom->data[5], '\n');
@@ -1863,7 +1863,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, DbMultipleStringsWithEscapes) {
   EXPECT_EQ(data_atom->data[6], 'W');
   EXPECT_EQ(data_atom->data[11], '\n');
   // NULL terminator
-  EXPECT_EQ(data_atom->data[12], 0);
+  EXPECT_EQ(data_atom->data[12], 0U);
 }
 
 TEST(EdtasmM80PlusPlusSyntaxTest, DefmAlias) {
@@ -1873,10 +1873,10 @@ TEST(EdtasmM80PlusPlusSyntaxTest, DefmAlias) {
 
   parser.Parse("         DEFM 'Message'", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 7);
+  ASSERT_EQ(data_atom->data.size(), 7UL);
   EXPECT_EQ(data_atom->data[0], 'M');
   EXPECT_EQ(data_atom->data[1], 'e');
   EXPECT_EQ(data_atom->data[2], 's');
@@ -1893,10 +1893,10 @@ TEST(EdtasmM80PlusPlusSyntaxTest, TextAlias) {
 
   parser.Parse("         TEXT 'ASCII'", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 5);
+  ASSERT_EQ(data_atom->data.size(), 5UL);
   EXPECT_EQ(data_atom->data[0], 'A');
   EXPECT_EQ(data_atom->data[4], 'I');
 }
@@ -1908,10 +1908,10 @@ TEST(EdtasmM80PlusPlusSyntaxTest, AsciiAlias) {
 
   parser.Parse("         ASCII 'TEST'", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 4);
+  ASSERT_EQ(data_atom->data.size(), 4UL);
   EXPECT_EQ(data_atom->data[0], 'T');
   EXPECT_EQ(data_atom->data[3], 'T');
 }
@@ -1923,10 +1923,10 @@ TEST(EdtasmM80PlusPlusSyntaxTest, DspaceAlias) {
 
   parser.Parse("         DSPACE 50", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto space_atom = std::dynamic_pointer_cast<SpaceAtom>(section.atoms[0]);
   ASSERT_NE(space_atom, nullptr);
-  EXPECT_EQ(space_atom->size, 50);
+  EXPECT_EQ(space_atom->size, 50UL);
 }
 
 TEST(EdtasmM80PlusPlusSyntaxTest, BlockAlias) {
@@ -1936,10 +1936,10 @@ TEST(EdtasmM80PlusPlusSyntaxTest, BlockAlias) {
 
   parser.Parse("         BLOCK 100", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto space_atom = std::dynamic_pointer_cast<SpaceAtom>(section.atoms[0]);
   ASSERT_NE(space_atom, nullptr);
-  EXPECT_EQ(space_atom->size, 100);
+  EXPECT_EQ(space_atom->size, 100UL);
 }
 
 TEST(EdtasmM80PlusPlusSyntaxTest, WordAlias) {
@@ -1949,12 +1949,12 @@ TEST(EdtasmM80PlusPlusSyntaxTest, WordAlias) {
 
   parser.Parse("         WORD $BEEF", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
 
   // WORD now stores as expressions for consistent forward/backward ref handling
-  ASSERT_EQ(data_atom->expressions.size(), 1);
+  ASSERT_EQ(data_atom->expressions.size(), 1UL);
   EXPECT_EQ(data_atom->expressions[0], "$BEEF");
   EXPECT_EQ(data_atom->data_size, DataSize::Word);
 }
@@ -1975,11 +1975,11 @@ TEST(EdtasmM80PlusPlusSyntaxTest, ReptSimple) {
   parser.Parse(source, section, symbols);
 
   // Should generate 3 DB atoms
-  ASSERT_EQ(section.atoms.size(), 3);
+  ASSERT_EQ(section.atoms.size(), 3UL);
   for (int i = 0; i < 3; ++i) {
     auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[i]);
     ASSERT_NE(data_atom, nullptr);
-    ASSERT_EQ(data_atom->data.size(), 1);
+    ASSERT_EQ(data_atom->data.size(), 1UL);
     EXPECT_EQ(data_atom->data[0], 0x42);
   }
 }
@@ -1996,7 +1996,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, ReptZeroTimes) {
   parser.Parse(source, section, symbols);
 
   // Should generate no atoms
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 TEST(EdtasmM80PlusPlusSyntaxTest, ReptMultipleInstructions) {
@@ -2014,7 +2014,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, ReptMultipleInstructions) {
   parser.Parse(source, section, symbols);
 
   // Should generate 4 atoms: NOP, DB, NOP, DB
-  ASSERT_EQ(section.atoms.size(), 4);
+  ASSERT_EQ(section.atoms.size(), 4UL);
 
   auto inst1 = std::dynamic_pointer_cast<InstructionAtom>(section.atoms[0]);
   ASSERT_NE(inst1, nullptr);
@@ -2049,7 +2049,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, IrpSimple) {
   parser.Parse(source, section, symbols);
 
   // Should generate 3 DB atoms with values 1, 2, 3
-  ASSERT_EQ(section.atoms.size(), 3);
+  ASSERT_EQ(section.atoms.size(), 3UL);
   auto data1 = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   auto data2 = std::dynamic_pointer_cast<DataAtom>(section.atoms[1]);
   auto data3 = std::dynamic_pointer_cast<DataAtom>(section.atoms[2]);
@@ -2058,9 +2058,9 @@ TEST(EdtasmM80PlusPlusSyntaxTest, IrpSimple) {
   ASSERT_NE(data2, nullptr);
   ASSERT_NE(data3, nullptr);
 
-  EXPECT_EQ(data1->data[0], 1);
-  EXPECT_EQ(data2->data[0], 2);
-  EXPECT_EQ(data3->data[0], 3);
+  EXPECT_EQ(data1->data[0], 1U);
+  EXPECT_EQ(data2->data[0], 2U);
+  EXPECT_EQ(data3->data[0], 3U);
 }
 
 TEST(EdtasmM80PlusPlusSyntaxTest, IrpWithHexValues) {
@@ -2075,7 +2075,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, IrpWithHexValues) {
   parser.Parse(source, section, symbols);
 
   // Should generate 3 DB atoms with hex values
-  ASSERT_EQ(section.atoms.size(), 3);
+  ASSERT_EQ(section.atoms.size(), 3UL);
   auto data1 = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   auto data2 = std::dynamic_pointer_cast<DataAtom>(section.atoms[1]);
   auto data3 = std::dynamic_pointer_cast<DataAtom>(section.atoms[2]);
@@ -2101,7 +2101,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, IrpEmptyList) {
   parser.Parse(source, section, symbols);
 
   // Should generate no atoms (empty list means zero iterations)
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 // ============================================================================
@@ -2120,7 +2120,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, IrpcSimple) {
   parser.Parse(source, section, symbols);
 
   // Should generate 3 DB atoms with 'A', 'B', 'C'
-  ASSERT_EQ(section.atoms.size(), 3);
+  ASSERT_EQ(section.atoms.size(), 3UL);
   auto data1 = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   auto data2 = std::dynamic_pointer_cast<DataAtom>(section.atoms[1]);
   auto data3 = std::dynamic_pointer_cast<DataAtom>(section.atoms[2]);
@@ -2146,7 +2146,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, IrpcEmptyString) {
   parser.Parse(source, section, symbols);
 
   // Should generate no atoms
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 // ============================================================================
@@ -2166,7 +2166,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, MacroDefinitionSimple) {
   parser.Parse(source, section, symbols);
 
   // Should generate 1 DB atom from macro invocation
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data[0], 0x42);
@@ -2185,7 +2185,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, MacroWithParameters) {
   parser.Parse(source, section, symbols);
 
   // Should generate LD instruction with substituted parameters
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto inst_atom = std::dynamic_pointer_cast<InstructionAtom>(section.atoms[0]);
   ASSERT_NE(inst_atom, nullptr);
   EXPECT_EQ(inst_atom->mnemonic, "LD");
@@ -2207,7 +2207,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, MacroMultipleInvocations) {
   parser.Parse(source, section, symbols);
 
   // Should generate 3 DB atoms
-  ASSERT_EQ(section.atoms.size(), 3);
+  ASSERT_EQ(section.atoms.size(), 3UL);
   auto data1 = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   auto data2 = std::dynamic_pointer_cast<DataAtom>(section.atoms[1]);
   auto data3 = std::dynamic_pointer_cast<DataAtom>(section.atoms[2]);
@@ -2244,7 +2244,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, MacroLocalSymbols) {
 
   // Should generate 4 atoms: NOP, JP, NOP, JP
   // Each invocation should have its own unique LOOP label
-  ASSERT_EQ(section.atoms.size(), 4);
+  ASSERT_EQ(section.atoms.size(), 4UL);
 
   auto inst1 = std::dynamic_pointer_cast<InstructionAtom>(section.atoms[0]);
   auto inst2 = std::dynamic_pointer_cast<InstructionAtom>(section.atoms[1]);
@@ -2280,7 +2280,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, ExitmInRept) {
   parser.Parse(source, section, symbols);
 
   // Should generate only 1 DB atom (exits after first iteration)
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data[0], 0x42);
@@ -2301,7 +2301,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, ExitmInMacro) {
   parser.Parse(source, section, symbols);
 
   // Should generate only 1 DB atom (exits before second DB)
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data[0], 0x42);
@@ -2328,7 +2328,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, NestedMacros) {
   parser.Parse(source, section, symbols);
 
   // Should generate 2 DB atoms
-  ASSERT_EQ(section.atoms.size(), 2);
+  ASSERT_EQ(section.atoms.size(), 2UL);
   auto data1 = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   auto data2 = std::dynamic_pointer_cast<DataAtom>(section.atoms[1]);
 
@@ -2353,7 +2353,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, NestedReptBlocks) {
   parser.Parse(source, section, symbols);
 
   // Should generate 4 DB atoms (2 * 2)
-  ASSERT_EQ(section.atoms.size(), 4);
+  ASSERT_EQ(section.atoms.size(), 4UL);
   for (int i = 0; i < 4; ++i) {
     auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[i]);
     ASSERT_NE(data_atom, nullptr);
@@ -2377,7 +2377,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, MacroAmpersandSubstitution) {
 
   parser.Parse(source, section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data[0], 0xFF);
@@ -2395,10 +2395,10 @@ TEST(EdtasmM80PlusPlusSyntaxTest, MacroPercentSubstitution) {
 
   parser.Parse(source, section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   // % substitution evaluates expression
-  ASSERT_EQ(data_atom->expressions.size(), 1);
+  ASSERT_EQ(data_atom->expressions.size(), 1UL);
   EXPECT_EQ(data_atom->expressions[0], "101");
 }

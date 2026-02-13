@@ -340,7 +340,7 @@ TEST_F(OutputIntegrationTest, CoCoLoadmFormatted) {
   // Should not be empty
   EXPECT_FALSE(result.empty());
   // Should contain binary data
-  EXPECT_GT(result.size(), 5); // At least header + some data
+  EXPECT_GT(result.size(), 5UL); // At least header + some data
 }
 
 /**
@@ -359,5 +359,5 @@ TEST_F(OutputIntegrationTest, TRSDOSFormatted) {
   // Should not be empty
   EXPECT_FALSE(result.empty());
   // Should contain binary data with header
-  EXPECT_GT(result.size(), 5);
+  EXPECT_GT(result.size(), 5UL);
 }

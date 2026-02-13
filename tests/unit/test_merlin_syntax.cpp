@@ -23,7 +23,7 @@ TEST(MerlinSyntaxTest, CommentWithAsterisk) {
   parser.Parse("* This is a comment", section, symbols);
 
   // Comment lines should produce no atoms
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 TEST(MerlinSyntaxTest, CommentWithSemicolon) {
@@ -34,7 +34,7 @@ TEST(MerlinSyntaxTest, CommentWithSemicolon) {
   parser.Parse("; This is a comment", section, symbols);
 
   // Comment lines should produce no atoms
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 TEST(MerlinSyntaxTest, InlineComment) {
@@ -45,7 +45,7 @@ TEST(MerlinSyntaxTest, InlineComment) {
   parser.Parse("         ORG $8000  ; Set origin", section, symbols);
 
   // Should create ORG atom, ignoring comment
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto atom = section.atoms[0];
   EXPECT_EQ(atom->type, AtomType::Org);
 }
@@ -64,7 +64,7 @@ TEST(MerlinSyntaxTest, GlobalLabel) {
   // Should create label symbol and LabelAtom
   EXPECT_TRUE(symbols.IsDefined("START"));
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto atom = section.atoms[0];
   EXPECT_EQ(atom->type, AtomType::Label);
 
@@ -82,7 +82,7 @@ TEST(MerlinSyntaxTest, GlobalLabelWithInstruction) {
 
   // Should create label and instruction atoms
   EXPECT_TRUE(symbols.IsDefined("LOOP"));
-  ASSERT_EQ(section.atoms.size(), 2);
+  ASSERT_EQ(section.atoms.size(), 2UL);
 
   EXPECT_EQ(section.atoms[0]->type, AtomType::Label);
   EXPECT_EQ(section.atoms[1]->type, AtomType::Instruction);
@@ -100,14 +100,14 @@ TEST(MerlinSyntaxTest, OrgDirective) {
   parser.Parse("         ORG $8000", section, symbols);
 
   // Should create OrgAtom
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
 
   auto atom = section.atoms[0];
   EXPECT_EQ(atom->type, AtomType::Org);
 
   auto org_atom = std::dynamic_pointer_cast<OrgAtom>(atom);
   ASSERT_NE(org_atom, nullptr);
-  EXPECT_EQ(org_atom->address, 0x8000);
+  EXPECT_EQ(org_atom->address, 0x8000U);
 }
 
 TEST(MerlinSyntaxTest, OrgWithDecimal) {
@@ -117,10 +117,10 @@ TEST(MerlinSyntaxTest, OrgWithDecimal) {
 
   parser.Parse("         ORG 32768", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto org_atom = std::dynamic_pointer_cast<OrgAtom>(section.atoms[0]);
   ASSERT_NE(org_atom, nullptr);
-  EXPECT_EQ(org_atom->address, 32768);
+  EXPECT_EQ(org_atom->address, 32768U);
 }
 
 // ============================================================================
@@ -134,10 +134,10 @@ TEST(MerlinSyntaxTest, HexNumber) {
 
   parser.Parse("         DB $FF", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 1);
+  ASSERT_EQ(data_atom->data.size(), 1UL);
   EXPECT_EQ(data_atom->data[0], 0xFF);
 }
 
@@ -148,10 +148,10 @@ TEST(MerlinSyntaxTest, BinaryNumber) {
 
   parser.Parse("         DB %11110000", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 1);
+  ASSERT_EQ(data_atom->data.size(), 1UL);
   EXPECT_EQ(data_atom->data[0], 0xF0);
 }
 
@@ -162,11 +162,11 @@ TEST(MerlinSyntaxTest, DecimalNumber) {
 
   parser.Parse("         DB 42", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 1);
-  EXPECT_EQ(data_atom->data[0], 42);
+  ASSERT_EQ(data_atom->data.size(), 1UL);
+  EXPECT_EQ(data_atom->data[0], 42U);
 }
 
 // ============================================================================
@@ -182,7 +182,7 @@ TEST(MerlinSyntaxTest, EquDirective) {
 
   // Should define symbol, but create no atoms
   EXPECT_TRUE(symbols.IsDefined("CONST"));
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 TEST(MerlinSyntaxTest, EquWithExpression) {
@@ -206,7 +206,7 @@ TEST(MerlinSyntaxTest, EqualsDirective) {
 
   // Should define symbol using = syntax, but create no atoms
   EXPECT_TRUE(symbols.IsDefined("CONST"));
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 TEST(MerlinSyntaxTest, EqualsWithHex) {
@@ -254,10 +254,10 @@ TEST(MerlinSyntaxTest, OrgWithSymbol) {
   // Should define start
   EXPECT_TRUE(symbols.IsDefined("start"));
   // Should have ORG atom with correct address
-  ASSERT_GE(section.atoms.size(), 1);
+  ASSERT_GE(section.atoms.size(), 1UL);
   auto org_atom = std::dynamic_pointer_cast<OrgAtom>(section.atoms[0]);
   ASSERT_NE(org_atom, nullptr);
-  EXPECT_EQ(org_atom->address, 0x8000);
+  EXPECT_EQ(org_atom->address, 0x8000U);
 }
 
 // ============================================================================
@@ -271,10 +271,10 @@ TEST(MerlinSyntaxTest, DbSingleByte) {
 
   parser.Parse("         DB $42", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 1);
+  ASSERT_EQ(data_atom->data.size(), 1UL);
   EXPECT_EQ(data_atom->data[0], 0x42);
 }
 
@@ -285,10 +285,10 @@ TEST(MerlinSyntaxTest, DbMultipleBytes) {
 
   parser.Parse("         DB $01,$02,$03", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 3);
+  ASSERT_EQ(data_atom->data.size(), 3UL);
   EXPECT_EQ(data_atom->data[0], 0x01);
   EXPECT_EQ(data_atom->data[1], 0x02);
   EXPECT_EQ(data_atom->data[2], 0x03);
@@ -305,11 +305,11 @@ TEST(MerlinSyntaxTest, DwSingleWord) {
 
   parser.Parse("         DW $1234", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   // DW stores expressions for multi-pass evaluation (supports forward refs)
-  ASSERT_EQ(data_atom->expressions.size(), 1);
+  ASSERT_EQ(data_atom->expressions.size(), 1UL);
   EXPECT_EQ(data_atom->expressions[0], "$1234");
   EXPECT_EQ(data_atom->data_size, DataSize::Word);
 }
@@ -321,11 +321,11 @@ TEST(MerlinSyntaxTest, DwMultipleWords) {
 
   parser.Parse("         DW $ABCD,$EF01", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   // DW stores expressions for multi-pass evaluation (supports forward refs)
-  ASSERT_EQ(data_atom->expressions.size(), 2);
+  ASSERT_EQ(data_atom->expressions.size(), 2UL);
   EXPECT_EQ(data_atom->expressions[0], "$ABCD");
   EXPECT_EQ(data_atom->expressions[1], "$EF01");
   EXPECT_EQ(data_atom->data_size, DataSize::Word);
@@ -346,7 +346,7 @@ TEST(MerlinSyntaxTest, DwWithSymbolReference) {
   EXPECT_TRUE(symbols.IsDefined(":1"));
 
   // Should have atoms: label, NOP, label, DW
-  ASSERT_GE(section.atoms.size(), 3);
+  ASSERT_GE(section.atoms.size(), 3UL);
 
   // Find the DataAtom from DW
   std::shared_ptr<DataAtom> data_atom = nullptr;
@@ -360,7 +360,7 @@ TEST(MerlinSyntaxTest, DwWithSymbolReference) {
   }
   ASSERT_NE(data_atom, nullptr);
   // DW stores expressions for multi-pass evaluation (supports forward refs)
-  ASSERT_EQ(data_atom->expressions.size(), 1);
+  ASSERT_EQ(data_atom->expressions.size(), 1UL);
   EXPECT_EQ(data_atom->expressions[0], "startrun");
   EXPECT_EQ(data_atom->data_size, DataSize::Word);
 }
@@ -376,10 +376,10 @@ TEST(MerlinSyntaxTest, HexDirective) {
 
   parser.Parse("         HEX 0102030405", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 5);
+  ASSERT_EQ(data_atom->data.size(), 5UL);
   EXPECT_EQ(data_atom->data[0], 0x01);
   EXPECT_EQ(data_atom->data[1], 0x02);
   EXPECT_EQ(data_atom->data[2], 0x03);
@@ -394,10 +394,10 @@ TEST(MerlinSyntaxTest, HexWithSpaces) {
 
   parser.Parse("         HEX AB CD EF", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 3);
+  ASSERT_EQ(data_atom->data.size(), 3UL);
   EXPECT_EQ(data_atom->data[0], 0xAB);
   EXPECT_EQ(data_atom->data[1], 0xCD);
   EXPECT_EQ(data_atom->data[2], 0xEF);
@@ -410,10 +410,10 @@ TEST(MerlinSyntaxTest, HexWithCommas) {
 
   parser.Parse("         HEX 01,02,03", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 3);
+  ASSERT_EQ(data_atom->data.size(), 3UL);
   EXPECT_EQ(data_atom->data[0], 0x01);
   EXPECT_EQ(data_atom->data[1], 0x02);
   EXPECT_EQ(data_atom->data[2], 0x03);
@@ -426,10 +426,10 @@ TEST(MerlinSyntaxTest, HexWithCommasAndSpaces) {
 
   parser.Parse("         HEX 00, 0d, 0b, 09", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 4);
+  ASSERT_EQ(data_atom->data.size(), 4UL);
   EXPECT_EQ(data_atom->data[0], 0x00);
   EXPECT_EQ(data_atom->data[1], 0x0D);
   EXPECT_EQ(data_atom->data[2], 0x0B);
@@ -457,7 +457,7 @@ TEST(MerlinSyntaxTest, PutDirectiveBasic) {
 
   // Should have included the label and DB directive
   EXPECT_TRUE(symbols.IsDefined("INCLUDED_LABEL"));
-  ASSERT_GE(section.atoms.size(), 1);
+  ASSERT_GE(section.atoms.size(), 1UL);
 
   // Clean up
   std::remove(test_file.c_str());
@@ -576,7 +576,7 @@ TEST(MerlinSyntaxTest, PutEmptyFile) {
   parser.Parse(" PUT /tmp/xasm_test_empty.asm", section, symbols);
 
   // Should have no atoms added
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 
   // Clean up
   std::remove(test_file.c_str());
@@ -682,10 +682,10 @@ TEST(MerlinSyntaxTest, DfbSingleByte) {
 
   parser.Parse("         DFB $42", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 1);
+  ASSERT_EQ(data_atom->data.size(), 1UL);
   EXPECT_EQ(data_atom->data[0], 0x42);
 }
 
@@ -696,10 +696,10 @@ TEST(MerlinSyntaxTest, DfbMultipleBytes) {
 
   parser.Parse("         DFB $01,$02,$03,$04", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 4);
+  ASSERT_EQ(data_atom->data.size(), 4UL);
   EXPECT_EQ(data_atom->data[0], 0x01);
   EXPECT_EQ(data_atom->data[1], 0x02);
   EXPECT_EQ(data_atom->data[2], 0x03);
@@ -714,10 +714,10 @@ TEST(MerlinSyntaxTest, DfbSignedNegativeByte) {
   // -1 should be stored as $FF
   parser.Parse("         DFB -1", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 1);
+  ASSERT_EQ(data_atom->data.size(), 1UL);
   EXPECT_EQ(data_atom->data[0], 0xFF);
 }
 
@@ -729,10 +729,10 @@ TEST(MerlinSyntaxTest, DfbHighBit) {
   // $80 + value sets high bit
   parser.Parse("         DFB $80+$41", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 1);
+  ASSERT_EQ(data_atom->data.size(), 1UL);
   EXPECT_EQ(data_atom->data[0], 0xC1); // $80 | $41
 }
 
@@ -744,11 +744,11 @@ TEST(MerlinSyntaxTest, DfbWithExpression) {
   parser.Parse("VALUE    EQU $10", section, symbols);
   parser.Parse("         DFB VALUE+5", section, symbols);
 
-  ASSERT_GE(section.atoms.size(), 1);
+  ASSERT_GE(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(
       section.atoms[section.atoms.size() - 1]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 1);
+  ASSERT_EQ(data_atom->data.size(), 1UL);
   EXPECT_EQ(data_atom->data[0], 0x15); // $10 + 5
 }
 
@@ -760,7 +760,7 @@ TEST(MerlinSyntaxTest, DfbWithLabel) {
   parser.Parse("DATA     DFB $01,$02", section, symbols);
 
   EXPECT_TRUE(symbols.IsDefined("DATA"));
-  ASSERT_GE(section.atoms.size(), 1);
+  ASSERT_GE(section.atoms.size(), 1UL);
 }
 
 // ============================================================================
@@ -779,7 +779,7 @@ TEST(MerlinSyntaxTest, DoFinTrue) {
   parser.Parse(source, section, symbols);
 
   // Code inside DO 1...FIN should be included
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data[0], 0x42);
@@ -797,7 +797,7 @@ TEST(MerlinSyntaxTest, DoFinFalse) {
   parser.Parse(source, section, symbols);
 
   // Code inside DO 0...FIN should be excluded
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 TEST(MerlinSyntaxTest, DoElseFinTrue) {
@@ -814,7 +814,7 @@ TEST(MerlinSyntaxTest, DoElseFinTrue) {
   parser.Parse(source, section, symbols);
 
   // DO branch included, ELSE branch excluded
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data[0], 0x42);
@@ -834,7 +834,7 @@ TEST(MerlinSyntaxTest, DoElseFinFalse) {
   parser.Parse(source, section, symbols);
 
   // DO branch excluded, ELSE branch included
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data[0], 0x99);
@@ -854,7 +854,7 @@ TEST(MerlinSyntaxTest, DoFinNested) {
   parser.Parse(source, section, symbols);
 
   // Nested DO blocks both true - code should be included
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data[0], 0x42);
@@ -872,7 +872,7 @@ TEST(MerlinSyntaxTest, LstDirective) {
   parser.Parse("         LST", section, symbols);
 
   // LST is a listing control directive - doesn't generate atoms
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 TEST(MerlinSyntaxTest, LstOffDirective) {
@@ -883,7 +883,7 @@ TEST(MerlinSyntaxTest, LstOffDirective) {
   parser.Parse("         LST OFF", section, symbols);
 
   // LST OFF is a listing control directive - doesn't generate atoms
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 TEST(MerlinSyntaxTest, LstdoDirective) {
@@ -894,7 +894,7 @@ TEST(MerlinSyntaxTest, LstdoDirective) {
   parser.Parse("         LSTDO", section, symbols);
 
   // LSTDO is a listing control directive - doesn't generate atoms
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 TEST(MerlinSyntaxTest, TrDirective) {
@@ -905,7 +905,7 @@ TEST(MerlinSyntaxTest, TrDirective) {
   parser.Parse("         TR", section, symbols);
 
   // TR is a listing control directive - doesn't generate atoms
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 TEST(MerlinSyntaxTest, TrWithParameters) {
@@ -914,15 +914,15 @@ TEST(MerlinSyntaxTest, TrWithParameters) {
   Section section("test", 0);
 
   parser.Parse("         TR ADR", section, symbols);
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 
   Section section2("test", 0);
   parser.Parse("         TR ON", section2, symbols);
-  EXPECT_EQ(section2.atoms.size(), 0);
+  EXPECT_EQ(section2.atoms.size(), 0UL);
 
   Section section3("test", 0);
   parser.Parse("         TR OFF", section3, symbols);
-  EXPECT_EQ(section3.atoms.size(), 0);
+  EXPECT_EQ(section3.atoms.size(), 0UL);
 }
 
 // ============================================================================
@@ -937,10 +937,10 @@ TEST(MerlinSyntaxTest, AscSimpleString) {
   parser.Parse("         ASC 'HELLO'", section, symbols);
 
   // ASC should set high bit on ALL characters (Apple II standard)
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 5);
+  ASSERT_EQ(data_atom->data.size(), 5UL);
   EXPECT_EQ(data_atom->data[0], 'H' | 0x80); // 0xC8
   EXPECT_EQ(data_atom->data[1], 'E' | 0x80); // 0xC5
   EXPECT_EQ(data_atom->data[2], 'L' | 0x80); // 0xCC
@@ -956,10 +956,10 @@ TEST(MerlinSyntaxTest, AscDoubleQuotes) {
   parser.Parse("         ASC \"TEST\"", section, symbols);
 
   // ASC should set high bit on ALL characters (Apple II standard)
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 4);
+  ASSERT_EQ(data_atom->data.size(), 4UL);
   EXPECT_EQ(data_atom->data[0], 'T' | 0x80); // 0xD4
   EXPECT_EQ(data_atom->data[1], 'E' | 0x80); // 0xC5
   EXPECT_EQ(data_atom->data[2], 'S' | 0x80); // 0xD3
@@ -975,10 +975,10 @@ TEST(MerlinSyntaxTest, AscHighBit) {
   // The '80' suffix is legacy and ignored (high bit already set)
   parser.Parse("         ASC 'HI'80", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 2);
+  ASSERT_EQ(data_atom->data.size(), 2UL);
   EXPECT_EQ(data_atom->data[0], 'H' | 0x80); // High bit set on all chars
   EXPECT_EQ(data_atom->data[1], 'I' | 0x80); // High bit set on all chars
 }
@@ -991,10 +991,10 @@ TEST(MerlinSyntaxTest, AscEmptyString) {
   parser.Parse("         ASC ''", section, symbols);
 
   // Empty string should create DataAtom with no bytes
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  EXPECT_EQ(data_atom->data.size(), 0);
+  EXPECT_EQ(data_atom->data.size(), 0UL);
 }
 
 // ============================================================================
@@ -1029,7 +1029,7 @@ TEST(MerlinSyntaxTest, DsWithSymbolReference) {
     }
   }
   ASSERT_NE(space_atom, nullptr);
-  EXPECT_EQ(space_atom->size, 200);
+  EXPECT_EQ(space_atom->size, 200UL);
 }
 
 TEST(MerlinSyntaxTest, DsWithExpression) {
@@ -1053,7 +1053,7 @@ TEST(MerlinSyntaxTest, DsWithExpression) {
     }
   }
   ASSERT_NE(space_atom, nullptr);
-  EXPECT_EQ(space_atom->size, 720);
+  EXPECT_EQ(space_atom->size, 720UL);
 }
 
 // ============================================================================
@@ -1068,7 +1068,7 @@ TEST(MerlinSyntaxTest, UsrWithHexAddress) {
   parser.Parse("         USR $C000", section, symbols);
 
   // USR is a no-op - should not generate any atoms
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 TEST(MerlinSyntaxTest, UsrWithDecimalAddress) {
@@ -1079,7 +1079,7 @@ TEST(MerlinSyntaxTest, UsrWithDecimalAddress) {
   parser.Parse("         USR 49152", section, symbols);
 
   // USR is a no-op - should not generate any atoms
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 TEST(MerlinSyntaxTest, UsrWithLabel) {
@@ -1096,7 +1096,7 @@ TEST(MerlinSyntaxTest, UsrWithLabel) {
   EXPECT_TRUE(symbols.IsDefined("DRAW"));
 
   // Should have only label and NOP - USR generates no atoms
-  ASSERT_EQ(section.atoms.size(), 2); // Label, NOP (no JSR)
+  ASSERT_EQ(section.atoms.size(), 2UL); // Label, NOP (no JSR)
   EXPECT_EQ(section.atoms[0]->type, AtomType::Label);
   EXPECT_EQ(section.atoms[1]->type, AtomType::Instruction);
 
@@ -1116,7 +1116,7 @@ TEST(MerlinSyntaxTest, UsrWithLabelOnLine) {
   EXPECT_TRUE(symbols.IsDefined("CALLDRAW"));
 
   // Should have only label - USR generates no atoms
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   EXPECT_EQ(section.atoms[0]->type, AtomType::Label);
 }
 
@@ -1131,7 +1131,7 @@ TEST(MerlinSyntaxTest, StripCommentsEmptyString) {
 
   // Empty string should not crash
   parser.Parse("", section, symbols);
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 TEST(MerlinSyntaxTest, StripCommentsSingleAsterisk) {
@@ -1141,7 +1141,7 @@ TEST(MerlinSyntaxTest, StripCommentsSingleAsterisk) {
 
   // Single * should be treated as comment
   parser.Parse("*", section, symbols);
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 TEST(MerlinSyntaxTest, ParseNumberEmptyString) {
@@ -1215,10 +1215,10 @@ TEST(MerlinSyntaxTest, HandleHexEmptyString) {
   parser.Parse("         HEX", section, symbols);
 
   // Should create empty DataAtom
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  EXPECT_EQ(data_atom->data.size(), 0);
+  EXPECT_EQ(data_atom->data.size(), 0UL);
 }
 
 TEST(MerlinSyntaxTest, HandleHexSingleDigit) {
@@ -1230,7 +1230,7 @@ TEST(MerlinSyntaxTest, HandleHexSingleDigit) {
   parser.Parse("         HEX A", section, symbols);
 
   // Should not crash (might skip last digit or pad with 0)
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
 }
 
 TEST(MerlinSyntaxTest, HandleAscEmptyOperand) {
@@ -1242,10 +1242,10 @@ TEST(MerlinSyntaxTest, HandleAscEmptyOperand) {
   parser.Parse("         ASC", section, symbols);
 
   // Should create empty DataAtom
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  EXPECT_EQ(data_atom->data.size(), 0);
+  EXPECT_EQ(data_atom->data.size(), 0UL);
 }
 
 TEST(MerlinSyntaxTest, HandleAscSingleQuoteOnly) {
@@ -1257,7 +1257,7 @@ TEST(MerlinSyntaxTest, HandleAscSingleQuoteOnly) {
   parser.Parse("         ASC '", section, symbols);
 
   // Should handle gracefully
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
 }
 
 TEST(MerlinSyntaxTest, HandleDsEmptyOperand) {
@@ -1269,10 +1269,10 @@ TEST(MerlinSyntaxTest, HandleDsEmptyOperand) {
   parser.Parse("         DS", section, symbols);
 
   // Should create SpaceAtom with 0 size
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto space_atom = std::dynamic_pointer_cast<SpaceAtom>(section.atoms[0]);
   ASSERT_NE(space_atom, nullptr);
-  EXPECT_EQ(space_atom->size, 0);
+  EXPECT_EQ(space_atom->size, 0UL);
 }
 
 TEST(MerlinSyntaxTest, HandleDsWithProgramCounter) {
@@ -1285,10 +1285,10 @@ TEST(MerlinSyntaxTest, HandleDsWithProgramCounter) {
   parser.Parse("         DS *", section, symbols);
 
   // Should create SpaceAtom with 0 size (current address is 0, so DS 0-0 = 0)
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto space_atom = std::dynamic_pointer_cast<SpaceAtom>(section.atoms[0]);
   ASSERT_NE(space_atom, nullptr);
-  EXPECT_EQ(space_atom->size, 0);
+  EXPECT_EQ(space_atom->size, 0UL);
 }
 
 TEST(MerlinSyntaxTest, TrimEmptyString) {
@@ -1300,7 +1300,7 @@ TEST(MerlinSyntaxTest, TrimEmptyString) {
 
   // Parse line that's all whitespace
   parser.Parse("         ", section, symbols);
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 TEST(MerlinSyntaxTest, ParseLineOnlyWhitespace) {
@@ -1309,7 +1309,7 @@ TEST(MerlinSyntaxTest, ParseLineOnlyWhitespace) {
   Section section("test", 0);
 
   parser.Parse("              ", section, symbols);
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 TEST(MerlinSyntaxTest, ParseExpressionShortStringAddition) {
@@ -1335,7 +1335,7 @@ TEST(MerlinSyntaxTest, EndDirective) {
   parser.Parse("         END", section, symbols);
 
   // END directive should be a no-op - no atoms generated
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 TEST(MerlinSyntaxTest, EndDirectiveWithCode) {
@@ -1352,7 +1352,7 @@ TEST(MerlinSyntaxTest, EndDirectiveWithCode) {
 
   // Should process code before END
   EXPECT_TRUE(symbols.IsDefined("START"));
-  ASSERT_GE(section.atoms.size(), 3); // ORG, Label, LDA, STA
+  ASSERT_GE(section.atoms.size(), 3UL); // ORG, Label, LDA, STA
 }
 
 TEST(MerlinSyntaxTest, EndDirectiveIgnoresAfter) {
@@ -1367,7 +1367,7 @@ TEST(MerlinSyntaxTest, EndDirectiveIgnoresAfter) {
   parser.Parse(source, section, symbols);
 
   // Should only have first DB - code after END should be ignored
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data[0], 0x01);
@@ -1388,7 +1388,7 @@ TEST(MerlinSyntaxTest, MacroDefinitionEmpty) {
   parser.Parse(source, section, symbols);
 
   // Empty macro should be defined but produce no atoms
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 TEST(MerlinSyntaxTest, MacroDefinitionSimple) {
@@ -1404,7 +1404,7 @@ TEST(MerlinSyntaxTest, MacroDefinitionSimple) {
   parser.Parse(source, section, symbols);
 
   // Macro definition should not generate atoms
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 TEST(MerlinSyntaxTest, MacroExpansionSimple) {
@@ -1422,7 +1422,7 @@ TEST(MerlinSyntaxTest, MacroExpansionSimple) {
   parser.Parse(source, section, symbols);
 
   // MAC should expand to 2 NOP instructions
-  ASSERT_EQ(section.atoms.size(), 2);
+  ASSERT_EQ(section.atoms.size(), 2UL);
   EXPECT_EQ(section.atoms[0]->type, AtomType::Instruction);
   EXPECT_EQ(section.atoms[1]->type, AtomType::Instruction);
 }
@@ -1441,7 +1441,7 @@ TEST(MerlinSyntaxTest, MacroWithParametersOneParam) {
   parser.Parse(source, section, symbols);
 
   // Should expand to LDA #$42
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto inst = std::dynamic_pointer_cast<InstructionAtom>(section.atoms[0]);
   ASSERT_NE(inst, nullptr);
   EXPECT_EQ(inst->mnemonic, "LDA");
@@ -1462,7 +1462,7 @@ TEST(MerlinSyntaxTest, MacroWithParametersTwoParams) {
   parser.Parse(source, section, symbols);
 
   // Should expand to LDA $C000 / STA $C001
-  ASSERT_EQ(section.atoms.size(), 2);
+  ASSERT_EQ(section.atoms.size(), 2UL);
   auto inst1 = std::dynamic_pointer_cast<InstructionAtom>(section.atoms[0]);
   ASSERT_NE(inst1, nullptr);
   EXPECT_EQ(inst1->mnemonic, "LDA");
@@ -1501,7 +1501,7 @@ TEST(MerlinSyntaxTest, MacroNestedExpansion) {
   parser.Parse(source, section, symbols);
 
   // OuterMacro should expand InnerMacro, which expands to NOP
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto inst = std::dynamic_pointer_cast<InstructionAtom>(section.atoms[0]);
   ASSERT_NE(inst, nullptr);
   EXPECT_EQ(inst->mnemonic, "NOP");
@@ -1551,7 +1551,7 @@ TEST(MerlinSyntaxTest, MacroMultipleExpansions) {
   // Should expand macro 3 times
   // Each with INC, BNE, INC (and label)
   ASSERT_GE(section.atoms.size(),
-            3 * 2); // At least 3 * (INC, BNE, INC) but labels add more
+            3UL * 2UL); // At least 3 * (INC, BNE, INC) but labels add more
 }
 
 // ============================================================================
@@ -1572,7 +1572,7 @@ TEST(MerlinSyntaxTest, MacroMerlinStyleDefinition) {
   parser.Parse(source, section, symbols);
 
   // Macro definition should not generate atoms
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 TEST(MerlinSyntaxTest, MacroMerlinStyleExpansion) {
@@ -1591,7 +1591,7 @@ TEST(MerlinSyntaxTest, MacroMerlinStyleExpansion) {
   parser.Parse(source, section, symbols);
 
   // Should expand to: Label, LDA, TAX, TAY
-  ASSERT_GE(section.atoms.size(), 4);
+  ASSERT_GE(section.atoms.size(), 4UL);
   EXPECT_EQ(section.atoms[0]->type, AtomType::Label);
   EXPECT_EQ(section.atoms[1]->type, AtomType::Instruction);
   EXPECT_EQ(section.atoms[2]->type, AtomType::Instruction);
@@ -1613,7 +1613,7 @@ TEST(MerlinSyntaxTest, MacroMerlinStyleWithParameters) {
   parser.Parse(source, section, symbols);
 
   // Should expand to: LDA #$42, STA $80
-  ASSERT_EQ(section.atoms.size(), 2);
+  ASSERT_EQ(section.atoms.size(), 2UL);
   auto inst1 = std::dynamic_pointer_cast<InstructionAtom>(section.atoms[0]);
   ASSERT_NE(inst1, nullptr);
   EXPECT_EQ(inst1->mnemonic, "LDA");
@@ -1638,7 +1638,7 @@ TEST(MerlinSyntaxTest, SavDirective) {
   parser.Parse(" sav boot", section, symbols);
 
   // SAV is a no-op directive - should produce no atoms
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 TEST(MerlinSyntaxTest, XcDirective) {
@@ -1650,7 +1650,7 @@ TEST(MerlinSyntaxTest, XcDirective) {
   parser.Parse(" xc off", section, symbols);
 
   // XC is a no-op directive - should produce no atoms
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 TEST(MerlinSyntaxTest, MxDirectiveBinary) {
@@ -1666,7 +1666,7 @@ TEST(MerlinSyntaxTest, MxDirectiveBinary) {
   parser.Parse(" mx %11", section, symbols); // 8-bit A, 8-bit X/Y
 
   // MX is a state-tracking directive - should produce no atoms
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 TEST(MerlinSyntaxTest, MxDirectiveDecimal) {
@@ -1682,7 +1682,7 @@ TEST(MerlinSyntaxTest, MxDirectiveDecimal) {
   parser.Parse(" mx 3", section, symbols); // Same as %11
 
   // MX is a state-tracking directive - should produce no atoms
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 TEST(MerlinSyntaxTest, MxDirectiveInvalidBinary) {
@@ -1732,13 +1732,13 @@ TEST(MerlinSyntaxTest, RevDirective) {
   EXPECT_EQ(value, 0);
 
   // Should have label and data atoms
-  ASSERT_EQ(section.atoms.size(), 2);
+  ASSERT_EQ(section.atoms.size(), 2UL);
   EXPECT_EQ(section.atoms[0]->type, AtomType::Label);
 
   // Data should be "CBA" (reversed)
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[1]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 3);
+  ASSERT_EQ(data_atom->data.size(), 3UL);
   EXPECT_EQ(data_atom->data[0], 'C'); // 0x43
   EXPECT_EQ(data_atom->data[1], 'B'); // 0x42
   EXPECT_EQ(data_atom->data[2], 'A'); // 0x41
@@ -1761,13 +1761,13 @@ TEST(MerlinSyntaxTest, RevDirectiveWithSingleChar) {
   EXPECT_EQ(value, 0);
 
   // Should have label and data atoms
-  ASSERT_EQ(section.atoms.size(), 2);
+  ASSERT_EQ(section.atoms.size(), 2UL);
   EXPECT_EQ(section.atoms[0]->type, AtomType::Label);
 
   // Data should be "X"
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[1]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 1);
+  ASSERT_EQ(data_atom->data.size(), 1UL);
   EXPECT_EQ(data_atom->data[0], 'X'); // 0x58
 }
 
@@ -1788,7 +1788,7 @@ TEST(MerlinSyntaxTest, LupBasicRepeat) {
   parser.Parse(source, section, symbols);
 
   // Should generate 3 NOP instructions
-  ASSERT_EQ(section.atoms.size(), 3);
+  ASSERT_EQ(section.atoms.size(), 3UL);
   EXPECT_EQ(section.atoms[0]->type, AtomType::Instruction);
   EXPECT_EQ(section.atoms[1]->type, AtomType::Instruction);
   EXPECT_EQ(section.atoms[2]->type, AtomType::Instruction);
@@ -1807,7 +1807,7 @@ TEST(MerlinSyntaxTest, LupZeroCount) {
   parser.Parse(source, section, symbols);
 
   // Should generate no atoms
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 TEST(MerlinSyntaxTest, LupMultipleInstructions) {
@@ -1824,7 +1824,7 @@ TEST(MerlinSyntaxTest, LupMultipleInstructions) {
   parser.Parse(source, section, symbols);
 
   // Should generate 4 instructions (2 iterations * 2 instructions)
-  ASSERT_EQ(section.atoms.size(), 4);
+  ASSERT_EQ(section.atoms.size(), 4UL);
   EXPECT_EQ(section.atoms[0]->type, AtomType::Instruction);
   EXPECT_EQ(section.atoms[1]->type, AtomType::Instruction);
   EXPECT_EQ(section.atoms[2]->type, AtomType::Instruction);
@@ -1844,7 +1844,7 @@ TEST(MerlinSyntaxTest, LupWithData) {
   parser.Parse(source, section, symbols);
 
   // Should generate 4 data atoms
-  ASSERT_EQ(section.atoms.size(), 4);
+  ASSERT_EQ(section.atoms.size(), 4UL);
   for (size_t i = 0; i < 4; ++i) {
     auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[i]);
     ASSERT_NE(data_atom, nullptr);
@@ -1867,7 +1867,7 @@ TEST(MerlinSyntaxTest, LupNested) {
   parser.Parse(source, section, symbols);
 
   // Should generate 4 NOP instructions (2 outer * 2 inner)
-  ASSERT_EQ(section.atoms.size(), 4);
+  ASSERT_EQ(section.atoms.size(), 4UL);
   for (size_t i = 0; i < 4; ++i) {
     EXPECT_EQ(section.atoms[i]->type, AtomType::Instruction);
   }
@@ -1931,7 +1931,7 @@ TEST(MerlinSyntaxTest, BltInstructionParsing) {
   parser.Parse(" blt target", section, symbols);
 
   // Should generate an instruction atom
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto instr_atom =
       std::dynamic_pointer_cast<InstructionAtom>(section.atoms[0]);
   ASSERT_NE(instr_atom, nullptr);
@@ -1961,7 +1961,7 @@ TEST(MerlinSyntaxTest, MacroLabelBasedDefinition) {
   parser.Parse(source, section, symbols);
 
   // Macro definition should not generate atoms
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 TEST(MerlinSyntaxTest, MacroLabelBasedExpansion) {
@@ -1982,11 +1982,11 @@ TEST(MerlinSyntaxTest, MacroLabelBasedExpansion) {
 
   // Should expand to: hex 9f, da $9D00, db $E1
   // That's 1 + 2 + 1 = 4 bytes
-  ASSERT_EQ(section.atoms.size(), 3); // 3 data atoms
+  ASSERT_EQ(section.atoms.size(), 3UL); // 3 data atoms
 
   auto data1 = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data1, nullptr);
-  ASSERT_EQ(data1->data.size(), 1);
+  ASSERT_EQ(data1->data.size(), 1UL);
   EXPECT_EQ(data1->data[0], 0x9F);
 }
 
@@ -2006,7 +2006,7 @@ TEST(MerlinSyntaxTest, MacroLabelBasedWithNoParams) {
   parser.Parse(source, section, symbols);
 
   // Should expand to: LDA #$00, TAX
-  ASSERT_EQ(section.atoms.size(), 2);
+  ASSERT_EQ(section.atoms.size(), 2UL);
   EXPECT_EQ(section.atoms[0]->type, AtomType::Instruction);
   EXPECT_EQ(section.atoms[1]->type, AtomType::Instruction);
 }

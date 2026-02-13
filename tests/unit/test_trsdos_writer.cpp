@@ -72,7 +72,7 @@ TEST_F(TrsDosWriterTest, EmptyOutput) {
   auto bytes = GetOutputBytes();
   // Empty sections should produce minimal header (if any)
   // TRS-DOS format may skip output for empty data
-  EXPECT_EQ(bytes.size(), 0); // No data = no output
+  EXPECT_EQ(bytes.size(), 0UL); // No data = no output
 }
 
 /**
@@ -88,7 +88,7 @@ TEST_F(TrsDosWriterTest, SingleByteAtAddress) {
 
   // Format: [segment_type] [load_addr_lo] [load_addr_hi] [length_lo]
   // [length_hi] [data...] Segment type: 0x01 for data segment
-  ASSERT_GE(bytes.size(), 6); // header (5 bytes) + 1 byte data
+  ASSERT_GE(bytes.size(), 6UL); // header (5 bytes) + 1 byte data
 
   EXPECT_EQ(bytes[0], 0x01);             // Segment type
   EXPECT_EQ(ReadLE16(bytes, 1), 0x8000); // Load address
@@ -108,7 +108,7 @@ TEST_F(TrsDosWriterTest, MultipleBytes) {
 
   auto bytes = GetOutputBytes();
 
-  ASSERT_GE(bytes.size(), 10); // header (5) + data (5)
+  ASSERT_GE(bytes.size(), 10UL); // header (5) + data (5)
 
   EXPECT_EQ(bytes[0], 0x01);             // Segment type
   EXPECT_EQ(ReadLE16(bytes, 1), 0x4000); // Load address
@@ -137,7 +137,7 @@ TEST_F(TrsDosWriterTest, MultipleSections) {
   auto bytes = GetOutputBytes();
 
   // Two segments: each with 5-byte header + 2 data bytes
-  ASSERT_GE(bytes.size(), 14); // (5+2) + (5+2)
+  ASSERT_GE(bytes.size(), 14UL); // (5+2) + (5+2)
 
   // First segment
   EXPECT_EQ(bytes[0], 0x01);
@@ -171,7 +171,7 @@ TEST_F(TrsDosWriterTest, WithEntryPoint) {
   auto bytes = GetOutputBytes();
 
   // Data segment + entry point segment (type 0x02)
-  ASSERT_GE(bytes.size(), 12); // (5+2) data + (5+0) entry
+  ASSERT_GE(bytes.size(), 12UL); // (5+2) data + (5+0) entry
 
   // Find entry point segment (should be last, type 0x02)
   size_t entry_offset = bytes.size() - 5; // Entry segment is 5 bytes (no data)
@@ -213,7 +213,7 @@ TEST_F(TrsDosWriterTest, SectionWithNoAtoms) {
   writer.Write(sections, output);
 
   auto bytes = GetOutputBytes();
-  EXPECT_EQ(bytes.size(), 0); // No data = no output
+  EXPECT_EQ(bytes.size(), 0UL); // No data = no output
 }
 
 /**
@@ -229,7 +229,7 @@ TEST_F(TrsDosWriterTest, SectionWithSpaceAtom) {
   writer.Write(sections, output);
 
   auto bytes = GetOutputBytes();
-  EXPECT_EQ(bytes.size(), 0); // Space atoms don't produce output
+  EXPECT_EQ(bytes.size(), 0UL); // Space atoms don't produce output
 }
 
 /**
@@ -252,7 +252,7 @@ TEST_F(TrsDosWriterTest, MixedAtomsWithSpace) {
   auto bytes = GetOutputBytes();
 
   // Should create two segments due to address gap
-  ASSERT_GE(bytes.size(), 12); // (5+1) + (5+1)
+  ASSERT_GE(bytes.size(), 12UL); // (5+1) + (5+1)
 
   // First segment: 0xAA at 0x8000
   EXPECT_EQ(bytes[0], 0x01);

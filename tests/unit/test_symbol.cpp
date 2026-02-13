@@ -150,7 +150,7 @@ TEST(SymbolTest, SymbolTableIteration) {
   table.Define("CONST", SymbolType::Equate, std::make_shared<LiteralExpr>(42));
 
   auto symbols = table.GetAllSymbols();
-  EXPECT_EQ(symbols.size(), 3);
+  EXPECT_EQ(symbols.size(), 3UL);
 
   // Verify all symbols are present
   bool found_label1 = false, found_label2 = false, found_const = false;

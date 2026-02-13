@@ -22,7 +22,7 @@ TEST(ParseHexTest, EmptyString) {
   uint32_t result = ParseHexSafe("", success, error);
 
   EXPECT_FALSE(success);
-  EXPECT_EQ(result, 0);
+  EXPECT_EQ(result, 0U);
   EXPECT_FALSE(error.empty());
 }
 
@@ -34,7 +34,7 @@ TEST(ParseHexTest, MissingDollarSign) {
   uint32_t result = ParseHexSafe("1234", success, error);
 
   EXPECT_FALSE(success);
-  EXPECT_EQ(result, 0);
+  EXPECT_EQ(result, 0U);
   EXPECT_FALSE(error.empty());
 }
 
@@ -46,7 +46,7 @@ TEST(ParseHexTest, InvalidHexCharacters) {
   uint32_t result = ParseHexSafe("$12XZ", success, error);
 
   EXPECT_FALSE(success);
-  EXPECT_EQ(result, 0);
+  EXPECT_EQ(result, 0U);
   EXPECT_FALSE(error.empty());
 }
 
@@ -58,7 +58,7 @@ TEST(ParseHexTest, NonHexCharacters) {
   uint32_t result = ParseHexSafe("$GHIJ", success, error);
 
   EXPECT_FALSE(success);
-  EXPECT_EQ(result, 0);
+  EXPECT_EQ(result, 0U);
   EXPECT_FALSE(error.empty());
 }
 
@@ -82,7 +82,7 @@ TEST(ParseHexTest, OnlyDollarSign) {
   uint32_t result = ParseHexSafe("$", success, error);
 
   EXPECT_FALSE(success);
-  EXPECT_EQ(result, 0);
+  EXPECT_EQ(result, 0U);
   EXPECT_FALSE(error.empty());
 }
 
@@ -108,7 +108,7 @@ TEST(ParseHexTest, ValidSingleByte) {
   uint32_t result = ParseHexSafe("$42", success, error);
 
   EXPECT_TRUE(success);
-  EXPECT_EQ(result, 0x42);
+  EXPECT_EQ(result, 0x42U);
   EXPECT_TRUE(error.empty());
 }
 
@@ -120,7 +120,7 @@ TEST(ParseHexTest, ValidTwoBytes) {
   uint32_t result = ParseHexSafe("$1234", success, error);
 
   EXPECT_TRUE(success);
-  EXPECT_EQ(result, 0x1234);
+  EXPECT_EQ(result, 0x1234U);
   EXPECT_TRUE(error.empty());
 }
 
@@ -132,7 +132,7 @@ TEST(ParseHexTest, ValidFourBytes) {
   uint32_t result = ParseHexSafe("$ABCD1234", success, error);
 
   EXPECT_TRUE(success);
-  EXPECT_EQ(result, 0xABCD1234);
+  EXPECT_EQ(result, 0xABCD1234U);
   EXPECT_TRUE(error.empty());
 }
 
@@ -144,7 +144,7 @@ TEST(ParseHexTest, LowercaseHexDigits) {
   uint32_t result = ParseHexSafe("$abcd", success, error);
 
   EXPECT_TRUE(success);
-  EXPECT_EQ(result, 0xABCD);
+  EXPECT_EQ(result, 0xABCDU);
   EXPECT_TRUE(error.empty());
 }
 
@@ -156,7 +156,7 @@ TEST(ParseHexTest, MixedCaseHexDigits) {
   uint32_t result = ParseHexSafe("$AbCd", success, error);
 
   EXPECT_TRUE(success);
-  EXPECT_EQ(result, 0xABCD);
+  EXPECT_EQ(result, 0xABCDU);
   EXPECT_TRUE(error.empty());
 }
 
@@ -168,7 +168,7 @@ TEST(ParseHexTest, ZeroValue) {
   uint32_t result = ParseHexSafe("$0", success, error);
 
   EXPECT_TRUE(success);
-  EXPECT_EQ(result, 0);
+  EXPECT_EQ(result, 0U);
   EXPECT_TRUE(error.empty());
 }
 
@@ -180,7 +180,7 @@ TEST(ParseHexTest, MaxUint32Value) {
   uint32_t result = ParseHexSafe("$FFFFFFFF", success, error);
 
   EXPECT_TRUE(success);
-  EXPECT_EQ(result, 0xFFFFFFFF);
+  EXPECT_EQ(result, 0xFFFFFFFFU);
   EXPECT_TRUE(error.empty());
 }
 
@@ -192,7 +192,7 @@ TEST(ParseHexTest, LeadingZeros) {
   uint32_t result = ParseHexSafe("$0042", success, error);
 
   EXPECT_TRUE(success);
-  EXPECT_EQ(result, 0x42);
+  EXPECT_EQ(result, 0x42U);
   EXPECT_TRUE(error.empty());
 }
 
@@ -202,24 +202,24 @@ TEST(ParseHexTest, LeadingZeros) {
 
 // Test: ParseHex with $ prefix
 TEST(ParseHexExceptionTest, WithDollarPrefix) {
-  EXPECT_EQ(0x1234, ParseHex("$1234"));
-  EXPECT_EQ(0xFF, ParseHex("$FF"));
-  EXPECT_EQ(0xABCD, ParseHex("$ABCD"));
+  EXPECT_EQ(0x1234U, ParseHex("$1234"));
+  EXPECT_EQ(0xFFU, ParseHex("$FF"));
+  EXPECT_EQ(0xABCDU, ParseHex("$ABCD"));
 }
 
 // Test: ParseHex without $ prefix (should work)
 TEST(ParseHexExceptionTest, WithoutDollarPrefix) {
-  EXPECT_EQ(0x1234, ParseHex("1234"));
-  EXPECT_EQ(0xFF, ParseHex("FF"));
-  EXPECT_EQ(0xABCD, ParseHex("ABCD"));
+  EXPECT_EQ(0x1234U, ParseHex("1234"));
+  EXPECT_EQ(0xFFU, ParseHex("FF"));
+  EXPECT_EQ(0xABCDU, ParseHex("ABCD"));
 }
 
 // Test: ParseHex strips addressing mode suffixes
 TEST(ParseHexExceptionTest, StripAddressingModeSuffixes) {
-  EXPECT_EQ(0x10, ParseHex("$10,X"));
-  EXPECT_EQ(0x20, ParseHex("$20,Y"));
-  EXPECT_EQ(0x30, ParseHex("$30,S"));
-  EXPECT_EQ(0x1234, ParseHex("$1234,X"));
+  EXPECT_EQ(0x10U, ParseHex("$10,X"));
+  EXPECT_EQ(0x20U, ParseHex("$20,Y"));
+  EXPECT_EQ(0x30U, ParseHex("$30,S"));
+  EXPECT_EQ(0x1234U, ParseHex("$1234,X"));
 }
 
 // Test: ParseHex throws on empty string
@@ -241,20 +241,20 @@ TEST(ParseHexExceptionTest, ThrowsOnOnlyDollarSign) {
 
 // Test: ParseHex handles lowercase
 TEST(ParseHexExceptionTest, HandlesLowercase) {
-  EXPECT_EQ(0xabcd, ParseHex("$abcd"));
-  EXPECT_EQ(0xabcd, ParseHex("abcd"));
+  EXPECT_EQ(0xabcdU, ParseHex("$abcd"));
+  EXPECT_EQ(0xabcdU, ParseHex("abcd"));
 }
 
 // Test: ParseHex handles mixed case
 TEST(ParseHexExceptionTest, HandlesMixedCase) {
-  EXPECT_EQ(0xAbCd, ParseHex("$AbCd"));
-  EXPECT_EQ(0xAbCd, ParseHex("AbCd"));
+  EXPECT_EQ(0xAbCdU, ParseHex("$AbCd"));
+  EXPECT_EQ(0xAbCdU, ParseHex("AbCd"));
 }
 
 // Test: ParseHex handles zero
 TEST(ParseHexExceptionTest, HandlesZero) {
-  EXPECT_EQ(0, ParseHex("$0"));
-  EXPECT_EQ(0, ParseHex("0"));
+  EXPECT_EQ(0U, ParseHex("$0"));
+  EXPECT_EQ(0U, ParseHex("0"));
 }
 
 } // namespace xasm

@@ -33,15 +33,15 @@ TEST(ConstCorrectnessTest, Cpu6502EncodingMethodsAreConst) {
 
   // All encoding methods should be const (don't modify CPU state)
   auto nop = cpu.EncodeNOP();
-  EXPECT_EQ(1, nop.size());
+  EXPECT_EQ(nop.size(), 1UL);
   EXPECT_EQ(0xEA, nop[0]);
 
   auto rts = cpu.EncodeRTS();
-  EXPECT_EQ(1, rts.size());
+  EXPECT_EQ(rts.size(), 1UL);
   EXPECT_EQ(0x60, rts[0]);
 
   auto lda = cpu.EncodeLDA(0x42, AddressingMode::Immediate);
-  EXPECT_EQ(2, lda.size());
+  EXPECT_EQ(lda.size(), 2UL);
   EXPECT_EQ(0xA9, lda[0]);
   EXPECT_EQ(0x42, lda[1]);
 }
@@ -50,9 +50,9 @@ TEST(ConstCorrectnessTest, Cpu6502EncodingMethodsAreConst) {
 TEST(ConstCorrectnessTest, Cpu6502CalculateInstructionSizeIsConst) {
   const Cpu6502 cpu;
 
-  EXPECT_EQ(1, cpu.CalculateInstructionSize(AddressingMode::Implied));
-  EXPECT_EQ(2, cpu.CalculateInstructionSize(AddressingMode::Immediate));
-  EXPECT_EQ(3, cpu.CalculateInstructionSize(AddressingMode::Absolute));
+  EXPECT_EQ(cpu.CalculateInstructionSize(AddressingMode::Implied), 1UL);
+  EXPECT_EQ(cpu.CalculateInstructionSize(AddressingMode::Immediate), 2UL);
+  EXPECT_EQ(cpu.CalculateInstructionSize(AddressingMode::Absolute), 3UL);
 }
 
 // Test CPU6502 branch relaxation methods are const
@@ -150,7 +150,7 @@ TEST(ConstCorrectnessTest, SymbolTableGetAllSymbolsIsConst) {
 
   const ConcreteSymbolTable &const_symbols = symbols;
   const auto &all_symbols = const_symbols.GetAllSymbols();
-  EXPECT_EQ(2, all_symbols.size());
+  EXPECT_EQ(all_symbols.size(), 2UL);
   EXPECT_TRUE(all_symbols.find("sym1") != all_symbols.end());
   EXPECT_TRUE(all_symbols.find("sym2") != all_symbols.end());
 }
@@ -167,7 +167,7 @@ TEST(ConstCorrectnessTest, AssemblerGetSectionCountIsConst) {
 
   // Cast to const to verify GetSectionCount is const
   const Assembler &const_assembler = assembler;
-  EXPECT_EQ(2, const_assembler.GetSectionCount());
+  EXPECT_EQ(2UL, const_assembler.GetSectionCount());
 }
 
 // Test that const objects can use const methods in realistic scenarios

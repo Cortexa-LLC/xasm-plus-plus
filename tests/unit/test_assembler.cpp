@@ -25,7 +25,7 @@ TEST(AssemblerTest, AddSection) {
                   0x8000);
   assembler.AddSection(section);
 
-  EXPECT_EQ(assembler.GetSectionCount(), 1);
+  EXPECT_EQ(assembler.GetSectionCount(), 1UL);
 }
 
 // Test 3: Add multiple sections
@@ -38,7 +38,7 @@ TEST(AssemblerTest, AddMultipleSections) {
   assembler.AddSection(text);
   assembler.AddSection(data);
 
-  EXPECT_EQ(assembler.GetSectionCount(), 2);
+  EXPECT_EQ(assembler.GetSectionCount(), 2UL);
 }
 
 // Test 4: Assemble with no sections (should succeed with 0 passes)
@@ -48,8 +48,8 @@ TEST(AssemblerTest, AssembleEmpty) {
   AssemblerResult result = assembler.Assemble();
 
   EXPECT_TRUE(result.success);
-  EXPECT_EQ(result.pass_count, 0);
-  EXPECT_EQ(result.errors.size(), 0);
+  EXPECT_EQ(result.pass_count, 0U);
+  EXPECT_EQ(result.errors.size(), 0UL);
 }
 
 // Test 5: Assemble with single section
@@ -65,7 +65,7 @@ TEST(AssemblerTest, AssembleSingleSection) {
   AssemblerResult result = assembler.Assemble();
 
   EXPECT_TRUE(result.success);
-  EXPECT_GE(result.pass_count, 1); // At least one pass
+  EXPECT_GE(result.pass_count, 1U); // At least one pass
 }
 
 // Test 6: Pass count tracking
@@ -80,8 +80,8 @@ TEST(AssemblerTest, PassCountTracking) {
   AssemblerResult result = assembler.Assemble();
 
   EXPECT_TRUE(result.success);
-  EXPECT_GE(result.pass_count, 1);
-  EXPECT_LE(result.pass_count, 500); // MAX_PASSES limit
+  EXPECT_GE(result.pass_count, 1U);
+  EXPECT_LE(result.pass_count, 500U); // MAX_PASSES limit
 }
 
 // Test 7: Convergence (no size changes means done)
@@ -98,7 +98,7 @@ TEST(AssemblerTest, Convergence) {
 
   EXPECT_TRUE(result.success);
   // Should converge quickly since nothing changes
-  EXPECT_LE(result.pass_count, 10);
+  EXPECT_LE(result.pass_count, 10U);
 }
 
 // Test 8: Error accumulation
@@ -112,7 +112,7 @@ TEST(AssemblerTest, ErrorAccumulation) {
   AssemblerResult result = assembler.Assemble();
 
   EXPECT_TRUE(result.success);
-  EXPECT_EQ(result.errors.size(), 0); // No errors for valid assembly
+  EXPECT_EQ(result.errors.size(), 0UL); // No errors for valid assembly
 }
 
 // Test 9: Get pass count limits
@@ -128,11 +128,11 @@ TEST(AssemblerTest, Reset) {
   Section section(".text", static_cast<uint32_t>(SectionAttributes::Code));
   assembler.AddSection(section);
 
-  EXPECT_EQ(assembler.GetSectionCount(), 1);
+  EXPECT_EQ(assembler.GetSectionCount(), 1UL);
 
   assembler.Reset();
 
-  EXPECT_EQ(assembler.GetSectionCount(), 0);
+  EXPECT_EQ(assembler.GetSectionCount(), 0UL);
 }
 
 // Test 11: Assemble result structure
@@ -142,7 +142,7 @@ TEST(AssemblerTest, ResultStructure) {
   result.pass_count = 5;
 
   EXPECT_TRUE(result.success);
-  EXPECT_EQ(result.pass_count, 5);
+  EXPECT_EQ(result.pass_count, 5U);
   EXPECT_TRUE(result.errors.empty());
 }
 
@@ -181,7 +181,7 @@ TEST(AssemblerTest, InstructionEncoding) {
   EXPECT_TRUE(result.success);
   // Verify encoded_bytes was populated
   EXPECT_FALSE(nop->encoded_bytes.empty());
-  EXPECT_EQ(nop->encoded_bytes.size(), 1);
+  EXPECT_EQ(nop->encoded_bytes.size(), 1UL);
   EXPECT_EQ(nop->encoded_bytes[0], 0xEA); // NOP opcode
 }
 
@@ -202,7 +202,7 @@ TEST(AssemblerTest, LDAImmediateEncoding) {
   AssemblerResult result = assembler.Assemble();
 
   EXPECT_TRUE(result.success);
-  EXPECT_EQ(lda->encoded_bytes.size(), 2);
+  EXPECT_EQ(lda->encoded_bytes.size(), 2UL);
   EXPECT_EQ(lda->encoded_bytes[0], 0xA9); // LDA immediate opcode
   EXPECT_EQ(lda->encoded_bytes[1], 0x42); // Operand
 }
@@ -224,7 +224,7 @@ TEST(AssemblerTest, STAAbsoluteEncoding) {
   AssemblerResult result = assembler.Assemble();
 
   EXPECT_TRUE(result.success);
-  EXPECT_EQ(sta->encoded_bytes.size(), 3);
+  EXPECT_EQ(sta->encoded_bytes.size(), 3UL);
   EXPECT_EQ(sta->encoded_bytes[0], 0x8D); // STA absolute opcode
   EXPECT_EQ(sta->encoded_bytes[1], 0x34); // Low byte
   EXPECT_EQ(sta->encoded_bytes[2], 0x12); // High byte
@@ -253,7 +253,7 @@ TEST(AssemblerTest, LabelAsOperand) {
   AssemblerResult result = assembler.Assemble();
 
   EXPECT_TRUE(result.success);
-  EXPECT_EQ(jmp->encoded_bytes.size(), 3);
+  EXPECT_EQ(jmp->encoded_bytes.size(), 3UL);
   EXPECT_EQ(jmp->encoded_bytes[0], 0x4C); // JMP absolute opcode
   EXPECT_EQ(jmp->encoded_bytes[1], 0x05); // Low byte of $8005
   EXPECT_EQ(jmp->encoded_bytes[2], 0x80); // High byte of $8005
@@ -282,7 +282,7 @@ TEST(AssemblerTest, BackwardReference) {
   AssemblerResult result = assembler.Assemble();
 
   EXPECT_TRUE(result.success);
-  EXPECT_EQ(jmp->encoded_bytes.size(), 3);
+  EXPECT_EQ(jmp->encoded_bytes.size(), 3UL);
   EXPECT_EQ(jmp->encoded_bytes[0], 0x4C); // JMP absolute opcode
   EXPECT_EQ(jmp->encoded_bytes[1], 0x00); // Low byte of $8000
   EXPECT_EQ(jmp->encoded_bytes[2], 0x80); // High byte of $8000
@@ -356,7 +356,7 @@ TEST(AssemblerTest, UndefinedLabel) {
 
   // Should succeed (single pass, undefined label gets value 0)
   EXPECT_TRUE(result.success);
-  EXPECT_EQ(jmp->encoded_bytes.size(), 3);
+  EXPECT_EQ(jmp->encoded_bytes.size(), 3UL);
   EXPECT_EQ(jmp->encoded_bytes[0], 0x4C); // JMP absolute opcode
   EXPECT_EQ(jmp->encoded_bytes[1], 0x00); // Low byte of $0000
   EXPECT_EQ(jmp->encoded_bytes[2], 0x00); // High byte of $0000
@@ -385,7 +385,7 @@ TEST(AssemblerTest, LDAWithLabelOperand) {
   AssemblerResult result = assembler.Assemble();
 
   EXPECT_TRUE(result.success);
-  EXPECT_EQ(lda->encoded_bytes.size(), 3);
+  EXPECT_EQ(lda->encoded_bytes.size(), 3UL);
   EXPECT_EQ(lda->encoded_bytes[0], 0xAD); // LDA absolute opcode
   EXPECT_EQ(lda->encoded_bytes[1], 0x00); // Low byte of $0200
   EXPECT_EQ(lda->encoded_bytes[2], 0x02); // High byte of $0200
@@ -426,17 +426,17 @@ TEST(AssemblerTest, InternalLabelExtraction) {
   EXPECT_TRUE(result.success);
 
   // Verify label addresses were calculated correctly
-  EXPECT_EQ(start_label->address, 0x8000);
-  EXPECT_EQ(backward_label->address, 0x8003);
-  EXPECT_EQ(forward_label->address, 0x8005);
+  EXPECT_EQ(start_label->address, 0x8000ULL);
+  EXPECT_EQ(backward_label->address, 0x8003ULL);
+  EXPECT_EQ(forward_label->address, 0x8005ULL);
 
   // Verify instructions encoded with correct addresses
-  EXPECT_EQ(jmp1->encoded_bytes.size(), 3);
+  EXPECT_EQ(jmp1->encoded_bytes.size(), 3UL);
   EXPECT_EQ(jmp1->encoded_bytes[0], 0x4C); // JMP opcode
   EXPECT_EQ(jmp1->encoded_bytes[1], 0x05); // Low byte of $8005
   EXPECT_EQ(jmp1->encoded_bytes[2], 0x80); // High byte of $8005
 
-  EXPECT_EQ(jmp2->encoded_bytes.size(), 3);
+  EXPECT_EQ(jmp2->encoded_bytes.size(), 3UL);
   EXPECT_EQ(jmp2->encoded_bytes[0], 0x4C); // JMP opcode
   EXPECT_EQ(jmp2->encoded_bytes[1], 0x03); // Low byte of $8003
   EXPECT_EQ(jmp2->encoded_bytes[2], 0x80); // High byte of $8003
@@ -476,7 +476,7 @@ TEST(AssemblerTest, ForwardReference) {
   AssemblerResult result = assembler.Assemble();
 
   EXPECT_TRUE(result.success);
-  EXPECT_EQ(jmp->encoded_bytes.size(), 3);
+  EXPECT_EQ(jmp->encoded_bytes.size(), 3UL);
   EXPECT_EQ(jmp->encoded_bytes[0], 0x4C); // JMP absolute opcode
   EXPECT_EQ(jmp->encoded_bytes[1], 0x05); // Low byte of $8005
   EXPECT_EQ(jmp->encoded_bytes[2], 0x80); // High byte of $8005
@@ -502,7 +502,7 @@ TEST(AssemblerTest, ASLAccumulatorMode) {
   AssemblerResult result = assembler.Assemble();
 
   EXPECT_TRUE(result.success);
-  EXPECT_EQ(asl->encoded_bytes.size(), 1);
+  EXPECT_EQ(asl->encoded_bytes.size(), 1UL);
   EXPECT_EQ(asl->encoded_bytes[0], 0x0A); // ASL accumulator opcode
 }
 
@@ -523,7 +523,7 @@ TEST(AssemblerTest, LSRAccumulatorMode) {
   AssemblerResult result = assembler.Assemble();
 
   EXPECT_TRUE(result.success);
-  EXPECT_EQ(lsr->encoded_bytes.size(), 1);
+  EXPECT_EQ(lsr->encoded_bytes.size(), 1UL);
   EXPECT_EQ(lsr->encoded_bytes[0], 0x4A); // LSR accumulator opcode
 }
 // ============================================================================
@@ -547,7 +547,7 @@ TEST(AssemblerTest, LDAZeroPageX) {
   AssemblerResult result = assembler.Assemble();
 
   EXPECT_TRUE(result.success);
-  EXPECT_EQ(lda->encoded_bytes.size(), 2);
+  EXPECT_EQ(lda->encoded_bytes.size(), 2UL);
   EXPECT_EQ(lda->encoded_bytes[0], 0xB5); // LDA zero page,X opcode
   EXPECT_EQ(lda->encoded_bytes[1], 0x80); // Zero page address
 }
@@ -569,7 +569,7 @@ TEST(AssemblerTest, STAAbsoluteX) {
   AssemblerResult result = assembler.Assemble();
 
   EXPECT_TRUE(result.success);
-  EXPECT_EQ(sta->encoded_bytes.size(), 3);
+  EXPECT_EQ(sta->encoded_bytes.size(), 3UL);
   EXPECT_EQ(sta->encoded_bytes[0], 0x9D); // STA absolute,X opcode
   EXPECT_EQ(sta->encoded_bytes[1], 0x34); // Low byte
   EXPECT_EQ(sta->encoded_bytes[2], 0x12); // High byte
@@ -592,7 +592,7 @@ TEST(AssemblerTest, LDXZeroPageY) {
   AssemblerResult result = assembler.Assemble();
 
   EXPECT_TRUE(result.success);
-  EXPECT_EQ(ldx->encoded_bytes.size(), 2);
+  EXPECT_EQ(ldx->encoded_bytes.size(), 2UL);
   EXPECT_EQ(ldx->encoded_bytes[0], 0xB6); // LDX zero page,Y opcode
   EXPECT_EQ(ldx->encoded_bytes[1], 0x80); // Zero page address
 }
@@ -614,7 +614,7 @@ TEST(AssemblerTest, LDAAbsoluteY) {
   AssemblerResult result = assembler.Assemble();
 
   EXPECT_TRUE(result.success);
-  EXPECT_EQ(lda->encoded_bytes.size(), 3);
+  EXPECT_EQ(lda->encoded_bytes.size(), 3UL);
   EXPECT_EQ(lda->encoded_bytes[0], 0xB9); // LDA absolute,Y opcode
   EXPECT_EQ(lda->encoded_bytes[1], 0x34); // Low byte
   EXPECT_EQ(lda->encoded_bytes[2], 0x12); // High byte
@@ -637,7 +637,7 @@ TEST(AssemblerTest, LDAIndexedWithWhitespace) {
   AssemblerResult result = assembler.Assemble();
 
   EXPECT_TRUE(result.success);
-  EXPECT_EQ(lda->encoded_bytes.size(), 2);
+  EXPECT_EQ(lda->encoded_bytes.size(), 2UL);
   EXPECT_EQ(lda->encoded_bytes[0], 0xB5); // LDA zero page,X opcode
   EXPECT_EQ(lda->encoded_bytes[1], 0x80); // Zero page address
 }
@@ -662,7 +662,7 @@ TEST(AssemblerTest, JMPIndirect) {
   AssemblerResult result = assembler.Assemble();
 
   EXPECT_TRUE(result.success);
-  EXPECT_EQ(jmp->encoded_bytes.size(), 3);
+  EXPECT_EQ(jmp->encoded_bytes.size(), 3UL);
   EXPECT_EQ(jmp->encoded_bytes[0], 0x6C); // JMP indirect opcode
   EXPECT_EQ(jmp->encoded_bytes[1], 0x34); // Low byte
   EXPECT_EQ(jmp->encoded_bytes[2], 0x12); // High byte
@@ -685,7 +685,7 @@ TEST(AssemblerTest, JMPIndirectWithWhitespace) {
   AssemblerResult result = assembler.Assemble();
 
   EXPECT_TRUE(result.success);
-  EXPECT_EQ(jmp->encoded_bytes.size(), 3);
+  EXPECT_EQ(jmp->encoded_bytes.size(), 3UL);
   EXPECT_EQ(jmp->encoded_bytes[0], 0x6C); // JMP indirect opcode
   EXPECT_EQ(jmp->encoded_bytes[1], 0x34); // Low byte
   EXPECT_EQ(jmp->encoded_bytes[2], 0x12); // High byte
@@ -712,7 +712,7 @@ TEST(AssemblerTest, LDAIndexedIndirect) {
   AssemblerResult result = assembler.Assemble();
 
   EXPECT_TRUE(result.success);
-  EXPECT_EQ(lda->encoded_bytes.size(), 2);
+  EXPECT_EQ(lda->encoded_bytes.size(), 2UL);
   EXPECT_EQ(lda->encoded_bytes[0], 0xA1); // LDA indexed indirect opcode
   EXPECT_EQ(lda->encoded_bytes[1], 0x80); // Zero page address
 }
@@ -734,7 +734,7 @@ TEST(AssemblerTest, STAIndexedIndirect) {
   AssemblerResult result = assembler.Assemble();
 
   EXPECT_TRUE(result.success);
-  EXPECT_EQ(sta->encoded_bytes.size(), 2);
+  EXPECT_EQ(sta->encoded_bytes.size(), 2UL);
   EXPECT_EQ(sta->encoded_bytes[0], 0x81); // STA indexed indirect opcode
   EXPECT_EQ(sta->encoded_bytes[1], 0x40); // Zero page address
 }
@@ -756,7 +756,7 @@ TEST(AssemblerTest, LDAIndirectIndexed) {
   AssemblerResult result = assembler.Assemble();
 
   EXPECT_TRUE(result.success);
-  EXPECT_EQ(lda->encoded_bytes.size(), 2);
+  EXPECT_EQ(lda->encoded_bytes.size(), 2UL);
   EXPECT_EQ(lda->encoded_bytes[0], 0xB1); // LDA indirect indexed opcode
   EXPECT_EQ(lda->encoded_bytes[1], 0x80); // Zero page address
 }
@@ -778,7 +778,7 @@ TEST(AssemblerTest, STAIndirectIndexed) {
   AssemblerResult result = assembler.Assemble();
 
   EXPECT_TRUE(result.success);
-  EXPECT_EQ(sta->encoded_bytes.size(), 2);
+  EXPECT_EQ(sta->encoded_bytes.size(), 2UL);
   EXPECT_EQ(sta->encoded_bytes[0], 0x91); // STA indirect indexed opcode
   EXPECT_EQ(sta->encoded_bytes[1], 0x40); // Zero page address
 }
@@ -800,7 +800,7 @@ TEST(AssemblerTest, IndexedIndirectWithWhitespace) {
   AssemblerResult result = assembler.Assemble();
 
   EXPECT_TRUE(result.success);
-  EXPECT_EQ(lda->encoded_bytes.size(), 2);
+  EXPECT_EQ(lda->encoded_bytes.size(), 2UL);
   EXPECT_EQ(lda->encoded_bytes[0], 0xA1); // LDA indexed indirect opcode
   EXPECT_EQ(lda->encoded_bytes[1], 0x80); // Zero page address
 }
@@ -822,7 +822,7 @@ TEST(AssemblerTest, IndirectIndexedWithWhitespace) {
   AssemblerResult result = assembler.Assemble();
 
   EXPECT_TRUE(result.success);
-  EXPECT_EQ(lda->encoded_bytes.size(), 2);
+  EXPECT_EQ(lda->encoded_bytes.size(), 2UL);
   EXPECT_EQ(lda->encoded_bytes[0], 0xB1); // LDA indirect indexed opcode
   EXPECT_EQ(lda->encoded_bytes[1], 0x80); // Zero page address
 }
@@ -1079,7 +1079,7 @@ TEST(AssemblerTest, LongBranchNeedsRelaxation) {
 
   // Relaxed branch should be 5 bytes: BNE *+5; JMP target
   ASSERT_FALSE(beq->encoded_bytes.empty());
-  EXPECT_EQ(beq->encoded_bytes.size(), 5);
+  EXPECT_EQ(beq->encoded_bytes.size(), 5UL);
   EXPECT_EQ(beq->encoded_bytes[0], 0xD0); // BNE (complement of BEQ)
   EXPECT_EQ(beq->encoded_bytes[1], 0x03); // Skip 3 bytes (JMP instruction)
   EXPECT_EQ(beq->encoded_bytes[2], 0x4C); // JMP opcode
@@ -1119,7 +1119,7 @@ TEST(AssemblerTest, ShortBranchNoRelaxation) {
 
   // Short branch should be 2 bytes: BEQ offset
   ASSERT_FALSE(beq->encoded_bytes.empty());
-  EXPECT_EQ(beq->encoded_bytes.size(), 2);
+  EXPECT_EQ(beq->encoded_bytes.size(), 2UL);
   EXPECT_EQ(beq->encoded_bytes[0], 0xF0); // BEQ opcode
   EXPECT_EQ(beq->encoded_bytes[1], 0x0A); // Offset = +10
 }
@@ -1156,7 +1156,7 @@ TEST(AssemblerTest, BackwardBranch) {
 
   // Backward branch should be 2 bytes: BNE offset
   ASSERT_FALSE(bne->encoded_bytes.empty());
-  EXPECT_EQ(bne->encoded_bytes.size(), 2);
+  EXPECT_EQ(bne->encoded_bytes.size(), 2UL);
   EXPECT_EQ(bne->encoded_bytes[0], 0xD0); // BNE opcode
   // Offset should be -4 (back to loop label)
   EXPECT_EQ(bne->encoded_bytes[1], 0xFC); // -4 in two's complement
@@ -1188,7 +1188,7 @@ TEST(AssemblerTest, OrgAtomCastFailure_Pass1) {
 
   // Should fail with error about cast failure
   EXPECT_FALSE(result.success);
-  EXPECT_GT(result.errors.size(), 0);
+  EXPECT_GT(result.errors.size(), 0UL);
 
   // Error message should mention the cast failure
   bool found_cast_error = false;
@@ -1220,7 +1220,7 @@ TEST(AssemblerTest, InstructionAtomCastFailure_Pass1) {
 
   // Should fail with error about cast failure
   EXPECT_FALSE(result.success);
-  EXPECT_GT(result.errors.size(), 0);
+  EXPECT_GT(result.errors.size(), 0UL);
 
   // Error message should mention the cast failure
   bool found_cast_error = false;
@@ -1252,7 +1252,7 @@ TEST(AssemblerTest, LabelAtomCastFailure_Pass2) {
 
   // Should fail with error about cast failure
   EXPECT_FALSE(result.success);
-  EXPECT_GT(result.errors.size(), 0);
+  EXPECT_GT(result.errors.size(), 0UL);
 
   // Error message should mention the cast failure
   bool found_cast_error = false;
@@ -1287,7 +1287,7 @@ TEST(AssemblerTest, OrgAtomCastFailure_Pass2) {
 
   // Should fail with error about cast failure
   EXPECT_FALSE(result.success);
-  EXPECT_GT(result.errors.size(), 0);
+  EXPECT_GT(result.errors.size(), 0UL);
 
   // Error message should mention the cast failure
   bool found_cast_error = false;
@@ -1322,7 +1322,7 @@ TEST(AssemblerTest, InstructionAtomCastFailure_Pass2) {
 
   // Should fail with error about cast failure
   EXPECT_FALSE(result.success);
-  EXPECT_GT(result.errors.size(), 0);
+  EXPECT_GT(result.errors.size(), 0UL);
 
   // Error message should mention the cast failure
   bool found_cast_error = false;
@@ -1354,7 +1354,7 @@ TEST(AssemblerTest, PHB_65816) {
   AssemblerResult result = assembler.Assemble();
 
   EXPECT_TRUE(result.success);
-  ASSERT_EQ(instr->encoded_bytes.size(), 1);
+  ASSERT_EQ(instr->encoded_bytes.size(), 1UL);
   EXPECT_EQ(instr->encoded_bytes[0], 0x8B); // PHB opcode
 }
 
@@ -1376,7 +1376,7 @@ TEST(AssemblerTest, PLB_65816) {
   AssemblerResult result = assembler.Assemble();
 
   EXPECT_TRUE(result.success);
-  ASSERT_EQ(instr->encoded_bytes.size(), 1);
+  ASSERT_EQ(instr->encoded_bytes.size(), 1UL);
   EXPECT_EQ(instr->encoded_bytes[0], 0xAB); // PLB opcode
 }
 
@@ -1398,7 +1398,7 @@ TEST(AssemblerTest, PHX_65C02) {
   AssemblerResult result = assembler.Assemble();
 
   EXPECT_TRUE(result.success);
-  ASSERT_EQ(instr->encoded_bytes.size(), 1);
+  ASSERT_EQ(instr->encoded_bytes.size(), 1UL);
   EXPECT_EQ(instr->encoded_bytes[0], 0xDA); // PHX opcode
 }
 
@@ -1420,7 +1420,7 @@ TEST(AssemblerTest, PLX_65C02) {
   AssemblerResult result = assembler.Assemble();
 
   EXPECT_TRUE(result.success);
-  ASSERT_EQ(instr->encoded_bytes.size(), 1);
+  ASSERT_EQ(instr->encoded_bytes.size(), 1UL);
   EXPECT_EQ(instr->encoded_bytes[0], 0xFA); // PLX opcode
 }
 
@@ -1442,7 +1442,7 @@ TEST(AssemblerTest, PHY_65C02) {
   AssemblerResult result = assembler.Assemble();
 
   EXPECT_TRUE(result.success);
-  ASSERT_EQ(instr->encoded_bytes.size(), 1);
+  ASSERT_EQ(instr->encoded_bytes.size(), 1UL);
   EXPECT_EQ(instr->encoded_bytes[0], 0x5A); // PHY opcode
 }
 
@@ -1464,6 +1464,6 @@ TEST(AssemblerTest, PLY_65C02) {
   AssemblerResult result = assembler.Assemble();
 
   EXPECT_TRUE(result.success);
-  ASSERT_EQ(instr->encoded_bytes.size(), 1);
+  ASSERT_EQ(instr->encoded_bytes.size(), 1UL);
   EXPECT_EQ(instr->encoded_bytes[0], 0x7A); // PLY opcode
 }

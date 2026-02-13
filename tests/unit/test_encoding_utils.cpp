@@ -179,14 +179,14 @@ TEST(EncodingUtilsTest, FitsInSignedByte_ValidatesSignedRange) {
 
 TEST(EncodingUtilsTest, WithPrefix_SingleByte) {
   auto result = WithPrefix(0xCB, {0x40});
-  ASSERT_EQ(result.size(), 2);
+  ASSERT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0xCB);
   EXPECT_EQ(result[1], 0x40);
 }
 
 TEST(EncodingUtilsTest, WithPrefix_MultipleBytes) {
   auto result = WithPrefix(0xDD, {0x21, 0x00, 0x10});
-  ASSERT_EQ(result.size(), 4);
+  ASSERT_EQ(result.size(), 4UL);
   EXPECT_EQ(result[0], 0xDD);
   EXPECT_EQ(result[1], 0x21);
   EXPECT_EQ(result[2], 0x00);
@@ -195,13 +195,13 @@ TEST(EncodingUtilsTest, WithPrefix_MultipleBytes) {
 
 TEST(EncodingUtilsTest, WithPrefix_EmptyBytes) {
   auto result = WithPrefix(0xED, {});
-  ASSERT_EQ(result.size(), 1);
+  ASSERT_EQ(result.size(), 1UL);
   EXPECT_EQ(result[0], 0xED);
 }
 
 TEST(EncodingUtilsTest, WithPrefixes_TwoPrefixes) {
   auto result = WithPrefixes({0xDD, 0xCB}, {0x40});
-  ASSERT_EQ(result.size(), 3);
+  ASSERT_EQ(result.size(), 3UL);
   EXPECT_EQ(result[0], 0xDD);
   EXPECT_EQ(result[1], 0xCB);
   EXPECT_EQ(result[2], 0x40);
@@ -209,7 +209,7 @@ TEST(EncodingUtilsTest, WithPrefixes_TwoPrefixes) {
 
 TEST(EncodingUtilsTest, WithPrefixes_OnePrefixMultipleBytes) {
   auto result = WithPrefixes({0xED}, {0xB0, 0x00});
-  ASSERT_EQ(result.size(), 3);
+  ASSERT_EQ(result.size(), 3UL);
   EXPECT_EQ(result[0], 0xED);
   EXPECT_EQ(result[1], 0xB0);
   EXPECT_EQ(result[2], 0x00);
@@ -217,12 +217,12 @@ TEST(EncodingUtilsTest, WithPrefixes_OnePrefixMultipleBytes) {
 
 TEST(EncodingUtilsTest, WithPrefixes_EmptyPrefixes) {
   auto result = WithPrefixes({}, {0x00, 0x01});
-  ASSERT_EQ(result.size(), 2);
+  ASSERT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0x00);
   EXPECT_EQ(result[1], 0x01);
 }
 
 TEST(EncodingUtilsTest, WithPrefixes_BothEmpty) {
   auto result = WithPrefixes({}, {});
-  EXPECT_EQ(result.size(), 0);
+  EXPECT_EQ(result.size(), 0UL);
 }

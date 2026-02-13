@@ -17,7 +17,7 @@ TEST(Cpu65816ExtendedTest, SEP_65816) {
 
   // SEP #$30 -> E2 30 (set M and X to 8-bit mode)
   auto bytes = cpu.EncodeSEP(0x30, AddressingMode::Immediate);
-  ASSERT_EQ(bytes.size(), 2);
+  ASSERT_EQ(bytes.size(), 2UL);
   EXPECT_EQ(bytes[0], 0xE2); // SEP opcode
   EXPECT_EQ(bytes[1], 0x30); // Status bits to set
 }
@@ -29,7 +29,7 @@ TEST(Cpu65816ExtendedTest, REP_65816) {
 
   // REP #$30 -> C2 30 (clear M and X for 16-bit mode)
   auto bytes = cpu.EncodeREP(0x30, AddressingMode::Immediate);
-  ASSERT_EQ(bytes.size(), 2);
+  ASSERT_EQ(bytes.size(), 2UL);
   EXPECT_EQ(bytes[0], 0xC2); // REP opcode
   EXPECT_EQ(bytes[1], 0x30); // Status bits to reset
 }
@@ -40,7 +40,7 @@ TEST(Cpu65816ExtendedTest, SEP_NotAvailableIn6502Mode) {
   // Default mode is 6502
 
   auto bytes = cpu.EncodeSEP(0x30, AddressingMode::Immediate);
-  EXPECT_EQ(bytes.size(), 0); // Empty = not supported
+  EXPECT_EQ(bytes.size(), 0UL); // Empty = not supported
 }
 
 // Test 4: REP not available in 65C02 mode
@@ -49,7 +49,7 @@ TEST(Cpu65816ExtendedTest, REP_NotAvailableIn65C02Mode) {
   cpu.SetCpuMode(CpuMode::Cpu65C02);
 
   auto bytes = cpu.EncodeREP(0x30, AddressingMode::Immediate);
-  EXPECT_EQ(bytes.size(), 0); // Empty = not supported
+  EXPECT_EQ(bytes.size(), 0UL); // Empty = not supported
 }
 
 // Test 5: XCE (Exchange Carry and Emulation) already implemented
@@ -59,7 +59,7 @@ TEST(Cpu65816ExtendedTest, XCE_65816) {
 
   // XCE -> FB
   auto bytes = cpu.EncodeXCE();
-  ASSERT_EQ(bytes.size(), 1);
+  ASSERT_EQ(bytes.size(), 1UL);
   EXPECT_EQ(bytes[0], 0xFB); // XCE opcode
 }
 
@@ -70,7 +70,7 @@ TEST(Cpu65816ExtendedTest, PHB_65816) {
 
   // PHB -> 8B
   auto bytes = cpu.EncodePHB();
-  ASSERT_EQ(bytes.size(), 1);
+  ASSERT_EQ(bytes.size(), 1UL);
   EXPECT_EQ(bytes[0], 0x8B); // PHB opcode
 }
 
@@ -81,7 +81,7 @@ TEST(Cpu65816ExtendedTest, PLB_65816) {
 
   // PLB -> AB
   auto bytes = cpu.EncodePLB();
-  ASSERT_EQ(bytes.size(), 1);
+  ASSERT_EQ(bytes.size(), 1UL);
   EXPECT_EQ(bytes[0], 0xAB); // PLB opcode
 }
 
@@ -92,7 +92,7 @@ TEST(Cpu65816ExtendedTest, MVN_65816) {
 
   // MVN $12,$34 -> 54 12 34
   auto bytes = cpu.EncodeMVN(0x12, 0x34);
-  ASSERT_EQ(bytes.size(), 3);
+  ASSERT_EQ(bytes.size(), 3UL);
   EXPECT_EQ(bytes[0], 0x54); // MVN opcode
   EXPECT_EQ(bytes[1], 0x12); // Source bank
   EXPECT_EQ(bytes[2], 0x34); // Dest bank

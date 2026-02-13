@@ -9,12 +9,12 @@ using namespace xasm;
 
 // Test 1: SectionAttributes enum values
 TEST(SectionTest, AttributeEnumValues) {
-  EXPECT_EQ(static_cast<uint32_t>(SectionAttributes::Code), 0x01);
-  EXPECT_EQ(static_cast<uint32_t>(SectionAttributes::Data), 0x02);
-  EXPECT_EQ(static_cast<uint32_t>(SectionAttributes::Bss), 0x04);
-  EXPECT_EQ(static_cast<uint32_t>(SectionAttributes::Read), 0x08);
-  EXPECT_EQ(static_cast<uint32_t>(SectionAttributes::Write), 0x10);
-  EXPECT_EQ(static_cast<uint32_t>(SectionAttributes::Execute), 0x20);
+  EXPECT_EQ(static_cast<uint32_t>(SectionAttributes::Code), 0x01U);
+  EXPECT_EQ(static_cast<uint32_t>(SectionAttributes::Data), 0x02U);
+  EXPECT_EQ(static_cast<uint32_t>(SectionAttributes::Bss), 0x04U);
+  EXPECT_EQ(static_cast<uint32_t>(SectionAttributes::Read), 0x08U);
+  EXPECT_EQ(static_cast<uint32_t>(SectionAttributes::Write), 0x10U);
+  EXPECT_EQ(static_cast<uint32_t>(SectionAttributes::Execute), 0x20U);
 }
 
 // Test 2: Basic section creation
@@ -25,9 +25,9 @@ TEST(SectionTest, BasicCreation) {
   section.org = 0;
 
   EXPECT_EQ(section.name, ".text");
-  EXPECT_EQ(section.attributes, 0x01);
-  EXPECT_EQ(section.org, 0);
-  EXPECT_EQ(section.current_offset, 0);
+  EXPECT_EQ(section.attributes, 0x01U);
+  EXPECT_EQ(section.org, 0ULL);
+  EXPECT_EQ(section.current_offset, 0UL);
   EXPECT_TRUE(section.atoms.empty());
 }
 
@@ -37,9 +37,9 @@ TEST(SectionTest, ConstructorCreation) {
                   0x2000);
 
   EXPECT_EQ(section.name, ".data");
-  EXPECT_EQ(section.attributes, 0x02);
-  EXPECT_EQ(section.org, 0x2000);
-  EXPECT_EQ(section.current_offset, 0);
+  EXPECT_EQ(section.attributes, 0x02U);
+  EXPECT_EQ(section.org, 0x2000ULL);
+  EXPECT_EQ(section.current_offset, 0UL);
 }
 
 // Test 4: Section with default org
@@ -48,7 +48,7 @@ TEST(SectionTest, DefaultOrg) {
   section.name = ".data";
   section.attributes = static_cast<uint32_t>(SectionAttributes::Data);
 
-  EXPECT_EQ(section.org, 0);
+  EXPECT_EQ(section.org, 0ULL);
 }
 
 // Test 5: Section with custom org
@@ -56,7 +56,7 @@ TEST(SectionTest, CustomOrg) {
   Section section(".text", static_cast<uint32_t>(SectionAttributes::Code),
                   0x8000);
 
-  EXPECT_EQ(section.org, 0x8000);
+  EXPECT_EQ(section.org, 0x8000ULL);
 }
 
 // Test 6: Adding atoms to section
@@ -69,7 +69,7 @@ TEST(SectionTest, AddAtoms) {
   section.atoms.push_back(label);
   section.atoms.push_back(instr);
 
-  EXPECT_EQ(section.atoms.size(), 2);
+  EXPECT_EQ(section.atoms.size(), 2UL);
   EXPECT_EQ(section.atoms[0], label);
   EXPECT_EQ(section.atoms[1], instr);
 }
@@ -82,13 +82,13 @@ TEST(SectionTest, OffsetTracking) {
   section.atoms.push_back(instr);
   section.current_offset += 2; // Assume 2-byte instruction
 
-  EXPECT_EQ(section.current_offset, 2);
+  EXPECT_EQ(section.current_offset, 2UL);
 
   auto instr2 = std::make_shared<InstructionAtom>("STA", "$1000");
   section.atoms.push_back(instr2);
   section.current_offset += 3; // Assume 3-byte instruction
 
-  EXPECT_EQ(section.current_offset, 5);
+  EXPECT_EQ(section.current_offset, 5UL);
 }
 
 // Test 8: Multiple sections
@@ -99,9 +99,9 @@ TEST(SectionTest, MultipleSections) {
                        0x9000);
 
   EXPECT_EQ(text_section.name, ".text");
-  EXPECT_EQ(text_section.org, 0x8000);
+  EXPECT_EQ(text_section.org, 0x8000ULL);
   EXPECT_EQ(data_section.name, ".data");
-  EXPECT_EQ(data_section.org, 0x9000);
+  EXPECT_EQ(data_section.org, 0x9000ULL);
 }
 
 // Test 9: Bitwise attribute flags
@@ -112,8 +112,8 @@ TEST(SectionTest, BitwiseAttributeFlags) {
 
   Section section(".text", attrs, 0x8000);
 
-  EXPECT_EQ(section.attributes, 0x01 | 0x08 | 0x20);
-  EXPECT_EQ(section.attributes, 0x29);
+  EXPECT_EQ(section.attributes, 0x01U | 0x08U | 0x20U);
+  EXPECT_EQ(section.attributes, 0x29U);
 
   // Verify individual flags are set
   EXPECT_TRUE(section.attributes &
@@ -135,7 +135,7 @@ TEST(SectionTest, BssSection) {
   Section section(".bss", attrs, 0xA000);
 
   EXPECT_EQ(section.name, ".bss");
-  EXPECT_EQ(section.org, 0xA000);
+  EXPECT_EQ(section.org, 0xA000ULL);
   EXPECT_TRUE(section.attributes &
               static_cast<uint32_t>(SectionAttributes::Bss));
   EXPECT_TRUE(section.attributes &
@@ -162,8 +162,8 @@ TEST(SectionTest, DataSectionWithAtoms) {
   section.atoms.push_back(data2);
   section.current_offset += 2;
 
-  EXPECT_EQ(section.atoms.size(), 2);
-  EXPECT_EQ(section.current_offset, 5);
+  EXPECT_EQ(section.atoms.size(), 2UL);
+  EXPECT_EQ(section.current_offset, 5UL);
 }
 
 // Test 12: Empty section initialization
@@ -171,8 +171,8 @@ TEST(SectionTest, EmptySection) {
   Section section;
 
   EXPECT_TRUE(section.name.empty());
-  EXPECT_EQ(section.attributes, 0);
-  EXPECT_EQ(section.org, 0);
-  EXPECT_EQ(section.current_offset, 0);
+  EXPECT_EQ(section.attributes, 0U);
+  EXPECT_EQ(section.org, 0ULL);
+  EXPECT_EQ(section.current_offset, 0UL);
   EXPECT_TRUE(section.atoms.empty());
 }

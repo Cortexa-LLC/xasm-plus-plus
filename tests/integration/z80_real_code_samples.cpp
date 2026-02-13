@@ -60,7 +60,7 @@ TEST_F(Z80IntegrationTest, EmptyFile) {
   std::string source = "";
 
   EXPECT_TRUE(AssembleCode(source, section, symbols));
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 TEST_F(Z80IntegrationTest, OnlyComments) {
@@ -72,7 +72,7 @@ TEST_F(Z80IntegrationTest, OnlyComments) {
                        "       ; Indented comment\n";
 
   EXPECT_TRUE(AssembleCode(source, section, symbols));
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 TEST_F(Z80IntegrationTest, OnlyWhitespace) {
@@ -84,7 +84,7 @@ TEST_F(Z80IntegrationTest, OnlyWhitespace) {
                        "        \n";
 
   EXPECT_TRUE(AssembleCode(source, section, symbols));
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 // ============================================================================
@@ -102,7 +102,7 @@ TEST_F(Z80IntegrationTest, LargeFileWithManyLabels) {
   }
 
   EXPECT_TRUE(AssembleCode(source.str(), section, symbols));
-  EXPECT_EQ(section.atoms.size(), 2000); // 1000 labels + 1000 NOPs
+  EXPECT_EQ(section.atoms.size(), 2000UL); // 1000 labels + 1000 NOPs
 
   // Verify symbols were created
   for (int i = 0; i < 1000; i++) {
@@ -125,9 +125,9 @@ TEST_F(Z80IntegrationTest, LargeDataBlock) {
   EXPECT_TRUE(AssembleCode(source.str(), section, symbols));
 
   // Should have ORG + 10240 data atoms
-  EXPECT_EQ(section.atoms.size(), 10241);
-  EXPECT_EQ(CountAtomType(section, AtomType::Org), 1);
-  EXPECT_EQ(CountAtomType(section, AtomType::Data), 10240);
+  EXPECT_EQ(section.atoms.size(), 10241UL);
+  EXPECT_EQ(CountAtomType(section, AtomType::Org), 1UL);
+  EXPECT_EQ(CountAtomType(section, AtomType::Data), 10240UL);
 }
 
 // ============================================================================
@@ -149,7 +149,7 @@ TEST_F(Z80IntegrationTest, DeepConditionalNesting) {
   }
 
   EXPECT_TRUE(AssembleCode(source.str(), section, symbols));
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
 
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
@@ -172,7 +172,7 @@ TEST_F(Z80IntegrationTest, DeepConditionalNestingWithFalse) {
   }
 
   EXPECT_TRUE(AssembleCode(source.str(), section, symbols));
-  EXPECT_EQ(section.atoms.size(), 0); // Outer false should skip everything
+  EXPECT_EQ(section.atoms.size(), 0UL); // Outer false should skip everything
 }
 
 // ============================================================================
@@ -251,12 +251,12 @@ TEST_F(Z80IntegrationTest, M80StyleHexNumbers) {
   // Verify ORG address
   auto org_atom = std::dynamic_pointer_cast<OrgAtom>(section.atoms[0]);
   ASSERT_NE(org_atom, nullptr);
-  EXPECT_EQ(org_atom->address, 0x8000);
+  EXPECT_EQ(org_atom->address, 0x8000U);
 
   // Verify data
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[3]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 3);
+  ASSERT_EQ(data_atom->data.size(), 3UL);
   EXPECT_EQ(data_atom->data[0], 0xAB);
   EXPECT_EQ(data_atom->data[1], 0xCD);
   EXPECT_EQ(data_atom->data[2], 0xEF);
@@ -304,7 +304,7 @@ TEST_F(Z80IntegrationTest, ZMACStyleDollarHex) {
 
   auto org_atom = std::dynamic_pointer_cast<OrgAtom>(section.atoms[0]);
   ASSERT_NE(org_atom, nullptr);
-  EXPECT_EQ(org_atom->address, 0x8000);
+  EXPECT_EQ(org_atom->address, 0x8000U);
 }
 
 // ============================================================================
@@ -365,7 +365,7 @@ TEST_F(Z80IntegrationTest, CPMBDOSCallPattern) {
   // Verify ORG
   auto org_atom = std::dynamic_pointer_cast<OrgAtom>(section.atoms[0]);
   ASSERT_NE(org_atom, nullptr);
-  EXPECT_EQ(org_atom->address, 0x100);
+  EXPECT_EQ(org_atom->address, 0x100U);
 }
 
 // ============================================================================
@@ -407,7 +407,7 @@ TEST_F(Z80IntegrationTest, InterruptHandlerPattern) {
   EXPECT_TRUE(symbols.IsDefined("ISR"));
 
   // Verify multiple ORG directives
-  EXPECT_EQ(CountAtomType(section, AtomType::Org), 3);
+  EXPECT_EQ(CountAtomType(section, AtomType::Org), 3UL);
 }
 
 // ============================================================================
@@ -465,11 +465,11 @@ TEST_F(Z80IntegrationTest, MixedNumberFormats) {
   EXPECT_TRUE(AssembleCode(source, section, symbols));
 
   // All should produce same value
-  ASSERT_EQ(section.atoms.size(), 6);
+  ASSERT_EQ(section.atoms.size(), 6UL);
   for (const auto &atom : section.atoms) {
     auto data_atom = std::dynamic_pointer_cast<DataAtom>(atom);
     ASSERT_NE(data_atom, nullptr);
-    ASSERT_EQ(data_atom->data.size(), 1);
+    ASSERT_EQ(data_atom->data.size(), 1UL);
     EXPECT_EQ(data_atom->data[0], 0xFF);
   }
 }
@@ -517,7 +517,7 @@ TEST_F(Z80IntegrationTest, ComplexExpressions) {
   // Verify expressions evaluated correctly
   auto org_atom = std::dynamic_pointer_cast<OrgAtom>(section.atoms[0]);
   ASSERT_NE(org_atom, nullptr);
-  EXPECT_EQ(org_atom->address, 0x8100); // 0x8000 + 0x100
+  EXPECT_EQ(org_atom->address, 0x8100U); // 0x8000 + 0x100
 
   auto data1 = std::dynamic_pointer_cast<DataAtom>(section.atoms[1]);
   ASSERT_NE(data1, nullptr);

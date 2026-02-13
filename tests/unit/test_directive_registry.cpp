@@ -94,8 +94,8 @@ TEST_F(DirectiveRegistryTest, UnknownDirectiveThrows) {
  * @test Verify that multiple directives can be registered
  */
 TEST_F(DirectiveRegistryTest, MultipleDirectives) {
-  int org_count = 0;
-  int equ_count = 0;
+  unsigned int org_count = 0;
+  unsigned int equ_count = 0;
 
   auto org_handler = [&org_count](const std::string & /*label*/,
                                   const std::string & /*operand*/,
@@ -119,8 +119,8 @@ TEST_F(DirectiveRegistryTest, MultipleDirectives) {
   registry_.Execute("ORG", "", "1000", context);
   registry_.Execute("EQU", "LABEL", "42", context);
 
-  EXPECT_EQ(org_count, 1);
-  EXPECT_EQ(equ_count, 1);
+  EXPECT_EQ(org_count, 1U);
+  EXPECT_EQ(equ_count, 1U);
 }
 
 /**
@@ -149,7 +149,7 @@ TEST_F(DirectiveRegistryTest, IsRegistered) {
  * @test Verify that multiple aliases can point to same handler
  */
 TEST_F(DirectiveRegistryTest, MultipleAliases) {
-  int handler_count = 0;
+  unsigned int handler_count = 0;
 
   auto handler = [&handler_count](const std::string & /*label*/,
                                   const std::string & /*operand*/,
@@ -170,5 +170,5 @@ TEST_F(DirectiveRegistryTest, MultipleAliases) {
   registry_.Execute("BYTE", "", "42", context);
 
   // Handler should be called three times
-  EXPECT_EQ(handler_count, 3);
+  EXPECT_EQ(handler_count, 3U);
 }

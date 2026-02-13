@@ -51,7 +51,7 @@ TEST(BinaryCompatTest, EquateOnlyFileProducesZeroBytes) {
   size_t file_size = file.tellg();
   file.close();
 
-  EXPECT_EQ(file_size, 0)
+  EXPECT_EQ(file_size, 0UL)
       << "Equate-only file should produce 0-byte output (vasm compatibility)";
 
   // Cleanup
@@ -84,7 +84,7 @@ TEST(BinaryCompatTest, FileWithDataProducesNormalOutput) {
                               std::istreambuf_iterator<char>());
   file.close();
 
-  ASSERT_EQ(result.size(), 4);
+  ASSERT_EQ(result.size(), 4UL);
   EXPECT_EQ(result[0], 0x01);
   EXPECT_EQ(result[1], 0x02);
   EXPECT_EQ(result[2], 0x03);
@@ -113,7 +113,7 @@ TEST(BinaryCompatTest, FileWithSpaceProducesOutput) {
                               std::istreambuf_iterator<char>());
   file.close();
 
-  ASSERT_EQ(result.size(), 10);
+  ASSERT_EQ(result.size(), 10UL);
 
   std::remove("test_with_space.bin");
 }
@@ -141,7 +141,7 @@ TEST(BinaryCompatTest, FileWithInstructionsProducesOutput) {
                               std::istreambuf_iterator<char>());
   file.close();
 
-  ASSERT_EQ(result.size(), 1);
+  ASSERT_EQ(result.size(), 1UL);
   EXPECT_EQ(result[0], 0xEA); // NOP opcode
 
   std::remove("test_with_inst.bin");
@@ -176,7 +176,7 @@ TEST(BinaryCompatTest, HighOrgNoZeroPadding) {
   file.close();
 
   // CRITICAL: Should be 2 bytes, NOT 0x3002 bytes!
-  ASSERT_EQ(result.size(), 2)
+  ASSERT_EQ(result.size(), 2UL)
       << "Should not pad from $0000 to ORG (vasm compatibility)";
   EXPECT_EQ(result[0], 0xE9);
   EXPECT_EQ(result[1], 0x30);
@@ -210,7 +210,7 @@ TEST(BinaryCompatTest, OrgLabelsDataNoPadding) {
                               std::istreambuf_iterator<char>());
   file.close();
 
-  ASSERT_EQ(result.size(), 3);
+  ASSERT_EQ(result.size(), 3UL);
   EXPECT_EQ(result[0], 0x01);
   EXPECT_EQ(result[1], 0x02);
   EXPECT_EQ(result[2], 0x03);
@@ -258,7 +258,7 @@ label2 ds 20
   size_t file_size = file.tellg();
   file.close();
 
-  EXPECT_EQ(file_size, 0)
+  EXPECT_EQ(file_size, 0UL)
       << "DS inside DUM block should not emit bytes (vasm compatibility)";
 
   // Verify symbols were created
@@ -298,7 +298,7 @@ label1 ds 10
                               std::istreambuf_iterator<char>());
   file.close();
 
-  ASSERT_EQ(result.size(), 10) << "DS outside DUM block should emit bytes";
+  ASSERT_EQ(result.size(), 10UL) << "DS outside DUM block should emit bytes";
 
   std::remove("test_ds_normal.bin");
 }
@@ -338,7 +338,7 @@ TEST(BinaryCompatTest, AscSetsHighBit) {
                               std::istreambuf_iterator<char>());
   file.close();
 
-  ASSERT_EQ(result.size(), 3);
+  ASSERT_EQ(result.size(), 3UL);
   EXPECT_EQ(result[0], 0xC1)
       << "ASCII 'A' (0x41) should become 0xC1 (high-bit set)";
   EXPECT_EQ(result[1], 0xC2)
@@ -377,7 +377,7 @@ TEST(BinaryCompatTest, AscPrinceOfPersiaHighBit) {
                               std::istreambuf_iterator<char>());
   file.close();
 
-  ASSERT_GE(result.size(), 4);
+  ASSERT_GE(result.size(), 4UL);
   // 'P' = 0x50 → 0xD0, 'r' = 0x72 → 0xF2, 'i' = 0x69 → 0xE9, 'n' = 0x6E → 0xEE
   EXPECT_EQ(result[0], 0xD0)
       << "Expected 0xD0 (not 0x50) for 'P' with high bit";
@@ -434,7 +434,7 @@ forward_label rts
 
   // Get the assembled sections (with encoded bytes)
   const std::vector<Section> &assembled_sections = assembler.GetSections();
-  ASSERT_EQ(assembled_sections.size(), 1) << "Should have one section";
+  ASSERT_EQ(assembled_sections.size(), 1UL) << "Should have one section";
 
   // Write output using assembled section
   BinaryOutput output;
@@ -451,7 +451,7 @@ forward_label rts
                               std::istreambuf_iterator<char>());
   file.close();
 
-  ASSERT_EQ(result.size(), 3) << "Should have 2 bytes (dw) + 1 byte (rts)";
+  ASSERT_EQ(result.size(), 3UL) << "Should have 2 bytes (dw) + 1 byte (rts)";
 
   // Little-endian: $3002 = 0x02 0x30
   EXPECT_EQ(result[0], 0x02) << "Low byte of $3002 should be 0x02 (not 0x00)";
@@ -501,7 +501,7 @@ seq3     db $03
 
   // Get the assembled sections (with encoded bytes)
   const std::vector<Section> &assembled_sections = assembler.GetSections();
-  ASSERT_EQ(assembled_sections.size(), 1) << "Should have one section";
+  ASSERT_EQ(assembled_sections.size(), 1UL) << "Should have one section";
 
   // Write output using assembled section
   BinaryOutput output;
@@ -518,7 +518,7 @@ seq3     db $03
                               std::istreambuf_iterator<char>());
   file.close();
 
-  ASSERT_EQ(result.size(), 9)
+  ASSERT_EQ(result.size(), 9UL)
       << "Should have 6 bytes (3 words) + 3 bytes (data)";
 
   // seq1 is at $3006 (after 3 words = 6 bytes)

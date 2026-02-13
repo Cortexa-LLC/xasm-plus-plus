@@ -46,9 +46,9 @@ struct AssemblerError {
  * errors that occurred during assembly.
  */
 struct AssemblerResult {
-  bool success = true;                ///< True if assembly succeeded
-  int pass_count = 0;                 ///< Number of passes performed
-  std::vector<AssemblerError> errors; ///< List of errors (if any)
+  bool success = true;                   ///< True if assembly succeeded
+  unsigned int pass_count = 0;           ///< Number of passes performed
+  std::vector<AssemblerError> errors;    ///< List of errors (if any)
 };
 
 /**

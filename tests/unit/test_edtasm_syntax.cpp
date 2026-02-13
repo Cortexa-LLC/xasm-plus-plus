@@ -20,7 +20,7 @@ TEST(EdtasmSyntaxTest, CommentWithAsterisk) {
   parser.Parse("* This is a comment", section, symbols);
 
   // Comment lines should produce no atoms
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 TEST(EdtasmSyntaxTest, CommentWithSemicolon) {
@@ -31,7 +31,7 @@ TEST(EdtasmSyntaxTest, CommentWithSemicolon) {
   parser.Parse("        LDA     #10     ; Inline comment", section, symbols);
 
   // Should create instruction atom, ignoring comment
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto atom = section.atoms[0];
   EXPECT_EQ(atom->type, AtomType::Instruction);
 }
@@ -44,7 +44,7 @@ TEST(EdtasmSyntaxTest, BlankLines) {
   parser.Parse("\n\n   \n\t\n", section, symbols);
 
   // Blank lines should produce no atoms
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 // ============================================================================
@@ -61,7 +61,7 @@ TEST(EdtasmSyntaxTest, GlobalLabel) {
   // Should create label symbol and LabelAtom
   EXPECT_TRUE(symbols.IsDefined("START"));
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto atom = section.atoms[0];
   EXPECT_EQ(atom->type, AtomType::Label);
 
@@ -79,7 +79,7 @@ TEST(EdtasmSyntaxTest, LabelWithInstruction) {
 
   // Should create label and instruction atoms
   EXPECT_TRUE(symbols.IsDefined("LOOP"));
-  ASSERT_EQ(section.atoms.size(), 2);
+  ASSERT_EQ(section.atoms.size(), 2UL);
 
   EXPECT_EQ(section.atoms[0]->type, AtomType::Label);
   EXPECT_EQ(section.atoms[1]->type, AtomType::Instruction);
@@ -96,13 +96,13 @@ TEST(EdtasmSyntaxTest, OrgDirective) {
 
   parser.Parse("        ORG     $0400", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto atom = section.atoms[0];
   EXPECT_EQ(atom->type, AtomType::Org);
 
   auto org_atom = std::dynamic_pointer_cast<OrgAtom>(atom);
   ASSERT_NE(org_atom, nullptr);
-  EXPECT_EQ(org_atom->address, 0x0400);
+  EXPECT_EQ(org_atom->address, 0x0400U);
 }
 
 TEST(EdtasmSyntaxTest, OrgDirectiveDecimal) {
@@ -112,13 +112,13 @@ TEST(EdtasmSyntaxTest, OrgDirectiveDecimal) {
 
   parser.Parse("        ORG     1024", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto atom = section.atoms[0];
   EXPECT_EQ(atom->type, AtomType::Org);
 
   auto org_atom = std::dynamic_pointer_cast<OrgAtom>(atom);
   ASSERT_NE(org_atom, nullptr);
-  EXPECT_EQ(org_atom->address, 1024);
+  EXPECT_EQ(org_atom->address, 1024U);
 }
 
 // ============================================================================
@@ -133,7 +133,7 @@ TEST(EdtasmSyntaxTest, EndDirective) {
   parser.Parse("        END", section, symbols);
 
   // END should produce no atoms (signals end of assembly)
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 TEST(EdtasmSyntaxTest, EndDirectiveWithEntryPoint) {
@@ -145,7 +145,7 @@ TEST(EdtasmSyntaxTest, EndDirectiveWithEntryPoint) {
   parser.Parse("START   NOP\n        END     START", section, symbols);
 
   // Should have NOP instruction, no END atom
-  ASSERT_EQ(section.atoms.size(), 2); // Label + Instruction
+  ASSERT_EQ(section.atoms.size(), 2UL); // Label + Instruction
   EXPECT_EQ(section.atoms[0]->type, AtomType::Label);
   EXPECT_EQ(section.atoms[1]->type, AtomType::Instruction);
 }
@@ -163,7 +163,7 @@ TEST(EdtasmSyntaxTest, EquDirective) {
 
   // EQU creates symbol but no atom
   EXPECT_TRUE(symbols.IsDefined("BUFSIZE"));
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 
   // Verify value
   int64_t value;
@@ -226,13 +226,13 @@ TEST(EdtasmSyntaxTest, FcbDirectiveSingle) {
 
   parser.Parse("        FCB     $FF", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto atom = section.atoms[0];
   EXPECT_EQ(atom->type, AtomType::Data);
 
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(atom);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 1);
+  ASSERT_EQ(data_atom->data.size(), 1UL);
   EXPECT_EQ(data_atom->data[0], 0xFF);
 }
 
@@ -243,13 +243,13 @@ TEST(EdtasmSyntaxTest, FcbDirectiveMultiple) {
 
   parser.Parse("        FCB     1,2,3,4,5", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 5);
-  EXPECT_EQ(data_atom->data[0], 1);
-  EXPECT_EQ(data_atom->data[1], 2);
-  EXPECT_EQ(data_atom->data[4], 5);
+  ASSERT_EQ(data_atom->data.size(), 5UL);
+  EXPECT_EQ(data_atom->data[0], 1U);
+  EXPECT_EQ(data_atom->data[1], 2U);
+  EXPECT_EQ(data_atom->data[4], 5U);
 }
 
 TEST(EdtasmSyntaxTest, FcbDirectiveCharacter) {
@@ -259,10 +259,10 @@ TEST(EdtasmSyntaxTest, FcbDirectiveCharacter) {
 
   parser.Parse("        FCB     'A'", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 1);
+  ASSERT_EQ(data_atom->data.size(), 1UL);
   EXPECT_EQ(data_atom->data[0], 'A');
 }
 
@@ -277,10 +277,10 @@ TEST(EdtasmSyntaxTest, FdbDirectiveSingle) {
 
   parser.Parse("        FDB     $1234", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 2);
+  ASSERT_EQ(data_atom->data.size(), 2UL);
   // 6809 uses big-endian (MSB first)
   EXPECT_EQ(data_atom->data[0], 0x12); // High byte
   EXPECT_EQ(data_atom->data[1], 0x34); // Low byte
@@ -293,10 +293,10 @@ TEST(EdtasmSyntaxTest, FdbDirectiveMultiple) {
 
   parser.Parse("        FDB     $1000,$2000", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 4);
+  ASSERT_EQ(data_atom->data.size(), 4UL);
   EXPECT_EQ(data_atom->data[0], 0x10);
   EXPECT_EQ(data_atom->data[1], 0x00);
   EXPECT_EQ(data_atom->data[2], 0x20);
@@ -314,10 +314,10 @@ TEST(EdtasmSyntaxTest, FccDirectiveSlashDelimiter) {
 
   parser.Parse("        FCC     /Hello/", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 5);
+  ASSERT_EQ(data_atom->data.size(), 5UL);
   EXPECT_EQ(data_atom->data[0], 'H');
   EXPECT_EQ(data_atom->data[4], 'o');
 }
@@ -329,10 +329,10 @@ TEST(EdtasmSyntaxTest, FccDirectiveQuoteDelimiter) {
 
   parser.Parse("        FCC     \"World\"", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 5);
+  ASSERT_EQ(data_atom->data.size(), 5UL);
   EXPECT_EQ(data_atom->data[0], 'W');
   EXPECT_EQ(data_atom->data[4], 'd');
 }
@@ -349,14 +349,14 @@ TEST(EdtasmSyntaxTest, RmbDirective) {
   parser.Parse("BUFFER  RMB     256", section, symbols);
 
   // RMB creates a Space atom (reserve memory bytes)
-  ASSERT_EQ(section.atoms.size(), 2); // Label + Space
+  ASSERT_EQ(section.atoms.size(), 2UL); // Label + Space
   EXPECT_EQ(section.atoms[0]->type, AtomType::Label);
   EXPECT_EQ(section.atoms[1]->type, AtomType::Space);
 
   auto space_atom = std::dynamic_pointer_cast<SpaceAtom>(section.atoms[1]);
   ASSERT_NE(space_atom, nullptr);
-  EXPECT_EQ(space_atom->count, 256);
-  EXPECT_EQ(space_atom->size, 256);
+  EXPECT_EQ(space_atom->count, 256UL);
+  EXPECT_EQ(space_atom->size, 256UL);
 }
 
 // ============================================================================
@@ -371,7 +371,7 @@ TEST(EdtasmSyntaxTest, SetdpDirective) {
   parser.Parse("        SETDP   $10", section, symbols);
 
   // SETDP should produce no atoms (assembler directive only)
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0UL);
 }
 
 // ============================================================================
@@ -399,7 +399,7 @@ START   LDA     #$00
   parser.Parse(source, section, symbols);
 
   // Should have: ORG, Label, LDA, STA, RTS atoms
-  ASSERT_GE(section.atoms.size(), 5);
+  ASSERT_GE(section.atoms.size(), 5UL);
 
   // Verify symbols
   EXPECT_TRUE(symbols.IsDefined("SCREEN"));

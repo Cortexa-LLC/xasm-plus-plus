@@ -245,7 +245,7 @@ TEST(FlexMacroTest, ExpandMacroSimple) {
 
   // Expected: Body returned with substitutions applied and local labels made
   // unique
-  ASSERT_GE(result.size(), 2); // At least the original 2 lines
+  ASSERT_GE(result.size(), 2UL); // At least the original 2 lines
   EXPECT_EQ(result[0], "        CLRA");
   EXPECT_EQ(result[1], "        CLRB");
 }
@@ -281,7 +281,7 @@ TEST(FlexMacroTest, ExpandMacroWithParameters) {
   std::vector<std::string> result = parser.TestExpandMacro("MOVB", arguments);
 
   // Expected: Parameters substituted
-  ASSERT_GE(result.size(), 2);
+  ASSERT_GE(result.size(), 2UL);
   EXPECT_EQ(result[0], "        LDA     $80");
   EXPECT_EQ(result[1], "        STA     $90");
 }
@@ -314,13 +314,13 @@ TEST(FlexMacroTest, ExpandMacroWithLocalLabels) {
 
   // First expansion - should get .LOOP_001
   std::vector<std::string> result1 = parser.TestExpandMacro("COPY", {});
-  ASSERT_GE(result1.size(), 2);
+  ASSERT_GE(result1.size(), 2UL);
   EXPECT_TRUE(result1[0].find(".LOOP_001") != std::string::npos);
   EXPECT_TRUE(result1[1].find(".LOOP_001") != std::string::npos);
 
   // Second expansion - should get .LOOP_002 (different expansion ID)
   std::vector<std::string> result2 = parser.TestExpandMacro("COPY", {});
-  ASSERT_GE(result2.size(), 2);
+  ASSERT_GE(result2.size(), 2UL);
   EXPECT_TRUE(result2[0].find(".LOOP_002") != std::string::npos);
   EXPECT_TRUE(result2[1].find(".LOOP_002") != std::string::npos);
 }
@@ -400,7 +400,7 @@ DELAY   MACRO
 
     // Should successfully expand (not throw exception)
     // Should have one NOP instruction
-    EXPECT_GE(section.atoms.size(), 1);
+    EXPECT_GE(section.atoms.size(), 1UL);
   } catch (const std::exception &e) {
     FAIL() << "Exception thrown: " << e.what();
   }
@@ -443,7 +443,7 @@ START   LDX     #$2000
 
     // Should have: LDX, CLRA, CLRB, STX, CLRA, CLRB
     // At minimum 6 instructions (or atoms)
-    EXPECT_GE(section.atoms.size(), 6);
+    EXPECT_GE(section.atoms.size(), 6UL);
 
     // Verify START label exists and points to $1000
     int64_t value;
@@ -484,7 +484,7 @@ START   MOVB    $80,$90
     parser.Parse(program, section, symbols);
 
     // Should have: 2 invocations * 2 instructions = 4 instructions
-    EXPECT_GE(section.atoms.size(), 4);
+    EXPECT_GE(section.atoms.size(), 4UL);
 
     // Verify START label
     int64_t value;
@@ -523,7 +523,7 @@ START   ADDM    $C0,$C1,$C2
     parser.Parse(program, section, symbols);
 
     // Should have: 3 instructions (LDA, ADDA, STA)
-    EXPECT_GE(section.atoms.size(), 3);
+    EXPECT_GE(section.atoms.size(), 3UL);
 
     // Verify START label
     int64_t value;
@@ -567,7 +567,7 @@ START   LDB     #10
     parser.Parse(program, section, symbols);
 
     // Should have: LDB, LDY, and expanded COPY (5 instructions)
-    EXPECT_GE(section.atoms.size(), 7);
+    EXPECT_GE(section.atoms.size(), 7UL);
 
     // Verify .LOOP_001 label exists (uniquified)
     int64_t value;
@@ -613,7 +613,7 @@ START   LDB     #10
     parser.Parse(program, section, symbols);
 
     // Should have both macro invocations expanded
-    EXPECT_GE(section.atoms.size(), 12);
+    EXPECT_GE(section.atoms.size(), 12UL);
 
     // Verify both unique labels exist
     int64_t loop1_value, loop2_value;
@@ -661,7 +661,7 @@ START   DELAY   5,100
     parser.Parse(program, section, symbols);
 
     // Should have expanded DELAY macro
-    EXPECT_GE(section.atoms.size(), 6);
+    EXPECT_GE(section.atoms.size(), 6UL);
 
     // Verify both local labels exist with same expansion ID
     int64_t outer_value, inner_value;
@@ -715,7 +715,7 @@ DONE    NOP
     parser.Parse(program, section, symbols);
 
     // Should have all instructions
-    EXPECT_GE(section.atoms.size(), 7);
+    EXPECT_GE(section.atoms.size(), 7UL);
 
     // Verify labels
     int64_t start_value, done_value;

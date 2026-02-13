@@ -22,7 +22,7 @@ TEST(Cpu6502Test, LDA_Immediate) {
   // LDA #$42 -> A9 42
   auto bytes = cpu.EncodeLDA(0x42, AddressingMode::Immediate);
 
-  ASSERT_EQ(bytes.size(), 2);
+  ASSERT_EQ(bytes.size(), 2UL);
   EXPECT_EQ(bytes[0], 0xA9); // LDA immediate opcode
   EXPECT_EQ(bytes[1], 0x42); // Operand
 }
@@ -34,7 +34,7 @@ TEST(Cpu6502Test, LDA_ZeroPage) {
   // LDA $80 -> A5 80
   auto bytes = cpu.EncodeLDA(0x80, AddressingMode::ZeroPage);
 
-  ASSERT_EQ(bytes.size(), 2);
+  ASSERT_EQ(bytes.size(), 2UL);
   EXPECT_EQ(bytes[0], 0xA5); // LDA zero page opcode
   EXPECT_EQ(bytes[1], 0x80);
 }
@@ -46,7 +46,7 @@ TEST(Cpu6502Test, LDA_Absolute) {
   // LDA $1234 -> AD 34 12 (little-endian)
   auto bytes = cpu.EncodeLDA(0x1234, AddressingMode::Absolute);
 
-  ASSERT_EQ(bytes.size(), 3);
+  ASSERT_EQ(bytes.size(), 3UL);
   EXPECT_EQ(bytes[0], 0xAD); // LDA absolute opcode
   EXPECT_EQ(bytes[1], 0x34); // Low byte
   EXPECT_EQ(bytes[2], 0x12); // High byte
@@ -59,7 +59,7 @@ TEST(Cpu6502Test, STA_ZeroPage) {
   // STA $80 -> 85 80
   auto bytes = cpu.EncodeSTA(0x80, AddressingMode::ZeroPage);
 
-  ASSERT_EQ(bytes.size(), 2);
+  ASSERT_EQ(bytes.size(), 2UL);
   EXPECT_EQ(bytes[0], 0x85); // STA zero page opcode
   EXPECT_EQ(bytes[1], 0x80);
 }
@@ -71,7 +71,7 @@ TEST(Cpu6502Test, STA_Absolute) {
   // STA $1234 -> 8D 34 12
   auto bytes = cpu.EncodeSTA(0x1234, AddressingMode::Absolute);
 
-  ASSERT_EQ(bytes.size(), 3);
+  ASSERT_EQ(bytes.size(), 3UL);
   EXPECT_EQ(bytes[0], 0x8D); // STA absolute opcode
   EXPECT_EQ(bytes[1], 0x34);
   EXPECT_EQ(bytes[2], 0x12);
@@ -84,7 +84,7 @@ TEST(Cpu6502Test, JMP_Absolute) {
   // JMP $8000 -> 4C 00 80
   auto bytes = cpu.EncodeJMP(0x8000, AddressingMode::Absolute);
 
-  ASSERT_EQ(bytes.size(), 3);
+  ASSERT_EQ(bytes.size(), 3UL);
   EXPECT_EQ(bytes[0], 0x4C); // JMP absolute opcode
   EXPECT_EQ(bytes[1], 0x00);
   EXPECT_EQ(bytes[2], 0x80);
@@ -97,7 +97,7 @@ TEST(Cpu6502Test, NOP) {
   // NOP -> EA
   auto bytes = cpu.EncodeNOP();
 
-  ASSERT_EQ(bytes.size(), 1);
+  ASSERT_EQ(bytes.size(), 1UL);
   EXPECT_EQ(bytes[0], 0xEA); // NOP opcode
 }
 
@@ -108,7 +108,7 @@ TEST(Cpu6502Test, RTS) {
   // RTS -> 60
   auto bytes = cpu.EncodeRTS();
 
-  ASSERT_EQ(bytes.size(), 1);
+  ASSERT_EQ(bytes.size(), 1UL);
   EXPECT_EQ(bytes[0], 0x60); // RTS opcode
 }
 
@@ -127,10 +127,10 @@ TEST(Cpu6502Test, AddressingModes) {
 TEST(Cpu6502Test, CalculateSize) {
   Cpu6502 cpu;
 
-  EXPECT_EQ(cpu.CalculateInstructionSize(AddressingMode::Immediate), 2);
-  EXPECT_EQ(cpu.CalculateInstructionSize(AddressingMode::ZeroPage), 2);
-  EXPECT_EQ(cpu.CalculateInstructionSize(AddressingMode::Absolute), 3);
-  EXPECT_EQ(cpu.CalculateInstructionSize(AddressingMode::Implied), 1);
+  EXPECT_EQ(cpu.CalculateInstructionSize(AddressingMode::Immediate), 2UL);
+  EXPECT_EQ(cpu.CalculateInstructionSize(AddressingMode::ZeroPage), 2UL);
+  EXPECT_EQ(cpu.CalculateInstructionSize(AddressingMode::Absolute), 3UL);
+  EXPECT_EQ(cpu.CalculateInstructionSize(AddressingMode::Implied), 1UL);
 }
 
 // Test 12: Multiple instructions
@@ -154,7 +154,7 @@ TEST(Cpu6502Test, MultipleInstructions) {
 TEST(Cpu6502Test, ADC_Immediate) {
   Cpu6502 cpu;
   auto result = cpu.EncodeADC(0x42, AddressingMode::Immediate);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0x69); // ADC immediate opcode
   EXPECT_EQ(result[1], 0x42); // Operand
 }
@@ -163,7 +163,7 @@ TEST(Cpu6502Test, ADC_Immediate) {
 TEST(Cpu6502Test, ADC_ZeroPage) {
   Cpu6502 cpu;
   auto result = cpu.EncodeADC(0x80, AddressingMode::ZeroPage);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0x65); // ADC zero page opcode
   EXPECT_EQ(result[1], 0x80); // Address
 }
@@ -172,7 +172,7 @@ TEST(Cpu6502Test, ADC_ZeroPage) {
 TEST(Cpu6502Test, ADC_Absolute) {
   Cpu6502 cpu;
   auto result = cpu.EncodeADC(0x1234, AddressingMode::Absolute);
-  EXPECT_EQ(result.size(), 3);
+  EXPECT_EQ(result.size(), 3UL);
   EXPECT_EQ(result[0], 0x6D); // ADC absolute opcode
   EXPECT_EQ(result[1], 0x34); // Low byte
   EXPECT_EQ(result[2], 0x12); // High byte
@@ -182,7 +182,7 @@ TEST(Cpu6502Test, ADC_Absolute) {
 TEST(Cpu6502Test, SBC_Immediate) {
   Cpu6502 cpu;
   auto result = cpu.EncodeSBC(0x42, AddressingMode::Immediate);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0xE9); // SBC immediate opcode
   EXPECT_EQ(result[1], 0x42); // Operand
 }
@@ -191,7 +191,7 @@ TEST(Cpu6502Test, SBC_Immediate) {
 TEST(Cpu6502Test, SBC_ZeroPage) {
   Cpu6502 cpu;
   auto result = cpu.EncodeSBC(0x80, AddressingMode::ZeroPage);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0xE5); // SBC zero page opcode
   EXPECT_EQ(result[1], 0x80); // Address
 }
@@ -200,7 +200,7 @@ TEST(Cpu6502Test, SBC_ZeroPage) {
 TEST(Cpu6502Test, SBC_Absolute) {
   Cpu6502 cpu;
   auto result = cpu.EncodeSBC(0x1234, AddressingMode::Absolute);
-  EXPECT_EQ(result.size(), 3);
+  EXPECT_EQ(result.size(), 3UL);
   EXPECT_EQ(result[0], 0xED); // SBC absolute opcode
   EXPECT_EQ(result[1], 0x34); // Low byte
   EXPECT_EQ(result[2], 0x12); // High byte
@@ -212,7 +212,7 @@ TEST(Cpu6502Test, SBC_Absolute) {
 TEST(Cpu6502Test, AND_Immediate) {
   Cpu6502 cpu;
   auto result = cpu.EncodeAND(0x42, AddressingMode::Immediate);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0x29); // AND immediate opcode
   EXPECT_EQ(result[1], 0x42); // Operand
 }
@@ -221,7 +221,7 @@ TEST(Cpu6502Test, AND_Immediate) {
 TEST(Cpu6502Test, AND_ZeroPage) {
   Cpu6502 cpu;
   auto result = cpu.EncodeAND(0x80, AddressingMode::ZeroPage);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0x25); // AND zero page opcode
   EXPECT_EQ(result[1], 0x80); // Address
 }
@@ -230,7 +230,7 @@ TEST(Cpu6502Test, AND_ZeroPage) {
 TEST(Cpu6502Test, AND_Absolute) {
   Cpu6502 cpu;
   auto result = cpu.EncodeAND(0x1234, AddressingMode::Absolute);
-  EXPECT_EQ(result.size(), 3);
+  EXPECT_EQ(result.size(), 3UL);
   EXPECT_EQ(result[0], 0x2D); // AND absolute opcode
   EXPECT_EQ(result[1], 0x34); // Low byte
   EXPECT_EQ(result[2], 0x12); // High byte
@@ -240,7 +240,7 @@ TEST(Cpu6502Test, AND_Absolute) {
 TEST(Cpu6502Test, ORA_Immediate) {
   Cpu6502 cpu;
   auto result = cpu.EncodeORA(0x42, AddressingMode::Immediate);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0x09); // ORA immediate opcode
   EXPECT_EQ(result[1], 0x42); // Operand
 }
@@ -249,7 +249,7 @@ TEST(Cpu6502Test, ORA_Immediate) {
 TEST(Cpu6502Test, ORA_ZeroPage) {
   Cpu6502 cpu;
   auto result = cpu.EncodeORA(0x80, AddressingMode::ZeroPage);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0x05); // ORA zero page opcode
   EXPECT_EQ(result[1], 0x80); // Address
 }
@@ -258,7 +258,7 @@ TEST(Cpu6502Test, ORA_ZeroPage) {
 TEST(Cpu6502Test, ORA_Absolute) {
   Cpu6502 cpu;
   auto result = cpu.EncodeORA(0x1234, AddressingMode::Absolute);
-  EXPECT_EQ(result.size(), 3);
+  EXPECT_EQ(result.size(), 3UL);
   EXPECT_EQ(result[0], 0x0D); // ORA absolute opcode
   EXPECT_EQ(result[1], 0x34); // Low byte
   EXPECT_EQ(result[2], 0x12); // High byte
@@ -268,7 +268,7 @@ TEST(Cpu6502Test, ORA_Absolute) {
 TEST(Cpu6502Test, EOR_Immediate) {
   Cpu6502 cpu;
   auto result = cpu.EncodeEOR(0x42, AddressingMode::Immediate);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0x49); // EOR immediate opcode
   EXPECT_EQ(result[1], 0x42); // Operand
 }
@@ -277,7 +277,7 @@ TEST(Cpu6502Test, EOR_Immediate) {
 TEST(Cpu6502Test, EOR_ZeroPage) {
   Cpu6502 cpu;
   auto result = cpu.EncodeEOR(0x80, AddressingMode::ZeroPage);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0x45); // EOR zero page opcode
   EXPECT_EQ(result[1], 0x80); // Address
 }
@@ -286,7 +286,7 @@ TEST(Cpu6502Test, EOR_ZeroPage) {
 TEST(Cpu6502Test, EOR_Absolute) {
   Cpu6502 cpu;
   auto result = cpu.EncodeEOR(0x1234, AddressingMode::Absolute);
-  EXPECT_EQ(result.size(), 3);
+  EXPECT_EQ(result.size(), 3UL);
   EXPECT_EQ(result[0], 0x4D); // EOR absolute opcode
   EXPECT_EQ(result[1], 0x34); // Low byte
   EXPECT_EQ(result[2], 0x12); // High byte
@@ -298,7 +298,7 @@ TEST(Cpu6502Test, EOR_Absolute) {
 TEST(Cpu6502Test, LDX_Immediate) {
   Cpu6502 cpu;
   auto result = cpu.EncodeLDX(0x42, AddressingMode::Immediate);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0xA2); // LDX immediate opcode
   EXPECT_EQ(result[1], 0x42); // Operand
 }
@@ -307,7 +307,7 @@ TEST(Cpu6502Test, LDX_Immediate) {
 TEST(Cpu6502Test, LDX_ZeroPage) {
   Cpu6502 cpu;
   auto result = cpu.EncodeLDX(0x80, AddressingMode::ZeroPage);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0xA6); // LDX zero page opcode
   EXPECT_EQ(result[1], 0x80); // Address
 }
@@ -316,7 +316,7 @@ TEST(Cpu6502Test, LDX_ZeroPage) {
 TEST(Cpu6502Test, LDX_Absolute) {
   Cpu6502 cpu;
   auto result = cpu.EncodeLDX(0x1234, AddressingMode::Absolute);
-  EXPECT_EQ(result.size(), 3);
+  EXPECT_EQ(result.size(), 3UL);
   EXPECT_EQ(result[0], 0xAE); // LDX absolute opcode
   EXPECT_EQ(result[1], 0x34); // Low byte
   EXPECT_EQ(result[2], 0x12); // High byte
@@ -326,7 +326,7 @@ TEST(Cpu6502Test, LDX_Absolute) {
 TEST(Cpu6502Test, LDY_Immediate) {
   Cpu6502 cpu;
   auto result = cpu.EncodeLDY(0x42, AddressingMode::Immediate);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0xA0); // LDY immediate opcode
   EXPECT_EQ(result[1], 0x42); // Operand
 }
@@ -335,7 +335,7 @@ TEST(Cpu6502Test, LDY_Immediate) {
 TEST(Cpu6502Test, LDY_ZeroPage) {
   Cpu6502 cpu;
   auto result = cpu.EncodeLDY(0x80, AddressingMode::ZeroPage);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0xA4); // LDY zero page opcode
   EXPECT_EQ(result[1], 0x80); // Address
 }
@@ -344,7 +344,7 @@ TEST(Cpu6502Test, LDY_ZeroPage) {
 TEST(Cpu6502Test, LDY_Absolute) {
   Cpu6502 cpu;
   auto result = cpu.EncodeLDY(0x1234, AddressingMode::Absolute);
-  EXPECT_EQ(result.size(), 3);
+  EXPECT_EQ(result.size(), 3UL);
   EXPECT_EQ(result[0], 0xAC); // LDY absolute opcode
   EXPECT_EQ(result[1], 0x34); // Low byte
   EXPECT_EQ(result[2], 0x12); // High byte
@@ -354,7 +354,7 @@ TEST(Cpu6502Test, LDY_Absolute) {
 TEST(Cpu6502Test, STX_ZeroPage) {
   Cpu6502 cpu;
   auto result = cpu.EncodeSTX(0x80, AddressingMode::ZeroPage);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0x86); // STX zero page opcode
   EXPECT_EQ(result[1], 0x80); // Address
 }
@@ -363,7 +363,7 @@ TEST(Cpu6502Test, STX_ZeroPage) {
 TEST(Cpu6502Test, STX_Absolute) {
   Cpu6502 cpu;
   auto result = cpu.EncodeSTX(0x1234, AddressingMode::Absolute);
-  EXPECT_EQ(result.size(), 3);
+  EXPECT_EQ(result.size(), 3UL);
   EXPECT_EQ(result[0], 0x8E); // STX absolute opcode
   EXPECT_EQ(result[1], 0x34); // Low byte
   EXPECT_EQ(result[2], 0x12); // High byte
@@ -373,7 +373,7 @@ TEST(Cpu6502Test, STX_Absolute) {
 TEST(Cpu6502Test, STY_ZeroPage) {
   Cpu6502 cpu;
   auto result = cpu.EncodeSTY(0x80, AddressingMode::ZeroPage);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0x84); // STY zero page opcode
   EXPECT_EQ(result[1], 0x80); // Address
 }
@@ -382,7 +382,7 @@ TEST(Cpu6502Test, STY_ZeroPage) {
 TEST(Cpu6502Test, STY_Absolute) {
   Cpu6502 cpu;
   auto result = cpu.EncodeSTY(0x1234, AddressingMode::Absolute);
-  EXPECT_EQ(result.size(), 3);
+  EXPECT_EQ(result.size(), 3UL);
   EXPECT_EQ(result[0], 0x8C); // STY absolute opcode
   EXPECT_EQ(result[1], 0x34); // Low byte
   EXPECT_EQ(result[2], 0x12); // High byte
@@ -394,7 +394,7 @@ TEST(Cpu6502Test, STY_Absolute) {
 TEST(Cpu6502Test, CMP_Immediate) {
   Cpu6502 cpu;
   auto result = cpu.EncodeCMP(0x42, AddressingMode::Immediate);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0xC9); // CMP immediate opcode
   EXPECT_EQ(result[1], 0x42); // Operand
 }
@@ -403,7 +403,7 @@ TEST(Cpu6502Test, CMP_Immediate) {
 TEST(Cpu6502Test, CMP_ZeroPage) {
   Cpu6502 cpu;
   auto result = cpu.EncodeCMP(0x80, AddressingMode::ZeroPage);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0xC5); // CMP zero page opcode
   EXPECT_EQ(result[1], 0x80); // Address
 }
@@ -412,7 +412,7 @@ TEST(Cpu6502Test, CMP_ZeroPage) {
 TEST(Cpu6502Test, CMP_Absolute) {
   Cpu6502 cpu;
   auto result = cpu.EncodeCMP(0x1234, AddressingMode::Absolute);
-  EXPECT_EQ(result.size(), 3);
+  EXPECT_EQ(result.size(), 3UL);
   EXPECT_EQ(result[0], 0xCD); // CMP absolute opcode
   EXPECT_EQ(result[1], 0x34); // Low byte
   EXPECT_EQ(result[2], 0x12); // High byte
@@ -422,7 +422,7 @@ TEST(Cpu6502Test, CMP_Absolute) {
 TEST(Cpu6502Test, CPX_Immediate) {
   Cpu6502 cpu;
   auto result = cpu.EncodeCPX(0x42, AddressingMode::Immediate);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0xE0); // CPX immediate opcode
   EXPECT_EQ(result[1], 0x42); // Operand
 }
@@ -431,7 +431,7 @@ TEST(Cpu6502Test, CPX_Immediate) {
 TEST(Cpu6502Test, CPX_ZeroPage) {
   Cpu6502 cpu;
   auto result = cpu.EncodeCPX(0x80, AddressingMode::ZeroPage);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0xE4); // CPX zero page opcode
   EXPECT_EQ(result[1], 0x80); // Address
 }
@@ -440,7 +440,7 @@ TEST(Cpu6502Test, CPX_ZeroPage) {
 TEST(Cpu6502Test, CPX_Absolute) {
   Cpu6502 cpu;
   auto result = cpu.EncodeCPX(0x1234, AddressingMode::Absolute);
-  EXPECT_EQ(result.size(), 3);
+  EXPECT_EQ(result.size(), 3UL);
   EXPECT_EQ(result[0], 0xEC); // CPX absolute opcode
   EXPECT_EQ(result[1], 0x34); // Low byte
   EXPECT_EQ(result[2], 0x12); // High byte
@@ -450,7 +450,7 @@ TEST(Cpu6502Test, CPX_Absolute) {
 TEST(Cpu6502Test, CPY_Immediate) {
   Cpu6502 cpu;
   auto result = cpu.EncodeCPY(0x42, AddressingMode::Immediate);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0xC0); // CPY immediate opcode
   EXPECT_EQ(result[1], 0x42); // Operand
 }
@@ -459,7 +459,7 @@ TEST(Cpu6502Test, CPY_Immediate) {
 TEST(Cpu6502Test, CPY_ZeroPage) {
   Cpu6502 cpu;
   auto result = cpu.EncodeCPY(0x80, AddressingMode::ZeroPage);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0xC4); // CPY zero page opcode
   EXPECT_EQ(result[1], 0x80); // Address
 }
@@ -468,7 +468,7 @@ TEST(Cpu6502Test, CPY_ZeroPage) {
 TEST(Cpu6502Test, CPY_Absolute) {
   Cpu6502 cpu;
   auto result = cpu.EncodeCPY(0x1234, AddressingMode::Absolute);
-  EXPECT_EQ(result.size(), 3);
+  EXPECT_EQ(result.size(), 3UL);
   EXPECT_EQ(result[0], 0xCC); // CPY absolute opcode
   EXPECT_EQ(result[1], 0x34); // Low byte
   EXPECT_EQ(result[2], 0x12); // High byte
@@ -480,7 +480,7 @@ TEST(Cpu6502Test, CPY_Absolute) {
 TEST(Cpu6502Test, BEQ_Relative) {
   Cpu6502 cpu;
   auto result = cpu.EncodeBEQ(0x10, AddressingMode::Relative);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0xF0); // BEQ opcode
   EXPECT_EQ(result[1], 0x10); // Relative offset
 }
@@ -489,7 +489,7 @@ TEST(Cpu6502Test, BEQ_Relative) {
 TEST(Cpu6502Test, BNE_Relative) {
   Cpu6502 cpu;
   auto result = cpu.EncodeBNE(0x10, AddressingMode::Relative);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0xD0); // BNE opcode
   EXPECT_EQ(result[1], 0x10); // Relative offset
 }
@@ -498,7 +498,7 @@ TEST(Cpu6502Test, BNE_Relative) {
 TEST(Cpu6502Test, BCC_Relative) {
   Cpu6502 cpu;
   auto result = cpu.EncodeBCC(0x10, AddressingMode::Relative);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0x90); // BCC opcode
   EXPECT_EQ(result[1], 0x10); // Relative offset
 }
@@ -507,7 +507,7 @@ TEST(Cpu6502Test, BCC_Relative) {
 TEST(Cpu6502Test, BCS_Relative) {
   Cpu6502 cpu;
   auto result = cpu.EncodeBCS(0x10, AddressingMode::Relative);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0xB0); // BCS opcode
   EXPECT_EQ(result[1], 0x10); // Relative offset
 }
@@ -516,7 +516,7 @@ TEST(Cpu6502Test, BCS_Relative) {
 TEST(Cpu6502Test, BMI_Relative) {
   Cpu6502 cpu;
   auto result = cpu.EncodeBMI(0x10, AddressingMode::Relative);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0x30); // BMI opcode
   EXPECT_EQ(result[1], 0x10); // Relative offset
 }
@@ -525,7 +525,7 @@ TEST(Cpu6502Test, BMI_Relative) {
 TEST(Cpu6502Test, BPL_Relative) {
   Cpu6502 cpu;
   auto result = cpu.EncodeBPL(0x10, AddressingMode::Relative);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0x10); // BPL opcode
   EXPECT_EQ(result[1], 0x10); // Relative offset
 }
@@ -534,7 +534,7 @@ TEST(Cpu6502Test, BPL_Relative) {
 TEST(Cpu6502Test, BVC_Relative) {
   Cpu6502 cpu;
   auto result = cpu.EncodeBVC(0x10, AddressingMode::Relative);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0x50); // BVC opcode
   EXPECT_EQ(result[1], 0x10); // Relative offset
 }
@@ -543,7 +543,7 @@ TEST(Cpu6502Test, BVC_Relative) {
 TEST(Cpu6502Test, BVS_Relative) {
   Cpu6502 cpu;
   auto result = cpu.EncodeBVS(0x10, AddressingMode::Relative);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0x70); // BVS opcode
   EXPECT_EQ(result[1], 0x10); // Relative offset
 }
@@ -554,7 +554,7 @@ TEST(Cpu6502Test, BVS_Relative) {
 TEST(Cpu6502Test, INX_Implied) {
   Cpu6502 cpu;
   auto result = cpu.EncodeINX();
-  EXPECT_EQ(result.size(), 1);
+  EXPECT_EQ(result.size(), 1UL);
   EXPECT_EQ(result[0], 0xE8); // INX opcode
 }
 
@@ -562,7 +562,7 @@ TEST(Cpu6502Test, INX_Implied) {
 TEST(Cpu6502Test, INY_Implied) {
   Cpu6502 cpu;
   auto result = cpu.EncodeINY();
-  EXPECT_EQ(result.size(), 1);
+  EXPECT_EQ(result.size(), 1UL);
   EXPECT_EQ(result[0], 0xC8); // INY opcode
 }
 
@@ -570,7 +570,7 @@ TEST(Cpu6502Test, INY_Implied) {
 TEST(Cpu6502Test, DEX_Implied) {
   Cpu6502 cpu;
   auto result = cpu.EncodeDEX();
-  EXPECT_EQ(result.size(), 1);
+  EXPECT_EQ(result.size(), 1UL);
   EXPECT_EQ(result[0], 0xCA); // DEX opcode
 }
 
@@ -578,7 +578,7 @@ TEST(Cpu6502Test, DEX_Implied) {
 TEST(Cpu6502Test, DEY_Implied) {
   Cpu6502 cpu;
   auto result = cpu.EncodeDEY();
-  EXPECT_EQ(result.size(), 1);
+  EXPECT_EQ(result.size(), 1UL);
   EXPECT_EQ(result[0], 0x88); // DEY opcode
 }
 
@@ -586,7 +586,7 @@ TEST(Cpu6502Test, DEY_Implied) {
 TEST(Cpu6502Test, INC_ZeroPage) {
   Cpu6502 cpu;
   auto result = cpu.EncodeINC(0x80, AddressingMode::ZeroPage);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0xE6); // INC zero page opcode
   EXPECT_EQ(result[1], 0x80); // Address
 }
@@ -595,7 +595,7 @@ TEST(Cpu6502Test, INC_ZeroPage) {
 TEST(Cpu6502Test, INC_Absolute) {
   Cpu6502 cpu;
   auto result = cpu.EncodeINC(0x1234, AddressingMode::Absolute);
-  EXPECT_EQ(result.size(), 3);
+  EXPECT_EQ(result.size(), 3UL);
   EXPECT_EQ(result[0], 0xEE); // INC absolute opcode
   EXPECT_EQ(result[1], 0x34); // Low byte
   EXPECT_EQ(result[2], 0x12); // High byte
@@ -605,7 +605,7 @@ TEST(Cpu6502Test, INC_Absolute) {
 TEST(Cpu6502Test, DEC_ZeroPage) {
   Cpu6502 cpu;
   auto result = cpu.EncodeDEC(0x80, AddressingMode::ZeroPage);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0xC6); // DEC zero page opcode
   EXPECT_EQ(result[1], 0x80); // Address
 }
@@ -614,7 +614,7 @@ TEST(Cpu6502Test, DEC_ZeroPage) {
 TEST(Cpu6502Test, DEC_Absolute) {
   Cpu6502 cpu;
   auto result = cpu.EncodeDEC(0x1234, AddressingMode::Absolute);
-  EXPECT_EQ(result.size(), 3);
+  EXPECT_EQ(result.size(), 3UL);
   EXPECT_EQ(result[0], 0xCE); // DEC absolute opcode
   EXPECT_EQ(result[1], 0x34); // Low byte
   EXPECT_EQ(result[2], 0x12); // High byte
@@ -626,7 +626,7 @@ TEST(Cpu6502Test, DEC_Absolute) {
 TEST(Cpu6502Test, PHA_Implied) {
   Cpu6502 cpu;
   auto result = cpu.EncodePHA();
-  EXPECT_EQ(result.size(), 1);
+  EXPECT_EQ(result.size(), 1UL);
   EXPECT_EQ(result[0], 0x48); // PHA opcode
 }
 
@@ -634,7 +634,7 @@ TEST(Cpu6502Test, PHA_Implied) {
 TEST(Cpu6502Test, PLA_Implied) {
   Cpu6502 cpu;
   auto result = cpu.EncodePLA();
-  EXPECT_EQ(result.size(), 1);
+  EXPECT_EQ(result.size(), 1UL);
   EXPECT_EQ(result[0], 0x68); // PLA opcode
 }
 
@@ -642,7 +642,7 @@ TEST(Cpu6502Test, PLA_Implied) {
 TEST(Cpu6502Test, PHP_Implied) {
   Cpu6502 cpu;
   auto result = cpu.EncodePHP();
-  EXPECT_EQ(result.size(), 1);
+  EXPECT_EQ(result.size(), 1UL);
   EXPECT_EQ(result[0], 0x08); // PHP opcode
 }
 
@@ -650,7 +650,7 @@ TEST(Cpu6502Test, PHP_Implied) {
 TEST(Cpu6502Test, PLP_Implied) {
   Cpu6502 cpu;
   auto result = cpu.EncodePLP();
-  EXPECT_EQ(result.size(), 1);
+  EXPECT_EQ(result.size(), 1UL);
   EXPECT_EQ(result[0], 0x28); // PLP opcode
 }
 
@@ -660,7 +660,7 @@ TEST(Cpu6502Test, PLP_Implied) {
 TEST(Cpu6502Test, JSR_Absolute) {
   Cpu6502 cpu;
   auto result = cpu.EncodeJSR(0x1234, AddressingMode::Absolute);
-  EXPECT_EQ(result.size(), 3);
+  EXPECT_EQ(result.size(), 3UL);
   EXPECT_EQ(result[0], 0x20); // JSR absolute opcode
   EXPECT_EQ(result[1], 0x34); // Low byte
   EXPECT_EQ(result[2], 0x12); // High byte
@@ -676,7 +676,7 @@ TEST(Cpu6502Test, JSR_Absolute) {
 TEST(Cpu6502Test, BIT_ZeroPage) {
   Cpu6502 cpu;
   auto result = cpu.EncodeBIT(0x80, AddressingMode::ZeroPage);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0x24); // BIT zero page opcode
   EXPECT_EQ(result[1], 0x80); // Zero page address
 }
@@ -685,7 +685,7 @@ TEST(Cpu6502Test, BIT_ZeroPage) {
 TEST(Cpu6502Test, BIT_Absolute) {
   Cpu6502 cpu;
   auto result = cpu.EncodeBIT(0x1234, AddressingMode::Absolute);
-  EXPECT_EQ(result.size(), 3);
+  EXPECT_EQ(result.size(), 3UL);
   EXPECT_EQ(result[0], 0x2C); // BIT absolute opcode
   EXPECT_EQ(result[1], 0x34); // Low byte
   EXPECT_EQ(result[2], 0x12); // High byte
@@ -697,7 +697,7 @@ TEST(Cpu6502Test, BIT_Absolute) {
 TEST(Cpu6502Test, ASL_Accumulator) {
   Cpu6502 cpu;
   auto result = cpu.EncodeASL(0, AddressingMode::Accumulator);
-  EXPECT_EQ(result.size(), 1);
+  EXPECT_EQ(result.size(), 1UL);
   EXPECT_EQ(result[0], 0x0A); // ASL A opcode
 }
 
@@ -705,7 +705,7 @@ TEST(Cpu6502Test, ASL_Accumulator) {
 TEST(Cpu6502Test, ASL_ZeroPage) {
   Cpu6502 cpu;
   auto result = cpu.EncodeASL(0x80, AddressingMode::ZeroPage);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0x06); // ASL zp opcode
   EXPECT_EQ(result[1], 0x80); // Zero page address
 }
@@ -714,7 +714,7 @@ TEST(Cpu6502Test, ASL_ZeroPage) {
 TEST(Cpu6502Test, ASL_ZeroPageX) {
   Cpu6502 cpu;
   auto result = cpu.EncodeASL(0x80, AddressingMode::ZeroPageX);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0x16); // ASL zp,X opcode
   EXPECT_EQ(result[1], 0x80); // Zero page address
 }
@@ -723,7 +723,7 @@ TEST(Cpu6502Test, ASL_ZeroPageX) {
 TEST(Cpu6502Test, ASL_Absolute) {
   Cpu6502 cpu;
   auto result = cpu.EncodeASL(0x1234, AddressingMode::Absolute);
-  EXPECT_EQ(result.size(), 3);
+  EXPECT_EQ(result.size(), 3UL);
   EXPECT_EQ(result[0], 0x0E); // ASL abs opcode
   EXPECT_EQ(result[1], 0x34); // Low byte
   EXPECT_EQ(result[2], 0x12); // High byte
@@ -733,7 +733,7 @@ TEST(Cpu6502Test, ASL_Absolute) {
 TEST(Cpu6502Test, ASL_AbsoluteX) {
   Cpu6502 cpu;
   auto result = cpu.EncodeASL(0x1234, AddressingMode::AbsoluteX);
-  EXPECT_EQ(result.size(), 3);
+  EXPECT_EQ(result.size(), 3UL);
   EXPECT_EQ(result[0], 0x1E); // ASL abs,X opcode
   EXPECT_EQ(result[1], 0x34); // Low byte
   EXPECT_EQ(result[2], 0x12); // High byte
@@ -743,7 +743,7 @@ TEST(Cpu6502Test, ASL_AbsoluteX) {
 TEST(Cpu6502Test, LSR_Accumulator) {
   Cpu6502 cpu;
   auto result = cpu.EncodeLSR(0, AddressingMode::Accumulator);
-  EXPECT_EQ(result.size(), 1);
+  EXPECT_EQ(result.size(), 1UL);
   EXPECT_EQ(result[0], 0x4A); // LSR A opcode
 }
 
@@ -751,7 +751,7 @@ TEST(Cpu6502Test, LSR_Accumulator) {
 TEST(Cpu6502Test, LSR_ZeroPage) {
   Cpu6502 cpu;
   auto result = cpu.EncodeLSR(0x80, AddressingMode::ZeroPage);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0x46); // LSR zp opcode
   EXPECT_EQ(result[1], 0x80); // Zero page address
 }
@@ -760,7 +760,7 @@ TEST(Cpu6502Test, LSR_ZeroPage) {
 TEST(Cpu6502Test, LSR_ZeroPageX) {
   Cpu6502 cpu;
   auto result = cpu.EncodeLSR(0x80, AddressingMode::ZeroPageX);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0x56); // LSR zp,X opcode
   EXPECT_EQ(result[1], 0x80); // Zero page address
 }
@@ -769,7 +769,7 @@ TEST(Cpu6502Test, LSR_ZeroPageX) {
 TEST(Cpu6502Test, LSR_Absolute) {
   Cpu6502 cpu;
   auto result = cpu.EncodeLSR(0x1234, AddressingMode::Absolute);
-  EXPECT_EQ(result.size(), 3);
+  EXPECT_EQ(result.size(), 3UL);
   EXPECT_EQ(result[0], 0x4E); // LSR abs opcode
   EXPECT_EQ(result[1], 0x34); // Low byte
   EXPECT_EQ(result[2], 0x12); // High byte
@@ -779,7 +779,7 @@ TEST(Cpu6502Test, LSR_Absolute) {
 TEST(Cpu6502Test, LSR_AbsoluteX) {
   Cpu6502 cpu;
   auto result = cpu.EncodeLSR(0x1234, AddressingMode::AbsoluteX);
-  EXPECT_EQ(result.size(), 3);
+  EXPECT_EQ(result.size(), 3UL);
   EXPECT_EQ(result[0], 0x5E); // LSR abs,X opcode
   EXPECT_EQ(result[1], 0x34); // Low byte
   EXPECT_EQ(result[2], 0x12); // High byte
@@ -791,7 +791,7 @@ TEST(Cpu6502Test, LSR_AbsoluteX) {
 TEST(Cpu6502Test, ROL_Accumulator) {
   Cpu6502 cpu;
   auto result = cpu.EncodeROL(0, AddressingMode::Accumulator);
-  EXPECT_EQ(result.size(), 1);
+  EXPECT_EQ(result.size(), 1UL);
   EXPECT_EQ(result[0], 0x2A); // ROL A opcode
 }
 
@@ -799,7 +799,7 @@ TEST(Cpu6502Test, ROL_Accumulator) {
 TEST(Cpu6502Test, ROL_ZeroPage) {
   Cpu6502 cpu;
   auto result = cpu.EncodeROL(0x80, AddressingMode::ZeroPage);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0x26); // ROL zp opcode
   EXPECT_EQ(result[1], 0x80); // Zero page address
 }
@@ -808,7 +808,7 @@ TEST(Cpu6502Test, ROL_ZeroPage) {
 TEST(Cpu6502Test, ROL_ZeroPageX) {
   Cpu6502 cpu;
   auto result = cpu.EncodeROL(0x80, AddressingMode::ZeroPageX);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0x36); // ROL zp,X opcode
   EXPECT_EQ(result[1], 0x80); // Zero page address
 }
@@ -817,7 +817,7 @@ TEST(Cpu6502Test, ROL_ZeroPageX) {
 TEST(Cpu6502Test, ROL_Absolute) {
   Cpu6502 cpu;
   auto result = cpu.EncodeROL(0x1234, AddressingMode::Absolute);
-  EXPECT_EQ(result.size(), 3);
+  EXPECT_EQ(result.size(), 3UL);
   EXPECT_EQ(result[0], 0x2E); // ROL abs opcode
   EXPECT_EQ(result[1], 0x34); // Low byte
   EXPECT_EQ(result[2], 0x12); // High byte
@@ -827,7 +827,7 @@ TEST(Cpu6502Test, ROL_Absolute) {
 TEST(Cpu6502Test, ROL_AbsoluteX) {
   Cpu6502 cpu;
   auto result = cpu.EncodeROL(0x1234, AddressingMode::AbsoluteX);
-  EXPECT_EQ(result.size(), 3);
+  EXPECT_EQ(result.size(), 3UL);
   EXPECT_EQ(result[0], 0x3E); // ROL abs,X opcode
   EXPECT_EQ(result[1], 0x34); // Low byte
   EXPECT_EQ(result[2], 0x12); // High byte
@@ -837,7 +837,7 @@ TEST(Cpu6502Test, ROL_AbsoluteX) {
 TEST(Cpu6502Test, ROR_Accumulator) {
   Cpu6502 cpu;
   auto result = cpu.EncodeROR(0, AddressingMode::Accumulator);
-  EXPECT_EQ(result.size(), 1);
+  EXPECT_EQ(result.size(), 1UL);
   EXPECT_EQ(result[0], 0x6A); // ROR A opcode
 }
 
@@ -845,7 +845,7 @@ TEST(Cpu6502Test, ROR_Accumulator) {
 TEST(Cpu6502Test, ROR_ZeroPage) {
   Cpu6502 cpu;
   auto result = cpu.EncodeROR(0x80, AddressingMode::ZeroPage);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0x66); // ROR zp opcode
   EXPECT_EQ(result[1], 0x80); // Zero page address
 }
@@ -854,7 +854,7 @@ TEST(Cpu6502Test, ROR_ZeroPage) {
 TEST(Cpu6502Test, ROR_ZeroPageX) {
   Cpu6502 cpu;
   auto result = cpu.EncodeROR(0x80, AddressingMode::ZeroPageX);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0x76); // ROR zp,X opcode
   EXPECT_EQ(result[1], 0x80); // Zero page address
 }
@@ -863,7 +863,7 @@ TEST(Cpu6502Test, ROR_ZeroPageX) {
 TEST(Cpu6502Test, ROR_Absolute) {
   Cpu6502 cpu;
   auto result = cpu.EncodeROR(0x1234, AddressingMode::Absolute);
-  EXPECT_EQ(result.size(), 3);
+  EXPECT_EQ(result.size(), 3UL);
   EXPECT_EQ(result[0], 0x6E); // ROR abs opcode
   EXPECT_EQ(result[1], 0x34); // Low byte
   EXPECT_EQ(result[2], 0x12); // High byte
@@ -873,7 +873,7 @@ TEST(Cpu6502Test, ROR_Absolute) {
 TEST(Cpu6502Test, ROR_AbsoluteX) {
   Cpu6502 cpu;
   auto result = cpu.EncodeROR(0x1234, AddressingMode::AbsoluteX);
-  EXPECT_EQ(result.size(), 3);
+  EXPECT_EQ(result.size(), 3UL);
   EXPECT_EQ(result[0], 0x7E); // ROR abs,X opcode
   EXPECT_EQ(result[1], 0x34); // Low byte
   EXPECT_EQ(result[2], 0x12); // High byte
@@ -885,7 +885,7 @@ TEST(Cpu6502Test, ROR_AbsoluteX) {
 TEST(Cpu6502Test, RTI_Implied) {
   Cpu6502 cpu;
   auto result = cpu.EncodeRTI();
-  EXPECT_EQ(result.size(), 1);
+  EXPECT_EQ(result.size(), 1UL);
   EXPECT_EQ(result[0], 0x40); // RTI opcode
 }
 
@@ -893,7 +893,7 @@ TEST(Cpu6502Test, RTI_Implied) {
 TEST(Cpu6502Test, BRK_Implied) {
   Cpu6502 cpu;
   auto result = cpu.EncodeBRK();
-  EXPECT_EQ(result.size(), 1);
+  EXPECT_EQ(result.size(), 1UL);
   EXPECT_EQ(result[0], 0x00); // BRK opcode
 }
 
@@ -903,7 +903,7 @@ TEST(Cpu6502Test, BRK_Implied) {
 TEST(Cpu6502Test, CLC_Implied) {
   Cpu6502 cpu;
   auto result = cpu.EncodeCLC();
-  EXPECT_EQ(result.size(), 1);
+  EXPECT_EQ(result.size(), 1UL);
   EXPECT_EQ(result[0], 0x18); // CLC opcode
 }
 
@@ -911,7 +911,7 @@ TEST(Cpu6502Test, CLC_Implied) {
 TEST(Cpu6502Test, SEC_Implied) {
   Cpu6502 cpu;
   auto result = cpu.EncodeSEC();
-  EXPECT_EQ(result.size(), 1);
+  EXPECT_EQ(result.size(), 1UL);
   EXPECT_EQ(result[0], 0x38); // SEC opcode
 }
 
@@ -919,7 +919,7 @@ TEST(Cpu6502Test, SEC_Implied) {
 TEST(Cpu6502Test, CLD_Implied) {
   Cpu6502 cpu;
   auto result = cpu.EncodeCLD();
-  EXPECT_EQ(result.size(), 1);
+  EXPECT_EQ(result.size(), 1UL);
   EXPECT_EQ(result[0], 0xD8); // CLD opcode
 }
 
@@ -927,7 +927,7 @@ TEST(Cpu6502Test, CLD_Implied) {
 TEST(Cpu6502Test, SED_Implied) {
   Cpu6502 cpu;
   auto result = cpu.EncodeSED();
-  EXPECT_EQ(result.size(), 1);
+  EXPECT_EQ(result.size(), 1UL);
   EXPECT_EQ(result[0], 0xF8); // SED opcode
 }
 
@@ -935,7 +935,7 @@ TEST(Cpu6502Test, SED_Implied) {
 TEST(Cpu6502Test, CLI_Implied) {
   Cpu6502 cpu;
   auto result = cpu.EncodeCLI();
-  EXPECT_EQ(result.size(), 1);
+  EXPECT_EQ(result.size(), 1UL);
   EXPECT_EQ(result[0], 0x58); // CLI opcode
 }
 
@@ -943,7 +943,7 @@ TEST(Cpu6502Test, CLI_Implied) {
 TEST(Cpu6502Test, SEI_Implied) {
   Cpu6502 cpu;
   auto result = cpu.EncodeSEI();
-  EXPECT_EQ(result.size(), 1);
+  EXPECT_EQ(result.size(), 1UL);
   EXPECT_EQ(result[0], 0x78); // SEI opcode
 }
 
@@ -951,7 +951,7 @@ TEST(Cpu6502Test, SEI_Implied) {
 TEST(Cpu6502Test, CLV_Implied) {
   Cpu6502 cpu;
   auto result = cpu.EncodeCLV();
-  EXPECT_EQ(result.size(), 1);
+  EXPECT_EQ(result.size(), 1UL);
   EXPECT_EQ(result[0], 0xB8); // CLV opcode
 }
 
@@ -961,7 +961,7 @@ TEST(Cpu6502Test, CLV_Implied) {
 TEST(Cpu6502Test, TSX_Implied) {
   Cpu6502 cpu;
   auto result = cpu.EncodeTSX();
-  EXPECT_EQ(result.size(), 1);
+  EXPECT_EQ(result.size(), 1UL);
   EXPECT_EQ(result[0], 0xBA); // TSX opcode
 }
 
@@ -969,7 +969,7 @@ TEST(Cpu6502Test, TSX_Implied) {
 TEST(Cpu6502Test, TXS_Implied) {
   Cpu6502 cpu;
   auto result = cpu.EncodeTXS();
-  EXPECT_EQ(result.size(), 1);
+  EXPECT_EQ(result.size(), 1UL);
   EXPECT_EQ(result[0], 0x9A); // TXS opcode
 }
 
@@ -977,7 +977,7 @@ TEST(Cpu6502Test, TXS_Implied) {
 TEST(Cpu6502Test, TAX_Implied) {
   Cpu6502 cpu;
   auto result = cpu.EncodeTAX();
-  EXPECT_EQ(result.size(), 1);
+  EXPECT_EQ(result.size(), 1UL);
   EXPECT_EQ(result[0], 0xAA); // TAX opcode
 }
 
@@ -985,7 +985,7 @@ TEST(Cpu6502Test, TAX_Implied) {
 TEST(Cpu6502Test, TAY_Implied) {
   Cpu6502 cpu;
   auto result = cpu.EncodeTAY();
-  EXPECT_EQ(result.size(), 1);
+  EXPECT_EQ(result.size(), 1UL);
   EXPECT_EQ(result[0], 0xA8); // TAY opcode
 }
 
@@ -993,7 +993,7 @@ TEST(Cpu6502Test, TAY_Implied) {
 TEST(Cpu6502Test, TXA_Implied) {
   Cpu6502 cpu;
   auto result = cpu.EncodeTXA();
-  EXPECT_EQ(result.size(), 1);
+  EXPECT_EQ(result.size(), 1UL);
   EXPECT_EQ(result[0], 0x8A); // TXA opcode
 }
 
@@ -1001,7 +1001,7 @@ TEST(Cpu6502Test, TXA_Implied) {
 TEST(Cpu6502Test, TYA_Implied) {
   Cpu6502 cpu;
   auto result = cpu.EncodeTYA();
-  EXPECT_EQ(result.size(), 1);
+  EXPECT_EQ(result.size(), 1UL);
   EXPECT_EQ(result[0], 0x98); // TYA opcode
 }
 
@@ -1011,7 +1011,7 @@ TEST(Cpu6502Test, TYA_Implied) {
 TEST(Cpu6502Test, LDA_ZeroPageX) {
   Cpu6502 cpu;
   auto result = cpu.EncodeLDA(0x80, AddressingMode::ZeroPageX);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0xB5); // LDA zp,X opcode
   EXPECT_EQ(result[1], 0x80);
 }
@@ -1020,7 +1020,7 @@ TEST(Cpu6502Test, LDA_ZeroPageX) {
 TEST(Cpu6502Test, LDA_AbsoluteX) {
   Cpu6502 cpu;
   auto result = cpu.EncodeLDA(0x1234, AddressingMode::AbsoluteX);
-  EXPECT_EQ(result.size(), 3);
+  EXPECT_EQ(result.size(), 3UL);
   EXPECT_EQ(result[0], 0xBD); // LDA abs,X opcode
   EXPECT_EQ(result[1], 0x34);
   EXPECT_EQ(result[2], 0x12);
@@ -1030,7 +1030,7 @@ TEST(Cpu6502Test, LDA_AbsoluteX) {
 TEST(Cpu6502Test, LDA_AbsoluteY) {
   Cpu6502 cpu;
   auto result = cpu.EncodeLDA(0x1234, AddressingMode::AbsoluteY);
-  EXPECT_EQ(result.size(), 3);
+  EXPECT_EQ(result.size(), 3UL);
   EXPECT_EQ(result[0], 0xB9); // LDA abs,Y opcode
   EXPECT_EQ(result[1], 0x34);
   EXPECT_EQ(result[2], 0x12);
@@ -1040,7 +1040,7 @@ TEST(Cpu6502Test, LDA_AbsoluteY) {
 TEST(Cpu6502Test, STA_ZeroPageX) {
   Cpu6502 cpu;
   auto result = cpu.EncodeSTA(0x80, AddressingMode::ZeroPageX);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0x95); // STA zp,X opcode
   EXPECT_EQ(result[1], 0x80);
 }
@@ -1049,7 +1049,7 @@ TEST(Cpu6502Test, STA_ZeroPageX) {
 TEST(Cpu6502Test, STA_AbsoluteX) {
   Cpu6502 cpu;
   auto result = cpu.EncodeSTA(0x1234, AddressingMode::AbsoluteX);
-  EXPECT_EQ(result.size(), 3);
+  EXPECT_EQ(result.size(), 3UL);
   EXPECT_EQ(result[0], 0x9D); // STA abs,X opcode
   EXPECT_EQ(result[1], 0x34);
   EXPECT_EQ(result[2], 0x12);
@@ -1059,7 +1059,7 @@ TEST(Cpu6502Test, STA_AbsoluteX) {
 TEST(Cpu6502Test, STA_AbsoluteY) {
   Cpu6502 cpu;
   auto result = cpu.EncodeSTA(0x1234, AddressingMode::AbsoluteY);
-  EXPECT_EQ(result.size(), 3);
+  EXPECT_EQ(result.size(), 3UL);
   EXPECT_EQ(result[0], 0x99); // STA abs,Y opcode
   EXPECT_EQ(result[1], 0x34);
   EXPECT_EQ(result[2], 0x12);
@@ -1069,7 +1069,7 @@ TEST(Cpu6502Test, STA_AbsoluteY) {
 TEST(Cpu6502Test, LDX_ZeroPageY) {
   Cpu6502 cpu;
   auto result = cpu.EncodeLDX(0x80, AddressingMode::ZeroPageY);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0xB6); // LDX zp,Y opcode
   EXPECT_EQ(result[1], 0x80);
 }
@@ -1078,7 +1078,7 @@ TEST(Cpu6502Test, LDX_ZeroPageY) {
 TEST(Cpu6502Test, LDX_AbsoluteY) {
   Cpu6502 cpu;
   auto result = cpu.EncodeLDX(0x1234, AddressingMode::AbsoluteY);
-  EXPECT_EQ(result.size(), 3);
+  EXPECT_EQ(result.size(), 3UL);
   EXPECT_EQ(result[0], 0xBE); // LDX abs,Y opcode
   EXPECT_EQ(result[1], 0x34);
   EXPECT_EQ(result[2], 0x12);
@@ -1088,7 +1088,7 @@ TEST(Cpu6502Test, LDX_AbsoluteY) {
 TEST(Cpu6502Test, STX_ZeroPageY) {
   Cpu6502 cpu;
   auto result = cpu.EncodeSTX(0x80, AddressingMode::ZeroPageY);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0x96); // STX zp,Y opcode
   EXPECT_EQ(result[1], 0x80);
 }
@@ -1097,7 +1097,7 @@ TEST(Cpu6502Test, STX_ZeroPageY) {
 TEST(Cpu6502Test, LDY_ZeroPageX) {
   Cpu6502 cpu;
   auto result = cpu.EncodeLDY(0x80, AddressingMode::ZeroPageX);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0xB4); // LDY zp,X opcode
   EXPECT_EQ(result[1], 0x80);
 }
@@ -1106,7 +1106,7 @@ TEST(Cpu6502Test, LDY_ZeroPageX) {
 TEST(Cpu6502Test, LDY_AbsoluteX) {
   Cpu6502 cpu;
   auto result = cpu.EncodeLDY(0x1234, AddressingMode::AbsoluteX);
-  EXPECT_EQ(result.size(), 3);
+  EXPECT_EQ(result.size(), 3UL);
   EXPECT_EQ(result[0], 0xBC); // LDY abs,X opcode
   EXPECT_EQ(result[1], 0x34);
   EXPECT_EQ(result[2], 0x12);
@@ -1116,7 +1116,7 @@ TEST(Cpu6502Test, LDY_AbsoluteX) {
 TEST(Cpu6502Test, STY_ZeroPageX) {
   Cpu6502 cpu;
   auto result = cpu.EncodeSTY(0x80, AddressingMode::ZeroPageX);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0x94); // STY zp,X opcode
   EXPECT_EQ(result[1], 0x80);
 }
@@ -1125,7 +1125,7 @@ TEST(Cpu6502Test, STY_ZeroPageX) {
 TEST(Cpu6502Test, AND_ZeroPageX) {
   Cpu6502 cpu;
   auto result = cpu.EncodeAND(0x80, AddressingMode::ZeroPageX);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0x35); // AND zp,X opcode
   EXPECT_EQ(result[1], 0x80);
 }
@@ -1134,7 +1134,7 @@ TEST(Cpu6502Test, AND_ZeroPageX) {
 TEST(Cpu6502Test, AND_AbsoluteX) {
   Cpu6502 cpu;
   auto result = cpu.EncodeAND(0x1234, AddressingMode::AbsoluteX);
-  EXPECT_EQ(result.size(), 3);
+  EXPECT_EQ(result.size(), 3UL);
   EXPECT_EQ(result[0], 0x3D); // AND abs,X opcode
   EXPECT_EQ(result[1], 0x34);
   EXPECT_EQ(result[2], 0x12);
@@ -1144,7 +1144,7 @@ TEST(Cpu6502Test, AND_AbsoluteX) {
 TEST(Cpu6502Test, AND_AbsoluteY) {
   Cpu6502 cpu;
   auto result = cpu.EncodeAND(0x1234, AddressingMode::AbsoluteY);
-  EXPECT_EQ(result.size(), 3);
+  EXPECT_EQ(result.size(), 3UL);
   EXPECT_EQ(result[0], 0x39); // AND abs,Y opcode
   EXPECT_EQ(result[1], 0x34);
   EXPECT_EQ(result[2], 0x12);
@@ -1154,7 +1154,7 @@ TEST(Cpu6502Test, AND_AbsoluteY) {
 TEST(Cpu6502Test, ORA_ZeroPageX) {
   Cpu6502 cpu;
   auto result = cpu.EncodeORA(0x80, AddressingMode::ZeroPageX);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0x15); // ORA zp,X opcode
   EXPECT_EQ(result[1], 0x80);
 }
@@ -1163,7 +1163,7 @@ TEST(Cpu6502Test, ORA_ZeroPageX) {
 TEST(Cpu6502Test, ORA_AbsoluteX) {
   Cpu6502 cpu;
   auto result = cpu.EncodeORA(0x1234, AddressingMode::AbsoluteX);
-  EXPECT_EQ(result.size(), 3);
+  EXPECT_EQ(result.size(), 3UL);
   EXPECT_EQ(result[0], 0x1D); // ORA abs,X opcode
   EXPECT_EQ(result[1], 0x34);
   EXPECT_EQ(result[2], 0x12);
@@ -1173,7 +1173,7 @@ TEST(Cpu6502Test, ORA_AbsoluteX) {
 TEST(Cpu6502Test, ORA_AbsoluteY) {
   Cpu6502 cpu;
   auto result = cpu.EncodeORA(0x1234, AddressingMode::AbsoluteY);
-  EXPECT_EQ(result.size(), 3);
+  EXPECT_EQ(result.size(), 3UL);
   EXPECT_EQ(result[0], 0x19); // ORA abs,Y opcode
   EXPECT_EQ(result[1], 0x34);
   EXPECT_EQ(result[2], 0x12);
@@ -1183,7 +1183,7 @@ TEST(Cpu6502Test, ORA_AbsoluteY) {
 TEST(Cpu6502Test, EOR_ZeroPageX) {
   Cpu6502 cpu;
   auto result = cpu.EncodeEOR(0x80, AddressingMode::ZeroPageX);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0x55); // EOR zp,X opcode
   EXPECT_EQ(result[1], 0x80);
 }
@@ -1192,7 +1192,7 @@ TEST(Cpu6502Test, EOR_ZeroPageX) {
 TEST(Cpu6502Test, EOR_AbsoluteX) {
   Cpu6502 cpu;
   auto result = cpu.EncodeEOR(0x1234, AddressingMode::AbsoluteX);
-  EXPECT_EQ(result.size(), 3);
+  EXPECT_EQ(result.size(), 3UL);
   EXPECT_EQ(result[0], 0x5D); // EOR abs,X opcode
   EXPECT_EQ(result[1], 0x34);
   EXPECT_EQ(result[2], 0x12);
@@ -1202,7 +1202,7 @@ TEST(Cpu6502Test, EOR_AbsoluteX) {
 TEST(Cpu6502Test, EOR_AbsoluteY) {
   Cpu6502 cpu;
   auto result = cpu.EncodeEOR(0x1234, AddressingMode::AbsoluteY);
-  EXPECT_EQ(result.size(), 3);
+  EXPECT_EQ(result.size(), 3UL);
   EXPECT_EQ(result[0], 0x59); // EOR abs,Y opcode
   EXPECT_EQ(result[1], 0x34);
   EXPECT_EQ(result[2], 0x12);
@@ -1212,7 +1212,7 @@ TEST(Cpu6502Test, EOR_AbsoluteY) {
 TEST(Cpu6502Test, ADC_ZeroPageX) {
   Cpu6502 cpu;
   auto result = cpu.EncodeADC(0x80, AddressingMode::ZeroPageX);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0x75); // ADC zp,X opcode
   EXPECT_EQ(result[1], 0x80);
 }
@@ -1221,7 +1221,7 @@ TEST(Cpu6502Test, ADC_ZeroPageX) {
 TEST(Cpu6502Test, ADC_AbsoluteX) {
   Cpu6502 cpu;
   auto result = cpu.EncodeADC(0x1234, AddressingMode::AbsoluteX);
-  EXPECT_EQ(result.size(), 3);
+  EXPECT_EQ(result.size(), 3UL);
   EXPECT_EQ(result[0], 0x7D); // ADC abs,X opcode
   EXPECT_EQ(result[1], 0x34);
   EXPECT_EQ(result[2], 0x12);
@@ -1231,7 +1231,7 @@ TEST(Cpu6502Test, ADC_AbsoluteX) {
 TEST(Cpu6502Test, ADC_AbsoluteY) {
   Cpu6502 cpu;
   auto result = cpu.EncodeADC(0x1234, AddressingMode::AbsoluteY);
-  EXPECT_EQ(result.size(), 3);
+  EXPECT_EQ(result.size(), 3UL);
   EXPECT_EQ(result[0], 0x79); // ADC abs,Y opcode
   EXPECT_EQ(result[1], 0x34);
   EXPECT_EQ(result[2], 0x12);
@@ -1241,7 +1241,7 @@ TEST(Cpu6502Test, ADC_AbsoluteY) {
 TEST(Cpu6502Test, SBC_ZeroPageX) {
   Cpu6502 cpu;
   auto result = cpu.EncodeSBC(0x80, AddressingMode::ZeroPageX);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0xF5); // SBC zp,X opcode
   EXPECT_EQ(result[1], 0x80);
 }
@@ -1250,7 +1250,7 @@ TEST(Cpu6502Test, SBC_ZeroPageX) {
 TEST(Cpu6502Test, SBC_AbsoluteX) {
   Cpu6502 cpu;
   auto result = cpu.EncodeSBC(0x1234, AddressingMode::AbsoluteX);
-  EXPECT_EQ(result.size(), 3);
+  EXPECT_EQ(result.size(), 3UL);
   EXPECT_EQ(result[0], 0xFD); // SBC abs,X opcode
   EXPECT_EQ(result[1], 0x34);
   EXPECT_EQ(result[2], 0x12);
@@ -1260,7 +1260,7 @@ TEST(Cpu6502Test, SBC_AbsoluteX) {
 TEST(Cpu6502Test, SBC_AbsoluteY) {
   Cpu6502 cpu;
   auto result = cpu.EncodeSBC(0x1234, AddressingMode::AbsoluteY);
-  EXPECT_EQ(result.size(), 3);
+  EXPECT_EQ(result.size(), 3UL);
   EXPECT_EQ(result[0], 0xF9); // SBC abs,Y opcode
   EXPECT_EQ(result[1], 0x34);
   EXPECT_EQ(result[2], 0x12);
@@ -1270,7 +1270,7 @@ TEST(Cpu6502Test, SBC_AbsoluteY) {
 TEST(Cpu6502Test, CMP_ZeroPageX) {
   Cpu6502 cpu;
   auto result = cpu.EncodeCMP(0x80, AddressingMode::ZeroPageX);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0xD5); // CMP zp,X opcode
   EXPECT_EQ(result[1], 0x80);
 }
@@ -1279,7 +1279,7 @@ TEST(Cpu6502Test, CMP_ZeroPageX) {
 TEST(Cpu6502Test, CMP_AbsoluteX) {
   Cpu6502 cpu;
   auto result = cpu.EncodeCMP(0x1234, AddressingMode::AbsoluteX);
-  EXPECT_EQ(result.size(), 3);
+  EXPECT_EQ(result.size(), 3UL);
   EXPECT_EQ(result[0], 0xDD); // CMP abs,X opcode
   EXPECT_EQ(result[1], 0x34);
   EXPECT_EQ(result[2], 0x12);
@@ -1289,7 +1289,7 @@ TEST(Cpu6502Test, CMP_AbsoluteX) {
 TEST(Cpu6502Test, CMP_AbsoluteY) {
   Cpu6502 cpu;
   auto result = cpu.EncodeCMP(0x1234, AddressingMode::AbsoluteY);
-  EXPECT_EQ(result.size(), 3);
+  EXPECT_EQ(result.size(), 3UL);
   EXPECT_EQ(result[0], 0xD9); // CMP abs,Y opcode
   EXPECT_EQ(result[1], 0x34);
   EXPECT_EQ(result[2], 0x12);
@@ -1299,7 +1299,7 @@ TEST(Cpu6502Test, CMP_AbsoluteY) {
 TEST(Cpu6502Test, INC_ZeroPageX) {
   Cpu6502 cpu;
   auto result = cpu.EncodeINC(0x80, AddressingMode::ZeroPageX);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0xF6); // INC zp,X opcode
   EXPECT_EQ(result[1], 0x80);
 }
@@ -1308,7 +1308,7 @@ TEST(Cpu6502Test, INC_ZeroPageX) {
 TEST(Cpu6502Test, INC_AbsoluteX) {
   Cpu6502 cpu;
   auto result = cpu.EncodeINC(0x1234, AddressingMode::AbsoluteX);
-  EXPECT_EQ(result.size(), 3);
+  EXPECT_EQ(result.size(), 3UL);
   EXPECT_EQ(result[0], 0xFE); // INC abs,X opcode
   EXPECT_EQ(result[1], 0x34);
   EXPECT_EQ(result[2], 0x12);
@@ -1318,7 +1318,7 @@ TEST(Cpu6502Test, INC_AbsoluteX) {
 TEST(Cpu6502Test, DEC_ZeroPageX) {
   Cpu6502 cpu;
   auto result = cpu.EncodeDEC(0x80, AddressingMode::ZeroPageX);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0xD6); // DEC zp,X opcode
   EXPECT_EQ(result[1], 0x80);
 }
@@ -1327,7 +1327,7 @@ TEST(Cpu6502Test, DEC_ZeroPageX) {
 TEST(Cpu6502Test, DEC_AbsoluteX) {
   Cpu6502 cpu;
   auto result = cpu.EncodeDEC(0x1234, AddressingMode::AbsoluteX);
-  EXPECT_EQ(result.size(), 3);
+  EXPECT_EQ(result.size(), 3UL);
   EXPECT_EQ(result[0], 0xDE); // DEC abs,X opcode
   EXPECT_EQ(result[1], 0x34);
   EXPECT_EQ(result[2], 0x12);
@@ -1339,7 +1339,7 @@ TEST(Cpu6502Test, DEC_AbsoluteX) {
 TEST(Cpu6502Test, JMP_Indirect) {
   Cpu6502 cpu;
   auto result = cpu.EncodeJMP(0x1234, AddressingMode::Indirect);
-  EXPECT_EQ(result.size(), 3);
+  EXPECT_EQ(result.size(), 3UL);
   EXPECT_EQ(result[0], 0x6C); // JMP (ind) opcode
   EXPECT_EQ(result[1], 0x34);
   EXPECT_EQ(result[2], 0x12);
@@ -1349,7 +1349,7 @@ TEST(Cpu6502Test, JMP_Indirect) {
 TEST(Cpu6502Test, LDA_IndirectX) {
   Cpu6502 cpu;
   auto result = cpu.EncodeLDA(0x80, AddressingMode::IndirectX);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0xA1); // LDA (zp,X) opcode
   EXPECT_EQ(result[1], 0x80);
 }
@@ -1358,7 +1358,7 @@ TEST(Cpu6502Test, LDA_IndirectX) {
 TEST(Cpu6502Test, LDA_IndirectY) {
   Cpu6502 cpu;
   auto result = cpu.EncodeLDA(0x80, AddressingMode::IndirectY);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0xB1); // LDA (zp),Y opcode
   EXPECT_EQ(result[1], 0x80);
 }
@@ -1367,7 +1367,7 @@ TEST(Cpu6502Test, LDA_IndirectY) {
 TEST(Cpu6502Test, STA_IndirectX) {
   Cpu6502 cpu;
   auto result = cpu.EncodeSTA(0x80, AddressingMode::IndirectX);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0x81); // STA (zp,X) opcode
   EXPECT_EQ(result[1], 0x80);
 }
@@ -1376,7 +1376,7 @@ TEST(Cpu6502Test, STA_IndirectX) {
 TEST(Cpu6502Test, STA_IndirectY) {
   Cpu6502 cpu;
   auto result = cpu.EncodeSTA(0x80, AddressingMode::IndirectY);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0x91); // STA (zp),Y opcode
   EXPECT_EQ(result[1], 0x80);
 }
@@ -1385,7 +1385,7 @@ TEST(Cpu6502Test, STA_IndirectY) {
 TEST(Cpu6502Test, CMP_IndirectX) {
   Cpu6502 cpu;
   auto result = cpu.EncodeCMP(0x80, AddressingMode::IndirectX);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0xC1); // CMP (zp,X) opcode
   EXPECT_EQ(result[1], 0x80);
 }
@@ -1394,7 +1394,7 @@ TEST(Cpu6502Test, CMP_IndirectX) {
 TEST(Cpu6502Test, CMP_IndirectY) {
   Cpu6502 cpu;
   auto result = cpu.EncodeCMP(0x80, AddressingMode::IndirectY);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0xD1); // CMP (zp),Y opcode
   EXPECT_EQ(result[1], 0x80);
 }
@@ -1403,7 +1403,7 @@ TEST(Cpu6502Test, CMP_IndirectY) {
 TEST(Cpu6502Test, AND_IndirectX) {
   Cpu6502 cpu;
   auto result = cpu.EncodeAND(0x80, AddressingMode::IndirectX);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0x21); // AND (zp,X) opcode
   EXPECT_EQ(result[1], 0x80);
 }
@@ -1412,7 +1412,7 @@ TEST(Cpu6502Test, AND_IndirectX) {
 TEST(Cpu6502Test, AND_IndirectY) {
   Cpu6502 cpu;
   auto result = cpu.EncodeAND(0x80, AddressingMode::IndirectY);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0x31); // AND (zp),Y opcode
   EXPECT_EQ(result[1], 0x80);
 }
@@ -1421,7 +1421,7 @@ TEST(Cpu6502Test, AND_IndirectY) {
 TEST(Cpu6502Test, ORA_IndirectX) {
   Cpu6502 cpu;
   auto result = cpu.EncodeORA(0x80, AddressingMode::IndirectX);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0x01); // ORA (zp,X) opcode
   EXPECT_EQ(result[1], 0x80);
 }
@@ -1430,7 +1430,7 @@ TEST(Cpu6502Test, ORA_IndirectX) {
 TEST(Cpu6502Test, ORA_IndirectY) {
   Cpu6502 cpu;
   auto result = cpu.EncodeORA(0x80, AddressingMode::IndirectY);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0x11); // ORA (zp),Y opcode
   EXPECT_EQ(result[1], 0x80);
 }
@@ -1439,7 +1439,7 @@ TEST(Cpu6502Test, ORA_IndirectY) {
 TEST(Cpu6502Test, EOR_IndirectX) {
   Cpu6502 cpu;
   auto result = cpu.EncodeEOR(0x80, AddressingMode::IndirectX);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0x41); // EOR (zp,X) opcode
   EXPECT_EQ(result[1], 0x80);
 }
@@ -1448,7 +1448,7 @@ TEST(Cpu6502Test, EOR_IndirectX) {
 TEST(Cpu6502Test, EOR_IndirectY) {
   Cpu6502 cpu;
   auto result = cpu.EncodeEOR(0x80, AddressingMode::IndirectY);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0x51); // EOR (zp),Y opcode
   EXPECT_EQ(result[1], 0x80);
 }
@@ -1457,7 +1457,7 @@ TEST(Cpu6502Test, EOR_IndirectY) {
 TEST(Cpu6502Test, ADC_IndirectX) {
   Cpu6502 cpu;
   auto result = cpu.EncodeADC(0x80, AddressingMode::IndirectX);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0x61); // ADC (zp,X) opcode
   EXPECT_EQ(result[1], 0x80);
 }
@@ -1466,7 +1466,7 @@ TEST(Cpu6502Test, ADC_IndirectX) {
 TEST(Cpu6502Test, ADC_IndirectY) {
   Cpu6502 cpu;
   auto result = cpu.EncodeADC(0x80, AddressingMode::IndirectY);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0x71); // ADC (zp),Y opcode
   EXPECT_EQ(result[1], 0x80);
 }
@@ -1475,7 +1475,7 @@ TEST(Cpu6502Test, ADC_IndirectY) {
 TEST(Cpu6502Test, SBC_IndirectX) {
   Cpu6502 cpu;
   auto result = cpu.EncodeSBC(0x80, AddressingMode::IndirectX);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0xE1); // SBC (zp,X) opcode
   EXPECT_EQ(result[1], 0x80);
 }
@@ -1484,7 +1484,7 @@ TEST(Cpu6502Test, SBC_IndirectX) {
 TEST(Cpu6502Test, SBC_IndirectY) {
   Cpu6502 cpu;
   auto result = cpu.EncodeSBC(0x80, AddressingMode::IndirectY);
-  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0xF1); // SBC (zp),Y opcode
   EXPECT_EQ(result[1], 0x80);
 }
@@ -1552,7 +1552,7 @@ TEST(Cpu6502Test, PHX_65C02) {
 
   // PHX -> DA
   auto bytes = cpu.EncodePHX();
-  ASSERT_EQ(bytes.size(), 1);
+  ASSERT_EQ(bytes.size(), 1UL);
   EXPECT_EQ(bytes[0], 0xDA); // PHX opcode
 }
 
@@ -1563,7 +1563,7 @@ TEST(Cpu6502Test, PLX_65C02) {
 
   // PLX -> FA
   auto bytes = cpu.EncodePLX();
-  ASSERT_EQ(bytes.size(), 1);
+  ASSERT_EQ(bytes.size(), 1UL);
   EXPECT_EQ(bytes[0], 0xFA); // PLX opcode
 }
 
@@ -1574,7 +1574,7 @@ TEST(Cpu6502Test, PHY_65C02) {
 
   // PHY -> 5A
   auto bytes = cpu.EncodePHY();
-  ASSERT_EQ(bytes.size(), 1);
+  ASSERT_EQ(bytes.size(), 1UL);
   EXPECT_EQ(bytes[0], 0x5A); // PHY opcode
 }
 
@@ -1585,7 +1585,7 @@ TEST(Cpu6502Test, PLY_65C02) {
 
   // PLY -> 7A
   auto bytes = cpu.EncodePLY();
-  ASSERT_EQ(bytes.size(), 1);
+  ASSERT_EQ(bytes.size(), 1UL);
   EXPECT_EQ(bytes[0], 0x7A); // PLY opcode
 }
 
@@ -1597,7 +1597,7 @@ TEST(Cpu6502Test, PHX_NotAvailableIn6502Mode) {
 
   // PHX not available in 6502 mode - should return empty
   auto bytes = cpu.EncodePHX();
-  EXPECT_EQ(bytes.size(), 0); // Empty = not supported in this mode
+  EXPECT_EQ(bytes.size(), 0UL); // Empty = not supported in this mode
 }
 
 // ============================================================================
@@ -1611,7 +1611,7 @@ TEST(Cpu6502Test, STZ_ZeroPage_65C02) {
 
   // STZ $80 -> 64 80
   auto bytes = cpu.EncodeSTZ(0x80, AddressingMode::ZeroPage);
-  ASSERT_EQ(bytes.size(), 2);
+  ASSERT_EQ(bytes.size(), 2UL);
   EXPECT_EQ(bytes[0], 0x64); // STZ zp opcode
   EXPECT_EQ(bytes[1], 0x80);
 }
@@ -1623,7 +1623,7 @@ TEST(Cpu6502Test, STZ_ZeroPageX_65C02) {
 
   // STZ $80,X -> 74 80
   auto bytes = cpu.EncodeSTZ(0x80, AddressingMode::ZeroPageX);
-  ASSERT_EQ(bytes.size(), 2);
+  ASSERT_EQ(bytes.size(), 2UL);
   EXPECT_EQ(bytes[0], 0x74); // STZ zp,X opcode
   EXPECT_EQ(bytes[1], 0x80);
 }
@@ -1635,7 +1635,7 @@ TEST(Cpu6502Test, STZ_Absolute_65C02) {
 
   // STZ $1234 -> 9C 34 12
   auto bytes = cpu.EncodeSTZ(0x1234, AddressingMode::Absolute);
-  ASSERT_EQ(bytes.size(), 3);
+  ASSERT_EQ(bytes.size(), 3UL);
   EXPECT_EQ(bytes[0], 0x9C); // STZ abs opcode
   EXPECT_EQ(bytes[1], 0x34); // Low byte
   EXPECT_EQ(bytes[2], 0x12); // High byte
@@ -1648,7 +1648,7 @@ TEST(Cpu6502Test, STZ_AbsoluteX_65C02) {
 
   // STZ $1234,X -> 9E 34 12
   auto bytes = cpu.EncodeSTZ(0x1234, AddressingMode::AbsoluteX);
-  ASSERT_EQ(bytes.size(), 3);
+  ASSERT_EQ(bytes.size(), 3UL);
   EXPECT_EQ(bytes[0], 0x9E); // STZ abs,X opcode
   EXPECT_EQ(bytes[1], 0x34); // Low byte
   EXPECT_EQ(bytes[2], 0x12); // High byte
@@ -1662,7 +1662,7 @@ TEST(Cpu6502Test, STZ_NotAvailableIn6502Mode) {
 
   // STZ not available in 6502 mode - should return empty
   auto bytes = cpu.EncodeSTZ(0x80, AddressingMode::ZeroPage);
-  EXPECT_EQ(bytes.size(), 0); // Empty = not supported in this mode
+  EXPECT_EQ(bytes.size(), 0UL); // Empty = not supported in this mode
 }
 
 // ============================================================================
@@ -1676,7 +1676,7 @@ TEST(Cpu6502Test, TRB_ZeroPage_65C02) {
 
   // TRB $80 -> 14 80
   auto bytes = cpu.EncodeTRB(0x80, AddressingMode::ZeroPage);
-  ASSERT_EQ(bytes.size(), 2);
+  ASSERT_EQ(bytes.size(), 2UL);
   EXPECT_EQ(bytes[0], 0x14); // TRB zp opcode
   EXPECT_EQ(bytes[1], 0x80);
 }
@@ -1688,7 +1688,7 @@ TEST(Cpu6502Test, TRB_Absolute_65C02) {
 
   // TRB $1234 -> 1C 34 12
   auto bytes = cpu.EncodeTRB(0x1234, AddressingMode::Absolute);
-  ASSERT_EQ(bytes.size(), 3);
+  ASSERT_EQ(bytes.size(), 3UL);
   EXPECT_EQ(bytes[0], 0x1C); // TRB abs opcode
   EXPECT_EQ(bytes[1], 0x34); // Low byte
   EXPECT_EQ(bytes[2], 0x12); // High byte
@@ -1701,7 +1701,7 @@ TEST(Cpu6502Test, TSB_ZeroPage_65C02) {
 
   // TSB $80 -> 04 80
   auto bytes = cpu.EncodeTSB(0x80, AddressingMode::ZeroPage);
-  ASSERT_EQ(bytes.size(), 2);
+  ASSERT_EQ(bytes.size(), 2UL);
   EXPECT_EQ(bytes[0], 0x04); // TSB zp opcode
   EXPECT_EQ(bytes[1], 0x80);
 }
@@ -1713,7 +1713,7 @@ TEST(Cpu6502Test, TSB_Absolute_65C02) {
 
   // TSB $1234 -> 0C 34 12
   auto bytes = cpu.EncodeTSB(0x1234, AddressingMode::Absolute);
-  ASSERT_EQ(bytes.size(), 3);
+  ASSERT_EQ(bytes.size(), 3UL);
   EXPECT_EQ(bytes[0], 0x0C); // TSB abs opcode
   EXPECT_EQ(bytes[1], 0x34); // Low byte
   EXPECT_EQ(bytes[2], 0x12); // High byte
@@ -1727,7 +1727,7 @@ TEST(Cpu6502Test, TRB_NotAvailableIn6502Mode) {
 
   // TRB not available in 6502 mode - should return empty
   auto bytes = cpu.EncodeTRB(0x80, AddressingMode::ZeroPage);
-  EXPECT_EQ(bytes.size(), 0); // Empty = not supported in this mode
+  EXPECT_EQ(bytes.size(), 0UL); // Empty = not supported in this mode
 }
 
 // ============================================================================
@@ -1741,7 +1741,7 @@ TEST(Cpu6502Test, BRA_ForwardBranch_65C02) {
 
   // BRA +10 -> 80 0A (forward branch of 10 bytes)
   auto bytes = cpu.EncodeBRA(0x0A, AddressingMode::Relative);
-  ASSERT_EQ(bytes.size(), 2);
+  ASSERT_EQ(bytes.size(), 2UL);
   EXPECT_EQ(bytes[0], 0x80); // BRA opcode
   EXPECT_EQ(bytes[1], 0x0A); // Relative offset
 }
@@ -1753,7 +1753,7 @@ TEST(Cpu6502Test, BRA_BackwardBranch_65C02) {
 
   // BRA -10 -> 80 F6 (backward branch, two's complement)
   auto bytes = cpu.EncodeBRA(0xF6, AddressingMode::Relative);
-  ASSERT_EQ(bytes.size(), 2);
+  ASSERT_EQ(bytes.size(), 2UL);
   EXPECT_EQ(bytes[0], 0x80); // BRA opcode
   EXPECT_EQ(bytes[1], 0xF6); // Relative offset (negative)
 }
@@ -1766,7 +1766,7 @@ TEST(Cpu6502Test, BRA_NotAvailableIn6502Mode) {
 
   // BRA not available in 6502 mode - should return empty
   auto bytes = cpu.EncodeBRA(0x0A, AddressingMode::Relative);
-  EXPECT_EQ(bytes.size(), 0); // Empty = not supported in this mode
+  EXPECT_EQ(bytes.size(), 0UL); // Empty = not supported in this mode
 }
 
 // ============================================================================
@@ -1781,7 +1781,7 @@ TEST(Cpu6502Test, LDA_Indirect_NoY_65C02) {
 
   // LDA ($80) -> B2 80 (65C02 new addressing mode)
   auto bytes = cpu.EncodeLDA(0x80, AddressingMode::IndirectZeroPage);
-  ASSERT_EQ(bytes.size(), 2);
+  ASSERT_EQ(bytes.size(), 2UL);
   EXPECT_EQ(bytes[0], 0xB2); // LDA (zp) opcode
   EXPECT_EQ(bytes[1], 0x80);
 }
@@ -1794,7 +1794,7 @@ TEST(Cpu6502Test, JMP_IndexedIndirect_65C02) {
 
   // JMP ($1234,X) -> 7C 34 12 (65C02 new addressing mode)
   auto bytes = cpu.EncodeJMP(0x1234, AddressingMode::AbsoluteIndexedIndirect);
-  ASSERT_EQ(bytes.size(), 3);
+  ASSERT_EQ(bytes.size(), 3UL);
   EXPECT_EQ(bytes[0], 0x7C); // JMP (abs,X) opcode
   EXPECT_EQ(bytes[1], 0x34); // Low byte
   EXPECT_EQ(bytes[2], 0x12); // High byte
@@ -1808,7 +1808,7 @@ TEST(Cpu6502Test, BIT_Immediate_65C02) {
 
   // BIT #$80 -> 89 80 (65C02 new addressing mode)
   auto bytes = cpu.EncodeBIT(0x80, AddressingMode::Immediate);
-  ASSERT_EQ(bytes.size(), 2);
+  ASSERT_EQ(bytes.size(), 2UL);
   EXPECT_EQ(bytes[0], 0x89); // BIT imm opcode
   EXPECT_EQ(bytes[1], 0x80);
 }
@@ -1820,7 +1820,7 @@ TEST(Cpu6502Test, BIT_ZeroPageX_65C02) {
 
   // BIT $80,X -> 34 80 (65C02 new addressing mode)
   auto bytes = cpu.EncodeBIT(0x80, AddressingMode::ZeroPageX);
-  ASSERT_EQ(bytes.size(), 2);
+  ASSERT_EQ(bytes.size(), 2UL);
   EXPECT_EQ(bytes[0], 0x34); // BIT zp,X opcode
   EXPECT_EQ(bytes[1], 0x80);
 }
@@ -1832,7 +1832,7 @@ TEST(Cpu6502Test, BIT_AbsoluteX_65C02) {
 
   // BIT $1234,X -> 3C 34 12 (65C02 new addressing mode)
   auto bytes = cpu.EncodeBIT(0x1234, AddressingMode::AbsoluteX);
-  ASSERT_EQ(bytes.size(), 3);
+  ASSERT_EQ(bytes.size(), 3UL);
   EXPECT_EQ(bytes[0], 0x3C); // BIT abs,X opcode
   EXPECT_EQ(bytes[1], 0x34); // Low byte
   EXPECT_EQ(bytes[2], 0x12); // High byte
@@ -1846,15 +1846,15 @@ TEST(Cpu6502Test, EnhancedModes_NotAvailableIn6502Mode) {
 
   // LDA (zp) - not available in 6502 mode
   auto bytes1 = cpu.EncodeLDA(0x80, AddressingMode::IndirectZeroPage);
-  EXPECT_EQ(bytes1.size(), 0); // Empty = not supported
+  EXPECT_EQ(bytes1.size(), 0UL); // Empty = not supported
 
   // JMP (abs,X) - not available in 6502 mode
   auto bytes2 = cpu.EncodeJMP(0x1234, AddressingMode::AbsoluteIndexedIndirect);
-  EXPECT_EQ(bytes2.size(), 0); // Empty = not supported
+  EXPECT_EQ(bytes2.size(), 0UL); // Empty = not supported
 
   // BIT immediate - not available in 6502 mode
   auto bytes3 = cpu.EncodeBIT(0x80, AddressingMode::Immediate);
-  EXPECT_EQ(bytes3.size(), 0); // Empty = not supported
+  EXPECT_EQ(bytes3.size(), 0UL); // Empty = not supported
 }
 
 // ============================================================================
@@ -1955,7 +1955,7 @@ TEST(Cpu6502Test, LDA_AbsoluteLong_65816) {
 
   // LDA $123456 -> AF 56 34 12 (24-bit address, little-endian)
   auto bytes = cpu.EncodeLDA(0x123456, AddressingMode::AbsoluteLong);
-  ASSERT_EQ(bytes.size(), 4);
+  ASSERT_EQ(bytes.size(), 4UL);
   EXPECT_EQ(bytes[0], 0xAF); // LDA long opcode
   EXPECT_EQ(bytes[1], 0x56); // Low byte
   EXPECT_EQ(bytes[2], 0x34); // Middle byte
@@ -1969,7 +1969,7 @@ TEST(Cpu6502Test, LDA_IndirectLong_65816) {
 
   // LDA [$80] -> A7 80 (24-bit pointer at zero page $80)
   auto bytes = cpu.EncodeLDA(0x80, AddressingMode::IndirectLong);
-  ASSERT_EQ(bytes.size(), 2);
+  ASSERT_EQ(bytes.size(), 2UL);
   EXPECT_EQ(bytes[0], 0xA7); // LDA [dp] opcode
   EXPECT_EQ(bytes[1], 0x80); // Zero page address
 }
@@ -1981,7 +1981,7 @@ TEST(Cpu6502Test, LDA_IndirectLongIndexedY_65816) {
 
   // LDA [$80],Y -> B7 80 (24-bit pointer + Y)
   auto bytes = cpu.EncodeLDA(0x80, AddressingMode::IndirectLongIndexedY);
-  ASSERT_EQ(bytes.size(), 2);
+  ASSERT_EQ(bytes.size(), 2UL);
   EXPECT_EQ(bytes[0], 0xB7); // LDA [dp],Y opcode
   EXPECT_EQ(bytes[1], 0x80); // Zero page address
 }
@@ -1993,12 +1993,12 @@ TEST(Cpu6502Test, LongAddressing_NotAvailableIn6502Mode) {
 
   // LDA long not available
   auto bytes1 = cpu.EncodeLDA(0x123456, AddressingMode::AbsoluteLong);
-  EXPECT_EQ(bytes1.size(), 0);
+  EXPECT_EQ(bytes1.size(), 0UL);
 
   // Switch to 65C02 - still not available
   cpu.SetCpuMode(CpuMode::Cpu65C02);
   auto bytes2 = cpu.EncodeLDA(0x123456, AddressingMode::AbsoluteLong);
-  EXPECT_EQ(bytes2.size(), 0);
+  EXPECT_EQ(bytes2.size(), 0UL);
 }
 
 // ============================================================================
@@ -2012,7 +2012,7 @@ TEST(Cpu6502Test, LDA_StackRelative_65816) {
 
   // LDA $03,S -> A3 03 (access data relative to stack pointer)
   auto bytes = cpu.EncodeLDA(0x03, AddressingMode::StackRelative);
-  ASSERT_EQ(bytes.size(), 2);
+  ASSERT_EQ(bytes.size(), 2UL);
   EXPECT_EQ(bytes[0], 0xA3); // LDA sr opcode
   EXPECT_EQ(bytes[1], 0x03); // Stack offset
 }
@@ -2025,7 +2025,7 @@ TEST(Cpu6502Test, LDA_StackRelativeIndirectIndexedY_65816) {
   // LDA ($03,S),Y -> B3 03 (indirect through stack pointer, then Y)
   auto bytes =
       cpu.EncodeLDA(0x03, AddressingMode::StackRelativeIndirectIndexedY);
-  ASSERT_EQ(bytes.size(), 2);
+  ASSERT_EQ(bytes.size(), 2UL);
   EXPECT_EQ(bytes[0], 0xB3); // LDA (sr,S),Y opcode
   EXPECT_EQ(bytes[1], 0x03); // Stack offset
 }
@@ -2037,12 +2037,12 @@ TEST(Cpu6502Test, StackRelative_NotAvailableIn6502Mode) {
 
   // Not available in 6502
   auto bytes1 = cpu.EncodeLDA(0x03, AddressingMode::StackRelative);
-  EXPECT_EQ(bytes1.size(), 0);
+  EXPECT_EQ(bytes1.size(), 0UL);
 
   // Not available in 65C02
   cpu.SetCpuMode(CpuMode::Cpu65C02);
   auto bytes2 = cpu.EncodeLDA(0x03, AddressingMode::StackRelative);
-  EXPECT_EQ(bytes2.size(), 0);
+  EXPECT_EQ(bytes2.size(), 0UL);
 }
 
 // ============================================================================
@@ -2056,7 +2056,7 @@ TEST(Cpu6502Test, PHB_65816) {
 
   // PHB -> 8B
   auto bytes = cpu.EncodePHB();
-  ASSERT_EQ(bytes.size(), 1);
+  ASSERT_EQ(bytes.size(), 1UL);
   EXPECT_EQ(bytes[0], 0x8B); // PHB opcode
 }
 
@@ -2067,7 +2067,7 @@ TEST(Cpu6502Test, PLB_65816) {
 
   // PLB -> AB
   auto bytes = cpu.EncodePLB();
-  ASSERT_EQ(bytes.size(), 1);
+  ASSERT_EQ(bytes.size(), 1UL);
   EXPECT_EQ(bytes[0], 0xAB); // PLB opcode
 }
 
@@ -2078,7 +2078,7 @@ TEST(Cpu6502Test, PHK_65816) {
 
   // PHK -> 4B
   auto bytes = cpu.EncodePHK();
-  ASSERT_EQ(bytes.size(), 1);
+  ASSERT_EQ(bytes.size(), 1UL);
   EXPECT_EQ(bytes[0], 0x4B); // PHK opcode
 }
 
@@ -2089,7 +2089,7 @@ TEST(Cpu6502Test, PHD_65816) {
 
   // PHD -> 0B
   auto bytes = cpu.EncodePHD();
-  ASSERT_EQ(bytes.size(), 1);
+  ASSERT_EQ(bytes.size(), 1UL);
   EXPECT_EQ(bytes[0], 0x0B); // PHD opcode
 }
 
@@ -2100,7 +2100,7 @@ TEST(Cpu6502Test, PLD_65816) {
 
   // PLD -> 2B
   auto bytes = cpu.EncodePLD();
-  ASSERT_EQ(bytes.size(), 1);
+  ASSERT_EQ(bytes.size(), 1UL);
   EXPECT_EQ(bytes[0], 0x2B); // PLD opcode
 }
 
@@ -2110,11 +2110,11 @@ TEST(Cpu6502Test, BankOps_NotAvailableIn6502Mode) {
   // Default mode is 6502
 
   auto bytes1 = cpu.EncodePHB();
-  EXPECT_EQ(bytes1.size(), 0);
+  EXPECT_EQ(bytes1.size(), 0UL);
 
   cpu.SetCpuMode(CpuMode::Cpu65C02);
   auto bytes2 = cpu.EncodePHB();
-  EXPECT_EQ(bytes2.size(), 0);
+  EXPECT_EQ(bytes2.size(), 0UL);
 }
 
 // ============================================================================
@@ -2128,7 +2128,7 @@ TEST(Cpu6502Test, TCD_65816) {
 
   // TCD -> 5B (Transfer 16-bit accumulator to Direct Page register)
   auto bytes = cpu.EncodeTCD();
-  ASSERT_EQ(bytes.size(), 1);
+  ASSERT_EQ(bytes.size(), 1UL);
   EXPECT_EQ(bytes[0], 0x5B); // TCD opcode
 }
 
@@ -2139,7 +2139,7 @@ TEST(Cpu6502Test, TDC_65816) {
 
   // TDC -> 7B (Transfer Direct Page register to 16-bit accumulator)
   auto bytes = cpu.EncodeTDC();
-  ASSERT_EQ(bytes.size(), 1);
+  ASSERT_EQ(bytes.size(), 1UL);
   EXPECT_EQ(bytes[0], 0x7B); // TDC opcode
 }
 
@@ -2150,7 +2150,7 @@ TEST(Cpu6502Test, TCS_65816) {
 
   // TCS -> 1B (Transfer 16-bit accumulator to Stack Pointer)
   auto bytes = cpu.EncodeTCS();
-  ASSERT_EQ(bytes.size(), 1);
+  ASSERT_EQ(bytes.size(), 1UL);
   EXPECT_EQ(bytes[0], 0x1B); // TCS opcode
 }
 
@@ -2161,7 +2161,7 @@ TEST(Cpu6502Test, TSC_65816) {
 
   // TSC -> 3B (Transfer Stack Pointer to 16-bit accumulator)
   auto bytes = cpu.EncodeTSC();
-  ASSERT_EQ(bytes.size(), 1);
+  ASSERT_EQ(bytes.size(), 1UL);
   EXPECT_EQ(bytes[0], 0x3B); // TSC opcode
 }
 
@@ -2170,11 +2170,11 @@ TEST(Cpu6502Test, Transfers_NotAvailableIn6502Mode) {
   Cpu6502 cpu;
 
   auto bytes1 = cpu.EncodeTCD();
-  EXPECT_EQ(bytes1.size(), 0);
+  EXPECT_EQ(bytes1.size(), 0UL);
 
   cpu.SetCpuMode(CpuMode::Cpu65C02);
   auto bytes2 = cpu.EncodeTCS();
-  EXPECT_EQ(bytes2.size(), 0);
+  EXPECT_EQ(bytes2.size(), 0UL);
 }
 
 // ============================================================================
@@ -2187,7 +2187,7 @@ TEST(Cpu6502Test, JML_65816_AbsoluteLong) {
   cpu.SetCpuMode(CpuMode::Cpu65816);
 
   auto bytes = cpu.EncodeJML(0x123456, AddressingMode::AbsoluteLong);
-  ASSERT_EQ(bytes.size(), 4);
+  ASSERT_EQ(bytes.size(), 4UL);
   EXPECT_EQ(bytes[0], 0x5C); // JML opcode
   EXPECT_EQ(bytes[1], 0x56); // Low byte
   EXPECT_EQ(bytes[2], 0x34); // Middle byte
@@ -2200,7 +2200,7 @@ TEST(Cpu6502Test, JSL_65816_AbsoluteLong) {
   cpu.SetCpuMode(CpuMode::Cpu65816);
 
   auto bytes = cpu.EncodeJSL(0x023456, AddressingMode::AbsoluteLong);
-  ASSERT_EQ(bytes.size(), 4);
+  ASSERT_EQ(bytes.size(), 4UL);
   EXPECT_EQ(bytes[0], 0x22); // JSL opcode
   EXPECT_EQ(bytes[1], 0x56); // Low byte
   EXPECT_EQ(bytes[2], 0x34); // Middle byte
@@ -2213,7 +2213,7 @@ TEST(Cpu6502Test, RTL_65816) {
   cpu.SetCpuMode(CpuMode::Cpu65816);
 
   auto bytes = cpu.EncodeRTL();
-  ASSERT_EQ(bytes.size(), 1);
+  ASSERT_EQ(bytes.size(), 1UL);
   EXPECT_EQ(bytes[0], 0x6B); // RTL opcode
 }
 
@@ -2222,14 +2222,14 @@ TEST(Cpu6502Test, LongJumps_NotAvailableIn6502Mode) {
   Cpu6502 cpu;
 
   auto bytes1 = cpu.EncodeJML(0x123456, AddressingMode::AbsoluteLong);
-  EXPECT_EQ(bytes1.size(), 0);
+  EXPECT_EQ(bytes1.size(), 0UL);
 
   cpu.SetCpuMode(CpuMode::Cpu65C02);
   auto bytes2 = cpu.EncodeJSL(0x123456, AddressingMode::AbsoluteLong);
-  EXPECT_EQ(bytes2.size(), 0);
+  EXPECT_EQ(bytes2.size(), 0UL);
 
   auto bytes3 = cpu.EncodeRTL();
-  EXPECT_EQ(bytes3.size(), 0);
+  EXPECT_EQ(bytes3.size(), 0UL);
 }
 
 // ============================================================================
@@ -2243,7 +2243,7 @@ TEST(Cpu6502Test, PEA_65816) {
 
   // PEA uses Absolute addressing, not Immediate
   auto bytes = cpu.EncodePEA(0x1234, AddressingMode::Absolute);
-  ASSERT_EQ(bytes.size(), 3);
+  ASSERT_EQ(bytes.size(), 3UL);
   EXPECT_EQ(bytes[0], 0xF4); // PEA opcode
   EXPECT_EQ(bytes[1], 0x34); // Low byte
   EXPECT_EQ(bytes[2], 0x12); // High byte
@@ -2255,7 +2255,7 @@ TEST(Cpu6502Test, PEI_65816) {
   cpu.SetCpuMode(CpuMode::Cpu65816);
 
   auto bytes = cpu.EncodePEI(0x80, AddressingMode::ZeroPage);
-  ASSERT_EQ(bytes.size(), 2);
+  ASSERT_EQ(bytes.size(), 2UL);
   EXPECT_EQ(bytes[0], 0xD4); // PEI opcode
   EXPECT_EQ(bytes[1], 0x80); // Zero page address
 }
@@ -2266,7 +2266,7 @@ TEST(Cpu6502Test, PER_65816) {
   cpu.SetCpuMode(CpuMode::Cpu65816);
 
   auto bytes = cpu.EncodePER(0x1234, AddressingMode::Relative);
-  ASSERT_EQ(bytes.size(), 3);
+  ASSERT_EQ(bytes.size(), 3UL);
   EXPECT_EQ(bytes[0], 0x62); // PER opcode
   EXPECT_EQ(bytes[1], 0x34); // Low byte
   EXPECT_EQ(bytes[2], 0x12); // High byte
@@ -2279,7 +2279,7 @@ TEST(Cpu6502Test, MVN_65816) {
 
   // MVN srcbank, destbank
   auto bytes = cpu.EncodeMVN(0x12, 0x34);
-  ASSERT_EQ(bytes.size(), 3);
+  ASSERT_EQ(bytes.size(), 3UL);
   EXPECT_EQ(bytes[0], 0x54); // MVN opcode
   EXPECT_EQ(bytes[1], 0x12); // Source bank
   EXPECT_EQ(bytes[2], 0x34); // Destination bank
@@ -2292,7 +2292,7 @@ TEST(Cpu6502Test, MVP_65816) {
 
   // MVP srcbank, destbank
   auto bytes = cpu.EncodeMVP(0x56, 0x78);
-  ASSERT_EQ(bytes.size(), 3);
+  ASSERT_EQ(bytes.size(), 3UL);
   EXPECT_EQ(bytes[0], 0x44); // MVP opcode
   EXPECT_EQ(bytes[1], 0x56); // Source bank
   EXPECT_EQ(bytes[2], 0x78); // Destination bank
@@ -2304,7 +2304,7 @@ TEST(Cpu6502Test, COP_65816) {
   cpu.SetCpuMode(CpuMode::Cpu65816);
 
   auto bytes = cpu.EncodeCOP(0x42, AddressingMode::Immediate);
-  ASSERT_EQ(bytes.size(), 2);
+  ASSERT_EQ(bytes.size(), 2UL);
   EXPECT_EQ(bytes[0], 0x02); // COP opcode
   EXPECT_EQ(bytes[1], 0x42); // Signature byte
 }
@@ -2315,7 +2315,7 @@ TEST(Cpu6502Test, WDM_65816) {
   cpu.SetCpuMode(CpuMode::Cpu65816);
 
   auto bytes = cpu.EncodeWDM(0x99, AddressingMode::Immediate);
-  ASSERT_EQ(bytes.size(), 2);
+  ASSERT_EQ(bytes.size(), 2UL);
   EXPECT_EQ(bytes[0], 0x42); // WDM opcode
   EXPECT_EQ(bytes[1], 0x99); // Reserved byte
 }
@@ -2326,7 +2326,7 @@ TEST(Cpu6502Test, XBA_65816) {
   cpu.SetCpuMode(CpuMode::Cpu65816);
 
   auto bytes = cpu.EncodeXBA();
-  ASSERT_EQ(bytes.size(), 1);
+  ASSERT_EQ(bytes.size(), 1UL);
   EXPECT_EQ(bytes[0], 0xEB); // XBA opcode
 }
 
@@ -2336,7 +2336,7 @@ TEST(Cpu6502Test, XCE_65816) {
   cpu.SetCpuMode(CpuMode::Cpu65816);
 
   auto bytes = cpu.EncodeXCE();
-  ASSERT_EQ(bytes.size(), 1);
+  ASSERT_EQ(bytes.size(), 1UL);
   EXPECT_EQ(bytes[0], 0xFB); // XCE opcode
 }
 
@@ -2345,17 +2345,17 @@ TEST(Cpu6502Test, MiscOpcodes_NotAvailableIn6502Mode) {
   Cpu6502 cpu;
 
   auto bytes1 = cpu.EncodePEA(0x1234, AddressingMode::Immediate);
-  EXPECT_EQ(bytes1.size(), 0);
+  EXPECT_EQ(bytes1.size(), 0UL);
 
   auto bytes2 = cpu.EncodeXBA();
-  EXPECT_EQ(bytes2.size(), 0);
+  EXPECT_EQ(bytes2.size(), 0UL);
 
   cpu.SetCpuMode(CpuMode::Cpu65C02);
   auto bytes3 = cpu.EncodeXCE();
-  EXPECT_EQ(bytes3.size(), 0);
+  EXPECT_EQ(bytes3.size(), 0UL);
 
   auto bytes4 = cpu.EncodeMVN(0x12, 0x34);
-  EXPECT_EQ(bytes4.size(), 0);
+  EXPECT_EQ(bytes4.size(), 0UL);
 }
 
 // ============================================================================
@@ -2369,7 +2369,7 @@ TEST(Cpu6502Test, BranchRelaxation_InRange_Positive127) {
   // BEQ with offset +127 (maximum positive offset)
   // Should NOT relax - still fits in 8-bit signed range
   auto bytes = cpu.EncodeBEQ(0x7F, AddressingMode::Relative);
-  ASSERT_EQ(bytes.size(), 2);
+  ASSERT_EQ(bytes.size(), 2UL);
   EXPECT_EQ(bytes[0], 0xF0); // BEQ opcode (not relaxed)
   EXPECT_EQ(bytes[1], 0x7F); // Offset +127
 }
@@ -2382,7 +2382,7 @@ TEST(Cpu6502Test, BranchRelaxation_InRange_Negative128) {
   // Should NOT relax - still fits in 8-bit signed range
   auto bytes =
       cpu.EncodeBEQ(0x80, AddressingMode::Relative); // 0x80 = -128 in signed
-  ASSERT_EQ(bytes.size(), 2);
+  ASSERT_EQ(bytes.size(), 2UL);
   EXPECT_EQ(bytes[0], 0xF0); // BEQ opcode (not relaxed)
   EXPECT_EQ(bytes[1], 0x80); // Offset -128
 }
@@ -2397,7 +2397,7 @@ TEST(Cpu6502Test, BranchRelaxation_OutOfRange_Positive128) {
   // Should relax to: BNE *+5; JMP $1082
   auto bytes = cpu.EncodeBranchWithRelaxation(0xF0, 0x1000, 0x1082);
 
-  ASSERT_EQ(bytes.size(), 5);
+  ASSERT_EQ(bytes.size(), 5UL);
   EXPECT_EQ(bytes[0], 0xD0); // BNE opcode (complement of BEQ)
   EXPECT_EQ(bytes[1], 0x03); // Skip 3 bytes (JMP instruction)
   EXPECT_EQ(bytes[2], 0x4C); // JMP opcode
@@ -2415,7 +2415,7 @@ TEST(Cpu6502Test, BranchRelaxation_OutOfRange_Negative129) {
   // Should relax to: BNE *+5; JMP $0F7F
   auto bytes = cpu.EncodeBranchWithRelaxation(0xF0, 0x1000, 0x0F7F);
 
-  ASSERT_EQ(bytes.size(), 5);
+  ASSERT_EQ(bytes.size(), 5UL);
   EXPECT_EQ(bytes[0], 0xD0); // BNE opcode (complement of BEQ)
   EXPECT_EQ(bytes[1], 0x03); // Skip 3 bytes (JMP instruction)
   EXPECT_EQ(bytes[2], 0x4C); // JMP opcode
@@ -2432,7 +2432,7 @@ TEST(Cpu6502Test, BranchRelaxation_BNE_OutOfRange) {
   // Should relax to: BEQ *+5; JMP $1200
   auto bytes = cpu.EncodeBranchWithRelaxation(0xD0, 0x1000, 0x1200);
 
-  ASSERT_EQ(bytes.size(), 5);
+  ASSERT_EQ(bytes.size(), 5UL);
   EXPECT_EQ(bytes[0], 0xF0); // BEQ opcode (complement of BNE)
   EXPECT_EQ(bytes[1], 0x03); // Skip 3 bytes
   EXPECT_EQ(bytes[2], 0x4C); // JMP opcode
@@ -2448,7 +2448,7 @@ TEST(Cpu6502Test, BranchRelaxation_BCC_OutOfRange) {
   // Should relax to: BCS *+5; JMP $1200
   auto bytes = cpu.EncodeBranchWithRelaxation(0x90, 0x1000, 0x1200);
 
-  ASSERT_EQ(bytes.size(), 5);
+  ASSERT_EQ(bytes.size(), 5UL);
   EXPECT_EQ(bytes[0], 0xB0); // BCS opcode (complement of BCC)
   EXPECT_EQ(bytes[1], 0x03); // Skip 3 bytes
   EXPECT_EQ(bytes[2], 0x4C); // JMP opcode
@@ -2464,7 +2464,7 @@ TEST(Cpu6502Test, BranchRelaxation_BCS_OutOfRange) {
   // Should relax to: BCC *+5; JMP $1200
   auto bytes = cpu.EncodeBranchWithRelaxation(0xB0, 0x1000, 0x1200);
 
-  ASSERT_EQ(bytes.size(), 5);
+  ASSERT_EQ(bytes.size(), 5UL);
   EXPECT_EQ(bytes[0], 0x90); // BCC opcode (complement of BCS)
   EXPECT_EQ(bytes[1], 0x03); // Skip 3 bytes
   EXPECT_EQ(bytes[2], 0x4C); // JMP opcode
@@ -2480,7 +2480,7 @@ TEST(Cpu6502Test, BranchRelaxation_BPL_OutOfRange) {
   // Should relax to: BMI *+5; JMP $1200
   auto bytes = cpu.EncodeBranchWithRelaxation(0x10, 0x1000, 0x1200);
 
-  ASSERT_EQ(bytes.size(), 5);
+  ASSERT_EQ(bytes.size(), 5UL);
   EXPECT_EQ(bytes[0], 0x30); // BMI opcode (complement of BPL)
   EXPECT_EQ(bytes[1], 0x03); // Skip 3 bytes
   EXPECT_EQ(bytes[2], 0x4C); // JMP opcode
@@ -2496,7 +2496,7 @@ TEST(Cpu6502Test, BranchRelaxation_BMI_OutOfRange) {
   // Should relax to: BPL *+5; JMP $1200
   auto bytes = cpu.EncodeBranchWithRelaxation(0x30, 0x1000, 0x1200);
 
-  ASSERT_EQ(bytes.size(), 5);
+  ASSERT_EQ(bytes.size(), 5UL);
   EXPECT_EQ(bytes[0], 0x10); // BPL opcode (complement of BMI)
   EXPECT_EQ(bytes[1], 0x03); // Skip 3 bytes
   EXPECT_EQ(bytes[2], 0x4C); // JMP opcode
@@ -2512,7 +2512,7 @@ TEST(Cpu6502Test, BranchRelaxation_BVC_OutOfRange) {
   // Should relax to: BVS *+5; JMP $1200
   auto bytes = cpu.EncodeBranchWithRelaxation(0x50, 0x1000, 0x1200);
 
-  ASSERT_EQ(bytes.size(), 5);
+  ASSERT_EQ(bytes.size(), 5UL);
   EXPECT_EQ(bytes[0], 0x70); // BVS opcode (complement of BVC)
   EXPECT_EQ(bytes[1], 0x03); // Skip 3 bytes
   EXPECT_EQ(bytes[2], 0x4C); // JMP opcode
@@ -2528,7 +2528,7 @@ TEST(Cpu6502Test, BranchRelaxation_BVS_OutOfRange) {
   // Should relax to: BVC *+5; JMP $1200
   auto bytes = cpu.EncodeBranchWithRelaxation(0x70, 0x1000, 0x1200);
 
-  ASSERT_EQ(bytes.size(), 5);
+  ASSERT_EQ(bytes.size(), 5UL);
   EXPECT_EQ(bytes[0], 0x50); // BVC opcode (complement of BVS)
   EXPECT_EQ(bytes[1], 0x03); // Skip 3 bytes
   EXPECT_EQ(bytes[2], 0x4C); // JMP opcode
@@ -2584,7 +2584,7 @@ TEST(Cpu6502Test, BranchRelaxation_LargeOffset_PoP) {
   // Should relax to: BCS *+5; JMP $1EC9
   auto bytes = cpu.EncodeBranchWithRelaxation(0x90, 0x12FE, 0x1EC9);
 
-  ASSERT_EQ(bytes.size(), 5);
+  ASSERT_EQ(bytes.size(), 5UL);
   EXPECT_EQ(bytes[0], 0xB0); // BCS opcode (complement of BCC)
   EXPECT_EQ(bytes[1], 0x03); // Skip 3 bytes
   EXPECT_EQ(bytes[2], 0x4C); // JMP opcode
@@ -2604,7 +2604,7 @@ TEST(Cpu6502Test, WAI_65C02Rockwell) {
 
   // WAI -> CB
   auto bytes = cpu.EncodeWAI();
-  ASSERT_EQ(bytes.size(), 1);
+  ASSERT_EQ(bytes.size(), 1UL);
   EXPECT_EQ(bytes[0], 0xCB); // WAI opcode
 }
 
@@ -2615,7 +2615,7 @@ TEST(Cpu6502Test, STP_65C02Rockwell) {
 
   // STP -> DB
   auto bytes = cpu.EncodeSTP();
-  ASSERT_EQ(bytes.size(), 1);
+  ASSERT_EQ(bytes.size(), 1UL);
   EXPECT_EQ(bytes[0], 0xDB); // STP opcode
 }
 
@@ -2625,7 +2625,7 @@ TEST(Cpu6502Test, WAI_NotAvailableIn6502Mode) {
   // Default mode is 6502
 
   auto bytes = cpu.EncodeWAI();
-  EXPECT_EQ(bytes.size(), 0); // Empty = not supported
+  EXPECT_EQ(bytes.size(), 0UL); // Empty = not supported
 }
 
 // Test 240: WAI not available in standard 65C02 mode (Rockwell-only)
@@ -2634,7 +2634,7 @@ TEST(Cpu6502Test, WAI_NotAvailableInStandard65C02) {
   cpu.SetCpuMode(CpuMode::Cpu65C02); // Standard 65C02, not Rockwell
 
   auto bytes = cpu.EncodeWAI();
-  EXPECT_EQ(bytes.size(), 0); // Empty = Rockwell-only instruction
+  EXPECT_EQ(bytes.size(), 0UL); // Empty = Rockwell-only instruction
 }
 
 // Test 241: STP not available in 6502 mode
@@ -2643,7 +2643,7 @@ TEST(Cpu6502Test, STP_NotAvailableIn6502Mode) {
   // Default mode is 6502
 
   auto bytes = cpu.EncodeSTP();
-  EXPECT_EQ(bytes.size(), 0); // Empty = not supported
+  EXPECT_EQ(bytes.size(), 0UL); // Empty = not supported
 }
 
 // Test 242: STP not available in standard 65C02 mode (Rockwell-only)
@@ -2652,7 +2652,7 @@ TEST(Cpu6502Test, STP_NotAvailableInStandard65C02) {
   cpu.SetCpuMode(CpuMode::Cpu65C02); // Standard 65C02, not Rockwell
 
   auto bytes = cpu.EncodeSTP();
-  EXPECT_EQ(bytes.size(), 0); // Empty = Rockwell-only instruction
+  EXPECT_EQ(bytes.size(), 0UL); // Empty = Rockwell-only instruction
 }
 
 // ============================================================================
@@ -2667,7 +2667,7 @@ TEST(Cpu6502Test, RMB0_65C02Rockwell) {
 
   // RMB0 $80 -> 07 80
   auto bytes = cpu.EncodeRMB0(0x80, AddressingMode::ZeroPage);
-  ASSERT_EQ(bytes.size(), 2);
+  ASSERT_EQ(bytes.size(), 2UL);
   EXPECT_EQ(bytes[0], 0x07); // RMB0 opcode
   EXPECT_EQ(bytes[1], 0x80); // Zero page address
 }
@@ -2679,7 +2679,7 @@ TEST(Cpu6502Test, RMB1_65C02Rockwell) {
 
   // RMB1 $42 -> 17 42
   auto bytes = cpu.EncodeRMB1(0x42, AddressingMode::ZeroPage);
-  ASSERT_EQ(bytes.size(), 2);
+  ASSERT_EQ(bytes.size(), 2UL);
   EXPECT_EQ(bytes[0], 0x17); // RMB1 opcode
   EXPECT_EQ(bytes[1], 0x42);
 }
@@ -2691,7 +2691,7 @@ TEST(Cpu6502Test, RMB2_65C02Rockwell) {
 
   // RMB2 $FF -> 27 FF
   auto bytes = cpu.EncodeRMB2(0xFF, AddressingMode::ZeroPage);
-  ASSERT_EQ(bytes.size(), 2);
+  ASSERT_EQ(bytes.size(), 2UL);
   EXPECT_EQ(bytes[0], 0x27);
   EXPECT_EQ(bytes[1], 0xFF);
 }
@@ -2702,7 +2702,7 @@ TEST(Cpu6502Test, RMB3_65C02Rockwell) {
   cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
 
   auto bytes = cpu.EncodeRMB3(0x00, AddressingMode::ZeroPage);
-  ASSERT_EQ(bytes.size(), 2);
+  ASSERT_EQ(bytes.size(), 2UL);
   EXPECT_EQ(bytes[0], 0x37);
   EXPECT_EQ(bytes[1], 0x00);
 }
@@ -2713,7 +2713,7 @@ TEST(Cpu6502Test, RMB4_65C02Rockwell) {
   cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
 
   auto bytes = cpu.EncodeRMB4(0x80, AddressingMode::ZeroPage);
-  ASSERT_EQ(bytes.size(), 2);
+  ASSERT_EQ(bytes.size(), 2UL);
   EXPECT_EQ(bytes[0], 0x47);
   EXPECT_EQ(bytes[1], 0x80);
 }
@@ -2724,7 +2724,7 @@ TEST(Cpu6502Test, RMB5_65C02Rockwell) {
   cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
 
   auto bytes = cpu.EncodeRMB5(0x80, AddressingMode::ZeroPage);
-  ASSERT_EQ(bytes.size(), 2);
+  ASSERT_EQ(bytes.size(), 2UL);
   EXPECT_EQ(bytes[0], 0x57);
   EXPECT_EQ(bytes[1], 0x80);
 }
@@ -2735,7 +2735,7 @@ TEST(Cpu6502Test, RMB6_65C02Rockwell) {
   cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
 
   auto bytes = cpu.EncodeRMB6(0x80, AddressingMode::ZeroPage);
-  ASSERT_EQ(bytes.size(), 2);
+  ASSERT_EQ(bytes.size(), 2UL);
   EXPECT_EQ(bytes[0], 0x67);
   EXPECT_EQ(bytes[1], 0x80);
 }
@@ -2746,7 +2746,7 @@ TEST(Cpu6502Test, RMB7_65C02Rockwell) {
   cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
 
   auto bytes = cpu.EncodeRMB7(0x80, AddressingMode::ZeroPage);
-  ASSERT_EQ(bytes.size(), 2);
+  ASSERT_EQ(bytes.size(), 2UL);
   EXPECT_EQ(bytes[0], 0x77);
   EXPECT_EQ(bytes[1], 0x80);
 }
@@ -2758,7 +2758,7 @@ TEST(Cpu6502Test, SMB0_65C02Rockwell) {
 
   // SMB0 $80 -> 87 80
   auto bytes = cpu.EncodeSMB0(0x80, AddressingMode::ZeroPage);
-  ASSERT_EQ(bytes.size(), 2);
+  ASSERT_EQ(bytes.size(), 2UL);
   EXPECT_EQ(bytes[0], 0x87);
   EXPECT_EQ(bytes[1], 0x80);
 }
@@ -2769,7 +2769,7 @@ TEST(Cpu6502Test, SMB1_65C02Rockwell) {
   cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
 
   auto bytes = cpu.EncodeSMB1(0x42, AddressingMode::ZeroPage);
-  ASSERT_EQ(bytes.size(), 2);
+  ASSERT_EQ(bytes.size(), 2UL);
   EXPECT_EQ(bytes[0], 0x97);
   EXPECT_EQ(bytes[1], 0x42);
 }
@@ -2780,7 +2780,7 @@ TEST(Cpu6502Test, SMB2_65C02Rockwell) {
   cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
 
   auto bytes = cpu.EncodeSMB2(0xFF, AddressingMode::ZeroPage);
-  ASSERT_EQ(bytes.size(), 2);
+  ASSERT_EQ(bytes.size(), 2UL);
   EXPECT_EQ(bytes[0], 0xA7);
   EXPECT_EQ(bytes[1], 0xFF);
 }
@@ -2791,7 +2791,7 @@ TEST(Cpu6502Test, SMB3_65C02Rockwell) {
   cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
 
   auto bytes = cpu.EncodeSMB3(0x00, AddressingMode::ZeroPage);
-  ASSERT_EQ(bytes.size(), 2);
+  ASSERT_EQ(bytes.size(), 2UL);
   EXPECT_EQ(bytes[0], 0xB7);
   EXPECT_EQ(bytes[1], 0x00);
 }
@@ -2802,7 +2802,7 @@ TEST(Cpu6502Test, SMB4_65C02Rockwell) {
   cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
 
   auto bytes = cpu.EncodeSMB4(0x80, AddressingMode::ZeroPage);
-  ASSERT_EQ(bytes.size(), 2);
+  ASSERT_EQ(bytes.size(), 2UL);
   EXPECT_EQ(bytes[0], 0xC7);
   EXPECT_EQ(bytes[1], 0x80);
 }
@@ -2813,7 +2813,7 @@ TEST(Cpu6502Test, SMB5_65C02Rockwell) {
   cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
 
   auto bytes = cpu.EncodeSMB5(0x80, AddressingMode::ZeroPage);
-  ASSERT_EQ(bytes.size(), 2);
+  ASSERT_EQ(bytes.size(), 2UL);
   EXPECT_EQ(bytes[0], 0xD7);
   EXPECT_EQ(bytes[1], 0x80);
 }
@@ -2824,7 +2824,7 @@ TEST(Cpu6502Test, SMB6_65C02Rockwell) {
   cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
 
   auto bytes = cpu.EncodeSMB6(0x80, AddressingMode::ZeroPage);
-  ASSERT_EQ(bytes.size(), 2);
+  ASSERT_EQ(bytes.size(), 2UL);
   EXPECT_EQ(bytes[0], 0xE7);
   EXPECT_EQ(bytes[1], 0x80);
 }
@@ -2835,7 +2835,7 @@ TEST(Cpu6502Test, SMB7_65C02Rockwell) {
   cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
 
   auto bytes = cpu.EncodeSMB7(0x80, AddressingMode::ZeroPage);
-  ASSERT_EQ(bytes.size(), 2);
+  ASSERT_EQ(bytes.size(), 2UL);
   EXPECT_EQ(bytes[0], 0xF7);
   EXPECT_EQ(bytes[1], 0x80);
 }
@@ -2845,7 +2845,7 @@ TEST(Cpu6502Test, RMB_NotAvailableIn6502Mode) {
   Cpu6502 cpu;
 
   auto bytes = cpu.EncodeRMB0(0x80, AddressingMode::ZeroPage);
-  EXPECT_EQ(bytes.size(), 0);
+  EXPECT_EQ(bytes.size(), 0UL);
 }
 
 // Test 260: SMB not available in standard 65C02 mode
@@ -2854,7 +2854,7 @@ TEST(Cpu6502Test, SMB_NotAvailableInStandard65C02) {
   cpu.SetCpuMode(CpuMode::Cpu65C02);
 
   auto bytes = cpu.EncodeSMB0(0x80, AddressingMode::ZeroPage);
-  EXPECT_EQ(bytes.size(), 0);
+  EXPECT_EQ(bytes.size(), 0UL);
 }
 
 // ============================================================================
@@ -2870,7 +2870,7 @@ TEST(Cpu6502Test, BBR0_65C02Rockwell) {
   // BBR0 $80, $10 -> 0F 80 10
   // Zero page address $80, relative branch offset $10
   auto bytes = cpu.EncodeBBR0(0x80, 0x10);
-  ASSERT_EQ(bytes.size(), 3);
+  ASSERT_EQ(bytes.size(), 3UL);
   EXPECT_EQ(bytes[0], 0x0F); // BBR0 opcode
   EXPECT_EQ(bytes[1], 0x80); // Zero page address
   EXPECT_EQ(bytes[2], 0x10); // Relative offset
@@ -2882,7 +2882,7 @@ TEST(Cpu6502Test, BBR1_65C02Rockwell) {
   cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
 
   auto bytes = cpu.EncodeBBR1(0x42, 0x20);
-  ASSERT_EQ(bytes.size(), 3);
+  ASSERT_EQ(bytes.size(), 3UL);
   EXPECT_EQ(bytes[0], 0x1F);
   EXPECT_EQ(bytes[1], 0x42);
   EXPECT_EQ(bytes[2], 0x20);
@@ -2894,7 +2894,7 @@ TEST(Cpu6502Test, BBR2_65C02Rockwell) {
   cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
 
   auto bytes = cpu.EncodeBBR2(0xFF, 0xFE); // Negative offset
-  ASSERT_EQ(bytes.size(), 3);
+  ASSERT_EQ(bytes.size(), 3UL);
   EXPECT_EQ(bytes[0], 0x2F);
   EXPECT_EQ(bytes[1], 0xFF);
   EXPECT_EQ(bytes[2], 0xFE);
@@ -2906,7 +2906,7 @@ TEST(Cpu6502Test, BBR3_65C02Rockwell) {
   cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
 
   auto bytes = cpu.EncodeBBR3(0x00, 0x7F); // Max positive offset
-  ASSERT_EQ(bytes.size(), 3);
+  ASSERT_EQ(bytes.size(), 3UL);
   EXPECT_EQ(bytes[0], 0x3F);
   EXPECT_EQ(bytes[1], 0x00);
   EXPECT_EQ(bytes[2], 0x7F);
@@ -2918,7 +2918,7 @@ TEST(Cpu6502Test, BBR4_65C02Rockwell) {
   cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
 
   auto bytes = cpu.EncodeBBR4(0x80, 0x00);
-  ASSERT_EQ(bytes.size(), 3);
+  ASSERT_EQ(bytes.size(), 3UL);
   EXPECT_EQ(bytes[0], 0x4F);
   EXPECT_EQ(bytes[1], 0x80);
   EXPECT_EQ(bytes[2], 0x00);
@@ -2930,7 +2930,7 @@ TEST(Cpu6502Test, BBR5_65C02Rockwell) {
   cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
 
   auto bytes = cpu.EncodeBBR5(0x80, 0x10);
-  ASSERT_EQ(bytes.size(), 3);
+  ASSERT_EQ(bytes.size(), 3UL);
   EXPECT_EQ(bytes[0], 0x5F);
   EXPECT_EQ(bytes[1], 0x80);
   EXPECT_EQ(bytes[2], 0x10);
@@ -2942,7 +2942,7 @@ TEST(Cpu6502Test, BBR6_65C02Rockwell) {
   cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
 
   auto bytes = cpu.EncodeBBR6(0x80, 0x10);
-  ASSERT_EQ(bytes.size(), 3);
+  ASSERT_EQ(bytes.size(), 3UL);
   EXPECT_EQ(bytes[0], 0x6F);
   EXPECT_EQ(bytes[1], 0x80);
   EXPECT_EQ(bytes[2], 0x10);
@@ -2954,7 +2954,7 @@ TEST(Cpu6502Test, BBR7_65C02Rockwell) {
   cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
 
   auto bytes = cpu.EncodeBBR7(0x80, 0x10);
-  ASSERT_EQ(bytes.size(), 3);
+  ASSERT_EQ(bytes.size(), 3UL);
   EXPECT_EQ(bytes[0], 0x7F);
   EXPECT_EQ(bytes[1], 0x80);
   EXPECT_EQ(bytes[2], 0x10);
@@ -2967,7 +2967,7 @@ TEST(Cpu6502Test, BBS0_65C02Rockwell) {
 
   // BBS0 $80, $10 -> 8F 80 10
   auto bytes = cpu.EncodeBBS0(0x80, 0x10);
-  ASSERT_EQ(bytes.size(), 3);
+  ASSERT_EQ(bytes.size(), 3UL);
   EXPECT_EQ(bytes[0], 0x8F);
   EXPECT_EQ(bytes[1], 0x80);
   EXPECT_EQ(bytes[2], 0x10);
@@ -2979,7 +2979,7 @@ TEST(Cpu6502Test, BBS1_65C02Rockwell) {
   cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
 
   auto bytes = cpu.EncodeBBS1(0x42, 0x20);
-  ASSERT_EQ(bytes.size(), 3);
+  ASSERT_EQ(bytes.size(), 3UL);
   EXPECT_EQ(bytes[0], 0x9F);
   EXPECT_EQ(bytes[1], 0x42);
   EXPECT_EQ(bytes[2], 0x20);
@@ -2991,7 +2991,7 @@ TEST(Cpu6502Test, BBS2_65C02Rockwell) {
   cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
 
   auto bytes = cpu.EncodeBBS2(0xFF, 0xFE);
-  ASSERT_EQ(bytes.size(), 3);
+  ASSERT_EQ(bytes.size(), 3UL);
   EXPECT_EQ(bytes[0], 0xAF);
   EXPECT_EQ(bytes[1], 0xFF);
   EXPECT_EQ(bytes[2], 0xFE);
@@ -3003,7 +3003,7 @@ TEST(Cpu6502Test, BBS3_65C02Rockwell) {
   cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
 
   auto bytes = cpu.EncodeBBS3(0x00, 0x7F);
-  ASSERT_EQ(bytes.size(), 3);
+  ASSERT_EQ(bytes.size(), 3UL);
   EXPECT_EQ(bytes[0], 0xBF);
   EXPECT_EQ(bytes[1], 0x00);
   EXPECT_EQ(bytes[2], 0x7F);
@@ -3015,7 +3015,7 @@ TEST(Cpu6502Test, BBS4_65C02Rockwell) {
   cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
 
   auto bytes = cpu.EncodeBBS4(0x80, 0x00);
-  ASSERT_EQ(bytes.size(), 3);
+  ASSERT_EQ(bytes.size(), 3UL);
   EXPECT_EQ(bytes[0], 0xCF);
   EXPECT_EQ(bytes[1], 0x80);
   EXPECT_EQ(bytes[2], 0x00);
@@ -3027,7 +3027,7 @@ TEST(Cpu6502Test, BBS5_65C02Rockwell) {
   cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
 
   auto bytes = cpu.EncodeBBS5(0x80, 0x10);
-  ASSERT_EQ(bytes.size(), 3);
+  ASSERT_EQ(bytes.size(), 3UL);
   EXPECT_EQ(bytes[0], 0xDF);
   EXPECT_EQ(bytes[1], 0x80);
   EXPECT_EQ(bytes[2], 0x10);
@@ -3039,7 +3039,7 @@ TEST(Cpu6502Test, BBS6_65C02Rockwell) {
   cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
 
   auto bytes = cpu.EncodeBBS6(0x80, 0x10);
-  ASSERT_EQ(bytes.size(), 3);
+  ASSERT_EQ(bytes.size(), 3UL);
   EXPECT_EQ(bytes[0], 0xEF);
   EXPECT_EQ(bytes[1], 0x80);
   EXPECT_EQ(bytes[2], 0x10);
@@ -3051,7 +3051,7 @@ TEST(Cpu6502Test, BBS7_65C02Rockwell) {
   cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
 
   auto bytes = cpu.EncodeBBS7(0x80, 0x10);
-  ASSERT_EQ(bytes.size(), 3);
+  ASSERT_EQ(bytes.size(), 3UL);
   EXPECT_EQ(bytes[0], 0xFF);
   EXPECT_EQ(bytes[1], 0x80);
   EXPECT_EQ(bytes[2], 0x10);
@@ -3062,7 +3062,7 @@ TEST(Cpu6502Test, BBR_NotAvailableIn6502Mode) {
   Cpu6502 cpu;
 
   auto bytes = cpu.EncodeBBR0(0x80, 0x10);
-  EXPECT_EQ(bytes.size(), 0);
+  EXPECT_EQ(bytes.size(), 0UL);
 }
 
 // Test 278: BBS not available in standard 65C02 mode
@@ -3071,5 +3071,5 @@ TEST(Cpu6502Test, BBS_NotAvailableInStandard65C02) {
   cpu.SetCpuMode(CpuMode::Cpu65C02);
 
   auto bytes = cpu.EncodeBBS0(0x80, 0x10);
-  EXPECT_EQ(bytes.size(), 0);
+  EXPECT_EQ(bytes.size(), 0UL);
 }

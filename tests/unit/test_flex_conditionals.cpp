@@ -45,7 +45,7 @@ TEST(FlexConditionalTest, IfcDefinedSymbolIncludesCode) {
   parser.Parse(program, section, symbols);
 
   // Should have 2 instructions: LDA (inside IFC) and NOP (outside)
-  EXPECT_GE(section.atoms.size(), 2);
+  EXPECT_GE(section.atoms.size(), 2UL);
 }
 
 /**
@@ -75,7 +75,7 @@ TEST(FlexConditionalTest, IfcUndefinedSymbolExcludesCode) {
   parser.Parse(program, section, symbols);
 
   // Should have 2 atoms: ORG + NOP (IFC block skipped, LDA not assembled)
-  EXPECT_EQ(section.atoms.size(), 2);
+  EXPECT_EQ(section.atoms.size(), 2UL);
 }
 
 /**
@@ -103,7 +103,7 @@ TEST(FlexConditionalTest, IfcExpressionNonZeroIncludesCode) {
   parser.Parse(program, section, symbols);
 
   // Should have 2 instructions: LDA (5+5=10, true) and NOP
-  EXPECT_GE(section.atoms.size(), 2);
+  EXPECT_GE(section.atoms.size(), 2UL);
 }
 
 /**
@@ -131,7 +131,7 @@ TEST(FlexConditionalTest, IfcExpressionZeroExcludesCode) {
   parser.Parse(program, section, symbols);
 
   // Should have 2 atoms: ORG + NOP (IFC block skipped because 5-5=0 is false)
-  EXPECT_EQ(section.atoms.size(), 2);
+  EXPECT_EQ(section.atoms.size(), 2UL);
 }
 
 // ============================================================================
@@ -170,7 +170,7 @@ TEST(FlexConditionalTest, NestedIfcBothTrue) {
   parser.Parse(program, section, symbols);
 
   // Should have: LDA, LDB, LDX, NOP = 4 instructions
-  EXPECT_GE(section.atoms.size(), 4);
+  EXPECT_GE(section.atoms.size(), 4UL);
 }
 
 /**
@@ -205,7 +205,7 @@ TEST(FlexConditionalTest, NestedIfcOuterTrueInnerFalse) {
   parser.Parse(program, section, symbols);
 
   // Should have: ORG, LDA, LDX, NOP = 4 atoms (LDB skipped)
-  EXPECT_EQ(section.atoms.size(), 4);
+  EXPECT_EQ(section.atoms.size(), 4UL);
 }
 
 /**
@@ -240,7 +240,7 @@ TEST(FlexConditionalTest, NestedIfcOuterFalse) {
   parser.Parse(program, section, symbols);
 
   // Should have: ORG + NOP = 2 atoms (entire IFC block skipped)
-  EXPECT_EQ(section.atoms.size(), 2);
+  EXPECT_EQ(section.atoms.size(), 2UL);
 }
 
 // ============================================================================
@@ -328,7 +328,7 @@ START   CLEAR
   parser.Parse(program, section, symbols);
 
   // Should have CLRA, CLRB from macro expansion
-  EXPECT_GE(section.atoms.size(), 2);
+  EXPECT_GE(section.atoms.size(), 2UL);
 }
 
 /**
@@ -410,7 +410,7 @@ DEBUG_INIT
 
   // Should have: NOP, JSR DEBUG_INIT, LDA, CLRA, RTS
   // (RELEASE block skipped)
-  EXPECT_GE(section.atoms.size(), 5);
+  EXPECT_GE(section.atoms.size(), 5UL);
 
   // Verify DEBUG_INIT label exists
   int64_t value;

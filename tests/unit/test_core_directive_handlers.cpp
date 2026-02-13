@@ -45,11 +45,11 @@ TEST_F(CoreDirectiveHandlersTest, OrgWithDecimalAddress) {
   HandleOrgDirective("2048", *section_, *symbols_, current_address_);
 
   // Assert
-  ASSERT_EQ(section_->atoms.size(), 1);
+  ASSERT_EQ(section_->atoms.size(), 1UL);
   auto org_atom = std::dynamic_pointer_cast<OrgAtom>(section_->atoms[0]);
   ASSERT_NE(org_atom, nullptr);
-  EXPECT_EQ(org_atom->address, 2048);
-  EXPECT_EQ(current_address_, 2048);
+  EXPECT_EQ(org_atom->address, 2048U);
+  EXPECT_EQ(current_address_, 2048U);
 }
 
 /**
@@ -60,11 +60,11 @@ TEST_F(CoreDirectiveHandlersTest, OrgWithHexAddress) {
   HandleOrgDirective("$C000", *section_, *symbols_, current_address_);
 
   // Assert
-  ASSERT_EQ(section_->atoms.size(), 1);
+  ASSERT_EQ(section_->atoms.size(), 1UL);
   auto org_atom = std::dynamic_pointer_cast<OrgAtom>(section_->atoms[0]);
   ASSERT_NE(org_atom, nullptr);
-  EXPECT_EQ(org_atom->address, 0xC000);
-  EXPECT_EQ(current_address_, 0xC000);
+  EXPECT_EQ(org_atom->address, 0xC000U);
+  EXPECT_EQ(current_address_, 0xC000U);
 }
 
 /**
@@ -75,11 +75,11 @@ TEST_F(CoreDirectiveHandlersTest, OrgWithBinaryAddress) {
   HandleOrgDirective("%11111111", *section_, *symbols_, current_address_);
 
   // Assert
-  ASSERT_EQ(section_->atoms.size(), 1);
+  ASSERT_EQ(section_->atoms.size(), 1UL);
   auto org_atom = std::dynamic_pointer_cast<OrgAtom>(section_->atoms[0]);
   ASSERT_NE(org_atom, nullptr);
-  EXPECT_EQ(org_atom->address, 255);
-  EXPECT_EQ(current_address_, 255);
+  EXPECT_EQ(org_atom->address, 255U);
+  EXPECT_EQ(current_address_, 255U);
 }
 
 /**
@@ -94,11 +94,11 @@ TEST_F(CoreDirectiveHandlersTest, OrgWithSymbolAddress) {
   HandleOrgDirective("START", *section_, *symbols_, current_address_);
 
   // Assert
-  ASSERT_EQ(section_->atoms.size(), 1);
+  ASSERT_EQ(section_->atoms.size(), 1UL);
   auto org_atom = std::dynamic_pointer_cast<OrgAtom>(section_->atoms[0]);
   ASSERT_NE(org_atom, nullptr);
-  EXPECT_EQ(org_atom->address, 0x8000);
-  EXPECT_EQ(current_address_, 0x8000);
+  EXPECT_EQ(org_atom->address, 0x8000U);
+  EXPECT_EQ(current_address_, 0x8000U);
 }
 
 /**
@@ -118,10 +118,10 @@ TEST_F(CoreDirectiveHandlersTest, OrgWithWhitespace) {
   HandleOrgDirective("  $1000  ", *section_, *symbols_, current_address_);
 
   // Assert
-  ASSERT_EQ(section_->atoms.size(), 1);
+  ASSERT_EQ(section_->atoms.size(), 1UL);
   auto org_atom = std::dynamic_pointer_cast<OrgAtom>(section_->atoms[0]);
   ASSERT_NE(org_atom, nullptr);
-  EXPECT_EQ(org_atom->address, 0x1000);
+  EXPECT_EQ(org_atom->address, 0x1000U);
 }
 
 // ============================================================================
@@ -187,7 +187,7 @@ TEST_F(CoreDirectiveHandlersTest, EquDoesNotCreateAtoms) {
   HandleEquDirective("CONSTANT", "42", *symbols_);
 
   // Assert
-  EXPECT_EQ(section_->atoms.size(), 0);
+  EXPECT_EQ(section_->atoms.size(), 0UL);
 }
 
 // ============================================================================
@@ -202,13 +202,13 @@ TEST_F(CoreDirectiveHandlersTest, DbWithSingleByte) {
   HandleDbDirective("42", *section_, *symbols_, current_address_);
 
   // Assert
-  ASSERT_EQ(section_->atoms.size(), 1);
+  ASSERT_EQ(section_->atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section_->atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data_size, DataSize::Byte);
-  ASSERT_EQ(data_atom->expressions.size(), 1);
+  ASSERT_EQ(data_atom->expressions.size(), 1UL);
   EXPECT_EQ(data_atom->expressions[0], "42");
-  EXPECT_EQ(current_address_, 0x1001); // Advanced by 1 byte
+  EXPECT_EQ(current_address_, 0x1001U); // Advanced by 1 byte
 }
 
 /**
@@ -219,14 +219,14 @@ TEST_F(CoreDirectiveHandlersTest, DbWithMultipleBytes) {
   HandleDbDirective("1,2,3,4,5", *section_, *symbols_, current_address_);
 
   // Assert
-  ASSERT_EQ(section_->atoms.size(), 1);
+  ASSERT_EQ(section_->atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section_->atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data_size, DataSize::Byte);
-  ASSERT_EQ(data_atom->expressions.size(), 5);
+  ASSERT_EQ(data_atom->expressions.size(), 5UL);
   EXPECT_EQ(data_atom->expressions[0], "1");
   EXPECT_EQ(data_atom->expressions[4], "5");
-  EXPECT_EQ(current_address_, 0x1005); // Advanced by 5 bytes
+  EXPECT_EQ(current_address_, 0x1005U); // Advanced by 5 bytes
 }
 
 /**
@@ -238,10 +238,10 @@ TEST_F(CoreDirectiveHandlersTest, DbWithExpressions) {
                     current_address_);
 
   // Assert
-  ASSERT_EQ(section_->atoms.size(), 1);
+  ASSERT_EQ(section_->atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section_->atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->expressions.size(), 3);
+  ASSERT_EQ(data_atom->expressions.size(), 3UL);
   EXPECT_EQ(data_atom->expressions[0], "$FF");
   EXPECT_EQ(data_atom->expressions[1], "1+2");
   EXPECT_EQ(data_atom->expressions[2], "%00001111");
@@ -255,10 +255,10 @@ TEST_F(CoreDirectiveHandlersTest, DbWithWhitespace) {
   HandleDbDirective("  1 ,  2  , 3  ", *section_, *symbols_, current_address_);
 
   // Assert
-  ASSERT_EQ(section_->atoms.size(), 1);
+  ASSERT_EQ(section_->atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section_->atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->expressions.size(), 3);
+  ASSERT_EQ(data_atom->expressions.size(), 3UL);
   EXPECT_EQ(data_atom->expressions[0], "1");
   EXPECT_EQ(data_atom->expressions[1], "2");
   EXPECT_EQ(data_atom->expressions[2], "3");
@@ -272,11 +272,11 @@ TEST_F(CoreDirectiveHandlersTest, DbWithEmptyOperand) {
   HandleDbDirective("", *section_, *symbols_, current_address_);
 
   // Assert - should create empty DataAtom
-  ASSERT_EQ(section_->atoms.size(), 1);
+  ASSERT_EQ(section_->atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section_->atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  EXPECT_EQ(data_atom->expressions.size(), 0);
-  EXPECT_EQ(current_address_, 0x1000); // Not advanced
+  EXPECT_EQ(data_atom->expressions.size(), 0UL);
+  EXPECT_EQ(current_address_, 0x1000U); // Not advanced
 }
 
 // ============================================================================
@@ -291,13 +291,13 @@ TEST_F(CoreDirectiveHandlersTest, DwWithSingleWord) {
   HandleDwDirective("$1234", *section_, *symbols_, current_address_);
 
   // Assert
-  ASSERT_EQ(section_->atoms.size(), 1);
+  ASSERT_EQ(section_->atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section_->atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data_size, DataSize::Word);
-  ASSERT_EQ(data_atom->expressions.size(), 1);
+  ASSERT_EQ(data_atom->expressions.size(), 1UL);
   EXPECT_EQ(data_atom->expressions[0], "$1234");
-  EXPECT_EQ(current_address_, 0x1002); // Advanced by 2 bytes
+  EXPECT_EQ(current_address_, 0x1002U); // Advanced by 2 bytes
 }
 
 /**
@@ -309,12 +309,12 @@ TEST_F(CoreDirectiveHandlersTest, DwWithMultipleWords) {
                     current_address_);
 
   // Assert
-  ASSERT_EQ(section_->atoms.size(), 1);
+  ASSERT_EQ(section_->atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section_->atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data_size, DataSize::Word);
-  ASSERT_EQ(data_atom->expressions.size(), 3);
-  EXPECT_EQ(current_address_, 0x1006); // Advanced by 6 bytes (3 words)
+  ASSERT_EQ(data_atom->expressions.size(), 3UL);
+  EXPECT_EQ(current_address_, 0x1006U); // Advanced by 6 bytes (3 words)
 }
 
 /**
@@ -326,10 +326,10 @@ TEST_F(CoreDirectiveHandlersTest, DwWithWhitespace) {
                     current_address_);
 
   // Assert
-  ASSERT_EQ(section_->atoms.size(), 1);
+  ASSERT_EQ(section_->atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section_->atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->expressions.size(), 2);
+  ASSERT_EQ(data_atom->expressions.size(), 2UL);
   EXPECT_EQ(data_atom->expressions[0], "$1000");
   EXPECT_EQ(data_atom->expressions[1], "$2000");
 }
@@ -346,11 +346,11 @@ TEST_F(CoreDirectiveHandlersTest, DsWithLiteralCount) {
   HandleDsDirective("100", *section_, *symbols_, current_address_);
 
   // Assert
-  ASSERT_EQ(section_->atoms.size(), 1);
+  ASSERT_EQ(section_->atoms.size(), 1UL);
   auto space_atom = std::dynamic_pointer_cast<SpaceAtom>(section_->atoms[0]);
   ASSERT_NE(space_atom, nullptr);
-  EXPECT_EQ(space_atom->count, 100);
-  EXPECT_EQ(current_address_, 0x1064); // Advanced by 100 bytes
+  EXPECT_EQ(space_atom->count, 100UL);
+  EXPECT_EQ(current_address_, 0x1064U); // Advanced by 100 bytes
 }
 
 /**
@@ -361,11 +361,11 @@ TEST_F(CoreDirectiveHandlersTest, DsWithHexCount) {
   HandleDsDirective("$100", *section_, *symbols_, current_address_);
 
   // Assert
-  ASSERT_EQ(section_->atoms.size(), 1);
+  ASSERT_EQ(section_->atoms.size(), 1UL);
   auto space_atom = std::dynamic_pointer_cast<SpaceAtom>(section_->atoms[0]);
   ASSERT_NE(space_atom, nullptr);
-  EXPECT_EQ(space_atom->count, 256);
-  EXPECT_EQ(current_address_, 0x1100); // Advanced by 256 bytes
+  EXPECT_EQ(space_atom->count, 256UL);
+  EXPECT_EQ(current_address_, 0x1100U); // Advanced by 256 bytes
 }
 
 /**
@@ -380,11 +380,11 @@ TEST_F(CoreDirectiveHandlersTest, DsWithExpression) {
   HandleDsDirective("SIZE*2", *section_, *symbols_, current_address_);
 
   // Assert
-  ASSERT_EQ(section_->atoms.size(), 1);
+  ASSERT_EQ(section_->atoms.size(), 1UL);
   auto space_atom = std::dynamic_pointer_cast<SpaceAtom>(section_->atoms[0]);
   ASSERT_NE(space_atom, nullptr);
-  EXPECT_EQ(space_atom->count, 100);
-  EXPECT_EQ(current_address_, 0x1064); // Advanced by 100 bytes
+  EXPECT_EQ(space_atom->count, 100UL);
+  EXPECT_EQ(current_address_, 0x1064U); // Advanced by 100 bytes
 }
 
 /**
@@ -404,10 +404,10 @@ TEST_F(CoreDirectiveHandlersTest, DsWithWhitespace) {
   HandleDsDirective("  50  ", *section_, *symbols_, current_address_);
 
   // Assert
-  ASSERT_EQ(section_->atoms.size(), 1);
+  ASSERT_EQ(section_->atoms.size(), 1UL);
   auto space_atom = std::dynamic_pointer_cast<SpaceAtom>(section_->atoms[0]);
   ASSERT_NE(space_atom, nullptr);
-  EXPECT_EQ(space_atom->count, 50);
+  EXPECT_EQ(space_atom->count, 50UL);
 }
 
 /**
@@ -418,11 +418,11 @@ TEST_F(CoreDirectiveHandlersTest, DsWithEmptyOperand) {
   HandleDsDirective("", *section_, *symbols_, current_address_);
 
   // Assert
-  ASSERT_EQ(section_->atoms.size(), 1);
+  ASSERT_EQ(section_->atoms.size(), 1UL);
   auto space_atom = std::dynamic_pointer_cast<SpaceAtom>(section_->atoms[0]);
   ASSERT_NE(space_atom, nullptr);
-  EXPECT_EQ(space_atom->count, 0);
-  EXPECT_EQ(current_address_, 0x1000); // Not advanced
+  EXPECT_EQ(space_atom->count, 0UL);
+  EXPECT_EQ(current_address_, 0x1000U); // Not advanced
 }
 
 // ============================================================================
@@ -463,11 +463,11 @@ TEST_F(CoreDirectiveRegistryTest, RegistryOrgWorks) {
   registry_.Execute(directives::ORG, "", "$C000", context_);
 
   // Assert
-  ASSERT_EQ(section_->atoms.size(), 1);
+  ASSERT_EQ(section_->atoms.size(), 1UL);
   auto org_atom = std::dynamic_pointer_cast<OrgAtom>(section_->atoms[0]);
   ASSERT_NE(org_atom, nullptr);
-  EXPECT_EQ(org_atom->address, 0xC000);
-  EXPECT_EQ(current_address_, 0xC000);
+  EXPECT_EQ(org_atom->address, 0xC000U);
+  EXPECT_EQ(current_address_, 0xC000U);
 }
 
 /**
@@ -491,12 +491,12 @@ TEST_F(CoreDirectiveRegistryTest, RegistryDbWorks) {
   registry_.Execute(directives::DB, "", "1,2,3", context_);
 
   // Assert
-  ASSERT_EQ(section_->atoms.size(), 1);
+  ASSERT_EQ(section_->atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section_->atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data_size, DataSize::Byte);
-  EXPECT_EQ(data_atom->expressions.size(), 3);
-  EXPECT_EQ(current_address_, 0x1003);
+  EXPECT_EQ(data_atom->expressions.size(), 3UL);
+  EXPECT_EQ(current_address_, 0x1003U);
 }
 
 /**
@@ -507,12 +507,12 @@ TEST_F(CoreDirectiveRegistryTest, RegistryDwWorks) {
   registry_.Execute(directives::DW, "", "$1000,$2000", context_);
 
   // Assert
-  ASSERT_EQ(section_->atoms.size(), 1);
+  ASSERT_EQ(section_->atoms.size(), 1UL);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section_->atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data_size, DataSize::Word);
-  EXPECT_EQ(data_atom->expressions.size(), 2);
-  EXPECT_EQ(current_address_, 0x1004);
+  EXPECT_EQ(data_atom->expressions.size(), 2UL);
+  EXPECT_EQ(current_address_, 0x1004U);
 }
 
 /**
@@ -523,11 +523,11 @@ TEST_F(CoreDirectiveRegistryTest, RegistryDsWorks) {
   registry_.Execute(directives::DS, "", "100", context_);
 
   // Assert
-  ASSERT_EQ(section_->atoms.size(), 1);
+  ASSERT_EQ(section_->atoms.size(), 1UL);
   auto space_atom = std::dynamic_pointer_cast<SpaceAtom>(section_->atoms[0]);
   ASSERT_NE(space_atom, nullptr);
-  EXPECT_EQ(space_atom->count, 100);
-  EXPECT_EQ(current_address_, 0x1064);
+  EXPECT_EQ(space_atom->count, 100UL);
+  EXPECT_EQ(current_address_, 0x1064U);
 }
 
 /**
@@ -536,11 +536,11 @@ TEST_F(CoreDirectiveRegistryTest, RegistryDsWorks) {
 TEST_F(CoreDirectiveRegistryTest, RegistryDbAliases) {
   // Test DEFB
   registry_.Execute(directives::DEFB, "", "42", context_);
-  ASSERT_EQ(section_->atoms.size(), 1);
+  ASSERT_EQ(section_->atoms.size(), 1UL);
 
   // Test BYTE
   registry_.Execute(directives::BYTE, "", "43", context_);
-  ASSERT_EQ(section_->atoms.size(), 2);
+  ASSERT_EQ(section_->atoms.size(), 2UL);
 }
 
 /**
@@ -549,11 +549,11 @@ TEST_F(CoreDirectiveRegistryTest, RegistryDbAliases) {
 TEST_F(CoreDirectiveRegistryTest, RegistryDwAliases) {
   // Test DEFW
   registry_.Execute(directives::DEFW, "", "$1234", context_);
-  ASSERT_EQ(section_->atoms.size(), 1);
+  ASSERT_EQ(section_->atoms.size(), 1UL);
 
   // Test WORD
   registry_.Execute(directives::WORD, "", "$5678", context_);
-  ASSERT_EQ(section_->atoms.size(), 2);
+  ASSERT_EQ(section_->atoms.size(), 2UL);
 }
 
 /**
@@ -562,15 +562,15 @@ TEST_F(CoreDirectiveRegistryTest, RegistryDwAliases) {
 TEST_F(CoreDirectiveRegistryTest, RegistryDsAliases) {
   // Test DEFS
   registry_.Execute(directives::DEFS, "", "10", context_);
-  ASSERT_EQ(section_->atoms.size(), 1);
+  ASSERT_EQ(section_->atoms.size(), 1UL);
 
   // Test BLOCK
   registry_.Execute(directives::BLOCK, "", "20", context_);
-  ASSERT_EQ(section_->atoms.size(), 2);
+  ASSERT_EQ(section_->atoms.size(), 2UL);
 
   // Test RMB
   registry_.Execute(directives::RMB, "", "30", context_);
-  ASSERT_EQ(section_->atoms.size(), 3);
+  ASSERT_EQ(section_->atoms.size(), 3UL);
 }
 
 /**
@@ -604,11 +604,11 @@ TEST_F(CoreDirectiveHandlersTest, OrgWithAdditionExpression) {
   HandleOrgDirective("$1000+$100", *section_, *symbols_, current_address_);
 
   // Assert
-  ASSERT_EQ(section_->atoms.size(), 1);
+  ASSERT_EQ(section_->atoms.size(), 1UL);
   auto org_atom = std::dynamic_pointer_cast<OrgAtom>(section_->atoms[0]);
   ASSERT_NE(org_atom, nullptr);
-  EXPECT_EQ(org_atom->address, 0x1100);
-  EXPECT_EQ(current_address_, 0x1100);
+  EXPECT_EQ(org_atom->address, 0x1100U);
+  EXPECT_EQ(current_address_, 0x1100U);
 }
 
 /**
@@ -619,11 +619,11 @@ TEST_F(CoreDirectiveHandlersTest, OrgWithSubtractionExpression) {
   HandleOrgDirective("$2000-$100", *section_, *symbols_, current_address_);
 
   // Assert
-  ASSERT_EQ(section_->atoms.size(), 1);
+  ASSERT_EQ(section_->atoms.size(), 1UL);
   auto org_atom = std::dynamic_pointer_cast<OrgAtom>(section_->atoms[0]);
   ASSERT_NE(org_atom, nullptr);
-  EXPECT_EQ(org_atom->address, 0x1F00);
-  EXPECT_EQ(current_address_, 0x1F00);
+  EXPECT_EQ(org_atom->address, 0x1F00U);
+  EXPECT_EQ(current_address_, 0x1F00U);
 }
 
 /**
@@ -634,11 +634,11 @@ TEST_F(CoreDirectiveHandlersTest, OrgWithMultiplicationExpression) {
   HandleOrgDirective("$100*16", *section_, *symbols_, current_address_);
 
   // Assert
-  ASSERT_EQ(section_->atoms.size(), 1);
+  ASSERT_EQ(section_->atoms.size(), 1UL);
   auto org_atom = std::dynamic_pointer_cast<OrgAtom>(section_->atoms[0]);
   ASSERT_NE(org_atom, nullptr);
-  EXPECT_EQ(org_atom->address, 0x1000);
-  EXPECT_EQ(current_address_, 0x1000);
+  EXPECT_EQ(org_atom->address, 0x1000U);
+  EXPECT_EQ(current_address_, 0x1000U);
 }
 
 /**
@@ -649,11 +649,11 @@ TEST_F(CoreDirectiveHandlersTest, OrgWithDivisionExpression) {
   HandleOrgDirective("$4000/2", *section_, *symbols_, current_address_);
 
   // Assert
-  ASSERT_EQ(section_->atoms.size(), 1);
+  ASSERT_EQ(section_->atoms.size(), 1UL);
   auto org_atom = std::dynamic_pointer_cast<OrgAtom>(section_->atoms[0]);
   ASSERT_NE(org_atom, nullptr);
-  EXPECT_EQ(org_atom->address, 0x2000);
-  EXPECT_EQ(current_address_, 0x2000);
+  EXPECT_EQ(org_atom->address, 0x2000U);
+  EXPECT_EQ(current_address_, 0x2000U);
 }
 
 /**
@@ -664,11 +664,11 @@ TEST_F(CoreDirectiveHandlersTest, OrgWithModuloExpression) {
   HandleOrgDirective("1000%256", *section_, *symbols_, current_address_);
 
   // Assert
-  ASSERT_EQ(section_->atoms.size(), 1);
+  ASSERT_EQ(section_->atoms.size(), 1UL);
   auto org_atom = std::dynamic_pointer_cast<OrgAtom>(section_->atoms[0]);
   ASSERT_NE(org_atom, nullptr);
-  EXPECT_EQ(org_atom->address, 232);
-  EXPECT_EQ(current_address_, 232);
+  EXPECT_EQ(org_atom->address, 232U);
+  EXPECT_EQ(current_address_, 232U);
 }
 
 /**
@@ -679,11 +679,11 @@ TEST_F(CoreDirectiveHandlersTest, OrgWithNestedExpression) {
   HandleOrgDirective("($1000+$100)*2", *section_, *symbols_, current_address_);
 
   // Assert
-  ASSERT_EQ(section_->atoms.size(), 1);
+  ASSERT_EQ(section_->atoms.size(), 1UL);
   auto org_atom = std::dynamic_pointer_cast<OrgAtom>(section_->atoms[0]);
   ASSERT_NE(org_atom, nullptr);
-  EXPECT_EQ(org_atom->address, 0x2200);
-  EXPECT_EQ(current_address_, 0x2200);
+  EXPECT_EQ(org_atom->address, 0x2200U);
+  EXPECT_EQ(current_address_, 0x2200U);
 }
 
 /**
@@ -694,11 +694,11 @@ TEST_F(CoreDirectiveHandlersTest, OrgWithComplexNestedExpression) {
   HandleOrgDirective("(100+50)*2-20", *section_, *symbols_, current_address_);
 
   // Assert
-  ASSERT_EQ(section_->atoms.size(), 1);
+  ASSERT_EQ(section_->atoms.size(), 1UL);
   auto org_atom = std::dynamic_pointer_cast<OrgAtom>(section_->atoms[0]);
   ASSERT_NE(org_atom, nullptr);
-  EXPECT_EQ(org_atom->address, 280); // (100+50)*2-20 = 150*2-20 = 300-20 = 280
-  EXPECT_EQ(current_address_, 280);
+  EXPECT_EQ(org_atom->address, 280U); // (100+50)*2-20 = 150*2-20 = 300-20 = 280
+  EXPECT_EQ(current_address_, 280U);
 }
 
 /**
@@ -713,11 +713,11 @@ TEST_F(CoreDirectiveHandlersTest, OrgWithSymbolArithmetic) {
   HandleOrgDirective("BASE+$100", *section_, *symbols_, current_address_);
 
   // Assert
-  ASSERT_EQ(section_->atoms.size(), 1);
+  ASSERT_EQ(section_->atoms.size(), 1UL);
   auto org_atom = std::dynamic_pointer_cast<OrgAtom>(section_->atoms[0]);
   ASSERT_NE(org_atom, nullptr);
-  EXPECT_EQ(org_atom->address, 0x8100);
-  EXPECT_EQ(current_address_, 0x8100);
+  EXPECT_EQ(org_atom->address, 0x8100U);
+  EXPECT_EQ(current_address_, 0x8100U);
 }
 
 /**
@@ -779,11 +779,11 @@ TEST_F(CoreDirectiveHandlersTest, DsWithMultiplicationExpression) {
   HandleDsDirective("10*16", *section_, *symbols_, current_address_);
 
   // Assert
-  ASSERT_EQ(section_->atoms.size(), 1);
+  ASSERT_EQ(section_->atoms.size(), 1UL);
   auto space_atom = std::dynamic_pointer_cast<SpaceAtom>(section_->atoms[0]);
   ASSERT_NE(space_atom, nullptr);
-  EXPECT_EQ(space_atom->count, 160);
-  EXPECT_EQ(current_address_, 0x1000 + 160);
+  EXPECT_EQ(space_atom->count, 160UL);
+  EXPECT_EQ(current_address_, 0x1000U + 160U);
 }
 
 /**
@@ -798,11 +798,11 @@ TEST_F(CoreDirectiveHandlersTest, DsWithSymbolAndArithmetic) {
   HandleDsDirective("PAGE_SIZE*4", *section_, *symbols_, current_address_);
 
   // Assert
-  ASSERT_EQ(section_->atoms.size(), 1);
+  ASSERT_EQ(section_->atoms.size(), 1UL);
   auto space_atom = std::dynamic_pointer_cast<SpaceAtom>(section_->atoms[0]);
   ASSERT_NE(space_atom, nullptr);
-  EXPECT_EQ(space_atom->count, 1024);
-  EXPECT_EQ(current_address_, 0x1000 + 1024);
+  EXPECT_EQ(space_atom->count, 1024UL);
+  EXPECT_EQ(current_address_, 0x1000U + 1024U);
 }
 
 /**
@@ -813,11 +813,11 @@ TEST_F(CoreDirectiveHandlersTest, DsWithDivisionExpression) {
   HandleDsDirective("1024/4", *section_, *symbols_, current_address_);
 
   // Assert
-  ASSERT_EQ(section_->atoms.size(), 1);
+  ASSERT_EQ(section_->atoms.size(), 1UL);
   auto space_atom = std::dynamic_pointer_cast<SpaceAtom>(section_->atoms[0]);
   ASSERT_NE(space_atom, nullptr);
-  EXPECT_EQ(space_atom->count, 256);
-  EXPECT_EQ(current_address_, 0x1000 + 256);
+  EXPECT_EQ(space_atom->count, 256UL);
+  EXPECT_EQ(current_address_, 0x1000U + 256U);
 }
 
 /**
@@ -828,9 +828,9 @@ TEST_F(CoreDirectiveHandlersTest, OrgWithOperatorPrecedence) {
   HandleOrgDirective("$1000+$10*2", *section_, *symbols_, current_address_);
 
   // Assert
-  ASSERT_EQ(section_->atoms.size(), 1);
+  ASSERT_EQ(section_->atoms.size(), 1UL);
   auto org_atom = std::dynamic_pointer_cast<OrgAtom>(section_->atoms[0]);
   ASSERT_NE(org_atom, nullptr);
-  EXPECT_EQ(org_atom->address, 0x1020);
-  EXPECT_EQ(current_address_, 0x1020);
+  EXPECT_EQ(org_atom->address, 0x1020U);
+  EXPECT_EQ(current_address_, 0x1020U);
 }

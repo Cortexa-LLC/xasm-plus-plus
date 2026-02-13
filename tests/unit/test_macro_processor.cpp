@@ -65,10 +65,10 @@ TEST(MacroProcessorTest, DefineMacroWithParameters) {
   const MacroDefinition *macro = processor.GetMacro("MOVB");
   ASSERT_NE(macro, nullptr);
   EXPECT_EQ(macro->name, "MOVB");
-  EXPECT_EQ(macro->parameters.size(), 2);
+  EXPECT_EQ(macro->parameters.size(), 2UL);
   EXPECT_EQ(macro->parameters[0], "SRC");
   EXPECT_EQ(macro->parameters[1], "DEST");
-  EXPECT_EQ(macro->body.size(), 2);
+  EXPECT_EQ(macro->body.size(), 2UL);
 }
 
 /**
@@ -111,8 +111,8 @@ TEST(MacroProcessorTest, GetMacro) {
   const MacroDefinition *macro = processor.GetMacro("TEST");
   ASSERT_NE(macro, nullptr);
   EXPECT_EQ(macro->name, "TEST");
-  EXPECT_EQ(macro->parameters.size(), 2);
-  EXPECT_EQ(macro->body.size(), 2);
+  EXPECT_EQ(macro->parameters.size(), 2UL);
+  EXPECT_EQ(macro->body.size(), 2UL);
 
   // Get non-existing macro
   const MacroDefinition *undefined = processor.GetMacro("NOTFOUND");
@@ -193,7 +193,7 @@ TEST(MacroProcessorTest, MaximumParameters) {
 
   const MacroDefinition *macro = processor.GetMacro("MAXPARAM");
   ASSERT_NE(macro, nullptr);
-  EXPECT_EQ(macro->parameters.size(), 8);
+  EXPECT_EQ(macro->parameters.size(), 8UL);
 }
 
 // ============================================================================
@@ -217,7 +217,7 @@ TEST(MacroProcessorTest, ExpandMacroSimple) {
   std::vector<std::string> expanded = processor.ExpandMacro("DELAY", {});
 
   // Verify expansion
-  ASSERT_EQ(expanded.size(), 3);
+  ASSERT_EQ(expanded.size(), 3UL);
   EXPECT_EQ(expanded[0], "        NOP");
   EXPECT_EQ(expanded[1], "        NOP");
   EXPECT_EQ(expanded[2], "        RTS");
@@ -243,7 +243,7 @@ TEST(MacroProcessorTest, ExpandMacroWithParameters) {
       processor.ExpandMacro("MOVB", {"$80", "$90"});
 
   // Verify parameter substitution
-  ASSERT_EQ(expanded.size(), 2);
+  ASSERT_EQ(expanded.size(), 2UL);
   EXPECT_EQ(expanded[0], "        LDA     $80");
   EXPECT_EQ(expanded[1], "        STA     $90");
 }
@@ -266,7 +266,7 @@ TEST(MacroProcessorTest, ExpandMacroMissingArguments) {
   std::vector<std::string> expanded = processor.ExpandMacro("TEST", {"$FF"});
 
   // Second parameter should be empty
-  ASSERT_EQ(expanded.size(), 2);
+  ASSERT_EQ(expanded.size(), 2UL);
   EXPECT_EQ(expanded[0], "        LDA     $FF");
   EXPECT_EQ(expanded[1], "        STA     "); // Y replaced with empty string
 }
@@ -305,13 +305,13 @@ TEST(MacroProcessorTest, ExpandMacroLocalLabels) {
 
   // First expansion
   std::vector<std::string> expanded1 = processor.ExpandMacro("COPY", {});
-  ASSERT_EQ(expanded1.size(), 4);
+  ASSERT_EQ(expanded1.size(), 4UL);
   EXPECT_EQ(expanded1[0], ".LOOP_001   LDA     ,X+");
   EXPECT_EQ(expanded1[3], "        BNE     .LOOP_001");
 
   // Second expansion - should have different label
   std::vector<std::string> expanded2 = processor.ExpandMacro("COPY", {});
-  ASSERT_EQ(expanded2.size(), 4);
+  ASSERT_EQ(expanded2.size(), 4UL);
   EXPECT_EQ(expanded2[0], ".LOOP_002   LDA     ,X+");
   EXPECT_EQ(expanded2[3], "        BNE     .LOOP_002");
 }
@@ -334,7 +334,7 @@ TEST(MacroProcessorTest, ExpandMacroMultipleLocalLabels) {
   // Expand once
   std::vector<std::string> expanded = processor.ExpandMacro("COMPLEX", {});
 
-  ASSERT_EQ(expanded.size(), 5);
+  ASSERT_EQ(expanded.size(), 5UL);
   EXPECT_EQ(expanded[0], ".START_001  LDA     #0");
   EXPECT_EQ(expanded[1], "        BEQ     .END_001");
   EXPECT_EQ(expanded[2], ".LOOP_001   NOP");
@@ -363,7 +363,7 @@ TEST(MacroProcessorTest, ExpandMacroParameterWordBoundaries) {
   // Expand with argument
   std::vector<std::string> expanded = processor.ExpandMacro("TEST", {"$FF"});
 
-  ASSERT_EQ(expanded.size(), 3);
+  ASSERT_EQ(expanded.size(), 3UL);
   EXPECT_EQ(expanded[0], "        LDA     $FF");   // A substituted
   EXPECT_EQ(expanded[1], "        STA     DATA");  // DATA unchanged
   EXPECT_EQ(expanded[2], "        BRA     LABEL"); // LABEL unchanged
@@ -392,6 +392,6 @@ TEST(MacroProcessorTest, ClearResetsExpansionCounter) {
 
   // Expansion should start at 001 again
   std::vector<std::string> expanded = processor.ExpandMacro("M2", {});
-  ASSERT_EQ(expanded.size(), 1);
+  ASSERT_EQ(expanded.size(), 1UL);
   EXPECT_EQ(expanded[0], ".LOOP_001 NOP");
 }

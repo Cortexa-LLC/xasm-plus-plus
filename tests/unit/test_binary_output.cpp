@@ -47,7 +47,7 @@ TEST(BinaryOutputTest, DataAtomSerialization) {
                               std::istreambuf_iterator<char>());
   file.close();
 
-  ASSERT_EQ(result.size(), 4);
+  ASSERT_EQ(result.size(), 4UL);
   EXPECT_EQ(result[0], 0x01);
   EXPECT_EQ(result[1], 0x02);
   EXPECT_EQ(result[2], 0x03);
@@ -74,7 +74,7 @@ TEST(BinaryOutputTest, OrgDirective) {
                               std::istreambuf_iterator<char>());
   file.close();
 
-  ASSERT_EQ(result.size(), 1);
+  ASSERT_EQ(result.size(), 1UL);
   EXPECT_EQ(result[0], 0xAA);
 
   std::remove("test.bin");
@@ -97,7 +97,7 @@ TEST(BinaryOutputTest, LabelHandling) {
                               std::istreambuf_iterator<char>());
   file.close();
 
-  ASSERT_EQ(result.size(), 1);
+  ASSERT_EQ(result.size(), 1UL);
   EXPECT_EQ(result[0], 0xFF);
 
   std::remove("test.bin");
@@ -118,7 +118,7 @@ TEST(BinaryOutputTest, SpaceAtomSerialization) {
                               std::istreambuf_iterator<char>());
   file.close();
 
-  ASSERT_EQ(result.size(), 4);
+  ASSERT_EQ(result.size(), 4UL);
   EXPECT_EQ(result[0], 0x00);
   EXPECT_EQ(result[1], 0x00);
   EXPECT_EQ(result[2], 0x00);
@@ -146,7 +146,7 @@ TEST(BinaryOutputTest, AlignAtomHandling) {
                               std::istreambuf_iterator<char>());
   file.close();
 
-  ASSERT_EQ(result.size(), 5);
+  ASSERT_EQ(result.size(), 5UL);
   EXPECT_EQ(result[0], 0x01);
   EXPECT_EQ(result[1], 0x00); // Padding
   EXPECT_EQ(result[2], 0x00);
@@ -176,7 +176,7 @@ TEST(BinaryOutputTest, MultipleSections) {
                               std::istreambuf_iterator<char>());
   file.close();
 
-  ASSERT_EQ(result.size(), 2);
+  ASSERT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0xAA);
   EXPECT_EQ(result[1], 0xBB);
 
@@ -202,7 +202,7 @@ TEST(BinaryOutputTest, InstructionSerialization) {
                               std::istreambuf_iterator<char>());
   file.close();
 
-  ASSERT_EQ(result.size(), 2);
+  ASSERT_EQ(result.size(), 2UL);
   EXPECT_EQ(result[0], 0xA9);
   EXPECT_EQ(result[1], 0x42);
 
@@ -254,7 +254,7 @@ TEST(BinaryOutputTest, CompleteProgram) {
                               std::istreambuf_iterator<char>());
   file.close();
 
-  ASSERT_EQ(result.size(), 6);
+  ASSERT_EQ(result.size(), 6UL);
   EXPECT_EQ(result[0], 0xA9); // LDA opcode
   EXPECT_EQ(result[1], 0x42); // LDA operand
   EXPECT_EQ(result[2], 0x01); // Data
