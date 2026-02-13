@@ -66,9 +66,10 @@ void ListingOutput::WriteOutput(const std::string &filename,
 
   std::string page_title = "Assembly Listing";
   bool listing_enabled = true; // LIST/NOLIST control
-  // Note: show_macro_expansion would be used when macro expansion tracking is implemented
-  // For now, this flag is set but not used as macro content is already expanded inline
-  
+  // Note: show_macro_expansion would be used when macro expansion tracking is
+  // implemented For now, this flag is set but not used as macro content is
+  // already expanded inline
+
   // Write header
   file << page_title << "\n";
   file << std::string(page_title.length(), '=') << "\n\n";
@@ -89,7 +90,7 @@ void ListingOutput::WriteOutput(const std::string &filename,
       // Handle listing control directives
       if (auto *ctrl = dynamic_cast<const ListingControlAtom *>(atom.get())) {
         bool output_source = false;
-        
+
         switch (ctrl->control_type) {
         case ListingControlType::Title:
           // Update page title for future pages
@@ -134,7 +135,7 @@ void ListingOutput::WriteOutput(const std::string &filename,
           output_source = true;
           break;
         }
-        
+
         // Output source line for directives if requested
         if (output_source && !ctrl->source_line.empty()) {
           std::string line_num = "     ";
@@ -143,12 +144,13 @@ void ListingOutput::WriteOutput(const std::string &filename,
             oss << std::setw(5) << std::right << ctrl->location.line;
             line_num = oss.str();
           }
-          file << line_num << "                            " << ctrl->source_line << "\n";
+          file << line_num << "                            "
+               << ctrl->source_line << "\n";
         }
-        
+
         continue;
       }
-      
+
       // Skip if listing is disabled
       if (!listing_enabled) {
         // Still need to track address for instructions/data
@@ -159,7 +161,7 @@ void ListingOutput::WriteOutput(const std::string &filename,
         }
         continue;
       }
-      
+
       // Format line number (5 digits, right-aligned)
       std::string line_num = "     ";
       if (atom->location.line > 0) {
@@ -167,7 +169,7 @@ void ListingOutput::WriteOutput(const std::string &filename,
         oss << std::setw(5) << std::right << atom->location.line;
         line_num = oss.str();
       }
-      
+
       // Use source_line if available, otherwise construct from atom data
       std::string source_text;
       if (!atom->source_line.empty()) {
@@ -176,14 +178,15 @@ void ListingOutput::WriteOutput(const std::string &filename,
         // Fallback to constructing from atom type
         if (auto *lbl = dynamic_cast<const LabelAtom *>(atom.get())) {
           source_text = lbl->name + ":";
-        } else if (auto *inst = dynamic_cast<const InstructionAtom *>(atom.get())) {
+        } else if (auto *inst =
+                       dynamic_cast<const InstructionAtom *>(atom.get())) {
           source_text = inst->mnemonic;
           if (!inst->operand.empty()) {
             source_text += " " + inst->operand;
           }
         }
       }
-      
+
       // Handle different atom types
       if (auto *lbl = dynamic_cast<const LabelAtom *>(atom.get())) {
         // Label atom - check if next atom is on same line
@@ -195,7 +198,7 @@ void ListingOutput::WriteOutput(const std::string &filename,
             skip_label = true;
           }
         }
-        
+
         if (!skip_label) {
           // Show standalone label
           file << line_num << "  " << FormatAddress(current_address)

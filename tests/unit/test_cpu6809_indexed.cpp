@@ -704,7 +704,8 @@ TEST_F(Cpu6809IndexedTest, SUBA_Indexed5BitOffset_Negative) {
   auto bytes = cpu.EncodeSUBA(-5, AddressingMode6809::Indexed5BitOffset);
   ASSERT_EQ(2, bytes.size());
   EXPECT_EQ(0xA0, bytes[0]); // SUBA indexed opcode
-  EXPECT_EQ(0x1B, bytes[1]); // Post-byte: 00011011 (-5,X in 5-bit two's complement)
+  EXPECT_EQ(0x1B,
+            bytes[1]); // Post-byte: 00011011 (-5,X in 5-bit two's complement)
 }
 
 TEST_F(Cpu6809IndexedTest, SUBA_Indexed8BitOffset) {

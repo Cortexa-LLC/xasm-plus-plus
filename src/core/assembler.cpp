@@ -177,9 +177,7 @@ void Assembler::AddSection(const Section &section) {
 
 size_t Assembler::GetSectionCount() const { return sections_.size(); }
 
-const std::vector<Section>& Assembler::GetSections() const {
-  return sections_;
-}
+const std::vector<Section> &Assembler::GetSections() const { return sections_; }
 
 void Assembler::Reset() { sections_.clear(); }
 
@@ -305,7 +303,8 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
           // Some instructions need context beyond standard operand values:
           //
           // 1. BRANCH RELAXATION (6502 branches):
-          //    - Branches use 8-bit signed relative offsets (-128 to +127 bytes)
+          //    - Branches use 8-bit signed relative offsets (-128 to +127
+          //    bytes)
           //    - If target is farther, must "relax" into longer sequence:
           //      Short form (2 bytes):  BEQ label
           //      Long form (5 bytes):   BNE skip / JMP label / skip: ...
@@ -315,34 +314,39 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
           //    - 65816 block move instructions take two operands
           //    - Need special parsing for "srcbank,destbank" format
           //
-          // CPU plugin handles ALL special cases - core assembler stays agnostic
+          // CPU plugin handles ALL special cases - core assembler stays
+          // agnostic
           if (cpu_->RequiresSpecialEncoding(mnemonic)) {
             try {
               // Resolve labels in operand before passing to CPU plugin
               // Branch instructions need target address, not label name
               std::string resolved_operand = operand;
               std::string trimmed = Trim(operand);
-              
-              // Check if operand is a label reference (not starting with $ or #)
-              if (!trimmed.empty() && trimmed[0] != '$' && trimmed[0] != '#' && trimmed[0] != '(') {
+
+              // Check if operand is a label reference (not starting with $ or
+              // #)
+              if (!trimmed.empty() && trimmed[0] != '$' && trimmed[0] != '#' &&
+                  trimmed[0] != '(') {
                 // Try to resolve as symbol
                 int64_t symbol_value;
                 if (symbols.Lookup(trimmed, symbol_value)) {
-                  // Convert resolved address to hex string format expected by CPU plugin
+                  // Convert resolved address to hex string format expected by
+                  // CPU plugin
                   std::ostringstream oss;
                   oss << "$" << std::hex << symbol_value;
                   resolved_operand = oss.str();
                 } else {
-                  // Label not yet defined - use placeholder $0000 for first pass
-                  // Multi-pass assembly will resolve on subsequent passes
+                  // Label not yet defined - use placeholder $0000 for first
+                  // pass Multi-pass assembly will resolve on subsequent passes
                   resolved_operand = "$0000";
                 }
               }
-              
+
               // Delegate to CPU plugin for special encoding
               // Plugin handles branch relaxation, multi-byte instructions, etc.
               inst->encoded_bytes = cpu_->EncodeInstructionSpecial(
-                  mnemonic, resolved_operand, static_cast<uint16_t>(current_address));
+                  mnemonic, resolved_operand,
+                  static_cast<uint16_t>(current_address));
 
               // Advance current address past this instruction
               current_address += inst->encoded_bytes.size();

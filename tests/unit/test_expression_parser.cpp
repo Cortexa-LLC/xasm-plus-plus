@@ -53,20 +53,17 @@ public:
    * @brief Get the current assembly location
    * @return Current location counter value
    */
-  int64_t GetCurrentLocation() const override {
-    return current_location_;
-  }
+  int64_t GetCurrentLocation() const override { return current_location_; }
 
   /**
    * @brief Set the current assembly location (for testing)
    * @param loc New location value
    */
-  void SetCurrentLocation(int64_t loc) {
-    current_location_ = loc;
-  }
+  void SetCurrentLocation(int64_t loc) { current_location_ = loc; }
 
   /**
-   * @brief Define a symbol (helper for tests, not part of SymbolTable interface)
+   * @brief Define a symbol (helper for tests, not part of SymbolTable
+   * interface)
    * @param name Symbol name
    * @param type Symbol type (unused in mock)
    * @param value_expr Symbol value expression
@@ -373,7 +370,7 @@ TEST(ExpressionParserTest, SymbolResolution) {
   MockSymbolTable symbols;
   symbols.AddSymbol("start", 0x8000);
   symbols.AddSymbol("end", 0x9000);
-  
+
   ExpressionParser parser(&symbols);
 
   auto expr = parser.Parse("start");
@@ -471,14 +468,14 @@ public:
     // Parse hex with H suffix: 0FFH
     if (token.length() >= 2 && (token.back() == 'H' || token.back() == 'h')) {
       std::string hex_part = token.substr(0, token.length() - 1);
-      
+
       // Check if all characters are valid hex digits
       for (char c : hex_part) {
         if (!std::isxdigit(c)) {
           return false;
         }
       }
-      
+
       // Convert to value
       value = 0;
       for (char c : hex_part) {
@@ -568,7 +565,8 @@ TEST(ExpressionParserTest, CurrentLocationInArithmetic) {
 TEST(ExpressionParserTest, CurrentLocationWithLabel) {
   MockSymbolTable symbols;
   symbols.SetCurrentLocation(0x8010);
-  symbols.Define("START", SymbolType::Label, std::make_shared<LiteralExpr>(0x8000));
+  symbols.Define("START", SymbolType::Label,
+                 std::make_shared<LiteralExpr>(0x8000));
   ExpressionParser parser(&symbols);
 
   // $ - START (size calculation)
@@ -586,7 +584,8 @@ TEST(ExpressionParserTest, CurrentLocationInComplexExpression) {
   ExpressionParser parser(&symbols);
 
   // ($ - START) / 2 - count of words
-  symbols.Define("START", SymbolType::Label, std::make_shared<LiteralExpr>(0x8000));
+  symbols.Define("START", SymbolType::Label,
+                 std::make_shared<LiteralExpr>(0x8000));
   auto expr = parser.Parse("($ - START) / 2");
   EXPECT_EQ(expr->Evaluate(symbols), 33); // 66 / 2 = 33
 

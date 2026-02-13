@@ -2,15 +2,16 @@
  * @file merlin_directives.cpp
  * @brief Implementation of Merlin-specific directive handlers
  *
- * Extracted from MerlinSyntaxParser as part of God-Class Phase 6c.1 refactoring.
+ * Extracted from MerlinSyntaxParser as part of God-Class Phase 6c.1
+ * refactoring.
  */
 
 #include "xasm++/directives/merlin_directives.h"
-#include "xasm++/directives/directive_constants.h"
-#include "xasm++/syntax/directive_registry.h"
 #include "xasm++/atom.h"
 #include "xasm++/cpu/cpu_6502.h"
+#include "xasm++/directives/directive_constants.h"
 #include "xasm++/expression.h"
+#include "xasm++/syntax/directive_registry.h"
 #include "xasm++/syntax/merlin_syntax.h"
 #include "xasm++/util/string_utils.h"
 #include <algorithm>
@@ -39,8 +40,7 @@ using xasm::util::Trim;
  * @return Formatted error message
  */
 static std::string FormatError(const std::string &message,
-                               const std::string &file = "",
-                               int line = 0) {
+                               const std::string &file = "", int line = 0) {
   if (!file.empty() && line > 0) {
     std::ostringstream oss;
     oss << file << ":" << line << ": error: " << message;
@@ -323,7 +323,8 @@ void HandleFlsDirective(const std::string &operand, Section &section,
 // ============================================================================
 
 void HandleDaDirective(const std::string &operand, Section &section,
-                       ConcreteSymbolTable &symbols, uint32_t &current_address) {
+                       ConcreteSymbolTable &symbols,
+                       uint32_t &current_address) {
   // DA (Define Address) - same as DW, word definitions in little-endian
   // Delegate to core DW handler
   extern void HandleDwDirective(const std::string &operand, Section &section,
@@ -343,8 +344,8 @@ void HandleEndDirective(bool &end_directive_seen) {
 
 void HandleSavDirective(const std::string & /* operand */) {
   // SAV filename - Save output filename directive
-  // This is a no-op for now - output filename is controlled by command-line args
-  // No state changed, no atoms created
+  // This is a no-op for now - output filename is controlled by command-line
+  // args No state changed, no atoms created
 }
 
 void HandleXcDirective(const std::string &operand, Cpu6502 *cpu) {
@@ -470,9 +471,9 @@ void HandleRevDirective(const std::string &label, const std::string &operand,
 // Block Control Directives
 // ============================================================================
 
-void HandleDumDirective(const std::string &operand, ConcreteSymbolTable &symbols,
-                        bool &in_dum_block, uint32_t &dum_address,
-                        const DirectiveContext *ctx) {
+void HandleDumDirective(const std::string &operand,
+                        ConcreteSymbolTable &symbols, bool &in_dum_block,
+                        uint32_t &dum_address, const DirectiveContext *ctx) {
   // DUM (Dummy section) - start variable definition block
   in_dum_block = true;
 
@@ -547,147 +548,166 @@ void HandleUsrDirective() {
 void RegisterMerlinDirectiveHandlers(DirectiveRegistry &registry,
                                      MerlinSyntaxParser *parser) {
   // HEX - Define hex bytes
-  registry.Register(directives::HEX,
-    [](const std::string &label, const std::string &operand, DirectiveContext &ctx) {
-      (void)label; // HEX doesn't use label
-      HandleHexDirective(operand, *ctx.section, *ctx.current_address);
-    });
+  registry.Register(directives::HEX, [](const std::string &label,
+                                        const std::string &operand,
+                                        DirectiveContext &ctx) {
+    (void)label; // HEX doesn't use label
+    HandleHexDirective(operand, *ctx.section, *ctx.current_address);
+  });
 
   // ASC - ASCII string with high bit set
-  registry.Register(directives::ASC,
-    [](const std::string &label, const std::string &operand, DirectiveContext &ctx) {
-      (void)label; // ASC doesn't use label (could be added later)
-      HandleAscDirective(operand, *ctx.section, *ctx.current_address);
-    });
+  registry.Register(directives::ASC, [](const std::string &label,
+                                        const std::string &operand,
+                                        DirectiveContext &ctx) {
+    (void)label; // ASC doesn't use label (could be added later)
+    HandleAscDirective(operand, *ctx.section, *ctx.current_address);
+  });
 
   // DCI - DCI string (last char with high bit set)
-  registry.Register(directives::DCI,
-    [](const std::string &label, const std::string &operand, DirectiveContext &ctx) {
-      (void)label;
-      HandleDciDirective(operand, *ctx.section, *ctx.current_address);
-    });
+  registry.Register(directives::DCI, [](const std::string &label,
+                                        const std::string &operand,
+                                        DirectiveContext &ctx) {
+    (void)label;
+    HandleDciDirective(operand, *ctx.section, *ctx.current_address);
+  });
 
   // INV - Inverse ASCII (all chars with high bit set)
-  registry.Register(directives::INV,
-    [](const std::string &label, const std::string &operand, DirectiveContext &ctx) {
-      (void)label;
-      HandleInvDirective(operand, *ctx.section, *ctx.current_address);
-    });
+  registry.Register(directives::INV, [](const std::string &label,
+                                        const std::string &operand,
+                                        DirectiveContext &ctx) {
+    (void)label;
+    HandleInvDirective(operand, *ctx.section, *ctx.current_address);
+  });
 
   // FLS - Flash ASCII (alternating high bit)
-  registry.Register(directives::FLS,
-    [](const std::string &label, const std::string &operand, DirectiveContext &ctx) {
-      (void)label;
-      HandleFlsDirective(operand, *ctx.section, *ctx.current_address);
-    });
+  registry.Register(directives::FLS, [](const std::string &label,
+                                        const std::string &operand,
+                                        DirectiveContext &ctx) {
+    (void)label;
+    HandleFlsDirective(operand, *ctx.section, *ctx.current_address);
+  });
 
   // DA - Define address (word)
   registry.Register(directives::DA,
-    [](const std::string &label, const std::string &operand, DirectiveContext &ctx) {
-      (void)label;
-      HandleDaDirective(operand, *ctx.section, *ctx.symbols, *ctx.current_address);
-    });
+                    [](const std::string &label, const std::string &operand,
+                       DirectiveContext &ctx) {
+                      (void)label;
+                      HandleDaDirective(operand, *ctx.section, *ctx.symbols,
+                                        *ctx.current_address);
+                    });
 
   // END - End of source
-  registry.Register(directives::END,
-    [parser](const std::string &label, const std::string &operand, DirectiveContext &ctx) {
-      (void)label;
-      (void)operand;
-      (void)ctx;
-      if (parser) {
-        HandleEndDirective(parser->end_directive_seen_);
-      }
-    });
+  registry.Register(directives::END, [parser](const std::string &label,
+                                              const std::string &operand,
+                                              DirectiveContext &ctx) {
+    (void)label;
+    (void)operand;
+    (void)ctx;
+    if (parser) {
+      HandleEndDirective(parser->end_directive_seen_);
+    }
+  });
 
   // SAV - Save output filename (no-op)
   registry.Register(directives::SAV,
-    [](const std::string &label, const std::string &operand, DirectiveContext &ctx) {
-      (void)label;
-      (void)ctx;
-      HandleSavDirective(operand);
-    });
+                    [](const std::string &label, const std::string &operand,
+                       DirectiveContext &ctx) {
+                      (void)label;
+                      (void)ctx;
+                      HandleSavDirective(operand);
+                    });
 
   // XC - Toggle 65C02 mode
-  registry.Register(directives::XC,
-    [parser](const std::string &label, const std::string &operand, DirectiveContext &ctx) {
-      (void)label;
-      (void)ctx;
-      if (parser) {
-        HandleXcDirective(operand, parser->cpu_);
-      }
-    });
+  registry.Register(directives::XC, [parser](const std::string &label,
+                                             const std::string &operand,
+                                             DirectiveContext &ctx) {
+    (void)label;
+    (void)ctx;
+    if (parser) {
+      HandleXcDirective(operand, parser->cpu_);
+    }
+  });
 
   // MX - Set 65816 register widths
   registry.Register(directives::MX,
-    [](const std::string &label, const std::string &operand, DirectiveContext &ctx) {
-      (void)label;
-      (void)ctx;
-      HandleMxDirective(operand);
-    });
+                    [](const std::string &label, const std::string &operand,
+                       DirectiveContext &ctx) {
+                      (void)label;
+                      (void)ctx;
+                      HandleMxDirective(operand);
+                    });
 
   // REV - Reverse ASCII string
-  registry.Register(directives::REV,
-    [](const std::string &label, const std::string &operand, DirectiveContext &ctx) {
-      if (label.empty()) {
-        throw std::runtime_error(FormatError("REV requires a label", "", 0));
-      }
-      HandleRevDirective(label, operand, *ctx.section, *ctx.symbols, *ctx.current_address);
-    });
+  registry.Register(directives::REV, [](const std::string &label,
+                                        const std::string &operand,
+                                        DirectiveContext &ctx) {
+    if (label.empty()) {
+      throw std::runtime_error(FormatError("REV requires a label", "", 0));
+    }
+    HandleRevDirective(label, operand, *ctx.section, *ctx.symbols,
+                       *ctx.current_address);
+  });
 
   // DUM - Start dummy section
-  registry.Register(directives::DUM,
-    [parser](const std::string &label, const std::string &operand, DirectiveContext &ctx) {
-      (void)label;
-      if (parser) {
-        HandleDumDirective(operand, *ctx.symbols, parser->in_dum_block_,
-                          parser->dum_address_, &ctx);
-      }
-    });
+  registry.Register(directives::DUM, [parser](const std::string &label,
+                                              const std::string &operand,
+                                              DirectiveContext &ctx) {
+    (void)label;
+    if (parser) {
+      HandleDumDirective(operand, *ctx.symbols, parser->in_dum_block_,
+                         parser->dum_address_, &ctx);
+    }
+  });
 
   // DEND - End dummy section
-  registry.Register(directives::DEND,
-    [parser](const std::string &label, const std::string &operand, DirectiveContext &ctx) {
-      (void)label;
-      (void)operand;
-      (void)ctx;
-      if (parser) {
-        HandleDendDirective(parser->in_dum_block_);
-      }
-    });
+  registry.Register(directives::DEND, [parser](const std::string &label,
+                                               const std::string &operand,
+                                               DirectiveContext &ctx) {
+    (void)label;
+    (void)operand;
+    (void)ctx;
+    if (parser) {
+      HandleDendDirective(parser->in_dum_block_);
+    }
+  });
 
   // LST - Listing control (no-op)
   registry.Register(directives::LST,
-    [](const std::string &label, const std::string &operand, DirectiveContext &ctx) {
-      (void)label;
-      (void)ctx;
-      HandleLstDirective(operand);
-    });
+                    [](const std::string &label, const std::string &operand,
+                       DirectiveContext &ctx) {
+                      (void)label;
+                      (void)ctx;
+                      HandleLstDirective(operand);
+                    });
 
   // LSTDO - List during DO blocks (no-op)
   registry.Register(directives::LSTDO,
-    [](const std::string &label, const std::string &operand, DirectiveContext &ctx) {
-      (void)label;
-      (void)operand;
-      (void)ctx;
-      HandleLstdoDirective();
-    });
+                    [](const std::string &label, const std::string &operand,
+                       DirectiveContext &ctx) {
+                      (void)label;
+                      (void)operand;
+                      (void)ctx;
+                      HandleLstdoDirective();
+                    });
 
   // TR - Truncate listing (no-op)
   registry.Register(directives::TR,
-    [](const std::string &label, const std::string &operand, DirectiveContext &ctx) {
-      (void)label;
-      (void)ctx;
-      HandleTrDirective(operand);
-    });
+                    [](const std::string &label, const std::string &operand,
+                       DirectiveContext &ctx) {
+                      (void)label;
+                      (void)ctx;
+                      HandleTrDirective(operand);
+                    });
 
   // USR - User-defined subroutine (no-op)
   registry.Register(directives::USR,
-    [](const std::string &label, const std::string &operand, DirectiveContext &ctx) {
-      (void)label;
-      (void)operand;
-      (void)ctx;
-      HandleUsrDirective();
-    });
+                    [](const std::string &label, const std::string &operand,
+                       DirectiveContext &ctx) {
+                      (void)label;
+                      (void)operand;
+                      (void)ctx;
+                      HandleUsrDirective();
+                    });
 
   // LUP - Loop assembly (handled directly by MerlinSyntaxParser)
 }

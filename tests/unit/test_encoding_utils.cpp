@@ -9,9 +9,9 @@
  * - Vector helpers (prefix construction)
  */
 
-#include <gtest/gtest.h>
 #include "xasm++/cpu/encoding_utils.h"
 #include <array>
+#include <gtest/gtest.h>
 #include <vector>
 
 using namespace xasm::encoding;
@@ -22,8 +22,8 @@ using namespace xasm::encoding;
 
 TEST(EncodingUtilsTest, ToLittleEndian16_StandardValue) {
   auto result = ToLittleEndian16(0x1234);
-  EXPECT_EQ(result[0], 0x34);  // Low byte first
-  EXPECT_EQ(result[1], 0x12);  // High byte second
+  EXPECT_EQ(result[0], 0x34); // Low byte first
+  EXPECT_EQ(result[1], 0x12); // High byte second
 }
 
 TEST(EncodingUtilsTest, ToLittleEndian16_EdgeCase_0x0000) {
@@ -52,8 +52,8 @@ TEST(EncodingUtilsTest, ToLittleEndian16_EdgeCase_0xFF00) {
 
 TEST(EncodingUtilsTest, ToBigEndian16_StandardValue) {
   auto result = ToBigEndian16(0x1234);
-  EXPECT_EQ(result[0], 0x12);  // High byte first
-  EXPECT_EQ(result[1], 0x34);  // Low byte second
+  EXPECT_EQ(result[0], 0x12); // High byte first
+  EXPECT_EQ(result[1], 0x34); // Low byte second
 }
 
 TEST(EncodingUtilsTest, ToBigEndian16_EdgeCase_0x0000) {
@@ -82,9 +82,9 @@ TEST(EncodingUtilsTest, ToBigEndian16_EdgeCase_0xFF00) {
 
 TEST(EncodingUtilsTest, ToLittleEndian24_StandardValue) {
   auto result = ToLittleEndian24(0x123456);
-  EXPECT_EQ(result[0], 0x56);  // Low byte
-  EXPECT_EQ(result[1], 0x34);  // Middle byte
-  EXPECT_EQ(result[2], 0x12);  // High byte
+  EXPECT_EQ(result[0], 0x56); // Low byte
+  EXPECT_EQ(result[1], 0x34); // Middle byte
+  EXPECT_EQ(result[2], 0x12); // High byte
 }
 
 TEST(EncodingUtilsTest, ToLittleEndian24_EdgeCase_0x000000) {
@@ -103,9 +103,9 @@ TEST(EncodingUtilsTest, ToLittleEndian24_EdgeCase_0xFFFFFF) {
 
 TEST(EncodingUtilsTest, ToLittleEndian24_TruncatesHighByte) {
   auto result = ToLittleEndian24(0xAB123456);
-  EXPECT_EQ(result[0], 0x56);  // Low byte
-  EXPECT_EQ(result[1], 0x34);  // Middle byte
-  EXPECT_EQ(result[2], 0x12);  // High byte (0xAB truncated)
+  EXPECT_EQ(result[0], 0x56); // Low byte
+  EXPECT_EQ(result[1], 0x34); // Middle byte
+  EXPECT_EQ(result[2], 0x12); // High byte (0xAB truncated)
 }
 
 // ============================================================================

@@ -4,7 +4,7 @@
  *
  * This file defines segment management for Z80 assemblers, supporting:
  * - CSEG: Code segment
- * - DSEG: Data segment  
+ * - DSEG: Data segment
  * - ASEG: Absolute segment
  * - COMMON /name/: Named common blocks
  *
@@ -148,13 +148,12 @@ public:
 private:
   /// Segment state: tracks address for a single segment
   struct SegmentState {
-    uint64_t address = 0; ///< Current address counter
-    bool has_origin =
-        false; ///< True if ORG has been set for this segment
+    uint64_t address = 0;    ///< Current address counter
+    bool has_origin = false; ///< True if ORG has been set for this segment
   };
 
-  SegmentType current_segment_;      ///< Currently active segment type
-  std::string current_common_name_;  ///< Current COMMON block name (if any)
+  SegmentType current_segment_;     ///< Currently active segment type
+  std::string current_common_name_; ///< Current COMMON block name (if any)
 
   /// Address counters for each standard segment type
   std::map<SegmentType, SegmentState> segments_;

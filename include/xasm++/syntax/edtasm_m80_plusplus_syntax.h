@@ -221,7 +221,7 @@ private:
  */
 class EdtasmM80PlusPlusSyntaxParser {
   // Friend declarations for directive handlers
-  friend void RegisterEdtasmDirectiveHandlers(DirectiveRegistry& registry);
+  friend void RegisterEdtasmDirectiveHandlers(DirectiveRegistry &registry);
 
 public:
   /**
@@ -247,13 +247,15 @@ public:
    * @brief Set listing title
    * @param title New listing title
    */
-  void SetListingTitle(const std::string& title) { listing_title_ = title; }
+  void SetListingTitle(const std::string &title) { listing_title_ = title; }
 
   /**
    * @brief Set listing subtitle
    * @param subtitle New listing subtitle
    */
-  void SetListingSubtitle(const std::string& subtitle) { listing_subtitle_ = subtitle; }
+  void SetListingSubtitle(const std::string &subtitle) {
+    listing_subtitle_ = subtitle;
+  }
 
   /**
    * @brief Enable listing output
@@ -275,13 +277,13 @@ public:
    * @brief Set module name
    * @param name Module name from NAME directive
    */
-  void SetModuleName(const std::string& name) { module_name_ = name; }
+  void SetModuleName(const std::string &name) { module_name_ = name; }
 
   /**
    * @brief Get segment manager
    * @return Reference to segment manager
    */
-  SegmentManager& GetSegmentManager() { return segment_manager_; }
+  SegmentManager &GetSegmentManager() { return segment_manager_; }
 
   /**
    * @brief Set number radix
@@ -357,7 +359,8 @@ public:
     bool should_emit;   ///< True if code should be emitted
   };
 
-  std::vector<ConditionalBlock> conditional_stack_; ///< Stack of nested conditionals
+  std::vector<ConditionalBlock>
+      conditional_stack_; ///< Stack of nested conditionals
 
   /**
    * @brief Macro definition
@@ -365,10 +368,10 @@ public:
    * Stores a macro body for later expansion.
    */
   struct MacroDefinition {
-    std::string name;                 ///< Macro name
-    std::vector<std::string> body;    ///< Lines of macro body (unexpanded)
-    std::vector<std::string> params;  ///< Parameter names
-    std::vector<std::string> locals;  ///< LOCAL symbols in macro
+    std::string name;                ///< Macro name
+    std::vector<std::string> body;   ///< Lines of macro body (unexpanded)
+    std::vector<std::string> params; ///< Parameter names
+    std::vector<std::string> locals; ///< LOCAL symbols in macro
   };
 
   /**
@@ -379,22 +382,28 @@ public:
   enum class RepeatType { NONE, REPT, IRP, IRPC };
 
   // Macro state (accessible to directive handlers)
-  bool in_macro_definition_ = false;      ///< True if defining a macro
-  MacroDefinition current_macro_; ///< Current macro being defined
+  bool in_macro_definition_ = false; ///< True if defining a macro
+  MacroDefinition current_macro_;    ///< Current macro being defined
   std::unordered_map<std::string, MacroDefinition> macros_; ///< Defined macros
   int macro_expansion_depth_ = 0; ///< Prevent infinite recursion
-  int macro_unique_counter_ = 0; ///< Counter for LOCAL label uniqueness
-  int next_macro_unique_id_ = 0; ///< ID for next macro expansion (for LOCAL labels)
-  bool exitm_triggered_ = false; ///< True if EXITM was encountered in current macro expansion
-  int macro_nesting_depth_ = 0; ///< Track nesting depth when capturing macro body
-  std::set<std::string> macro_local_labels_; ///< Set of current macro LOCAL labels (unique names) that should not create atoms
-  
+  int macro_unique_counter_ = 0;  ///< Counter for LOCAL label uniqueness
+  int next_macro_unique_id_ =
+      0; ///< ID for next macro expansion (for LOCAL labels)
+  bool exitm_triggered_ =
+      false; ///< True if EXITM was encountered in current macro expansion
+  int macro_nesting_depth_ =
+      0; ///< Track nesting depth when capturing macro body
+  std::set<std::string>
+      macro_local_labels_; ///< Set of current macro LOCAL labels (unique names)
+                           ///< that should not create atoms
+
   // Repeat block state (REPT/IRP/IRPC) (accessible to directive handlers)
-  RepeatType in_repeat_block_ = RepeatType::NONE;    ///< Type of repeat block being captured
-  int rept_count_ = 0;                ///< Repeat count for REPT
+  RepeatType in_repeat_block_ =
+      RepeatType::NONE; ///< Type of repeat block being captured
+  int rept_count_ = 0;  ///< Repeat count for REPT
   std::vector<std::string> repeat_body_; ///< Lines in repeat block
-  int repeat_nesting_depth_ = 0; ///< Track nested REPT/IRP/IRPC blocks
-  std::string repeat_param_;      ///< Parameter name for IRP/IRPC
+  int repeat_nesting_depth_ = 0;         ///< Track nested REPT/IRP/IRPC blocks
+  std::string repeat_param_;             ///< Parameter name for IRP/IRPC
   std::vector<std::string> repeat_values_; ///< Values for IRP iteration
 
   /**
@@ -412,9 +421,10 @@ public:
    * Used by IRP/IRPC directive handlers for parameter substitution.
    * @note Internal use - called by directive handlers
    */
-  std::string SubstituteMacroParameters(const std::string &line,
-                                        const std::vector<std::string> &param_names,
-                                        const std::vector<std::string> &param_values);
+  std::string
+  SubstituteMacroParameters(const std::string &line,
+                            const std::vector<std::string> &param_names,
+                            const std::vector<std::string> &param_values);
 
 private:
   /**
@@ -439,27 +449,27 @@ private:
   int current_line_;         ///< Current line number
 
   // Listing control state
-  bool listing_enabled_;          ///< True if listing output enabled
-  std::string listing_title_;     ///< Listing title (TITLE directive)
-  std::string listing_subtitle_;  ///< Listing subtitle (SUBTTL directive)
-  std::string module_name_;       ///< Module name (NAME directive)
+  bool listing_enabled_;         ///< True if listing output enabled
+  std::string listing_title_;    ///< Listing title (TITLE directive)
+  std::string listing_subtitle_; ///< Listing subtitle (SUBTTL directive)
+  std::string module_name_;      ///< Module name (NAME directive)
 
   // Special features state
-  int current_radix_;  ///< Current number base (2-16, default 10)
+  int current_radix_; ///< Current number base (2-16, default 10)
 
   CpuZ80 *cpu_ = nullptr; ///< CPU plugin for undocumented instructions
 
   DirectiveRegistry directive_registry_; ///< Registry for directive handlers
-  SegmentManager segment_manager_;       ///< Manages segments (CSEG/DSEG/ASEG/COMMON)
+  SegmentManager segment_manager_; ///< Manages segments (CSEG/DSEG/ASEG/COMMON)
 
   // Expression and number parsing
-  Z80NumberParser z80_number_parser_;      ///< Z80-specific number parser
+  Z80NumberParser z80_number_parser_; ///< Z80-specific number parser
 
   // Parsing helpers
   void InitializeDirectiveRegistry(); ///< Register all directives
   std::string StripComments(const std::string &line);
   std::string Trim(const std::string &str);
-  
+
   // Macro helpers
   std::string MakeLocalLabelUnique(const std::string &line,
                                    const std::vector<std::string> &local_labels,

@@ -38,7 +38,7 @@
 #pragma once
 
 #include "xasm++/section.h"
-#include "xasm++/symbol.h"  // For ConcreteSymbolTable
+#include "xasm++/symbol.h" // For ConcreteSymbolTable
 #include <cstdint>
 #include <string>
 
@@ -101,7 +101,8 @@ void HandleOrgDirective(const std::string &operand, Section &section,
  * @endcode
  */
 void HandleEquDirective(const std::string &label, const std::string &operand,
-                        ConcreteSymbolTable &symbols, const DirectiveContext *ctx = nullptr);
+                        ConcreteSymbolTable &symbols,
+                        const DirectiveContext *ctx = nullptr);
 
 /**
  * @brief Handle DB directive - define byte data

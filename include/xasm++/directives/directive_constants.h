@@ -25,200 +25,200 @@ namespace directives {
 // ============================================================================
 
 /// ORG directive - Set program counter to specific address
-constexpr const char* ORG = "ORG";
+constexpr const char *ORG = "ORG";
 
 // ============================================================================
 // Symbol Definition Directives
 // ============================================================================
 
 /// EQU directive - Define constant symbol
-constexpr const char* EQU = "EQU";
+constexpr const char *EQU = "EQU";
 
 /// SET directive - Define variable symbol (allows redefinition)
-constexpr const char* SET = "SET";
+constexpr const char *SET = "SET";
 
 // ============================================================================
 // Data Definition Directives
 // ============================================================================
 
 /// DB directive - Define byte data (primary name)
-constexpr const char* DB = "DB";
+constexpr const char *DB = "DB";
 
 /// DEFB directive - Define byte data (alias for DB)
-constexpr const char* DEFB = "DEFB";
+constexpr const char *DEFB = "DEFB";
 
 /// DFB directive - Define byte data (Merlin alias for DB)
-constexpr const char* DFB = "DFB";
+constexpr const char *DFB = "DFB";
 
 /// BYTE directive - Define byte data (alias for DB)
-constexpr const char* BYTE = "BYTE";
+constexpr const char *BYTE = "BYTE";
 
 /// DW directive - Define word data (primary name)
-constexpr const char* DW = "DW";
+constexpr const char *DW = "DW";
 
 /// DEFW directive - Define word data (alias for DW)
-constexpr const char* DEFW = "DEFW";
+constexpr const char *DEFW = "DEFW";
 
 /// WORD directive - Define word data (alias for DW)
-constexpr const char* WORD = "WORD";
+constexpr const char *WORD = "WORD";
 
 // ============================================================================
 // FLEX ASM09-Specific Data Directives
 // ============================================================================
 
 /// FCB directive - Form Constant Byte (FLEX ASM09)
-constexpr const char* FCB = "FCB";
+constexpr const char *FCB = "FCB";
 
 /// FDB directive - Form Double Byte (FLEX ASM09 16-bit word)
-constexpr const char* FDB = "FDB";
+constexpr const char *FDB = "FDB";
 
 /// FCC directive - Form Constant Characters (FLEX ASM09 string)
-constexpr const char* FCC = "FCC";
+constexpr const char *FCC = "FCC";
 
 // ============================================================================
 // Space Reservation Directives
 // ============================================================================
 
 /// DS directive - Define space / reserve bytes (primary name)
-constexpr const char* DS = "DS";
+constexpr const char *DS = "DS";
 
 /// DEFS directive - Define space (alias for DS)
-constexpr const char* DEFS = "DEFS";
+constexpr const char *DEFS = "DEFS";
 
 /// BLOCK directive - Define space (alias for DS)
-constexpr const char* BLOCK = "BLOCK";
+constexpr const char *BLOCK = "BLOCK";
 
 /// RMB directive - Reserve memory bytes (alias for DS)
-constexpr const char* RMB = "RMB";
+constexpr const char *RMB = "RMB";
 
 // ============================================================================
 // FLEX ASM09-Specific Control Directives
 // ============================================================================
 
 /// SETDP directive - Set Direct Page register (FLEX ASM09)
-constexpr const char* SETDP = "SETDP";
+constexpr const char *SETDP = "SETDP";
 
 /// NAM directive - Set program name/title (FLEX ASM09)
-constexpr const char* NAM = "NAM";
+constexpr const char *NAM = "NAM";
 
 /// TTL directive - Set title (FLEX ASM09 alias for NAM)
-constexpr const char* TTL = "TTL";
+constexpr const char *TTL = "TTL";
 
 /// STTL directive - Set subtitle (FLEX ASM09)
-constexpr const char* STTL = "STTL";
+constexpr const char *STTL = "STTL";
 
 /// PAGE directive - Form feed / new page (FLEX ASM09)
-constexpr const char* PAGE = "PAGE";
+constexpr const char *PAGE = "PAGE";
 
 /// SPC directive - Space lines (FLEX ASM09)
-constexpr const char* SPC = "SPC";
+constexpr const char *SPC = "SPC";
 
 /// IFC directive - If Condition (FLEX ASM09 conditional assembly)
-constexpr const char* IFC = "IFC";
+constexpr const char *IFC = "IFC";
 
 /// ENDC directive - End Conditional (FLEX ASM09)
-constexpr const char* ENDC = "ENDC";
+constexpr const char *ENDC = "ENDC";
 
 /// RPT directive - Repeat block (FLEX ASM09)
-constexpr const char* RPT = "RPT";
+constexpr const char *RPT = "RPT";
 
 /// ENDR directive - End Repeat block (FLEX ASM09)
-constexpr const char* ENDR = "ENDR";
+constexpr const char *ENDR = "ENDR";
 
 // ============================================================================
 // Expression Functions
 // ============================================================================
 
 /// LOW function - Extract low byte of value
-constexpr const char* LOW_FUNC = "LOW";
+constexpr const char *LOW_FUNC = "LOW";
 
 /// HIGH function - Extract high byte of value
-constexpr const char* HIGH_FUNC = "HIGH";
+constexpr const char *HIGH_FUNC = "HIGH";
 
 // ============================================================================
 // Merlin-Specific Directives
 // ============================================================================
 
 /// HEX directive - Define hex bytes
-constexpr const char* HEX = "HEX";
+constexpr const char *HEX = "HEX";
 
 /// ASC directive - ASCII string with high bit set
-constexpr const char* ASC = "ASC";
+constexpr const char *ASC = "ASC";
 
 /// DCI directive - DCI string (last char with high bit set)
-constexpr const char* DCI = "DCI";
+constexpr const char *DCI = "DCI";
 
 /// INV directive - Inverse ASCII (all chars with high bit set)
-constexpr const char* INV = "INV";
+constexpr const char *INV = "INV";
 
 /// FLS directive - Flash ASCII (alternating high bit)
-constexpr const char* FLS = "FLS";
+constexpr const char *FLS = "FLS";
 
 /// DA directive - Define address (same as DW)
-constexpr const char* DA = "DA";
+constexpr const char *DA = "DA";
 
 /// END directive - End of source
-constexpr const char* END = "END";
+constexpr const char *END = "END";
 
 /// SAV directive - Save output filename
-constexpr const char* SAV = "SAV";
+constexpr const char *SAV = "SAV";
 
 /// XC directive - Toggle 65C02 mode
-constexpr const char* XC = "XC";
+constexpr const char *XC = "XC";
 
 /// ON option - Enable option
-constexpr const char* ON = "ON";
+constexpr const char *ON = "ON";
 
 /// OFF option - Disable option
-constexpr const char* OFF = "OFF";
+constexpr const char *OFF = "OFF";
 
 /// MX directive - Set 65816 register widths
-constexpr const char* MX = "MX";
+constexpr const char *MX = "MX";
 
 /// REV directive - Reverse ASCII string
-constexpr const char* REV = "REV";
+constexpr const char *REV = "REV";
 
 /// DUM directive - Start dummy section
-constexpr const char* DUM = "DUM";
+constexpr const char *DUM = "DUM";
 
 /// DEND directive - End dummy section
-constexpr const char* DEND = "DEND";
+constexpr const char *DEND = "DEND";
 
 /// LST directive - Listing control
-constexpr const char* LST = "LST";
+constexpr const char *LST = "LST";
 
 /// LSTDO directive - List during DO blocks
-constexpr const char* LSTDO = "LSTDO";
+constexpr const char *LSTDO = "LSTDO";
 
 /// TR directive - Truncate listing
-constexpr const char* TR = "TR";
+constexpr const char *TR = "TR";
 
 /// USR directive - User-defined subroutine
-constexpr const char* USR = "USR";
+constexpr const char *USR = "USR";
 
 /// LUP directive - Loop assembly
-constexpr const char* LUP = "LUP";
+constexpr const char *LUP = "LUP";
 
 /// DO directive - Start conditional assembly block
-constexpr const char* DO = "DO";
+constexpr const char *DO = "DO";
 
 /// FIN directive - End DO block
-constexpr const char* FIN = "FIN";
+constexpr const char *FIN = "FIN";
 
 /// PUT directive - Include source file
-constexpr const char* PUT = "PUT";
+constexpr const char *PUT = "PUT";
 
 /// MAC directive - Define macro
-constexpr const char* MAC = "MAC";
+constexpr const char *MAC = "MAC";
 
 /// EOM directive - End of macro definition
-constexpr const char* EOM = "EOM";
+constexpr const char *EOM = "EOM";
 
 /// MACRO_END_ALT directive - Alternative end of macro definition (Merlin style)
-constexpr const char* MACRO_END_ALT = "<<<";
+constexpr const char *MACRO_END_ALT = "<<<";
 
 /// PMC directive - Print macro call
-constexpr const char* PMC = "PMC";
+constexpr const char *PMC = "PMC";
 
 // ============================================================================
 // EDTASM-M80++ Specific Directives
@@ -226,144 +226,144 @@ constexpr const char* PMC = "PMC";
 
 // Segment Control
 /// ASEG directive - Absolute segment
-constexpr const char* ASEG = "ASEG";
+constexpr const char *ASEG = "ASEG";
 
 /// CSEG directive - Code segment
-constexpr const char* CSEG = "CSEG";
+constexpr const char *CSEG = "CSEG";
 
 /// DSEG directive - Data segment
-constexpr const char* DSEG = "DSEG";
+constexpr const char *DSEG = "DSEG";
 
 // Conditional Assembly
 /// IF directive - Start conditional block
-constexpr const char* IF = "IF";
+constexpr const char *IF = "IF";
 
 /// ELSE directive - Else clause
-constexpr const char* ELSE = "ELSE";
+constexpr const char *ELSE = "ELSE";
 
 /// ENDIF directive - End conditional block
-constexpr const char* ENDIF = "ENDIF";
+constexpr const char *ENDIF = "ENDIF";
 
 /// IFDEF directive - If symbol defined
-constexpr const char* IFDEF = "IFDEF";
+constexpr const char *IFDEF = "IFDEF";
 
 /// IFNDEF directive - If symbol not defined
-constexpr const char* IFNDEF = "IFNDEF";
+constexpr const char *IFNDEF = "IFNDEF";
 
 /// IFEQ directive - If equal
-constexpr const char* IFEQ = "IFEQ";
+constexpr const char *IFEQ = "IFEQ";
 
 /// IFNE directive - If not equal
-constexpr const char* IFNE = "IFNE";
+constexpr const char *IFNE = "IFNE";
 
 /// IFLT directive - If less than
-constexpr const char* IFLT = "IFLT";
+constexpr const char *IFLT = "IFLT";
 
 /// IFGT directive - If greater than
-constexpr const char* IFGT = "IFGT";
+constexpr const char *IFGT = "IFGT";
 
 /// IFLE directive - If less than or equal
-constexpr const char* IFLE = "IFLE";
+constexpr const char *IFLE = "IFLE";
 
 /// IFGE directive - If greater than or equal
-constexpr const char* IFGE = "IFGE";
+constexpr const char *IFGE = "IFGE";
 
 /// IF1 directive - If first pass
-constexpr const char* IF1 = "IF1";
+constexpr const char *IF1 = "IF1";
 
 /// IF2 directive - If second pass
-constexpr const char* IF2 = "IF2";
+constexpr const char *IF2 = "IF2";
 
 /// IFB directive - If blank
-constexpr const char* IFB = "IFB";
+constexpr const char *IFB = "IFB";
 
 /// IFNB directive - If not blank
-constexpr const char* IFNB = "IFNB";
+constexpr const char *IFNB = "IFNB";
 
 /// IFIDN directive - If identical
-constexpr const char* IFIDN = "IFIDN";
+constexpr const char *IFIDN = "IFIDN";
 
 /// IFDIF directive - If different
-constexpr const char* IFDIF = "IFDIF";
+constexpr const char *IFDIF = "IFDIF";
 
 // Macro System
 /// MACRO directive - Start macro definition
-constexpr const char* MACRO = "MACRO";
+constexpr const char *MACRO = "MACRO";
 
 /// ENDM directive - End macro/repeat block
-constexpr const char* ENDM = "ENDM";
+constexpr const char *ENDM = "ENDM";
 
 /// LOCAL directive - Define local symbol in macro
-constexpr const char* LOCAL = "LOCAL";
+constexpr const char *LOCAL = "LOCAL";
 
 /// EXITM directive - Exit macro early
-constexpr const char* EXITM = "EXITM";
+constexpr const char *EXITM = "EXITM";
 
 /// REPT directive - Repeat block
-constexpr const char* REPT = "REPT";
+constexpr const char *REPT = "REPT";
 
 /// IRP directive - Iterate over parameters
-constexpr const char* IRP = "IRP";
+constexpr const char *IRP = "IRP";
 
 /// IRPC directive - Iterate over characters
-constexpr const char* IRPC = "IRPC";
+constexpr const char *IRPC = "IRPC";
 
 // Listing Control
 /// LIST directive - Enable listing
-constexpr const char* LIST = "LIST";
+constexpr const char *LIST = "LIST";
 
 /// NOLIST directive - Disable listing
-constexpr const char* NOLIST = "NOLIST";
+constexpr const char *NOLIST = "NOLIST";
 
 /// XLIST directive - Disable listing (alias for NOLIST)
-constexpr const char* XLIST = "XLIST";
+constexpr const char *XLIST = "XLIST";
 
 /// LALL directive - List all (including macro expansions)
-constexpr const char* LALL = "LALL";
+constexpr const char *LALL = "LALL";
 
 /// SALL directive - Suppress all listing
-constexpr const char* SALL = "SALL";
+constexpr const char *SALL = "SALL";
 
 /// TITLE directive - Set listing title
-constexpr const char* TITLE = "TITLE";
+constexpr const char *TITLE = "TITLE";
 
 /// SUBTTL directive - Set subtitle
-constexpr const char* SUBTTL = "SUBTTL";
+constexpr const char *SUBTTL = "SUBTTL";
 
 /// EJECT directive - Page eject
-constexpr const char* EJECT = "EJECT";
+constexpr const char *EJECT = "EJECT";
 
 /// SPACE directive - Add blank lines
-constexpr const char* SPACE = "SPACE";
+constexpr const char *SPACE = "SPACE";
 
 /// NAME directive - Set module name
-constexpr const char* NAME = "NAME";
+constexpr const char *NAME = "NAME";
 
 /// RADIX directive - Set number radix
-constexpr const char* RADIX = "RADIX";
+constexpr const char *RADIX = "RADIX";
 
 // Dot-prefixed variants (EDTASM-M80++ alternate syntax)
 /// .LIST directive - Enable listing (dot-prefixed variant)
-constexpr const char* DOT_LIST = ".LIST";
+constexpr const char *DOT_LIST = ".LIST";
 
 /// .XLIST directive - Disable listing (dot-prefixed variant)
-constexpr const char* DOT_XLIST = ".XLIST";
+constexpr const char *DOT_XLIST = ".XLIST";
 
 /// .TITLE directive - Set listing title (dot-prefixed variant)
-constexpr const char* DOT_TITLE = ".TITLE";
+constexpr const char *DOT_TITLE = ".TITLE";
 
 /// .SUBTTL directive - Set subtitle (dot-prefixed variant)
-constexpr const char* DOT_SUBTTL = ".SUBTTL";
+constexpr const char *DOT_SUBTTL = ".SUBTTL";
 
 /// .RADIX directive - Set number radix (dot-prefixed variant)
-constexpr const char* DOT_RADIX = ".RADIX";
+constexpr const char *DOT_RADIX = ".RADIX";
 
 // Star-prefixed variants (EDTASM-M80++ special syntax)
 /// *LIST directive - Toggle listing
-constexpr const char* STAR_LIST = "*LIST";
+constexpr const char *STAR_LIST = "*LIST";
 
 /// *RADIX directive - Set radix (star-prefixed variant)
-constexpr const char* STAR_RADIX = "*RADIX";
+constexpr const char *STAR_RADIX = "*RADIX";
 
 // ============================================================================
 // Error Message Components
@@ -372,28 +372,28 @@ constexpr const char* STAR_RADIX = "*RADIX";
 namespace errors {
 
 /// Error message prefix for ORG directive
-constexpr const char* ORG_PREFIX = "ORG: ";
+constexpr const char *ORG_PREFIX = "ORG: ";
 
 /// Missing operand error suffix
-constexpr const char* MISSING_OPERAND = "Missing operand";
+constexpr const char *MISSING_OPERAND = "Missing operand";
 
 /// Missing address error
-constexpr const char* MISSING_ADDRESS = "Missing address operand";
+constexpr const char *MISSING_ADDRESS = "Missing address operand";
 
 /// Error message prefix for EQU directive
-constexpr const char* EQU_PREFIX = "EQU: ";
+constexpr const char *EQU_PREFIX = "EQU: ";
 
 /// Missing label error
-constexpr const char* MISSING_LABEL = "Missing label";
+constexpr const char *MISSING_LABEL = "Missing label";
 
 /// Error message prefix for DS directive
-constexpr const char* DS_PREFIX = "DS: ";
+constexpr const char *DS_PREFIX = "DS: ";
 
 /// Negative count error
-constexpr const char* NEGATIVE_COUNT = "Negative count not allowed";
+constexpr const char *NEGATIVE_COUNT = "Negative count not allowed";
 
 /// Negative address error
-constexpr const char* NEGATIVE_ADDRESS = "Negative address not allowed";
+constexpr const char *NEGATIVE_ADDRESS = "Negative address not allowed";
 
 } // namespace errors
 

@@ -213,7 +213,8 @@ void HandleSavDirective(const std::string &operand);
 /**
  * @brief Handle XC directive - toggle 65C02 CPU mode
  *
- * Sets the CPU mode to 65C02 (if no operand or "ON") or back to 6502 (if "OFF").
+ * Sets the CPU mode to 65C02 (if no operand or "ON") or back to 6502 (if
+ * "OFF").
  *
  * @param operand "ON", "OFF", or empty (defaults to ON)
  * @param cpu CPU instance to configure (nullptr ignored for tests)
@@ -293,8 +294,9 @@ void HandleRevDirective(const std::string &label, const std::string &operand,
  * // in_dum is true, dum_addr is 0x200
  * @endcode
  */
-void HandleDumDirective(const std::string &operand, ConcreteSymbolTable &symbols,
-                        bool &in_dum_block, uint32_t &dum_address,
+void HandleDumDirective(const std::string &operand,
+                        ConcreteSymbolTable &symbols, bool &in_dum_block,
+                        uint32_t &dum_address,
                         const DirectiveContext *ctx = nullptr);
 
 /**

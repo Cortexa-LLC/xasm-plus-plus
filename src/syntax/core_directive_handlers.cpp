@@ -7,12 +7,12 @@
  */
 
 #include "xasm++/syntax/core_directive_handlers.h"
-#include "xasm++/syntax/directive_registry.h"
 #include "xasm++/atom.h"
+#include "xasm++/common/expression_parser.h"
 #include "xasm++/directives/directive_constants.h"
 #include "xasm++/expression.h"
 #include "xasm++/symbol.h"
-#include "xasm++/common/expression_parser.h"
+#include "xasm++/syntax/directive_registry.h"
 #include <algorithm>
 #include <cctype>
 #include <sstream>
@@ -27,11 +27,12 @@ namespace {
  * @brief Trim whitespace from both ends of a string
  */
 std::string Trim(const std::string &str) {
-  auto start = std::find_if_not(str.begin(), str.end(),
-                                 [](unsigned char ch) { return std::isspace(ch); });
-  auto end = std::find_if_not(str.rbegin(), str.rend(),
-                               [](unsigned char ch) { return std::isspace(ch); })
-                 .base();
+  auto start = std::find_if_not(str.begin(), str.end(), [](unsigned char ch) {
+    return std::isspace(ch);
+  });
+  auto end = std::find_if_not(str.rbegin(), str.rend(), [](unsigned char ch) {
+               return std::isspace(ch);
+             }).base();
 
   return (start < end) ? std::string(start, end) : std::string();
 }
@@ -39,9 +40,11 @@ std::string Trim(const std::string &str) {
 /**
  * @brief Format error message with file:line: prefix
  */
-std::string FormatError(const DirectiveContext &ctx, const std::string &message) {
+std::string FormatError(const DirectiveContext &ctx,
+                        const std::string &message) {
   if (!ctx.current_file.empty() && ctx.current_line > 0) {
-    return ctx.current_file + ":" + std::to_string(ctx.current_line) + ": " + message;
+    return ctx.current_file + ":" + std::to_string(ctx.current_line) + ": " +
+           message;
   }
   return message;
 }
@@ -53,7 +56,7 @@ std::string FormatError(const DirectiveContext &ctx, const std::string &message)
  * @brief Parse an expression from string
  */
 std::shared_ptr<Expression> ParseExpression(const std::string &str,
-                                           ConcreteSymbolTable &symbols) {
+                                            ConcreteSymbolTable &symbols) {
   std::string trimmed = Trim(str);
 
   if (trimmed.empty()) {
@@ -118,12 +121,14 @@ void HandleOrgDirective(const std::string &operand, Section &section,
   }
 
   // Create OrgAtom and update address
-  section.atoms.push_back(std::make_shared<OrgAtom>(static_cast<uint32_t>(address)));
+  section.atoms.push_back(
+      std::make_shared<OrgAtom>(static_cast<uint32_t>(address)));
   current_address = static_cast<uint32_t>(address);
 }
 
 void HandleEquDirective(const std::string &label, const std::string &operand,
-                        ConcreteSymbolTable &symbols, const DirectiveContext *ctx) {
+                        ConcreteSymbolTable &symbols,
+                        const DirectiveContext *ctx) {
   std::string lbl = Trim(label);
   std::string op = Trim(operand);
 
@@ -144,8 +149,9 @@ void HandleEquDirective(const std::string &label, const std::string &operand,
 }
 
 void HandleDbDirective(const std::string &operand, Section &section,
-                       ConcreteSymbolTable &symbols, uint32_t &current_address) {
-  (void)symbols;  // May be used for expression evaluation in future
+                       ConcreteSymbolTable &symbols,
+                       uint32_t &current_address) {
+  (void)symbols; // May be used for expression evaluation in future
   std::string op = Trim(operand);
 
   // Split by commas
@@ -164,8 +170,9 @@ void HandleDbDirective(const std::string &operand, Section &section,
 }
 
 void HandleDwDirective(const std::string &operand, Section &section,
-                       ConcreteSymbolTable &symbols, uint32_t &current_address) {
-  (void)symbols;  // May be used for expression evaluation in future
+                       ConcreteSymbolTable &symbols,
+                       uint32_t &current_address) {
+  (void)symbols; // May be used for expression evaluation in future
   std::string op = Trim(operand);
 
   // Split by commas
@@ -221,38 +228,51 @@ void HandleDsDirective(const std::string &operand, Section &section,
 
 void RegisterCoreDirectiveHandlers(DirectiveRegistry &registry) {
   // ORG directive - Set origin address
-  registry.Register(directives::ORG, 
-    [](const std::string &label, const std::string &operand, DirectiveContext &ctx) {
-      (void)label; // ORG doesn't use label
-      HandleOrgDirective(operand, *ctx.section, *ctx.symbols, *ctx.current_address, &ctx);
-    });
+  registry.Register(directives::ORG,
+                    [](const std::string &label, const std::string &operand,
+                       DirectiveContext &ctx) {
+                      (void)label; // ORG doesn't use label
+                      HandleOrgDirective(operand, *ctx.section, *ctx.symbols,
+                                         *ctx.current_address, &ctx);
+                    });
 
   // EQU directive - Define constant symbol
   registry.Register(directives::EQU,
-    [](const std::string &label, const std::string &operand, DirectiveContext &ctx) {
-      HandleEquDirective(label, operand, *ctx.symbols, &ctx);
-    });
+                    [](const std::string &label, const std::string &operand,
+                       DirectiveContext &ctx) {
+                      HandleEquDirective(label, operand, *ctx.symbols, &ctx);
+                    });
 
   // DB directive and aliases - Define byte data
   registry.Register({directives::DB, directives::DEFB, directives::BYTE},
-    [](const std::string &label, const std::string &operand, DirectiveContext &ctx) {
-      (void)label; // DB doesn't use label (could be used for auto-label feature)
-      HandleDbDirective(operand, *ctx.section, *ctx.symbols, *ctx.current_address);
-    });
+                    [](const std::string &label, const std::string &operand,
+                       DirectiveContext &ctx) {
+                      (void)label; // DB doesn't use label (could be used for
+                                   // auto-label feature)
+                      HandleDbDirective(operand, *ctx.section, *ctx.symbols,
+                                        *ctx.current_address);
+                    });
 
   // DW directive and aliases - Define word data
   registry.Register({directives::DW, directives::DEFW, directives::WORD},
-    [](const std::string &label, const std::string &operand, DirectiveContext &ctx) {
-      (void)label; // DW doesn't use label (could be used for auto-label feature)
-      HandleDwDirective(operand, *ctx.section, *ctx.symbols, *ctx.current_address);
-    });
+                    [](const std::string &label, const std::string &operand,
+                       DirectiveContext &ctx) {
+                      (void)label; // DW doesn't use label (could be used for
+                                   // auto-label feature)
+                      HandleDwDirective(operand, *ctx.section, *ctx.symbols,
+                                        *ctx.current_address);
+                    });
 
   // DS directive and aliases - Define space
-  registry.Register({directives::DS, directives::DEFS, directives::BLOCK, directives::RMB},
-    [](const std::string &label, const std::string &operand, DirectiveContext &ctx) {
-      (void)label; // DS doesn't use label (could be used for auto-label feature)
-      HandleDsDirective(operand, *ctx.section, *ctx.symbols, *ctx.current_address, &ctx);
-    });
+  registry.Register(
+      {directives::DS, directives::DEFS, directives::BLOCK, directives::RMB},
+      [](const std::string &label, const std::string &operand,
+         DirectiveContext &ctx) {
+        (void)label; // DS doesn't use label (could be used for auto-label
+                     // feature)
+        HandleDsDirective(operand, *ctx.section, *ctx.symbols,
+                          *ctx.current_address, &ctx);
+      });
 }
 
 } // namespace xasm

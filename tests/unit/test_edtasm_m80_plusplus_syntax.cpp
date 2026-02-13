@@ -333,7 +333,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, DwSingleWord) {
   ASSERT_EQ(section.atoms.size(), 1);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  
+
   // DW now stores as expressions for consistent forward/backward ref handling
   ASSERT_EQ(data_atom->expressions.size(), 1);
   EXPECT_EQ(data_atom->expressions[0], "$1234");
@@ -350,7 +350,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, DefwSingleWord) {
   ASSERT_EQ(section.atoms.size(), 1);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  
+
   // DEFW now stores as expressions for consistent forward/backward ref handling
   ASSERT_EQ(data_atom->expressions.size(), 1);
   EXPECT_EQ(data_atom->expressions[0], "$ABCD");
@@ -1151,12 +1151,13 @@ TEST(EdtasmM80PlusPlusSyntaxTest, NestedIfElse) {
 
   parser.Parse(source, section, symbols);
 
-  // Should include DB $22 and DB $33 (outer true, inner false -> else, outer continues)
+  // Should include DB $22 and DB $33 (outer true, inner false -> else, outer
+  // continues)
   ASSERT_EQ(section.atoms.size(), 2);
   auto data_atom1 = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom1, nullptr);
   EXPECT_EQ(data_atom1->data[0], 0x22);
-  
+
   auto data_atom2 = std::dynamic_pointer_cast<DataAtom>(section.atoms[1]);
   ASSERT_NE(data_atom2, nullptr);
   EXPECT_EQ(data_atom2->data[0], 0x33);
@@ -1225,30 +1226,31 @@ TEST(EdtasmM80PlusPlusSyntaxTest, ListXlistDirectives) {
 
   parser.Parse(source, section, symbols);
 
-  // Should generate: LIST atom, DB atom, XLIST atom, DB atom, LIST atom, DB atom = 6 atoms
+  // Should generate: LIST atom, DB atom, XLIST atom, DB atom, LIST atom, DB
+  // atom = 6 atoms
   ASSERT_EQ(section.atoms.size(), 6);
-  
+
   // Check that listing control atoms are present
   auto list1 = std::dynamic_pointer_cast<ListingControlAtom>(section.atoms[0]);
   ASSERT_NE(list1, nullptr);
   EXPECT_EQ(list1->control_type, ListingControlType::List);
-  
+
   auto data1 = std::dynamic_pointer_cast<DataAtom>(section.atoms[1]);
   ASSERT_NE(data1, nullptr);
   EXPECT_EQ(data1->data[0], 0x42);
-  
+
   auto xlist = std::dynamic_pointer_cast<ListingControlAtom>(section.atoms[2]);
   ASSERT_NE(xlist, nullptr);
   EXPECT_EQ(xlist->control_type, ListingControlType::Nolist);
-  
+
   auto data2 = std::dynamic_pointer_cast<DataAtom>(section.atoms[3]);
   ASSERT_NE(data2, nullptr);
   EXPECT_EQ(data2->data[0], 0x43);
-  
+
   auto list2 = std::dynamic_pointer_cast<ListingControlAtom>(section.atoms[4]);
   ASSERT_NE(list2, nullptr);
   EXPECT_EQ(list2->control_type, ListingControlType::List);
-  
+
   auto data3 = std::dynamic_pointer_cast<DataAtom>(section.atoms[5]);
   ASSERT_NE(data3, nullptr);
   EXPECT_EQ(data3->data[0], 0x44);
@@ -1269,30 +1271,32 @@ TEST(EdtasmM80PlusPlusSyntaxTest, StarListDirective) {
 
   parser.Parse(source, section, symbols);
 
-  // Should generate: *LIST atom, DB atom, *LIST atom, DB atom, *LIST atom, DB atom = 6 atoms
+  // Should generate: *LIST atom, DB atom, *LIST atom, DB atom, *LIST atom, DB
+  // atom = 6 atoms
   ASSERT_EQ(section.atoms.size(), 6);
-  
+
   // Check that listing control atoms are present
   auto list1 = std::dynamic_pointer_cast<ListingControlAtom>(section.atoms[0]);
   ASSERT_NE(list1, nullptr);
   EXPECT_EQ(list1->control_type, ListingControlType::List);
-  
+
   auto data1 = std::dynamic_pointer_cast<DataAtom>(section.atoms[1]);
   ASSERT_NE(data1, nullptr);
   EXPECT_EQ(data1->data[0], 0x42);
-  
-  auto list_off = std::dynamic_pointer_cast<ListingControlAtom>(section.atoms[2]);
+
+  auto list_off =
+      std::dynamic_pointer_cast<ListingControlAtom>(section.atoms[2]);
   ASSERT_NE(list_off, nullptr);
   EXPECT_EQ(list_off->control_type, ListingControlType::Nolist);
-  
+
   auto data2 = std::dynamic_pointer_cast<DataAtom>(section.atoms[3]);
   ASSERT_NE(data2, nullptr);
   EXPECT_EQ(data2->data[0], 0x43);
-  
+
   auto list2 = std::dynamic_pointer_cast<ListingControlAtom>(section.atoms[4]);
   ASSERT_NE(list2, nullptr);
   EXPECT_EQ(list2->control_type, ListingControlType::List);
-  
+
   auto data3 = std::dynamic_pointer_cast<DataAtom>(section.atoms[5]);
   ASSERT_NE(data3, nullptr);
   EXPECT_EQ(data3->data[0], 0x44);
@@ -1311,10 +1315,11 @@ TEST(EdtasmM80PlusPlusSyntaxTest, TitleDirective) {
 
   // Should create title atom and data atom
   ASSERT_EQ(section.atoms.size(), 2);
-  auto title_atom = std::dynamic_pointer_cast<ListingControlAtom>(section.atoms[0]);
+  auto title_atom =
+      std::dynamic_pointer_cast<ListingControlAtom>(section.atoms[0]);
   ASSERT_NE(title_atom, nullptr);
   EXPECT_EQ(title_atom->control_type, ListingControlType::Title);
-  
+
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[1]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data[0], 0x42);
@@ -1332,10 +1337,11 @@ TEST(EdtasmM80PlusPlusSyntaxTest, SubttlDirective) {
   parser.Parse(source, section, symbols);
 
   ASSERT_EQ(section.atoms.size(), 2);
-  auto subtitle_atom = std::dynamic_pointer_cast<ListingControlAtom>(section.atoms[0]);
+  auto subtitle_atom =
+      std::dynamic_pointer_cast<ListingControlAtom>(section.atoms[0]);
   ASSERT_NE(subtitle_atom, nullptr);
   EXPECT_EQ(subtitle_atom->control_type, ListingControlType::Subtitle);
-  
+
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[1]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data[0], 0x42);
@@ -1357,11 +1363,12 @@ TEST(EdtasmM80PlusPlusSyntaxTest, EjectDirective) {
   auto data1 = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data1, nullptr);
   EXPECT_EQ(data1->data[0], 0x42);
-  
-  auto eject_atom = std::dynamic_pointer_cast<ListingControlAtom>(section.atoms[1]);
+
+  auto eject_atom =
+      std::dynamic_pointer_cast<ListingControlAtom>(section.atoms[1]);
   ASSERT_NE(eject_atom, nullptr);
   EXPECT_EQ(eject_atom->control_type, ListingControlType::Page);
-  
+
   auto data2 = std::dynamic_pointer_cast<DataAtom>(section.atoms[2]);
   ASSERT_NE(data2, nullptr);
   EXPECT_EQ(data2->data[0], 0x43);
@@ -1383,11 +1390,12 @@ TEST(EdtasmM80PlusPlusSyntaxTest, SpaceDirective) {
   auto data1 = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data1, nullptr);
   EXPECT_EQ(data1->data[0], 0x42);
-  
-  auto space_atom = std::dynamic_pointer_cast<ListingControlAtom>(section.atoms[1]);
+
+  auto space_atom =
+      std::dynamic_pointer_cast<ListingControlAtom>(section.atoms[1]);
   ASSERT_NE(space_atom, nullptr);
   EXPECT_EQ(space_atom->control_type, ListingControlType::Space);
-  
+
   auto data2 = std::dynamic_pointer_cast<DataAtom>(section.atoms[2]);
   ASSERT_NE(data2, nullptr);
   EXPECT_EQ(data2->data[0], 0x43);
@@ -1493,9 +1501,9 @@ TEST(EdtasmM80PlusPlusSyntaxTest, RadixChangeMidAssembly) {
 
   // Change radix mid-assembly
   std::string source = "         *RADIX 16\n"
-                       "         DB FF\n"      // Hex
+                       "         DB FF\n" // Hex
                        "         *RADIX 10\n"
-                       "         DB 42\n"      // Decimal
+                       "         DB 42\n" // Decimal
                        "         *RADIX 2\n"
                        "         DB 101010\n"; // Binary
 
@@ -1505,11 +1513,11 @@ TEST(EdtasmM80PlusPlusSyntaxTest, RadixChangeMidAssembly) {
   auto data1 = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   auto data2 = std::dynamic_pointer_cast<DataAtom>(section.atoms[1]);
   auto data3 = std::dynamic_pointer_cast<DataAtom>(section.atoms[2]);
-  
+
   ASSERT_NE(data1, nullptr);
   ASSERT_NE(data2, nullptr);
   ASSERT_NE(data3, nullptr);
-  
+
   EXPECT_EQ(data1->data[0], 0xFF);
   EXPECT_EQ(data2->data[0], 42);
   EXPECT_EQ(data3->data[0], 0x2A); // 101010 binary = 42 decimal
@@ -1704,9 +1712,9 @@ TEST(EdtasmM80PlusPlusSyntaxTest, DbMixedStringAndNumbers) {
   ASSERT_EQ(data_atom->data.size(), 5);
   EXPECT_EQ(data_atom->data[0], 'H');
   EXPECT_EQ(data_atom->data[1], 'i');
-  EXPECT_EQ(data_atom->data[2], 13);  // CR
-  EXPECT_EQ(data_atom->data[3], 10);  // LF
-  EXPECT_EQ(data_atom->data[4], 0);   // NULL
+  EXPECT_EQ(data_atom->data[2], 13); // CR
+  EXPECT_EQ(data_atom->data[3], 10); // LF
+  EXPECT_EQ(data_atom->data[4], 0);  // NULL
 }
 
 TEST(EdtasmM80PlusPlusSyntaxTest, DbEscapeNewline) {
@@ -1725,7 +1733,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, DbEscapeNewline) {
   EXPECT_EQ(data_atom->data[2], 'n');
   EXPECT_EQ(data_atom->data[3], 'e');
   EXPECT_EQ(data_atom->data[4], '1');
-  EXPECT_EQ(data_atom->data[5], '\n');  // Escape sequence
+  EXPECT_EQ(data_atom->data[5], '\n'); // Escape sequence
   EXPECT_EQ(data_atom->data[6], 'L');
   EXPECT_EQ(data_atom->data[7], 'i');
   EXPECT_EQ(data_atom->data[8], 'n');
@@ -1834,7 +1842,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, DbEmptyString) {
   ASSERT_EQ(section.atoms.size(), 1);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  EXPECT_EQ(data_atom->data.size(), 0);  // Empty string produces no bytes
+  EXPECT_EQ(data_atom->data.size(), 0); // Empty string produces no bytes
 }
 
 TEST(EdtasmM80PlusPlusSyntaxTest, DbMultipleStringsWithEscapes) {
@@ -1944,7 +1952,7 @@ TEST(EdtasmM80PlusPlusSyntaxTest, WordAlias) {
   ASSERT_EQ(section.atoms.size(), 1);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  
+
   // WORD now stores as expressions for consistent forward/backward ref handling
   ASSERT_EQ(data_atom->expressions.size(), 1);
   EXPECT_EQ(data_atom->expressions[0], "$BEEF");
@@ -2007,19 +2015,19 @@ TEST(EdtasmM80PlusPlusSyntaxTest, ReptMultipleInstructions) {
 
   // Should generate 4 atoms: NOP, DB, NOP, DB
   ASSERT_EQ(section.atoms.size(), 4);
-  
+
   auto inst1 = std::dynamic_pointer_cast<InstructionAtom>(section.atoms[0]);
   ASSERT_NE(inst1, nullptr);
   EXPECT_EQ(inst1->mnemonic, "NOP");
-  
+
   auto data1 = std::dynamic_pointer_cast<DataAtom>(section.atoms[1]);
   ASSERT_NE(data1, nullptr);
   EXPECT_EQ(data1->data[0], 0xFF);
-  
+
   auto inst2 = std::dynamic_pointer_cast<InstructionAtom>(section.atoms[2]);
   ASSERT_NE(inst2, nullptr);
   EXPECT_EQ(inst2->mnemonic, "NOP");
-  
+
   auto data2 = std::dynamic_pointer_cast<DataAtom>(section.atoms[3]);
   ASSERT_NE(data2, nullptr);
   EXPECT_EQ(data2->data[0], 0xFF);
@@ -2045,11 +2053,11 @@ TEST(EdtasmM80PlusPlusSyntaxTest, IrpSimple) {
   auto data1 = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   auto data2 = std::dynamic_pointer_cast<DataAtom>(section.atoms[1]);
   auto data3 = std::dynamic_pointer_cast<DataAtom>(section.atoms[2]);
-  
+
   ASSERT_NE(data1, nullptr);
   ASSERT_NE(data2, nullptr);
   ASSERT_NE(data3, nullptr);
-  
+
   EXPECT_EQ(data1->data[0], 1);
   EXPECT_EQ(data2->data[0], 2);
   EXPECT_EQ(data3->data[0], 3);
@@ -2071,11 +2079,11 @@ TEST(EdtasmM80PlusPlusSyntaxTest, IrpWithHexValues) {
   auto data1 = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   auto data2 = std::dynamic_pointer_cast<DataAtom>(section.atoms[1]);
   auto data3 = std::dynamic_pointer_cast<DataAtom>(section.atoms[2]);
-  
+
   ASSERT_NE(data1, nullptr);
   ASSERT_NE(data2, nullptr);
   ASSERT_NE(data3, nullptr);
-  
+
   EXPECT_EQ(data1->data[0], 0x10);
   EXPECT_EQ(data2->data[0], 0x20);
   EXPECT_EQ(data3->data[0], 0x30);
@@ -2116,11 +2124,11 @@ TEST(EdtasmM80PlusPlusSyntaxTest, IrpcSimple) {
   auto data1 = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   auto data2 = std::dynamic_pointer_cast<DataAtom>(section.atoms[1]);
   auto data3 = std::dynamic_pointer_cast<DataAtom>(section.atoms[2]);
-  
+
   ASSERT_NE(data1, nullptr);
   ASSERT_NE(data2, nullptr);
   ASSERT_NE(data3, nullptr);
-  
+
   EXPECT_EQ(data1->data[0], 'A');
   EXPECT_EQ(data2->data[0], 'B');
   EXPECT_EQ(data3->data[0], 'C');
@@ -2203,11 +2211,11 @@ TEST(EdtasmM80PlusPlusSyntaxTest, MacroMultipleInvocations) {
   auto data1 = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   auto data2 = std::dynamic_pointer_cast<DataAtom>(section.atoms[1]);
   auto data3 = std::dynamic_pointer_cast<DataAtom>(section.atoms[2]);
-  
+
   ASSERT_NE(data1, nullptr);
   ASSERT_NE(data2, nullptr);
   ASSERT_NE(data3, nullptr);
-  
+
   EXPECT_EQ(data1->data[0], 0x10);
   EXPECT_EQ(data2->data[0], 0x20);
   EXPECT_EQ(data3->data[0], 0x30);
@@ -2237,17 +2245,17 @@ TEST(EdtasmM80PlusPlusSyntaxTest, MacroLocalSymbols) {
   // Should generate 4 atoms: NOP, JP, NOP, JP
   // Each invocation should have its own unique LOOP label
   ASSERT_EQ(section.atoms.size(), 4);
-  
+
   auto inst1 = std::dynamic_pointer_cast<InstructionAtom>(section.atoms[0]);
   auto inst2 = std::dynamic_pointer_cast<InstructionAtom>(section.atoms[1]);
   auto inst3 = std::dynamic_pointer_cast<InstructionAtom>(section.atoms[2]);
   auto inst4 = std::dynamic_pointer_cast<InstructionAtom>(section.atoms[3]);
-  
+
   ASSERT_NE(inst1, nullptr);
   ASSERT_NE(inst2, nullptr);
   ASSERT_NE(inst3, nullptr);
   ASSERT_NE(inst4, nullptr);
-  
+
   EXPECT_EQ(inst1->mnemonic, "NOP");
   EXPECT_EQ(inst2->mnemonic, "JP");
   EXPECT_EQ(inst3->mnemonic, "NOP");
@@ -2323,10 +2331,10 @@ TEST(EdtasmM80PlusPlusSyntaxTest, NestedMacros) {
   ASSERT_EQ(section.atoms.size(), 2);
   auto data1 = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   auto data2 = std::dynamic_pointer_cast<DataAtom>(section.atoms[1]);
-  
+
   ASSERT_NE(data1, nullptr);
   ASSERT_NE(data2, nullptr);
-  
+
   EXPECT_EQ(data1->data[0], 0x10);
   EXPECT_EQ(data2->data[0], 0x20);
 }

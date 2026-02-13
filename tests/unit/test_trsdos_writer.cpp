@@ -13,8 +13,8 @@
  *       Command: SYSTEM "filename"
  */
 
-#include "xasm++/output/trsdos_writer.h"
 #include "xasm++/atom.h"
+#include "xasm++/output/trsdos_writer.h"
 #include "xasm++/section.h"
 
 #include <gtest/gtest.h>
@@ -85,15 +85,15 @@ TEST_F(TrsDosWriterTest, SingleByteAtAddress) {
   writer.Write(sections, output);
 
   auto bytes = GetOutputBytes();
-  
-  // Format: [segment_type] [load_addr_lo] [load_addr_hi] [length_lo] [length_hi] [data...]
-  // Segment type: 0x01 for data segment
+
+  // Format: [segment_type] [load_addr_lo] [load_addr_hi] [length_lo]
+  // [length_hi] [data...] Segment type: 0x01 for data segment
   ASSERT_GE(bytes.size(), 6); // header (5 bytes) + 1 byte data
-  
-  EXPECT_EQ(bytes[0], 0x01); // Segment type
+
+  EXPECT_EQ(bytes[0], 0x01);             // Segment type
   EXPECT_EQ(ReadLE16(bytes, 1), 0x8000); // Load address
-  EXPECT_EQ(ReadLE16(bytes, 3), 1); // Length
-  EXPECT_EQ(bytes[5], 0x42); // Data
+  EXPECT_EQ(ReadLE16(bytes, 3), 1);      // Length
+  EXPECT_EQ(bytes[5], 0x42);             // Data
 }
 
 /**
@@ -107,13 +107,13 @@ TEST_F(TrsDosWriterTest, MultipleBytes) {
   writer.Write(sections, output);
 
   auto bytes = GetOutputBytes();
-  
+
   ASSERT_GE(bytes.size(), 10); // header (5) + data (5)
-  
-  EXPECT_EQ(bytes[0], 0x01); // Segment type
+
+  EXPECT_EQ(bytes[0], 0x01);             // Segment type
   EXPECT_EQ(ReadLE16(bytes, 1), 0x4000); // Load address
-  EXPECT_EQ(ReadLE16(bytes, 3), 5); // Length
-  
+  EXPECT_EQ(ReadLE16(bytes, 3), 5);      // Length
+
   // Check data bytes
   for (size_t i = 0; i < test_data.size(); ++i) {
     EXPECT_EQ(bytes[5 + i], test_data[i]) << "Data byte " << i;
@@ -135,17 +135,17 @@ TEST_F(TrsDosWriterTest, MultipleSections) {
   writer.Write(sections, output);
 
   auto bytes = GetOutputBytes();
-  
+
   // Two segments: each with 5-byte header + 2 data bytes
   ASSERT_GE(bytes.size(), 14); // (5+2) + (5+2)
-  
+
   // First segment
   EXPECT_EQ(bytes[0], 0x01);
   EXPECT_EQ(ReadLE16(bytes, 1), 0x4000);
   EXPECT_EQ(ReadLE16(bytes, 3), 2);
   EXPECT_EQ(bytes[5], 0xAA);
   EXPECT_EQ(bytes[6], 0xBB);
-  
+
   // Second segment
   EXPECT_EQ(bytes[7], 0x01);
   EXPECT_EQ(ReadLE16(bytes, 8), 0x5000);
@@ -169,15 +169,15 @@ TEST_F(TrsDosWriterTest, WithEntryPoint) {
   writer.Write(sections, output);
 
   auto bytes = GetOutputBytes();
-  
+
   // Data segment + entry point segment (type 0x02)
   ASSERT_GE(bytes.size(), 12); // (5+2) data + (5+0) entry
-  
+
   // Find entry point segment (should be last, type 0x02)
   size_t entry_offset = bytes.size() - 5; // Entry segment is 5 bytes (no data)
-  EXPECT_EQ(bytes[entry_offset], 0x02); // Entry point segment type
+  EXPECT_EQ(bytes[entry_offset], 0x02);   // Entry point segment type
   EXPECT_EQ(ReadLE16(bytes, entry_offset + 1), 0x8000); // Entry address
-  EXPECT_EQ(ReadLE16(bytes, entry_offset + 3), 0); // Length = 0
+  EXPECT_EQ(ReadLE16(bytes, entry_offset + 3), 0);      // Length = 0
 }
 
 // ============================================================================
@@ -238,26 +238,28 @@ TEST_F(TrsDosWriterTest, SectionWithSpaceAtom) {
 TEST_F(TrsDosWriterTest, MixedAtomsWithSpace) {
   std::vector<Section> sections;
   Section section("TEST", 0, 0x8000);
-  
-  section.atoms.push_back(std::make_shared<DataAtom>(std::vector<uint8_t>{0xAA}));
+
+  section.atoms.push_back(
+      std::make_shared<DataAtom>(std::vector<uint8_t>{0xAA}));
   section.atoms.push_back(std::make_shared<SpaceAtom>(10));
-  section.atoms.push_back(std::make_shared<DataAtom>(std::vector<uint8_t>{0xBB}));
-  
+  section.atoms.push_back(
+      std::make_shared<DataAtom>(std::vector<uint8_t>{0xBB}));
+
   sections.push_back(section);
 
   writer.Write(sections, output);
 
   auto bytes = GetOutputBytes();
-  
+
   // Should create two segments due to address gap
   ASSERT_GE(bytes.size(), 12); // (5+1) + (5+1)
-  
+
   // First segment: 0xAA at 0x8000
   EXPECT_EQ(bytes[0], 0x01);
   EXPECT_EQ(ReadLE16(bytes, 1), 0x8000);
   EXPECT_EQ(ReadLE16(bytes, 3), 1);
   EXPECT_EQ(bytes[5], 0xAA);
-  
+
   // Second segment: 0xBB at 0x800B (0x8000 + 1 + 10)
   EXPECT_EQ(bytes[6], 0x01);
   EXPECT_EQ(ReadLE16(bytes, 7), 0x800B);

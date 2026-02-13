@@ -85,7 +85,7 @@ public:
   size_t last_size;           ///< Size in bytes (previous pass)
   uint32_t changes;           ///< Number of times size has changed
   std::shared_ptr<Atom> next; ///< Next atom in linked list (nullptr if last)
-  std::string source_line;    ///< Original source line text (for listing output)
+  std::string source_line; ///< Original source line text (for listing output)
 
   /**
    * @brief Construct an atom of the given type

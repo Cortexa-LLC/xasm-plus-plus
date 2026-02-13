@@ -31,18 +31,18 @@ TEST_F(Z80ForwardReferenceTest, DWWithForwardReference) {
 
   // Should parse successfully (expression deferred)
   EXPECT_NO_THROW(parser->Parse(source, section, symbols));
-  
+
   // Both labels should be defined
   EXPECT_TRUE(symbols.IsDefined("TABLE"));
   EXPECT_TRUE(symbols.IsDefined("LABEL"));
-  
+
   // DW atom should exist with expression string
   ASSERT_GE(section.atoms.size(), 2);
-  
+
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[1]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data_size, DataSize::Word);
-  
+
   // Expression should be stored for later evaluation
   EXPECT_EQ(data_atom->expressions.size(), 1);
   EXPECT_FALSE(data_atom->expressions[0].empty());
@@ -60,13 +60,13 @@ TEST_F(Z80ForwardReferenceTest, DWWithMultipleForwardReferences) {
                        "CMD2:     RET\n";
 
   EXPECT_NO_THROW(parser->Parse(source, section, symbols));
-  
+
   // All labels should be defined
   EXPECT_TRUE(symbols.IsDefined("DISPATCH"));
   EXPECT_TRUE(symbols.IsDefined("CMD0"));
   EXPECT_TRUE(symbols.IsDefined("CMD1"));
   EXPECT_TRUE(symbols.IsDefined("CMD2"));
-  
+
   // DW atom should have 3 expressions
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[1]);
   ASSERT_NE(data_atom, nullptr);
@@ -84,9 +84,9 @@ TEST_F(Z80ForwardReferenceTest, DBWithForwardReference) {
                        "LABEL:   NOP\n";
 
   EXPECT_NO_THROW(parser->Parse(source, section, symbols));
-  
+
   EXPECT_TRUE(symbols.IsDefined("LABEL"));
-  
+
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data_size, DataSize::Byte);
@@ -103,10 +103,10 @@ TEST_F(Z80ForwardReferenceTest, DWWithBackwardReference) {
                        "TABLE:   DW LABEL\n";
 
   EXPECT_NO_THROW(parser->Parse(source, section, symbols));
-  
+
   EXPECT_TRUE(symbols.IsDefined("LABEL"));
   EXPECT_TRUE(symbols.IsDefined("TABLE"));
-  
+
   // Should have data atom with expression (last atom)
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[3]);
   ASSERT_NE(data_atom, nullptr);
@@ -123,11 +123,11 @@ TEST_F(Z80ForwardReferenceTest, DWWithMixedReferences) {
                        "END:     RET\n";
 
   EXPECT_NO_THROW(parser->Parse(source, section, symbols));
-  
+
   EXPECT_TRUE(symbols.IsDefined("START"));
   EXPECT_TRUE(symbols.IsDefined("TABLE"));
   EXPECT_TRUE(symbols.IsDefined("END"));
-  
+
   // Data atom is at index 3 (after START label, instruction, TABLE label)
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[3]);
   ASSERT_NE(data_atom, nullptr);

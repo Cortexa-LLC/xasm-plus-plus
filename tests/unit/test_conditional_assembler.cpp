@@ -109,60 +109,60 @@ TEST_F(ConditionalAssemblerTest, ElseWithoutIf_ShouldThrow) {
  * @test Nested IF: true inside true
  */
 TEST_F(ConditionalAssemblerTest, NestedIfTrueInTrue_ShouldEmit) {
-  assembler.BeginIf(true);  // Outer: true
-  assembler.BeginIf(true);  // Inner: true
+  assembler.BeginIf(true); // Outer: true
+  assembler.BeginIf(true); // Inner: true
   EXPECT_TRUE(assembler.ShouldEmit());
-  assembler.EndIf();        // End inner
+  assembler.EndIf(); // End inner
   EXPECT_TRUE(assembler.ShouldEmit());
-  assembler.EndIf();        // End outer
+  assembler.EndIf(); // End outer
 }
 
 /**
  * @test Nested IF: false inside true
  */
 TEST_F(ConditionalAssemblerTest, NestedIfFalseInTrue_InnerShouldNotEmit) {
-  assembler.BeginIf(true);   // Outer: true, emit
+  assembler.BeginIf(true); // Outer: true, emit
   EXPECT_TRUE(assembler.ShouldEmit());
-  assembler.BeginIf(false);  // Inner: false, don't emit
+  assembler.BeginIf(false); // Inner: false, don't emit
   EXPECT_FALSE(assembler.ShouldEmit());
-  assembler.EndIf();         // End inner
-  EXPECT_TRUE(assembler.ShouldEmit());  // Back to outer
-  assembler.EndIf();         // End outer
+  assembler.EndIf();                   // End inner
+  EXPECT_TRUE(assembler.ShouldEmit()); // Back to outer
+  assembler.EndIf();                   // End outer
 }
 
 /**
  * @test Nested IF: true inside false (should not emit due to parent)
  */
 TEST_F(ConditionalAssemblerTest, NestedIfTrueInFalse_ShouldNotEmit) {
-  assembler.BeginIf(false);  // Outer: false, don't emit
+  assembler.BeginIf(false); // Outer: false, don't emit
   EXPECT_FALSE(assembler.ShouldEmit());
-  assembler.BeginIf(true);   // Inner: true, but parent is false
-  EXPECT_FALSE(assembler.ShouldEmit());  // Still don't emit
-  assembler.EndIf();         // End inner
-  EXPECT_FALSE(assembler.ShouldEmit());  // Still in false outer
-  assembler.EndIf();         // End outer
+  assembler.BeginIf(true);              // Inner: true, but parent is false
+  EXPECT_FALSE(assembler.ShouldEmit()); // Still don't emit
+  assembler.EndIf();                    // End inner
+  EXPECT_FALSE(assembler.ShouldEmit()); // Still in false outer
+  assembler.EndIf();                    // End outer
 }
 
 /**
  * @test Nested ELSE blocks
  */
 TEST_F(ConditionalAssemblerTest, NestedElse_ComplexNesting) {
-  assembler.BeginIf(true);   // Outer: true, emit
+  assembler.BeginIf(true); // Outer: true, emit
   EXPECT_TRUE(assembler.ShouldEmit());
-  
-  assembler.BeginIf(false);  // Inner: false, don't emit
+
+  assembler.BeginIf(false); // Inner: false, don't emit
   EXPECT_FALSE(assembler.ShouldEmit());
-  
-  assembler.BeginElse();     // Inner ELSE: emit (outer true, inner condition false)
+
+  assembler.BeginElse(); // Inner ELSE: emit (outer true, inner condition false)
   EXPECT_TRUE(assembler.ShouldEmit());
-  
-  assembler.EndIf();         // End inner
+
+  assembler.EndIf(); // End inner
   EXPECT_TRUE(assembler.ShouldEmit());
-  
-  assembler.BeginElse();     // Outer ELSE: don't emit
+
+  assembler.BeginElse(); // Outer ELSE: don't emit
   EXPECT_FALSE(assembler.ShouldEmit());
-  
-  assembler.EndIf();         // End outer
+
+  assembler.EndIf(); // End outer
   EXPECT_TRUE(assembler.ShouldEmit());
 }
 
@@ -198,30 +198,30 @@ TEST_F(ConditionalAssemblerTest, DeepNesting_Works) {
   // Level 1: true
   assembler.BeginIf(true);
   EXPECT_TRUE(assembler.ShouldEmit());
-  
+
   // Level 2: true
   assembler.BeginIf(true);
   EXPECT_TRUE(assembler.ShouldEmit());
-  
+
   // Level 3: false
   assembler.BeginIf(false);
   EXPECT_FALSE(assembler.ShouldEmit());
-  
+
   // Level 4: true (but parent is false)
   assembler.BeginIf(true);
   EXPECT_FALSE(assembler.ShouldEmit());
-  
+
   // Unwind
-  assembler.EndIf();  // Level 3
+  assembler.EndIf(); // Level 3
   EXPECT_FALSE(assembler.ShouldEmit());
-  
-  assembler.EndIf();  // Level 2
+
+  assembler.EndIf(); // Level 2
   EXPECT_TRUE(assembler.ShouldEmit());
-  
-  assembler.EndIf();  // Level 1
+
+  assembler.EndIf(); // Level 1
   EXPECT_TRUE(assembler.ShouldEmit());
-  
-  assembler.EndIf();  // Level 0
+
+  assembler.EndIf(); // Level 0
   EXPECT_TRUE(assembler.ShouldEmit());
 }
 
@@ -236,7 +236,7 @@ TEST_F(ConditionalAssemblerTest, Reset_ClearsState) {
   assembler.BeginIf(false);
   assembler.BeginIf(true);
   EXPECT_FALSE(assembler.ShouldEmit());
-  
+
   assembler.Reset();
   EXPECT_TRUE(assembler.ShouldEmit());
   EXPECT_TRUE(assembler.IsBalanced());

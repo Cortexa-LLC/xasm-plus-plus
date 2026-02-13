@@ -17,8 +17,8 @@
  *       https://en.wikipedia.org/wiki/SREC_(file_format)
  */
 
-#include "xasm++/output/srec_writer.h"
 #include "xasm++/atom.h"
+#include "xasm++/output/srec_writer.h"
 #include "xasm++/section.h"
 
 #include <gtest/gtest.h>
@@ -88,32 +88,35 @@ protected:
     // Extract data bytes
     data.clear();
     size_t data_start = 4 + addr_size;
-    size_t data_bytes = byte_count - (addr_size / 2) - 1; // Subtract address and checksum
-    
+    size_t data_bytes =
+        byte_count - (addr_size / 2) - 1; // Subtract address and checksum
+
     if (record.length() != data_start + data_bytes * 2 + 2) {
       return false;
     }
 
     for (size_t i = 0; i < data_bytes; ++i) {
-      data.push_back(std::stoi(record.substr(data_start + i * 2, 2), nullptr, 16));
+      data.push_back(
+          std::stoi(record.substr(data_start + i * 2, 2), nullptr, 16));
     }
 
     // Extract checksum
-    checksum = std::stoi(record.substr(data_start + data_bytes * 2, 2), nullptr, 16);
+    checksum =
+        std::stoi(record.substr(data_start + data_bytes * 2, 2), nullptr, 16);
 
     // Verify checksum (one's complement of sum of count + address + data)
     uint8_t calculated_checksum = byte_count;
-    
+
     // Add address bytes
     for (size_t i = 0; i < addr_size / 2; ++i) {
       calculated_checksum += (address >> (8 * (addr_size / 2 - 1 - i))) & 0xFF;
     }
-    
+
     // Add data bytes
     for (uint8_t byte : data) {
       calculated_checksum += byte;
     }
-    
+
     calculated_checksum = ~calculated_checksum & 0xFF;
 
     return calculated_checksum == checksum;
@@ -177,7 +180,7 @@ TEST_F(SRecordWriterTest, SingleByteAtZero_S19) {
   std::vector<uint8_t> data;
 
   ASSERT_TRUE(ValidateSRecord(lines[1], type_char, type_num, byte_count,
-                               address, data, checksum));
+                              address, data, checksum));
   EXPECT_EQ(type_num, 1); // S1 record
   EXPECT_EQ(address, 0x0000);
   EXPECT_EQ(data.size(), 1);
@@ -204,7 +207,7 @@ TEST_F(SRecordWriterTest, MultipleBytes_S19) {
   std::vector<uint8_t> data;
 
   ASSERT_TRUE(ValidateSRecord(lines[1], type_char, type_num, byte_count,
-                               address, data, checksum));
+                              address, data, checksum));
   EXPECT_EQ(type_num, 1);
   EXPECT_EQ(address, 0x1000);
   EXPECT_EQ(data, test_data);
@@ -234,7 +237,7 @@ TEST_F(SRecordWriterTest, AutoSelectS28Format) {
   std::vector<uint8_t> data;
 
   ASSERT_TRUE(ValidateSRecord(lines[1], type_char, type_num, byte_count,
-                               address, data, checksum));
+                              address, data, checksum));
   EXPECT_EQ(type_num, 2); // S2 record
   EXPECT_EQ(address, 0x10000);
   EXPECT_EQ(data.size(), 2);
@@ -243,7 +246,7 @@ TEST_F(SRecordWriterTest, AutoSelectS28Format) {
 
   // Terminator should be S8
   ASSERT_TRUE(ValidateSRecord(lines[lines.size() - 1], type_char, type_num,
-                               byte_count, address, data, checksum));
+                              byte_count, address, data, checksum));
   EXPECT_EQ(type_num, 8); // S8 terminator for S28
 }
 
@@ -271,7 +274,7 @@ TEST_F(SRecordWriterTest, AutoSelectS37Format) {
   std::vector<uint8_t> data;
 
   ASSERT_TRUE(ValidateSRecord(lines[1], type_char, type_num, byte_count,
-                               address, data, checksum));
+                              address, data, checksum));
   EXPECT_EQ(type_num, 3); // S3 record
   EXPECT_EQ(address, 0x1000000);
   EXPECT_EQ(data.size(), 2);
@@ -280,7 +283,7 @@ TEST_F(SRecordWriterTest, AutoSelectS37Format) {
 
   // Terminator should be S7
   ASSERT_TRUE(ValidateSRecord(lines[lines.size() - 1], type_char, type_num,
-                               byte_count, address, data, checksum));
+                              byte_count, address, data, checksum));
   EXPECT_EQ(type_num, 7); // S7 terminator for S37
 }
 
@@ -308,8 +311,8 @@ TEST_F(SRecordWriterTest, HeaderRecord) {
   std::vector<uint8_t> data;
 
   ASSERT_TRUE(ValidateSRecord(lines[0], type_char, type_num, byte_count,
-                               address, data, checksum));
-  EXPECT_EQ(type_num, 0); // S0 record
+                              address, data, checksum));
+  EXPECT_EQ(type_num, 0);     // S0 record
   EXPECT_EQ(address, 0x0000); // Typically zero for header
 }
 
@@ -322,7 +325,8 @@ TEST_F(SRecordWriterTest, HeaderRecord) {
  */
 TEST_F(SRecordWriterTest, ChecksumValidation) {
   std::vector<Section> sections;
-  sections.push_back(CreateSectionWithData("TEST", 0xABCD, {0x12, 0x34, 0x56, 0x78}));
+  sections.push_back(
+      CreateSectionWithData("TEST", 0xABCD, {0x12, 0x34, 0x56, 0x78}));
 
   writer.Write(sections, output);
 
@@ -336,8 +340,8 @@ TEST_F(SRecordWriterTest, ChecksumValidation) {
     uint64_t address;
     std::vector<uint8_t> data;
 
-    ASSERT_TRUE(ValidateSRecord(line, type_char, type_num, byte_count,
-                                address, data, checksum))
+    ASSERT_TRUE(ValidateSRecord(line, type_char, type_num, byte_count, address,
+                                data, checksum))
         << "Invalid checksum in record: " << line;
   }
 }
@@ -419,8 +423,8 @@ TEST_F(SRecordWriterTest, MultipleSectionsWithMixedAddressRanges) {
 
   // Verify all records are valid
   for (const auto &line : lines) {
-    ASSERT_TRUE(ValidateSRecord(line, type_char, type_num, byte_count,
-                                address, data, checksum))
+    ASSERT_TRUE(ValidateSRecord(line, type_char, type_num, byte_count, address,
+                                data, checksum))
         << "Invalid record: " << line;
   }
 }

@@ -31,9 +31,7 @@ protected:
 // Phase 1: Foundation Tests
 // ============================================================================
 
-TEST_F(CpuZ80Test, GetName_ReturnsZ80) {
-  EXPECT_EQ("Z80", cpu.GetName());
-}
+TEST_F(CpuZ80Test, GetName_ReturnsZ80) { EXPECT_EQ("Z80", cpu.GetName()); }
 
 TEST_F(CpuZ80Test, GetCpuFamily_ReturnsZ80) {
   EXPECT_EQ("Z80", cpu.GetCpuFamily());

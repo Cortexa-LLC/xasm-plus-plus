@@ -5,12 +5,12 @@
  * Tests segment directive handlers for relocatable code support.
  */
 
+#include "xasm++/section.h"
+#include "xasm++/segment_manager.h"
+#include "xasm++/symbol.h"
+#include "xasm++/syntax/directive_registry.h"
 #include "xasm++/syntax/edtasm_directive_handlers.h"
 #include "xasm++/syntax/edtasm_m80_plusplus_syntax.h"
-#include "xasm++/syntax/directive_registry.h"
-#include "xasm++/segment_manager.h"
-#include "xasm++/section.h"
-#include "xasm++/symbol.h"
 #include <gtest/gtest.h>
 #include <memory>
 
@@ -26,7 +26,7 @@ protected:
     section_ = std::make_unique<Section>("test_section", 0x01);
     parser_ = std::make_unique<EdtasmM80PlusPlusSyntaxParser>();
     current_address_ = 0x1000;
-    
+
     // Initialize context
     ctx_.section = section_.get();
     ctx_.symbols = symbols_.get();
@@ -53,7 +53,7 @@ TEST_F(SegmentDirectivesTest, AsegSwitchesToAbsoluteSegment) {
   HandleAsegDirective("", "", ctx_);
 
   // Assert
-  EXPECT_EQ(parser_->GetSegmentManager().GetCurrentSegmentType(), 
+  EXPECT_EQ(parser_->GetSegmentManager().GetCurrentSegmentType(),
             SegmentType::Absolute);
 }
 
@@ -80,7 +80,7 @@ TEST_F(SegmentDirectivesTest, CsegSwitchesToCodeSegment) {
   HandleCsegDirective("", "", ctx_);
 
   // Assert
-  EXPECT_EQ(parser_->GetSegmentManager().GetCurrentSegmentType(), 
+  EXPECT_EQ(parser_->GetSegmentManager().GetCurrentSegmentType(),
             SegmentType::Code);
 }
 
@@ -107,7 +107,7 @@ TEST_F(SegmentDirectivesTest, DsegSwitchesToDataSegment) {
   HandleDsegDirective("", "", ctx_);
 
   // Assert
-  EXPECT_EQ(parser_->GetSegmentManager().GetCurrentSegmentType(), 
+  EXPECT_EQ(parser_->GetSegmentManager().GetCurrentSegmentType(),
             SegmentType::Data);
 }
 
@@ -147,7 +147,7 @@ TEST_F(SegmentDirectivesTest, SegmentSwitchingPreservesAddresses) {
 
   // Assert - CSEG address should be preserved at 0x100A
   EXPECT_EQ(parser_->GetSegmentManager().GetCurrentAddress(), 0x100A);
-  EXPECT_EQ(parser_->GetSegmentManager().GetCurrentSegmentType(), 
+  EXPECT_EQ(parser_->GetSegmentManager().GetCurrentSegmentType(),
             SegmentType::Code);
 }
 
@@ -159,26 +159,29 @@ TEST_F(SegmentDirectivesTest, MultipleSegmentSwitches) {
   HandleCsegDirective("", "", ctx_);
   parser_->GetSegmentManager().SetOrigin(0x1000);
   parser_->GetSegmentManager().Advance(20);
-  
+
   // DSEG @ 0x2000
   HandleDsegDirective("", "", ctx_);
   parser_->GetSegmentManager().SetOrigin(0x2000);
   parser_->GetSegmentManager().Advance(30);
-  
+
   // ASEG @ 0x3000
   HandleAsegDirective("", "", ctx_);
   parser_->GetSegmentManager().SetOrigin(0x3000);
   parser_->GetSegmentManager().Advance(40);
-  
+
   // Verify each segment preserved its address
   HandleCsegDirective("", "", ctx_);
-  EXPECT_EQ(parser_->GetSegmentManager().GetCurrentAddress(), 0x1014); // 0x1000 + 20
-  
+  EXPECT_EQ(parser_->GetSegmentManager().GetCurrentAddress(),
+            0x1014); // 0x1000 + 20
+
   HandleDsegDirective("", "", ctx_);
-  EXPECT_EQ(parser_->GetSegmentManager().GetCurrentAddress(), 0x201E); // 0x2000 + 30
-  
+  EXPECT_EQ(parser_->GetSegmentManager().GetCurrentAddress(),
+            0x201E); // 0x2000 + 30
+
   HandleAsegDirective("", "", ctx_);
-  EXPECT_EQ(parser_->GetSegmentManager().GetCurrentAddress(), 0x3028); // 0x3000 + 40
+  EXPECT_EQ(parser_->GetSegmentManager().GetCurrentAddress(),
+            0x3028); // 0x3000 + 40
 }
 
 /**
@@ -186,6 +189,6 @@ TEST_F(SegmentDirectivesTest, MultipleSegmentSwitches) {
  */
 TEST_F(SegmentDirectivesTest, InitialSegmentIsCode) {
   // Assert - Default should be Code segment
-  EXPECT_EQ(parser_->GetSegmentManager().GetCurrentSegmentType(), 
+  EXPECT_EQ(parser_->GetSegmentManager().GetCurrentSegmentType(),
             SegmentType::Code);
 }

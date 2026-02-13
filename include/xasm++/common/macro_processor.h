@@ -26,10 +26,11 @@ namespace xasm {
  * Contains all information needed to define and expand a macro.
  */
 struct MacroDefinition {
-  std::string name;                    ///< Macro name
-  std::vector<std::string> parameters; ///< Parameter names (max 8 per FLEX spec)
-  std::vector<std::string> body;       ///< Macro body lines
-  int definition_line;                 ///< Line number where defined
+  std::string name; ///< Macro name
+  std::vector<std::string>
+      parameters;                ///< Parameter names (max 8 per FLEX spec)
+  std::vector<std::string> body; ///< Macro body lines
+  int definition_line;           ///< Line number where defined
 };
 
 /**
@@ -49,11 +50,11 @@ struct MacroDefinition {
  * @par Usage Example
  * @code
  * MacroProcessor processor;
- * 
+ *
  * // Define a macro
  * processor.DefineMacro("MOVB", {"SRC", "DEST"},
  *                       {"        LDA     SRC", "        STA     DEST"});
- * 
+ *
  * // Check if macro exists
  * if (processor.IsMacro("MOVB")) {
  *     // Expand macro with arguments
@@ -163,8 +164,7 @@ private:
    * @param expansion_id Unique expansion ID
    * @return Unique label name
    */
-  std::string MakeLocalLabelUnique(const std::string &label,
-                                   int expansion_id);
+  std::string MakeLocalLabelUnique(const std::string &label, int expansion_id);
 
   std::unordered_map<std::string, MacroDefinition> macros_; ///< Defined macros
   int expansion_counter_ = 0; ///< Unique ID for macro expansions

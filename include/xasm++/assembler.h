@@ -144,7 +144,7 @@ public:
    * @return Number of sections that will be assembled
    */
   size_t GetSectionCount() const;
-  
+
   /**
    * @brief Get the assembled sections
    *
@@ -155,7 +155,7 @@ public:
    *
    * @note Should only be called after Assemble() has been called
    */
-  const std::vector<Section>& GetSections() const;
+  const std::vector<Section> &GetSections() const;
 
   /**
    * @brief Reset the assembler state

@@ -91,7 +91,7 @@ TEST_F(Z80NumberParserTest, OctalSuffixInvalid) {
   // Invalid octal digits (8 and 9 not allowed)
   EXPECT_FALSE(parser.TryParse("389O", value));
   EXPECT_FALSE(parser.TryParse("777O", value)); // Wait, this is valid
-  
+
   // Actually test with 8 and 9
   EXPECT_FALSE(parser.TryParse("180O", value));
   EXPECT_FALSE(parser.TryParse("290Q", value));
@@ -198,7 +198,7 @@ TEST_F(Z80NumberParserTest, RejectStandardFormats) {
   EXPECT_FALSE(parser.TryParse("$FF", value));
   EXPECT_FALSE(parser.TryParse("0xFF", value));
   EXPECT_FALSE(parser.TryParse("%10101010", value));
-  EXPECT_FALSE(parser.TryParse("255", value)); // No suffix
+  EXPECT_FALSE(parser.TryParse("255", value));  // No suffix
   EXPECT_FALSE(parser.TryParse("0377", value)); // No suffix
 }
 

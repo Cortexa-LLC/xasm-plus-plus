@@ -4,12 +4,12 @@
  */
 
 #include "xasm++/syntax/edtasm_m80_plusplus_syntax.h"
+#include "edtasm_directive_handlers.h"
 #include "xasm++/atom.h"
 #include "xasm++/cpu/cpu_z80.h"
 #include "xasm++/directives/common_directives.h"
 #include "xasm++/directives/directive_constants.h"
 #include "xasm++/directives/z80_directives.h"
-#include "edtasm_directive_handlers.h"
 #include <algorithm>
 #include <cctype>
 #include <chrono>
@@ -26,12 +26,12 @@ using namespace Z80Directives;
 
 // Import EDTASM-M80++ specific directive constants
 using xasm::directives::DOT_LIST;
-using xasm::directives::DOT_XLIST;
+using xasm::directives::DOT_RADIX;
+using xasm::directives::DOT_SUBTTL;
 using xasm::directives::DOT_TITLE;
+using xasm::directives::DOT_XLIST;
 using xasm::directives::LALL;
 using xasm::directives::SALL;
-using xasm::directives::DOT_SUBTTL;
-using xasm::directives::DOT_RADIX;
 using xasm::directives::STAR_LIST;
 using xasm::directives::STAR_RADIX;
 
@@ -39,8 +39,7 @@ using xasm::directives::STAR_RADIX;
 // Z80NumberParser Implementation
 // ============================================================================
 
-bool Z80NumberParser::TryParse(const std::string &token,
-                                int64_t &value) const {
+bool Z80NumberParser::TryParse(const std::string &token, int64_t &value) const {
   if (token.empty()) {
     return false;
   }
@@ -192,11 +191,11 @@ bool Z80NumberParser::TryParse(const std::string &token,
 
 EdtasmM80PlusPlusSyntaxParser::EdtasmM80PlusPlusSyntaxParser()
     : in_macro_definition_(false), macro_expansion_depth_(0),
-      macro_unique_counter_(0), next_macro_unique_id_(0), exitm_triggered_(false),
-      macro_nesting_depth_(0), in_repeat_block_(RepeatType::NONE),
-      rept_count_(0), repeat_nesting_depth_(0), current_address_(0),
-      end_directive_seen_(false), current_line_(0), listing_enabled_(true),
-      current_radix_(10) {
+      macro_unique_counter_(0), next_macro_unique_id_(0),
+      exitm_triggered_(false), macro_nesting_depth_(0),
+      in_repeat_block_(RepeatType::NONE), rept_count_(0),
+      repeat_nesting_depth_(0), current_address_(0), end_directive_seen_(false),
+      current_line_(0), listing_enabled_(true), current_radix_(10) {
   InitializeDirectiveRegistry();
 }
 
@@ -222,7 +221,7 @@ void EdtasmM80PlusPlusSyntaxParser::ToggleConditional() {
   if (conditional_stack_.empty()) {
     throw std::runtime_error("ELSE without matching IF");
   }
-  auto& block = conditional_stack_.back();
+  auto &block = conditional_stack_.back();
   if (block.in_else_block) {
     throw std::runtime_error("Multiple ELSE for same IF");
   }
@@ -238,7 +237,7 @@ void EdtasmM80PlusPlusSyntaxParser::PopConditional() {
 }
 
 bool EdtasmM80PlusPlusSyntaxParser::ShouldSuppressEmission() const {
-  for (const auto& block : conditional_stack_) {
+  for (const auto &block : conditional_stack_) {
     if (!block.should_emit) {
       return true;
     }
@@ -247,8 +246,8 @@ bool EdtasmM80PlusPlusSyntaxParser::ShouldSuppressEmission() const {
 }
 
 void EdtasmM80PlusPlusSyntaxParser::Parse(const std::string &source,
-                                     Section &section,
-                                     ConcreteSymbolTable &symbols) {
+                                          Section &section,
+                                          ConcreteSymbolTable &symbols) {
   // Reset state
   end_directive_seen_ = false;
   current_line_ = 0;
@@ -274,13 +273,11 @@ void EdtasmM80PlusPlusSyntaxParser::Parse(const std::string &source,
 
   // DATE: YYYYMMDD format
   int date_value = (local_time->tm_year + 1900) * 10000 +
-                   (local_time->tm_mon + 1) * 100 +
-                   local_time->tm_mday;
+                   (local_time->tm_mon + 1) * 100 + local_time->tm_mday;
   symbols.DefineLabel("DATE", date_value);
 
   // TIME: HHMMSS format
-  int time_value = local_time->tm_hour * 10000 +
-                   local_time->tm_min * 100 +
+  int time_value = local_time->tm_hour * 10000 + local_time->tm_min * 100 +
                    local_time->tm_sec;
   symbols.DefineLabel("TIME", time_value);
 
@@ -305,16 +302,16 @@ void EdtasmM80PlusPlusSyntaxParser::Parse(const std::string &source,
       continue;
     }
 
-
     // Parse the line
     ParseLine(line, section, symbols);
   }
-  
+
   // Check for unclosed blocks (only if END directive wasn't seen)
   // END directive stops assembly, so unclosed blocks after it are acceptable
   if (!end_directive_seen_) {
     if (in_macro_definition_) {
-      throw std::runtime_error("Unclosed MACRO definition: " + current_macro_.name);
+      throw std::runtime_error("Unclosed MACRO definition: " +
+                               current_macro_.name);
     }
     if (in_repeat_block_ != RepeatType::NONE) {
       throw std::runtime_error("Unclosed REPT/IRP/IRPC block");
@@ -322,7 +319,8 @@ void EdtasmM80PlusPlusSyntaxParser::Parse(const std::string &source,
   }
 }
 
-std::string EdtasmM80PlusPlusSyntaxParser::StripComments(const std::string &line) {
+std::string
+EdtasmM80PlusPlusSyntaxParser::StripComments(const std::string &line) {
   // Find semicolon comment
   size_t semi_pos = line.find(';');
   if (semi_pos != std::string::npos) {
@@ -341,27 +339,28 @@ std::string EdtasmM80PlusPlusSyntaxParser::Trim(const std::string &str) {
 }
 
 void EdtasmM80PlusPlusSyntaxParser::ParseLine(const std::string &line,
-                                         Section &section,
-                                         ConcreteSymbolTable &symbols) {
+                                              Section &section,
+                                              ConcreteSymbolTable &symbols) {
   // Store original line for listing output (before comment stripping)
   std::string original_line = line;
-  
 
-  
   // Check if we're capturing a macro/repeat block
   // First check if this line is ENDM (to end capture) or END (to stop assembly)
   std::string trimmed_line = Trim(line);
   std::string upper_line = trimmed_line;
-  std::transform(upper_line.begin(), upper_line.end(),
-                 upper_line.begin(), ::toupper);
-  
-  bool is_endm = (upper_line == ENDM || upper_line.rfind(std::string(ENDM) + " ", 0) == 0 ||
+  std::transform(upper_line.begin(), upper_line.end(), upper_line.begin(),
+                 ::toupper);
+
+  bool is_endm = (upper_line == ENDM ||
+                  upper_line.rfind(std::string(ENDM) + " ", 0) == 0 ||
                   upper_line.rfind(std::string(ENDM) + "\t", 0) == 0);
 
-  bool is_end = (upper_line == END || upper_line.rfind(std::string(END) + " ", 0) == 0 ||
-                 upper_line.rfind(std::string(END) + "\t", 0) == 0);
-  
-  // Check if this is a LOCAL directive (should be processed immediately in macro definition)
+  bool is_end =
+      (upper_line == END || upper_line.rfind(std::string(END) + " ", 0) == 0 ||
+       upper_line.rfind(std::string(END) + "\t", 0) == 0);
+
+  // Check if this is a LOCAL directive (should be processed immediately in
+  // macro definition)
   std::string trimmed_upper = upper_line;
   size_t first_non_space = trimmed_upper.find_first_not_of(" \t");
   if (first_non_space != std::string::npos) {
@@ -376,9 +375,10 @@ void EdtasmM80PlusPlusSyntaxParser::ParseLine(const std::string &line,
   // If this is a LOCAL directive in a macro definition, process it now
   if (in_macro_definition_ && is_local) {
     // Extract local symbol names from the operand
-    std::string operand = trimmed_upper.substr(std::strlen(LOCAL)); // Skip LOCAL
+    std::string operand =
+        trimmed_upper.substr(std::strlen(LOCAL)); // Skip LOCAL
     operand = Trim(operand);
-    
+
     // Parse comma-separated list of symbols
     std::vector<std::string> local_symbols;
     std::istringstream iss(operand);
@@ -389,31 +389,36 @@ void EdtasmM80PlusPlusSyntaxParser::ParseLine(const std::string &line,
         current_macro_.locals.push_back(symbol);
       }
     }
-    
+
     // Don't add LOCAL directive to macro body
     return;
   }
-  
+
   // END directive should always stop assembly, even in macro/repeat blocks
   if (is_end && !in_macro_definition_ && in_repeat_block_ != RepeatType::NONE) {
-    // END encountered while in repeat block - process it to set end_directive_seen_
-    // This allows unclosed repeat blocks before END
-    // (Don't return early - fall through to normal processing)
+    // END encountered while in repeat block - process it to set
+    // end_directive_seen_ This allows unclosed repeat blocks before END (Don't
+    // return early - fall through to normal processing)
   }
-  
+
   // If in macro definition or repeat block, capture lines (except END)
-  if ((in_macro_definition_ || in_repeat_block_ != RepeatType::NONE) && !is_local && !is_end) {
+  if ((in_macro_definition_ || in_repeat_block_ != RepeatType::NONE) &&
+      !is_local && !is_end) {
     if (in_macro_definition_) {
       // Check for nested MACRO/REPT/IRP/IRPC to track nesting
-      if (upper_line.rfind(std::string(MACRO) + " ", 0) == 0 || upper_line.rfind(std::string(MACRO) + "\t", 0) == 0 ||
-          upper_line.rfind(std::string(REPT) + " ", 0) == 0 || upper_line.rfind(std::string(REPT) + "\t", 0) == 0 ||
-          upper_line.rfind(std::string(IRP) + " ", 0) == 0 || upper_line.rfind(std::string(IRP) + "\t", 0) == 0 ||
-          upper_line.rfind(std::string(IRPC) + " ", 0) == 0 || upper_line.rfind(std::string(IRPC) + "\t", 0) == 0) {
+      if (upper_line.rfind(std::string(MACRO) + " ", 0) == 0 ||
+          upper_line.rfind(std::string(MACRO) + "\t", 0) == 0 ||
+          upper_line.rfind(std::string(REPT) + " ", 0) == 0 ||
+          upper_line.rfind(std::string(REPT) + "\t", 0) == 0 ||
+          upper_line.rfind(std::string(IRP) + " ", 0) == 0 ||
+          upper_line.rfind(std::string(IRP) + "\t", 0) == 0 ||
+          upper_line.rfind(std::string(IRPC) + " ", 0) == 0 ||
+          upper_line.rfind(std::string(IRPC) + "\t", 0) == 0) {
         macro_nesting_depth_++;
         current_macro_.body.push_back(trimmed_line);
         return;
       }
-      
+
       // Check for ENDM
       if (is_endm) {
         if (macro_nesting_depth_ > 0) {
@@ -430,16 +435,21 @@ void EdtasmM80PlusPlusSyntaxParser::ParseLine(const std::string &line,
         return;
       }
     } else {
-      // In repeat block - track nesting depth for nested REPT/IRP/IRPC/MACRO blocks
-      if (upper_line.rfind(std::string(MACRO) + " ", 0) == 0 || upper_line.rfind(std::string(MACRO) + "\t", 0) == 0 ||
-          upper_line.rfind(std::string(REPT) + " ", 0) == 0 || upper_line.rfind(std::string(REPT) + "\t", 0) == 0 ||
-          upper_line.rfind(std::string(IRP) + " ", 0) == 0 || upper_line.rfind(std::string(IRP) + "\t", 0) == 0 ||
-          upper_line.rfind(std::string(IRPC) + " ", 0) == 0 || upper_line.rfind(std::string(IRPC) + "\t", 0) == 0) {
+      // In repeat block - track nesting depth for nested REPT/IRP/IRPC/MACRO
+      // blocks
+      if (upper_line.rfind(std::string(MACRO) + " ", 0) == 0 ||
+          upper_line.rfind(std::string(MACRO) + "\t", 0) == 0 ||
+          upper_line.rfind(std::string(REPT) + " ", 0) == 0 ||
+          upper_line.rfind(std::string(REPT) + "\t", 0) == 0 ||
+          upper_line.rfind(std::string(IRP) + " ", 0) == 0 ||
+          upper_line.rfind(std::string(IRP) + "\t", 0) == 0 ||
+          upper_line.rfind(std::string(IRPC) + " ", 0) == 0 ||
+          upper_line.rfind(std::string(IRPC) + "\t", 0) == 0) {
         repeat_nesting_depth_++;
         repeat_body_.push_back(trimmed_line);
         return;
       }
-      
+
       // Check for ENDM
       if (is_endm) {
         if (repeat_nesting_depth_ > 0) {
@@ -457,7 +467,7 @@ void EdtasmM80PlusPlusSyntaxParser::ParseLine(const std::string &line,
       }
     }
   }
-  
+
   size_t pos = 0;
 
   // Check for label (ends with : or ::)
@@ -500,21 +510,20 @@ void EdtasmM80PlusPlusSyntaxParser::ParseLine(const std::string &line,
   if (second_start < line.size()) {
     second_token = line.substr(second_start, pos - second_start);
   }
-  
+
   // Convert second token to uppercase
   std::string upper_second = second_token;
-  std::transform(upper_second.begin(), upper_second.end(),
-                 upper_second.begin(), ::toupper);
+  std::transform(upper_second.begin(), upper_second.end(), upper_second.begin(),
+                 ::toupper);
 
   // Check if this is label-without-colon syntax (LABEL EQU/=/SET/MACRO value)
-  if (label.empty() && 
-      (upper_second == EQU || upper_second == EQUALS || 
-       upper_second == SET || upper_second == DEFL || 
-       upper_second == MACRO)) {
+  if (label.empty() &&
+      (upper_second == EQU || upper_second == EQUALS || upper_second == SET ||
+       upper_second == DEFL || upper_second == MACRO)) {
     // First token is the label, second is the directive
     label = mnemonic;
     upper_mnemonic = upper_second;
-    
+
     // Skip whitespace after directive
     while (pos < line.size() && std::isspace(line[pos])) {
       pos++;
@@ -532,8 +541,8 @@ void EdtasmM80PlusPlusSyntaxParser::ParseLine(const std::string &line,
 
   // Conditional assembly directives must always be processed
   // (to maintain stack integrity), but other directives honor the stack
-  bool is_conditional_directive = 
-      (upper_mnemonic == IF || upper_mnemonic == IFDEF || 
+  bool is_conditional_directive =
+      (upper_mnemonic == IF || upper_mnemonic == IFDEF ||
        upper_mnemonic == IFNDEF || upper_mnemonic == IFEQ ||
        upper_mnemonic == IFNE || upper_mnemonic == IFLT ||
        upper_mnemonic == IFGT || upper_mnemonic == IFLE ||
@@ -591,7 +600,7 @@ void EdtasmM80PlusPlusSyntaxParser::ParseLine(const std::string &line,
   // Check if it's a macro invocation
   if (macros_.find(upper_mnemonic) != macros_.end()) {
     const MacroDefinition &macro = macros_[upper_mnemonic];
-    
+
     // Parse arguments
     std::vector<std::string> args;
     std::string trimmed_operand = Trim(operand);
@@ -606,35 +615,37 @@ void EdtasmM80PlusPlusSyntaxParser::ParseLine(const std::string &line,
       // Last argument
       args.push_back(Trim(remaining));
     }
-    
+
     // Check parameter count
     if (args.size() != macro.params.size()) {
       throw std::runtime_error("Macro " + macro.name + " expects " +
-                               std::to_string(macro.params.size()) + " parameters, got " +
+                               std::to_string(macro.params.size()) +
+                               " parameters, got " +
                                std::to_string(args.size()));
     }
-    
+
     // Expand macro body with parameter substitution
     std::vector<std::string> expanded_lines;
     int unique_id = next_macro_unique_id_++;
-    
+
     // Build set of unique LOCAL label names to suppress atom creation
     macro_local_labels_.clear();
     for (const auto &local_label : macro.locals) {
       std::string unique_label = local_label + "_" + std::to_string(unique_id);
       macro_local_labels_.insert(unique_label);
     }
-    
+
     for (const auto &body_line : macro.body) {
-      std::string expanded = SubstituteMacroParameters(body_line, macro.params, args);
+      std::string expanded =
+          SubstituteMacroParameters(body_line, macro.params, args);
       // Handle LOCAL labels
       expanded = MakeLocalLabelUnique(expanded, macro.locals, unique_id);
       expanded_lines.push_back(expanded);
     }
-    
+
     // Parse expanded lines
     ExpandAndParseLines(expanded_lines, section, symbols);
-    
+
     // Clear LOCAL labels after macro expansion
     macro_local_labels_.clear();
     return;
@@ -646,7 +657,7 @@ void EdtasmM80PlusPlusSyntaxParser::ParseLine(const std::string &line,
   inst_atom->location = SourceLocation(current_file_, current_line_, 1);
   inst_atom->source_line = original_line;
   section.atoms.push_back(inst_atom);
-  
+
   // Estimate instruction size based on mnemonic and operand
   // This is a heuristic until CPU plugin provides exact encoding (Phase 9+)
   uint32_t estimated_size = EstimateZ80InstructionSize(upper_mnemonic, operand);
@@ -657,33 +668,38 @@ uint32_t EdtasmM80PlusPlusSyntaxParser::EstimateZ80InstructionSize(
     const std::string &mnemonic, const std::string &operand) {
   // Heuristic Z80 instruction size estimation
   // Actual encoding will be done by CPU plugin (Phase 9+)
-  
+
   // Extended instructions (ED prefix) - typically 2+ bytes
-  if (mnemonic.find("LD") == 0 && (operand.find("I,") != std::string::npos || 
-                                    operand.find("R,") != std::string::npos ||
-                                    operand.find(",I") != std::string::npos ||
-                                    operand.find(",R") != std::string::npos)) {
+  if (mnemonic.find("LD") == 0 && (operand.find("I,") != std::string::npos ||
+                                   operand.find("R,") != std::string::npos ||
+                                   operand.find(",I") != std::string::npos ||
+                                   operand.find(",R") != std::string::npos)) {
     return 2; // ED-prefixed LD I/R instructions
   }
-  
+
   // Index register instructions (DD/FD prefix)
-  if (operand.find("IX") != std::string::npos || operand.find("IY") != std::string::npos) {
+  if (operand.find("IX") != std::string::npos ||
+      operand.find("IY") != std::string::npos) {
     // With displacement: prefix + opcode + displacement
     if (operand.find("(") != std::string::npos) {
-      return operand.find(",") != std::string::npos ? 4 : 3; // With or without immediate
+      return operand.find(",") != std::string::npos
+                 ? 4
+                 : 3; // With or without immediate
     }
     return 2; // Without displacement
   }
-  
+
   // Immediate 16-bit operands (e.g., LD HL,nnnn)
-  if (operand.find(",") != std::string::npos && 
-      (operand.find("$") != std::string::npos || operand.find("0") != std::string::npos)) {
+  if (operand.find(",") != std::string::npos &&
+      (operand.find("$") != std::string::npos ||
+       operand.find("0") != std::string::npos)) {
     std::string trimmed_op = Trim(operand);
     // Check if likely 16-bit value (hex with 3+ digits, or decimal > 255)
     if (trimmed_op.find("$") != std::string::npos) {
       size_t hex_start = trimmed_op.find("$") + 1;
       size_t hex_end = hex_start;
-      while (hex_end < trimmed_op.size() && std::isxdigit(trimmed_op[hex_end])) {
+      while (hex_end < trimmed_op.size() &&
+             std::isxdigit(trimmed_op[hex_end])) {
         hex_end++;
       }
       if (hex_end - hex_start > 2) {
@@ -691,34 +707,35 @@ uint32_t EdtasmM80PlusPlusSyntaxParser::EstimateZ80InstructionSize(
       }
     }
   }
-  
+
   // Immediate 8-bit operands (e.g., LD A,n)
   if (operand.find(",") != std::string::npos) {
     return 2; // opcode + byte operand (default for immediate data)
   }
-  
+
   // Relative jumps (JR, DJNZ) - opcode + displacement
   if (mnemonic == "JR" || mnemonic == "DJNZ") {
     return 2;
   }
-  
+
   // Absolute jumps/calls - opcode + 16-bit address
   if (mnemonic == "JP" || mnemonic == "CALL") {
     return 3;
   }
-  
+
   // RST instructions - single byte
   if (mnemonic == "RST") {
     return 1;
   }
-  
+
   // Default: assume single-byte instruction (register-only, implicit, etc.)
   return 1;
 }
 
-std::string EdtasmM80PlusPlusSyntaxParser::ParseLabel(const std::string &line,
-                                                 size_t &pos, Section &section,
-                                                 ConcreteSymbolTable &symbols) {
+std::string
+EdtasmM80PlusPlusSyntaxParser::ParseLabel(const std::string &line, size_t &pos,
+                                          Section &section,
+                                          ConcreteSymbolTable &symbols) {
   // Check if line starts with a label (identifier followed by : or ::)
   size_t colon_pos = line.find(':');
   if (colon_pos == std::string::npos || colon_pos == 0) {
@@ -752,7 +769,7 @@ std::string EdtasmM80PlusPlusSyntaxParser::ParseLabel(const std::string &line,
 
   // Define symbol first
   symbols.DefineLabel(potential_label, current_address_);
-  
+
   // Mark as public (exported) if double colon was used
   if (is_public) {
     Symbol *symbol = symbols.GetSymbol(potential_label);
@@ -764,7 +781,8 @@ std::string EdtasmM80PlusPlusSyntaxParser::ParseLabel(const std::string &line,
   // Create label atom ONLY if not a macro LOCAL label
   // Macro LOCAL labels should not create atoms (only used for references)
   if (macro_local_labels_.find(potential_label) == macro_local_labels_.end()) {
-    auto label_atom = std::make_shared<LabelAtom>(potential_label, current_address_);
+    auto label_atom =
+        std::make_shared<LabelAtom>(potential_label, current_address_);
     label_atom->location = SourceLocation(current_file_, current_line_, 1);
     label_atom->source_line = line; // Store original line
     section.atoms.push_back(label_atom);
@@ -782,7 +800,6 @@ std::string EdtasmM80PlusPlusSyntaxParser::ParseLabel(const std::string &line,
 
   return potential_label;
 }
-
 
 uint32_t EdtasmM80PlusPlusSyntaxParser::ParseNumber(const std::string &str) {
   std::string trimmed = Trim(str);
@@ -825,7 +842,7 @@ uint32_t EdtasmM80PlusPlusSyntaxParser::ParseNumber(const std::string &str) {
 
 std::shared_ptr<Expression>
 EdtasmM80PlusPlusSyntaxParser::ParseExpression(const std::string &str,
-                                          ConcreteSymbolTable &symbols) {
+                                               ConcreteSymbolTable &symbols) {
   // Create ExpressionParser with symbol table and Z80 number parser
   ExpressionParser parser(&symbols, &z80_number_parser_);
   return parser.Parse(str);
@@ -874,12 +891,12 @@ std::string EdtasmM80PlusPlusSyntaxParser::SubstituteMacroParameters(
     const std::string &line, const std::vector<std::string> &param_names,
     const std::vector<std::string> &param_values) {
   std::string result = line;
-  
+
   // Substitute each parameter
   for (size_t i = 0; i < param_names.size(); ++i) {
     std::string param_name = param_names[i];
     std::string param_value = (i < param_values.size()) ? param_values[i] : "";
-    
+
     // & prefix - textual substitution
     std::string amp_param = "&" + param_name;
     size_t pos = 0;
@@ -887,7 +904,7 @@ std::string EdtasmM80PlusPlusSyntaxParser::SubstituteMacroParameters(
       result.replace(pos, amp_param.size(), param_value);
       pos += param_value.size();
     }
-    
+
     // % prefix - numeric evaluation
     // First substitute with value, then evaluate the resulting expression
     std::string pct_param = "%" + param_name;
@@ -896,15 +913,13 @@ std::string EdtasmM80PlusPlusSyntaxParser::SubstituteMacroParameters(
       // Extract the expression context around the parameter
       // We need to find the expression boundaries to evaluate
       size_t expr_end = pos + pct_param.size();
-      
+
       // Find expression end (whitespace, comma, newline, or end of string)
-      while (expr_end < result.size() && 
-             !std::isspace(result[expr_end]) && 
-             result[expr_end] != ',' &&
-             result[expr_end] != ';') {
+      while (expr_end < result.size() && !std::isspace(result[expr_end]) &&
+             result[expr_end] != ',' && result[expr_end] != ';') {
         expr_end++;
       }
-      
+
       // Extract expression with parameter substituted
       std::string expr = result.substr(pos, expr_end - pos);
       // Replace %param with value in the expression
@@ -912,7 +927,7 @@ std::string EdtasmM80PlusPlusSyntaxParser::SubstituteMacroParameters(
       if (param_pos != std::string::npos) {
         expr.replace(param_pos, pct_param.size(), param_value);
       }
-      
+
       // Try to evaluate the expression
       try {
         ConcreteSymbolTable temp_symbols;
@@ -934,7 +949,7 @@ std::string EdtasmM80PlusPlusSyntaxParser::SubstituteMacroParameters(
       }
     }
   }
-  
+
   return result;
 }
 
@@ -947,41 +962,43 @@ std::string EdtasmM80PlusPlusSyntaxParser::MakeLocalLabelUnique(
     const std::string &line, const std::vector<std::string> &local_labels,
     int unique_id) {
   std::string result = line;
-  
+
   for (const auto &label : local_labels) {
     // Find label references (with or without colon)
     std::string unique_label = label + "_" + std::to_string(unique_id);
-    
+
     // Replace label: with unique_label:
     size_t pos = 0;
     while ((pos = result.find(label + ":", pos)) != std::string::npos) {
       result.replace(pos, label.size(), unique_label);
       pos += unique_label.size() + 1;
     }
-    
+
     // Replace standalone label references
     // Check word boundaries considering Z80 identifier characters
     pos = 0;
     while ((pos = result.find(label, pos)) != std::string::npos) {
       // Check if it's a standalone reference (not part of another identifier)
       bool is_standalone = true;
-      
+
       // Check character before label (if any)
       if (pos > 0) {
         char prev = result[pos - 1];
-        if (std::isalnum(prev) || prev == '_' || prev == '$' || prev == '.' || prev == '?') {
+        if (std::isalnum(prev) || prev == '_' || prev == '$' || prev == '.' ||
+            prev == '?') {
           is_standalone = false;
         }
       }
-      
+
       // Check character after label (if any)
       if (pos + label.size() < result.size()) {
         char next = result[pos + label.size()];
-        if (std::isalnum(next) || next == '_' || next == '$' || next == '.' || next == '?' || next == ':') {
+        if (std::isalnum(next) || next == '_' || next == '$' || next == '.' ||
+            next == '?' || next == ':') {
           is_standalone = false;
         }
       }
-      
+
       if (is_standalone) {
         result.replace(pos, label.size(), unique_label);
         pos += unique_label.size();
@@ -990,7 +1007,7 @@ std::string EdtasmM80PlusPlusSyntaxParser::MakeLocalLabelUnique(
       }
     }
   }
-  
+
   return result;
 }
 
@@ -1058,22 +1075,25 @@ void EdtasmM80PlusPlusSyntaxParser::InitializeDirectiveRegistry() {
       {DB, DEFB, BYTE, DM, DEFM, TEXT, ASCII},
       [this](const std::string & /*label*/, const std::string &operand,
              DirectiveContext &ctx) {
-        // Parse operands manually, respecting quoted strings (don't split on comma inside quotes)
+        // Parse operands manually, respecting quoted strings (don't split on
+        // comma inside quotes)
         std::vector<std::string> tokens;
         std::string current_token;
         bool in_string = false;
         char string_delimiter = '\0';
         bool escape_next = false;
-        
+
         for (size_t i = 0; i < operand.size(); ++i) {
           char c = operand[i];
-          
+
           if (escape_next) {
-            // Previous character was backslash - include this character literally
+            // Previous character was backslash - include this character
+            // literally
             current_token += c;
             escape_next = false;
           } else if (in_string && c == '\\') {
-            // Escape sequence - include backslash and mark that next char is escaped
+            // Escape sequence - include backslash and mark that next char is
+            // escaped
             current_token += c;
             escape_next = true;
           } else if (in_string && c == string_delimiter) {
@@ -1096,64 +1116,64 @@ void EdtasmM80PlusPlusSyntaxParser::InitializeDirectiveRegistry() {
             current_token += c;
           }
         }
-        
+
         // Add final token
         if (!current_token.empty()) {
           tokens.push_back(Trim(current_token));
         }
-        
+
         // Collect all bytes - try immediate evaluation when possible
         std::vector<uint8_t> immediate_bytes;
-        
+
         for (const std::string &token : tokens) {
           if (token.empty()) {
             continue;
           }
-          
+
           // Check if token is a string literal (starts with ' or ")
-          if (token.size() >= 2 && 
-              (token[0] == '\'' || token[0] == '"')) {
+          if (token.size() >= 2 && (token[0] == '\'' || token[0] == '"')) {
             char delimiter = token[0];
-            
+
             // Find the real end delimiter (accounting for escape sequences)
             // Token should be properly delimited from tokenization phase
             size_t end_pos = token.size() - 1;
             if (token[end_pos] != delimiter) {
-              throw std::runtime_error(FormatError("String missing closing delimiter"));
+              throw std::runtime_error(
+                  FormatError("String missing closing delimiter"));
             }
-            
+
             // Extract string content (between delimiters) - immediate bytes
             // Process escape sequences
             for (size_t i = 1; i < end_pos; ++i) {
               char c = token[i];
-              
+
               // Check for escape sequence
               if (c == '\\' && i + 1 < end_pos) {
                 char next = token[i + 1];
                 switch (next) {
-                  case 'n':   // Newline
-                    immediate_bytes.push_back('\n');
-                    break;
-                  case 'r':   // Carriage return
-                    immediate_bytes.push_back('\r');
-                    break;
-                  case 't':   // Tab
-                    immediate_bytes.push_back('\t');
-                    break;
-                  case '\\':  // Backslash
-                    immediate_bytes.push_back('\\');
-                    break;
-                  case '\'':  // Single quote
-                    immediate_bytes.push_back('\'');
-                    break;
-                  case '"':   // Double quote
-                    immediate_bytes.push_back('"');
-                    break;
-                  default:
-                    // Unknown escape sequence - treat as literal
-                    immediate_bytes.push_back(c);
-                    immediate_bytes.push_back(next);
-                    break;
+                case 'n': // Newline
+                  immediate_bytes.push_back('\n');
+                  break;
+                case 'r': // Carriage return
+                  immediate_bytes.push_back('\r');
+                  break;
+                case 't': // Tab
+                  immediate_bytes.push_back('\t');
+                  break;
+                case '\\': // Backslash
+                  immediate_bytes.push_back('\\');
+                  break;
+                case '\'': // Single quote
+                  immediate_bytes.push_back('\'');
+                  break;
+                case '"': // Double quote
+                  immediate_bytes.push_back('"');
+                  break;
+                default:
+                  // Unknown escape sequence - treat as literal
+                  immediate_bytes.push_back(c);
+                  immediate_bytes.push_back(next);
+                  break;
                 }
                 i++; // Skip next character (part of escape sequence)
                 (*ctx.current_address)++;
@@ -1177,28 +1197,32 @@ void EdtasmM80PlusPlusSyntaxParser::InitializeDirectiveRegistry() {
               // Flush any pending immediate bytes first
               if (!immediate_bytes.empty()) {
                 auto data_atom = std::make_shared<DataAtom>(immediate_bytes);
-                data_atom->location = SourceLocation(ctx.current_file, ctx.current_line, 1);
+                data_atom->location =
+                    SourceLocation(ctx.current_file, ctx.current_line, 1);
                 data_atom->source_line = ctx.source_line;
                 ctx.section->atoms.push_back(data_atom);
                 immediate_bytes.clear();
               }
-              
+
               // Store expression for deferred evaluation
               std::vector<std::string> expressions = {token};
-              auto data_atom = std::make_shared<DataAtom>(expressions, DataSize::Byte);
-              data_atom->location = SourceLocation(ctx.current_file, ctx.current_line, 1);
+              auto data_atom =
+                  std::make_shared<DataAtom>(expressions, DataSize::Byte);
+              data_atom->location =
+                  SourceLocation(ctx.current_file, ctx.current_line, 1);
               data_atom->source_line = ctx.source_line;
               ctx.section->atoms.push_back(data_atom);
               (*ctx.current_address)++;
             }
           }
         }
-        
-        // Create atom with any remaining immediate bytes (including empty for DB '')
-        // Only create if we processed at least one token
+
+        // Create atom with any remaining immediate bytes (including empty for
+        // DB '') Only create if we processed at least one token
         if (!tokens.empty()) {
           auto data_atom = std::make_shared<DataAtom>(immediate_bytes);
-          data_atom->location = SourceLocation(ctx.current_file, ctx.current_line, 1);
+          data_atom->location =
+              SourceLocation(ctx.current_file, ctx.current_line, 1);
           data_atom->source_line = ctx.source_line;
           ctx.section->atoms.push_back(data_atom);
         }
@@ -1213,10 +1237,10 @@ void EdtasmM80PlusPlusSyntaxParser::InitializeDirectiveRegistry() {
         // This ensures consistent handling of forward/backward refs
         // and preserves DataSize::Word for relocatable output
         std::vector<std::string> expressions;
-        
+
         std::istringstream iss(operand);
         std::string token;
-        
+
         while (std::getline(iss, token, ',')) {
           token = Trim(token);
           if (!token.empty()) {
@@ -1224,11 +1248,13 @@ void EdtasmM80PlusPlusSyntaxParser::InitializeDirectiveRegistry() {
             (*ctx.current_address) += 2;
           }
         }
-        
+
         // Create single DataAtom with all expressions
         if (!expressions.empty()) {
-          auto data_atom = std::make_shared<DataAtom>(expressions, DataSize::Word);
-          data_atom->location = SourceLocation(ctx.current_file, ctx.current_line, 1);
+          auto data_atom =
+              std::make_shared<DataAtom>(expressions, DataSize::Word);
+          data_atom->location =
+              SourceLocation(ctx.current_file, ctx.current_line, 1);
           data_atom->source_line = ctx.source_line;
           ctx.section->atoms.push_back(data_atom);
         }
@@ -1254,11 +1280,10 @@ void EdtasmM80PlusPlusSyntaxParser::InitializeDirectiveRegistry() {
       });
 
   // END - End assembly
-  directive_registry_.Register(END, [this](const std::string & /*label*/,
-                                           const std::string & /*operand*/,
-                                             DirectiveContext & /*ctx*/) {
-    end_directive_seen_ = true;
-  });
+  directive_registry_.Register(
+      END,
+      [this](const std::string & /*label*/, const std::string & /*operand*/,
+             DirectiveContext & /*ctx*/) { end_directive_seen_ = true; });
 
   // PUBLIC/GLOBAL/ENTRY - Export symbols (multi-alias)
   directive_registry_.Register(
@@ -1307,12 +1332,13 @@ void EdtasmM80PlusPlusSyntaxParser::InitializeDirectiveRegistry() {
 
   // IF - Conditional assembly (expression-based)
   directive_registry_.Register(IF, [this](const std::string & /*label*/,
-                                      const std::string &operand,
-                                        DirectiveContext &ctx) {
-    auto parser = static_cast<EdtasmM80PlusPlusSyntaxParser*>(ctx.parser_state);
+                                          const std::string &operand,
+                                          DirectiveContext &ctx) {
+    auto parser =
+        static_cast<EdtasmM80PlusPlusSyntaxParser *>(ctx.parser_state);
     auto expr = ParseExpression(operand, *ctx.symbols);
     int64_t value = expr->Evaluate(*ctx.symbols);
-    
+
     ConditionalBlock block;
     block.condition = (value != 0);
     block.in_else_block = false;
@@ -1323,17 +1349,18 @@ void EdtasmM80PlusPlusSyntaxParser::InitializeDirectiveRegistry() {
   // ELSE - Conditional assembly
   directive_registry_.Register(ELSE, [](const std::string & /*label*/,
                                         const std::string & /*operand*/,
-                                          DirectiveContext &ctx) {
-    auto parser = static_cast<EdtasmM80PlusPlusSyntaxParser*>(ctx.parser_state);
+                                        DirectiveContext &ctx) {
+    auto parser =
+        static_cast<EdtasmM80PlusPlusSyntaxParser *>(ctx.parser_state);
     if (parser->conditional_stack_.empty()) {
       throw std::runtime_error("ELSE without matching IF");
     }
-    
+
     ConditionalBlock &block = parser->conditional_stack_.back();
     if (block.in_else_block) {
       throw std::runtime_error("Multiple ELSE in same IF block");
     }
-    
+
     block.in_else_block = true;
     block.should_emit = !block.condition;
   });
@@ -1341,8 +1368,9 @@ void EdtasmM80PlusPlusSyntaxParser::InitializeDirectiveRegistry() {
   // ENDIF - Conditional assembly
   directive_registry_.Register(ENDIF, [](const std::string & /*label*/,
                                          const std::string & /*operand*/,
-                                           DirectiveContext &ctx) {
-    auto parser = static_cast<EdtasmM80PlusPlusSyntaxParser*>(ctx.parser_state);
+                                         DirectiveContext &ctx) {
+    auto parser =
+        static_cast<EdtasmM80PlusPlusSyntaxParser *>(ctx.parser_state);
     if (parser->conditional_stack_.empty()) {
       throw std::runtime_error("ENDIF without matching IF");
     }
@@ -1351,12 +1379,13 @@ void EdtasmM80PlusPlusSyntaxParser::InitializeDirectiveRegistry() {
 
   // IFDEF - If symbol defined
   directive_registry_.Register(IFDEF, [this](const std::string & /*label*/,
-                                              const std::string &operand,
-                                              DirectiveContext &ctx) {
-    auto parser = static_cast<EdtasmM80PlusPlusSyntaxParser*>(ctx.parser_state);
+                                             const std::string &operand,
+                                             DirectiveContext &ctx) {
+    auto parser =
+        static_cast<EdtasmM80PlusPlusSyntaxParser *>(ctx.parser_state);
     std::string symbol = Trim(operand);
     bool is_defined = ctx.symbols->IsDefined(symbol);
-    
+
     ConditionalBlock block;
     block.condition = is_defined;
     block.in_else_block = false;
@@ -1366,12 +1395,13 @@ void EdtasmM80PlusPlusSyntaxParser::InitializeDirectiveRegistry() {
 
   // IFNDEF - If symbol not defined
   directive_registry_.Register(IFNDEF, [this](const std::string & /*label*/,
-                                               const std::string &operand,
-                                               DirectiveContext &ctx) {
-    auto parser = static_cast<EdtasmM80PlusPlusSyntaxParser*>(ctx.parser_state);
+                                              const std::string &operand,
+                                              DirectiveContext &ctx) {
+    auto parser =
+        static_cast<EdtasmM80PlusPlusSyntaxParser *>(ctx.parser_state);
     std::string symbol = Trim(operand);
     bool is_defined = ctx.symbols->IsDefined(symbol);
-    
+
     ConditionalBlock block;
     block.condition = !is_defined;
     block.in_else_block = false;
@@ -1381,12 +1411,13 @@ void EdtasmM80PlusPlusSyntaxParser::InitializeDirectiveRegistry() {
 
   // IFEQ - If expression equals zero (or two operands equal)
   directive_registry_.Register(IFEQ, [this](const std::string & /*label*/,
-                                             const std::string &operand,
-                                             DirectiveContext &ctx) {
-    auto parser = static_cast<EdtasmM80PlusPlusSyntaxParser*>(ctx.parser_state);
+                                            const std::string &operand,
+                                            DirectiveContext &ctx) {
+    auto parser =
+        static_cast<EdtasmM80PlusPlusSyntaxParser *>(ctx.parser_state);
     auto expr = ParseExpression(operand, *ctx.symbols);
     int64_t value = expr->Evaluate(*ctx.symbols);
-    
+
     ConditionalBlock block;
     block.condition = (value == 0);
     block.in_else_block = false;
@@ -1396,12 +1427,13 @@ void EdtasmM80PlusPlusSyntaxParser::InitializeDirectiveRegistry() {
 
   // IFNE - If expression not equal to zero
   directive_registry_.Register(IFNE, [this](const std::string & /*label*/,
-                                             const std::string &operand,
-                                             DirectiveContext &ctx) {
-    auto parser = static_cast<EdtasmM80PlusPlusSyntaxParser*>(ctx.parser_state);
+                                            const std::string &operand,
+                                            DirectiveContext &ctx) {
+    auto parser =
+        static_cast<EdtasmM80PlusPlusSyntaxParser *>(ctx.parser_state);
     auto expr = ParseExpression(operand, *ctx.symbols);
     int64_t value = expr->Evaluate(*ctx.symbols);
-    
+
     ConditionalBlock block;
     block.condition = (value != 0);
     block.in_else_block = false;
@@ -1411,12 +1443,13 @@ void EdtasmM80PlusPlusSyntaxParser::InitializeDirectiveRegistry() {
 
   // IFLT - If expression less than zero
   directive_registry_.Register(IFLT, [this](const std::string & /*label*/,
-                                             const std::string &operand,
-                                             DirectiveContext &ctx) {
-    auto parser = static_cast<EdtasmM80PlusPlusSyntaxParser*>(ctx.parser_state);
+                                            const std::string &operand,
+                                            DirectiveContext &ctx) {
+    auto parser =
+        static_cast<EdtasmM80PlusPlusSyntaxParser *>(ctx.parser_state);
     auto expr = ParseExpression(operand, *ctx.symbols);
     int64_t value = expr->Evaluate(*ctx.symbols);
-    
+
     ConditionalBlock block;
     block.condition = (value < 0);
     block.in_else_block = false;
@@ -1426,12 +1459,13 @@ void EdtasmM80PlusPlusSyntaxParser::InitializeDirectiveRegistry() {
 
   // IFGT - If expression greater than zero
   directive_registry_.Register(IFGT, [this](const std::string & /*label*/,
-                                             const std::string &operand,
-                                             DirectiveContext &ctx) {
-    auto parser = static_cast<EdtasmM80PlusPlusSyntaxParser*>(ctx.parser_state);
+                                            const std::string &operand,
+                                            DirectiveContext &ctx) {
+    auto parser =
+        static_cast<EdtasmM80PlusPlusSyntaxParser *>(ctx.parser_state);
     auto expr = ParseExpression(operand, *ctx.symbols);
     int64_t value = expr->Evaluate(*ctx.symbols);
-    
+
     ConditionalBlock block;
     block.condition = (value > 0);
     block.in_else_block = false;
@@ -1441,12 +1475,13 @@ void EdtasmM80PlusPlusSyntaxParser::InitializeDirectiveRegistry() {
 
   // IFLE - If expression less than or equal to zero
   directive_registry_.Register(IFLE, [this](const std::string & /*label*/,
-                                             const std::string &operand,
-                                             DirectiveContext &ctx) {
-    auto parser = static_cast<EdtasmM80PlusPlusSyntaxParser*>(ctx.parser_state);
+                                            const std::string &operand,
+                                            DirectiveContext &ctx) {
+    auto parser =
+        static_cast<EdtasmM80PlusPlusSyntaxParser *>(ctx.parser_state);
     auto expr = ParseExpression(operand, *ctx.symbols);
     int64_t value = expr->Evaluate(*ctx.symbols);
-    
+
     ConditionalBlock block;
     block.condition = (value <= 0);
     block.in_else_block = false;
@@ -1456,12 +1491,13 @@ void EdtasmM80PlusPlusSyntaxParser::InitializeDirectiveRegistry() {
 
   // IFGE - If expression greater than or equal to zero
   directive_registry_.Register(IFGE, [this](const std::string & /*label*/,
-                                             const std::string &operand,
-                                             DirectiveContext &ctx) {
-    auto parser = static_cast<EdtasmM80PlusPlusSyntaxParser*>(ctx.parser_state);
+                                            const std::string &operand,
+                                            DirectiveContext &ctx) {
+    auto parser =
+        static_cast<EdtasmM80PlusPlusSyntaxParser *>(ctx.parser_state);
     auto expr = ParseExpression(operand, *ctx.symbols);
     int64_t value = expr->Evaluate(*ctx.symbols);
-    
+
     ConditionalBlock block;
     block.condition = (value >= 0);
     block.in_else_block = false;
@@ -1471,10 +1507,11 @@ void EdtasmM80PlusPlusSyntaxParser::InitializeDirectiveRegistry() {
 
   // IF1 - If first pass (always false for single-pass assembler)
   directive_registry_.Register(IF1, [](const std::string & /*label*/,
-                                        const std::string & /*operand*/,
-                                        DirectiveContext &ctx) {
-    auto parser = static_cast<EdtasmM80PlusPlusSyntaxParser*>(ctx.parser_state);
-    
+                                       const std::string & /*operand*/,
+                                       DirectiveContext &ctx) {
+    auto parser =
+        static_cast<EdtasmM80PlusPlusSyntaxParser *>(ctx.parser_state);
+
     ConditionalBlock block;
     block.condition = false; // Single-pass assembler, never in pass 1
     block.in_else_block = false;
@@ -1484,10 +1521,11 @@ void EdtasmM80PlusPlusSyntaxParser::InitializeDirectiveRegistry() {
 
   // IF2 - If second pass (always false for single-pass assembler)
   directive_registry_.Register(IF2, [](const std::string & /*label*/,
-                                        const std::string & /*operand*/,
-                                        DirectiveContext &ctx) {
-    auto parser = static_cast<EdtasmM80PlusPlusSyntaxParser*>(ctx.parser_state);
-    
+                                       const std::string & /*operand*/,
+                                       DirectiveContext &ctx) {
+    auto parser =
+        static_cast<EdtasmM80PlusPlusSyntaxParser *>(ctx.parser_state);
+
     ConditionalBlock block;
     block.condition = false; // Single-pass assembler, never in pass 2
     block.in_else_block = false;
@@ -1497,11 +1535,12 @@ void EdtasmM80PlusPlusSyntaxParser::InitializeDirectiveRegistry() {
 
   // IFB - If blank (operand is empty)
   directive_registry_.Register(IFB, [this](const std::string & /*label*/,
-                                            const std::string &operand,
-                                            DirectiveContext &ctx) {
-    auto parser = static_cast<EdtasmM80PlusPlusSyntaxParser*>(ctx.parser_state);
+                                           const std::string &operand,
+                                           DirectiveContext &ctx) {
+    auto parser =
+        static_cast<EdtasmM80PlusPlusSyntaxParser *>(ctx.parser_state);
     std::string trimmed = Trim(operand);
-    
+
     ConditionalBlock block;
     block.condition = trimmed.empty();
     block.in_else_block = false;
@@ -1511,11 +1550,12 @@ void EdtasmM80PlusPlusSyntaxParser::InitializeDirectiveRegistry() {
 
   // IFNB - If not blank (operand is non-empty)
   directive_registry_.Register(IFNB, [this](const std::string & /*label*/,
-                                             const std::string &operand,
-                                             DirectiveContext &ctx) {
-    auto parser = static_cast<EdtasmM80PlusPlusSyntaxParser*>(ctx.parser_state);
+                                            const std::string &operand,
+                                            DirectiveContext &ctx) {
+    auto parser =
+        static_cast<EdtasmM80PlusPlusSyntaxParser *>(ctx.parser_state);
     std::string trimmed = Trim(operand);
-    
+
     ConditionalBlock block;
     block.condition = !trimmed.empty();
     block.in_else_block = false;
@@ -1525,25 +1565,27 @@ void EdtasmM80PlusPlusSyntaxParser::InitializeDirectiveRegistry() {
 
   // IFIDN - If identical (string comparison, case-insensitive)
   directive_registry_.Register(IFIDN, [this](const std::string & /*label*/,
-                                              const std::string &operand,
-                                              DirectiveContext &ctx) {
-    auto parser = static_cast<EdtasmM80PlusPlusSyntaxParser*>(ctx.parser_state);
-    
+                                             const std::string &operand,
+                                             DirectiveContext &ctx) {
+    auto parser =
+        static_cast<EdtasmM80PlusPlusSyntaxParser *>(ctx.parser_state);
+
     // Parse two operands separated by comma
     size_t comma_pos = operand.find(',');
     if (comma_pos == std::string::npos) {
-      throw std::runtime_error("IFIDN requires two operands separated by comma");
+      throw std::runtime_error(
+          "IFIDN requires two operands separated by comma");
     }
-    
+
     std::string op1 = Trim(operand.substr(0, comma_pos));
     std::string op2 = Trim(operand.substr(comma_pos + 1));
-    
+
     // Case-insensitive comparison
     std::string upper1 = op1;
     std::string upper2 = op2;
     std::transform(upper1.begin(), upper1.end(), upper1.begin(), ::toupper);
     std::transform(upper2.begin(), upper2.end(), upper2.begin(), ::toupper);
-    
+
     ConditionalBlock block;
     block.condition = (upper1 == upper2);
     block.in_else_block = false;
@@ -1553,25 +1595,27 @@ void EdtasmM80PlusPlusSyntaxParser::InitializeDirectiveRegistry() {
 
   // IFDIF - If different (string comparison, case-insensitive)
   directive_registry_.Register(IFDIF, [this](const std::string & /*label*/,
-                                              const std::string &operand,
-                                              DirectiveContext &ctx) {
-    auto parser = static_cast<EdtasmM80PlusPlusSyntaxParser*>(ctx.parser_state);
-    
+                                             const std::string &operand,
+                                             DirectiveContext &ctx) {
+    auto parser =
+        static_cast<EdtasmM80PlusPlusSyntaxParser *>(ctx.parser_state);
+
     // Parse two operands separated by comma
     size_t comma_pos = operand.find(',');
     if (comma_pos == std::string::npos) {
-      throw std::runtime_error("IFDIF requires two operands separated by comma");
+      throw std::runtime_error(
+          "IFDIF requires two operands separated by comma");
     }
-    
+
     std::string op1 = Trim(operand.substr(0, comma_pos));
     std::string op2 = Trim(operand.substr(comma_pos + 1));
-    
+
     // Case-insensitive comparison
     std::string upper1 = op1;
     std::string upper2 = op2;
     std::transform(upper1.begin(), upper1.end(), upper1.begin(), ::toupper);
     std::transform(upper2.begin(), upper2.end(), upper2.begin(), ::toupper);
-    
+
     ConditionalBlock block;
     block.condition = (upper1 != upper2);
     block.in_else_block = false;
@@ -1581,13 +1625,13 @@ void EdtasmM80PlusPlusSyntaxParser::InitializeDirectiveRegistry() {
 
   // MACRO - Macro definition
   directive_registry_.Register(MACRO, [this](const std::string &label,
-                                         const std::string &operand,
-                                           DirectiveContext & /*ctx*/) {
-    auto parser = static_cast<EdtasmM80PlusPlusSyntaxParser*>(this);
-    
+                                             const std::string &operand,
+                                             DirectiveContext & /*ctx*/) {
+    auto parser = static_cast<EdtasmM80PlusPlusSyntaxParser *>(this);
+
     std::string macro_name;
     std::string params_str;
-    
+
     // Support both syntaxes:
     // 1. MYLABEL MACRO param1,param2  (label-based - traditional)
     // 2. MACRO MYNAME param1,param2   (operand-based - some assemblers)
@@ -1601,7 +1645,7 @@ void EdtasmM80PlusPlusSyntaxParser::InitializeDirectiveRegistry() {
       if (trimmed_op.empty()) {
         throw std::runtime_error("MACRO requires a name");
       }
-      
+
       // Find first whitespace or comma to separate name from params
       size_t sep_pos = trimmed_op.find_first_of(" \t,");
       if (sep_pos == std::string::npos) {
@@ -1613,18 +1657,18 @@ void EdtasmM80PlusPlusSyntaxParser::InitializeDirectiveRegistry() {
         params_str = Trim(trimmed_op.substr(sep_pos + 1));
       }
     }
-    
+
     if (macro_name.empty()) {
       throw std::runtime_error("MACRO requires a name");
     }
-    
+
     // Start macro definition
     parser->in_macro_definition_ = true;
     parser->macro_nesting_depth_ = 0; // Reset nesting depth
     parser->current_macro_.name = macro_name;
     parser->current_macro_.body.clear();
     parser->current_macro_.locals.clear();
-    
+
     // Parse parameters from params_str (comma-separated)
     parser->current_macro_.params.clear();
     if (!params_str.empty()) {
@@ -1647,23 +1691,24 @@ void EdtasmM80PlusPlusSyntaxParser::InitializeDirectiveRegistry() {
 
   // EXITM - Exit macro expansion early
   directive_registry_.Register(EXITM, [this](const std::string & /*label*/,
-                                         const std::string & /*operand*/,
-                                          DirectiveContext & /*ctx*/) {
-    auto parser = static_cast<EdtasmM80PlusPlusSyntaxParser*>(this);
+                                             const std::string & /*operand*/,
+                                             DirectiveContext & /*ctx*/) {
+    auto parser = static_cast<EdtasmM80PlusPlusSyntaxParser *>(this);
     // Set flag to stop macro expansion
     parser->exitm_triggered_ = true;
   });
 
   // LOCAL - Declare local labels in macro
   directive_registry_.Register(LOCAL, [this](const std::string & /*label*/,
-                                         const std::string &operand,
-                                          DirectiveContext & /*ctx*/) {
-    auto parser = static_cast<EdtasmM80PlusPlusSyntaxParser*>(this);
-    
+                                             const std::string &operand,
+                                             DirectiveContext & /*ctx*/) {
+    auto parser = static_cast<EdtasmM80PlusPlusSyntaxParser *>(this);
+
     if (!parser->in_macro_definition_) {
-      throw std::runtime_error("LOCAL can only be used inside MACRO definitions");
+      throw std::runtime_error(
+          "LOCAL can only be used inside MACRO definitions");
     }
-    
+
     // Parse local label names (comma-separated)
     std::string remaining = operand;
     size_t comma_pos;
@@ -1683,32 +1728,34 @@ void EdtasmM80PlusPlusSyntaxParser::InitializeDirectiveRegistry() {
 
   // ENDM - End macro or repeat block
   directive_registry_.Register(ENDM, [this](const std::string & /*label*/,
-                                        const std::string & /*operand*/,
-                                          DirectiveContext &ctx) {
-    auto parser = static_cast<EdtasmM80PlusPlusSyntaxParser*>(this);
-    
+                                            const std::string & /*operand*/,
+                                            DirectiveContext &ctx) {
+    auto parser = static_cast<EdtasmM80PlusPlusSyntaxParser *>(this);
+
     if (parser->in_repeat_block_ != RepeatType::NONE) {
       // End of repeat block - expand and parse
-      // IMPORTANT: Make a copy of repeat_body_ before iterating to avoid use-after-free
-      // (ExpandAndParseLines may modify repeat_body_ if nested REPT is encountered)
+      // IMPORTANT: Make a copy of repeat_body_ before iterating to avoid
+      // use-after-free (ExpandAndParseLines may modify repeat_body_ if nested
+      // REPT is encountered)
       std::vector<std::string> body_copy = parser->repeat_body_;
       RepeatType repeat_type = parser->in_repeat_block_;
       int rept_count = parser->rept_count_;
       std::string repeat_param = parser->repeat_param_;
       std::vector<std::string> repeat_values = parser->repeat_values_;
-      
+
       // Reset repeat state BEFORE expansion (so lines can be parsed normally)
       parser->in_repeat_block_ = RepeatType::NONE;
       parser->repeat_body_.clear();
-      parser->exitm_triggered_ = false; // Reset EXITM flag before starting expansion
-      
+      parser->exitm_triggered_ =
+          false; // Reset EXITM flag before starting expansion
+
       if (repeat_type == RepeatType::REPT) {
         // Repeat the body rept_count_ times
         for (int i = 0; i < rept_count; ++i) {
           parser->ExpandAndParseLines(body_copy, *ctx.section, *ctx.symbols);
           if (parser->exitm_triggered_) {
             parser->exitm_triggered_ = false; // Reset flag after handling
-            break; // Exit REPT loop on EXITM
+            break;                            // Exit REPT loop on EXITM
           }
         }
       } else if (repeat_type == RepeatType::IRP) {
@@ -1716,16 +1763,17 @@ void EdtasmM80PlusPlusSyntaxParser::InitializeDirectiveRegistry() {
         for (const auto &value : repeat_values) {
           std::vector<std::string> param_names = {repeat_param};
           std::vector<std::string> param_values = {value};
-          
+
           std::vector<std::string> expanded_lines;
           for (const auto &line : body_copy) {
-            expanded_lines.push_back(
-                parser->SubstituteMacroParameters(line, param_names, param_values));
+            expanded_lines.push_back(parser->SubstituteMacroParameters(
+                line, param_names, param_values));
           }
-          parser->ExpandAndParseLines(expanded_lines, *ctx.section, *ctx.symbols);
+          parser->ExpandAndParseLines(expanded_lines, *ctx.section,
+                                      *ctx.symbols);
           if (parser->exitm_triggered_) {
             parser->exitm_triggered_ = false; // Reset flag after handling
-            break; // Exit IRP loop on EXITM
+            break;                            // Exit IRP loop on EXITM
           }
         }
       } else if (repeat_type == RepeatType::IRPC) {
@@ -1733,20 +1781,21 @@ void EdtasmM80PlusPlusSyntaxParser::InitializeDirectiveRegistry() {
         for (char c : repeat_values[0]) {
           std::vector<std::string> param_names = {repeat_param};
           std::vector<std::string> param_values = {std::string(1, c)};
-          
+
           std::vector<std::string> expanded_lines;
           for (const auto &line : body_copy) {
-            expanded_lines.push_back(
-                parser->SubstituteMacroParameters(line, param_names, param_values));
+            expanded_lines.push_back(parser->SubstituteMacroParameters(
+                line, param_names, param_values));
           }
-          parser->ExpandAndParseLines(expanded_lines, *ctx.section, *ctx.symbols);
+          parser->ExpandAndParseLines(expanded_lines, *ctx.section,
+                                      *ctx.symbols);
           if (parser->exitm_triggered_) {
             parser->exitm_triggered_ = false; // Reset flag after handling
-            break; // Exit IRPC loop on EXITM
+            break;                            // Exit IRPC loop on EXITM
           }
         }
       }
-      
+
     } else if (parser->in_macro_definition_) {
       // End of macro definition - store it
       parser->macros_[parser->current_macro_.name] = parser->current_macro_;
@@ -1754,7 +1803,7 @@ void EdtasmM80PlusPlusSyntaxParser::InitializeDirectiveRegistry() {
       parser->current_macro_.body.clear();
       parser->current_macro_.params.clear();
       parser->current_macro_.locals.clear();
-      
+
     } else {
       throw std::runtime_error("ENDM without matching MACRO/REPT/IRP/IRPC");
     }
@@ -1762,16 +1811,16 @@ void EdtasmM80PlusPlusSyntaxParser::InitializeDirectiveRegistry() {
 
   // REPT - Repeat block
   directive_registry_.Register(REPT, [this](const std::string & /*label*/,
-                                        const std::string &operand,
-                                          DirectiveContext & /*ctx*/) {
-    auto parser = static_cast<EdtasmM80PlusPlusSyntaxParser*>(this);
-    
+                                            const std::string &operand,
+                                            DirectiveContext & /*ctx*/) {
+    auto parser = static_cast<EdtasmM80PlusPlusSyntaxParser *>(this);
+
     // Parse repeat count
     std::string count_str = Trim(operand);
     if (count_str.empty()) {
       throw std::runtime_error("REPT requires a repeat count");
     }
-    
+
     // Try to parse as number
     int count = 0;
     try {
@@ -1779,11 +1828,11 @@ void EdtasmM80PlusPlusSyntaxParser::InitializeDirectiveRegistry() {
     } catch (...) {
       throw std::runtime_error("REPT count must be a number: " + count_str);
     }
-    
+
     if (count < 0) {
       throw std::runtime_error("REPT count cannot be negative: " + count_str);
     }
-    
+
     // Start capturing repeat block
     parser->in_repeat_block_ = RepeatType::REPT;
     parser->rept_count_ = count;
@@ -1792,30 +1841,30 @@ void EdtasmM80PlusPlusSyntaxParser::InitializeDirectiveRegistry() {
 
   // IRP - Iterate over list
   directive_registry_.Register(IRP, [this](const std::string & /*label*/,
-                                       const std::string &operand,
-                                         DirectiveContext & /*ctx*/) {
-    auto parser = static_cast<EdtasmM80PlusPlusSyntaxParser*>(this);
-    
+                                           const std::string &operand,
+                                           DirectiveContext & /*ctx*/) {
+    auto parser = static_cast<EdtasmM80PlusPlusSyntaxParser *>(this);
+
     // Parse: IRP param,<value1,value2,...>
     // Comma is required. Empty list (IRP param,) generates zero iterations.
     size_t comma_pos = operand.find(',');
     std::string param_name;
     std::string list_str;
-    
+
     if (comma_pos == std::string::npos) {
       // No comma - this is an error
       throw std::runtime_error("IRP requires a comma-separated value list");
     }
-    
+
     // Extract parameter name
     param_name = Trim(operand.substr(0, comma_pos));
     // Extract value list (can be empty for zero iterations)
     list_str = Trim(operand.substr(comma_pos + 1));
-    
+
     if (param_name.empty()) {
       throw std::runtime_error("IRP parameter name cannot be empty");
     }
-    
+
     // Parse list - can be <value1, value2> or just value1, value2
     // Empty list is OK - just means zero iterations
     std::vector<std::string> values;
@@ -1824,7 +1873,7 @@ void EdtasmM80PlusPlusSyntaxParser::InitializeDirectiveRegistry() {
       if (list_str.front() == '<' && list_str.back() == '>') {
         list_str = list_str.substr(1, list_str.size() - 2);
       }
-      
+
       // Trim after removing brackets - if empty (was <>), skip parsing
       list_str = Trim(list_str);
       if (!list_str.empty()) {
@@ -1845,7 +1894,7 @@ void EdtasmM80PlusPlusSyntaxParser::InitializeDirectiveRegistry() {
         }
       }
     }
-    
+
     // Start capturing IRP block
     parser->in_repeat_block_ = RepeatType::IRP;
     parser->repeat_param_ = param_name;
@@ -1855,31 +1904,31 @@ void EdtasmM80PlusPlusSyntaxParser::InitializeDirectiveRegistry() {
 
   // IRPC - Iterate over characters in string
   directive_registry_.Register(IRPC, [this](const std::string & /*label*/,
-                                        const std::string &operand,
-                                          DirectiveContext & /*ctx*/) {
-    auto parser = static_cast<EdtasmM80PlusPlusSyntaxParser*>(this);
-    
+                                            const std::string &operand,
+                                            DirectiveContext & /*ctx*/) {
+    auto parser = static_cast<EdtasmM80PlusPlusSyntaxParser *>(this);
+
     // Parse: IRPC param, string (or <string>)
     // Find comma separator
     size_t comma_pos = operand.find(',');
     if (comma_pos == std::string::npos) {
       throw std::runtime_error("IRPC requires parameter name and string");
     }
-    
+
     // Extract parameter name
     std::string param_name = Trim(operand.substr(0, comma_pos));
     if (param_name.empty()) {
       throw std::runtime_error("IRPC parameter name cannot be empty");
     }
-    
+
     // Extract string
     std::string str = Trim(operand.substr(comma_pos + 1));
-    
+
     // Remove angle brackets if present
     if (!str.empty() && str.front() == '<' && str.back() == '>') {
       str = str.substr(1, str.size() - 2);
     }
-    
+
     // Start capturing IRPC block
     // Store string as single value in repeat_values_
     parser->in_repeat_block_ = RepeatType::IRPC;
@@ -1893,45 +1942,55 @@ void EdtasmM80PlusPlusSyntaxParser::InitializeDirectiveRegistry() {
   // ============================================================================
 
   // LIST - Enable listing output
-  directive_registry_.Register({LIST, DOT_LIST}, [this](const std::string & /*label*/,
-                                                        const std::string & /*operand*/,
-                                                        DirectiveContext &ctx) {
-    listing_enabled_ = true;
-    // Create ListingControlAtom so listing output can process it
-    auto list_atom = std::make_shared<ListingControlAtom>(ListingControlType::List);
-    list_atom->location = SourceLocation(ctx.current_file, ctx.current_line, 1);
-    list_atom->source_line = ctx.source_line;
-    ctx.section->atoms.push_back(list_atom);
-  });
+  directive_registry_.Register(
+      {LIST, DOT_LIST},
+      [this](const std::string & /*label*/, const std::string & /*operand*/,
+             DirectiveContext &ctx) {
+        listing_enabled_ = true;
+        // Create ListingControlAtom so listing output can process it
+        auto list_atom =
+            std::make_shared<ListingControlAtom>(ListingControlType::List);
+        list_atom->location =
+            SourceLocation(ctx.current_file, ctx.current_line, 1);
+        list_atom->source_line = ctx.source_line;
+        ctx.section->atoms.push_back(list_atom);
+      });
 
   // NOLIST/XLIST - Disable listing output
-  directive_registry_.Register({NOLIST, XLIST, DOT_XLIST}, [this](const std::string & /*label*/,
-                                                                   const std::string & /*operand*/,
-                                                                   DirectiveContext &ctx) {
-    listing_enabled_ = false;
-    // Create ListingControlAtom so listing output can process it
-    auto nolist_atom = std::make_shared<ListingControlAtom>(ListingControlType::Nolist);
-    nolist_atom->location = SourceLocation(ctx.current_file, ctx.current_line, 1);
-    nolist_atom->source_line = ctx.source_line;
-    ctx.section->atoms.push_back(nolist_atom);
-  });
+  directive_registry_.Register(
+      {NOLIST, XLIST, DOT_XLIST},
+      [this](const std::string & /*label*/, const std::string & /*operand*/,
+             DirectiveContext &ctx) {
+        listing_enabled_ = false;
+        // Create ListingControlAtom so listing output can process it
+        auto nolist_atom =
+            std::make_shared<ListingControlAtom>(ListingControlType::Nolist);
+        nolist_atom->location =
+            SourceLocation(ctx.current_file, ctx.current_line, 1);
+        nolist_atom->source_line = ctx.source_line;
+        ctx.section->atoms.push_back(nolist_atom);
+      });
 
   // *LIST ON/OFF - Z80ASM style listing control
   directive_registry_.Register(STAR_LIST, [this](const std::string & /*label*/,
-                                               const std::string &operand,
-                                               DirectiveContext &ctx) {
+                                                 const std::string &operand,
+                                                 DirectiveContext &ctx) {
     std::string op = Trim(operand);
     std::transform(op.begin(), op.end(), op.begin(), ::toupper);
     if (op == "ON") {
       listing_enabled_ = true;
-      auto list_atom = std::make_shared<ListingControlAtom>(ListingControlType::List);
-      list_atom->location = SourceLocation(ctx.current_file, ctx.current_line, 1);
+      auto list_atom =
+          std::make_shared<ListingControlAtom>(ListingControlType::List);
+      list_atom->location =
+          SourceLocation(ctx.current_file, ctx.current_line, 1);
       list_atom->source_line = ctx.source_line;
       ctx.section->atoms.push_back(list_atom);
     } else if (op == "OFF") {
       listing_enabled_ = false;
-      auto nolist_atom = std::make_shared<ListingControlAtom>(ListingControlType::Nolist);
-      nolist_atom->location = SourceLocation(ctx.current_file, ctx.current_line, 1);
+      auto nolist_atom =
+          std::make_shared<ListingControlAtom>(ListingControlType::Nolist);
+      nolist_atom->location =
+          SourceLocation(ctx.current_file, ctx.current_line, 1);
       nolist_atom->source_line = ctx.source_line;
       ctx.section->atoms.push_back(nolist_atom);
     }
@@ -1942,7 +2001,8 @@ void EdtasmM80PlusPlusSyntaxParser::InitializeDirectiveRegistry() {
   directive_registry_.Register(LALL, [](const std::string & /*label*/,
                                         const std::string & /*operand*/,
                                         DirectiveContext &ctx) {
-    auto lall_atom = std::make_shared<ListingControlAtom>(ListingControlType::Lall);
+    auto lall_atom =
+        std::make_shared<ListingControlAtom>(ListingControlType::Lall);
     lall_atom->location = SourceLocation(ctx.current_file, ctx.current_line, 1);
     lall_atom->source_line = ctx.source_line;
     ctx.section->atoms.push_back(lall_atom);
@@ -1952,53 +2012,60 @@ void EdtasmM80PlusPlusSyntaxParser::InitializeDirectiveRegistry() {
   directive_registry_.Register(SALL, [](const std::string & /*label*/,
                                         const std::string & /*operand*/,
                                         DirectiveContext &ctx) {
-    auto sall_atom = std::make_shared<ListingControlAtom>(ListingControlType::Sall);
+    auto sall_atom =
+        std::make_shared<ListingControlAtom>(ListingControlType::Sall);
     sall_atom->location = SourceLocation(ctx.current_file, ctx.current_line, 1);
     sall_atom->source_line = ctx.source_line;
     ctx.section->atoms.push_back(sall_atom);
   });
 
   // TITLE - Set listing title
-  directive_registry_.Register({TITLE, DOT_TITLE}, [this](const std::string & /*label*/,
-                                                          const std::string &operand,
-                                                          DirectiveContext &ctx) {
-    listing_title_ = Trim(operand);
-    // Create ListingControlAtom so listing output can see it
-    auto title_atom = std::make_shared<ListingControlAtom>(
-        ListingControlType::Title, listing_title_);
-    title_atom->location = SourceLocation(ctx.current_file, ctx.current_line, 1);
-    title_atom->source_line = ctx.source_line;
-    ctx.section->atoms.push_back(title_atom);
-  });
+  directive_registry_.Register(
+      {TITLE, DOT_TITLE},
+      [this](const std::string & /*label*/, const std::string &operand,
+             DirectiveContext &ctx) {
+        listing_title_ = Trim(operand);
+        // Create ListingControlAtom so listing output can see it
+        auto title_atom = std::make_shared<ListingControlAtom>(
+            ListingControlType::Title, listing_title_);
+        title_atom->location =
+            SourceLocation(ctx.current_file, ctx.current_line, 1);
+        title_atom->source_line = ctx.source_line;
+        ctx.section->atoms.push_back(title_atom);
+      });
 
   // SUBTTL - Set listing subtitle
-  directive_registry_.Register({SUBTTL, DOT_SUBTTL}, [this](const std::string & /*label*/,
-                                                             const std::string &operand,
-                                                             DirectiveContext &ctx) {
-    listing_subtitle_ = Trim(operand);
-    // Create ListingControlAtom so listing output can see it
-    auto subtitle_atom = std::make_shared<ListingControlAtom>(
-        ListingControlType::Subtitle, listing_subtitle_);
-    subtitle_atom->location = SourceLocation(ctx.current_file, ctx.current_line, 1);
-    subtitle_atom->source_line = ctx.source_line;
-    ctx.section->atoms.push_back(subtitle_atom);
-  });
+  directive_registry_.Register(
+      {SUBTTL, DOT_SUBTTL},
+      [this](const std::string & /*label*/, const std::string &operand,
+             DirectiveContext &ctx) {
+        listing_subtitle_ = Trim(operand);
+        // Create ListingControlAtom so listing output can see it
+        auto subtitle_atom = std::make_shared<ListingControlAtom>(
+            ListingControlType::Subtitle, listing_subtitle_);
+        subtitle_atom->location =
+            SourceLocation(ctx.current_file, ctx.current_line, 1);
+        subtitle_atom->source_line = ctx.source_line;
+        ctx.section->atoms.push_back(subtitle_atom);
+      });
 
   // EJECT - Page break in listing
   directive_registry_.Register(EJECT, [](const std::string & /*label*/,
                                          const std::string & /*operand*/,
                                          DirectiveContext &ctx) {
     // Create ListingControlAtom for page break
-    auto eject_atom = std::make_shared<ListingControlAtom>(ListingControlType::Page);
-    eject_atom->location = SourceLocation(ctx.current_file, ctx.current_line, 1);
+    auto eject_atom =
+        std::make_shared<ListingControlAtom>(ListingControlType::Page);
+    eject_atom->location =
+        SourceLocation(ctx.current_file, ctx.current_line, 1);
     eject_atom->source_line = ctx.source_line;
     ctx.section->atoms.push_back(eject_atom);
   });
 
   // SPACE - Insert blank lines in listing
   directive_registry_.Register(SPACE, [this](const std::string & /*label*/,
-                                         const std::string &operand,
-                                         DirectiveContext &ctx) {
+                                             const std::string &operand,
+                                             DirectiveContext &ctx) {
     // Parse number of blank lines (default to 1)
     int count = 1;
     if (!operand.empty()) {
@@ -2009,35 +2076,36 @@ void EdtasmM80PlusPlusSyntaxParser::InitializeDirectiveRegistry() {
       }
     }
     // Create ListingControlAtom for spacing
-    auto space_atom = std::make_shared<ListingControlAtom>(
-        ListingControlType::Space, count);
-    space_atom->location = SourceLocation(ctx.current_file, ctx.current_line, 1);
+    auto space_atom =
+        std::make_shared<ListingControlAtom>(ListingControlType::Space, count);
+    space_atom->location =
+        SourceLocation(ctx.current_file, ctx.current_line, 1);
     space_atom->source_line = ctx.source_line;
     ctx.section->atoms.push_back(space_atom);
   });
 
   // NAME - Set module name
-  directive_registry_.Register(NAME, [this](const std::string & /*label*/,
-                                            const std::string &operand,
-                                            DirectiveContext & /*ctx*/) {
-    module_name_ = Trim(operand);
-  });
+  directive_registry_.Register(
+      NAME,
+      [this](const std::string & /*label*/, const std::string &operand,
+             DirectiveContext & /*ctx*/) { module_name_ = Trim(operand); });
 
   // ============================================================================
   // Phase 9: Special Features
   // ============================================================================
 
   // RADIX - Set default number base (2-16)
-  directive_registry_.Register({RADIX, DOT_RADIX, STAR_RADIX},
+  directive_registry_.Register(
+      {RADIX, DOT_RADIX, STAR_RADIX},
       [this](const std::string & /*label*/, const std::string &operand,
              DirectiveContext & /*ctx*/) {
-    int radix = std::stoi(Trim(operand));
-    if (radix < 2 || radix > 16) {
-      throw std::runtime_error("RADIX must be between 2 and 16");
-    }
-    current_radix_ = radix;
-    z80_number_parser_.SetRadix(radix);
-  });
+        int radix = std::stoi(Trim(operand));
+        if (radix < 2 || radix > 16) {
+          throw std::runtime_error("RADIX must be between 2 and 16");
+        }
+        current_radix_ = radix;
+        z80_number_parser_.SetRadix(radix);
+      });
 }
 
 std::vector<std::string>

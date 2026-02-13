@@ -242,13 +242,14 @@ void FlexAsmSyntax::ParseDirective(const std::string &directive,
   if (dir_upper == IFC) {
     // Check if we should evaluate condition or just track nesting
     bool should_evaluate = ShouldAssemble();
-    
+
     if (should_evaluate) {
       // Evaluate condition and push result onto stack
       bool condition_result = EvaluateCondition(operands);
       conditional_stack_.push(condition_result);
-      
-      // If condition is false AND we're currently assembling, enter skipping mode
+
+      // If condition is false AND we're currently assembling, enter skipping
+      // mode
       if (!condition_result) {
         mode_ = ParserMode::SkippingConditional;
       }
@@ -256,7 +257,7 @@ void FlexAsmSyntax::ParseDirective(const std::string &directive,
       // We're already skipping, just push false to track nesting
       conditional_stack_.push(false);
     }
-    
+
     return;
   }
 
@@ -265,17 +266,17 @@ void FlexAsmSyntax::ParseDirective(const std::string &directive,
     if (conditional_stack_.empty()) {
       throw std::runtime_error("ENDC without matching IFC");
     }
-    
+
     // Pop condition from stack
     conditional_stack_.pop();
-    
+
     // Exit skipping mode if stack is now empty or top is true
     if (mode_ == ParserMode::SkippingConditional) {
       if (conditional_stack_.empty() || conditional_stack_.top()) {
         mode_ = ParserMode::Normal;
       }
     }
-    
+
     return;
   }
 
@@ -284,16 +285,16 @@ void FlexAsmSyntax::ParseDirective(const std::string &directive,
     if (mode_ != ParserMode::Normal) {
       throw std::runtime_error("Nested MACRO not allowed");
     }
-    
+
     // Enter macro definition mode
     mode_ = ParserMode::InMacroDefinition;
-    
+
     // Set up current macro
     current_macro_.name = label;
     current_macro_.parameters.clear();
     current_macro_.body.clear();
     current_macro_.definition_line = current_line_;
-    
+
     // Parse parameters from operands (comma-separated)
     if (!operands.empty()) {
       std::istringstream iss(operands);
@@ -305,7 +306,7 @@ void FlexAsmSyntax::ParseDirective(const std::string &directive,
         }
       }
     }
-    
+
     return;
   }
 
@@ -314,20 +315,19 @@ void FlexAsmSyntax::ParseDirective(const std::string &directive,
     if (mode_ != ParserMode::InMacroDefinition) {
       throw std::runtime_error("ENDM without MACRO");
     }
-    
+
     // Store the macro in MacroProcessor
-    macro_processor_.DefineMacro(current_macro_.name,
-                                 current_macro_.parameters,
+    macro_processor_.DefineMacro(current_macro_.name, current_macro_.parameters,
                                  current_macro_.body);
-    
+
     // Also store in local macros_ map for compatibility
     std::string name_upper = ToUpper(current_macro_.name);
     macros_[name_upper] = current_macro_;
-    
+
     // Return to normal mode
     mode_ = ParserMode::Normal;
     current_macro_ = MacroDefinition{};
-    
+
     return;
   }
 
@@ -343,23 +343,26 @@ void FlexAsmSyntax::ParseLine(const std::string &line, Section &section,
   // Strip inline comments
   std::string cleaned = StripComments(line);
 
-  // Skip blank lines and comment lines (but not during macro definition or conditional skipping)
-  if (mode_ != ParserMode::InMacroDefinition && mode_ != ParserMode::SkippingConditional) {
+  // Skip blank lines and comment lines (but not during macro definition or
+  // conditional skipping)
+  if (mode_ != ParserMode::InMacroDefinition &&
+      mode_ != ParserMode::SkippingConditional) {
     if (cleaned.empty() || IsCommentLine(cleaned)) {
       return;
     }
   }
 
   std::string trimmed = Trim(cleaned);
-  if (mode_ != ParserMode::InMacroDefinition && mode_ != ParserMode::SkippingConditional && trimmed.empty()) {
+  if (mode_ != ParserMode::InMacroDefinition &&
+      mode_ != ParserMode::SkippingConditional && trimmed.empty()) {
     return;
   }
-  
+
   // If we're in conditional skipping mode, only look for IFC/ENDC directives
   if (mode_ == ParserMode::SkippingConditional) {
     // Parse just enough to find IFC/ENDC directives for nesting
     std::string opcode;
-    
+
     // Extract opcode (handle both label+opcode and opcode-only lines)
     if (!std::isspace(static_cast<unsigned char>(line[0]))) {
       // Label present, skip to opcode
@@ -383,9 +386,9 @@ void FlexAsmSyntax::ParseLine(const std::string &line, Section &section,
         opcode = rest;
       }
     }
-    
+
     std::string opcode_upper = ToUpper(opcode);
-    
+
     // Only process IFC/ENDC while skipping
     if (opcode_upper == IFC || opcode_upper == ENDC) {
       // Extract operands for IFC
@@ -395,15 +398,15 @@ void FlexAsmSyntax::ParseLine(const std::string &line, Section &section,
         std::string after_opcode = trimmed.substr(opcode_pos + opcode.length());
         operands = Trim(after_opcode);
       }
-      
+
       // Let ParseDirective handle it
       ParseDirective(opcode, operands, "", section, symbols);
     }
-    
+
     // Skip all other lines while in conditional skipping mode
     return;
   }
-  
+
   // If we're in macro definition mode, collect body lines
   if (mode_ == ParserMode::InMacroDefinition) {
     // Check if this is the ENDM directive
@@ -414,7 +417,7 @@ void FlexAsmSyntax::ParseLine(const std::string &line, Section &section,
     } else {
       opcode = trimmed;
     }
-    
+
     std::string opcode_upper = ToUpper(opcode);
     if (opcode_upper == ENDM) {
       // Let ParseDirective handle ENDM
@@ -470,13 +473,11 @@ void FlexAsmSyntax::ParseLine(const std::string &line, Section &section,
 
     // List of known directives
     static const std::unordered_set<std::string> directives_set = {
-        ORG,   END,   EQU, SET,  FCB,  FDB,  FCC,
-        RMB,   SETDP, NAM, TTL,  STTL, PAGE, SPC,
-        MACRO, ENDM,  IFC, ENDC, RPT,  ENDR};
+        ORG, END,  EQU,  SET, FCB,   FDB,  FCC, RMB,  SETDP, NAM,
+        TTL, STTL, PAGE, SPC, MACRO, ENDM, IFC, ENDC, RPT,   ENDR};
 
     // Directives that define symbols but don't create label atoms
-    static const std::unordered_set<std::string> symbol_directives = {EQU,
-                                                                      SET};
+    static const std::unordered_set<std::string> symbol_directives = {EQU, SET};
 
     if (directives_set.find(opcode_upper) != directives_set.end()) {
       // For non-symbol-defining directives, create label atom BEFORE directive
@@ -491,14 +492,14 @@ void FlexAsmSyntax::ParseLine(const std::string &line, Section &section,
       ParseDirective(opcode, operands, label, section, symbols);
     } else if (macro_processor_.IsMacro(opcode_upper)) {
       // It's a macro invocation - expand and parse
-      
+
       // Create label atom if label is present (before macro expansion)
       if (!label.empty()) {
         section.atoms.push_back(
             std::make_shared<LabelAtom>(label, current_address_));
         symbols.DefineLabel(label, static_cast<int64_t>(current_address_));
       }
-      
+
       // Parse arguments from operands (comma-separated)
       std::vector<std::string> arguments;
       if (!operands.empty()) {
@@ -511,10 +512,11 @@ void FlexAsmSyntax::ParseLine(const std::string &line, Section &section,
           }
         }
       }
-      
+
       // Expand the macro
-      std::vector<std::string> expanded_lines = macro_processor_.ExpandMacro(opcode_upper, arguments);
-      
+      std::vector<std::string> expanded_lines =
+          macro_processor_.ExpandMacro(opcode_upper, arguments);
+
       // Parse each expanded line recursively
       for (const std::string &expanded_line : expanded_lines) {
         ParseLine(expanded_line, section, symbols);
@@ -522,14 +524,14 @@ void FlexAsmSyntax::ParseLine(const std::string &line, Section &section,
     } else {
       // It's an instruction - create a placeholder data atom for now
       // Full instruction parsing will be implemented in a later phase
-      
+
       // Create label atom if label is present (before instruction)
       if (!label.empty()) {
         section.atoms.push_back(
             std::make_shared<LabelAtom>(label, current_address_));
         symbols.DefineLabel(label, static_cast<int64_t>(current_address_));
       }
-      
+
       // Create placeholder data atom for instruction
       // For testing purposes, we'll create a 2-byte data atom
       std::vector<uint8_t> dummy_data = {0x00, 0x00};
@@ -552,10 +554,10 @@ void FlexAsmSyntax::Parse(const std::string &source, Section &section,
                           ConcreteSymbolTable &symbols) {
   // Store symbol table pointer for conditional evaluation
   current_symbols_ = &symbols;
-  
+
   // Reset line counter
   current_line_ = 0;
-  
+
   // Split source into lines
   std::istringstream iss(source);
   std::string line;
@@ -564,12 +566,12 @@ void FlexAsmSyntax::Parse(const std::string &source, Section &section,
     current_line_++;
     ParseLine(line, section, symbols);
   }
-  
+
   // Check for unclosed conditionals
   if (!conditional_stack_.empty()) {
     throw std::runtime_error("IFC without matching ENDC");
   }
-  
+
   // Clear symbol table pointer
   current_symbols_ = nullptr;
 }
@@ -597,18 +599,18 @@ FlexAsmSyntax::ExpandMacro(const std::string &name,
   if (it == macros_.end()) {
     return {}; // Macro not found
   }
-  
+
   const MacroDefinition &macro = it->second;
   std::vector<std::string> result;
-  
+
   // Generate unique expansion ID
   int expansion_id = ++expansion_counter_;
-  
+
   // Process each line in the macro body
   for (const std::string &line : macro.body) {
     // Step 1: Substitute parameters with arguments
     std::string expanded = SubstituteParameters(line, macro, arguments);
-    
+
     // Step 2: Make local labels unique
     // Find all labels in the line (labels start with .)
     std::string final_line;
@@ -621,10 +623,10 @@ FlexAsmSyntax::ExpandMacro(const std::string &name,
         final_line += expanded.substr(pos);
         break;
       }
-      
+
       // Append everything before the dot
       final_line += expanded.substr(pos, dot_pos - pos);
-      
+
       // Extract the label name
       size_t label_start = dot_pos;
       size_t label_end = dot_pos + 1;
@@ -633,12 +635,14 @@ FlexAsmSyntax::ExpandMacro(const std::string &name,
               expanded[label_end] == '_')) {
         label_end++;
       }
-      
-      // Check if this looks like a local label (starts with . followed by alphanum)
+
+      // Check if this looks like a local label (starts with . followed by
+      // alphanum)
       if (label_end > label_start + 1 &&
           std::isalpha(static_cast<unsigned char>(expanded[label_start + 1]))) {
         // This is a local label - make it unique
-        std::string label = expanded.substr(label_start, label_end - label_start);
+        std::string label =
+            expanded.substr(label_start, label_end - label_start);
         std::string unique_label = MakeLocalLabelUnique(label, expansion_id);
         final_line += unique_label;
         pos = label_end;
@@ -648,31 +652,35 @@ FlexAsmSyntax::ExpandMacro(const std::string &name,
         pos = dot_pos + 1;
       }
     }
-    
+
     result.push_back(final_line);
   }
-  
+
   return result;
 }
 
-std::string FlexAsmSyntax::SubstituteParameters(
-    const std::string &line, const MacroDefinition &macro,
-    const std::vector<std::string> &arguments) {
+std::string
+FlexAsmSyntax::SubstituteParameters(const std::string &line,
+                                    const MacroDefinition &macro,
+                                    const std::vector<std::string> &arguments) {
   std::string result = line;
-  
+
   // Replace each parameter with its corresponding argument
   for (size_t i = 0; i < macro.parameters.size(); ++i) {
     const std::string &param = macro.parameters[i];
     const std::string &arg = (i < arguments.size()) ? arguments[i] : "";
-    
+
     // Find and replace all occurrences of this parameter (word boundaries)
     size_t pos = 0;
     while ((pos = result.find(param, pos)) != std::string::npos) {
       // Check if this is a whole word match
-      bool is_start_boundary = (pos == 0 || !std::isalnum(static_cast<unsigned char>(result[pos - 1])));
+      bool is_start_boundary =
+          (pos == 0 ||
+           !std::isalnum(static_cast<unsigned char>(result[pos - 1])));
       bool is_end_boundary = (pos + param.length() >= result.length() ||
-                              !std::isalnum(static_cast<unsigned char>(result[pos + param.length()])));
-      
+                              !std::isalnum(static_cast<unsigned char>(
+                                  result[pos + param.length()])));
+
       if (is_start_boundary && is_end_boundary) {
         // This is a whole word match, replace it
         result.replace(pos, param.length(), arg);
@@ -683,7 +691,7 @@ std::string FlexAsmSyntax::SubstituteParameters(
       }
     }
   }
-  
+
   return result;
 }
 
@@ -708,21 +716,21 @@ std::string FlexAsmSyntax::MakeLocalLabelUnique(const std::string &label,
 
 bool FlexAsmSyntax::EvaluateCondition(const std::string &condition) {
   std::string trimmed = Trim(condition);
-  
+
   if (trimmed.empty()) {
     // Empty condition is false
     return false;
   }
-  
+
   // Try to evaluate as a numeric expression
   // If it contains operators (+, -, *, /), evaluate the expression
   // If it's just a symbol name, check if symbol exists
-  
+
   // For now, simple implementation:
   // - If it's an expression with operators, evaluate it
   // - If it's a number, check if non-zero
   // - If it's a symbol name (identifier), check if symbol exists
-  
+
   // Check if it contains arithmetic operators FIRST (before trying ParseNumber)
   // This prevents "5-5" from being parsed as just "5"
   if (trimmed.find('+') != std::string::npos ||
@@ -733,9 +741,9 @@ bool FlexAsmSyntax::EvaluateCondition(const std::string &condition) {
     try {
       // Simple evaluation: split by operator and compute
       // For MVP, we'll do basic arithmetic
-      
+
       int64_t result = 0;
-      
+
       // Handle addition
       size_t plus_pos = trimmed.find('+');
       if (plus_pos != std::string::npos) {
@@ -746,7 +754,7 @@ bool FlexAsmSyntax::EvaluateCondition(const std::string &condition) {
         result = left_val + right_val;
         return result != 0;
       }
-      
+
       // Handle subtraction
       size_t minus_pos = trimmed.find('-');
       if (minus_pos != std::string::npos && minus_pos > 0) {
@@ -757,14 +765,14 @@ bool FlexAsmSyntax::EvaluateCondition(const std::string &condition) {
         result = left_val - right_val;
         return result != 0;
       }
-      
+
       // Default: couldn't evaluate
       return false;
     } catch (const std::exception &) {
       return false;
     }
   }
-  
+
   // No operators - try to parse as simple number
   try {
     uint32_t value = ParseNumber(trimmed);
@@ -777,7 +785,7 @@ bool FlexAsmSyntax::EvaluateCondition(const std::string &condition) {
       // Symbol exists and has a value means condition is true
       return current_symbols_->Lookup(trimmed, value);
     }
-    
+
     // No symbol table available, undefined symbols evaluate to false
     return false;
   }
@@ -789,7 +797,7 @@ bool FlexAsmSyntax::ShouldAssemble() const {
   if (conditional_stack_.empty()) {
     return true;
   }
-  
+
   // Check if top of stack is true
   return conditional_stack_.top();
 }

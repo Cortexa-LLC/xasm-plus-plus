@@ -57,8 +57,8 @@ TEST_F(DirectiveRegistryTest, CaseInsensitiveLookup) {
   bool handler_called = false;
 
   auto handler = [&handler_called](const std::string & /*label*/,
-                                    const std::string & /*operand*/,
-                                    DirectiveContext & /*context*/) {
+                                   const std::string & /*operand*/,
+                                   DirectiveContext & /*context*/) {
     handler_called = true;
   };
 
@@ -98,12 +98,16 @@ TEST_F(DirectiveRegistryTest, MultipleDirectives) {
   int equ_count = 0;
 
   auto org_handler = [&org_count](const std::string & /*label*/,
-                                   const std::string & /*operand*/,
-                                   DirectiveContext & /*context*/) { org_count++; };
+                                  const std::string & /*operand*/,
+                                  DirectiveContext & /*context*/) {
+    org_count++;
+  };
 
   auto equ_handler = [&equ_count](const std::string & /*label*/,
-                                   const std::string & /*operand*/,
-                                   DirectiveContext & /*context*/) { equ_count++; };
+                                  const std::string & /*operand*/,
+                                  DirectiveContext & /*context*/) {
+    equ_count++;
+  };
 
   // Register multiple handlers
   registry_.Register("ORG", org_handler);
@@ -123,8 +127,9 @@ TEST_F(DirectiveRegistryTest, MultipleDirectives) {
  * @test Verify that directive can be checked for existence
  */
 TEST_F(DirectiveRegistryTest, IsRegistered) {
-  auto handler = [](const std::string & /*label*/, const std::string & /*operand*/,
-                     DirectiveContext & /*context*/) {};
+  auto handler = [](const std::string & /*label*/,
+                    const std::string & /*operand*/,
+                    DirectiveContext & /*context*/) {};
 
   // Initially not registered
   EXPECT_FALSE(registry_.IsRegistered("ORG"));
@@ -147,8 +152,8 @@ TEST_F(DirectiveRegistryTest, MultipleAliases) {
   int handler_count = 0;
 
   auto handler = [&handler_count](const std::string & /*label*/,
-                                   const std::string & /*operand*/,
-                                   DirectiveContext & /*context*/) {
+                                  const std::string & /*operand*/,
+                                  DirectiveContext & /*context*/) {
     handler_count++;
   };
 

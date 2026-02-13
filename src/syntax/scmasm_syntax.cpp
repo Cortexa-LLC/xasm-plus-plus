@@ -9,9 +9,9 @@
 
 #include "xasm++/syntax/scmasm_syntax.h"
 #include "xasm++/atom.h"
-#include "xasm++/directives/scmasm_directive_handlers.h"
-#include "xasm++/directives/scmasm_directive_constants.h"
 #include "xasm++/directives/scmasm_constants.h"
+#include "xasm++/directives/scmasm_directive_constants.h"
+#include "xasm++/directives/scmasm_directive_handlers.h"
 #include <algorithm>
 #include <cctype>
 #include <iostream>
@@ -26,7 +26,7 @@ namespace xasm {
 // ============================================================================
 
 bool SCMASMNumberParser::TryParse(const std::string &token,
-                                   int64_t &value) const {
+                                  int64_t &value) const {
   if (token.empty()) {
     return false;
   }
@@ -407,7 +407,8 @@ void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
         context.section = &section;
         context.symbols = &symbols;
         context.current_address = &current_address_;
-        context.parser_state = this;  // Phase 6c.2: Set parser for handler access
+        context.parser_state =
+            this; // Phase 6c.2: Set parser for handler access
         context.current_file = current_file_;
         context.current_line = current_line_;
         it->second(label, operand, context);
@@ -741,7 +742,8 @@ uint32_t ScmasmSyntaxParser::EvaluateExpression(const std::string &str,
     }
   }
 
-  // Handle SCMASM-specific number formats that ExpressionParser doesn't support:
+  // Handle SCMASM-specific number formats that ExpressionParser doesn't
+  // support:
   // 1. Binary with . separators: %1111.0000
   // 2. Character constants: 'A, "A, #A, /A, etc.
   //
@@ -755,10 +757,10 @@ uint32_t ScmasmSyntaxParser::EvaluateExpression(const std::string &str,
         // Fall through to ExpressionParser
       }
     }
-    
+
     // Character constant: single non-alphanumeric followed by a character
     // (delimiter + char, e.g., 'A, "A, #A, /A)
-    if (trimmed.length() == 2 && !std::isalnum(trimmed[0]) && 
+    if (trimmed.length() == 2 && !std::isalnum(trimmed[0]) &&
         trimmed[0] != '$' && trimmed[0] != '%') {
       try {
         return ParseNumber(trimmed);
@@ -1327,7 +1329,7 @@ void ScmasmSyntaxParser::InitializeDirectiveRegistry() {
 
   // .DA / .DFB - Define byte(s)
   directive_registry_[DA] = scmasm::HandleDa;
-  directive_registry_[DFB] = scmasm::HandleDa;  // Alias
+  directive_registry_[DFB] = scmasm::HandleDa; // Alias
 
   // .HS - Hex string
   directive_registry_[HS] = scmasm::HandleHs;
@@ -1340,7 +1342,14 @@ void ScmasmSyntaxParser::InitializeDirectiveRegistry() {
 
   // .ENDM / .EM - End macro definition
   directive_registry_[ENDM] = scmasm::HandleEndm;
-  directive_registry_[EM] = scmasm::HandleEndm;  // Alias
+  directive_registry_[EM] = scmasm::HandleEndm; // Alias
+
+  // P0 Priority Directives (A2oSX Critical)
+  directive_registry_[PS] = scmasm::HandlePs;       // Pascal string
+  directive_registry_[INB] = scmasm::HandleInb;     // Include binary
+  directive_registry_[LIST] = scmasm::HandleList;   // Listing control
+  directive_registry_[DUMMY] = scmasm::HandleDummy; // Dummy section
+  directive_registry_[OP] = scmasm::HandleOp;       // CPU operation mode
 
   // Note: Control flow directives (.DO, .ELSE, .FIN, .LU, .ENDU) are NOT
   // registered here because they require special handling in ParseLine with

@@ -22,7 +22,8 @@ IntelHexWriter::IntelHexWriter() : bytes_per_line_(16) {}
 void IntelHexWriter::Write(const std::vector<Section> &sections,
                            std::ostream &output) {
   // Track current extended address (upper 16 bits for > 64KB addresses)
-  // Start with 0 so we don't emit unnecessary extended address record for low addresses
+  // Start with 0 so we don't emit unnecessary extended address record for low
+  // addresses
   uint16_t current_extended_address = 0;
   bool extended_address_written = false;
 
@@ -42,7 +43,7 @@ void IntelHexWriter::Write(const std::vector<Section> &sections,
 
       // Check if we need an extended address record
       uint16_t extended_address = (address >> 16) & 0xFFFF;
-      if (extended_address != current_extended_address || 
+      if (extended_address != current_extended_address ||
           (extended_address != 0 && !extended_address_written)) {
         // Only write extended address if non-zero or we've already written one
         if (extended_address != 0 || extended_address_written) {
@@ -125,8 +126,8 @@ uint8_t IntelHexWriter::CalculateChecksum(uint8_t byte_count, uint16_t address,
                                           const std::vector<uint8_t> &data) {
   // Sum all bytes
   uint8_t sum = byte_count;
-  sum += (address >> 8) & 0xFF;   // High byte of address
-  sum += address & 0xFF;          // Low byte of address
+  sum += (address >> 8) & 0xFF; // High byte of address
+  sum += address & 0xFF;        // Low byte of address
   sum += record_type;
 
   for (uint8_t byte : data) {

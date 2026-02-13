@@ -11,9 +11,9 @@
 
 #pragma once
 
+#include "xasm++/common/macro_processor.h"
 #include "xasm++/section.h"
 #include "xasm++/symbol.h"
-#include "xasm++/common/macro_processor.h"
 #include <memory>
 #include <stack>
 #include <string>
@@ -150,9 +150,9 @@ protected:
   bool IsMacroDefined(const std::string &name) const;
 
   // ========== Macro Processor State (Protected for Testing) ==========
-  
+
   std::unordered_map<std::string, MacroDefinition> macros_; ///< Defined macros
-  int expansion_counter_ = 0;     ///< Unique ID for macro expansions
+  int expansion_counter_ = 0; ///< Unique ID for macro expansions
 
 private:
   /**
@@ -173,12 +173,13 @@ private:
   std::string subtitle_;                 ///< Program subtitle (STTL)
 
   // Macro processor state (macros_ and expansion_counter_ moved to protected)
-  MacroDefinition current_macro_; ///< Macro being defined
+  MacroDefinition current_macro_;  ///< Macro being defined
   MacroProcessor macro_processor_; ///< Macro processor instance
 
   // Conditional assembly state
   std::stack<bool> conditional_stack_; ///< Condition evaluation stack
-  ConcreteSymbolTable *current_symbols_ = nullptr; ///< Symbol table for current parse
+  ConcreteSymbolTable *current_symbols_ =
+      nullptr; ///< Symbol table for current parse
 
   // Repeat block state
   struct RepeatBlock {

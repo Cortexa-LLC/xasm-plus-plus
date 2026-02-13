@@ -71,23 +71,20 @@ public:
  * expression    := logical_or
  * logical_or    := logical_and ('||' logical_and)*
  * logical_and   := comparison ('&&' comparison)*
- * comparison    := bitwise_or (('==' | '!=' | '<' | '>' | '<=' | '>=') bitwise_or)*
- * bitwise_or    := bitwise_xor ('|' bitwise_xor)*
- * bitwise_xor   := bitwise_and ('^' bitwise_and)*
- * bitwise_and   := shift ('&' shift)*
- * shift         := add_sub (('<<' | '>>') add_sub)*
- * add_sub       := mul_div (('+' | '-') mul_div)*
- * mul_div       := unary (('*' | '/' | '%') unary)*
- * unary         := ('-' | '~' | '!') unary | primary
- * primary       := NUMBER | SYMBOL | '(' expression ')' | function_call
- * function_call := IDENTIFIER '(' expression ')'
+ * comparison    := bitwise_or (('==' | '!=' | '<' | '>' | '<=' | '>=')
+ * bitwise_or)* bitwise_or    := bitwise_xor ('|' bitwise_xor)* bitwise_xor   :=
+ * bitwise_and ('^' bitwise_and)* bitwise_and   := shift ('&' shift)* shift :=
+ * add_sub (('<<' | '>>') add_sub)* add_sub       := mul_div (('+' | '-')
+ * mul_div)* mul_div       := unary (('*' | '/' | '%') unary)* unary         :=
+ * ('-' | '~' | '!') unary | primary primary       := NUMBER | SYMBOL | '('
+ * expression ')' | function_call function_call := IDENTIFIER '(' expression ')'
  * @endcode
  *
  * @par Usage Example
  * @code
  * MockSymbolTable symbols;
  * symbols.AddSymbol("start", 0x8000);
- * 
+ *
  * ExpressionParser parser(&symbols);
  * auto expr = parser.Parse("start + $10 * 2");
  * int64_t value = expr->Evaluate(symbols);  // 0x8020
@@ -120,10 +117,10 @@ public:
   std::shared_ptr<Expression> Parse(const std::string &str);
 
 private:
-  const SymbolTable *symbols_;       ///< Symbol table for symbol resolution
+  const SymbolTable *symbols_;         ///< Symbol table for symbol resolution
   const INumberParser *number_parser_; ///< Optional custom number parser
-  std::string expr_;                 ///< Current expression being parsed
-  size_t pos_;                       ///< Current position in expression
+  std::string expr_;                   ///< Current expression being parsed
+  size_t pos_;                         ///< Current position in expression
 
   // ========================================================================
   // Recursive descent parsing methods (precedence order: low to high)

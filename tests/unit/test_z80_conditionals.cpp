@@ -1,6 +1,7 @@
 // Z80 Universal Syntax Conditional Directives Tests
-// Tests for Phase 7: IF/ELSE/ENDIF, IFDEF/IFNDEF, IFEQ/IFNE/IFLT/IFGT/IFLE/IFGE,
-// IF1/IF2, IFB/IFNB, IFIDN/IFDIF, and nested conditionals
+// Tests for Phase 7: IF/ELSE/ENDIF, IFDEF/IFNDEF,
+// IFEQ/IFNE/IFLT/IFGT/IFLE/IFGE, IF1/IF2, IFB/IFNB, IFIDN/IFDIF, and nested
+// conditionals
 
 #include "xasm++/cpu/cpu_z80.h"
 #include "xasm++/symbol.h"
@@ -10,7 +11,8 @@
 using namespace xasm;
 
 // Helper to get symbol value
-[[maybe_unused]] static int64_t GetSymbolValue(ConcreteSymbolTable &symbols, const std::string &name) {
+[[maybe_unused]] static int64_t GetSymbolValue(ConcreteSymbolTable &symbols,
+                                               const std::string &name) {
   auto symbol = symbols.GetSymbol(name);
   if (!symbol || !symbol->value) {
     return -1;
@@ -31,7 +33,8 @@ TEST(Z80ConditionalsTest, IfTrueCondition) {
          IF 1
          DB 42H
          ENDIF
-)", section, symbols);
+)",
+               section, symbols);
 
   // IF 1 (true) - DB should be assembled
   ASSERT_EQ(section.atoms.size(), 1);
@@ -49,7 +52,8 @@ TEST(Z80ConditionalsTest, IfFalseCondition) {
          IF 0
          DB 42H
          ENDIF
-)", section, symbols);
+)",
+               section, symbols);
 
   // IF 0 (false) - DB should be skipped
   EXPECT_EQ(section.atoms.size(), 0);
@@ -66,7 +70,8 @@ TEST(Z80ConditionalsTest, IfElseTrue) {
          ELSE
          DB 22H
          ENDIF
-)", section, symbols);
+)",
+               section, symbols);
 
   // IF 1 (true) - first DB should be assembled, second skipped
   ASSERT_EQ(section.atoms.size(), 1);
@@ -86,7 +91,8 @@ TEST(Z80ConditionalsTest, IfElseFalse) {
          ELSE
          DB 22H
          ENDIF
-)", section, symbols);
+)",
+               section, symbols);
 
   // IF 0 (false) - second DB should be assembled, first skipped
   ASSERT_EQ(section.atoms.size(), 1);
@@ -109,7 +115,8 @@ SYM      EQU 100
          IFDEF SYM
          DB 42H
          ENDIF
-)", section, symbols);
+)",
+               section, symbols);
 
   // SYM is defined - DB should be assembled
   // EQU creates a label atom, so expect 2 atoms (label + data)
@@ -128,7 +135,8 @@ TEST(Z80ConditionalsTest, IfdefSymbolNotDefined) {
          IFDEF UNDEFINED_SYM
          DB 42H
          ENDIF
-)", section, symbols);
+)",
+               section, symbols);
 
   // UNDEFINED_SYM not defined - DB should be skipped
   EXPECT_EQ(section.atoms.size(), 0);
@@ -143,7 +151,8 @@ TEST(Z80ConditionalsTest, IfndefSymbolNotDefined) {
          IFNDEF UNDEFINED_SYM
          DB 42H
          ENDIF
-)", section, symbols);
+)",
+               section, symbols);
 
   // UNDEFINED_SYM not defined - DB should be assembled
   ASSERT_EQ(section.atoms.size(), 1);
@@ -162,7 +171,8 @@ SYM      EQU 100
          IFNDEF SYM
          DB 42H
          ENDIF
-)", section, symbols);
+)",
+               section, symbols);
 
   // SYM is defined - DB should be skipped
   // Only the EQU label atom should be present
@@ -184,7 +194,8 @@ TEST(Z80ConditionalsTest, IfeqEqual) {
          IFEQ 5, 5
          DB 42H
          ENDIF
-)", section, symbols);
+)",
+               section, symbols);
 
   // 5 == 5 (true) - DB should be assembled
   ASSERT_EQ(section.atoms.size(), 1);
@@ -202,7 +213,8 @@ TEST(Z80ConditionalsTest, IfeqNotEqual) {
          IFEQ 5, 3
          DB 42H
          ENDIF
-)", section, symbols);
+)",
+               section, symbols);
 
   // 5 == 3 (false) - DB should be skipped
   EXPECT_EQ(section.atoms.size(), 0);
@@ -217,7 +229,8 @@ TEST(Z80ConditionalsTest, IfneNotEqual) {
          IFNE 5, 3
          DB 42H
          ENDIF
-)", section, symbols);
+)",
+               section, symbols);
 
   // 5 != 3 (true) - DB should be assembled
   ASSERT_EQ(section.atoms.size(), 1);
@@ -235,7 +248,8 @@ TEST(Z80ConditionalsTest, IfneEqual) {
          IFNE 5, 5
          DB 42H
          ENDIF
-)", section, symbols);
+)",
+               section, symbols);
 
   // 5 != 5 (false) - DB should be skipped
   EXPECT_EQ(section.atoms.size(), 0);
@@ -254,7 +268,8 @@ TEST(Z80ConditionalsTest, IfltLessThan) {
          IFLT 3, 5
          DB 42H
          ENDIF
-)", section, symbols);
+)",
+               section, symbols);
 
   // 3 < 5 (true) - DB should be assembled
   ASSERT_EQ(section.atoms.size(), 1);
@@ -272,7 +287,8 @@ TEST(Z80ConditionalsTest, IfltNotLessThan) {
          IFLT 5, 3
          DB 42H
          ENDIF
-)", section, symbols);
+)",
+               section, symbols);
 
   // 5 < 3 (false) - DB should be skipped
   EXPECT_EQ(section.atoms.size(), 0);
@@ -287,7 +303,8 @@ TEST(Z80ConditionalsTest, IfgtGreaterThan) {
          IFGT 5, 3
          DB 42H
          ENDIF
-)", section, symbols);
+)",
+               section, symbols);
 
   // 5 > 3 (true) - DB should be assembled
   ASSERT_EQ(section.atoms.size(), 1);
@@ -305,7 +322,8 @@ TEST(Z80ConditionalsTest, IfgtNotGreaterThan) {
          IFGT 3, 5
          DB 42H
          ENDIF
-)", section, symbols);
+)",
+               section, symbols);
 
   // 3 > 5 (false) - DB should be skipped
   EXPECT_EQ(section.atoms.size(), 0);
@@ -320,7 +338,8 @@ TEST(Z80ConditionalsTest, IfleLessOrEqual) {
          IFLE 5, 5
          DB 42H
          ENDIF
-)", section, symbols);
+)",
+               section, symbols);
 
   // 5 <= 5 (true) - DB should be assembled
   ASSERT_EQ(section.atoms.size(), 1);
@@ -338,7 +357,8 @@ TEST(Z80ConditionalsTest, IfleNotLessOrEqual) {
          IFLE 5, 3
          DB 42H
          ENDIF
-)", section, symbols);
+)",
+               section, symbols);
 
   // 5 <= 3 (false) - DB should be skipped
   EXPECT_EQ(section.atoms.size(), 0);
@@ -353,7 +373,8 @@ TEST(Z80ConditionalsTest, IfgeGreaterOrEqual) {
          IFGE 5, 5
          DB 42H
          ENDIF
-)", section, symbols);
+)",
+               section, symbols);
 
   // 5 >= 5 (true) - DB should be assembled
   ASSERT_EQ(section.atoms.size(), 1);
@@ -371,7 +392,8 @@ TEST(Z80ConditionalsTest, IfgeNotGreaterOrEqual) {
          IFGE 3, 5
          DB 42H
          ENDIF
-)", section, symbols);
+)",
+               section, symbols);
 
   // 3 >= 5 (false) - DB should be skipped
   EXPECT_EQ(section.atoms.size(), 0);
@@ -390,7 +412,8 @@ TEST(Z80ConditionalsTest, If1FirstPass) {
          IF1
          DB 42H
          ENDIF
-)", section, symbols);
+)",
+               section, symbols);
 
   // IF1 - true on first pass (we're always first pass in single-pass)
   ASSERT_EQ(section.atoms.size(), 1);
@@ -408,7 +431,8 @@ TEST(Z80ConditionalsTest, If2SecondPass) {
          IF2
          DB 42H
          ENDIF
-)", section, symbols);
+)",
+               section, symbols);
 
   // IF2 - false on first pass (we don't do second pass by default)
   // Single-pass assembler treats IF2 as false
@@ -428,7 +452,8 @@ TEST(Z80ConditionalsTest, IfbBlankArgument) {
          IFB <>
          DB 42H
          ENDIF
-)", section, symbols);
+)",
+               section, symbols);
 
   // IFB <> (blank) - DB should be assembled
   ASSERT_EQ(section.atoms.size(), 1);
@@ -446,7 +471,8 @@ TEST(Z80ConditionalsTest, IfbNonBlankArgument) {
          IFB <NOTBLANK>
          DB 42H
          ENDIF
-)", section, symbols);
+)",
+               section, symbols);
 
   // IFB <NOTBLANK> (not blank) - DB should be skipped
   EXPECT_EQ(section.atoms.size(), 0);
@@ -461,7 +487,8 @@ TEST(Z80ConditionalsTest, IfnbNonBlankArgument) {
          IFNB <NOTBLANK>
          DB 42H
          ENDIF
-)", section, symbols);
+)",
+               section, symbols);
 
   // IFNB <NOTBLANK> (not blank) - DB should be assembled
   ASSERT_EQ(section.atoms.size(), 1);
@@ -479,7 +506,8 @@ TEST(Z80ConditionalsTest, IfnbBlankArgument) {
          IFNB <>
          DB 42H
          ENDIF
-)", section, symbols);
+)",
+               section, symbols);
 
   // IFNB <> (blank) - DB should be skipped
   EXPECT_EQ(section.atoms.size(), 0);
@@ -498,7 +526,8 @@ TEST(Z80ConditionalsTest, IfidnIdenticalStrings) {
          IFIDN <ABC>, <ABC>
          DB 42H
          ENDIF
-)", section, symbols);
+)",
+               section, symbols);
 
   // IFIDN <ABC>, <ABC> (identical) - DB should be assembled
   ASSERT_EQ(section.atoms.size(), 1);
@@ -516,7 +545,8 @@ TEST(Z80ConditionalsTest, IfidnDifferentStrings) {
          IFIDN <ABC>, <XYZ>
          DB 42H
          ENDIF
-)", section, symbols);
+)",
+               section, symbols);
 
   // IFIDN <ABC>, <XYZ> (different) - DB should be skipped
   EXPECT_EQ(section.atoms.size(), 0);
@@ -531,7 +561,8 @@ TEST(Z80ConditionalsTest, IfdifDifferentStrings) {
          IFDIF <ABC>, <XYZ>
          DB 42H
          ENDIF
-)", section, symbols);
+)",
+               section, symbols);
 
   // IFDIF <ABC>, <XYZ> (different) - DB should be assembled
   ASSERT_EQ(section.atoms.size(), 1);
@@ -549,7 +580,8 @@ TEST(Z80ConditionalsTest, IfdifIdenticalStrings) {
          IFDIF <ABC>, <ABC>
          DB 42H
          ENDIF
-)", section, symbols);
+)",
+               section, symbols);
 
   // IFDIF <ABC>, <ABC> (identical) - DB should be skipped
   EXPECT_EQ(section.atoms.size(), 0);
@@ -570,7 +602,8 @@ TEST(Z80ConditionalsTest, NestedIfBothTrue) {
          DB 42H
          ENDIF
          ENDIF
-)", section, symbols);
+)",
+               section, symbols);
 
   // Both IF conditions true - DB should be assembled
   ASSERT_EQ(section.atoms.size(), 1);
@@ -590,7 +623,8 @@ TEST(Z80ConditionalsTest, NestedIfOuterFalse) {
          DB 42H
          ENDIF
          ENDIF
-)", section, symbols);
+)",
+               section, symbols);
 
   // Outer IF false - inner block skipped entirely
   EXPECT_EQ(section.atoms.size(), 0);
@@ -608,7 +642,8 @@ TEST(Z80ConditionalsTest, NestedIfInnerFalse) {
          ENDIF
          DB 55H
          ENDIF
-)", section, symbols);
+)",
+               section, symbols);
 
   // Outer IF true, inner IF false - only outer DB assembled
   ASSERT_EQ(section.atoms.size(), 1);
@@ -632,7 +667,8 @@ TEST(Z80ConditionalsTest, NestedIfElse) {
          ELSE
          DB 33H
          ENDIF
-)", section, symbols);
+)",
+               section, symbols);
 
   // Outer IF true, inner IF false, inner ELSE taken
   ASSERT_EQ(section.atoms.size(), 1);
@@ -654,7 +690,8 @@ TEST(Z80ConditionalsTest, NestedConditionalThreeLevels) {
          ENDIF
          ENDIF
          ENDIF
-)", section, symbols);
+)",
+               section, symbols);
 
   // Three levels of true conditionals
   ASSERT_EQ(section.atoms.size(), 1);
@@ -677,7 +714,8 @@ SYM      EQU 5
          ENDIF
          ENDIF
          ENDIF
-)", section, symbols);
+)",
+               section, symbols);
 
   // IFDEF SYM (true), IFEQ 5,5 (true), IFGT 10,3 (true)
   // EQU creates a label atom, so expect 2 atoms (label + data)
@@ -696,13 +734,16 @@ TEST(Z80ConditionalsTest, ElseWithoutIf) {
   ConcreteSymbolTable symbols;
   Section section("test", 0);
 
-  EXPECT_THROW({
-    parser.Parse(R"(
+  EXPECT_THROW(
+      {
+        parser.Parse(R"(
          ELSE
          DB 42H
          ENDIF
-)", section, symbols);
-  }, std::runtime_error);
+)",
+                     section, symbols);
+      },
+      std::runtime_error);
 }
 
 TEST(Z80ConditionalsTest, EndifWithoutIf) {
@@ -710,11 +751,14 @@ TEST(Z80ConditionalsTest, EndifWithoutIf) {
   ConcreteSymbolTable symbols;
   Section section("test", 0);
 
-  EXPECT_THROW({
-    parser.Parse(R"(
+  EXPECT_THROW(
+      {
+        parser.Parse(R"(
          ENDIF
-)", section, symbols);
-  }, std::runtime_error);
+)",
+                     section, symbols);
+      },
+      std::runtime_error);
 }
 
 TEST(Z80ConditionalsTest, MultipleElseBlocks) {
@@ -722,8 +766,9 @@ TEST(Z80ConditionalsTest, MultipleElseBlocks) {
   ConcreteSymbolTable symbols;
   Section section("test", 0);
 
-  EXPECT_THROW({
-    parser.Parse(R"(
+  EXPECT_THROW(
+      {
+        parser.Parse(R"(
          IF 1
          DB 11H
          ELSE
@@ -731,8 +776,10 @@ TEST(Z80ConditionalsTest, MultipleElseBlocks) {
          ELSE
          DB 33H
          ENDIF
-)", section, symbols);
-  }, std::runtime_error);
+)",
+                     section, symbols);
+      },
+      std::runtime_error);
 }
 
 // ============================================================================
@@ -749,7 +796,8 @@ VAL      EQU 10
          IF VAL > 5
          DB 42H
          ENDIF
-)", section, symbols);
+)",
+               section, symbols);
 
   // VAL > 5 (10 > 5 = true) - DB should be assembled
   ASSERT_EQ(section.atoms.size(), 1);
@@ -769,7 +817,8 @@ VAL2     EQU 5
          IFEQ VAL1, VAL2
          DB 42H
          ENDIF
-)", section, symbols);
+)",
+               section, symbols);
 
   // VAL1 == VAL2 (5 == 5 = true) - DB should be assembled
   // Two EQU labels + data atom = 3 atoms
@@ -789,7 +838,8 @@ BASE     EQU 100
          IFLT BASE + 50, 200
          DB 42H
          ENDIF
-)", section, symbols);
+)",
+               section, symbols);
 
   // (BASE + 50) < 200 (150 < 200 = true) - DB should be assembled
   // EQU label + data atom = 2 atoms

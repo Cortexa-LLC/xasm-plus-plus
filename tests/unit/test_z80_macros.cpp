@@ -3,10 +3,10 @@
  * Tests MACRO/ENDM, LOCAL, EXITM, REPT, IRP, IRPC
  */
 
-#include <gtest/gtest.h>
-#include "xasm++/syntax/edtasm_m80_plusplus_syntax.h"
 #include "xasm++/assembler.h"
 #include "xasm++/cpu/cpu_z80.h"
+#include "xasm++/syntax/edtasm_m80_plusplus_syntax.h"
+#include <gtest/gtest.h>
 
 class Z80MacrosTest : public ::testing::Test {
 protected:
@@ -36,28 +36,33 @@ TEST_F(Z80MacrosTest, ReptBasic) {
     ENDM
   )";
 
-  parser->Parse(source, section, symbols); 
+  parser->Parse(source, section, symbols);
   auto atoms = section.atoms;
-  
+
   // DEBUG: Print all atoms
   std::cout << "Total atoms: " << atoms.size() << std::endl;
   for (size_t i = 0; i < atoms.size(); ++i) {
     if (auto org = std::dynamic_pointer_cast<xasm::OrgAtom>(atoms[i])) {
-      std::cout << "  Atom " << i << ": ORG " << std::hex << org->address << std::dec << std::endl;
-    } else if (auto inst = std::dynamic_pointer_cast<xasm::InstructionAtom>(atoms[i])) {
-      std::cout << "  Atom " << i << ": INSTRUCTION " << inst->mnemonic << " " << inst->operand << std::endl;
-    } else if (auto data = std::dynamic_pointer_cast<xasm::DataAtom>(atoms[i])) {
-      std::cout << "  Atom " << i << ": DATA (size=" << data->data.size() << ")" << std::endl;
+      std::cout << "  Atom " << i << ": ORG " << std::hex << org->address
+                << std::dec << std::endl;
+    } else if (auto inst =
+                   std::dynamic_pointer_cast<xasm::InstructionAtom>(atoms[i])) {
+      std::cout << "  Atom " << i << ": INSTRUCTION " << inst->mnemonic << " "
+                << inst->operand << std::endl;
+    } else if (auto data =
+                   std::dynamic_pointer_cast<xasm::DataAtom>(atoms[i])) {
+      std::cout << "  Atom " << i << ": DATA (size=" << data->data.size() << ")"
+                << std::endl;
     } else {
       std::cout << "  Atom " << i << ": UNKNOWN" << std::endl;
     }
   }
-  
+
   // Should have origin + 3 NOPs
   if (atoms.size() < 2) {
     FAIL() << "Expected at least 2 atoms (ORG + NOPs), got " << atoms.size();
   }
-  
+
   // Check for NOP instructions (by mnemonic, not encoded bytes)
   int nop_count = 0;
   for (const auto &atom : atoms) {
@@ -79,8 +84,9 @@ TEST_F(Z80MacrosTest, ReptZero) {
     LD A, 1
   )";
 
-  parser->Parse(source, section, symbols); auto atoms = section.atoms;
-  
+  parser->Parse(source, section, symbols);
+  auto atoms = section.atoms;
+
   // Should have origin + LD A,1 but no NOP
   int nop_count = 0;
   for (const auto &atom : atoms) {
@@ -102,8 +108,9 @@ TEST_F(Z80MacrosTest, ReptWithInstructions) {
     ENDM
   )";
 
-  parser->Parse(source, section, symbols); auto atoms = section.atoms;
-  
+  parser->Parse(source, section, symbols);
+  auto atoms = section.atoms;
+
   // Should have origin + 4 instructions (2 reps * 2 instructions)
   int ld_count = 0;
   for (const auto &atom : atoms) {
@@ -126,8 +133,9 @@ TEST_F(Z80MacrosTest, IrpBasic) {
     ENDM
   )";
 
-  parser->Parse(source, section, symbols); auto atoms = section.atoms;
-  
+  parser->Parse(source, section, symbols);
+  auto atoms = section.atoms;
+
   // Should generate: LD A,0; LD B,0; LD C,0
   int ld_count = 0;
   for (const auto &atom : atoms) {
@@ -146,8 +154,9 @@ TEST_F(Z80MacrosTest, IrpWithPercent) {
     ENDM
   )";
 
-  parser->Parse(source, section, symbols); auto atoms = section.atoms;
-  
+  parser->Parse(source, section, symbols);
+  auto atoms = section.atoms;
+
   // Should generate: DB 1; DB 2; DB 3
   int db_count = 0;
   for (const auto &atom : atoms) {
@@ -169,7 +178,7 @@ TEST_F(Z80MacrosTest, IrpEmpty) {
 
   parser->Parse(source, section, symbols);
   auto atoms = section.atoms;
-  
+
   // Should only have NOP (IRP with empty list generates nothing)
   int ld_count = 0;
   int nop_count = 0;
@@ -198,8 +207,9 @@ TEST_F(Z80MacrosTest, IrpcBasic) {
     ENDM
   )";
 
-  parser->Parse(source, section, symbols); auto atoms = section.atoms;
-  
+  parser->Parse(source, section, symbols);
+  auto atoms = section.atoms;
+
   // Should generate: DB 'A'; DB 'B'; DB 'C'
   int db_count = 0;
   for (const auto &atom : atoms) {
@@ -218,8 +228,9 @@ TEST_F(Z80MacrosTest, IrpcWithAngleBrackets) {
     ENDM
   )";
 
-  parser->Parse(source, section, symbols); auto atoms = section.atoms;
-  
+  parser->Parse(source, section, symbols);
+  auto atoms = section.atoms;
+
   // Should generate: DB 'X'; DB 'Y'; DB 'Z'
   int db_count = 0;
   for (const auto &atom : atoms) {
@@ -239,8 +250,9 @@ TEST_F(Z80MacrosTest, IrpcEmpty) {
     NOP
   )";
 
-  parser->Parse(source, section, symbols); auto atoms = section.atoms;
-  
+  parser->Parse(source, section, symbols);
+  auto atoms = section.atoms;
+
   // Should only have NOP
   int db_count = 0;
   for (const auto &atom : atoms) {
@@ -266,8 +278,9 @@ TEST_F(Z80MacrosTest, MacroBasic) {
     LOAD_IMMEDIATE B, 99
   )";
 
-  parser->Parse(source, section, symbols); auto atoms = section.atoms;
-  
+  parser->Parse(source, section, symbols);
+  auto atoms = section.atoms;
+
   // Should have 2 LD instructions
   int ld_count = 0;
   for (const auto &atom : atoms) {
@@ -290,8 +303,9 @@ TEST_F(Z80MacrosTest, MacroNoParams) {
     SAVE_ALL
   )";
 
-  parser->Parse(source, section, symbols); auto atoms = section.atoms;
-  
+  parser->Parse(source, section, symbols);
+  auto atoms = section.atoms;
+
   // Should have 3 PUSH instructions
   int push_count = 0;
   for (const auto &atom : atoms) {
@@ -316,8 +330,9 @@ LOOP    DJNZ LOOP
         DELAY
   )";
 
-  parser->Parse(source, section, symbols); auto atoms = section.atoms;
-  
+  parser->Parse(source, section, symbols);
+  auto atoms = section.atoms;
+
   // Should have LD and DJNZ
   int inst_count = 0;
   for (const auto &atom : atoms) {
@@ -348,8 +363,9 @@ SKIP    NOP
         WAIT
   )";
 
-  parser->Parse(source, section, symbols); auto atoms = section.atoms;
-  
+  parser->Parse(source, section, symbols);
+  auto atoms = section.atoms;
+
   // Each macro invocation should create unique local labels
   // We should have 2 invocations with different local labels
   // The test mainly checks that it parses without duplicate label errors
@@ -376,7 +392,7 @@ TEST MACRO
 
   parser->Parse(source, section, symbols);
   auto atoms = section.atoms;
-  
+
   // Should only have NOP (EXITM exits before RET)
   int nop_count = 0;
   int ret_count = 0;
@@ -412,8 +428,9 @@ INIT    MACRO
         INIT
   )";
 
-  parser->Parse(source, section, symbols); auto atoms = section.atoms;
-  
+  parser->Parse(source, section, symbols);
+  auto atoms = section.atoms;
+
   // Should expand INIT which calls SET_REG twice
   int ld_count = 0;
   for (const auto &atom : atoms) {
@@ -436,8 +453,9 @@ FILL_ZERO MACRO COUNT
           FILL_ZERO 5
   )";
 
-  parser->Parse(source, section, symbols); auto atoms = section.atoms;
-  
+  parser->Parse(source, section, symbols);
+  auto atoms = section.atoms;
+
   // Should generate 5 DB 0
   int db_count = 0;
   for (const auto &atom : atoms) {
@@ -529,7 +547,7 @@ TEST MACRO
   // Second definition should be used
   parser->Parse(source, section, symbols);
   auto atoms = section.atoms;
-  
+
   // Should have one RET instruction (second macro definition)
   int ret_count = 0;
   int nop_count = 0;

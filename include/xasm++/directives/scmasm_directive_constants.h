@@ -14,27 +14,34 @@ namespace scmasm {
 namespace directives {
 
 // Origin and addressing
-constexpr const char* OR = ".OR";
+constexpr const char *OR = ".OR";
 
 // Symbol definition
-constexpr const char* EQ = ".EQ";
-constexpr const char* SE = ".SE";
+constexpr const char *EQ = ".EQ";
+constexpr const char *SE = ".SE";
 
 // String directives
-constexpr const char* AS = ".AS";
-constexpr const char* AT = ".AT";
-constexpr const char* AZ = ".AZ";
+constexpr const char *AS = ".AS";
+constexpr const char *AT = ".AT";
+constexpr const char *AZ = ".AZ";
 
 // Data directives
-constexpr const char* DA = ".DA";
-constexpr const char* DFB = ".DFB";  // Alias to .DA
-constexpr const char* HS = ".HS";
-constexpr const char* BS = ".BS";
+constexpr const char *DA = ".DA";
+constexpr const char *DFB = ".DFB"; // Alias to .DA
+constexpr const char *HS = ".HS";
+constexpr const char *BS = ".BS";
 
 // Macro directives
-constexpr const char* MA = ".MA";
-constexpr const char* ENDM = ".ENDM";
-constexpr const char* EM = ".EM";    // Alias to .ENDM
+constexpr const char *MA = ".MA";
+constexpr const char *ENDM = ".ENDM";
+constexpr const char *EM = ".EM"; // Alias to .ENDM
+
+// P0 Priority Directives (A2oSX Critical)
+constexpr const char *PS = ".PS";       // Pascal string (length-prefixed)
+constexpr const char *INB = ".INB";     // Include binary file
+constexpr const char *LIST = ".LIST";   // Listing control
+constexpr const char *DUMMY = ".DUMMY"; // Dummy section
+constexpr const char *OP = ".OP";       // CPU operation mode
 
 } // namespace directives
 } // namespace scmasm

@@ -66,9 +66,7 @@ void SRecordWriter::Write(const std::vector<Section> &sections,
 
 std::string SRecordWriter::GetExtension() const { return "s19"; }
 
-std::string SRecordWriter::GetFormatName() const {
-  return "Motorola S-Record";
-}
+std::string SRecordWriter::GetFormatName() const { return "Motorola S-Record"; }
 
 void SRecordWriter::SetBytesPerLine(size_t bytes) {
   if (bytes == 0 || bytes > 255) {

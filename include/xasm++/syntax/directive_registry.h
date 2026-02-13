@@ -32,11 +32,11 @@ struct DirectiveContext {
   ConcreteSymbolTable *symbols = nullptr; ///< Symbol table
   uint32_t *current_address = nullptr;    ///< Pointer to current address
   void *parser_state = nullptr;           ///< Opaque parser state (for casting)
-  
+
   // Source location tracking for listing output
-  std::string current_file;               ///< Current source filename
-  int current_line = 0;                   ///< Current line number
-  std::string source_line;                ///< Original source line text
+  std::string current_file; ///< Current source filename
+  int current_line = 0;     ///< Current line number
+  std::string source_line;  ///< Original source line text
 
   /**
    * @brief Constructor with common context
@@ -53,9 +53,9 @@ struct DirectiveContext {
  *
  * @throws std::runtime_error on directive processing errors
  */
-using DirectiveHandler = std::function<void(const std::string &label,
-                                            const std::string &operand,
-                                            DirectiveContext &context)>;
+using DirectiveHandler =
+    std::function<void(const std::string &label, const std::string &operand,
+                       DirectiveContext &context)>;
 
 /**
  * @brief Registry for directive handlers

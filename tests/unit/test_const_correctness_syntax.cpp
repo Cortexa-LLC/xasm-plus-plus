@@ -36,14 +36,16 @@ protected:
  * - EdtasmSyntaxParser::IsCommentLine()
  * - ScmasmSyntaxParser::IsLocalLabel()
  *
- * This test exists to document the requirement. Once the methods are marked const,
- * they can be safely called from const contexts, improving code safety.
+ * This test exists to document the requirement. Once the methods are marked
+ * const, they can be safely called from const contexts, improving code safety.
  */
 TEST_F(SyntaxConstCorrectnessTest, DocumentConstRequirements) {
   // These methods should be const:
   // 1. FlexAsmSyntax::IsCommentLine() - only checks if line starts with '*'
-  // 2. EdtasmSyntaxParser::IsCommentLine() - only checks if line starts with '*'
-  // 3. ScmasmSyntaxParser::IsLocalLabel() - only checks if label matches pattern
+  // 2. EdtasmSyntaxParser::IsCommentLine() - only checks if line starts with
+  // '*'
+  // 3. ScmasmSyntaxParser::IsLocalLabel() - only checks if label matches
+  // pattern
   //
   // All are pure query methods that don't modify object state.
 

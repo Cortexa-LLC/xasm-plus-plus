@@ -8,8 +8,8 @@
  * - Range validation
  * - Vector construction helpers (for multi-byte opcodes with prefixes)
  *
- * These utilities eliminate code duplication across CPU families (6502, Z80, 6809)
- * and provide a single source of truth for common encoding patterns.
+ * These utilities eliminate code duplication across CPU families (6502, Z80,
+ * 6809) and provide a single source of truth for common encoding patterns.
  *
  * @note All functions are constexpr where possible for compile-time evaluation
  */
@@ -42,7 +42,7 @@ namespace encoding {
  * // bytes[0] = 0x34, bytes[1] = 0x12
  */
 constexpr std::array<uint8_t, 2> ToLittleEndian16(uint16_t value) {
-  return {static_cast<uint8_t>(value & 0xFF),        // Low byte
+  return {static_cast<uint8_t>(value & 0xFF),         // Low byte
           static_cast<uint8_t>((value >> 8) & 0xFF)}; // High byte
 }
 
@@ -61,7 +61,7 @@ constexpr std::array<uint8_t, 2> ToLittleEndian16(uint16_t value) {
  */
 constexpr std::array<uint8_t, 2> ToBigEndian16(uint16_t value) {
   return {static_cast<uint8_t>((value >> 8) & 0xFF), // High byte
-          static_cast<uint8_t>(value & 0xFF)};        // Low byte
+          static_cast<uint8_t>(value & 0xFF)};       // Low byte
 }
 
 /**
@@ -78,8 +78,8 @@ constexpr std::array<uint8_t, 2> ToBigEndian16(uint16_t value) {
  * // bytes[0] = 0x56, bytes[1] = 0x34, bytes[2] = 0x12
  */
 constexpr std::array<uint8_t, 3> ToLittleEndian24(uint32_t value) {
-  return {static_cast<uint8_t>(value & 0xFF),         // Low byte
-          static_cast<uint8_t>((value >> 8) & 0xFF),  // Middle byte
+  return {static_cast<uint8_t>(value & 0xFF),          // Low byte
+          static_cast<uint8_t>((value >> 8) & 0xFF),   // Middle byte
           static_cast<uint8_t>((value >> 16) & 0xFF)}; // High byte
 }
 
@@ -149,9 +149,7 @@ constexpr uint8_t HighNibble(uint8_t value) {
  * @param value Value to check
  * @return true if value ≤ 255, false otherwise
  */
-constexpr bool FitsIn8Bits(uint32_t value) {
-  return value <= 0xFF;
-}
+constexpr bool FitsIn8Bits(uint32_t value) { return value <= 0xFF; }
 
 /**
  * @brief Check if value fits in 16 bits (0-65535)
@@ -159,9 +157,7 @@ constexpr bool FitsIn8Bits(uint32_t value) {
  * @param value Value to check
  * @return true if value ≤ 65535, false otherwise
  */
-constexpr bool FitsIn16Bits(uint32_t value) {
-  return value <= 0xFFFF;
-}
+constexpr bool FitsIn16Bits(uint32_t value) { return value <= 0xFFFF; }
 
 /**
  * @brief Check if value fits in signed 8-bit range (-128 to 127)
@@ -192,7 +188,7 @@ constexpr bool FitsInSignedByte(int32_t value) {
  * // Z80: BIT 0, A → CB 47
  * auto encoded = WithPrefix(0xCB, {0x47});
  */
-inline std::vector<uint8_t> WithPrefix(uint8_t prefix, 
+inline std::vector<uint8_t> WithPrefix(uint8_t prefix,
                                        std::initializer_list<uint8_t> bytes) {
   std::vector<uint8_t> result;
   result.reserve(1 + bytes.size());
@@ -214,8 +210,9 @@ inline std::vector<uint8_t> WithPrefix(uint8_t prefix,
  * // Z80: BIT 0, (IX+d) → DD CB d 46
  * auto encoded = WithPrefixes({0xDD, 0xCB}, {displacement, 0x46});
  */
-inline std::vector<uint8_t> WithPrefixes(std::initializer_list<uint8_t> prefixes,
-                                         std::initializer_list<uint8_t> bytes) {
+inline std::vector<uint8_t>
+WithPrefixes(std::initializer_list<uint8_t> prefixes,
+             std::initializer_list<uint8_t> bytes) {
   std::vector<uint8_t> result;
   result.reserve(prefixes.size() + bytes.size());
   result.insert(result.end(), prefixes.begin(), prefixes.end());

@@ -9,8 +9,8 @@
  * can be called from const contexts.
  */
 
-#include "xasm++/syntax/scmasm_syntax.h"
 #include "xasm++/syntax/edtasm_m80_plusplus_syntax.h"
+#include "xasm++/syntax/scmasm_syntax.h"
 #include <gtest/gtest.h>
 
 using namespace xasm;
@@ -33,10 +33,10 @@ protected:
 TEST_F(UtilityMethodConstCorrectnessTest, ScmasmTrimIsConst) {
   // This test will fail (RED) until Trim is marked const
   // Once marked const, it will pass (GREEN)
-  
+
   // Note: Trim is private, so we test it indirectly by ensuring
   // const objects can be used in parsing contexts where Trim would be called
-  
+
   // For now, this documents the requirement
   EXPECT_TRUE(true) << "ScmasmSyntaxParser::Trim should be marked const";
 }
@@ -50,9 +50,9 @@ TEST_F(UtilityMethodConstCorrectnessTest, ScmasmTrimIsConst) {
 TEST_F(UtilityMethodConstCorrectnessTest, Z80UniversalTrimIsConst) {
   // This test will fail (RED) until Trim is marked const
   // Once marked const, it will pass (GREEN)
-  
+
   // Note: Trim is private, so we test it indirectly
-  
+
   // For now, this documents the requirement
   EXPECT_TRUE(true) << "Z80UniversalSyntax::Trim should be marked const";
 }

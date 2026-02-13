@@ -1,7 +1,7 @@
 /**
  * @file test_macro_processor.cpp
  * @brief Unit tests for MacroProcessor class
- * 
+ *
  * Tests the standalone macro processor functionality including:
  * - Macro definition storage
  * - Macro lookup
@@ -21,7 +21,7 @@ using namespace xasm;
 
 /**
  * Test: DefineMacro - Store simple macro without parameters
- * 
+ *
  * Given: A macro with no parameters
  * When: DefineMacro is called
  * Then: Macro is stored and can be retrieved
@@ -44,7 +44,7 @@ TEST(MacroProcessorTest, DefineMacroSimple) {
 
 /**
  * Test: DefineMacro - Store macro with parameters
- * 
+ *
  * Given: A macro with 2 parameters
  * When: DefineMacro is called
  * Then: Macro is stored with correct parameter list
@@ -53,15 +53,16 @@ TEST(MacroProcessorTest, DefineMacroWithParameters) {
   MacroProcessor processor;
 
   std::vector<std::string> params = {"SRC", "DEST"};
-  std::vector<std::string> body = {"        LDA     SRC", "        STA     DEST"};
+  std::vector<std::string> body = {"        LDA     SRC",
+                                   "        STA     DEST"};
 
   processor.DefineMacro("MOVB", params, body);
 
   // Verify macro is defined
   EXPECT_TRUE(processor.IsMacro("MOVB"));
-  
+
   // Verify can get the macro back
-  const MacroDefinition* macro = processor.GetMacro("MOVB");
+  const MacroDefinition *macro = processor.GetMacro("MOVB");
   ASSERT_NE(macro, nullptr);
   EXPECT_EQ(macro->name, "MOVB");
   EXPECT_EQ(macro->parameters.size(), 2);
@@ -72,7 +73,7 @@ TEST(MacroProcessorTest, DefineMacroWithParameters) {
 
 /**
  * Test: IsMacro - Check if macro exists
- * 
+ *
  * Given: Some macros defined
  * When: IsMacro is called
  * Then: Returns true for defined macros, false otherwise
@@ -94,7 +95,7 @@ TEST(MacroProcessorTest, IsMacro) {
 
 /**
  * Test: GetMacro - Retrieve macro definition
- * 
+ *
  * Given: A defined macro
  * When: GetMacro is called
  * Then: Returns pointer to macro definition
@@ -107,20 +108,20 @@ TEST(MacroProcessorTest, GetMacro) {
   processor.DefineMacro("TEST", params, body);
 
   // Get existing macro
-  const MacroDefinition* macro = processor.GetMacro("TEST");
+  const MacroDefinition *macro = processor.GetMacro("TEST");
   ASSERT_NE(macro, nullptr);
   EXPECT_EQ(macro->name, "TEST");
   EXPECT_EQ(macro->parameters.size(), 2);
   EXPECT_EQ(macro->body.size(), 2);
 
   // Get non-existing macro
-  const MacroDefinition* undefined = processor.GetMacro("NOTFOUND");
+  const MacroDefinition *undefined = processor.GetMacro("NOTFOUND");
   EXPECT_EQ(undefined, nullptr);
 }
 
 /**
  * Test: Clear - Remove all macros
- * 
+ *
  * Given: Multiple macros defined
  * When: Clear is called
  * Then: All macros are removed
@@ -152,7 +153,7 @@ TEST(MacroProcessorTest, Clear) {
 
 /**
  * Test: Case insensitive macro lookup
- * 
+ *
  * Given: Macro defined with mixed case
  * When: Looked up with different case
  * Then: Should be found (case insensitive)
@@ -175,7 +176,7 @@ TEST(MacroProcessorTest, CaseInsensitiveLookup) {
 
 /**
  * Test: Maximum 8 parameters
- * 
+ *
  * Given: Macro with 8 parameters (FLEX spec limit)
  * When: DefineMacro is called
  * Then: Should succeed without error
@@ -183,13 +184,14 @@ TEST(MacroProcessorTest, CaseInsensitiveLookup) {
 TEST(MacroProcessorTest, MaximumParameters) {
   MacroProcessor processor;
 
-  std::vector<std::string> params = {"P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8"};
+  std::vector<std::string> params = {"P1", "P2", "P3", "P4",
+                                     "P5", "P6", "P7", "P8"};
   std::vector<std::string> body = {"        NOP"};
 
   // Should succeed (8 parameters is max)
   EXPECT_NO_THROW(processor.DefineMacro("MAXPARAM", params, body));
-  
-  const MacroDefinition* macro = processor.GetMacro("MAXPARAM");
+
+  const MacroDefinition *macro = processor.GetMacro("MAXPARAM");
   ASSERT_NE(macro, nullptr);
   EXPECT_EQ(macro->parameters.size(), 8);
 }
@@ -200,7 +202,7 @@ TEST(MacroProcessorTest, MaximumParameters) {
 
 /**
  * Test: ExpandMacro - Simple macro without parameters
- * 
+ *
  * Given: A macro with no parameters
  * When: ExpandMacro is called
  * Then: Returns macro body unchanged
@@ -223,7 +225,7 @@ TEST(MacroProcessorTest, ExpandMacroSimple) {
 
 /**
  * Test: ExpandMacro - Macro with parameter substitution
- * 
+ *
  * Given: A macro with 2 parameters
  * When: ExpandMacro is called with arguments
  * Then: Parameters are substituted with arguments
@@ -232,14 +234,13 @@ TEST(MacroProcessorTest, ExpandMacroWithParameters) {
   MacroProcessor processor;
 
   std::vector<std::string> params = {"SRC", "DEST"};
-  std::vector<std::string> body = {
-    "        LDA     SRC",
-    "        STA     DEST"
-  };
+  std::vector<std::string> body = {"        LDA     SRC",
+                                   "        STA     DEST"};
   processor.DefineMacro("MOVB", params, body);
 
   // Expand with arguments
-  std::vector<std::string> expanded = processor.ExpandMacro("MOVB", {"$80", "$90"});
+  std::vector<std::string> expanded =
+      processor.ExpandMacro("MOVB", {"$80", "$90"});
 
   // Verify parameter substitution
   ASSERT_EQ(expanded.size(), 2);
@@ -249,7 +250,7 @@ TEST(MacroProcessorTest, ExpandMacroWithParameters) {
 
 /**
  * Test: ExpandMacro - Missing arguments
- * 
+ *
  * Given: Macro with 2 parameters
  * When: Expanded with only 1 argument
  * Then: Missing parameter substituted with empty string
@@ -272,7 +273,7 @@ TEST(MacroProcessorTest, ExpandMacroMissingArguments) {
 
 /**
  * Test: ExpandMacro - Undefined macro
- * 
+ *
  * Given: No macro defined
  * When: ExpandMacro is called
  * Then: Returns empty vector
@@ -289,7 +290,7 @@ TEST(MacroProcessorTest, ExpandMacroUndefined) {
 
 /**
  * Test: ExpandMacro - Local label uniquification
- * 
+ *
  * Given: Macro with local labels (.LOOP)
  * When: Expanded multiple times
  * Then: Each expansion has unique local labels
@@ -297,12 +298,9 @@ TEST(MacroProcessorTest, ExpandMacroUndefined) {
 TEST(MacroProcessorTest, ExpandMacroLocalLabels) {
   MacroProcessor processor;
 
-  std::vector<std::string> body = {
-    ".LOOP   LDA     ,X+",
-    "        STA     ,Y+",
-    "        LEAX    -1,X",
-    "        BNE     .LOOP"
-  };
+  std::vector<std::string> body = {".LOOP   LDA     ,X+", "        STA     ,Y+",
+                                   "        LEAX    -1,X",
+                                   "        BNE     .LOOP"};
   processor.DefineMacro("COPY", {}, body);
 
   // First expansion
@@ -320,7 +318,7 @@ TEST(MacroProcessorTest, ExpandMacroLocalLabels) {
 
 /**
  * Test: ExpandMacro - Multiple local labels
- * 
+ *
  * Given: Macro with multiple different local labels
  * When: Expanded once
  * Then: All local labels get unique suffixes
@@ -328,13 +326,9 @@ TEST(MacroProcessorTest, ExpandMacroLocalLabels) {
 TEST(MacroProcessorTest, ExpandMacroMultipleLocalLabels) {
   MacroProcessor processor;
 
-  std::vector<std::string> body = {
-    ".START  LDA     #0",
-    "        BEQ     .END",
-    ".LOOP   NOP",
-    "        BRA     .LOOP",
-    ".END    RTS"
-  };
+  std::vector<std::string> body = {".START  LDA     #0", "        BEQ     .END",
+                                   ".LOOP   NOP", "        BRA     .LOOP",
+                                   ".END    RTS"};
   processor.DefineMacro("COMPLEX", {}, body);
 
   // Expand once
@@ -350,7 +344,7 @@ TEST(MacroProcessorTest, ExpandMacroMultipleLocalLabels) {
 
 /**
  * Test: ExpandMacro - Parameter substitution with word boundaries
- * 
+ *
  * Given: Macro with parameter that's substring of another word
  * When: Expanded with argument
  * Then: Only whole-word matches are substituted
@@ -360,9 +354,9 @@ TEST(MacroProcessorTest, ExpandMacroParameterWordBoundaries) {
 
   std::vector<std::string> params = {"A"};
   std::vector<std::string> body = {
-    "        LDA     A",      // Should substitute
-    "        STA     DATA",   // Should NOT substitute (A is part of DATA)
-    "        BRA     LABEL"   // Should NOT substitute (A is part of LABEL)
+      "        LDA     A",    // Should substitute
+      "        STA     DATA", // Should NOT substitute (A is part of DATA)
+      "        BRA     LABEL" // Should NOT substitute (A is part of LABEL)
   };
   processor.DefineMacro("TEST", params, body);
 
@@ -370,14 +364,14 @@ TEST(MacroProcessorTest, ExpandMacroParameterWordBoundaries) {
   std::vector<std::string> expanded = processor.ExpandMacro("TEST", {"$FF"});
 
   ASSERT_EQ(expanded.size(), 3);
-  EXPECT_EQ(expanded[0], "        LDA     $FF");    // A substituted
-  EXPECT_EQ(expanded[1], "        STA     DATA");   // DATA unchanged
-  EXPECT_EQ(expanded[2], "        BRA     LABEL");  // LABEL unchanged
+  EXPECT_EQ(expanded[0], "        LDA     $FF");   // A substituted
+  EXPECT_EQ(expanded[1], "        STA     DATA");  // DATA unchanged
+  EXPECT_EQ(expanded[2], "        BRA     LABEL"); // LABEL unchanged
 }
 
 /**
  * Test: ExpandMacro - Clear resets expansion counter
- * 
+ *
  * Given: Macros expanded multiple times
  * When: Clear is called and new macro defined
  * Then: Expansion counter restarts at 1

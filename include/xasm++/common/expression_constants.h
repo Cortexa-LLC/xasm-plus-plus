@@ -16,22 +16,22 @@ namespace expression {
 // ============================================================================
 
 /// HIGH - Extract high byte of 16-bit value (uppercase)
-constexpr const char* HIGH = "HIGH";
+constexpr const char *HIGH = "HIGH";
 
 /// high - Extract high byte of 16-bit value (lowercase)
-constexpr const char* high = "high";
+constexpr const char *high = "high";
 
 /// High - Extract high byte of 16-bit value (mixed case)
-constexpr const char* High = "High";
+constexpr const char *High = "High";
 
 /// LOW - Extract low byte of 16-bit value (uppercase)
-constexpr const char* LOW = "LOW";
+constexpr const char *LOW = "LOW";
 
 /// low - Extract low byte of 16-bit value (lowercase)
-constexpr const char* low = "low";
+constexpr const char *low = "low";
 
 /// Low - Extract low byte of 16-bit value (mixed case)
-constexpr const char* Low = "Low";
+constexpr const char *Low = "Low";
 
 } // namespace expression
 } // namespace xasm

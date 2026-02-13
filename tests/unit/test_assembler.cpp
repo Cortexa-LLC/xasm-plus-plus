@@ -860,11 +860,12 @@ TEST(AssemblerTest, IntegrationZeroPageIndexedLoop) {
   AssemblerResult result = assembler.Assemble();
 
   if (!result.success) {
-    for (const auto& err : result.errors) {
+    for (const auto &err : result.errors) {
       std::cerr << "Error: " << err.message << std::endl;
     }
   }
-  ASSERT_TRUE(result.success) << "Assembly failed with " << result.errors.size() << " errors";
+  ASSERT_TRUE(result.success)
+      << "Assembly failed with " << result.errors.size() << " errors";
   ASSERT_FALSE(ldx->encoded_bytes.empty());
   ASSERT_FALSE(lda->encoded_bytes.empty());
   ASSERT_FALSE(inx->encoded_bytes.empty());
@@ -968,11 +969,12 @@ TEST(AssemblerTest, IntegrationIndexedIndirect) {
   AssemblerResult result = assembler.Assemble();
 
   if (!result.success) {
-    for (const auto& err : result.errors) {
+    for (const auto &err : result.errors) {
       std::cerr << "Error: " << err.message << std::endl;
     }
   }
-  ASSERT_TRUE(result.success) << "Assembly failed with " << result.errors.size() << " errors";
+  ASSERT_TRUE(result.success)
+      << "Assembly failed with " << result.errors.size() << " errors";
   ASSERT_FALSE(ldy->encoded_bytes.empty());
   ASSERT_FALSE(lda->encoded_bytes.empty());
   ASSERT_FALSE(sta->encoded_bytes.empty());
@@ -1068,11 +1070,12 @@ TEST(AssemblerTest, LongBranchNeedsRelaxation) {
 
   // Currently this throws an error - should succeed with relaxation
   if (!result.success) {
-    for (const auto& err : result.errors) {
+    for (const auto &err : result.errors) {
       std::cerr << "Error: " << err.message << std::endl;
     }
   }
-  ASSERT_TRUE(result.success) << "Assembly failed with " << result.errors.size() << " errors";
+  ASSERT_TRUE(result.success)
+      << "Assembly failed with " << result.errors.size() << " errors";
 
   // Relaxed branch should be 5 bytes: BNE *+5; JMP target
   ASSERT_FALSE(beq->encoded_bytes.empty());
@@ -1107,11 +1110,12 @@ TEST(AssemblerTest, ShortBranchNoRelaxation) {
   AssemblerResult result = assembler.Assemble();
 
   if (!result.success) {
-    for (const auto& err : result.errors) {
+    for (const auto &err : result.errors) {
       std::cerr << "Error: " << err.message << std::endl;
     }
   }
-  ASSERT_TRUE(result.success) << "Assembly failed with " << result.errors.size() << " errors";
+  ASSERT_TRUE(result.success)
+      << "Assembly failed with " << result.errors.size() << " errors";
 
   // Short branch should be 2 bytes: BEQ offset
   ASSERT_FALSE(beq->encoded_bytes.empty());
@@ -1143,11 +1147,12 @@ TEST(AssemblerTest, BackwardBranch) {
   AssemblerResult result = assembler.Assemble();
 
   if (!result.success) {
-    for (const auto& err : result.errors) {
+    for (const auto &err : result.errors) {
       std::cerr << "Error: " << err.message << std::endl;
     }
   }
-  ASSERT_TRUE(result.success) << "Assembly failed with " << result.errors.size() << " errors";
+  ASSERT_TRUE(result.success)
+      << "Assembly failed with " << result.errors.size() << " errors";
 
   // Backward branch should be 2 bytes: BNE offset
   ASSERT_FALSE(bne->encoded_bytes.empty());

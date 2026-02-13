@@ -4,6 +4,7 @@
 #include "xasm++/section.h"
 #include "xasm++/symbol.h"
 #include "xasm++/syntax/scmasm_syntax.h"
+#include <fstream>
 #include <gtest/gtest.h>
 
 using namespace xasm;
@@ -35,7 +36,7 @@ TEST_F(ScmasmSyntaxTest, ConstructorCreatesValidParser) {
 
 TEST_F(ScmasmSyntaxTest, ParseEmptySourceSucceeds) {
   EXPECT_NO_THROW(parser->Parse("", section, symbols));
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0u);
 }
 
 // ============================================================================
@@ -45,20 +46,20 @@ TEST_F(ScmasmSyntaxTest, ParseEmptySourceSucceeds) {
 TEST_F(ScmasmSyntaxTest, StripsAsteriskCommentInColumn1) {
   // * comment in column 1 should be stripped
   parser->Parse("* This is a comment\n", section, symbols);
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0u);
 }
 
 TEST_F(ScmasmSyntaxTest, StripsSemicolonComment) {
   // ; comment anywhere should be stripped
   parser->Parse("    ; This is a comment\n", section, symbols);
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0u);
 }
 
 TEST_F(ScmasmSyntaxTest, StripsInlineComment) {
   // Code followed by comment
   parser->Parse("1000 .OR $0800  ; Set origin\n", section, symbols);
   // Should have ORG atom
-  EXPECT_GT(section.atoms.size(), 0);
+  EXPECT_GT(section.atoms.size(), 0u);
 }
 
 // ============================================================================
@@ -68,20 +69,20 @@ TEST_F(ScmasmSyntaxTest, StripsInlineComment) {
 TEST_F(ScmasmSyntaxTest, RecognizesSimpleLineNumber) {
   // Line numbers are optional but should be recognized
   parser->Parse("1000 .OR $0800\n", section, symbols);
-  EXPECT_GT(section.atoms.size(), 0);
+  EXPECT_GT(section.atoms.size(), 0u);
 }
 
 TEST_F(ScmasmSyntaxTest, RecognizesLineNumberRange) {
   // Line numbers: 0-65535
   parser->Parse("0 .OR $0000\n", section, symbols);
   parser->Parse("65535 .OR $FFFF\n", section, symbols);
-  EXPECT_GT(section.atoms.size(), 0);
+  EXPECT_GT(section.atoms.size(), 0u);
 }
 
 TEST_F(ScmasmSyntaxTest, ParsesDirectiveWithoutLineNumber) {
   // Line numbers are optional
   parser->Parse("    .OR $0800\n", section, symbols);
-  EXPECT_GT(section.atoms.size(), 0);
+  EXPECT_GT(section.atoms.size(), 0u);
 }
 
 // ============================================================================
@@ -91,7 +92,7 @@ TEST_F(ScmasmSyntaxTest, ParsesDirectiveWithoutLineNumber) {
 TEST_F(ScmasmSyntaxTest, RecognizesDotPrefixDirective) {
   // All SCMASM directives start with .
   parser->Parse(".OR $0800\n", section, symbols);
-  EXPECT_GT(section.atoms.size(), 0);
+  EXPECT_GT(section.atoms.size(), 0u);
 }
 
 TEST_F(ScmasmSyntaxTest, RejectsMissingDotPrefix) {
@@ -109,28 +110,28 @@ TEST_F(ScmasmSyntaxTest, OrDirectiveSetsAddress) {
   parser->Parse(".OR $0800\n", section, symbols);
 
   // Should have one OrgAtom
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1u);
   auto org_atom = std::dynamic_pointer_cast<OrgAtom>(section.atoms[0]);
   ASSERT_NE(org_atom, nullptr);
-  EXPECT_EQ(org_atom->address, 0x0800);
+  EXPECT_EQ(org_atom->address, 0x0800u);
 }
 
 TEST_F(ScmasmSyntaxTest, OrDirectiveWithDecimal) {
   parser->Parse(".OR 2048\n", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1u);
   auto org_atom = std::dynamic_pointer_cast<OrgAtom>(section.atoms[0]);
   ASSERT_NE(org_atom, nullptr);
-  EXPECT_EQ(org_atom->address, 2048);
+  EXPECT_EQ(org_atom->address, 2048u);
 }
 
 TEST_F(ScmasmSyntaxTest, OrDirectiveWithLineNumber) {
   parser->Parse("1000 .OR $2000\n", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1u);
   auto org_atom = std::dynamic_pointer_cast<OrgAtom>(section.atoms[0]);
   ASSERT_NE(org_atom, nullptr);
-  EXPECT_EQ(org_atom->address, 0x2000);
+  EXPECT_EQ(org_atom->address, 0x2000u);
 }
 
 // ============================================================================
@@ -141,7 +142,7 @@ TEST_F(ScmasmSyntaxTest, EqDefinesConstant) {
   parser->Parse("BUFSIZE .EQ 256\n", section, symbols);
 
   // EQU should not create atoms
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0u);
 
   // Symbol should be defined
   int64_t value;
@@ -335,10 +336,10 @@ TEST_F(ScmasmSyntaxTest, AsDirectiveWithSimpleString) {
   // .AS with delimiter " (0x22 < 0x27) → high bit SET
   parser->Parse("        .AS \"HELLO\"\n", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1u);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 5);
+  ASSERT_EQ(data_atom->data.size(), 5u);
   EXPECT_EQ(data_atom->data[0], 0xC8); // 'H' with high bit SET
   EXPECT_EQ(data_atom->data[1], 0xC5); // 'E' with high bit SET
   EXPECT_EQ(data_atom->data[2], 0xCC); // 'L' with high bit SET
@@ -350,10 +351,10 @@ TEST_F(ScmasmSyntaxTest, AsDirectiveHighBitRule) {
   // Delimiter < 0x27 should SET high bit for .AS
   parser->Parse("        .AS \"A\"\n", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1u);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 1);
+  ASSERT_EQ(data_atom->data.size(), 1u);
   EXPECT_EQ(data_atom->data[0], 0xC1); // 'A' with high bit SET (0x41 | 0x80)
 }
 
@@ -361,10 +362,10 @@ TEST_F(ScmasmSyntaxTest, AsDirectiveHighBitClear) {
   // Delimiter >= 0x27 should keep high bit CLEAR for .AS
   parser->Parse("        .AS 'A'\n", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1u);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 1);
+  ASSERT_EQ(data_atom->data.size(), 1u);
   EXPECT_EQ(data_atom->data[0], 0x41); // 'A' with high bit CLEAR
 }
 
@@ -372,10 +373,10 @@ TEST_F(ScmasmSyntaxTest, AsDirectiveEmptyString) {
   // Empty string should produce no data
   parser->Parse("        .AS \"\"\n", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1u);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  EXPECT_EQ(data_atom->data.size(), 0);
+  EXPECT_EQ(data_atom->data.size(), 0u);
 }
 
 // ============================================================================
@@ -386,10 +387,10 @@ TEST_F(ScmasmSyntaxTest, AtDirectiveSetsHighBit) {
   // .AT always sets high bit on last character
   parser->Parse("        .AT 'HELLO'\n", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1u);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 5);
+  ASSERT_EQ(data_atom->data.size(), 5u);
   EXPECT_EQ(data_atom->data[0], 0x48); // 'H' normal
   EXPECT_EQ(data_atom->data[1], 0x45); // 'E' normal
   EXPECT_EQ(data_atom->data[2], 0x4C); // 'L' normal
@@ -402,10 +403,10 @@ TEST_F(ScmasmSyntaxTest, AtDirectiveDelimiterStillApplies) {
   // Then set high bit on LAST char (which already has it)
   parser->Parse("        .AT \"AB\"\n", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1u);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 2);
+  ASSERT_EQ(data_atom->data.size(), 2u);
   EXPECT_EQ(data_atom->data[0], 0xC1); // 'A' with high bit from delimiter
   EXPECT_EQ(data_atom->data[1],
             0xC2); // 'B' with high bit (delimiter + .AT rule)
@@ -415,10 +416,10 @@ TEST_F(ScmasmSyntaxTest, AtDirectiveSingleChar) {
   // Single character gets high bit set
   parser->Parse("        .AT 'X'\n", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1u);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 1);
+  ASSERT_EQ(data_atom->data.size(), 1u);
   EXPECT_EQ(data_atom->data[0], 0xD8); // 'X' with high bit SET
 }
 
@@ -430,41 +431,41 @@ TEST_F(ScmasmSyntaxTest, AzDirectiveAddsZero) {
   // .AZ should append $00 terminator
   parser->Parse("        .AZ 'HELLO'\n", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1u);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 6); // 5 chars + null
-  EXPECT_EQ(data_atom->data[0], 0x48);  // 'H'
-  EXPECT_EQ(data_atom->data[1], 0x45);  // 'E'
-  EXPECT_EQ(data_atom->data[2], 0x4C);  // 'L'
-  EXPECT_EQ(data_atom->data[3], 0x4C);  // 'L'
-  EXPECT_EQ(data_atom->data[4], 0x4F);  // 'O'
-  EXPECT_EQ(data_atom->data[5], 0x00);  // null terminator
+  ASSERT_EQ(data_atom->data.size(), 6u); // 5 chars + null
+  EXPECT_EQ(data_atom->data[0], 0x48);   // 'H'
+  EXPECT_EQ(data_atom->data[1], 0x45);   // 'E'
+  EXPECT_EQ(data_atom->data[2], 0x4C);   // 'L'
+  EXPECT_EQ(data_atom->data[3], 0x4C);   // 'L'
+  EXPECT_EQ(data_atom->data[4], 0x4F);   // 'O'
+  EXPECT_EQ(data_atom->data[5], 0x00);   // null terminator
 }
 
 TEST_F(ScmasmSyntaxTest, AzDirectiveHighBitRule) {
   // .AZ respects delimiter high-bit rule
   parser->Parse("        .AZ \"TEST\"\n", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1u);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 5); // 4 chars + null
-  EXPECT_EQ(data_atom->data[0], 0xD4);  // 'T' with high bit
-  EXPECT_EQ(data_atom->data[1], 0xC5);  // 'E' with high bit
-  EXPECT_EQ(data_atom->data[2], 0xD3);  // 'S' with high bit
-  EXPECT_EQ(data_atom->data[3], 0xD4);  // 'T' with high bit
-  EXPECT_EQ(data_atom->data[4], 0x00);  // null terminator (no high bit)
+  ASSERT_EQ(data_atom->data.size(), 5u); // 4 chars + null
+  EXPECT_EQ(data_atom->data[0], 0xD4);   // 'T' with high bit
+  EXPECT_EQ(data_atom->data[1], 0xC5);   // 'E' with high bit
+  EXPECT_EQ(data_atom->data[2], 0xD3);   // 'S' with high bit
+  EXPECT_EQ(data_atom->data[3], 0xD4);   // 'T' with high bit
+  EXPECT_EQ(data_atom->data[4], 0x00);   // null terminator (no high bit)
 }
 
 TEST_F(ScmasmSyntaxTest, AzDirectiveEmptyString) {
   // Empty string should just emit null terminator
   parser->Parse("        .AZ ''\n", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1u);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 1);
+  ASSERT_EQ(data_atom->data.size(), 1u);
   EXPECT_EQ(data_atom->data[0], 0x00);
 }
 
@@ -476,10 +477,10 @@ TEST_F(ScmasmSyntaxTest, DaDirectiveSingleByte) {
   // .DA with single byte value - SCMASM always emits 16-bit (2 bytes)
   parser->Parse("        .DA $42\n", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1u);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 2);
+  ASSERT_EQ(data_atom->data.size(), 2u);
   EXPECT_EQ(data_atom->data[0], 0x42); // Low byte
   EXPECT_EQ(data_atom->data[1], 0x00); // High byte
 }
@@ -489,26 +490,26 @@ TEST_F(ScmasmSyntaxTest, DaDirectiveMultipleBytes) {
   // each)
   parser->Parse("        .DA $01,$02,$03\n", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1u);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 6); // 3 values × 2 bytes each
-  EXPECT_EQ(data_atom->data[0], 0x01);  // Value 1 low
-  EXPECT_EQ(data_atom->data[1], 0x00);  // Value 1 high
-  EXPECT_EQ(data_atom->data[2], 0x02);  // Value 2 low
-  EXPECT_EQ(data_atom->data[3], 0x00);  // Value 2 high
-  EXPECT_EQ(data_atom->data[4], 0x03);  // Value 3 low
-  EXPECT_EQ(data_atom->data[5], 0x00);  // Value 3 high
+  ASSERT_EQ(data_atom->data.size(), 6u); // 3 values × 2 bytes each
+  EXPECT_EQ(data_atom->data[0], 0x01);   // Value 1 low
+  EXPECT_EQ(data_atom->data[1], 0x00);   // Value 1 high
+  EXPECT_EQ(data_atom->data[2], 0x02);   // Value 2 low
+  EXPECT_EQ(data_atom->data[3], 0x00);   // Value 2 high
+  EXPECT_EQ(data_atom->data[4], 0x03);   // Value 3 low
+  EXPECT_EQ(data_atom->data[5], 0x00);   // Value 3 high
 }
 
 TEST_F(ScmasmSyntaxTest, DaDirectiveMultiByteValue) {
   // .DA with 16-bit value (should emit low byte, high byte)
   parser->Parse("        .DA $1234\n", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1u);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 2);
+  ASSERT_EQ(data_atom->data.size(), 2u);
   EXPECT_EQ(data_atom->data[0], 0x34); // Low byte
   EXPECT_EQ(data_atom->data[1], 0x12); // High byte
 }
@@ -517,16 +518,16 @@ TEST_F(ScmasmSyntaxTest, DaDirectiveMixedValues) {
   // .DA with mix of byte and word values - all emitted as 16-bit
   parser->Parse("        .DA $12,$3456,$78\n", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1u);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 6); // 3 values × 2 bytes each
-  EXPECT_EQ(data_atom->data[0], 0x12);  // Value 1 low
-  EXPECT_EQ(data_atom->data[1], 0x00);  // Value 1 high
-  EXPECT_EQ(data_atom->data[2], 0x56);  // Value 2 low
-  EXPECT_EQ(data_atom->data[3], 0x34);  // Value 2 high
-  EXPECT_EQ(data_atom->data[4], 0x78);  // Value 3 low
-  EXPECT_EQ(data_atom->data[5], 0x00);  // Value 3 high
+  ASSERT_EQ(data_atom->data.size(), 6u); // 3 values × 2 bytes each
+  EXPECT_EQ(data_atom->data[0], 0x12);   // Value 1 low
+  EXPECT_EQ(data_atom->data[1], 0x00);   // Value 1 high
+  EXPECT_EQ(data_atom->data[2], 0x56);   // Value 2 low
+  EXPECT_EQ(data_atom->data[3], 0x34);   // Value 2 high
+  EXPECT_EQ(data_atom->data[4], 0x78);   // Value 3 low
+  EXPECT_EQ(data_atom->data[5], 0x00);   // Value 3 high
 }
 
 TEST_F(ScmasmSyntaxTest, DaDirectiveWithExpressions) {
@@ -534,10 +535,10 @@ TEST_F(ScmasmSyntaxTest, DaDirectiveWithExpressions) {
   parser->Parse("BASE .EQ $1000\n", section, symbols);
   parser->Parse("        .DA BASE+10\n", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1u);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 2);
+  ASSERT_EQ(data_atom->data.size(), 2u);
   EXPECT_EQ(data_atom->data[0], 0x0A); // Low byte of $100A
   EXPECT_EQ(data_atom->data[1], 0x10); // High byte
 }
@@ -550,28 +551,28 @@ TEST_F(ScmasmSyntaxTest, DfbDirectiveAliasDa) {
   // .DFB is an alias for .DA - emits 16-bit values
   parser->Parse("        .DFB $42\n", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1u);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 2); // 16-bit value
-  EXPECT_EQ(data_atom->data[0], 0x42);  // Low byte
-  EXPECT_EQ(data_atom->data[1], 0x00);  // High byte
+  ASSERT_EQ(data_atom->data.size(), 2u); // 16-bit value
+  EXPECT_EQ(data_atom->data[0], 0x42);   // Low byte
+  EXPECT_EQ(data_atom->data[1], 0x00);   // High byte
 }
 
 TEST_F(ScmasmSyntaxTest, DfbDirectiveMultipleValues) {
   // .DFB works same as .DA - emits 16-bit values
   parser->Parse("        .DFB $01,$02,$03\n", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1u);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 6); // 3 values × 2 bytes each
-  EXPECT_EQ(data_atom->data[0], 0x01);  // Value 1 low
-  EXPECT_EQ(data_atom->data[1], 0x00);  // Value 1 high
-  EXPECT_EQ(data_atom->data[2], 0x02);  // Value 2 low
-  EXPECT_EQ(data_atom->data[3], 0x00);  // Value 2 high
-  EXPECT_EQ(data_atom->data[4], 0x03);  // Value 3 low
-  EXPECT_EQ(data_atom->data[5], 0x00);  // Value 3 high
+  ASSERT_EQ(data_atom->data.size(), 6u); // 3 values × 2 bytes each
+  EXPECT_EQ(data_atom->data[0], 0x01);   // Value 1 low
+  EXPECT_EQ(data_atom->data[1], 0x00);   // Value 1 high
+  EXPECT_EQ(data_atom->data[2], 0x02);   // Value 2 low
+  EXPECT_EQ(data_atom->data[3], 0x00);   // Value 2 high
+  EXPECT_EQ(data_atom->data[4], 0x03);   // Value 3 low
+  EXPECT_EQ(data_atom->data[5], 0x00);   // Value 3 high
 }
 
 // ============================================================================
@@ -582,10 +583,10 @@ TEST_F(ScmasmSyntaxTest, HsDirectiveSimple) {
   // .HS takes hex digits (no $ prefix)
   parser->Parse("        .HS 01 02 03\n", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1u);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 3);
+  ASSERT_EQ(data_atom->data.size(), 3u);
   EXPECT_EQ(data_atom->data[0], 0x01);
   EXPECT_EQ(data_atom->data[1], 0x02);
   EXPECT_EQ(data_atom->data[2], 0x03);
@@ -595,10 +596,10 @@ TEST_F(ScmasmSyntaxTest, HsDirectiveNoSpaces) {
   // .HS can have no spaces between bytes
   parser->Parse("        .HS 010203\n", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1u);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 3);
+  ASSERT_EQ(data_atom->data.size(), 3u);
   EXPECT_EQ(data_atom->data[0], 0x01);
   EXPECT_EQ(data_atom->data[1], 0x02);
   EXPECT_EQ(data_atom->data[2], 0x03);
@@ -608,10 +609,10 @@ TEST_F(ScmasmSyntaxTest, HsDirectiveUpperLower) {
   // .HS accepts both upper and lowercase hex
   parser->Parse("        .HS AbCdEf\n", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1u);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 3);
+  ASSERT_EQ(data_atom->data.size(), 3u);
   EXPECT_EQ(data_atom->data[0], 0xAB);
   EXPECT_EQ(data_atom->data[1], 0xCD);
   EXPECT_EQ(data_atom->data[2], 0xEF);
@@ -631,10 +632,10 @@ TEST_F(ScmasmSyntaxTest, BsDirectiveSimple) {
   // .BS converts binary strings to bytes
   parser->Parse("        .BS 10101010\n", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1u);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 1);
+  ASSERT_EQ(data_atom->data.size(), 1u);
   EXPECT_EQ(data_atom->data[0], 0xAA);
 }
 
@@ -642,10 +643,10 @@ TEST_F(ScmasmSyntaxTest, BsDirectiveMultipleBytes) {
   // .BS with multiple bytes
   parser->Parse("        .BS 11111111 00000000\n", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1u);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 2);
+  ASSERT_EQ(data_atom->data.size(), 2u);
   EXPECT_EQ(data_atom->data[0], 0xFF);
   EXPECT_EQ(data_atom->data[1], 0x00);
 }
@@ -654,10 +655,10 @@ TEST_F(ScmasmSyntaxTest, BsDirectiveNoSpaces) {
   // .BS can have no spaces
   parser->Parse("        .BS 1111000010101010\n", section, symbols);
 
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1u);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 2);
+  ASSERT_EQ(data_atom->data.size(), 2u);
   EXPECT_EQ(data_atom->data[0], 0xF0);
   EXPECT_EQ(data_atom->data[1], 0xAA);
 }
@@ -683,7 +684,7 @@ TEST_F(ScmasmSyntaxTest, Phase2StringProgram) {
   parser->Parse(source, section, symbols);
 
   // Should have: ORG + 3 data atoms
-  EXPECT_EQ(section.atoms.size(), 4);
+  EXPECT_EQ(section.atoms.size(), 4u);
 }
 
 TEST_F(ScmasmSyntaxTest, Phase2DataProgram) {
@@ -698,7 +699,7 @@ TEST_F(ScmasmSyntaxTest, Phase2DataProgram) {
   parser->Parse(source, section, symbols);
 
   // Should have: ORG + 4 data atoms
-  EXPECT_EQ(section.atoms.size(), 5);
+  EXPECT_EQ(section.atoms.size(), 5u);
 }
 
 TEST_F(ScmasmSyntaxTest, Phase2MixedProgram) {
@@ -716,7 +717,7 @@ BITS    .BS 10101010 11110000
   parser->Parse(source, section, symbols);
 
   // Should have multiple atoms
-  EXPECT_GT(section.atoms.size(), 5);
+  EXPECT_GT(section.atoms.size(), 5u);
 }
 
 // ============================================================================
@@ -737,7 +738,7 @@ TEST_F(ScmasmSyntaxTest, MacroDefinitionSimple) {
 
   // Macro definition should not generate atoms
   parser->Parse(source, section, symbols);
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0u);
 }
 
 TEST_F(ScmasmSyntaxTest, MacroInvocationSimple) {
@@ -752,7 +753,7 @@ TEST_F(ScmasmSyntaxTest, MacroInvocationSimple) {
 
   parser->Parse(source, section, symbols);
   // Should expand to LDA #0 instruction
-  EXPECT_GT(section.atoms.size(), 0);
+  EXPECT_GT(section.atoms.size(), 0u);
 }
 
 TEST_F(ScmasmSyntaxTest, MacroWithSingleParameter) {
@@ -767,7 +768,7 @@ TEST_F(ScmasmSyntaxTest, MacroWithSingleParameter) {
 
   parser->Parse(source, section, symbols);
   // Should expand to LDA #$42
-  EXPECT_GT(section.atoms.size(), 0);
+  EXPECT_GT(section.atoms.size(), 0u);
 }
 
 TEST_F(ScmasmSyntaxTest, MacroWithTwoParameters) {
@@ -783,7 +784,7 @@ TEST_F(ScmasmSyntaxTest, MacroWithTwoParameters) {
 
   parser->Parse(source, section, symbols);
   // Should expand to LDA #$FF and STA $C000
-  EXPECT_GE(section.atoms.size(), 2);
+  EXPECT_GE(section.atoms.size(), 2u);
 }
 
 TEST_F(ScmasmSyntaxTest, MacroWithAllParameters) {
@@ -797,11 +798,11 @@ TEST_F(ScmasmSyntaxTest, MacroWithAllParameters) {
 )";
 
   parser->Parse(source, section, symbols);
-  ASSERT_EQ(section.atoms.size(), 1);
+  ASSERT_EQ(section.atoms.size(), 1u);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data.size(),
-            20); // 10 values × 2 bytes each (.DA emits 16-bit)
+            20u); // 10 values × 2 bytes each (.DA emits 16-bit)
 }
 
 TEST_F(ScmasmSyntaxTest, MacroNamedWithLabel) {
@@ -815,7 +816,7 @@ STORE   .MA
 )";
 
   parser->Parse(source, section, symbols);
-  EXPECT_GT(section.atoms.size(), 0);
+  EXPECT_GT(section.atoms.size(), 0u);
 }
 
 TEST_F(ScmasmSyntaxTest, MacroMultipleInvocations) {
@@ -832,7 +833,7 @@ TEST_F(ScmasmSyntaxTest, MacroMultipleInvocations) {
 
   parser->Parse(source, section, symbols);
   // Should have 3 LDA instructions
-  EXPECT_EQ(section.atoms.size(), 3);
+  EXPECT_EQ(section.atoms.size(), 3u);
 }
 
 TEST_F(ScmasmSyntaxTest, MacroWithLabelGeneration) {
@@ -849,7 +850,7 @@ WAIT2   WAIT
 
   parser->Parse(source, section, symbols);
   // Should generate LOOPWAIT1 and LOOPWAIT2 labels
-  EXPECT_GT(section.atoms.size(), 0);
+  EXPECT_GT(section.atoms.size(), 0u);
 }
 
 TEST_F(ScmasmSyntaxTest, NestedMacroInvocations) {
@@ -868,7 +869,7 @@ TEST_F(ScmasmSyntaxTest, NestedMacroInvocations) {
 )";
 
   parser->Parse(source, section, symbols);
-  EXPECT_GE(section.atoms.size(), 2);
+  EXPECT_GE(section.atoms.size(), 2u);
 }
 
 TEST_F(ScmasmSyntaxTest, MacroRedefinition) {
@@ -887,7 +888,7 @@ TEST_F(ScmasmSyntaxTest, MacroRedefinition) {
 
   parser->Parse(source, section, symbols);
   // Should use second definition (LDA #2)
-  EXPECT_GT(section.atoms.size(), 0);
+  EXPECT_GT(section.atoms.size(), 0u);
 }
 
 // ============================================================================
@@ -904,7 +905,7 @@ TEST_F(ScmasmSyntaxTest, ConditionalDoTrue) {
 
   parser->Parse(source, section, symbols);
   // Should assemble LDA instruction
-  EXPECT_EQ(section.atoms.size(), 1);
+  EXPECT_EQ(section.atoms.size(), 1u);
 }
 
 TEST_F(ScmasmSyntaxTest, ConditionalDoFalse) {
@@ -917,7 +918,7 @@ TEST_F(ScmasmSyntaxTest, ConditionalDoFalse) {
 
   parser->Parse(source, section, symbols);
   // Should NOT assemble LDA instruction
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0u);
 }
 
 TEST_F(ScmasmSyntaxTest, ConditionalWithElseTrue) {
@@ -932,7 +933,7 @@ TEST_F(ScmasmSyntaxTest, ConditionalWithElseTrue) {
 
   parser->Parse(source, section, symbols);
   // Should assemble first LDA only
-  EXPECT_EQ(section.atoms.size(), 1);
+  EXPECT_EQ(section.atoms.size(), 1u);
 }
 
 TEST_F(ScmasmSyntaxTest, ConditionalWithElseFalse) {
@@ -947,7 +948,7 @@ TEST_F(ScmasmSyntaxTest, ConditionalWithElseFalse) {
 
   parser->Parse(source, section, symbols);
   // Should assemble second LDA only
-  EXPECT_EQ(section.atoms.size(), 1);
+  EXPECT_EQ(section.atoms.size(), 1u);
 }
 
 TEST_F(ScmasmSyntaxTest, ConditionalWithSymbol) {
@@ -960,7 +961,7 @@ DEBUG   .EQ 1
 )";
 
   parser->Parse(source, section, symbols);
-  EXPECT_EQ(section.atoms.size(), 1);
+  EXPECT_EQ(section.atoms.size(), 1u);
 }
 
 TEST_F(ScmasmSyntaxTest, ConditionalWithExpression) {
@@ -974,7 +975,7 @@ VERSION .EQ 2
 
   parser->Parse(source, section, symbols);
   // VERSION-1 = 2-1 = 1 (true)
-  EXPECT_EQ(section.atoms.size(), 1);
+  EXPECT_EQ(section.atoms.size(), 1u);
 }
 
 TEST_F(ScmasmSyntaxTest, ConditionalNested) {
@@ -988,7 +989,7 @@ TEST_F(ScmasmSyntaxTest, ConditionalNested) {
 )";
 
   parser->Parse(source, section, symbols);
-  EXPECT_EQ(section.atoms.size(), 1);
+  EXPECT_EQ(section.atoms.size(), 1u);
 }
 
 TEST_F(ScmasmSyntaxTest, ConditionalNestedWithElse) {
@@ -1005,7 +1006,7 @@ TEST_F(ScmasmSyntaxTest, ConditionalNestedWithElse) {
 
   parser->Parse(source, section, symbols);
   // Should assemble second LDA
-  EXPECT_EQ(section.atoms.size(), 1);
+  EXPECT_EQ(section.atoms.size(), 1u);
 }
 
 TEST_F(ScmasmSyntaxTest, ConditionalComplex) {
@@ -1026,7 +1027,7 @@ DEBUG    .EQ 0
 
   parser->Parse(source, section, symbols);
   // PLATFORM-1 = 0, so else branch: LDA #$CC
-  EXPECT_EQ(section.atoms.size(), 1);
+  EXPECT_EQ(section.atoms.size(), 1u);
 }
 
 // ============================================================================
@@ -1044,7 +1045,7 @@ TEST_F(ScmasmSyntaxTest, LocalLabelForwardReference) {
 
   parser->Parse(source, section, symbols);
   // Should resolve forward reference
-  EXPECT_GT(section.atoms.size(), 0);
+  EXPECT_GT(section.atoms.size(), 0u);
 }
 
 TEST_F(ScmasmSyntaxTest, LocalLabelMultipleReferences) {
@@ -1057,7 +1058,7 @@ TEST_F(ScmasmSyntaxTest, LocalLabelMultipleReferences) {
 )";
 
   parser->Parse(source, section, symbols);
-  EXPECT_GT(section.atoms.size(), 0);
+  EXPECT_GT(section.atoms.size(), 0u);
 }
 
 TEST_F(ScmasmSyntaxTest, LocalLabelRedefinition) {
@@ -1072,7 +1073,7 @@ TEST_F(ScmasmSyntaxTest, LocalLabelRedefinition) {
 
   parser->Parse(source, section, symbols);
   // Second .1 redefines the label
-  EXPECT_GT(section.atoms.size(), 0);
+  EXPECT_GT(section.atoms.size(), 0u);
 }
 
 TEST_F(ScmasmSyntaxTest, LocalLabelAllDigits) {
@@ -1092,7 +1093,7 @@ TEST_F(ScmasmSyntaxTest, LocalLabelAllDigits) {
 )";
 
   parser->Parse(source, section, symbols);
-  EXPECT_EQ(section.atoms.size(), 11); // ORG + 10 NOPs
+  EXPECT_EQ(section.atoms.size(), 11u); // ORG + 10 NOPs
 }
 
 TEST_F(ScmasmSyntaxTest, LocalLabelInLoop) {
@@ -1107,7 +1108,7 @@ TEST_F(ScmasmSyntaxTest, LocalLabelInLoop) {
 )";
 
   parser->Parse(source, section, symbols);
-  EXPECT_GT(section.atoms.size(), 0);
+  EXPECT_GT(section.atoms.size(), 0u);
 }
 
 // ============================================================================
@@ -1126,7 +1127,7 @@ INDEX   .SE INDEX+1
 
   parser->Parse(source, section, symbols);
   // Should generate 3 data atoms with values 0, 1, 2
-  EXPECT_EQ(section.atoms.size(), 3);
+  EXPECT_EQ(section.atoms.size(), 3u);
 }
 
 TEST_F(ScmasmSyntaxTest, LoopWithTable) {
@@ -1142,7 +1143,7 @@ VALUE   .SE VALUE+1
 
   parser->Parse(source, section, symbols);
   // Should have ORG + 8 data atoms
-  EXPECT_EQ(section.atoms.size(), 9);
+  EXPECT_EQ(section.atoms.size(), 9u);
 }
 
 TEST_F(ScmasmSyntaxTest, LoopNested) {
@@ -1161,7 +1162,7 @@ OUTER   .SE OUTER+1
 
   parser->Parse(source, section, symbols);
   // 2x2 = 4 data atoms
-  EXPECT_EQ(section.atoms.size(), 4);
+  EXPECT_EQ(section.atoms.size(), 4u);
 }
 
 TEST_F(ScmasmSyntaxTest, LoopWithInstructions) {
@@ -1175,7 +1176,7 @@ TEST_F(ScmasmSyntaxTest, LoopWithInstructions) {
 
   parser->Parse(source, section, symbols);
   // ORG + 3 NOPs
-  EXPECT_EQ(section.atoms.size(), 4);
+  EXPECT_EQ(section.atoms.size(), 4u);
 }
 
 TEST_F(ScmasmSyntaxTest, LoopWithZeroCount) {
@@ -1187,7 +1188,7 @@ TEST_F(ScmasmSyntaxTest, LoopWithZeroCount) {
 )";
 
   parser->Parse(source, section, symbols);
-  EXPECT_EQ(section.atoms.size(), 0);
+  EXPECT_EQ(section.atoms.size(), 0u);
 }
 
 TEST_F(ScmasmSyntaxTest, LoopWithLargeCount) {
@@ -1201,7 +1202,7 @@ TEST_F(ScmasmSyntaxTest, LoopWithLargeCount) {
 
   parser->Parse(source, section, symbols);
   // ORG + 10 NOPs
-  EXPECT_EQ(section.atoms.size(), 11);
+  EXPECT_EQ(section.atoms.size(), 11u);
 }
 
 // ============================================================================
@@ -1229,7 +1230,7 @@ START   LDA #$FF
 )";
 
   parser->Parse(source, section, symbols);
-  EXPECT_GT(section.atoms.size(), 5);
+  EXPECT_GT(section.atoms.size(), 5u);
 }
 
 TEST_F(ScmasmSyntaxTest, Phase3ConditionalProgram) {
@@ -1253,7 +1254,7 @@ PROD    .EQ 0
 )";
 
   parser->Parse(source, section, symbols);
-  EXPECT_GT(section.atoms.size(), 2);
+  EXPECT_GT(section.atoms.size(), 2u);
 }
 
 TEST_F(ScmasmSyntaxTest, Phase3LoopProgram) {
@@ -1269,7 +1270,7 @@ TABLES  .LU 16
 
   parser->Parse(source, section, symbols);
   // ORG + 16 data entries
-  EXPECT_EQ(section.atoms.size(), 17);
+  EXPECT_EQ(section.atoms.size(), 17u);
 }
 
 TEST_F(ScmasmSyntaxTest, Phase3CombinedFeatures) {
@@ -1300,7 +1301,7 @@ START   TRACE
 )";
 
   parser->Parse(source, section, symbols);
-  EXPECT_GT(section.atoms.size(), 5);
+  EXPECT_GT(section.atoms.size(), 5u);
 }
 
 TEST_F(ScmasmSyntaxTest, Phase3MacroWithLocalLabels) {
@@ -1319,5 +1320,230 @@ TEST_F(ScmasmSyntaxTest, Phase3MacroWithLocalLabels) {
 )";
 
   parser->Parse(source, section, symbols);
-  EXPECT_GT(section.atoms.size(), 5);
+  EXPECT_GT(section.atoms.size(), 5u);
+}
+
+// ============================================================================
+// P0 Directives: Phase 1 - .PS (Pascal String)
+// ============================================================================
+
+TEST_F(ScmasmSyntaxTest, PS_EmitsLengthPrefixedString) {
+  // .PS "HELLO" should emit: 05 48 45 4C 4C 4F
+  std::string source = R"(
+        .OR $0800
+        .PS "HELLO"
+)";
+
+  parser->Parse(source, section, symbols);
+
+  // Should have OrgAtom and DataAtom
+  ASSERT_GE(section.atoms.size(), 2u);
+
+  // Get DataAtom (second atom)
+  auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[1]);
+  ASSERT_NE(data_atom, nullptr);
+
+  // Verify: length byte (5) + string bytes
+  std::vector<uint8_t> expected = {0x05, 0x48, 0x45, 0x4C, 0x4C, 0x4F};
+  EXPECT_EQ(data_atom->data, expected);
+}
+
+TEST_F(ScmasmSyntaxTest, PS_EmptyString) {
+  // .PS "" should emit just 00 (length = 0)
+  std::string source = R"(
+        .OR $0800
+        .PS ""
+)";
+
+  parser->Parse(source, section, symbols);
+
+  auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[1]);
+  ASSERT_NE(data_atom, nullptr);
+
+  std::vector<uint8_t> expected = {0x00};
+  EXPECT_EQ(data_atom->data, expected);
+}
+
+TEST_F(ScmasmSyntaxTest, PS_MaxLengthString) {
+  // .PS with 255 characters (max for length byte)
+  std::string long_str(255, 'A');
+  std::string source = "        .OR $0800\n        .PS \"" + long_str + "\"\n";
+
+  parser->Parse(source, section, symbols);
+
+  auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[1]);
+  ASSERT_NE(data_atom, nullptr);
+
+  // First byte should be 255 (0xFF)
+  EXPECT_EQ(data_atom->data[0], 0xFF);
+  EXPECT_EQ(data_atom->data.size(), 256u); // length + 255 chars
+}
+
+TEST_F(ScmasmSyntaxTest, PS_StringTooLong) {
+  // .PS with 256+ characters should throw error
+  std::string long_str(256, 'A');
+  std::string source = "        .OR $0800\n        .PS \"" + long_str + "\"\n";
+
+  EXPECT_THROW(parser->Parse(source, section, symbols), std::runtime_error);
+}
+
+TEST_F(ScmasmSyntaxTest, PS_HighBitRuleApplied) {
+  // .PS 'HELLO' (delimiter < 0x27) should set high bit
+  std::string source = R"(
+        .OR $0800
+        .PS 'HELLO'
+)";
+
+  parser->Parse(source, section, symbols);
+
+  auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[1]);
+  ASSERT_NE(data_atom, nullptr);
+
+  // Length byte not affected, but string bytes should have high bit set
+  EXPECT_EQ(data_atom->data[0], 0x05);        // length
+  EXPECT_EQ(data_atom->data[1] & 0x80, 0x80); // 'H' with high bit
+  EXPECT_EQ(data_atom->data[2] & 0x80, 0x80); // 'E' with high bit
+}
+
+TEST_F(ScmasmSyntaxTest, PS_NoOperandError) {
+  // .PS without operand should throw
+  std::string source = R"(
+        .OR $0800
+        .PS
+)";
+
+  EXPECT_THROW(parser->Parse(source, section, symbols), std::runtime_error);
+}
+
+// ============================================================================
+// .INB (Include Binary) Directive Tests
+// ============================================================================
+
+TEST_F(ScmasmSyntaxTest, INB_IncludesExistingFile) {
+  // Create a temp binary file for testing
+  std::string test_file = "test_binary.bin";
+  std::ofstream out(test_file, std::ios::binary);
+  std::vector<uint8_t> test_data = {0x01, 0x02, 0x03, 0x04, 0x05};
+  out.write(reinterpret_cast<const char *>(test_data.data()), test_data.size());
+  out.close();
+
+  std::string source = R"(
+        .OR $0800
+        .INB test_binary.bin
+)";
+
+  parser->Parse(source, section, symbols);
+
+  // Should have OrgAtom and DataAtom
+  ASSERT_GE(section.atoms.size(), 2u);
+
+  // Get DataAtom
+  auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[1]);
+  ASSERT_NE(data_atom, nullptr);
+
+  // Should contain exact binary data
+  EXPECT_EQ(data_atom->data, test_data);
+
+  // Cleanup
+  std::remove(test_file.c_str());
+}
+
+TEST_F(ScmasmSyntaxTest, INB_MissingFileError) {
+  std::string source = R"(
+        .OR $0800
+        .INB nonexistent_file.bin
+)";
+
+  EXPECT_THROW(parser->Parse(source, section, symbols), std::runtime_error);
+}
+
+TEST_F(ScmasmSyntaxTest, INB_EmptyFile) {
+  // Create empty file
+  std::string test_file = "empty.bin";
+  std::ofstream out(test_file, std::ios::binary);
+  out.close();
+
+  std::string source = R"(
+        .OR $0800
+        .INB empty.bin
+)";
+
+  parser->Parse(source, section, symbols);
+
+  // Should have OrgAtom and DataAtom
+  ASSERT_GE(section.atoms.size(), 2u);
+
+  // Get DataAtom
+  auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[1]);
+  ASSERT_NE(data_atom, nullptr);
+
+  // Should be empty
+  EXPECT_TRUE(data_atom->data.empty());
+
+  // Cleanup
+  std::remove(test_file.c_str());
+}
+
+TEST_F(ScmasmSyntaxTest, INB_NoOperandError) {
+  std::string source = R"(
+        .OR $0800
+        .INB
+)";
+
+  EXPECT_THROW(parser->Parse(source, section, symbols), std::runtime_error);
+}
+
+// ============================================================================
+// .LIST (Listing Control) Directive Tests
+// ============================================================================
+
+TEST_F(ScmasmSyntaxTest, LIST_On) {
+  std::string source = R"(
+        .OR $0800
+        .LIST ON
+        NOP
+)";
+
+  // Should not throw - just accept and continue
+  EXPECT_NO_THROW(parser->Parse(source, section, symbols));
+
+  // Should have OrgAtom and InstructionAtom (NOP)
+  ASSERT_GE(section.atoms.size(), 2u);
+}
+
+TEST_F(ScmasmSyntaxTest, LIST_Off) {
+  std::string source = R"(
+        .OR $0800
+        .LIST OFF
+        NOP
+)";
+
+  // Should not throw - just accept and continue
+  EXPECT_NO_THROW(parser->Parse(source, section, symbols));
+
+  // Should have OrgAtom and InstructionAtom (NOP)
+  ASSERT_GE(section.atoms.size(), 2u);
+}
+
+TEST_F(ScmasmSyntaxTest, LIST_NoOperand) {
+  // .LIST without operand defaults to ON
+  std::string source = R"(
+        .OR $0800
+        .LIST
+        NOP
+)";
+
+  EXPECT_NO_THROW(parser->Parse(source, section, symbols));
+  ASSERT_GE(section.atoms.size(), 2u);
+}
+
+TEST_F(ScmasmSyntaxTest, LIST_CaseInsensitive) {
+  std::string source = R"(
+        .OR $0800
+        .LIST on
+        NOP
+)";
+
+  EXPECT_NO_THROW(parser->Parse(source, section, symbols));
+  ASSERT_GE(section.atoms.size(), 2u);
 }

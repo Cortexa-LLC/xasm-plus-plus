@@ -14,7 +14,7 @@ using namespace xasm;
 
 /**
  * Test: SubstituteParameters - Simple case with one parameter
- * 
+ *
  * Given: Macro line "LDA SRC" with parameter SRC
  * When: Called with argument "$80"
  * Then: Returns "LDA $80"
@@ -22,9 +22,10 @@ using namespace xasm;
 TEST(FlexMacroTest, SubstituteParametersSimple) {
   class TestableFlexAsm : public FlexAsmSyntax {
   public:
-    std::string TestSubstituteParameters(const std::string &line,
-                                         const MacroDefinition &macro,
-                                         const std::vector<std::string> &arguments) {
+    std::string
+    TestSubstituteParameters(const std::string &line,
+                             const MacroDefinition &macro,
+                             const std::vector<std::string> &arguments) {
       return SubstituteParameters(line, macro, arguments);
     }
   };
@@ -40,23 +41,26 @@ TEST(FlexMacroTest, SubstituteParametersSimple) {
 
   // Test substitution
   std::vector<std::string> arguments = {"$80", "$90"};
-  
+
   // Test first line: "        LDA     SRC" -> "        LDA     $80"
-  std::string result = parser.TestSubstituteParameters("        LDA     SRC", macro, arguments);
+  std::string result =
+      parser.TestSubstituteParameters("        LDA     SRC", macro, arguments);
   EXPECT_EQ(result, "        LDA     $80");
-  
+
   // Test second line: "        STA     DEST" -> "        STA     $90"
-  result = parser.TestSubstituteParameters("        STA     DEST", macro, arguments);
+  result =
+      parser.TestSubstituteParameters("        STA     DEST", macro, arguments);
   EXPECT_EQ(result, "        STA     $90");
-  
+
   // Test both parameters in one line
-  result = parser.TestSubstituteParameters("        LDA     SRC,DEST", macro, arguments);
+  result = parser.TestSubstituteParameters("        LDA     SRC,DEST", macro,
+                                           arguments);
   EXPECT_EQ(result, "        LDA     $80,$90");
 }
 
 /**
  * Test: SubstituteParameters - Parameter as substring should not be replaced
- * 
+ *
  * Given: Macro line "LDA SOURCE" with parameter SRC
  * When: Called with argument "$80"
  * Then: Returns "LDA SOURCE" (SRC not replaced because it's part of SOURCE)
@@ -64,9 +68,10 @@ TEST(FlexMacroTest, SubstituteParametersSimple) {
 TEST(FlexMacroTest, SubstituteParametersWordBoundary) {
   class TestableFlexAsm : public FlexAsmSyntax {
   public:
-    std::string TestSubstituteParameters(const std::string &line,
-                                         const MacroDefinition &macro,
-                                         const std::vector<std::string> &arguments) {
+    std::string
+    TestSubstituteParameters(const std::string &line,
+                             const MacroDefinition &macro,
+                             const std::vector<std::string> &arguments) {
       return SubstituteParameters(line, macro, arguments);
     }
   };
@@ -80,23 +85,26 @@ TEST(FlexMacroTest, SubstituteParametersWordBoundary) {
   macro.definition_line = 1;
 
   std::vector<std::string> arguments = {"$80"};
-  
+
   // "SOURCE" contains "SRC" but should not be replaced (word boundary)
-  std::string result = parser.TestSubstituteParameters("        LDA     SOURCE", macro, arguments);
+  std::string result = parser.TestSubstituteParameters("        LDA     SOURCE",
+                                                       macro, arguments);
   EXPECT_EQ(result, "        LDA     SOURCE");
-  
+
   // But standalone "SRC" should be replaced
-  result = parser.TestSubstituteParameters("        LDA     SRC", macro, arguments);
+  result =
+      parser.TestSubstituteParameters("        LDA     SRC", macro, arguments);
   EXPECT_EQ(result, "        LDA     $80");
-  
+
   // SRC at end of line should be replaced
-  result = parser.TestSubstituteParameters("        LDA     SRC", macro, arguments);
+  result =
+      parser.TestSubstituteParameters("        LDA     SRC", macro, arguments);
   EXPECT_EQ(result, "        LDA     $80");
 }
 
 /**
  * Test: SubstituteParameters - Missing argument
- * 
+ *
  * Given: Macro with 2 parameters but only 1 argument provided
  * When: Substituting second parameter
  * Then: Second parameter replaced with empty string
@@ -104,9 +112,10 @@ TEST(FlexMacroTest, SubstituteParametersWordBoundary) {
 TEST(FlexMacroTest, SubstituteParametersMissing) {
   class TestableFlexAsm : public FlexAsmSyntax {
   public:
-    std::string TestSubstituteParameters(const std::string &line,
-                                         const MacroDefinition &macro,
-                                         const std::vector<std::string> &arguments) {
+    std::string
+    TestSubstituteParameters(const std::string &line,
+                             const MacroDefinition &macro,
+                             const std::vector<std::string> &arguments) {
       return SubstituteParameters(line, macro, arguments);
     }
   };
@@ -121,13 +130,15 @@ TEST(FlexMacroTest, SubstituteParametersMissing) {
 
   // Only provide one argument, second is missing
   std::vector<std::string> arguments = {"$80"};
-  
+
   // First parameter should be replaced
-  std::string result = parser.TestSubstituteParameters("        LDA     SRC", macro, arguments);
+  std::string result =
+      parser.TestSubstituteParameters("        LDA     SRC", macro, arguments);
   EXPECT_EQ(result, "        LDA     $80");
-  
+
   // Second parameter (missing argument) should be replaced with empty string
-  result = parser.TestSubstituteParameters("        STA     DEST", macro, arguments);
+  result =
+      parser.TestSubstituteParameters("        STA     DEST", macro, arguments);
   EXPECT_EQ(result, "        STA     ");
 }
 
@@ -137,7 +148,7 @@ TEST(FlexMacroTest, SubstituteParametersMissing) {
 
 /**
  * Test: MakeLocalLabelUnique - Simple case
- * 
+ *
  * Given: Local label ".LOOP" and expansion_id 1
  * When: MakeLocalLabelUnique called
  * Then: Returns ".LOOP_001"
@@ -153,15 +164,15 @@ TEST(FlexMacroTest, MakeLocalLabelUniqueSimple) {
   };
 
   TestableFlexAsm parser;
-  
+
   // Test: .LOOP with expansion_id 1 -> .LOOP_001
   std::string result = parser.TestMakeLocalLabelUnique(".LOOP", 1);
   EXPECT_EQ(result, ".LOOP_001");
-  
+
   // Test: .LOOP with expansion_id 2 -> .LOOP_002
   result = parser.TestMakeLocalLabelUnique(".LOOP", 2);
   EXPECT_EQ(result, ".LOOP_002");
-  
+
   // Test: .DONE with expansion_id 123 -> .DONE_123
   result = parser.TestMakeLocalLabelUnique(".DONE", 123);
   EXPECT_EQ(result, ".DONE_123");
@@ -169,7 +180,7 @@ TEST(FlexMacroTest, MakeLocalLabelUniqueSimple) {
 
 /**
  * Test: MakeLocalLabelUnique - Non-local label
- * 
+ *
  * Given: Regular label "START" (not starting with .)
  * When: MakeLocalLabelUnique called
  * Then: Returns "START" unchanged
@@ -183,14 +194,14 @@ TEST(FlexMacroTest, MakeLocalLabelUniqueNonLocal) {
   };
 
   TestableFlexAsm parser;
-  
+
   // Non-local labels should pass through unchanged
   std::string result = parser.TestMakeLocalLabelUnique("START", 1);
   EXPECT_EQ(result, "START");
-  
+
   result = parser.TestMakeLocalLabelUnique("LOOP", 999);
   EXPECT_EQ(result, "LOOP");
-  
+
   result = parser.TestMakeLocalLabelUnique("MYLABEL", 42);
   EXPECT_EQ(result, "MYLABEL");
 }
@@ -201,7 +212,7 @@ TEST(FlexMacroTest, MakeLocalLabelUniqueNonLocal) {
 
 /**
  * Test: ExpandMacro - Simple macro without parameters
- * 
+ *
  * Given: DELAY macro with no parameters
  * When: ExpandMacro called
  * Then: Returns macro body as-is
@@ -211,16 +222,17 @@ TEST(FlexMacroTest, ExpandMacroSimple) {
   public:
     // Need to access macros_ map (it's private)
     // For testing, we'll use a workaround - create through parsing
-    std::vector<std::string> TestExpandMacro(const std::string &name,
-                                              const std::vector<std::string> &arguments) {
+    std::vector<std::string>
+    TestExpandMacro(const std::string &name,
+                    const std::vector<std::string> &arguments) {
       // First add the macro manually to the macros_ map
       MacroDefinition macro;
       macro.name = name;
-      macro.parameters = {};  // No parameters for simple test
+      macro.parameters = {}; // No parameters for simple test
       macro.body = {"        CLRA", "        CLRB"};
       macro.definition_line = 1;
       macros_[name] = macro;
-      
+
       return ExpandMacro(name, arguments);
     }
   };
@@ -230,16 +242,17 @@ TEST(FlexMacroTest, ExpandMacroSimple) {
   // Test expansion of simple macro with no parameters
   std::vector<std::string> arguments = {};
   std::vector<std::string> result = parser.TestExpandMacro("CLEAR", arguments);
-  
-  // Expected: Body returned with substitutions applied and local labels made unique
-  ASSERT_GE(result.size(), 2);  // At least the original 2 lines
+
+  // Expected: Body returned with substitutions applied and local labels made
+  // unique
+  ASSERT_GE(result.size(), 2); // At least the original 2 lines
   EXPECT_EQ(result[0], "        CLRA");
   EXPECT_EQ(result[1], "        CLRB");
 }
 
 /**
  * Test: ExpandMacro - Macro with parameters
- * 
+ *
  * Given: MOVB macro with SRC,DEST parameters
  * When: ExpandMacro called with $80,$90
  * Then: Returns body with parameters substituted
@@ -247,15 +260,16 @@ TEST(FlexMacroTest, ExpandMacroSimple) {
 TEST(FlexMacroTest, ExpandMacroWithParameters) {
   class TestableFlexAsm : public FlexAsmSyntax {
   public:
-    std::vector<std::string> TestExpandMacro(const std::string &name,
-                                              const std::vector<std::string> &arguments) {
+    std::vector<std::string>
+    TestExpandMacro(const std::string &name,
+                    const std::vector<std::string> &arguments) {
       MacroDefinition macro;
       macro.name = name;
       macro.parameters = {"SRC", "DEST"};
       macro.body = {"        LDA     SRC", "        STA     DEST"};
       macro.definition_line = 1;
       macros_[name] = macro;
-      
+
       return ExpandMacro(name, arguments);
     }
   };
@@ -265,7 +279,7 @@ TEST(FlexMacroTest, ExpandMacroWithParameters) {
   // Test expansion with parameter substitution
   std::vector<std::string> arguments = {"$80", "$90"};
   std::vector<std::string> result = parser.TestExpandMacro("MOVB", arguments);
-  
+
   // Expected: Parameters substituted
   ASSERT_GE(result.size(), 2);
   EXPECT_EQ(result[0], "        LDA     $80");
@@ -274,7 +288,7 @@ TEST(FlexMacroTest, ExpandMacroWithParameters) {
 
 /**
  * Test: ExpandMacro - Macro with local labels
- * 
+ *
  * Given: COPY macro with .LOOP local label
  * When: ExpandMacro called twice
  * Then: Each expansion has unique label (.LOOP_001, .LOOP_002)
@@ -282,15 +296,16 @@ TEST(FlexMacroTest, ExpandMacroWithParameters) {
 TEST(FlexMacroTest, ExpandMacroWithLocalLabels) {
   class TestableFlexAsm : public FlexAsmSyntax {
   public:
-    std::vector<std::string> TestExpandMacro(const std::string &name,
-                                              const std::vector<std::string> &arguments) {
+    std::vector<std::string>
+    TestExpandMacro(const std::string &name,
+                    const std::vector<std::string> &arguments) {
       MacroDefinition macro;
       macro.name = name;
       macro.parameters = {};
       macro.body = {".LOOP   LDA     $80", "        BNE     .LOOP"};
       macro.definition_line = 1;
       macros_[name] = macro;
-      
+
       return ExpandMacro(name, arguments);
     }
   };
@@ -302,7 +317,7 @@ TEST(FlexMacroTest, ExpandMacroWithLocalLabels) {
   ASSERT_GE(result1.size(), 2);
   EXPECT_TRUE(result1[0].find(".LOOP_001") != std::string::npos);
   EXPECT_TRUE(result1[1].find(".LOOP_001") != std::string::npos);
-  
+
   // Second expansion - should get .LOOP_002 (different expansion ID)
   std::vector<std::string> result2 = parser.TestExpandMacro("COPY", {});
   ASSERT_GE(result2.size(), 2);
@@ -335,10 +350,10 @@ DELAY   MACRO
 
   try {
     parser.Parse(program, section, symbols);
-    
+
     // Verify macro is defined
     EXPECT_TRUE(parser.IsMacroDefined("DELAY"));
-  } catch (const std::exception& e) {
+  } catch (const std::exception &e) {
     FAIL() << "Exception thrown: " << e.what();
   }
 }
@@ -358,10 +373,10 @@ MOVB    MACRO   SRC,DEST
 
   try {
     parser.Parse(program, section, symbols);
-    
+
     // Verify macro is defined
     EXPECT_TRUE(parser.IsMacroDefined("MOVB"));
-  } catch (const std::exception& e) {
+  } catch (const std::exception &e) {
     FAIL() << "Exception thrown: " << e.what();
   }
 }
@@ -382,11 +397,11 @@ DELAY   MACRO
 
   try {
     parser.Parse(program, section, symbols);
-    
+
     // Should successfully expand (not throw exception)
     // Should have one NOP instruction
     EXPECT_GE(section.atoms.size(), 1);
-  } catch (const std::exception& e) {
+  } catch (const std::exception &e) {
     FAIL() << "Exception thrown: " << e.what();
   }
 }
@@ -397,7 +412,7 @@ DELAY   MACRO
 
 /**
  * Test: Simple macro with multiple invocations
- * 
+ *
  * This test validates:
  * - Basic macro definition with no parameters
  * - Multiple macro invocations
@@ -425,23 +440,23 @@ START   LDX     #$2000
 
   try {
     parser.Parse(program, section, symbols);
-    
+
     // Should have: LDX, CLRA, CLRB, STX, CLRA, CLRB
     // At minimum 6 instructions (or atoms)
     EXPECT_GE(section.atoms.size(), 6);
-    
+
     // Verify START label exists and points to $1000
     int64_t value;
     EXPECT_TRUE(symbols.Lookup("START", value));
     EXPECT_EQ(value, 0x1000);
-  } catch (const std::exception& e) {
+  } catch (const std::exception &e) {
     FAIL() << "Exception thrown: " << e.what();
   }
 }
 
 /**
  * Test: Macro with parameter substitution
- * 
+ *
  * This test validates:
  * - Macro parameters in definition
  * - Argument passing during invocation
@@ -467,21 +482,21 @@ START   MOVB    $80,$90
 
   try {
     parser.Parse(program, section, symbols);
-    
+
     // Should have: 2 invocations * 2 instructions = 4 instructions
     EXPECT_GE(section.atoms.size(), 4);
-    
+
     // Verify START label
     int64_t value;
     EXPECT_TRUE(symbols.Lookup("START", value));
-  } catch (const std::exception& e) {
+  } catch (const std::exception &e) {
     FAIL() << "Exception thrown: " << e.what();
   }
 }
 
 /**
  * Test: Macro with three parameters
- * 
+ *
  * This test validates:
  * - Multiple parameters (more than 2)
  * - Correct substitution of all parameters
@@ -506,21 +521,21 @@ START   ADDM    $C0,$C1,$C2
 
   try {
     parser.Parse(program, section, symbols);
-    
+
     // Should have: 3 instructions (LDA, ADDA, STA)
     EXPECT_GE(section.atoms.size(), 3);
-    
+
     // Verify START label
     int64_t value;
     EXPECT_TRUE(symbols.Lookup("START", value));
-  } catch (const std::exception& e) {
+  } catch (const std::exception &e) {
     FAIL() << "Exception thrown: " << e.what();
   }
 }
 
 /**
  * Test: Macro with local labels - single invocation
- * 
+ *
  * This test validates:
  * - Local label definition (.LOOP)
  * - Local label uniquification on first invocation
@@ -550,21 +565,21 @@ START   LDB     #10
 
   try {
     parser.Parse(program, section, symbols);
-    
+
     // Should have: LDB, LDY, and expanded COPY (5 instructions)
     EXPECT_GE(section.atoms.size(), 7);
-    
+
     // Verify .LOOP_001 label exists (uniquified)
     int64_t value;
     EXPECT_TRUE(symbols.Lookup(".LOOP_001", value));
-  } catch (const std::exception& e) {
+  } catch (const std::exception &e) {
     FAIL() << "Exception thrown: " << e.what();
   }
 }
 
 /**
  * Test: Macro with local labels - multiple invocations
- * 
+ *
  * This test validates:
  * - Each invocation gets unique local labels
  * - .LOOP_001 for first invocation
@@ -596,25 +611,27 @@ START   LDB     #10
 
   try {
     parser.Parse(program, section, symbols);
-    
+
     // Should have both macro invocations expanded
     EXPECT_GE(section.atoms.size(), 12);
-    
+
     // Verify both unique labels exist
     int64_t loop1_value, loop2_value;
-    EXPECT_TRUE(symbols.Lookup(".LOOP_001", loop1_value)) << ".LOOP_001 should exist for first invocation";
-    EXPECT_TRUE(symbols.Lookup(".LOOP_002", loop2_value)) << ".LOOP_002 should exist for second invocation";
-    
+    EXPECT_TRUE(symbols.Lookup(".LOOP_001", loop1_value))
+        << ".LOOP_001 should exist for first invocation";
+    EXPECT_TRUE(symbols.Lookup(".LOOP_002", loop2_value))
+        << ".LOOP_002 should exist for second invocation";
+
     // They should have different addresses
     EXPECT_NE(loop1_value, loop2_value);
-  } catch (const std::exception& e) {
+  } catch (const std::exception &e) {
     FAIL() << "Exception thrown: " << e.what();
   }
 }
 
 /**
  * Test: Macro with multiple local labels
- * 
+ *
  * This test validates:
  * - Multiple local labels in one macro body
  * - All local labels uniquified with same expansion ID
@@ -642,22 +659,24 @@ START   DELAY   5,100
 
   try {
     parser.Parse(program, section, symbols);
-    
+
     // Should have expanded DELAY macro
     EXPECT_GE(section.atoms.size(), 6);
-    
+
     // Verify both local labels exist with same expansion ID
     int64_t outer_value, inner_value;
-    EXPECT_TRUE(symbols.Lookup(".OUTER_001", outer_value)) << ".OUTER_001 should exist";
-    EXPECT_TRUE(symbols.Lookup(".INNER_001", inner_value)) << ".INNER_001 should exist";
-  } catch (const std::exception& e) {
+    EXPECT_TRUE(symbols.Lookup(".OUTER_001", outer_value))
+        << ".OUTER_001 should exist";
+    EXPECT_TRUE(symbols.Lookup(".INNER_001", inner_value))
+        << ".INNER_001 should exist";
+  } catch (const std::exception &e) {
     FAIL() << "Exception thrown: " << e.what();
   }
 }
 
 /**
  * Test: Complex program with macros, directives, and labels
- * 
+ *
  * This test validates:
  * - Macros work alongside normal directives (ORG, END)
  * - Macros work with regular labels
@@ -694,17 +713,17 @@ DONE    NOP
 
   try {
     parser.Parse(program, section, symbols);
-    
+
     // Should have all instructions
     EXPECT_GE(section.atoms.size(), 7);
-    
+
     // Verify labels
     int64_t start_value, done_value;
     EXPECT_TRUE(symbols.Lookup("START", start_value));
     EXPECT_EQ(start_value, 0x1000);
-    
+
     EXPECT_TRUE(symbols.Lookup("DONE", done_value));
-  } catch (const std::exception& e) {
+  } catch (const std::exception &e) {
     FAIL() << "Exception thrown: " << e.what();
   }
 }

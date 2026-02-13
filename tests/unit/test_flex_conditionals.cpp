@@ -1,15 +1,15 @@
 /**
  * @file test_flex_conditionals.cpp
  * @brief FLEX ASM09 Conditional Assembly Tests
- * 
+ *
  * Tests for IFC/ENDC conditional assembly directives.
  * Phase 3 of FLEX ASM09 implementation.
  */
 
-#include <gtest/gtest.h>
 #include "xasm++/cpu/cpu_6809.h"
 #include "xasm++/symbol.h"
 #include "xasm++/syntax/flex_syntax.h"
+#include <gtest/gtest.h>
 
 using namespace xasm;
 
@@ -19,7 +19,7 @@ using namespace xasm;
 
 /**
  * Test: Simple IFC directive with defined symbol
- * 
+ *
  * Given: Symbol "DEBUG" is defined
  * When: IFC DEBUG ... ENDC block is encountered
  * Then: Code inside block is assembled
@@ -50,7 +50,7 @@ TEST(FlexConditionalTest, IfcDefinedSymbolIncludesCode) {
 
 /**
  * Test: Simple IFC directive with undefined symbol
- * 
+ *
  * Given: Symbol "DEBUG" is NOT defined
  * When: IFC DEBUG ... ENDC block is encountered
  * Then: Code inside block is NOT assembled
@@ -80,7 +80,7 @@ TEST(FlexConditionalTest, IfcUndefinedSymbolExcludesCode) {
 
 /**
  * Test: IFC with expression evaluation (non-zero = true)
- * 
+ *
  * Given: Expression "5+5" evaluates to 10 (non-zero)
  * When: IFC 5+5 ... ENDC block is encountered
  * Then: Code inside block is assembled
@@ -108,7 +108,7 @@ TEST(FlexConditionalTest, IfcExpressionNonZeroIncludesCode) {
 
 /**
  * Test: IFC with expression evaluation (zero = false)
- * 
+ *
  * Given: Expression "5-5" evaluates to 0 (zero)
  * When: IFC 5-5 ... ENDC block is encountered
  * Then: Code inside block is NOT assembled
@@ -140,7 +140,7 @@ TEST(FlexConditionalTest, IfcExpressionZeroExcludesCode) {
 
 /**
  * Test: Nested IFC blocks (both true)
- * 
+ *
  * Given: Both outer and inner conditions are true
  * When: Nested IFC blocks are encountered
  * Then: All code is assembled
@@ -175,7 +175,7 @@ TEST(FlexConditionalTest, NestedIfcBothTrue) {
 
 /**
  * Test: Nested IFC blocks (outer true, inner false)
- * 
+ *
  * Given: Outer condition true, inner condition false
  * When: Nested IFC blocks are encountered
  * Then: Only outer code assembled, inner block skipped
@@ -210,7 +210,7 @@ TEST(FlexConditionalTest, NestedIfcOuterTrueInnerFalse) {
 
 /**
  * Test: Nested IFC blocks (outer false)
- * 
+ *
  * Given: Outer condition is false
  * When: Nested IFC blocks are encountered
  * Then: Entire outer block skipped (inner condition not evaluated)
@@ -249,7 +249,7 @@ TEST(FlexConditionalTest, NestedIfcOuterFalse) {
 
 /**
  * Test: ENDC without matching IFC
- * 
+ *
  * Given: ENDC directive without preceding IFC
  * When: Parser encounters orphan ENDC
  * Then: Parser throws error
@@ -272,7 +272,7 @@ TEST(FlexConditionalTest, EndcWithoutIfc) {
 
 /**
  * Test: IFC without matching ENDC
- * 
+ *
  * Given: IFC directive without closing ENDC
  * When: Parser reaches end of file
  * Then: Parser throws error about unclosed conditional
@@ -300,7 +300,7 @@ TEST(FlexConditionalTest, IfcWithoutEndc) {
 
 /**
  * Test: Conditional with macro integration
- * 
+ *
  * Given: Macro defined inside conditional block
  * When: Condition is true
  * Then: Macro is defined and can be invoked
@@ -333,7 +333,7 @@ START   CLEAR
 
 /**
  * Test: Conditional block with labels
- * 
+ *
  * Given: Labels defined inside conditional block
  * When: Condition is true
  * Then: Labels are defined in symbol table
@@ -366,7 +366,7 @@ TRACE   LDA     #$42
 
 /**
  * Test: Complete program with conditionals
- * 
+ *
  * Given: Complete FLEX ASM program with multiple conditionals
  * When: Parsed with specific symbols defined
  * Then: Correct code is assembled based on conditions

@@ -153,8 +153,7 @@ private:
    * @return Calculated checksum (8-bit)
    */
   uint8_t CalculateChecksum(uint8_t byte_count, uint64_t address,
-                            size_t addr_size,
-                            const std::vector<uint8_t> &data);
+                            size_t addr_size, const std::vector<uint8_t> &data);
 
   /**
    * @brief Write header record (S0)

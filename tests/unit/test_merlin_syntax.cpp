@@ -1280,7 +1280,8 @@ TEST(MerlinSyntaxTest, HandleDsWithProgramCounter) {
   ConcreteSymbolTable symbols;
   Section section("test", 0);
 
-  // DS with * (program counter) - should reserve 0 bytes (current_addr - current_addr)
+  // DS with * (program counter) - should reserve 0 bytes (current_addr -
+  // current_addr)
   parser.Parse("         DS *", section, symbols);
 
   // Should create SpaceAtom with 0 size (current address is 0, so DS 0-0 = 0)

@@ -71,8 +71,7 @@ void CocoLoadmWriter::WritePreamble(std::ostream &output,
                                     size_t total_length) {
   // Validate address fits in 16-bit
   if (first_address > 0xFFFF) {
-    throw std::runtime_error(
-        "CoCo DOS format: Address exceeds 16-bit limit");
+    throw std::runtime_error("CoCo DOS format: Address exceeds 16-bit limit");
   }
 
   output.put(0x00); // Preamble type
@@ -84,8 +83,7 @@ void CocoLoadmWriter::WriteDataBlock(std::ostream &output, uint64_t address,
                                      const std::vector<uint8_t> &data) {
   // Validate address fits in 16-bit
   if (address > 0xFFFF) {
-    throw std::runtime_error(
-        "CoCo DOS format: Address exceeds 16-bit limit");
+    throw std::runtime_error("CoCo DOS format: Address exceeds 16-bit limit");
   }
 
   output.put(0x00); // Data block type

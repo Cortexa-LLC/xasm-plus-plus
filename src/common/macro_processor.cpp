@@ -106,8 +106,7 @@ MacroProcessor::ExpandMacro(const std::string &name,
       // Check if this looks like a local label (starts with . followed by
       // alphanum)
       if (label_end > label_start + 1 &&
-          std::isalpha(
-              static_cast<unsigned char>(expanded[label_start + 1]))) {
+          std::isalpha(static_cast<unsigned char>(expanded[label_start + 1]))) {
         // This is a local label - make it unique
         std::string label =
             expanded.substr(label_start, label_end - label_start);
@@ -131,10 +130,9 @@ MacroProcessor::ExpandMacro(const std::string &name,
 // Private Implementation Methods
 // ============================================================================
 
-std::string
-MacroProcessor::SubstituteParameters(const std::string &line,
-                                     const MacroDefinition &macro,
-                                     const std::vector<std::string> &arguments) {
+std::string MacroProcessor::SubstituteParameters(
+    const std::string &line, const MacroDefinition &macro,
+    const std::vector<std::string> &arguments) {
   std::string result = line;
 
   // Replace each parameter with its corresponding argument
@@ -149,9 +147,9 @@ MacroProcessor::SubstituteParameters(const std::string &line,
       bool is_start_boundary =
           (pos == 0 ||
            !std::isalnum(static_cast<unsigned char>(result[pos - 1])));
-      bool is_end_boundary =
-          (pos + param.length() >= result.length() ||
-           !std::isalnum(static_cast<unsigned char>(result[pos + param.length()])));
+      bool is_end_boundary = (pos + param.length() >= result.length() ||
+                              !std::isalnum(static_cast<unsigned char>(
+                                  result[pos + param.length()])));
 
       // Check if this parameter is part of a local label (preceded by '.')
       bool is_local_label = (pos > 0 && result[pos - 1] == '.');
@@ -171,7 +169,7 @@ MacroProcessor::SubstituteParameters(const std::string &line,
 }
 
 std::string MacroProcessor::MakeLocalLabelUnique(const std::string &label,
-                                                  int expansion_id) {
+                                                 int expansion_id) {
   // Local labels start with '.' in FLEX ASM09
   if (label.empty() || label[0] != '.') {
     // Not a local label, return unchanged

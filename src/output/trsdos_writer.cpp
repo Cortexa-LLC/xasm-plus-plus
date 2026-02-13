@@ -10,8 +10,7 @@
 
 namespace xasm {
 
-TrsDosWriter::TrsDosWriter()
-    : has_entry_point_(false), entry_point_addr_(0) {}
+TrsDosWriter::TrsDosWriter() : has_entry_point_(false), entry_point_addr_(0) {}
 
 void TrsDosWriter::Write(const std::vector<Section> &sections,
                          std::ostream &output) {

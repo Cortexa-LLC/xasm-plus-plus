@@ -1943,8 +1943,8 @@ Cpu6502::EncodeInstructionSpecial(const std::string &mnemonic,
   }
 
   // If we get here, instruction doesn't support special encoding
-  throw std::invalid_argument("Special encoding not supported for instruction: " +
-                              mnemonic);
+  throw std::invalid_argument(
+      "Special encoding not supported for instruction: " + mnemonic);
 }
 
 } // namespace xasm

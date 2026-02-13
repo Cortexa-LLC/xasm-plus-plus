@@ -25,355 +25,355 @@ namespace M6809Mnemonics {
 // ============================================================================
 
 /// LDA - Load Accumulator A
-constexpr const char* LDA = "LDA";
+constexpr const char *LDA = "LDA";
 
 /// LDB - Load Accumulator B
-constexpr const char* LDB = "LDB";
+constexpr const char *LDB = "LDB";
 
 /// LDD - Load Accumulator D (16-bit)
-constexpr const char* LDD = "LDD";
+constexpr const char *LDD = "LDD";
 
 /// LDX - Load Index Register X
-constexpr const char* LDX = "LDX";
+constexpr const char *LDX = "LDX";
 
 /// LDY - Load Index Register Y
-constexpr const char* LDY = "LDY";
+constexpr const char *LDY = "LDY";
 
 /// LDU - Load User Stack Pointer
-constexpr const char* LDU = "LDU";
+constexpr const char *LDU = "LDU";
 
 /// LDS - Load System Stack Pointer
-constexpr const char* LDS = "LDS";
+constexpr const char *LDS = "LDS";
 
 // ============================================================================
 // Data Movement Instructions - Store
 // ============================================================================
 
 /// STA - Store Accumulator A
-constexpr const char* STA = "STA";
+constexpr const char *STA = "STA";
 
 /// STB - Store Accumulator B
-constexpr const char* STB = "STB";
+constexpr const char *STB = "STB";
 
 /// STD - Store Accumulator D (16-bit)
-constexpr const char* STD = "STD";
+constexpr const char *STD = "STD";
 
 /// STX - Store Index Register X
-constexpr const char* STX = "STX";
+constexpr const char *STX = "STX";
 
 /// STY - Store Index Register Y
-constexpr const char* STY = "STY";
+constexpr const char *STY = "STY";
 
 // ============================================================================
 // Arithmetic Instructions
 // ============================================================================
 
 /// ADDA - Add to Accumulator A
-constexpr const char* ADDA = "ADDA";
+constexpr const char *ADDA = "ADDA";
 
 /// ADDB - Add to Accumulator B
-constexpr const char* ADDB = "ADDB";
+constexpr const char *ADDB = "ADDB";
 
 /// SUBA - Subtract from Accumulator A
-constexpr const char* SUBA = "SUBA";
+constexpr const char *SUBA = "SUBA";
 
 /// SUBB - Subtract from Accumulator B
-constexpr const char* SUBB = "SUBB";
+constexpr const char *SUBB = "SUBB";
 
 /// INCA - Increment Accumulator A
-constexpr const char* INCA = "INCA";
+constexpr const char *INCA = "INCA";
 
 /// INCB - Increment Accumulator B
-constexpr const char* INCB = "INCB";
+constexpr const char *INCB = "INCB";
 
 /// DECA - Decrement Accumulator A
-constexpr const char* DECA = "DECA";
+constexpr const char *DECA = "DECA";
 
 /// DECB - Decrement Accumulator B
-constexpr const char* DECB = "DECB";
+constexpr const char *DECB = "DECB";
 
 // ============================================================================
 // Logical Operations
 // ============================================================================
 
 /// ANDA - AND with Accumulator A
-constexpr const char* ANDA = "ANDA";
+constexpr const char *ANDA = "ANDA";
 
 /// ANDB - AND with Accumulator B
-constexpr const char* ANDB = "ANDB";
+constexpr const char *ANDB = "ANDB";
 
 /// ORA - OR with Accumulator A
-constexpr const char* ORA = "ORA";
+constexpr const char *ORA = "ORA";
 
 /// ORB - OR with Accumulator B
-constexpr const char* ORB = "ORB";
+constexpr const char *ORB = "ORB";
 
 /// EORA - Exclusive OR with Accumulator A
-constexpr const char* EORA = "EORA";
+constexpr const char *EORA = "EORA";
 
 /// EORB - Exclusive OR with Accumulator B
-constexpr const char* EORB = "EORB";
+constexpr const char *EORB = "EORB";
 
 /// BITA - Bit Test Accumulator A
-constexpr const char* BITA = "BITA";
+constexpr const char *BITA = "BITA";
 
 /// BITB - Bit Test Accumulator B
-constexpr const char* BITB = "BITB";
+constexpr const char *BITB = "BITB";
 
 // ============================================================================
 // Comparison Instructions
 // ============================================================================
 
 /// CMPA - Compare Accumulator A
-constexpr const char* CMPA = "CMPA";
+constexpr const char *CMPA = "CMPA";
 
 /// CMPB - Compare Accumulator B
-constexpr const char* CMPB = "CMPB";
+constexpr const char *CMPB = "CMPB";
 
 /// CMPX - Compare Index Register X
-constexpr const char* CMPX = "CMPX";
+constexpr const char *CMPX = "CMPX";
 
 /// CMPY - Compare Index Register Y
-constexpr const char* CMPY = "CMPY";
+constexpr const char *CMPY = "CMPY";
 
 /// CMPU - Compare User Stack Pointer
-constexpr const char* CMPU = "CMPU";
+constexpr const char *CMPU = "CMPU";
 
 /// CMPS - Compare System Stack Pointer
-constexpr const char* CMPS = "CMPS";
+constexpr const char *CMPS = "CMPS";
 
 // ============================================================================
 // Shift and Rotate Instructions
 // ============================================================================
 
 /// ASLA - Arithmetic Shift Left Accumulator A
-constexpr const char* ASLA = "ASLA";
+constexpr const char *ASLA = "ASLA";
 
 /// ASLB - Arithmetic Shift Left Accumulator B
-constexpr const char* ASLB = "ASLB";
+constexpr const char *ASLB = "ASLB";
 
 /// ASRA - Arithmetic Shift Right Accumulator A
-constexpr const char* ASRA = "ASRA";
+constexpr const char *ASRA = "ASRA";
 
 /// ASRB - Arithmetic Shift Right Accumulator B
-constexpr const char* ASRB = "ASRB";
+constexpr const char *ASRB = "ASRB";
 
 /// LSRA - Logical Shift Right Accumulator A
-constexpr const char* LSRA = "LSRA";
+constexpr const char *LSRA = "LSRA";
 
 /// LSRB - Logical Shift Right Accumulator B
-constexpr const char* LSRB = "LSRB";
+constexpr const char *LSRB = "LSRB";
 
 /// ROLA - Rotate Left Accumulator A
-constexpr const char* ROLA = "ROLA";
+constexpr const char *ROLA = "ROLA";
 
 /// ROLB - Rotate Left Accumulator B
-constexpr const char* ROLB = "ROLB";
+constexpr const char *ROLB = "ROLB";
 
 /// RORA - Rotate Right Accumulator A
-constexpr const char* RORA = "RORA";
+constexpr const char *RORA = "RORA";
 
 /// RORB - Rotate Right Accumulator B
-constexpr const char* RORB = "RORB";
+constexpr const char *RORB = "RORB";
 
 // ============================================================================
 // Test/Clear/Complement/Negate Instructions
 // ============================================================================
 
 /// TSTA - Test Accumulator A
-constexpr const char* TSTA = "TSTA";
+constexpr const char *TSTA = "TSTA";
 
 /// TSTB - Test Accumulator B
-constexpr const char* TSTB = "TSTB";
+constexpr const char *TSTB = "TSTB";
 
 /// CLRA - Clear Accumulator A
-constexpr const char* CLRA = "CLRA";
+constexpr const char *CLRA = "CLRA";
 
 /// CLRB - Clear Accumulator B
-constexpr const char* CLRB = "CLRB";
+constexpr const char *CLRB = "CLRB";
 
 /// COMA - Complement Accumulator A
-constexpr const char* COMA = "COMA";
+constexpr const char *COMA = "COMA";
 
 /// COMB - Complement Accumulator B
-constexpr const char* COMB = "COMB";
+constexpr const char *COMB = "COMB";
 
 /// NEGA - Negate Accumulator A
-constexpr const char* NEGA = "NEGA";
+constexpr const char *NEGA = "NEGA";
 
 /// NEGB - Negate Accumulator B
-constexpr const char* NEGB = "NEGB";
+constexpr const char *NEGB = "NEGB";
 
 // ============================================================================
 // Short Branch Instructions (8-bit relative)
 // ============================================================================
 
 /// BRA - Branch Always
-constexpr const char* BRA = "BRA";
+constexpr const char *BRA = "BRA";
 
 /// BEQ - Branch if Equal
-constexpr const char* BEQ = "BEQ";
+constexpr const char *BEQ = "BEQ";
 
 /// BNE - Branch if Not Equal
-constexpr const char* BNE = "BNE";
+constexpr const char *BNE = "BNE";
 
 /// BCC - Branch if Carry Clear
-constexpr const char* BCC = "BCC";
+constexpr const char *BCC = "BCC";
 
 /// BHS - Branch if Higher or Same (alias for BCC)
-constexpr const char* BHS = "BHS";
+constexpr const char *BHS = "BHS";
 
 /// BCS - Branch if Carry Set
-constexpr const char* BCS = "BCS";
+constexpr const char *BCS = "BCS";
 
 /// BLO - Branch if Lower (alias for BCS)
-constexpr const char* BLO = "BLO";
+constexpr const char *BLO = "BLO";
 
 /// BMI - Branch if Minus
-constexpr const char* BMI = "BMI";
+constexpr const char *BMI = "BMI";
 
 /// BPL - Branch if Plus
-constexpr const char* BPL = "BPL";
+constexpr const char *BPL = "BPL";
 
 /// BVS - Branch if Overflow Set
-constexpr const char* BVS = "BVS";
+constexpr const char *BVS = "BVS";
 
 /// BVC - Branch if Overflow Clear
-constexpr const char* BVC = "BVC";
+constexpr const char *BVC = "BVC";
 
 /// BGE - Branch if Greater or Equal (signed)
-constexpr const char* BGE = "BGE";
+constexpr const char *BGE = "BGE";
 
 /// BLT - Branch if Less Than (signed)
-constexpr const char* BLT = "BLT";
+constexpr const char *BLT = "BLT";
 
 /// BGT - Branch if Greater Than (signed)
-constexpr const char* BGT = "BGT";
+constexpr const char *BGT = "BGT";
 
 /// BLE - Branch if Less or Equal (signed)
-constexpr const char* BLE = "BLE";
+constexpr const char *BLE = "BLE";
 
 /// BHI - Branch if Higher (unsigned)
-constexpr const char* BHI = "BHI";
+constexpr const char *BHI = "BHI";
 
 /// BLS - Branch if Lower or Same (unsigned)
-constexpr const char* BLS = "BLS";
+constexpr const char *BLS = "BLS";
 
 /// BSR - Branch to Subroutine
-constexpr const char* BSR = "BSR";
+constexpr const char *BSR = "BSR";
 
 // ============================================================================
 // Long Branch Instructions (16-bit relative)
 // ============================================================================
 
 /// LBRA - Long Branch Always
-constexpr const char* LBRA = "LBRA";
+constexpr const char *LBRA = "LBRA";
 
 /// LBSR - Long Branch to Subroutine
-constexpr const char* LBSR = "LBSR";
+constexpr const char *LBSR = "LBSR";
 
 /// LBRN - Long Branch Never
-constexpr const char* LBRN = "LBRN";
+constexpr const char *LBRN = "LBRN";
 
 /// LBHI - Long Branch if Higher (unsigned)
-constexpr const char* LBHI = "LBHI";
+constexpr const char *LBHI = "LBHI";
 
 /// LBLS - Long Branch if Lower or Same (unsigned)
-constexpr const char* LBLS = "LBLS";
+constexpr const char *LBLS = "LBLS";
 
 /// LBCC - Long Branch if Carry Clear
-constexpr const char* LBCC = "LBCC";
+constexpr const char *LBCC = "LBCC";
 
 /// LBHS - Long Branch if Higher or Same (alias for LBCC)
-constexpr const char* LBHS = "LBHS";
+constexpr const char *LBHS = "LBHS";
 
 /// LBCS - Long Branch if Carry Set
-constexpr const char* LBCS = "LBCS";
+constexpr const char *LBCS = "LBCS";
 
 /// LBLO - Long Branch if Lower (alias for LBCS)
-constexpr const char* LBLO = "LBLO";
+constexpr const char *LBLO = "LBLO";
 
 /// LBNE - Long Branch if Not Equal
-constexpr const char* LBNE = "LBNE";
+constexpr const char *LBNE = "LBNE";
 
 /// LBEQ - Long Branch if Equal
-constexpr const char* LBEQ = "LBEQ";
+constexpr const char *LBEQ = "LBEQ";
 
 /// LBVC - Long Branch if Overflow Clear
-constexpr const char* LBVC = "LBVC";
+constexpr const char *LBVC = "LBVC";
 
 /// LBVS - Long Branch if Overflow Set
-constexpr const char* LBVS = "LBVS";
+constexpr const char *LBVS = "LBVS";
 
 /// LBPL - Long Branch if Plus
-constexpr const char* LBPL = "LBPL";
+constexpr const char *LBPL = "LBPL";
 
 /// LBMI - Long Branch if Minus
-constexpr const char* LBMI = "LBMI";
+constexpr const char *LBMI = "LBMI";
 
 /// LBGE - Long Branch if Greater or Equal (signed)
-constexpr const char* LBGE = "LBGE";
+constexpr const char *LBGE = "LBGE";
 
 /// LBLT - Long Branch if Less Than (signed)
-constexpr const char* LBLT = "LBLT";
+constexpr const char *LBLT = "LBLT";
 
 /// LBGT - Long Branch if Greater Than (signed)
-constexpr const char* LBGT = "LBGT";
+constexpr const char *LBGT = "LBGT";
 
 /// LBLE - Long Branch if Less or Equal (signed)
-constexpr const char* LBLE = "LBLE";
+constexpr const char *LBLE = "LBLE";
 
 // ============================================================================
 // Control Flow Instructions
 // ============================================================================
 
 /// JMP - Jump
-constexpr const char* JMP = "JMP";
+constexpr const char *JMP = "JMP";
 
 /// JSR - Jump to Subroutine
-constexpr const char* JSR = "JSR";
+constexpr const char *JSR = "JSR";
 
 /// RTS - Return from Subroutine
-constexpr const char* RTS = "RTS";
+constexpr const char *RTS = "RTS";
 
 /// NOP - No Operation
-constexpr const char* NOP = "NOP";
+constexpr const char *NOP = "NOP";
 
 // ============================================================================
 // Load Effective Address Instructions
 // ============================================================================
 
 /// LEAX - Load Effective Address into X
-constexpr const char* LEAX = "LEAX";
+constexpr const char *LEAX = "LEAX";
 
 /// LEAY - Load Effective Address into Y
-constexpr const char* LEAY = "LEAY";
+constexpr const char *LEAY = "LEAY";
 
 // ============================================================================
 // Stack Operations
 // ============================================================================
 
 /// PSHS - Push registers onto System Stack
-constexpr const char* PSHS = "PSHS";
+constexpr const char *PSHS = "PSHS";
 
 /// PULS - Pull registers from System Stack
-constexpr const char* PULS = "PULS";
+constexpr const char *PULS = "PULS";
 
 /// PSHU - Push registers onto User Stack
-constexpr const char* PSHU = "PSHU";
+constexpr const char *PSHU = "PSHU";
 
 /// PULU - Pull registers from User Stack
-constexpr const char* PULU = "PULU";
+constexpr const char *PULU = "PULU";
 
 // ============================================================================
 // Register Transfer and Exchange
 // ============================================================================
 
 /// TFR - Transfer between registers
-constexpr const char* TFR = "TFR";
+constexpr const char *TFR = "TFR";
 
 /// EXG - Exchange registers
-constexpr const char* EXG = "EXG";
+constexpr const char *EXG = "EXG";
 
 } // namespace M6809Mnemonics
 } // namespace xasm

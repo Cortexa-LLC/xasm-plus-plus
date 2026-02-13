@@ -292,124 +292,124 @@ constexpr uint8_t BRANCH_RELAXATION_OFFSET = 0x03;
 namespace M6502Mnemonics {
 
 // Load/Store Instructions
-constexpr const char* LDA = "LDA";
-constexpr const char* LDX = "LDX";
-constexpr const char* LDY = "LDY";
-constexpr const char* STA = "STA";
-constexpr const char* STX = "STX";
-constexpr const char* STY = "STY";
-constexpr const char* STZ = "STZ"; // 65C02+
+constexpr const char *LDA = "LDA";
+constexpr const char *LDX = "LDX";
+constexpr const char *LDY = "LDY";
+constexpr const char *STA = "STA";
+constexpr const char *STX = "STX";
+constexpr const char *STY = "STY";
+constexpr const char *STZ = "STZ"; // 65C02+
 
 // Arithmetic Instructions
-constexpr const char* ADC = "ADC";
-constexpr const char* SBC = "SBC";
-constexpr const char* INC = "INC";
-constexpr const char* DEC = "DEC";
-constexpr const char* INX = "INX";
-constexpr const char* INY = "INY";
-constexpr const char* DEX = "DEX";
-constexpr const char* DEY = "DEY";
+constexpr const char *ADC = "ADC";
+constexpr const char *SBC = "SBC";
+constexpr const char *INC = "INC";
+constexpr const char *DEC = "DEC";
+constexpr const char *INX = "INX";
+constexpr const char *INY = "INY";
+constexpr const char *DEX = "DEX";
+constexpr const char *DEY = "DEY";
 
 // Logical Instructions
-constexpr const char* AND = "AND";
-constexpr const char* ORA = "ORA";
-constexpr const char* EOR = "EOR";
-constexpr const char* BIT = "BIT";
+constexpr const char *AND = "AND";
+constexpr const char *ORA = "ORA";
+constexpr const char *EOR = "EOR";
+constexpr const char *BIT = "BIT";
 
 // Compare Instructions
-constexpr const char* CMP = "CMP";
-constexpr const char* CPX = "CPX";
-constexpr const char* CPY = "CPY";
+constexpr const char *CMP = "CMP";
+constexpr const char *CPX = "CPX";
+constexpr const char *CPY = "CPY";
 
 // Branch Instructions
-constexpr const char* BEQ = "BEQ";
-constexpr const char* BNE = "BNE";
-constexpr const char* BCS = "BCS";
-constexpr const char* BCC = "BCC";
-constexpr const char* BMI = "BMI";
-constexpr const char* BPL = "BPL";
-constexpr const char* BVS = "BVS";
-constexpr const char* BVC = "BVC";
-constexpr const char* BRA = "BRA"; // 65C02+
+constexpr const char *BEQ = "BEQ";
+constexpr const char *BNE = "BNE";
+constexpr const char *BCS = "BCS";
+constexpr const char *BCC = "BCC";
+constexpr const char *BMI = "BMI";
+constexpr const char *BPL = "BPL";
+constexpr const char *BVS = "BVS";
+constexpr const char *BVC = "BVC";
+constexpr const char *BRA = "BRA"; // 65C02+
 
 // Pseudo Branch Instructions (aliases)
-constexpr const char* BLT = "BLT"; // Alias for BCC (Branch if Less Than)
+constexpr const char *BLT = "BLT"; // Alias for BCC (Branch if Less Than)
 
 // Jump Instructions
-constexpr const char* JMP = "JMP";
-constexpr const char* JSR = "JSR";
-constexpr const char* RTS = "RTS";
-constexpr const char* RTI = "RTI";
-constexpr const char* JML = "JML"; // 65816
-constexpr const char* JSL = "JSL"; // 65816
-constexpr const char* RTL = "RTL"; // 65816
+constexpr const char *JMP = "JMP";
+constexpr const char *JSR = "JSR";
+constexpr const char *RTS = "RTS";
+constexpr const char *RTI = "RTI";
+constexpr const char *JML = "JML"; // 65816
+constexpr const char *JSL = "JSL"; // 65816
+constexpr const char *RTL = "RTL"; // 65816
 
 // Stack Instructions
-constexpr const char* PHA = "PHA";
-constexpr const char* PLA = "PLA";
-constexpr const char* PHP = "PHP";
-constexpr const char* PLP = "PLP";
-constexpr const char* PHX = "PHX"; // 65C02+
-constexpr const char* PLX = "PLX"; // 65C02+
-constexpr const char* PHY = "PHY"; // 65C02+
-constexpr const char* PLY = "PLY"; // 65C02+
-constexpr const char* PHB = "PHB"; // 65816
-constexpr const char* PLB = "PLB"; // 65816
-constexpr const char* PHD = "PHD"; // 65816
-constexpr const char* PLD = "PLD"; // 65816
-constexpr const char* PHK = "PHK"; // 65816
+constexpr const char *PHA = "PHA";
+constexpr const char *PLA = "PLA";
+constexpr const char *PHP = "PHP";
+constexpr const char *PLP = "PLP";
+constexpr const char *PHX = "PHX"; // 65C02+
+constexpr const char *PLX = "PLX"; // 65C02+
+constexpr const char *PHY = "PHY"; // 65C02+
+constexpr const char *PLY = "PLY"; // 65C02+
+constexpr const char *PHB = "PHB"; // 65816
+constexpr const char *PLB = "PLB"; // 65816
+constexpr const char *PHD = "PHD"; // 65816
+constexpr const char *PLD = "PLD"; // 65816
+constexpr const char *PHK = "PHK"; // 65816
 
 // Transfer Instructions
-constexpr const char* TAX = "TAX";
-constexpr const char* TXA = "TXA";
-constexpr const char* TAY = "TAY";
-constexpr const char* TYA = "TYA";
-constexpr const char* TSX = "TSX";
-constexpr const char* TXS = "TXS";
-constexpr const char* TCD = "TCD"; // 65816
-constexpr const char* TCS = "TCS"; // 65816
-constexpr const char* TDC = "TDC"; // 65816
-constexpr const char* TSC = "TSC"; // 65816
+constexpr const char *TAX = "TAX";
+constexpr const char *TXA = "TXA";
+constexpr const char *TAY = "TAY";
+constexpr const char *TYA = "TYA";
+constexpr const char *TSX = "TSX";
+constexpr const char *TXS = "TXS";
+constexpr const char *TCD = "TCD"; // 65816
+constexpr const char *TCS = "TCS"; // 65816
+constexpr const char *TDC = "TDC"; // 65816
+constexpr const char *TSC = "TSC"; // 65816
 
 // Shift/Rotate Instructions
-constexpr const char* ASL = "ASL";
-constexpr const char* LSR = "LSR";
-constexpr const char* ROL = "ROL";
-constexpr const char* ROR = "ROR";
+constexpr const char *ASL = "ASL";
+constexpr const char *LSR = "LSR";
+constexpr const char *ROL = "ROL";
+constexpr const char *ROR = "ROR";
 
 // Flag Instructions
-constexpr const char* CLC = "CLC";
-constexpr const char* SEC = "SEC";
-constexpr const char* CLD = "CLD";
-constexpr const char* SED = "SED";
-constexpr const char* CLI = "CLI";
-constexpr const char* SEI = "SEI";
-constexpr const char* CLV = "CLV";
-constexpr const char* REP = "REP"; // 65816
-constexpr const char* SEP = "SEP"; // 65816
-constexpr const char* XCE = "XCE"; // 65816
+constexpr const char *CLC = "CLC";
+constexpr const char *SEC = "SEC";
+constexpr const char *CLD = "CLD";
+constexpr const char *SED = "SED";
+constexpr const char *CLI = "CLI";
+constexpr const char *SEI = "SEI";
+constexpr const char *CLV = "CLV";
+constexpr const char *REP = "REP"; // 65816
+constexpr const char *SEP = "SEP"; // 65816
+constexpr const char *XCE = "XCE"; // 65816
 
 // Test/Set Instructions
-constexpr const char* TRB = "TRB"; // 65C02+
-constexpr const char* TSB = "TSB"; // 65C02+
+constexpr const char *TRB = "TRB"; // 65C02+
+constexpr const char *TSB = "TSB"; // 65C02+
 
 // Special Instructions
-constexpr const char* NOP = "NOP";
-constexpr const char* BRK = "BRK";
-constexpr const char* COP = "COP"; // 65816
-constexpr const char* STP = "STP"; // 65C02+
-constexpr const char* WAI = "WAI"; // 65C02+
-constexpr const char* WDM = "WDM"; // 65816
-constexpr const char* XBA = "XBA"; // 65816
+constexpr const char *NOP = "NOP";
+constexpr const char *BRK = "BRK";
+constexpr const char *COP = "COP"; // 65816
+constexpr const char *STP = "STP"; // 65C02+
+constexpr const char *WAI = "WAI"; // 65C02+
+constexpr const char *WDM = "WDM"; // 65816
+constexpr const char *XBA = "XBA"; // 65816
 
 // Stack Instructions - 65816
-constexpr const char* PEA = "PEA"; // 65816
-constexpr const char* PEI = "PEI"; // 65816
-constexpr const char* PER = "PER"; // 65816
+constexpr const char *PEA = "PEA"; // 65816
+constexpr const char *PEI = "PEI"; // 65816
+constexpr const char *PER = "PER"; // 65816
 
 // Block Move Instructions - 65816
-constexpr const char* MVN = "MVN"; // 65816 - Move Negative (Block Move)
-constexpr const char* MVP = "MVP"; // 65816 - Move Positive (Block Move)
+constexpr const char *MVN = "MVN"; // 65816 - Move Negative (Block Move)
+constexpr const char *MVP = "MVP"; // 65816 - Move Positive (Block Move)
 
 } // namespace M6502Mnemonics
 

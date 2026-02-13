@@ -6,11 +6,11 @@
  * Eliminates magic strings code smell by providing named constants.
  */
 
-#include "xasm++/cpu/opcodes_z80.h"
 #include "xasm++/cpu/opcodes_6502.h"
 #include "xasm++/cpu/opcodes_6809.h"
-#include <gtest/gtest.h>
+#include "xasm++/cpu/opcodes_z80.h"
 #include <cstring>
+#include <gtest/gtest.h>
 
 using namespace xasm;
 

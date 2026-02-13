@@ -1648,9 +1648,13 @@ Cpu6809::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
       // Determine if 8-bit or 16-bit based on instruction
       // For now, assume 8-bit for A/B instructions, 16-bit for D/X/Y/U/S
       bool is_16bit =
-          (mnemonic == M6809Mnemonics::LDD || mnemonic == M6809Mnemonics::LDX || mnemonic == M6809Mnemonics::LDY ||
-           mnemonic == M6809Mnemonics::LDU || mnemonic == M6809Mnemonics::LDS || mnemonic == M6809Mnemonics::CMPX ||
-           mnemonic == M6809Mnemonics::CMPY || mnemonic == M6809Mnemonics::CMPU || mnemonic == M6809Mnemonics::CMPS);
+          (mnemonic == M6809Mnemonics::LDD || mnemonic == M6809Mnemonics::LDX ||
+           mnemonic == M6809Mnemonics::LDY || mnemonic == M6809Mnemonics::LDU ||
+           mnemonic == M6809Mnemonics::LDS ||
+           mnemonic == M6809Mnemonics::CMPX ||
+           mnemonic == M6809Mnemonics::CMPY ||
+           mnemonic == M6809Mnemonics::CMPU ||
+           mnemonic == M6809Mnemonics::CMPS);
       mode = is_16bit ? AddressingMode6809::Immediate16
                       : AddressingMode6809::Immediate8;
     }

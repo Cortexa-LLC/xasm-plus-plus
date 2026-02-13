@@ -14,8 +14,8 @@
  *       https://en.wikipedia.org/wiki/Intel_HEX
  */
 
-#include "xasm++/output/intel_hex_writer.h"
 #include "xasm++/atom.h"
+#include "xasm++/output/intel_hex_writer.h"
 #include "xasm++/section.h"
 
 #include <gtest/gtest.h>
@@ -77,8 +77,7 @@ protected:
    */
   bool ValidateIntelHexRecord(const std::string &record, uint8_t &byte_count,
                               uint16_t &address, uint8_t &record_type,
-                              std::vector<uint8_t> &data,
-                              uint8_t &checksum) {
+                              std::vector<uint8_t> &data, uint8_t &checksum) {
     // Intel HEX format: :LLAAAATTDD...DDCC
     // : - start code
     // LL - byte count (2 hex digits)
@@ -179,8 +178,8 @@ TEST_F(IntelHexWriterTest, SingleByteAtZero) {
   uint16_t address;
   std::vector<uint8_t> data;
 
-  ASSERT_TRUE(
-      ValidateIntelHexRecord(lines[0], byte_count, address, record_type, data, checksum));
+  ASSERT_TRUE(ValidateIntelHexRecord(lines[0], byte_count, address, record_type,
+                                     data, checksum));
   EXPECT_EQ(byte_count, 1);
   EXPECT_EQ(address, 0x0000);
   EXPECT_EQ(record_type, 0x00); // Data record
@@ -208,8 +207,8 @@ TEST_F(IntelHexWriterTest, MultipleBytes) {
   uint16_t address;
   std::vector<uint8_t> data;
 
-  ASSERT_TRUE(
-      ValidateIntelHexRecord(lines[0], byte_count, address, record_type, data, checksum));
+  ASSERT_TRUE(ValidateIntelHexRecord(lines[0], byte_count, address, record_type,
+                                     data, checksum));
   EXPECT_EQ(byte_count, 5);
   EXPECT_EQ(address, 0x1000);
   EXPECT_EQ(record_type, 0x00);
@@ -239,20 +238,20 @@ TEST_F(IntelHexWriterTest, MultipleRecords) {
   uint16_t address;
   std::vector<uint8_t> data;
 
-  ASSERT_TRUE(
-      ValidateIntelHexRecord(lines[0], byte_count, address, record_type, data, checksum));
+  ASSERT_TRUE(ValidateIntelHexRecord(lines[0], byte_count, address, record_type,
+                                     data, checksum));
   EXPECT_EQ(byte_count, 16);
   EXPECT_EQ(address, 0x2000);
 
   // Verify second record
-  ASSERT_TRUE(
-      ValidateIntelHexRecord(lines[1], byte_count, address, record_type, data, checksum));
+  ASSERT_TRUE(ValidateIntelHexRecord(lines[1], byte_count, address, record_type,
+                                     data, checksum));
   EXPECT_EQ(byte_count, 16);
   EXPECT_EQ(address, 0x2010);
 
   // Verify third record
-  ASSERT_TRUE(
-      ValidateIntelHexRecord(lines[2], byte_count, address, record_type, data, checksum));
+  ASSERT_TRUE(ValidateIntelHexRecord(lines[2], byte_count, address, record_type,
+                                     data, checksum));
   EXPECT_EQ(byte_count, 16);
   EXPECT_EQ(address, 0x2020);
 }
@@ -278,8 +277,8 @@ TEST_F(IntelHexWriterTest, ExtendedLinearAddress) {
   uint16_t address;
   std::vector<uint8_t> data;
 
-  ASSERT_TRUE(
-      ValidateIntelHexRecord(lines[0], byte_count, address, record_type, data, checksum));
+  ASSERT_TRUE(ValidateIntelHexRecord(lines[0], byte_count, address, record_type,
+                                     data, checksum));
   EXPECT_EQ(byte_count, 2);
   EXPECT_EQ(address, 0x0000);
   EXPECT_EQ(record_type, 0x04); // Extended linear address
@@ -287,8 +286,8 @@ TEST_F(IntelHexWriterTest, ExtendedLinearAddress) {
   EXPECT_EQ((data[0] << 8) | data[1], 0x0001); // Upper 16 bits
 
   // Second line should be data record
-  ASSERT_TRUE(
-      ValidateIntelHexRecord(lines[1], byte_count, address, record_type, data, checksum));
+  ASSERT_TRUE(ValidateIntelHexRecord(lines[1], byte_count, address, record_type,
+                                     data, checksum));
   EXPECT_EQ(record_type, 0x00); // Data record
   EXPECT_EQ(address, 0x0000);   // Lower 16 bits
 }
@@ -319,7 +318,7 @@ TEST_F(IntelHexWriterTest, MultipleExtendedAddresses) {
   int ext_addr_count = 0;
   for (const auto &line : lines) {
     if (ValidateIntelHexRecord(line, byte_count, address, record_type, data,
-                                checksum)) {
+                               checksum)) {
       if (record_type == 0x04) {
         ext_addr_count++;
       }
@@ -338,7 +337,8 @@ TEST_F(IntelHexWriterTest, MultipleExtendedAddresses) {
  */
 TEST_F(IntelHexWriterTest, ChecksumValidation) {
   std::vector<Section> sections;
-  sections.push_back(CreateSectionWithData("TEST", 0xABCD, {0x12, 0x34, 0x56, 0x78}));
+  sections.push_back(
+      CreateSectionWithData("TEST", 0xABCD, {0x12, 0x34, 0x56, 0x78}));
 
   writer.Write(sections, output);
 
@@ -432,7 +432,8 @@ TEST_F(IntelHexWriterTest, MultipleSectionsWithDifferentTypes) {
   sections.push_back(CreateSectionWithData("DATA", 0x9000, {0x11, 0x22, 0x33}));
 
   // Another code section
-  sections.push_back(CreateSectionWithInstructions("CODE2", 0xA000, {0x85, 0x00}));
+  sections.push_back(
+      CreateSectionWithInstructions("CODE2", 0xA000, {0x85, 0x00}));
 
   writer.Write(sections, output);
 
@@ -444,12 +445,13 @@ TEST_F(IntelHexWriterTest, MultipleSectionsWithDifferentTypes) {
   uint16_t address;
   std::vector<uint8_t> data;
 
-  ASSERT_TRUE(
-      ValidateIntelHexRecord(lines[0], byte_count, address, record_type, data, checksum));
+  ASSERT_TRUE(ValidateIntelHexRecord(lines[0], byte_count, address, record_type,
+                                     data, checksum));
   EXPECT_EQ(address, 0x8000);
 
   // Note: Can't assume exact line order for other sections without knowing
-  // implementation details, but all should have valid checksums and proper format
+  // implementation details, but all should have valid checksums and proper
+  // format
   for (size_t i = 1; i < lines.size() - 1; ++i) {
     ASSERT_TRUE(ValidateIntelHexRecord(lines[i], byte_count, address,
                                        record_type, data, checksum))
@@ -522,9 +524,11 @@ TEST_F(IntelHexWriterTest, MixedAtomsWithSpace) {
   Section section("TEST", 0, 0x0000);
 
   // Data, space, more data
-  section.atoms.push_back(std::make_shared<DataAtom>(std::vector<uint8_t>{0xAA}));
+  section.atoms.push_back(
+      std::make_shared<DataAtom>(std::vector<uint8_t>{0xAA}));
   section.atoms.push_back(std::make_shared<SpaceAtom>(10));
-  section.atoms.push_back(std::make_shared<DataAtom>(std::vector<uint8_t>{0xBB}));
+  section.atoms.push_back(
+      std::make_shared<DataAtom>(std::vector<uint8_t>{0xBB}));
 
   sections.push_back(section);
 
@@ -532,8 +536,8 @@ TEST_F(IntelHexWriterTest, MixedAtomsWithSpace) {
 
   auto lines = SplitLines(output.str());
 
-  // Should have at least 2 data records (potentially 3 if space causes address gap)
-  // and EOF
+  // Should have at least 2 data records (potentially 3 if space causes address
+  // gap) and EOF
   ASSERT_GE(lines.size(), 3);
 
   uint8_t byte_count, record_type, checksum;
@@ -541,8 +545,8 @@ TEST_F(IntelHexWriterTest, MixedAtomsWithSpace) {
   std::vector<uint8_t> data;
 
   // First record should have 0xAA at address 0
-  ASSERT_TRUE(
-      ValidateIntelHexRecord(lines[0], byte_count, address, record_type, data, checksum));
+  ASSERT_TRUE(ValidateIntelHexRecord(lines[0], byte_count, address, record_type,
+                                     data, checksum));
   EXPECT_EQ(address, 0x0000);
   EXPECT_EQ(data[0], 0xAA);
 

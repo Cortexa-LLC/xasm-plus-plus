@@ -275,16 +275,18 @@ void EdtasmSyntaxParser::ParseLine(const std::string &line, Section &section,
 
   // Check if opcode is a directive
   std::string opcode_upper = ToUpper(opcode);
-  bool is_directive = (opcode_upper == directives::ORG || opcode_upper == directives::END ||
-                       opcode_upper == directives::EQU || opcode_upper == directives::SET ||
-                       opcode_upper == directives::FCB || opcode_upper == directives::FDB ||
-                       opcode_upper == directives::FCC || opcode_upper == directives::RMB ||
-                       opcode_upper == directives::SETDP);
+  bool is_directive =
+      (opcode_upper == directives::ORG || opcode_upper == directives::END ||
+       opcode_upper == directives::EQU || opcode_upper == directives::SET ||
+       opcode_upper == directives::FCB || opcode_upper == directives::FDB ||
+       opcode_upper == directives::FCC || opcode_upper == directives::RMB ||
+       opcode_upper == directives::SETDP);
 
   // Create label atom for non-EQU/SET directives and instructions
   // EQU and SET handle their labels internally (they don't create address
   // labels)
-  if (!label.empty() && opcode_upper != directives::EQU && opcode_upper != directives::SET) {
+  if (!label.empty() && opcode_upper != directives::EQU &&
+      opcode_upper != directives::SET) {
     symbols.Define(label, SymbolType::Label,
                    std::make_shared<LiteralExpr>(current_address_));
     section.atoms.push_back(

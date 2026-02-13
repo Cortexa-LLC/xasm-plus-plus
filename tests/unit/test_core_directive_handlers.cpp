@@ -6,12 +6,12 @@
  * as part of God-Class Phase 6b refactoring.
  */
 
-#include "xasm++/syntax/core_directive_handlers.h"
-#include "xasm++/syntax/directive_registry.h"
-#include "xasm++/directives/directive_constants.h"
 #include "xasm++/atom.h"
+#include "xasm++/directives/directive_constants.h"
 #include "xasm++/section.h"
 #include "xasm++/symbol.h"
+#include "xasm++/syntax/core_directive_handlers.h"
+#include "xasm++/syntax/directive_registry.h"
 #include <gtest/gtest.h>
 #include <memory>
 
@@ -87,7 +87,8 @@ TEST_F(CoreDirectiveHandlersTest, OrgWithBinaryAddress) {
  */
 TEST_F(CoreDirectiveHandlersTest, OrgWithSymbolAddress) {
   // Arrange
-  symbols_->Define("START", SymbolType::Label, std::make_shared<LiteralExpr>(0x8000));
+  symbols_->Define("START", SymbolType::Label,
+                   std::make_shared<LiteralExpr>(0x8000));
 
   // Act
   HandleOrgDirective("START", *section_, *symbols_, current_address_);
@@ -105,10 +106,8 @@ TEST_F(CoreDirectiveHandlersTest, OrgWithSymbolAddress) {
  */
 TEST_F(CoreDirectiveHandlersTest, OrgWithEmptyOperandThrows) {
   // Act & Assert
-  EXPECT_THROW(
-    HandleOrgDirective("", *section_, *symbols_, current_address_),
-    std::runtime_error
-  );
+  EXPECT_THROW(HandleOrgDirective("", *section_, *symbols_, current_address_),
+               std::runtime_error);
 }
 
 /**
@@ -160,7 +159,8 @@ TEST_F(CoreDirectiveHandlersTest, EquWithHexValue) {
  */
 TEST_F(CoreDirectiveHandlersTest, EquWithExpression) {
   // Arrange
-  symbols_->Define("BASE", SymbolType::Label, std::make_shared<LiteralExpr>(0x2000));
+  symbols_->Define("BASE", SymbolType::Label,
+                   std::make_shared<LiteralExpr>(0x2000));
 
   // Act
   HandleEquDirective("OFFSET", "BASE+$100", *symbols_);
@@ -176,10 +176,7 @@ TEST_F(CoreDirectiveHandlersTest, EquWithExpression) {
  */
 TEST_F(CoreDirectiveHandlersTest, EquWithEmptyLabelThrows) {
   // Act & Assert
-  EXPECT_THROW(
-    HandleEquDirective("", "100", *symbols_),
-    std::runtime_error
-  );
+  EXPECT_THROW(HandleEquDirective("", "100", *symbols_), std::runtime_error);
 }
 
 /**
@@ -237,7 +234,8 @@ TEST_F(CoreDirectiveHandlersTest, DbWithMultipleBytes) {
  */
 TEST_F(CoreDirectiveHandlersTest, DbWithExpressions) {
   // Act
-  HandleDbDirective("$FF,1+2,%00001111", *section_, *symbols_, current_address_);
+  HandleDbDirective("$FF,1+2,%00001111", *section_, *symbols_,
+                    current_address_);
 
   // Assert
   ASSERT_EQ(section_->atoms.size(), 1);
@@ -307,7 +305,8 @@ TEST_F(CoreDirectiveHandlersTest, DwWithSingleWord) {
  */
 TEST_F(CoreDirectiveHandlersTest, DwWithMultipleWords) {
   // Act
-  HandleDwDirective("$1000,$2000,$3000", *section_, *symbols_, current_address_);
+  HandleDwDirective("$1000,$2000,$3000", *section_, *symbols_,
+                    current_address_);
 
   // Assert
   ASSERT_EQ(section_->atoms.size(), 1);
@@ -323,7 +322,8 @@ TEST_F(CoreDirectiveHandlersTest, DwWithMultipleWords) {
  */
 TEST_F(CoreDirectiveHandlersTest, DwWithWhitespace) {
   // Act
-  HandleDwDirective("  $1000  ,  $2000  ", *section_, *symbols_, current_address_);
+  HandleDwDirective("  $1000  ,  $2000  ", *section_, *symbols_,
+                    current_address_);
 
   // Assert
   ASSERT_EQ(section_->atoms.size(), 1);
@@ -373,7 +373,8 @@ TEST_F(CoreDirectiveHandlersTest, DsWithHexCount) {
  */
 TEST_F(CoreDirectiveHandlersTest, DsWithExpression) {
   // Arrange
-  symbols_->Define("SIZE", SymbolType::Label, std::make_shared<LiteralExpr>(50));
+  symbols_->Define("SIZE", SymbolType::Label,
+                   std::make_shared<LiteralExpr>(50));
 
   // Act
   HandleDsDirective("SIZE*2", *section_, *symbols_, current_address_);
@@ -391,10 +392,8 @@ TEST_F(CoreDirectiveHandlersTest, DsWithExpression) {
  */
 TEST_F(CoreDirectiveHandlersTest, DsWithNegativeCountThrows) {
   // Act & Assert
-  EXPECT_THROW(
-    HandleDsDirective("-10", *section_, *symbols_, current_address_),
-    std::runtime_error
-  );
+  EXPECT_THROW(HandleDsDirective("-10", *section_, *symbols_, current_address_),
+               std::runtime_error);
 }
 
 /**
@@ -439,12 +438,12 @@ protected:
     symbols_ = std::make_unique<ConcreteSymbolTable>();
     section_ = std::make_unique<Section>("test_section", 0x01);
     current_address_ = 0x1000;
-    
+
     // Set up DirectiveContext
     context_.section = section_.get();
     context_.symbols = symbols_.get();
     context_.current_address = &current_address_;
-    
+
     // Register handlers
     RegisterCoreDirectiveHandlers(registry_);
   }
@@ -538,7 +537,7 @@ TEST_F(CoreDirectiveRegistryTest, RegistryDbAliases) {
   // Test DEFB
   registry_.Execute(directives::DEFB, "", "42", context_);
   ASSERT_EQ(section_->atoms.size(), 1);
-  
+
   // Test BYTE
   registry_.Execute(directives::BYTE, "", "43", context_);
   ASSERT_EQ(section_->atoms.size(), 2);
@@ -551,7 +550,7 @@ TEST_F(CoreDirectiveRegistryTest, RegistryDwAliases) {
   // Test DEFW
   registry_.Execute(directives::DEFW, "", "$1234", context_);
   ASSERT_EQ(section_->atoms.size(), 1);
-  
+
   // Test WORD
   registry_.Execute(directives::WORD, "", "$5678", context_);
   ASSERT_EQ(section_->atoms.size(), 2);
@@ -564,11 +563,11 @@ TEST_F(CoreDirectiveRegistryTest, RegistryDsAliases) {
   // Test DEFS
   registry_.Execute(directives::DEFS, "", "10", context_);
   ASSERT_EQ(section_->atoms.size(), 1);
-  
+
   // Test BLOCK
   registry_.Execute(directives::BLOCK, "", "20", context_);
   ASSERT_EQ(section_->atoms.size(), 2);
-  
+
   // Test RMB
   registry_.Execute(directives::RMB, "", "30", context_);
   ASSERT_EQ(section_->atoms.size(), 3);
@@ -707,7 +706,8 @@ TEST_F(CoreDirectiveHandlersTest, OrgWithComplexNestedExpression) {
  */
 TEST_F(CoreDirectiveHandlersTest, OrgWithSymbolArithmetic) {
   // Arrange
-  symbols_->Define("BASE", SymbolType::Label, std::make_shared<LiteralExpr>(0x8000));
+  symbols_->Define("BASE", SymbolType::Label,
+                   std::make_shared<LiteralExpr>(0x8000));
 
   // Act
   HandleOrgDirective("BASE+$100", *section_, *symbols_, current_address_);
@@ -738,8 +738,10 @@ TEST_F(CoreDirectiveHandlersTest, EquWithMultiplicationExpression) {
  */
 TEST_F(CoreDirectiveHandlersTest, EquWithComplexExpression) {
   // Arrange
-  symbols_->Define("WIDTH", SymbolType::Label, std::make_shared<LiteralExpr>(40));
-  symbols_->Define("HEIGHT", SymbolType::Label, std::make_shared<LiteralExpr>(25));
+  symbols_->Define("WIDTH", SymbolType::Label,
+                   std::make_shared<LiteralExpr>(40));
+  symbols_->Define("HEIGHT", SymbolType::Label,
+                   std::make_shared<LiteralExpr>(25));
 
   // Act
   HandleEquDirective("SCREEN_SIZE", "WIDTH*HEIGHT", *symbols_);
@@ -755,8 +757,10 @@ TEST_F(CoreDirectiveHandlersTest, EquWithComplexExpression) {
  */
 TEST_F(CoreDirectiveHandlersTest, EquWithNestedExpressionAndSymbols) {
   // Arrange
-  symbols_->Define("BASE", SymbolType::Label, std::make_shared<LiteralExpr>(0x1000));
-  symbols_->Define("OFFSET", SymbolType::Label, std::make_shared<LiteralExpr>(0x10));
+  symbols_->Define("BASE", SymbolType::Label,
+                   std::make_shared<LiteralExpr>(0x1000));
+  symbols_->Define("OFFSET", SymbolType::Label,
+                   std::make_shared<LiteralExpr>(0x10));
 
   // Act
   HandleEquDirective("ADDR", "(BASE+OFFSET)*2", *symbols_);
@@ -787,7 +791,8 @@ TEST_F(CoreDirectiveHandlersTest, DsWithMultiplicationExpression) {
  */
 TEST_F(CoreDirectiveHandlersTest, DsWithSymbolAndArithmetic) {
   // Arrange
-  symbols_->Define("PAGE_SIZE", SymbolType::Label, std::make_shared<LiteralExpr>(256));
+  symbols_->Define("PAGE_SIZE", SymbolType::Label,
+                   std::make_shared<LiteralExpr>(256));
 
   // Act
   HandleDsDirective("PAGE_SIZE*4", *section_, *symbols_, current_address_);

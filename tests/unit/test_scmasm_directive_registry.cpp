@@ -114,7 +114,7 @@ TEST_F(DirectiveRegistryTest, HsDirectiveRegistered) {
  * @brief Test that .BS (bit string) directive is registered and works
  */
 TEST_F(DirectiveRegistryTest, BsDirectiveRegistered) {
-  std::string source = "  .BS 10101010\n";  // Binary string (8 bits = 1 byte)
+  std::string source = "  .BS 10101010\n"; // Binary string (8 bits = 1 byte)
   parser->Parse(source, section, symbols);
 
   // .BS should create a data atom
@@ -153,7 +153,7 @@ TEST_F(DirectiveRegistryTest, EndmAliasRegistered) {
   std::string source = "TEST .MA\n"
                        "     LDA #$00\n"
                        "     .ENDM\n"
-                       "     LDA #$FF\n";  // Code after macro should parse
+                       "     LDA #$FF\n"; // Code after macro should parse
 
   // .ENDM should work as alias for .EM
   EXPECT_NO_THROW(parser->Parse(source, section, symbols));
@@ -217,7 +217,8 @@ TEST_F(DirectiveRegistryTest, ControlFlowDirectivesSpecialHandled) {
 TEST_F(DirectiveRegistryTest, MismatchedControlFlowThrows) {
   // .ELSE without .DO should throw
   std::string source_else = "  .ELSE\n";
-  EXPECT_THROW(parser->Parse(source_else, section, symbols), std::runtime_error);
+  EXPECT_THROW(parser->Parse(source_else, section, symbols),
+               std::runtime_error);
 
   // .FIN without .DO should throw
   parser = std::make_unique<ScmasmSyntaxParser>();
@@ -240,7 +241,7 @@ TEST_F(DirectiveRegistryTest, DirectivesAreCaseInsensitive) {
   // Test lowercase directive
   std::string source_lower = "VAL1 .eq $1000\n";
   EXPECT_NO_THROW(parser->Parse(source_lower, section, symbols));
-  
+
   int64_t value;
   ASSERT_TRUE(symbols.Lookup("VAL1", value));
   EXPECT_EQ(value, 0x1000);
@@ -250,7 +251,7 @@ TEST_F(DirectiveRegistryTest, DirectivesAreCaseInsensitive) {
   section = Section();
   std::string source_mixed = "VAL2 .Eq $2000\n";
   EXPECT_NO_THROW(parser->Parse(source_mixed, section, symbols));
-  
+
   ASSERT_TRUE(symbols.Lookup("VAL2", value));
   EXPECT_EQ(value, 0x2000);
 }

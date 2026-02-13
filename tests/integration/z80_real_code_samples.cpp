@@ -4,8 +4,8 @@
 #include "xasm++/assembler.h"
 #include "xasm++/cpu/cpu_z80.h"
 #include "xasm++/syntax/edtasm_m80_plusplus_syntax.h"
-#include <gtest/gtest.h>
 #include <fstream>
+#include <gtest/gtest.h>
 #include <sstream>
 
 using namespace xasm;
@@ -26,20 +26,21 @@ protected:
   }
 
   // Helper to assemble code and return success
-  bool AssembleCode(const std::string& source, Section& section, ConcreteSymbolTable& symbols) {
+  bool AssembleCode(const std::string &source, Section &section,
+                    ConcreteSymbolTable &symbols) {
     try {
       parser->Parse(source, section, symbols);
       return true;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
       std::cerr << "Assembly error: " << e.what() << std::endl;
       return false;
     }
   }
 
   // Helper to count atoms of a specific type
-  size_t CountAtomType(const Section& section, AtomType type) {
+  size_t CountAtomType(const Section &section, AtomType type) {
     size_t count = 0;
-    for (const auto& atom : section.atoms) {
+    for (const auto &atom : section.atoms) {
       if (atom->type == type) {
         count++;
       }
@@ -102,7 +103,7 @@ TEST_F(Z80IntegrationTest, LargeFileWithManyLabels) {
 
   EXPECT_TRUE(AssembleCode(source.str(), section, symbols));
   EXPECT_EQ(section.atoms.size(), 2000); // 1000 labels + 1000 NOPs
-  
+
   // Verify symbols were created
   for (int i = 0; i < 1000; i++) {
     std::string label = "LABEL" + std::to_string(i);
@@ -122,7 +123,7 @@ TEST_F(Z80IntegrationTest, LargeDataBlock) {
   }
 
   EXPECT_TRUE(AssembleCode(source.str(), section, symbols));
-  
+
   // Should have ORG + 10240 data atoms
   EXPECT_EQ(section.atoms.size(), 10241);
   EXPECT_EQ(CountAtomType(section, AtomType::Org), 1);
@@ -149,7 +150,7 @@ TEST_F(Z80IntegrationTest, DeepConditionalNesting) {
 
   EXPECT_TRUE(AssembleCode(source.str(), section, symbols));
   ASSERT_EQ(section.atoms.size(), 1);
-  
+
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   EXPECT_EQ(data_atom->data[0], 0x42);
@@ -192,16 +193,16 @@ TEST_F(Z80IntegrationTest, M80StylePublicDeclaration) {
                        "EXIT:    HALT\n";
 
   EXPECT_TRUE(AssembleCode(source, section, symbols));
-  
+
   // Verify public symbols
   auto start = symbols.GetSymbol("START");
   auto init = symbols.GetSymbol("INIT");
   auto exit = symbols.GetSymbol("EXIT");
-  
+
   ASSERT_NE(start, nullptr);
   ASSERT_NE(init, nullptr);
   ASSERT_NE(exit, nullptr);
-  
+
   EXPECT_TRUE(start->is_exported);
   EXPECT_TRUE(init->is_exported);
   EXPECT_TRUE(exit->is_exported);
@@ -220,16 +221,16 @@ TEST_F(Z80IntegrationTest, M80StyleExternalReferences) {
                        "MSG:     DB \"Hello\",0\n";
 
   EXPECT_TRUE(AssembleCode(source, section, symbols));
-  
+
   // Verify external symbols
   auto printf = symbols.GetSymbol("PRINTF");
   auto scanf = symbols.GetSymbol("SCANF");
   auto exit = symbols.GetSymbol("EXIT");
-  
+
   ASSERT_NE(printf, nullptr);
   ASSERT_NE(scanf, nullptr);
   ASSERT_NE(exit, nullptr);
-  
+
   EXPECT_TRUE(printf->is_imported);
   EXPECT_TRUE(scanf->is_imported);
   EXPECT_TRUE(exit->is_imported);
@@ -246,12 +247,12 @@ TEST_F(Z80IntegrationTest, M80StyleHexNumbers) {
                        "         DB 0ABH,0CDH,0EFH\n";
 
   EXPECT_TRUE(AssembleCode(source, section, symbols));
-  
+
   // Verify ORG address
   auto org_atom = std::dynamic_pointer_cast<OrgAtom>(section.atoms[0]);
   ASSERT_NE(org_atom, nullptr);
   EXPECT_EQ(org_atom->address, 0x8000);
-  
+
   // Verify data
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[3]);
   ASSERT_NE(data_atom, nullptr);
@@ -280,11 +281,11 @@ TEST_F(Z80IntegrationTest, ZMACStyleLocalLabels) {
                        "         RET\n";
 
   EXPECT_TRUE(AssembleCode(source, section, symbols));
-  
+
   // Global labels should be defined
   EXPECT_TRUE(symbols.IsDefined("MAIN"));
   EXPECT_TRUE(symbols.IsDefined("SUB2"));
-  
+
   // Local labels are scoped to parent
   // (implementation may vary - just ensure it assembles)
 }
@@ -300,7 +301,7 @@ TEST_F(Z80IntegrationTest, ZMACStyleDollarHex) {
                        "         DB $AB,$CD,$EF\n";
 
   EXPECT_TRUE(AssembleCode(source, section, symbols));
-  
+
   auto org_atom = std::dynamic_pointer_cast<OrgAtom>(section.atoms[0]);
   ASSERT_NE(org_atom, nullptr);
   EXPECT_EQ(org_atom->address, 0x8000);
@@ -325,7 +326,7 @@ TEST_F(Z80IntegrationTest, Z80ASMStyleLocalLabels) {
                        "         RET\n";
 
   EXPECT_TRUE(AssembleCode(source, section, symbols));
-  
+
   // Global labels should be defined
   EXPECT_TRUE(symbols.IsDefined("MAIN"));
   EXPECT_TRUE(symbols.IsDefined("SUB2"));
@@ -353,14 +354,14 @@ TEST_F(Z80IntegrationTest, CPMBDOSCallPattern) {
                        "MSG:     DB 'Hello, CP/M!$'\n";
 
   EXPECT_TRUE(AssembleCode(source, section, symbols));
-  
+
   // Verify constants
   EXPECT_TRUE(symbols.IsDefined("BDOS"));
   EXPECT_TRUE(symbols.IsDefined("CONOUT"));
   EXPECT_TRUE(symbols.IsDefined("PRINT"));
   EXPECT_TRUE(symbols.IsDefined("START"));
   EXPECT_TRUE(symbols.IsDefined("MSG"));
-  
+
   // Verify ORG
   auto org_atom = std::dynamic_pointer_cast<OrgAtom>(section.atoms[0]);
   ASSERT_NE(org_atom, nullptr);
@@ -399,12 +400,12 @@ TEST_F(Z80IntegrationTest, InterruptHandlerPattern) {
                        "         RETI\n";
 
   EXPECT_TRUE(AssembleCode(source, section, symbols));
-  
+
   // Verify labels
   EXPECT_TRUE(symbols.IsDefined("START"));
   EXPECT_TRUE(symbols.IsDefined("LOOP"));
   EXPECT_TRUE(symbols.IsDefined("ISR"));
-  
+
   // Verify multiple ORG directives
   EXPECT_EQ(CountAtomType(section, AtomType::Org), 3);
 }
@@ -436,7 +437,7 @@ TEST_F(Z80IntegrationTest, LookupTablePattern) {
                        "         RET\n";
 
   EXPECT_TRUE(AssembleCode(source, section, symbols));
-  
+
   // Verify all labels
   EXPECT_TRUE(symbols.IsDefined("DISPATCH"));
   EXPECT_TRUE(symbols.IsDefined("CMD0"));
@@ -462,10 +463,10 @@ TEST_F(Z80IntegrationTest, MixedNumberFormats) {
                        "         DB 11111111B  ; Binary\n";
 
   EXPECT_TRUE(AssembleCode(source, section, symbols));
-  
+
   // All should produce same value
   ASSERT_EQ(section.atoms.size(), 6);
-  for (const auto& atom : section.atoms) {
+  for (const auto &atom : section.atoms) {
     auto data_atom = std::dynamic_pointer_cast<DataAtom>(atom);
     ASSERT_NE(data_atom, nullptr);
     ASSERT_EQ(data_atom->data.size(), 1);
@@ -487,7 +488,7 @@ TEST_F(Z80IntegrationTest, StringWithEscapes) {
                        "MSG3:    DB \"Tab\\tNewline\\n\",0\n";
 
   EXPECT_TRUE(AssembleCode(source, section, symbols));
-  
+
   // Verify strings were assembled
   EXPECT_TRUE(symbols.IsDefined("MSG1"));
   EXPECT_TRUE(symbols.IsDefined("MSG2"));
@@ -512,12 +513,12 @@ TEST_F(Z80IntegrationTest, ComplexExpressions) {
                        "         DB (SIZE+1)/2\n";
 
   EXPECT_TRUE(AssembleCode(source, section, symbols));
-  
+
   // Verify expressions evaluated correctly
   auto org_atom = std::dynamic_pointer_cast<OrgAtom>(section.atoms[0]);
   ASSERT_NE(org_atom, nullptr);
   EXPECT_EQ(org_atom->address, 0x8100); // 0x8000 + 0x100
-  
+
   auto data1 = std::dynamic_pointer_cast<DataAtom>(section.atoms[1]);
   ASSERT_NE(data1, nullptr);
   EXPECT_EQ(data1->data[0], 128); // 256/2
@@ -537,16 +538,17 @@ TEST_F(Z80IntegrationTest, RapidParsingPerformance) {
                        "         RET\n";
 
   auto start = std::chrono::high_resolution_clock::now();
-  
+
   for (int i = 0; i < 100; i++) {
     ConcreteSymbolTable symbols;
     Section section("test", 0);
     EXPECT_TRUE(AssembleCode(source, section, symbols));
   }
-  
+
   auto end = std::chrono::high_resolution_clock::now();
-  auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-  
+  auto duration =
+      std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+
   // Should complete in under 1 second
   EXPECT_LT(duration.count(), 1000);
 }

@@ -12,8 +12,8 @@
  * - Parentheses and brackets
  */
 
-#include "xasm++/syntax/edtasm_m80_plusplus_syntax.h"
 #include "xasm++/symbol.h"
+#include "xasm++/syntax/edtasm_m80_plusplus_syntax.h"
 #include <gtest/gtest.h>
 
 using namespace xasm;
@@ -74,10 +74,10 @@ TEST_F(Z80ExpressionTest, Modulo) {
 }
 
 TEST_F(Z80ExpressionTest, ComplexArithmetic) {
-  EXPECT_EQ(EvalExpr("10 + 5 * 2"), 20);      // Precedence: * before +
-  EXPECT_EQ(EvalExpr("(10 + 5) * 2"), 30);    // Parentheses override
-  EXPECT_EQ(EvalExpr("100 - 20 / 4"), 95);    // Precedence: / before -
-  EXPECT_EQ(EvalExpr("(100 - 20) / 4"), 20);  // Parentheses override
+  EXPECT_EQ(EvalExpr("10 + 5 * 2"), 20);     // Precedence: * before +
+  EXPECT_EQ(EvalExpr("(10 + 5) * 2"), 30);   // Parentheses override
+  EXPECT_EQ(EvalExpr("100 - 20 / 4"), 95);   // Precedence: / before -
+  EXPECT_EQ(EvalExpr("(100 - 20) / 4"), 20); // Parentheses override
 }
 
 // ============================================================================
@@ -215,35 +215,37 @@ TEST_F(Z80ExpressionTest, HighLowCombination) {
 // ============================================================================
 
 TEST_F(Z80ExpressionTest, ArithmeticPrecedence) {
-  EXPECT_EQ(EvalExpr("2 + 3 * 4"), 14);       // * before +
-  EXPECT_EQ(EvalExpr("10 - 8 / 2"), 6);       // / before -
-  EXPECT_EQ(EvalExpr("15 % 4 + 2"), 5);       // % before +
+  EXPECT_EQ(EvalExpr("2 + 3 * 4"), 14); // * before +
+  EXPECT_EQ(EvalExpr("10 - 8 / 2"), 6); // / before -
+  EXPECT_EQ(EvalExpr("15 % 4 + 2"), 5); // % before +
 }
 
 TEST_F(Z80ExpressionTest, BitwisePrecedence) {
-  EXPECT_EQ(EvalExpr("8 | 4 & 2"), 8);        // & before |
-  EXPECT_EQ(EvalExpr("8 ^ 4 | 2"), 14);       // ^ before |
+  EXPECT_EQ(EvalExpr("8 | 4 & 2"), 8);  // & before |
+  EXPECT_EQ(EvalExpr("8 ^ 4 | 2"), 14); // ^ before |
 }
 
 TEST_F(Z80ExpressionTest, ShiftPrecedence) {
-  EXPECT_EQ(EvalExpr("4 << 2 + 1"), 32);      // + before <<: 4 << (2+1) = 4 << 3 = 32
-  EXPECT_EQ(EvalExpr("16 >> 2 - 1"), 8);      // - before >>: 16 >> (2-1) = 16 >> 1 = 8
+  EXPECT_EQ(EvalExpr("4 << 2 + 1"),
+            32); // + before <<: 4 << (2+1) = 4 << 3 = 32
+  EXPECT_EQ(EvalExpr("16 >> 2 - 1"),
+            8); // - before >>: 16 >> (2-1) = 16 >> 1 = 8
 }
 
 TEST_F(Z80ExpressionTest, ComparisonPrecedence) {
-  EXPECT_EQ(EvalExpr("5 + 3 > 7"), 1);        // + before >
-  EXPECT_EQ(EvalExpr("10 - 5 < 3"), 0);       // - before <
+  EXPECT_EQ(EvalExpr("5 + 3 > 7"), 1);  // + before >
+  EXPECT_EQ(EvalExpr("10 - 5 < 3"), 0); // - before <
 }
 
 TEST_F(Z80ExpressionTest, LogicalPrecedence) {
-  EXPECT_EQ(EvalExpr("1 || 0 && 0"), 1);      // && before ||
-  EXPECT_EQ(EvalExpr("0 && 1 || 1"), 1);      // && before ||
+  EXPECT_EQ(EvalExpr("1 || 0 && 0"), 1); // && before ||
+  EXPECT_EQ(EvalExpr("0 && 1 || 1"), 1); // && before ||
 }
 
 TEST_F(Z80ExpressionTest, MixedPrecedence) {
-  EXPECT_EQ(EvalExpr("5 + 3 * 2 & 0xFF"), 11);           // *, +, & in order
-  EXPECT_EQ(EvalExpr("10 << 1 | 4 >> 1"), 22);           // <<, >>, | in order
-  EXPECT_EQ(EvalExpr("5 * 2 == 10 && 3 < 5"), 1);       // *, ==, <, && in order
+  EXPECT_EQ(EvalExpr("5 + 3 * 2 & 0xFF"), 11);    // *, +, & in order
+  EXPECT_EQ(EvalExpr("10 << 1 | 4 >> 1"), 22);    // <<, >>, | in order
+  EXPECT_EQ(EvalExpr("5 * 2 == 10 && 3 < 5"), 1); // *, ==, <, && in order
 }
 
 // ============================================================================
@@ -318,7 +320,7 @@ TEST_F(Z80ExpressionTest, SymbolArithmetic) {
 
 TEST_F(Z80ExpressionTest, ComplexExpression1) {
   // (ADDR + SIZE * 2) & 0xFFFF
-  EXPECT_EQ(EvalExpr("(ADDR + SIZE * 2) & 0xFFFF"), 
+  EXPECT_EQ(EvalExpr("(ADDR + SIZE * 2) & 0xFFFF"),
             (0x8000 + 256 * 2) & 0xFFFF);
 }
 

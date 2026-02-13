@@ -85,8 +85,8 @@ void SimpleSyntaxParser::InitializeDirectives() {
       value = Trim(value);
       if (!value.empty()) {
         uint32_t word = ParseHex(value);
-        bytes.push_back(static_cast<uint8_t>(word & 0xFF));         // Low byte
-        bytes.push_back(static_cast<uint8_t>((word >> 8) & 0xFF));  // High byte
+        bytes.push_back(static_cast<uint8_t>(word & 0xFF));        // Low byte
+        bytes.push_back(static_cast<uint8_t>((word >> 8) & 0xFF)); // High byte
       }
     }
 

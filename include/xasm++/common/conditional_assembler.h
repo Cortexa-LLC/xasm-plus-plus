@@ -76,7 +76,8 @@ namespace xasm {
  * @endcode
  *
  * @par Thread Safety
- * Not thread-safe. Each parser should have its own ConditionalAssembler instance.
+ * Not thread-safe. Each parser should have its own ConditionalAssembler
+ * instance.
  */
 class ConditionalAssembler {
 public:
