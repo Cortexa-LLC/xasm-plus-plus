@@ -250,10 +250,25 @@ std::vector<uint8_t> Cpu6502::EncodeSTA(uint16_t operand,
 std::vector<uint8_t> Cpu6502::EncodeJMP(uint16_t operand,
                                         AddressingMode mode) const {
   static const OpcodeTable JMP_TABLE = {
+      .immediate = std::nullopt,
+      .zero_page = std::nullopt,
+      .zero_page_x = std::nullopt,
+      .zero_page_y = std::nullopt,
       .absolute = Opcodes::JMP_ABS,
+      .absolute_x = std::nullopt,
+      .absolute_y = std::nullopt,
       .indirect = Opcodes::JMP_IND,
-      .absolute_indexed_indirect = Opcodes::JMP_AIX // 65C02+
-  };
+      .indirect_x = std::nullopt,
+      .indirect_y = std::nullopt,
+      .accumulator = std::nullopt,
+      .relative = std::nullopt,
+      .indirect_zero_page = std::nullopt,
+      .absolute_indexed_indirect = Opcodes::JMP_AIX, // 65C02+
+      .absolute_long = std::nullopt,
+      .indirect_long = std::nullopt,
+      .indirect_long_indexed_y = std::nullopt,
+      .stack_relative = std::nullopt,
+      .stack_relative_indirect_indexed_y = std::nullopt};
   return EncodeWithTable(JMP_TABLE, operand, mode);
 }
 
@@ -407,46 +422,104 @@ std::vector<uint8_t> Cpu6502::EncodeEOR(uint16_t operand,
 // LDX - Load X Register
 std::vector<uint8_t> Cpu6502::EncodeLDX(uint16_t operand,
                                         AddressingMode mode) const {
-  static const OpcodeTable LDX_TABLE = {.immediate = Opcodes::LDX_IMM,
-                                        .zero_page = Opcodes::LDX_ZP,
-                                        .zero_page_x = std::nullopt,
-                                        .zero_page_y = Opcodes::LDX_ZPY,
-                                        .absolute = Opcodes::LDX_ABS,
-                                        .absolute_x = std::nullopt,
-                                        .absolute_y = Opcodes::LDX_ABY};
+  static const OpcodeTable LDX_TABLE = {
+      .immediate = Opcodes::LDX_IMM,
+      .zero_page = Opcodes::LDX_ZP,
+      .zero_page_x = std::nullopt,
+      .zero_page_y = Opcodes::LDX_ZPY,
+      .absolute = Opcodes::LDX_ABS,
+      .absolute_x = std::nullopt,
+      .absolute_y = Opcodes::LDX_ABY,
+      .indirect = std::nullopt,
+      .indirect_x = std::nullopt,
+      .indirect_y = std::nullopt,
+      .accumulator = std::nullopt,
+      .relative = std::nullopt,
+      .indirect_zero_page = std::nullopt,
+      .absolute_indexed_indirect = std::nullopt,
+      .absolute_long = std::nullopt,
+      .indirect_long = std::nullopt,
+      .indirect_long_indexed_y = std::nullopt,
+      .stack_relative = std::nullopt,
+      .stack_relative_indirect_indexed_y = std::nullopt};
   return EncodeWithTable(LDX_TABLE, operand, mode);
 }
 
 // LDY - Load Y Register
 std::vector<uint8_t> Cpu6502::EncodeLDY(uint16_t operand,
                                         AddressingMode mode) const {
-  static const OpcodeTable LDY_TABLE = {.immediate = Opcodes::LDY_IMM,
-                                        .zero_page = Opcodes::LDY_ZP,
-                                        .zero_page_x = Opcodes::LDY_ZPX,
-                                        .zero_page_y = std::nullopt,
-                                        .absolute = Opcodes::LDY_ABS,
-                                        .absolute_x = Opcodes::LDY_ABX,
-                                        .absolute_y = std::nullopt};
+  static const OpcodeTable LDY_TABLE = {
+      .immediate = Opcodes::LDY_IMM,
+      .zero_page = Opcodes::LDY_ZP,
+      .zero_page_x = Opcodes::LDY_ZPX,
+      .zero_page_y = std::nullopt,
+      .absolute = Opcodes::LDY_ABS,
+      .absolute_x = Opcodes::LDY_ABX,
+      .absolute_y = std::nullopt,
+      .indirect = std::nullopt,
+      .indirect_x = std::nullopt,
+      .indirect_y = std::nullopt,
+      .accumulator = std::nullopt,
+      .relative = std::nullopt,
+      .indirect_zero_page = std::nullopt,
+      .absolute_indexed_indirect = std::nullopt,
+      .absolute_long = std::nullopt,
+      .indirect_long = std::nullopt,
+      .indirect_long_indexed_y = std::nullopt,
+      .stack_relative = std::nullopt,
+      .stack_relative_indirect_indexed_y = std::nullopt};
   return EncodeWithTable(LDY_TABLE, operand, mode);
 }
 
 // STX - Store X Register
 std::vector<uint8_t> Cpu6502::EncodeSTX(uint16_t operand,
                                         AddressingMode mode) const {
-  static const OpcodeTable STX_TABLE = {.zero_page = Opcodes::STX_ZP,
-                                        .zero_page_x = std::nullopt,
-                                        .zero_page_y = Opcodes::STX_ZPY,
-                                        .absolute = Opcodes::STX_ABS};
+  static const OpcodeTable STX_TABLE = {
+      .immediate = std::nullopt,
+      .zero_page = Opcodes::STX_ZP,
+      .zero_page_x = std::nullopt,
+      .zero_page_y = Opcodes::STX_ZPY,
+      .absolute = Opcodes::STX_ABS,
+      .absolute_x = std::nullopt,
+      .absolute_y = std::nullopt,
+      .indirect = std::nullopt,
+      .indirect_x = std::nullopt,
+      .indirect_y = std::nullopt,
+      .accumulator = std::nullopt,
+      .relative = std::nullopt,
+      .indirect_zero_page = std::nullopt,
+      .absolute_indexed_indirect = std::nullopt,
+      .absolute_long = std::nullopt,
+      .indirect_long = std::nullopt,
+      .indirect_long_indexed_y = std::nullopt,
+      .stack_relative = std::nullopt,
+      .stack_relative_indirect_indexed_y = std::nullopt};
   return EncodeWithTable(STX_TABLE, operand, mode);
 }
 
 // STY - Store Y Register
 std::vector<uint8_t> Cpu6502::EncodeSTY(uint16_t operand,
                                         AddressingMode mode) const {
-  static const OpcodeTable STY_TABLE = {.zero_page = Opcodes::STY_ZP,
-                                        .zero_page_x = Opcodes::STY_ZPX,
-                                        .zero_page_y = std::nullopt,
-                                        .absolute = Opcodes::STY_ABS};
+  static const OpcodeTable STY_TABLE = {
+      .immediate = std::nullopt,
+      .zero_page = Opcodes::STY_ZP,
+      .zero_page_x = Opcodes::STY_ZPX,
+      .zero_page_y = std::nullopt,
+      .absolute = Opcodes::STY_ABS,
+      .absolute_x = std::nullopt,
+      .absolute_y = std::nullopt,
+      .indirect = std::nullopt,
+      .indirect_x = std::nullopt,
+      .indirect_y = std::nullopt,
+      .accumulator = std::nullopt,
+      .relative = std::nullopt,
+      .indirect_zero_page = std::nullopt,
+      .absolute_indexed_indirect = std::nullopt,
+      .absolute_long = std::nullopt,
+      .indirect_long = std::nullopt,
+      .indirect_long_indexed_y = std::nullopt,
+      .stack_relative = std::nullopt,
+      .stack_relative_indirect_indexed_y = std::nullopt};
   return EncodeWithTable(STY_TABLE, operand, mode);
 }
 
@@ -455,34 +528,78 @@ std::vector<uint8_t> Cpu6502::EncodeSTY(uint16_t operand,
 // CMP - Compare Accumulator
 std::vector<uint8_t> Cpu6502::EncodeCMP(uint16_t operand,
                                         AddressingMode mode) const {
-  static const OpcodeTable CMP_TABLE = {.immediate = Opcodes::CMP_IMM,
-                                        .zero_page = Opcodes::CMP_ZP,
-                                        .zero_page_x = Opcodes::CMP_ZPX,
-                                        .zero_page_y = std::nullopt,
-                                        .absolute = Opcodes::CMP_ABS,
-                                        .absolute_x = Opcodes::CMP_ABX,
-                                        .absolute_y = Opcodes::CMP_ABY,
-                                        .indirect = std::nullopt,
-                                        .indirect_x = Opcodes::CMP_INX,
-                                        .indirect_y = Opcodes::CMP_INY};
+  static const OpcodeTable CMP_TABLE = {
+      .immediate = Opcodes::CMP_IMM,
+      .zero_page = Opcodes::CMP_ZP,
+      .zero_page_x = Opcodes::CMP_ZPX,
+      .zero_page_y = std::nullopt,
+      .absolute = Opcodes::CMP_ABS,
+      .absolute_x = Opcodes::CMP_ABX,
+      .absolute_y = Opcodes::CMP_ABY,
+      .indirect = std::nullopt,
+      .indirect_x = Opcodes::CMP_INX,
+      .indirect_y = Opcodes::CMP_INY,
+      .accumulator = std::nullopt,
+      .relative = std::nullopt,
+      .indirect_zero_page = std::nullopt,
+      .absolute_indexed_indirect = std::nullopt,
+      .absolute_long = std::nullopt,
+      .indirect_long = std::nullopt,
+      .indirect_long_indexed_y = std::nullopt,
+      .stack_relative = std::nullopt,
+      .stack_relative_indirect_indexed_y = std::nullopt};
   return EncodeWithTable(CMP_TABLE, operand, mode);
 }
 
 // CPX - Compare X Register
 std::vector<uint8_t> Cpu6502::EncodeCPX(uint16_t operand,
                                         AddressingMode mode) const {
-  static const OpcodeTable CPX_TABLE = {.immediate = Opcodes::CPX_IMM,
-                                        .zero_page = Opcodes::CPX_ZP,
-                                        .absolute = Opcodes::CPX_ABS};
+  static const OpcodeTable CPX_TABLE = {
+      .immediate = Opcodes::CPX_IMM,
+      .zero_page = Opcodes::CPX_ZP,
+      .zero_page_x = std::nullopt,
+      .zero_page_y = std::nullopt,
+      .absolute = Opcodes::CPX_ABS,
+      .absolute_x = std::nullopt,
+      .absolute_y = std::nullopt,
+      .indirect = std::nullopt,
+      .indirect_x = std::nullopt,
+      .indirect_y = std::nullopt,
+      .accumulator = std::nullopt,
+      .relative = std::nullopt,
+      .indirect_zero_page = std::nullopt,
+      .absolute_indexed_indirect = std::nullopt,
+      .absolute_long = std::nullopt,
+      .indirect_long = std::nullopt,
+      .indirect_long_indexed_y = std::nullopt,
+      .stack_relative = std::nullopt,
+      .stack_relative_indirect_indexed_y = std::nullopt};
   return EncodeWithTable(CPX_TABLE, operand, mode);
 }
 
 // CPY - Compare Y Register
 std::vector<uint8_t> Cpu6502::EncodeCPY(uint16_t operand,
                                         AddressingMode mode) const {
-  static const OpcodeTable CPY_TABLE = {.immediate = Opcodes::CPY_IMM,
-                                        .zero_page = Opcodes::CPY_ZP,
-                                        .absolute = Opcodes::CPY_ABS};
+  static const OpcodeTable CPY_TABLE = {
+      .immediate = Opcodes::CPY_IMM,
+      .zero_page = Opcodes::CPY_ZP,
+      .zero_page_x = std::nullopt,
+      .zero_page_y = std::nullopt,
+      .absolute = Opcodes::CPY_ABS,
+      .absolute_x = std::nullopt,
+      .absolute_y = std::nullopt,
+      .indirect = std::nullopt,
+      .indirect_x = std::nullopt,
+      .indirect_y = std::nullopt,
+      .accumulator = std::nullopt,
+      .relative = std::nullopt,
+      .indirect_zero_page = std::nullopt,
+      .absolute_indexed_indirect = std::nullopt,
+      .absolute_long = std::nullopt,
+      .indirect_long = std::nullopt,
+      .indirect_long_indexed_y = std::nullopt,
+      .stack_relative = std::nullopt,
+      .stack_relative_indirect_indexed_y = std::nullopt};
   return EncodeWithTable(CPY_TABLE, operand, mode);
 }
 
@@ -491,56 +608,208 @@ std::vector<uint8_t> Cpu6502::EncodeCPY(uint16_t operand,
 // BEQ - Branch if Equal
 std::vector<uint8_t> Cpu6502::EncodeBEQ(uint16_t operand,
                                         AddressingMode mode) const {
-  static const OpcodeTable BEQ_TABLE = {.relative = Opcodes::BEQ};
+  static const OpcodeTable BEQ_TABLE = {
+      .immediate = std::nullopt,
+      .zero_page = std::nullopt,
+      .zero_page_x = std::nullopt,
+      .zero_page_y = std::nullopt,
+      .absolute = std::nullopt,
+      .absolute_x = std::nullopt,
+      .absolute_y = std::nullopt,
+      .indirect = std::nullopt,
+      .indirect_x = std::nullopt,
+      .indirect_y = std::nullopt,
+      .accumulator = std::nullopt,
+      .relative = Opcodes::BEQ,
+      .indirect_zero_page = std::nullopt,
+      .absolute_indexed_indirect = std::nullopt,
+      .absolute_long = std::nullopt,
+      .indirect_long = std::nullopt,
+      .indirect_long_indexed_y = std::nullopt,
+      .stack_relative = std::nullopt,
+      .stack_relative_indirect_indexed_y = std::nullopt};
   return EncodeWithTable(BEQ_TABLE, operand, mode);
 }
 
 // BNE - Branch if Not Equal
 std::vector<uint8_t> Cpu6502::EncodeBNE(uint16_t operand,
                                         AddressingMode mode) const {
-  static const OpcodeTable BNE_TABLE = {.relative = Opcodes::BNE};
+  static const OpcodeTable BNE_TABLE = {
+      .immediate = std::nullopt,
+      .zero_page = std::nullopt,
+      .zero_page_x = std::nullopt,
+      .zero_page_y = std::nullopt,
+      .absolute = std::nullopt,
+      .absolute_x = std::nullopt,
+      .absolute_y = std::nullopt,
+      .indirect = std::nullopt,
+      .indirect_x = std::nullopt,
+      .indirect_y = std::nullopt,
+      .accumulator = std::nullopt,
+      .relative = Opcodes::BNE,
+      .indirect_zero_page = std::nullopt,
+      .absolute_indexed_indirect = std::nullopt,
+      .absolute_long = std::nullopt,
+      .indirect_long = std::nullopt,
+      .indirect_long_indexed_y = std::nullopt,
+      .stack_relative = std::nullopt,
+      .stack_relative_indirect_indexed_y = std::nullopt};
   return EncodeWithTable(BNE_TABLE, operand, mode);
 }
 
 // BCC - Branch if Carry Clear
 std::vector<uint8_t> Cpu6502::EncodeBCC(uint16_t operand,
                                         AddressingMode mode) const {
-  static const OpcodeTable BCC_TABLE = {.relative = Opcodes::BCC};
+  static const OpcodeTable BCC_TABLE = {
+      .immediate = std::nullopt,
+      .zero_page = std::nullopt,
+      .zero_page_x = std::nullopt,
+      .zero_page_y = std::nullopt,
+      .absolute = std::nullopt,
+      .absolute_x = std::nullopt,
+      .absolute_y = std::nullopt,
+      .indirect = std::nullopt,
+      .indirect_x = std::nullopt,
+      .indirect_y = std::nullopt,
+      .accumulator = std::nullopt,
+      .relative = Opcodes::BCC,
+      .indirect_zero_page = std::nullopt,
+      .absolute_indexed_indirect = std::nullopt,
+      .absolute_long = std::nullopt,
+      .indirect_long = std::nullopt,
+      .indirect_long_indexed_y = std::nullopt,
+      .stack_relative = std::nullopt,
+      .stack_relative_indirect_indexed_y = std::nullopt};
   return EncodeWithTable(BCC_TABLE, operand, mode);
 }
 
 // BCS - Branch if Carry Set
 std::vector<uint8_t> Cpu6502::EncodeBCS(uint16_t operand,
                                         AddressingMode mode) const {
-  static const OpcodeTable BCS_TABLE = {.relative = Opcodes::BCS};
+  static const OpcodeTable BCS_TABLE = {
+      .immediate = std::nullopt,
+      .zero_page = std::nullopt,
+      .zero_page_x = std::nullopt,
+      .zero_page_y = std::nullopt,
+      .absolute = std::nullopt,
+      .absolute_x = std::nullopt,
+      .absolute_y = std::nullopt,
+      .indirect = std::nullopt,
+      .indirect_x = std::nullopt,
+      .indirect_y = std::nullopt,
+      .accumulator = std::nullopt,
+      .relative = Opcodes::BCS,
+      .indirect_zero_page = std::nullopt,
+      .absolute_indexed_indirect = std::nullopt,
+      .absolute_long = std::nullopt,
+      .indirect_long = std::nullopt,
+      .indirect_long_indexed_y = std::nullopt,
+      .stack_relative = std::nullopt,
+      .stack_relative_indirect_indexed_y = std::nullopt};
   return EncodeWithTable(BCS_TABLE, operand, mode);
 }
 
 // BMI - Branch if Minus
 std::vector<uint8_t> Cpu6502::EncodeBMI(uint16_t operand,
                                         AddressingMode mode) const {
-  static const OpcodeTable BMI_TABLE = {.relative = Opcodes::BMI};
+  static const OpcodeTable BMI_TABLE = {
+      .immediate = std::nullopt,
+      .zero_page = std::nullopt,
+      .zero_page_x = std::nullopt,
+      .zero_page_y = std::nullopt,
+      .absolute = std::nullopt,
+      .absolute_x = std::nullopt,
+      .absolute_y = std::nullopt,
+      .indirect = std::nullopt,
+      .indirect_x = std::nullopt,
+      .indirect_y = std::nullopt,
+      .accumulator = std::nullopt,
+      .relative = Opcodes::BMI,
+      .indirect_zero_page = std::nullopt,
+      .absolute_indexed_indirect = std::nullopt,
+      .absolute_long = std::nullopt,
+      .indirect_long = std::nullopt,
+      .indirect_long_indexed_y = std::nullopt,
+      .stack_relative = std::nullopt,
+      .stack_relative_indirect_indexed_y = std::nullopt};
   return EncodeWithTable(BMI_TABLE, operand, mode);
 }
 
 // BPL - Branch if Plus
 std::vector<uint8_t> Cpu6502::EncodeBPL(uint16_t operand,
                                         AddressingMode mode) const {
-  static const OpcodeTable BPL_TABLE = {.relative = Opcodes::BPL};
+  static const OpcodeTable BPL_TABLE = {
+      .immediate = std::nullopt,
+      .zero_page = std::nullopt,
+      .zero_page_x = std::nullopt,
+      .zero_page_y = std::nullopt,
+      .absolute = std::nullopt,
+      .absolute_x = std::nullopt,
+      .absolute_y = std::nullopt,
+      .indirect = std::nullopt,
+      .indirect_x = std::nullopt,
+      .indirect_y = std::nullopt,
+      .accumulator = std::nullopt,
+      .relative = Opcodes::BPL,
+      .indirect_zero_page = std::nullopt,
+      .absolute_indexed_indirect = std::nullopt,
+      .absolute_long = std::nullopt,
+      .indirect_long = std::nullopt,
+      .indirect_long_indexed_y = std::nullopt,
+      .stack_relative = std::nullopt,
+      .stack_relative_indirect_indexed_y = std::nullopt};
   return EncodeWithTable(BPL_TABLE, operand, mode);
 }
 
 // BVC - Branch if Overflow Clear
 std::vector<uint8_t> Cpu6502::EncodeBVC(uint16_t operand,
                                         AddressingMode mode) const {
-  static const OpcodeTable BVC_TABLE = {.relative = Opcodes::BVC};
+  static const OpcodeTable BVC_TABLE = {
+      .immediate = std::nullopt,
+      .zero_page = std::nullopt,
+      .zero_page_x = std::nullopt,
+      .zero_page_y = std::nullopt,
+      .absolute = std::nullopt,
+      .absolute_x = std::nullopt,
+      .absolute_y = std::nullopt,
+      .indirect = std::nullopt,
+      .indirect_x = std::nullopt,
+      .indirect_y = std::nullopt,
+      .accumulator = std::nullopt,
+      .relative = Opcodes::BVC,
+      .indirect_zero_page = std::nullopt,
+      .absolute_indexed_indirect = std::nullopt,
+      .absolute_long = std::nullopt,
+      .indirect_long = std::nullopt,
+      .indirect_long_indexed_y = std::nullopt,
+      .stack_relative = std::nullopt,
+      .stack_relative_indirect_indexed_y = std::nullopt};
   return EncodeWithTable(BVC_TABLE, operand, mode);
 }
 
 // BVS - Branch if Overflow Set
 std::vector<uint8_t> Cpu6502::EncodeBVS(uint16_t operand,
                                         AddressingMode mode) const {
-  static const OpcodeTable BVS_TABLE = {.relative = Opcodes::BVS};
+  static const OpcodeTable BVS_TABLE = {
+      .immediate = std::nullopt,
+      .zero_page = std::nullopt,
+      .zero_page_x = std::nullopt,
+      .zero_page_y = std::nullopt,
+      .absolute = std::nullopt,
+      .absolute_x = std::nullopt,
+      .absolute_y = std::nullopt,
+      .indirect = std::nullopt,
+      .indirect_x = std::nullopt,
+      .indirect_y = std::nullopt,
+      .accumulator = std::nullopt,
+      .relative = Opcodes::BVS,
+      .indirect_zero_page = std::nullopt,
+      .absolute_indexed_indirect = std::nullopt,
+      .absolute_long = std::nullopt,
+      .indirect_long = std::nullopt,
+      .indirect_long_indexed_y = std::nullopt,
+      .stack_relative = std::nullopt,
+      .stack_relative_indirect_indexed_y = std::nullopt};
   return EncodeWithTable(BVS_TABLE, operand, mode);
 }
 
@@ -561,20 +830,52 @@ std::vector<uint8_t> Cpu6502::EncodeDEY() const { return {Opcodes::DEY}; }
 // INC - Increment Memory
 std::vector<uint8_t> Cpu6502::EncodeINC(uint16_t operand,
                                         AddressingMode mode) const {
-  static const OpcodeTable INC_TABLE = {.zero_page = Opcodes::INC_ZP,
-                                        .zero_page_x = Opcodes::INC_ZPX,
-                                        .absolute = Opcodes::INC_ABS,
-                                        .absolute_x = Opcodes::INC_ABX};
+  static const OpcodeTable INC_TABLE = {
+      .immediate = std::nullopt,
+      .zero_page = Opcodes::INC_ZP,
+      .zero_page_x = Opcodes::INC_ZPX,
+      .zero_page_y = std::nullopt,
+      .absolute = Opcodes::INC_ABS,
+      .absolute_x = Opcodes::INC_ABX,
+      .absolute_y = std::nullopt,
+      .indirect = std::nullopt,
+      .indirect_x = std::nullopt,
+      .indirect_y = std::nullopt,
+      .accumulator = std::nullopt,
+      .relative = std::nullopt,
+      .indirect_zero_page = std::nullopt,
+      .absolute_indexed_indirect = std::nullopt,
+      .absolute_long = std::nullopt,
+      .indirect_long = std::nullopt,
+      .indirect_long_indexed_y = std::nullopt,
+      .stack_relative = std::nullopt,
+      .stack_relative_indirect_indexed_y = std::nullopt};
   return EncodeWithTable(INC_TABLE, operand, mode);
 }
 
 // DEC - Decrement Memory
 std::vector<uint8_t> Cpu6502::EncodeDEC(uint16_t operand,
                                         AddressingMode mode) const {
-  static const OpcodeTable DEC_TABLE = {.zero_page = Opcodes::DEC_ZP,
-                                        .zero_page_x = Opcodes::DEC_ZPX,
-                                        .absolute = Opcodes::DEC_ABS,
-                                        .absolute_x = Opcodes::DEC_ABX};
+  static const OpcodeTable DEC_TABLE = {
+      .immediate = std::nullopt,
+      .zero_page = Opcodes::DEC_ZP,
+      .zero_page_x = Opcodes::DEC_ZPX,
+      .zero_page_y = std::nullopt,
+      .absolute = Opcodes::DEC_ABS,
+      .absolute_x = Opcodes::DEC_ABX,
+      .absolute_y = std::nullopt,
+      .indirect = std::nullopt,
+      .indirect_x = std::nullopt,
+      .indirect_y = std::nullopt,
+      .accumulator = std::nullopt,
+      .relative = std::nullopt,
+      .indirect_zero_page = std::nullopt,
+      .absolute_indexed_indirect = std::nullopt,
+      .absolute_long = std::nullopt,
+      .indirect_long = std::nullopt,
+      .indirect_long_indexed_y = std::nullopt,
+      .stack_relative = std::nullopt,
+      .stack_relative_indirect_indexed_y = std::nullopt};
   return EncodeWithTable(DEC_TABLE, operand, mode);
 }
 
@@ -597,7 +898,26 @@ std::vector<uint8_t> Cpu6502::EncodePLP() const { return {Opcodes::PLP}; }
 // JSR - Jump to Subroutine
 std::vector<uint8_t> Cpu6502::EncodeJSR(uint16_t operand,
                                         AddressingMode mode) const {
-  static const OpcodeTable JSR_TABLE = {.absolute = Opcodes::JSR};
+  static const OpcodeTable JSR_TABLE = {
+      .immediate = std::nullopt,
+      .zero_page = std::nullopt,
+      .zero_page_x = std::nullopt,
+      .zero_page_y = std::nullopt,
+      .absolute = Opcodes::JSR,
+      .absolute_x = std::nullopt,
+      .absolute_y = std::nullopt,
+      .indirect = std::nullopt,
+      .indirect_x = std::nullopt,
+      .indirect_y = std::nullopt,
+      .accumulator = std::nullopt,
+      .relative = std::nullopt,
+      .indirect_zero_page = std::nullopt,
+      .absolute_indexed_indirect = std::nullopt,
+      .absolute_long = std::nullopt,
+      .indirect_long = std::nullopt,
+      .indirect_long_indexed_y = std::nullopt,
+      .stack_relative = std::nullopt,
+      .stack_relative_indirect_indexed_y = std::nullopt};
   return EncodeWithTable(JSR_TABLE, operand, mode);
 }
 
@@ -654,22 +974,52 @@ std::vector<uint8_t> Cpu6502::EncodeBIT(uint16_t operand,
 // ASL - Arithmetic Shift Left
 std::vector<uint8_t> Cpu6502::EncodeASL(uint16_t operand,
                                         AddressingMode mode) const {
-  static const OpcodeTable ASL_TABLE = {.zero_page = Opcodes::ASL_ZP,
-                                        .zero_page_x = Opcodes::ASL_ZPX,
-                                        .absolute = Opcodes::ASL_ABS,
-                                        .absolute_x = Opcodes::ASL_ABX,
-                                        .accumulator = Opcodes::ASL_ACC};
+  static const OpcodeTable ASL_TABLE = {
+      .immediate = std::nullopt,
+      .zero_page = Opcodes::ASL_ZP,
+      .zero_page_x = Opcodes::ASL_ZPX,
+      .zero_page_y = std::nullopt,
+      .absolute = Opcodes::ASL_ABS,
+      .absolute_x = Opcodes::ASL_ABX,
+      .absolute_y = std::nullopt,
+      .indirect = std::nullopt,
+      .indirect_x = std::nullopt,
+      .indirect_y = std::nullopt,
+      .accumulator = Opcodes::ASL_ACC,
+      .relative = std::nullopt,
+      .indirect_zero_page = std::nullopt,
+      .absolute_indexed_indirect = std::nullopt,
+      .absolute_long = std::nullopt,
+      .indirect_long = std::nullopt,
+      .indirect_long_indexed_y = std::nullopt,
+      .stack_relative = std::nullopt,
+      .stack_relative_indirect_indexed_y = std::nullopt};
   return EncodeWithTable(ASL_TABLE, operand, mode);
 }
 
 // LSR - Logical Shift Right
 std::vector<uint8_t> Cpu6502::EncodeLSR(uint16_t operand,
                                         AddressingMode mode) const {
-  static const OpcodeTable LSR_TABLE = {.zero_page = Opcodes::LSR_ZP,
-                                        .zero_page_x = Opcodes::LSR_ZPX,
-                                        .absolute = Opcodes::LSR_ABS,
-                                        .absolute_x = Opcodes::LSR_ABX,
-                                        .accumulator = Opcodes::LSR_ACC};
+  static const OpcodeTable LSR_TABLE = {
+      .immediate = std::nullopt,
+      .zero_page = Opcodes::LSR_ZP,
+      .zero_page_x = Opcodes::LSR_ZPX,
+      .zero_page_y = std::nullopt,
+      .absolute = Opcodes::LSR_ABS,
+      .absolute_x = Opcodes::LSR_ABX,
+      .absolute_y = std::nullopt,
+      .indirect = std::nullopt,
+      .indirect_x = std::nullopt,
+      .indirect_y = std::nullopt,
+      .accumulator = Opcodes::LSR_ACC,
+      .relative = std::nullopt,
+      .indirect_zero_page = std::nullopt,
+      .absolute_indexed_indirect = std::nullopt,
+      .absolute_long = std::nullopt,
+      .indirect_long = std::nullopt,
+      .indirect_long_indexed_y = std::nullopt,
+      .stack_relative = std::nullopt,
+      .stack_relative_indirect_indexed_y = std::nullopt};
   return EncodeWithTable(LSR_TABLE, operand, mode);
 }
 
@@ -678,22 +1028,52 @@ std::vector<uint8_t> Cpu6502::EncodeLSR(uint16_t operand,
 // ROL - Rotate Left
 std::vector<uint8_t> Cpu6502::EncodeROL(uint16_t operand,
                                         AddressingMode mode) const {
-  static const OpcodeTable ROL_TABLE = {.zero_page = Opcodes::ROL_ZP,
-                                        .zero_page_x = Opcodes::ROL_ZPX,
-                                        .absolute = Opcodes::ROL_ABS,
-                                        .absolute_x = Opcodes::ROL_ABX,
-                                        .accumulator = Opcodes::ROL_ACC};
+  static const OpcodeTable ROL_TABLE = {
+      .immediate = std::nullopt,
+      .zero_page = Opcodes::ROL_ZP,
+      .zero_page_x = Opcodes::ROL_ZPX,
+      .zero_page_y = std::nullopt,
+      .absolute = Opcodes::ROL_ABS,
+      .absolute_x = Opcodes::ROL_ABX,
+      .absolute_y = std::nullopt,
+      .indirect = std::nullopt,
+      .indirect_x = std::nullopt,
+      .indirect_y = std::nullopt,
+      .accumulator = Opcodes::ROL_ACC,
+      .relative = std::nullopt,
+      .indirect_zero_page = std::nullopt,
+      .absolute_indexed_indirect = std::nullopt,
+      .absolute_long = std::nullopt,
+      .indirect_long = std::nullopt,
+      .indirect_long_indexed_y = std::nullopt,
+      .stack_relative = std::nullopt,
+      .stack_relative_indirect_indexed_y = std::nullopt};
   return EncodeWithTable(ROL_TABLE, operand, mode);
 }
 
 // ROR - Rotate Right
 std::vector<uint8_t> Cpu6502::EncodeROR(uint16_t operand,
                                         AddressingMode mode) const {
-  static const OpcodeTable ROR_TABLE = {.zero_page = Opcodes::ROR_ZP,
-                                        .zero_page_x = Opcodes::ROR_ZPX,
-                                        .absolute = Opcodes::ROR_ABS,
-                                        .absolute_x = Opcodes::ROR_ABX,
-                                        .accumulator = Opcodes::ROR_ACC};
+  static const OpcodeTable ROR_TABLE = {
+      .immediate = std::nullopt,
+      .zero_page = Opcodes::ROR_ZP,
+      .zero_page_x = Opcodes::ROR_ZPX,
+      .zero_page_y = std::nullopt,
+      .absolute = Opcodes::ROR_ABS,
+      .absolute_x = Opcodes::ROR_ABX,
+      .absolute_y = std::nullopt,
+      .indirect = std::nullopt,
+      .indirect_x = std::nullopt,
+      .indirect_y = std::nullopt,
+      .accumulator = Opcodes::ROR_ACC,
+      .relative = std::nullopt,
+      .indirect_zero_page = std::nullopt,
+      .absolute_indexed_indirect = std::nullopt,
+      .absolute_long = std::nullopt,
+      .indirect_long = std::nullopt,
+      .indirect_long_indexed_y = std::nullopt,
+      .stack_relative = std::nullopt,
+      .stack_relative_indirect_indexed_y = std::nullopt};
   return EncodeWithTable(ROR_TABLE, operand, mode);
 }
 
@@ -1197,10 +1577,26 @@ std::vector<uint8_t> Cpu6502::EncodeSTZ(uint16_t operand,
     return {}; // Not available in base 6502
   }
 
-  static const OpcodeTable STZ_TABLE = {.zero_page = 0x64,
-                                        .zero_page_x = 0x74,
-                                        .absolute = 0x9C,
-                                        .absolute_x = 0x9E};
+  static const OpcodeTable STZ_TABLE = {
+      .immediate = std::nullopt,
+      .zero_page = 0x64,
+      .zero_page_x = 0x74,
+      .zero_page_y = std::nullopt,
+      .absolute = 0x9C,
+      .absolute_x = 0x9E,
+      .absolute_y = std::nullopt,
+      .indirect = std::nullopt,
+      .indirect_x = std::nullopt,
+      .indirect_y = std::nullopt,
+      .accumulator = std::nullopt,
+      .relative = std::nullopt,
+      .indirect_zero_page = std::nullopt,
+      .absolute_indexed_indirect = std::nullopt,
+      .absolute_long = std::nullopt,
+      .indirect_long = std::nullopt,
+      .indirect_long_indexed_y = std::nullopt,
+      .stack_relative = std::nullopt,
+      .stack_relative_indirect_indexed_y = std::nullopt};
   return EncodeWithTable(STZ_TABLE, operand, mode);
 }
 
@@ -1214,7 +1610,26 @@ std::vector<uint8_t> Cpu6502::EncodeTRB(uint16_t operand,
     return {};
   }
 
-  static const OpcodeTable TRB_TABLE = {.zero_page = 0x14, .absolute = 0x1C};
+  static const OpcodeTable TRB_TABLE = {
+      .immediate = std::nullopt,
+      .zero_page = 0x14,
+      .zero_page_x = std::nullopt,
+      .zero_page_y = std::nullopt,
+      .absolute = 0x1C,
+      .absolute_x = std::nullopt,
+      .absolute_y = std::nullopt,
+      .indirect = std::nullopt,
+      .indirect_x = std::nullopt,
+      .indirect_y = std::nullopt,
+      .accumulator = std::nullopt,
+      .relative = std::nullopt,
+      .indirect_zero_page = std::nullopt,
+      .absolute_indexed_indirect = std::nullopt,
+      .absolute_long = std::nullopt,
+      .indirect_long = std::nullopt,
+      .indirect_long_indexed_y = std::nullopt,
+      .stack_relative = std::nullopt,
+      .stack_relative_indirect_indexed_y = std::nullopt};
   return EncodeWithTable(TRB_TABLE, operand, mode);
 }
 
@@ -1224,7 +1639,26 @@ std::vector<uint8_t> Cpu6502::EncodeTSB(uint16_t operand,
     return {};
   }
 
-  static const OpcodeTable TSB_TABLE = {.zero_page = 0x04, .absolute = 0x0C};
+  static const OpcodeTable TSB_TABLE = {
+      .immediate = std::nullopt,
+      .zero_page = 0x04,
+      .zero_page_x = std::nullopt,
+      .zero_page_y = std::nullopt,
+      .absolute = 0x0C,
+      .absolute_x = std::nullopt,
+      .absolute_y = std::nullopt,
+      .indirect = std::nullopt,
+      .indirect_x = std::nullopt,
+      .indirect_y = std::nullopt,
+      .accumulator = std::nullopt,
+      .relative = std::nullopt,
+      .indirect_zero_page = std::nullopt,
+      .absolute_indexed_indirect = std::nullopt,
+      .absolute_long = std::nullopt,
+      .indirect_long = std::nullopt,
+      .indirect_long_indexed_y = std::nullopt,
+      .stack_relative = std::nullopt,
+      .stack_relative_indirect_indexed_y = std::nullopt};
   return EncodeWithTable(TSB_TABLE, operand, mode);
 }
 
@@ -1238,7 +1672,26 @@ std::vector<uint8_t> Cpu6502::EncodeBRA(uint16_t operand,
     return {};
   }
 
-  static const OpcodeTable BRA_TABLE = {.relative = 0x80};
+  static const OpcodeTable BRA_TABLE = {
+      .immediate = std::nullopt,
+      .zero_page = std::nullopt,
+      .zero_page_x = std::nullopt,
+      .zero_page_y = std::nullopt,
+      .absolute = std::nullopt,
+      .absolute_x = std::nullopt,
+      .absolute_y = std::nullopt,
+      .indirect = std::nullopt,
+      .indirect_x = std::nullopt,
+      .indirect_y = std::nullopt,
+      .accumulator = std::nullopt,
+      .relative = 0x80,
+      .indirect_zero_page = std::nullopt,
+      .absolute_indexed_indirect = std::nullopt,
+      .absolute_long = std::nullopt,
+      .indirect_long = std::nullopt,
+      .indirect_long_indexed_y = std::nullopt,
+      .stack_relative = std::nullopt,
+      .stack_relative_indirect_indexed_y = std::nullopt};
   return EncodeWithTable(BRA_TABLE, operand, mode);
 }
 
