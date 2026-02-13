@@ -2,6 +2,7 @@
 // Phases 1-3: Foundation, Local Labels, DUM Blocks
 
 #include "xasm++/syntax/merlin_syntax.h"
+#include "xasm++/common/expression_parser.h"
 #include "xasm++/cpu/cpu_6502.h"
 #include "xasm++/directives/directive_constants.h"
 #include "xasm++/directives/merlin_directives.h"
@@ -463,120 +464,48 @@ std::string MerlinSyntaxParser::FormatError(const std::string &message) const {
 }
 
 // ============================================================================
-// Number Parsing
+// Number Parsing (DEPRECATED - delegated to ExpressionParser)
 // ============================================================================
 
 // Parse number in various formats: $hex, %binary, decimal
+// NOTE: Kept for HandleOrg compatibility - will refactor in future phase
 uint32_t MerlinSyntaxParser::ParseNumber(const std::string &str) {
   if (str.empty()) {
     return 0;
   }
 
-  // Hex: $FFFF (may have addressing mode suffix like $200,x)
+  // Strip addressing mode suffix (,X ,Y ,S) if present in hex numbers
+  std::string clean_str = str;
   if (str[0] == '$') {
-    std::string hex_part = str.substr(1);
-    if (hex_part.empty()) {
-      throw std::runtime_error(
-          FormatError("Invalid hex number: '" + str + "' (no digits after $)"));
-    }
-
-    // Strip addressing mode suffix (,X ,Y ,S) before parsing
-    size_t comma_pos = hex_part.find(',');
+    size_t comma_pos = str.find(',');
     if (comma_pos != std::string::npos) {
-      hex_part = hex_part.substr(0, comma_pos);
-    }
-
-    // Validate hex digits BEFORE calling stoul
-    for (char c : hex_part) {
-      if (!std::isxdigit(static_cast<unsigned char>(c))) {
-        throw std::runtime_error(FormatError(
-            "Invalid hex digit '" + std::string(1, c) + "' in hex number: '" +
-            str + "' (hex_part after strip: '" + hex_part + "')"));
-      }
-    }
-
-    try {
-      return std::stoul(hex_part, nullptr, 16);
-    } catch (const std::invalid_argument &e) {
-      throw std::runtime_error(FormatError("Invalid hex number: '" + str +
-                                           "' (hex_part: '" + hex_part +
-                                           "') - " + e.what()));
-    } catch (const std::out_of_range &e) {
-      throw std::runtime_error(
-          FormatError("Hex number out of range: '" + str + "' - " + e.what()));
+      clean_str = str.substr(0, comma_pos);
     }
   }
 
-  // Binary: %11110000
-  if (str[0] == '%') {
-    std::string bin_part = str.substr(1);
-    if (bin_part.empty()) {
-      throw std::runtime_error(FormatError("Invalid binary number: '" + str +
-                                           "' (no digits after %)"));
-    }
-
-    // Validate binary digits BEFORE calling stoul
-    for (char c : bin_part) {
-      if (c != '0' && c != '1') {
-        throw std::runtime_error(
-            FormatError("Invalid binary digit '" + std::string(1, c) +
-                        "' in binary number: '" + str + "'"));
-      }
-    }
-
-    try {
-      return std::stoul(bin_part, nullptr, 2);
-    } catch (const std::invalid_argument &e) {
-      throw std::runtime_error(FormatError("Invalid binary number: '" + str +
-                                           "' (bin_part: '" + bin_part +
-                                           "') - " + e.what()));
-    } catch (const std::out_of_range &e) {
-      throw std::runtime_error(FormatError("Binary number out of range: '" +
-                                           str + "' - " + e.what()));
-    }
-  }
-
-  // Decimal: 42
-  // Validate decimal digits BEFORE calling stoul
-  for (size_t i = 0; i < str.length(); ++i) {
-    char c = str[i];
-    // Allow leading - sign
-    if (i == 0 && c == '-') {
-      continue;
-    }
-    if (!std::isdigit(static_cast<unsigned char>(c))) {
-      throw std::runtime_error(
-          FormatError("Invalid decimal digit '" + std::string(1, c) +
-                      "' in decimal number: '" + str + "'"));
-    }
-  }
-
+  // Delegate to ExpressionParser for actual parsing
+  ConcreteSymbolTable empty_symbols;
+  ExpressionParser parser(&empty_symbols);
   try {
-    return std::stoul(str, nullptr, 10);
-  } catch (const std::invalid_argument &e) {
-    throw std::runtime_error(
-        FormatError("Invalid decimal number: '" + str + "' - " + e.what()));
-  } catch (const std::out_of_range &e) {
-    throw std::runtime_error(FormatError("Decimal number out of range: '" +
-                                         str + "' - " + e.what()));
+    auto expr = parser.Parse(clean_str);
+    return static_cast<uint32_t>(expr->Evaluate(empty_symbols));
+  } catch (const std::runtime_error &e) {
+    // Re-throw with Merlin formatting
+    throw std::runtime_error(FormatError(e.what()));
   }
 }
 
-// Parse expression (for now, just handle simple numbers and basic operators)
+// Parse expression - delegates to ExpressionParser for standard operations
+// while preserving Merlin-specific features: character literals, low/high byte
 std::shared_ptr<Expression>
 MerlinSyntaxParser::ParseExpression(const std::string &str,
                                     ConcreteSymbolTable &symbols) {
 
-  // For now, handle simple cases:
-  // - Pure number: $100
-  // - Simple addition: $100+$20, VALUE+5
-  // - Symbol reference: LABEL
-  // - Negative number: -1
-  // - Low byte operator: <ADDRESS
-  // - High byte operator: >ADDRESS
-  // - Multiplication: 24*30
-
   std::string expr = Trim(str);
+
+  // ========================================================================
+  // Merlin-Specific Features (handle before delegating to ExpressionParser)
+  // ========================================================================
 
   // Check for character literal: "x" or 'x'
   if (!expr.empty() && (expr[0] == '"' || expr[0] == '\'')) {
@@ -629,98 +558,41 @@ MerlinSyntaxParser::ParseExpression(const std::string &str,
     return std::make_shared<LiteralExpr>((value >> 8) & 0xFF); // High byte
   }
 
-  // Check for addition/subtraction first (lower precedence than multiplication)
-  // We need to handle expressions like BASE+OFFSET*2 properly
-  size_t plus_pos = expr.find('+');
-  size_t minus_pos =
-      expr.find('-', 1); // Skip first char (could be negative sign)
+  // ========================================================================
+  // Delegate to Shared ExpressionParser
+  // ========================================================================
 
-  if (plus_pos != std::string::npos) {
-    // Addition: BASE+OFFSET*2
-    std::string left = Trim(expr.substr(0, plus_pos));
-    std::string right = Trim(expr.substr(plus_pos + 1));
-
-    // Recursively parse left side (might be complex)
-    auto left_expr = ParseExpression(left, symbols);
-    int64_t left_val = left_expr->Evaluate(symbols);
-
-    // Recursively parse right side (might contain multiplication)
-    auto right_expr = ParseExpression(right, symbols);
-    int64_t right_val = right_expr->Evaluate(symbols);
-
-    return std::make_shared<LiteralExpr>(left_val + right_val);
-  } else if (minus_pos != std::string::npos) {
-    // Subtraction: $200-$10 or VALUE-5
-    std::string left = Trim(expr.substr(0, minus_pos));
-    std::string right = Trim(expr.substr(minus_pos + 1));
-
-    // Recursively parse left side
-    auto left_expr = ParseExpression(left, symbols);
-    int64_t left_val = left_expr->Evaluate(symbols);
-
-    // Recursively parse right side
-    auto right_expr = ParseExpression(right, symbols);
-    int64_t right_val = right_expr->Evaluate(symbols);
-
-    return std::make_shared<LiteralExpr>(left_val - right_val);
+  // Check for empty expression (legacy behavior: treat as 0)
+  // This handles edge cases like "X+" where trailing operator leaves empty right side
+  if (expr.empty()) {
+    return std::make_shared<LiteralExpr>(0);
   }
 
-  // Check for multiplication (higher precedence, parsed after +/-)
-  size_t mult_pos = expr.find('*');
-  if (mult_pos != std::string::npos) {
-    std::string left = Trim(expr.substr(0, mult_pos));
-    std::string right = Trim(expr.substr(mult_pos + 1));
-
-    // Parse left side (could be number or symbol)
-    int64_t left_val = 0;
-    if (symbols.IsDefined(left)) {
-      auto sym_expr = std::make_shared<SymbolExpr>(left);
-      left_val = sym_expr->Evaluate(symbols);
-    } else {
-      left_val = ParseNumber(left);
-    }
-
-    // Parse right side (could be number or symbol)
-    int64_t right_val = 0;
-    if (symbols.IsDefined(right)) {
-      auto sym_expr = std::make_shared<SymbolExpr>(right);
-      right_val = sym_expr->Evaluate(symbols);
-    } else {
-      right_val = ParseNumber(right);
-    }
-
-    return std::make_shared<LiteralExpr>(left_val * right_val);
+  // Check for Merlin edge cases that conflict with Z80 semantics
+  if (expr == "$") {
+    // In Merlin, "$" alone is an error (not program counter like Z80)
+    // Merlin uses "*" for program counter
+    throw std::runtime_error(
+        FormatError("Invalid hex number: '$' (no digits after $)"));
   }
 
-  // Check for negative number
-  if (!expr.empty() && expr[0] == '-') {
-    // Negative number: -1, -128
-    // Check if rest is all digits (valid negative number)
-    bool is_neg_number = true;
-    for (size_t i = 1; i < expr.length(); ++i) {
-      if (!std::isdigit(static_cast<unsigned char>(expr[i]))) {
-        is_neg_number = false;
-        break;
+  // Check for trailing operators (legacy Merlin behavior: treat missing operand as 0)
+  // Examples: "X+", "Y-", "Z*"
+  if (!expr.empty()) {
+    char last_char = expr[expr.length() - 1];
+    if (last_char == '+' || last_char == '-' || last_char == '*') {
+      // Strip trailing operator and parse as is
+      // Old Merlin behavior: X+ evaluates to X+0 = X
+      std::string clean_expr = Trim(expr.substr(0, expr.length() - 1));
+      if (!clean_expr.empty()) {
+        return ParseExpression(clean_expr, symbols);
       }
     }
-    if (is_neg_number && expr.length() > 1) {
-      // Valid negative number - use stoll for proper sign extension to int64_t
-      int64_t value = std::stoll(expr);
-      return std::make_shared<LiteralExpr>(value);
-    }
-    // Otherwise might be subtraction expression, fall through to operator
-    // handling
-  } else if (!expr.empty() &&
-             (expr[0] == '$' || expr[0] == '%' || std::isdigit(expr[0]))) {
-    // Pure number
-    return std::make_shared<LiteralExpr>(ParseNumber(expr));
-  } else if (!expr.empty()) {
-    // Symbol reference (defined or not - let Evaluate() throw if undefined)
-    return std::make_shared<SymbolExpr>(expr);
   }
 
-  // Empty expression - return literal 0
-  return std::make_shared<LiteralExpr>(0);
+  // All other expressions (arithmetic, symbols, literals) handled by shared parser
+  ExpressionParser parser(&symbols);
+  return parser.Parse(expr);
 }
 
 // ============================================================================
