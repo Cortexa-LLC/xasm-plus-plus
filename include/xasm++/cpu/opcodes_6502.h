@@ -413,4 +413,100 @@ constexpr const char *MVP = "MVP"; // 65816 - Move Positive (Block Move)
 
 } // namespace M6502Mnemonics
 
+// ============================================================================
+// Rockwell 65C02 Mnemonic Constants
+// ============================================================================
+
+namespace RockwellMnemonics {
+
+// RMB - Reset Memory Bit (Rockwell 65C02 Extensions)
+constexpr const char *RMB0 = "RMB0";
+constexpr const char *RMB1 = "RMB1";
+constexpr const char *RMB2 = "RMB2";
+constexpr const char *RMB3 = "RMB3";
+constexpr const char *RMB4 = "RMB4";
+constexpr const char *RMB5 = "RMB5";
+constexpr const char *RMB6 = "RMB6";
+constexpr const char *RMB7 = "RMB7";
+
+// SMB - Set Memory Bit (Rockwell 65C02 Extensions)
+constexpr const char *SMB0 = "SMB0";
+constexpr const char *SMB1 = "SMB1";
+constexpr const char *SMB2 = "SMB2";
+constexpr const char *SMB3 = "SMB3";
+constexpr const char *SMB4 = "SMB4";
+constexpr const char *SMB5 = "SMB5";
+constexpr const char *SMB6 = "SMB6";
+constexpr const char *SMB7 = "SMB7";
+
+// BBR - Branch if Bit Reset (Rockwell 65C02 Extensions)
+constexpr const char *BBR0 = "BBR0";
+constexpr const char *BBR1 = "BBR1";
+constexpr const char *BBR2 = "BBR2";
+constexpr const char *BBR3 = "BBR3";
+constexpr const char *BBR4 = "BBR4";
+constexpr const char *BBR5 = "BBR5";
+constexpr const char *BBR6 = "BBR6";
+constexpr const char *BBR7 = "BBR7";
+
+// BBS - Branch if Bit Set (Rockwell 65C02 Extensions)
+constexpr const char *BBS0 = "BBS0";
+constexpr const char *BBS1 = "BBS1";
+constexpr const char *BBS2 = "BBS2";
+constexpr const char *BBS3 = "BBS3";
+constexpr const char *BBS4 = "BBS4";
+constexpr const char *BBS5 = "BBS5";
+constexpr const char *BBS6 = "BBS6";
+constexpr const char *BBS7 = "BBS7";
+
+} // namespace RockwellMnemonics
+
+// ============================================================================
+// Rockwell 65C02 Opcode Constants
+// ============================================================================
+
+namespace RockwellOpcodes {
+
+// RMB - Reset Memory Bit (Rockwell 65C02 Extensions)
+constexpr uint8_t RMB0 = 0x07; // RMB0 zp      - Reset Memory Bit 0
+constexpr uint8_t RMB1 = 0x17; // RMB1 zp      - Reset Memory Bit 1
+constexpr uint8_t RMB2 = 0x27; // RMB2 zp      - Reset Memory Bit 2
+constexpr uint8_t RMB3 = 0x37; // RMB3 zp      - Reset Memory Bit 3
+constexpr uint8_t RMB4 = 0x47; // RMB4 zp      - Reset Memory Bit 4
+constexpr uint8_t RMB5 = 0x57; // RMB5 zp      - Reset Memory Bit 5
+constexpr uint8_t RMB6 = 0x67; // RMB6 zp      - Reset Memory Bit 6
+constexpr uint8_t RMB7 = 0x77; // RMB7 zp      - Reset Memory Bit 7
+
+// SMB - Set Memory Bit (Rockwell 65C02 Extensions)
+constexpr uint8_t SMB0 = 0x87; // SMB0 zp      - Set Memory Bit 0
+constexpr uint8_t SMB1 = 0x97; // SMB1 zp      - Set Memory Bit 1
+constexpr uint8_t SMB2 = 0xA7; // SMB2 zp      - Set Memory Bit 2
+constexpr uint8_t SMB3 = 0xB7; // SMB3 zp      - Set Memory Bit 3
+constexpr uint8_t SMB4 = 0xC7; // SMB4 zp      - Set Memory Bit 4
+constexpr uint8_t SMB5 = 0xD7; // SMB5 zp      - Set Memory Bit 5
+constexpr uint8_t SMB6 = 0xE7; // SMB6 zp      - Set Memory Bit 6
+constexpr uint8_t SMB7 = 0xF7; // SMB7 zp      - Set Memory Bit 7
+
+// BBR - Branch if Bit Reset (Rockwell 65C02 Extensions)
+constexpr uint8_t BBR0 = 0x0F; // BBR0 zp,rel  - Branch if Bit 0 Reset
+constexpr uint8_t BBR1 = 0x1F; // BBR1 zp,rel  - Branch if Bit 1 Reset
+constexpr uint8_t BBR2 = 0x2F; // BBR2 zp,rel  - Branch if Bit 2 Reset
+constexpr uint8_t BBR3 = 0x3F; // BBR3 zp,rel  - Branch if Bit 3 Reset
+constexpr uint8_t BBR4 = 0x4F; // BBR4 zp,rel  - Branch if Bit 4 Reset
+constexpr uint8_t BBR5 = 0x5F; // BBR5 zp,rel  - Branch if Bit 5 Reset
+constexpr uint8_t BBR6 = 0x6F; // BBR6 zp,rel  - Branch if Bit 6 Reset
+constexpr uint8_t BBR7 = 0x7F; // BBR7 zp,rel  - Branch if Bit 7 Reset
+
+// BBS - Branch if Bit Set (Rockwell 65C02 Extensions)
+constexpr uint8_t BBS0 = 0x8F; // BBS0 zp,rel  - Branch if Bit 0 Set
+constexpr uint8_t BBS1 = 0x9F; // BBS1 zp,rel  - Branch if Bit 1 Set
+constexpr uint8_t BBS2 = 0xAF; // BBS2 zp,rel  - Branch if Bit 2 Set
+constexpr uint8_t BBS3 = 0xBF; // BBS3 zp,rel  - Branch if Bit 3 Set
+constexpr uint8_t BBS4 = 0xCF; // BBS4 zp,rel  - Branch if Bit 4 Set
+constexpr uint8_t BBS5 = 0xDF; // BBS5 zp,rel  - Branch if Bit 5 Set
+constexpr uint8_t BBS6 = 0xEF; // BBS6 zp,rel  - Branch if Bit 6 Set
+constexpr uint8_t BBS7 = 0xFF; // BBS7 zp,rel  - Branch if Bit 7 Set
+
+} // namespace RockwellOpcodes
+
 } // namespace xasm

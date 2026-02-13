@@ -1251,7 +1251,7 @@ std::vector<uint8_t> Cpu6502::EncodeRMB0(uint8_t operand,
   if (cpu_mode_ != CpuMode::Cpu65C02Rock || mode != AddressingMode::ZeroPage) {
     return {};
   }
-  return {0x07, operand};
+  return {RockwellOpcodes::RMB0, operand};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeRMB1(uint8_t operand,
@@ -1259,7 +1259,7 @@ std::vector<uint8_t> Cpu6502::EncodeRMB1(uint8_t operand,
   if (cpu_mode_ != CpuMode::Cpu65C02Rock || mode != AddressingMode::ZeroPage) {
     return {};
   }
-  return {0x17, operand};
+  return {RockwellOpcodes::RMB1, operand};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeRMB2(uint8_t operand,
@@ -1267,7 +1267,7 @@ std::vector<uint8_t> Cpu6502::EncodeRMB2(uint8_t operand,
   if (cpu_mode_ != CpuMode::Cpu65C02Rock || mode != AddressingMode::ZeroPage) {
     return {};
   }
-  return {0x27, operand};
+  return {RockwellOpcodes::RMB2, operand};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeRMB3(uint8_t operand,
@@ -1275,7 +1275,7 @@ std::vector<uint8_t> Cpu6502::EncodeRMB3(uint8_t operand,
   if (cpu_mode_ != CpuMode::Cpu65C02Rock || mode != AddressingMode::ZeroPage) {
     return {};
   }
-  return {0x37, operand};
+  return {RockwellOpcodes::RMB3, operand};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeRMB4(uint8_t operand,
@@ -1283,7 +1283,7 @@ std::vector<uint8_t> Cpu6502::EncodeRMB4(uint8_t operand,
   if (cpu_mode_ != CpuMode::Cpu65C02Rock || mode != AddressingMode::ZeroPage) {
     return {};
   }
-  return {0x47, operand};
+  return {RockwellOpcodes::RMB4, operand};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeRMB5(uint8_t operand,
@@ -1291,7 +1291,7 @@ std::vector<uint8_t> Cpu6502::EncodeRMB5(uint8_t operand,
   if (cpu_mode_ != CpuMode::Cpu65C02Rock || mode != AddressingMode::ZeroPage) {
     return {};
   }
-  return {0x57, operand};
+  return {RockwellOpcodes::RMB5, operand};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeRMB6(uint8_t operand,
@@ -1299,7 +1299,7 @@ std::vector<uint8_t> Cpu6502::EncodeRMB6(uint8_t operand,
   if (cpu_mode_ != CpuMode::Cpu65C02Rock || mode != AddressingMode::ZeroPage) {
     return {};
   }
-  return {0x67, operand};
+  return {RockwellOpcodes::RMB6, operand};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeRMB7(uint8_t operand,
@@ -1307,7 +1307,7 @@ std::vector<uint8_t> Cpu6502::EncodeRMB7(uint8_t operand,
   if (cpu_mode_ != CpuMode::Cpu65C02Rock || mode != AddressingMode::ZeroPage) {
     return {};
   }
-  return {0x77, operand};
+  return {RockwellOpcodes::RMB7, operand};
 }
 
 // ============================================================================
@@ -1326,7 +1326,7 @@ std::vector<uint8_t> Cpu6502::EncodeSMB0(uint8_t operand,
   if (cpu_mode_ != CpuMode::Cpu65C02Rock || mode != AddressingMode::ZeroPage) {
     return {};
   }
-  return {0x87, operand};
+  return {RockwellOpcodes::SMB0, operand};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeSMB1(uint8_t operand,
@@ -1334,7 +1334,7 @@ std::vector<uint8_t> Cpu6502::EncodeSMB1(uint8_t operand,
   if (cpu_mode_ != CpuMode::Cpu65C02Rock || mode != AddressingMode::ZeroPage) {
     return {};
   }
-  return {0x97, operand};
+  return {RockwellOpcodes::SMB1, operand};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeSMB2(uint8_t operand,
@@ -1342,7 +1342,7 @@ std::vector<uint8_t> Cpu6502::EncodeSMB2(uint8_t operand,
   if (cpu_mode_ != CpuMode::Cpu65C02Rock || mode != AddressingMode::ZeroPage) {
     return {};
   }
-  return {0xA7, operand};
+  return {RockwellOpcodes::SMB2, operand};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeSMB3(uint8_t operand,
@@ -1350,7 +1350,7 @@ std::vector<uint8_t> Cpu6502::EncodeSMB3(uint8_t operand,
   if (cpu_mode_ != CpuMode::Cpu65C02Rock || mode != AddressingMode::ZeroPage) {
     return {};
   }
-  return {0xB7, operand};
+  return {RockwellOpcodes::SMB3, operand};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeSMB4(uint8_t operand,
@@ -1358,7 +1358,7 @@ std::vector<uint8_t> Cpu6502::EncodeSMB4(uint8_t operand,
   if (cpu_mode_ != CpuMode::Cpu65C02Rock || mode != AddressingMode::ZeroPage) {
     return {};
   }
-  return {0xC7, operand};
+  return {RockwellOpcodes::SMB4, operand};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeSMB5(uint8_t operand,
@@ -1366,7 +1366,7 @@ std::vector<uint8_t> Cpu6502::EncodeSMB5(uint8_t operand,
   if (cpu_mode_ != CpuMode::Cpu65C02Rock || mode != AddressingMode::ZeroPage) {
     return {};
   }
-  return {0xD7, operand};
+  return {RockwellOpcodes::SMB5, operand};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeSMB6(uint8_t operand,
@@ -1374,7 +1374,7 @@ std::vector<uint8_t> Cpu6502::EncodeSMB6(uint8_t operand,
   if (cpu_mode_ != CpuMode::Cpu65C02Rock || mode != AddressingMode::ZeroPage) {
     return {};
   }
-  return {0xE7, operand};
+  return {RockwellOpcodes::SMB6, operand};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeSMB7(uint8_t operand,
@@ -1382,7 +1382,7 @@ std::vector<uint8_t> Cpu6502::EncodeSMB7(uint8_t operand,
   if (cpu_mode_ != CpuMode::Cpu65C02Rock || mode != AddressingMode::ZeroPage) {
     return {};
   }
-  return {0xF7, operand};
+  return {RockwellOpcodes::SMB7, operand};
 }
 
 // ============================================================================
@@ -1401,7 +1401,7 @@ std::vector<uint8_t> Cpu6502::EncodeBBR0(uint8_t zp_addr,
   if (cpu_mode_ != CpuMode::Cpu65C02Rock) {
     return {};
   }
-  return {0x0F, zp_addr, offset};
+  return {RockwellOpcodes::BBR0, zp_addr, offset};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeBBR1(uint8_t zp_addr,
@@ -1409,7 +1409,7 @@ std::vector<uint8_t> Cpu6502::EncodeBBR1(uint8_t zp_addr,
   if (cpu_mode_ != CpuMode::Cpu65C02Rock) {
     return {};
   }
-  return {0x1F, zp_addr, offset};
+  return {RockwellOpcodes::BBR1, zp_addr, offset};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeBBR2(uint8_t zp_addr,
@@ -1417,7 +1417,7 @@ std::vector<uint8_t> Cpu6502::EncodeBBR2(uint8_t zp_addr,
   if (cpu_mode_ != CpuMode::Cpu65C02Rock) {
     return {};
   }
-  return {0x2F, zp_addr, offset};
+  return {RockwellOpcodes::BBR2, zp_addr, offset};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeBBR3(uint8_t zp_addr,
@@ -1425,7 +1425,7 @@ std::vector<uint8_t> Cpu6502::EncodeBBR3(uint8_t zp_addr,
   if (cpu_mode_ != CpuMode::Cpu65C02Rock) {
     return {};
   }
-  return {0x3F, zp_addr, offset};
+  return {RockwellOpcodes::BBR3, zp_addr, offset};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeBBR4(uint8_t zp_addr,
@@ -1433,7 +1433,7 @@ std::vector<uint8_t> Cpu6502::EncodeBBR4(uint8_t zp_addr,
   if (cpu_mode_ != CpuMode::Cpu65C02Rock) {
     return {};
   }
-  return {0x4F, zp_addr, offset};
+  return {RockwellOpcodes::BBR4, zp_addr, offset};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeBBR5(uint8_t zp_addr,
@@ -1441,7 +1441,7 @@ std::vector<uint8_t> Cpu6502::EncodeBBR5(uint8_t zp_addr,
   if (cpu_mode_ != CpuMode::Cpu65C02Rock) {
     return {};
   }
-  return {0x5F, zp_addr, offset};
+  return {RockwellOpcodes::BBR5, zp_addr, offset};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeBBR6(uint8_t zp_addr,
@@ -1449,7 +1449,7 @@ std::vector<uint8_t> Cpu6502::EncodeBBR6(uint8_t zp_addr,
   if (cpu_mode_ != CpuMode::Cpu65C02Rock) {
     return {};
   }
-  return {0x6F, zp_addr, offset};
+  return {RockwellOpcodes::BBR6, zp_addr, offset};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeBBR7(uint8_t zp_addr,
@@ -1457,7 +1457,7 @@ std::vector<uint8_t> Cpu6502::EncodeBBR7(uint8_t zp_addr,
   if (cpu_mode_ != CpuMode::Cpu65C02Rock) {
     return {};
   }
-  return {0x7F, zp_addr, offset};
+  return {RockwellOpcodes::BBR7, zp_addr, offset};
 }
 
 // ============================================================================
@@ -1476,7 +1476,7 @@ std::vector<uint8_t> Cpu6502::EncodeBBS0(uint8_t zp_addr,
   if (cpu_mode_ != CpuMode::Cpu65C02Rock) {
     return {};
   }
-  return {0x8F, zp_addr, offset};
+  return {RockwellOpcodes::BBS0, zp_addr, offset};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeBBS1(uint8_t zp_addr,
@@ -1484,7 +1484,7 @@ std::vector<uint8_t> Cpu6502::EncodeBBS1(uint8_t zp_addr,
   if (cpu_mode_ != CpuMode::Cpu65C02Rock) {
     return {};
   }
-  return {0x9F, zp_addr, offset};
+  return {RockwellOpcodes::BBS1, zp_addr, offset};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeBBS2(uint8_t zp_addr,
@@ -1492,7 +1492,7 @@ std::vector<uint8_t> Cpu6502::EncodeBBS2(uint8_t zp_addr,
   if (cpu_mode_ != CpuMode::Cpu65C02Rock) {
     return {};
   }
-  return {0xAF, zp_addr, offset};
+  return {RockwellOpcodes::BBS2, zp_addr, offset};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeBBS3(uint8_t zp_addr,
@@ -1500,7 +1500,7 @@ std::vector<uint8_t> Cpu6502::EncodeBBS3(uint8_t zp_addr,
   if (cpu_mode_ != CpuMode::Cpu65C02Rock) {
     return {};
   }
-  return {0xBF, zp_addr, offset};
+  return {RockwellOpcodes::BBS3, zp_addr, offset};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeBBS4(uint8_t zp_addr,
@@ -1508,7 +1508,7 @@ std::vector<uint8_t> Cpu6502::EncodeBBS4(uint8_t zp_addr,
   if (cpu_mode_ != CpuMode::Cpu65C02Rock) {
     return {};
   }
-  return {0xCF, zp_addr, offset};
+  return {RockwellOpcodes::BBS4, zp_addr, offset};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeBBS5(uint8_t zp_addr,
@@ -1516,7 +1516,7 @@ std::vector<uint8_t> Cpu6502::EncodeBBS5(uint8_t zp_addr,
   if (cpu_mode_ != CpuMode::Cpu65C02Rock) {
     return {};
   }
-  return {0xDF, zp_addr, offset};
+  return {RockwellOpcodes::BBS5, zp_addr, offset};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeBBS6(uint8_t zp_addr,
@@ -1524,7 +1524,7 @@ std::vector<uint8_t> Cpu6502::EncodeBBS6(uint8_t zp_addr,
   if (cpu_mode_ != CpuMode::Cpu65C02Rock) {
     return {};
   }
-  return {0xEF, zp_addr, offset};
+  return {RockwellOpcodes::BBS6, zp_addr, offset};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeBBS7(uint8_t zp_addr,
@@ -1532,7 +1532,7 @@ std::vector<uint8_t> Cpu6502::EncodeBBS7(uint8_t zp_addr,
   if (cpu_mode_ != CpuMode::Cpu65C02Rock) {
     return {};
   }
-  return {0xFF, zp_addr, offset};
+  return {RockwellOpcodes::BBS7, zp_addr, offset};
 }
 
 // ============================================================================
@@ -2464,10 +2464,17 @@ bool Cpu6502::HasOpcode(const std::string &mnemonic) const {
       M6502Mnemonics::WAI,
 
       // 65C02 Rockwell extensions (RMB, SMB, BBR, BBS)
-      "RMB0", "RMB1", "RMB2", "RMB3", "RMB4", "RMB5", "RMB6", "RMB7", "SMB0",
-      "SMB1", "SMB2", "SMB3", "SMB4", "SMB5", "SMB6", "SMB7", "BBR0", "BBR1",
-      "BBR2", "BBR3", "BBR4", "BBR5", "BBR6", "BBR7", "BBS0", "BBS1", "BBS2",
-      "BBS3", "BBS4", "BBS5", "BBS6", "BBS7",
+      RockwellMnemonics::RMB0, RockwellMnemonics::RMB1, RockwellMnemonics::RMB2,
+      RockwellMnemonics::RMB3, RockwellMnemonics::RMB4, RockwellMnemonics::RMB5,
+      RockwellMnemonics::RMB6, RockwellMnemonics::RMB7, RockwellMnemonics::SMB0,
+      RockwellMnemonics::SMB1, RockwellMnemonics::SMB2, RockwellMnemonics::SMB3,
+      RockwellMnemonics::SMB4, RockwellMnemonics::SMB5, RockwellMnemonics::SMB6,
+      RockwellMnemonics::SMB7, RockwellMnemonics::BBR0, RockwellMnemonics::BBR1,
+      RockwellMnemonics::BBR2, RockwellMnemonics::BBR3, RockwellMnemonics::BBR4,
+      RockwellMnemonics::BBR5, RockwellMnemonics::BBR6, RockwellMnemonics::BBR7,
+      RockwellMnemonics::BBS0, RockwellMnemonics::BBS1, RockwellMnemonics::BBS2,
+      RockwellMnemonics::BBS3, RockwellMnemonics::BBS4, RockwellMnemonics::BBS5,
+      RockwellMnemonics::BBS6, RockwellMnemonics::BBS7,
 
       // 65816 additions
       M6502Mnemonics::PHB, M6502Mnemonics::PLB, M6502Mnemonics::PHD,
