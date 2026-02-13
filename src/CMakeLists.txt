@@ -47,6 +47,7 @@ add_library(xasm_syntax STATIC
     syntax/simple_syntax.cpp
     syntax/merlin_syntax.cpp
     syntax/merlin_directives.cpp
+    syntax/merlin_directive_handlers.cpp
     syntax/scmasm_syntax.cpp
     syntax/scmasm_directive_handlers.cpp
     syntax/edtasm_syntax.cpp

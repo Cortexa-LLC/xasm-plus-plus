@@ -6,6 +6,7 @@
 #include "xasm++/cpu/cpu_6502.h"
 #include "xasm++/directives/directive_constants.h"
 #include "xasm++/directives/merlin_directives.h"
+#include "xasm++/directives/merlin_directive_handlers.h"
 #include "xasm++/util/string_utils.h"
 #include <algorithm>
 #include <cctype>
@@ -40,383 +41,40 @@ void MerlinSyntaxParser::SetCpu(Cpu6502 *cpu) { cpu_ = cpu; }
 // ============================================================================
 
 void MerlinSyntaxParser::InitializeDirectiveRegistry() {
-  // ORG - Set origin address
-  directive_registry_[ORG] = [this](const std::string &label,
-                                    const std::string &operand,
-                                    DirectiveContext &ctx) {
-    (void)label;
-    HandleOrg(operand, *ctx.section, *ctx.symbols);
-  };
-
-  // EQU - Define constant (label is handled separately)
-  directive_registry_[EQU] = [this](const std::string &label,
-                                    const std::string &operand,
-                                    DirectiveContext &ctx) {
-    (void)ctx.section;
-    HandleEqu(label, operand, *ctx.symbols);
-  };
-
-  // DB/DFB - Define byte data
-  auto handle_db_with_label = [this](const std::string &label,
-                                     const std::string &operand,
-                                     DirectiveContext &ctx) {
-    // Create label atom first if label present
-    if (!label.empty()) {
-      ctx.symbols->Define(label, SymbolType::Label,
-                          std::make_shared<LiteralExpr>(current_address_));
-      ctx.section->atoms.push_back(
-          std::make_shared<LabelAtom>(label, current_address_));
-      current_scope_.global_label = label;
-      current_scope_.local_labels.clear();
-    }
-    HandleDB(operand, *ctx.section, *ctx.symbols);
-  };
-  directive_registry_[DB] = handle_db_with_label;
-  directive_registry_[DFB] = handle_db_with_label;
-
-  // DW - Define word data
-  directive_registry_[DW] = [this](const std::string &label,
-                                   const std::string &operand,
-                                   DirectiveContext &ctx) {
-    // Create label atom first if label present
-    if (!label.empty()) {
-      ctx.symbols->Define(label, SymbolType::Label,
-                          std::make_shared<LiteralExpr>(current_address_));
-      ctx.section->atoms.push_back(
-          std::make_shared<LabelAtom>(label, current_address_));
-      current_scope_.global_label = label;
-      current_scope_.local_labels.clear();
-    }
-    HandleDW(operand, *ctx.section, *ctx.symbols);
-  };
-
-  // HEX - Define hex bytes
-  directive_registry_[HEX] = [this](const std::string &label,
-                                    const std::string &operand,
-                                    DirectiveContext &ctx) {
-    // Create label atom first if label present
-    if (!label.empty()) {
-      ctx.symbols->Define(label, SymbolType::Label,
-                          std::make_shared<LiteralExpr>(current_address_));
-      ctx.section->atoms.push_back(
-          std::make_shared<LabelAtom>(label, current_address_));
-      current_scope_.global_label = label;
-      current_scope_.local_labels.clear();
-    }
-    HandleHex(operand, *ctx.section);
-  };
-
-  // DS - Define space
-  directive_registry_[DS] = [this](const std::string &label,
-                                   const std::string &operand,
-                                   DirectiveContext &ctx) {
-    // Create label atom first if label present
-    if (!label.empty()) {
-      // Use dum_address_ if in DUM block, otherwise current_address_
-      uint32_t label_address = in_dum_block_ ? dum_address_ : current_address_;
-      ctx.symbols->Define(label, SymbolType::Label,
-                          std::make_shared<LiteralExpr>(label_address));
-      ctx.section->atoms.push_back(
-          std::make_shared<LabelAtom>(label, label_address));
-      current_scope_.global_label = label;
-      current_scope_.local_labels.clear();
-    }
-    HandleDS(operand, *ctx.section, *ctx.symbols);
-  };
-
-  // DUM/DEND - Dummy section
-  directive_registry_[DUM] = [this](const std::string &label,
-                                    const std::string &operand,
-                                    DirectiveContext &ctx) {
-    (void)label;
-    HandleDumDirective(operand, *ctx.symbols, in_dum_block_, dum_address_,
-                       &ctx);
-  };
-  directive_registry_[DEND] = [this](const std::string &label,
-                                     const std::string &operand,
-                                     DirectiveContext &ctx) {
-    (void)label;
-    (void)operand;
-    (void)ctx.section;
-    (void)ctx.symbols;
-    HandleDend();
-  };
-
-  // PUT - Include file
-  directive_registry_[PUT] = [this](const std::string &label,
-                                    const std::string &operand,
-                                    DirectiveContext &ctx) {
-    (void)label;
-    HandlePut(operand, *ctx.section, *ctx.symbols);
-  };
-
-  // Conditional assembly
-  directive_registry_[DO] = [this](const std::string &label,
-                                   const std::string &operand,
-                                   DirectiveContext &ctx) {
-    (void)label;
-    (void)ctx.section;
-    HandleDo(operand, *ctx.symbols);
-  };
-  directive_registry_[ELSE] = [this](const std::string &label,
-                                     const std::string &operand,
-                                     DirectiveContext &ctx) {
-    (void)label;
-    (void)operand;
-    (void)ctx.section;
-    (void)ctx.symbols;
-    HandleElse();
-  };
-  directive_registry_[FIN] = [this](const std::string &label,
-                                    const std::string &operand,
-                                    DirectiveContext &ctx) {
-    (void)label;
-    (void)operand;
-    (void)ctx.section;
-    (void)ctx.symbols;
-    HandleFin();
-  };
-
-  // Listing control
-  directive_registry_[LST] = [this](const std::string &label,
-                                    const std::string &operand,
-                                    DirectiveContext &ctx) {
-    (void)label;
-    (void)ctx.section;
-    (void)ctx.symbols;
-    HandleLst(operand);
-  };
-  directive_registry_[LSTDO] = [this](const std::string &label,
-                                      const std::string &operand,
-                                      DirectiveContext &ctx) {
-    (void)label;
-    (void)operand;
-    (void)ctx.section;
-    (void)ctx.symbols;
-    HandleLstdo();
-  };
-
-  // TR - Truncate listing
-  directive_registry_[TR] = [this](const std::string &label,
-                                   const std::string &operand,
-                                   DirectiveContext &ctx) {
-    (void)label;
-    (void)ctx.section;
-    (void)ctx.symbols;
-    HandleTr(operand);
-  };
-
-  // String directives (with label support)
-  auto handle_string_with_label = [this](const std::string &label,
-                                         const std::string &operand,
-                                         DirectiveContext &ctx,
-                                         void (MerlinSyntaxParser::*handler)(
-                                             const std::string &, Section &)) {
-    // Create label atom first if label present
-    if (!label.empty()) {
-      ctx.symbols->Define(label, SymbolType::Label,
-                          std::make_shared<LiteralExpr>(current_address_));
-      ctx.section->atoms.push_back(
-          std::make_shared<LabelAtom>(label, current_address_));
-      current_scope_.global_label = label;
-      current_scope_.local_labels.clear();
-    }
-    (this->*handler)(operand, *ctx.section);
-  };
-
-  directive_registry_[ASC] =
-      [handle_string_with_label](const std::string &label,
-                                 const std::string &operand,
-                                 DirectiveContext &ctx) {
-        handle_string_with_label(label, operand, ctx,
-                                 &MerlinSyntaxParser::HandleAsc);
-      };
-
-  directive_registry_[DCI] =
-      [handle_string_with_label](const std::string &label,
-                                 const std::string &operand,
-                                 DirectiveContext &ctx) {
-        handle_string_with_label(label, operand, ctx,
-                                 &MerlinSyntaxParser::HandleDCI);
-      };
-
-  directive_registry_[INV] =
-      [handle_string_with_label](const std::string &label,
-                                 const std::string &operand,
-                                 DirectiveContext &ctx) {
-        handle_string_with_label(label, operand, ctx,
-                                 &MerlinSyntaxParser::HandleINV);
-      };
-
-  directive_registry_[FLS] =
-      [handle_string_with_label](const std::string &label,
-                                 const std::string &operand,
-                                 DirectiveContext &ctx) {
-        handle_string_with_label(label, operand, ctx,
-                                 &MerlinSyntaxParser::HandleFLS);
-      };
-
-  // DA - Define address
-  directive_registry_[DA] = [this](const std::string &label,
-                                   const std::string &operand,
-                                   DirectiveContext &ctx) {
-    // Create label atom first if label present
-    if (!label.empty()) {
-      ctx.symbols->Define(label, SymbolType::Label,
-                          std::make_shared<LiteralExpr>(current_address_));
-      ctx.section->atoms.push_back(
-          std::make_shared<LabelAtom>(label, current_address_));
-      current_scope_.global_label = label;
-      current_scope_.local_labels.clear();
-    }
-    HandleDA(operand, *ctx.section, *ctx.symbols);
-  };
-
-  // Macro directives
-  directive_registry_[PMC] = [this](const std::string &label,
-                                    const std::string &operand,
-                                    DirectiveContext &ctx) {
-    (void)ctx.section;
-    (void)ctx.symbols;
-    HandlePMC(label.empty() ? operand : label);
-  };
-
-  directive_registry_[EOM] = [this](const std::string &label,
-                                    const std::string &operand,
-                                    DirectiveContext &ctx) {
-    (void)label;
-    (void)operand;
-    (void)ctx.section;
-    (void)ctx.symbols;
-    HandleEOM();
-  };
-
-  // MAC - Macro definition or invocation (complex logic)
-  directive_registry_[MAC] = [this](const std::string &label,
-                                    const std::string &operand,
-                                    DirectiveContext &ctx) {
-    std::string macro_name;
-    std::string params_str;
-
-    // Check if label is present - if so, it's the macro name
-    if (!label.empty()) {
-      macro_name = ToUpper(label);
-      params_str = operand;
-    } else {
-      // Parse macro name and parameters from operand
-      size_t semicolon_pos = operand.find(';');
-      if (semicolon_pos != std::string::npos) {
-        macro_name = ToUpper(Trim(operand.substr(0, semicolon_pos)));
-        params_str = Trim(operand.substr(semicolon_pos + 1));
-      } else {
-        macro_name = ToUpper(Trim(operand));
-        params_str = "";
-      }
-    }
-
-    if (macro_name.empty()) {
-      throw std::runtime_error(FormatError("MAC requires macro name"));
-    }
-
-    // Check if macro exists (invocation) or is being defined
-    if (macros_.find(macro_name) != macros_.end()) {
-      // Macro exists - invoke it
-      ExpandMacro(macro_name, params_str, *ctx.section, *ctx.symbols);
-    } else {
-      // Macro doesn't exist - start definition
-      if (in_macro_definition_) {
-        throw std::runtime_error(
-            FormatError("Nested macro definitions not allowed"));
-      }
-      in_macro_definition_ = true;
-      current_macro_.name = macro_name;
-      current_macro_.body.clear();
-      current_macro_.param_count = 0;
-    }
-  };
-
-  // USR - User-defined subroutine (no-op with optional label)
-  directive_registry_[USR] = [this](const std::string &label,
-                                    const std::string &operand,
-                                    DirectiveContext &ctx) {
-    (void)operand;
-    if (!label.empty()) {
-      ctx.symbols->Define(label, SymbolType::Label,
-                          std::make_shared<LiteralExpr>(current_address_));
-      ctx.section->atoms.push_back(
-          std::make_shared<LabelAtom>(label, current_address_));
-      current_scope_.global_label = label;
-      current_scope_.local_labels.clear();
-    }
-    // USR is a no-op - no atoms generated
-  };
-
-  // END - End of source
-  directive_registry_[END] = [this](const std::string &label,
-                                    const std::string &operand,
-                                    DirectiveContext &ctx) {
-    (void)operand;
-    if (!label.empty()) {
-      ctx.symbols->Define(label, SymbolType::Label,
-                          std::make_shared<LiteralExpr>(current_address_));
-      ctx.section->atoms.push_back(
-          std::make_shared<LabelAtom>(label, current_address_));
-      current_scope_.global_label = label;
-      current_scope_.local_labels.clear();
-    }
-    HandleEnd();
-  };
-
-  // SAV - Save output filename
-  directive_registry_[SAV] = [this](const std::string &label,
-                                    const std::string &operand,
-                                    DirectiveContext &ctx) {
-    (void)label;
-    (void)ctx.section;
-    (void)ctx.symbols;
-    HandleSav(operand);
-  };
-
-  // XC - Toggle 65C02 mode
-  directive_registry_[XC] = [this](const std::string &label,
-                                   const std::string &operand,
-                                   DirectiveContext &ctx) {
-    (void)label;
-    (void)ctx.section;
-    (void)ctx.symbols;
-    HandleXc(operand);
-  };
-
-  // MX - Set 65816 register widths
-  directive_registry_[MX] = [this](const std::string &label,
-                                   const std::string &operand,
-                                   DirectiveContext &ctx) {
-    (void)label;
-    (void)ctx.section;
-    (void)ctx.symbols;
-    HandleMx(operand);
-  };
-
-  // REV - Reverse ASCII string (requires label)
-  directive_registry_[REV] = [this](const std::string &label,
-                                    const std::string &operand,
-                                    DirectiveContext &ctx) {
-    if (label.empty()) {
-      throw std::runtime_error(FormatError("REV requires a label"));
-    }
-    HandleRev(label, operand, *ctx.section, *ctx.symbols);
-  };
-
-  // LUP - Loop assembly
-  directive_registry_[LUP] = [this](const std::string &label,
-                                    const std::string &operand,
-                                    DirectiveContext &ctx) {
-    (void)label;
-    (void)ctx.section;
-    (void)ctx.symbols;
-    HandleLup(operand);
-  };
+  // Register directive handlers from merlin namespace
+  directive_registry_[ORG] = merlin::HandleOrg;
+  directive_registry_[EQU] = merlin::HandleEqu;
+  directive_registry_[DB] = merlin::HandleDb;
+  directive_registry_[DFB] = merlin::HandleDb;  // Alias
+  directive_registry_[DW] = merlin::HandleDw;
+  directive_registry_[HEX] = merlin::HandleHex;
+  directive_registry_[DS] = merlin::HandleDs;
+  directive_registry_[DUM] = merlin::HandleDum;
+  directive_registry_[DEND] = merlin::HandleDend;
+  directive_registry_[PUT] = merlin::HandlePut;
+  directive_registry_[DO] = merlin::HandleDo;
+  directive_registry_[ELSE] = merlin::HandleElse;
+  directive_registry_[FIN] = merlin::HandleFin;
+  directive_registry_[LST] = merlin::HandleLst;
+  directive_registry_[LSTDO] = merlin::HandleLstdo;
+  directive_registry_[TR] = merlin::HandleTr;
+  directive_registry_[ASC] = merlin::HandleAsc;
+  directive_registry_[DCI] = merlin::HandleDci;
+  directive_registry_[INV] = merlin::HandleInv;
+  directive_registry_[FLS] = merlin::HandleFls;
+  directive_registry_[DA] = merlin::HandleDa;
+  directive_registry_[PMC] = merlin::HandlePmc;
+  directive_registry_[EOM] = merlin::HandleEom;
+  directive_registry_[MAC] = merlin::HandleMac;
+  directive_registry_[USR] = merlin::HandleUsr;
+  directive_registry_[END] = merlin::HandleEnd;
+  directive_registry_[SAV] = merlin::HandleSav;
+  directive_registry_[XC] = merlin::HandleXc;
+  directive_registry_[MX] = merlin::HandleMx;
+  directive_registry_[REV] = merlin::HandleRev;
+  directive_registry_[LUP] = merlin::HandleLup;
 }
+
 
 bool MerlinSyntaxParser::DispatchDirective(const std::string &directive,
                                            const std::string &label,
