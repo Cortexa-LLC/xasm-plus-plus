@@ -1587,7 +1587,8 @@ TEST_F(ScmasmSyntaxTest, CS_EscapeSequenceNewline) {
   ASSERT_NE(data_atom, nullptr);
 
   // \n should become 0x0A
-  std::vector<uint8_t> expected = {'L', 'i', 'n', 'e', '1', 0x0A, 'L', 'i', 'n', 'e', '2'};
+  std::vector<uint8_t> expected = {'L', 'i', 'n', 'e', '1', 0x0A,
+                                   'L', 'i', 'n', 'e', '2'};
   EXPECT_EQ(data_atom->data, expected);
 }
 
@@ -1684,14 +1685,14 @@ TEST_F(ScmasmSyntaxTest, CS_AllEscapeSequences) {
 
   // All escape sequences
   std::vector<uint8_t> expected = {
-    0x07,  // \a (bell)
-    0x08,  // \b (backspace)
-    0x1B,  // \e (escape)
-    0x0C,  // \f (form feed)
-    0x0A,  // \n (newline)
-    0x0D,  // \r (carriage return)
-    0x09,  // \t (tab)
-    0x0B   // \v (vertical tab)
+      0x07, // \a (bell)
+      0x08, // \b (backspace)
+      0x1B, // \e (escape)
+      0x0C, // \f (form feed)
+      0x0A, // \n (newline)
+      0x0D, // \r (carriage return)
+      0x09, // \t (tab)
+      0x0B  // \v (vertical tab)
   };
   EXPECT_EQ(data_atom->data, expected);
 }

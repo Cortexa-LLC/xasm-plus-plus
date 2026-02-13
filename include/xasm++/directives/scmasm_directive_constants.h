@@ -44,12 +44,12 @@ constexpr const char *DUMMY = ".DUMMY"; // Dummy section
 constexpr const char *OP = ".OP";       // CPU operation mode
 
 // Phase 3: 100% Coverage Directives
-constexpr const char *CS = ".CS";   // C-string with escape sequences
-constexpr const char *CZ = ".CZ";   // C-string zero-terminated
-constexpr const char *TF = ".TF";   // Text file/title metadata
-constexpr const char *EP = ".EP";   // Entry point
-constexpr const char *HX = ".HX";   // Hex nibble storage
-constexpr const char *TA = ".TA";   // Target address (no-op)
+constexpr const char *CS = ".CS";     // C-string with escape sequences
+constexpr const char *CZ = ".CZ";     // C-string zero-terminated
+constexpr const char *TF = ".TF";     // Text file/title metadata
+constexpr const char *EP = ".EP";     // Entry point
+constexpr const char *HX = ".HX";     // Hex nibble storage
+constexpr const char *TA = ".TA";     // Target address (no-op)
 constexpr const char *AC = ".AC";     // ASCII with numeric prefix
 constexpr const char *DO = ".DO";     // Conditional assembly start
 constexpr const char *ELSE = ".ELSE"; // Conditional assembly else

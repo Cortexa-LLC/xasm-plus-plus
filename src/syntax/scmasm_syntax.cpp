@@ -1188,8 +1188,7 @@ void ScmasmSyntaxParser::HandleDo(const std::string &operand, Section &section,
     using namespace scmasm::directives;
     if (first_token == DO || directive == DO) {
       nesting++;
-    } else if ((first_token == ELSE || directive == ELSE) &&
-               nesting == 1) {
+    } else if ((first_token == ELSE || directive == ELSE) && nesting == 1) {
       else_line = i;
     } else if (first_token == FIN || directive == FIN) {
       nesting--;
@@ -1359,14 +1358,14 @@ void ScmasmSyntaxParser::InitializeDirectiveRegistry() {
   directive_registry_[OP] = scmasm::HandleOp;       // CPU operation mode
 
   // Phase 3: 100% Coverage Directives
-  directive_registry_[CS] = scmasm::HandleCs;   // C-string with escapes
-  directive_registry_[CZ] = scmasm::HandleCz;   // C-string zero-terminated
-  directive_registry_[TF] = scmasm::HandleTf;   // Text file/title metadata
-  directive_registry_[EP] = scmasm::HandleEp;   // Entry point
-  directive_registry_[HX] = scmasm::HandleHx;   // Hex nibble storage
-  directive_registry_[TA] = scmasm::HandleTa;   // Target address (no-op)
-  directive_registry_[AC] = scmasm::HandleAc;   // ASCII with prefix
-  
+  directive_registry_[CS] = scmasm::HandleCs; // C-string with escapes
+  directive_registry_[CZ] = scmasm::HandleCz; // C-string zero-terminated
+  directive_registry_[TF] = scmasm::HandleTf; // Text file/title metadata
+  directive_registry_[EP] = scmasm::HandleEp; // Entry point
+  directive_registry_[HX] = scmasm::HandleHx; // Hex nibble storage
+  directive_registry_[TA] = scmasm::HandleTa; // Target address (no-op)
+  directive_registry_[AC] = scmasm::HandleAc; // ASCII with prefix
+
   // Note: Control flow directives (.DO, .ELSE, .FIN, .LU, .ENDU) are NOT
   // registered here because they require special handling in ParseLine with
   // line skipping and nested scoping. They cannot be dispatched via the simple

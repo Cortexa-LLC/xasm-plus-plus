@@ -662,8 +662,7 @@ uint8_t ParseEscapeSequence(const char *&s) {
     if (std::isxdigit(*s) && std::isxdigit(*(s + 1))) {
       int hi = std::isdigit(*s) ? (*s - '0') : (std::toupper(*s) - 'A' + 10);
       s++;
-      int lo =
-          std::isdigit(*s) ? (*s - '0') : (std::toupper(*s) - 'A' + 10);
+      int lo = std::isdigit(*s) ? (*s - '0') : (std::toupper(*s) - 'A' + 10);
       s++;
       return static_cast<uint8_t>((hi << 4) | lo);
     } else {

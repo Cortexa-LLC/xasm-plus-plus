@@ -8,11 +8,11 @@
  */
 
 #include "xasm++/cpu/cpu_6809.h"
-#include <algorithm>
-#include <unordered_set>
 #include "xasm++/cpu/cpu_6809_constants.h"
 #include "xasm++/cpu/opcodes_6809.h"
+#include <algorithm>
 #include <stdexcept>
+#include <unordered_set>
 
 namespace xasm {
 

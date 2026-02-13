@@ -8,9 +8,9 @@
  */
 
 #include "xasm++/cpu/cpu_z80.h"
+#include "xasm++/cpu/opcodes_z80.h"
 #include <algorithm>
 #include <unordered_set>
-#include "xasm++/cpu/opcodes_z80.h"
 
 namespace xasm {
 
@@ -612,22 +612,21 @@ bool CpuZ80::HasOpcode(const std::string &mnemonic) const {
       Z80Mnemonics::AND, Z80Mnemonics::OR, Z80Mnemonics::XOR, Z80Mnemonics::CP,
 
       // Branch/Jump
-      Z80Mnemonics::JP, Z80Mnemonics::JR, Z80Mnemonics::CALL,
-      Z80Mnemonics::RET, Z80Mnemonics::RST, Z80Mnemonics::DJNZ,
+      Z80Mnemonics::JP, Z80Mnemonics::JR, Z80Mnemonics::CALL, Z80Mnemonics::RET,
+      Z80Mnemonics::RST, Z80Mnemonics::DJNZ,
 
       // Rotate/Shift
       Z80Mnemonics::RLCA, Z80Mnemonics::RRCA, Z80Mnemonics::RLA,
-      Z80Mnemonics::RRA, Z80Mnemonics::RLC, Z80Mnemonics::RRC,
-      Z80Mnemonics::RL, Z80Mnemonics::RR, Z80Mnemonics::SLA,
-      Z80Mnemonics::SRA, Z80Mnemonics::SRL,
+      Z80Mnemonics::RRA, Z80Mnemonics::RLC, Z80Mnemonics::RRC, Z80Mnemonics::RL,
+      Z80Mnemonics::RR, Z80Mnemonics::SLA, Z80Mnemonics::SRA, Z80Mnemonics::SRL,
 
       // Bit Manipulation
       Z80Mnemonics::BIT, Z80Mnemonics::SET, Z80Mnemonics::RES,
 
       // Miscellaneous
-      Z80Mnemonics::NOP, Z80Mnemonics::HALT, Z80Mnemonics::DI,
-      Z80Mnemonics::EI, Z80Mnemonics::NEG, Z80Mnemonics::CPL,
-      Z80Mnemonics::CCF, Z80Mnemonics::SCF, Z80Mnemonics::DAA,
+      Z80Mnemonics::NOP, Z80Mnemonics::HALT, Z80Mnemonics::DI, Z80Mnemonics::EI,
+      Z80Mnemonics::NEG, Z80Mnemonics::CPL, Z80Mnemonics::CCF,
+      Z80Mnemonics::SCF, Z80Mnemonics::DAA,
 
       // Block Transfer/Search
       Z80Mnemonics::LDI, Z80Mnemonics::LDIR, Z80Mnemonics::LDD,
