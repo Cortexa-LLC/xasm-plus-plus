@@ -50,6 +50,7 @@ add_library(xasm_syntax STATIC
     syntax/scmasm_syntax.cpp
     syntax/scmasm_directive_handlers.cpp
     syntax/edtasm_syntax.cpp
+    syntax/edtasm_simple_directive_handlers.cpp
     syntax/flex_syntax.cpp
     syntax/directive_registry.cpp
     syntax/edtasm_m80_plusplus_syntax.cpp

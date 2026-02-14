@@ -11,13 +11,28 @@
 
 #pragma once
 
+#include "xasm++/directives/edtasm_simple_directive_handlers.h"
 #include "xasm++/section.h"
 #include "xasm++/symbol.h"
+#include "xasm++/syntax/directive_registry.h"
 #include <functional>
 #include <string>
 #include <unordered_map>
 
 namespace xasm {
+
+// Forward declarations for edtasm namespace
+namespace edtasm {
+void HandleOrg(const std::string &, const std::string &, DirectiveContext &);
+void HandleEnd(const std::string &, const std::string &, DirectiveContext &);
+void HandleEqu(const std::string &, const std::string &, DirectiveContext &);
+void HandleSet(const std::string &, const std::string &, DirectiveContext &);
+void HandleFcb(const std::string &, const std::string &, DirectiveContext &);
+void HandleFdb(const std::string &, const std::string &, DirectiveContext &);
+void HandleFcc(const std::string &, const std::string &, DirectiveContext &);
+void HandleRmb(const std::string &, const std::string &, DirectiveContext &);
+void HandleSetdp(const std::string &, const std::string &, DirectiveContext &);
+} // namespace edtasm
 
 /**
  * @brief EDTASM+ assembly syntax parser
@@ -68,6 +83,17 @@ namespace xasm {
  */
 class EdtasmSyntaxParser {
 public:
+  // Friend declarations for edtasm namespace directive handlers
+  friend void edtasm::HandleOrg(const std::string &, const std::string &, DirectiveContext &);
+  friend void edtasm::HandleEnd(const std::string &, const std::string &, DirectiveContext &);
+  friend void edtasm::HandleEqu(const std::string &, const std::string &, DirectiveContext &);
+  friend void edtasm::HandleSet(const std::string &, const std::string &, DirectiveContext &);
+  friend void edtasm::HandleFcb(const std::string &, const std::string &, DirectiveContext &);
+  friend void edtasm::HandleFdb(const std::string &, const std::string &, DirectiveContext &);
+  friend void edtasm::HandleFcc(const std::string &, const std::string &, DirectiveContext &);
+  friend void edtasm::HandleRmb(const std::string &, const std::string &, DirectiveContext &);
+  friend void edtasm::HandleSetdp(const std::string &, const std::string &, DirectiveContext &);
+
   /**
    * @brief Default constructor - initializes directive registry
    */
@@ -94,39 +120,19 @@ private:
   uint32_t current_address_ = 0; ///< Current assembly address
   uint8_t direct_page_ = 0;      ///< Current direct page value (for SETDP)
 
-  // Directive registry pattern (O(1) lookup)
+  // Directive registry pattern (O(1) lookup) - matches Merlin signature
   using DirectiveHandler = std::function<void(
-      const std::string &operands, const std::string &label, Section &section,
-      ConcreteSymbolTable &symbols)>;
+      const std::string &label, const std::string &operand,
+      DirectiveContext &context)>;
   std::unordered_map<std::string, DirectiveHandler> directive_registry_;
 
   /**
-   * @brief Register all EDTASM+ directives
+   * @brief Initialize directive registry with all EDTASM+ directives
    *
    * Populates directive_registry_ with handlers for all supported directives.
    * Called from constructor.
    */
-  void RegisterDirectives();
-
-  // Directive handler methods
-  void HandleOrg(const std::string &operands, const std::string &label,
-                 Section &section, ConcreteSymbolTable &symbols);
-  void HandleEnd(const std::string &operands, const std::string &label,
-                 Section &section, ConcreteSymbolTable &symbols);
-  void HandleEqu(const std::string &operands, const std::string &label,
-                 Section &section, ConcreteSymbolTable &symbols);
-  void HandleSet(const std::string &operands, const std::string &label,
-                 Section &section, ConcreteSymbolTable &symbols);
-  void HandleFcb(const std::string &operands, const std::string &label,
-                 Section &section, ConcreteSymbolTable &symbols);
-  void HandleFdb(const std::string &operands, const std::string &label,
-                 Section &section, ConcreteSymbolTable &symbols);
-  void HandleFcc(const std::string &operands, const std::string &label,
-                 Section &section, ConcreteSymbolTable &symbols);
-  void HandleRmb(const std::string &operands, const std::string &label,
-                 Section &section, ConcreteSymbolTable &symbols);
-  void HandleSetdp(const std::string &operands, const std::string &label,
-                   Section &section, ConcreteSymbolTable &symbols);
+  void InitializeDirectiveRegistry();
 
   /**
    * @brief Parse a single line of EDTASM+ source

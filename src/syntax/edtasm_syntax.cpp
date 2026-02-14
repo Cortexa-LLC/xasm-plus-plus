@@ -3,6 +3,7 @@
 
 #include "xasm++/syntax/edtasm_syntax.h"
 #include "xasm++/directives/directive_constants.h"
+#include "xasm++/directives/edtasm_simple_directive_handlers.h"
 #include "xasm++/parse_utils.h"
 #include <algorithm>
 #include <cctype>
@@ -16,71 +17,26 @@ namespace xasm {
 // ===========================================================================
 
 EdtasmSyntaxParser::EdtasmSyntaxParser() {
-  RegisterDirectives();
+  InitializeDirectiveRegistry();
 }
 
 // ===========================================================================
 // Directive Registration
 // ===========================================================================
 
-void EdtasmSyntaxParser::RegisterDirectives() {
+void EdtasmSyntaxParser::InitializeDirectiveRegistry() {
   using namespace directives;
 
-  // Register all EDTASM+ directives with case-insensitive lookup
-  directive_registry_[ORG] = [this](const std::string &operands,
-                                    const std::string &label, Section &section,
-                                    ConcreteSymbolTable &symbols) {
-    HandleOrg(operands, label, section, symbols);
-  };
-
-  directive_registry_[END] = [this](const std::string &operands,
-                                    const std::string &label, Section &section,
-                                    ConcreteSymbolTable &symbols) {
-    HandleEnd(operands, label, section, symbols);
-  };
-
-  directive_registry_[EQU] = [this](const std::string &operands,
-                                    const std::string &label, Section &section,
-                                    ConcreteSymbolTable &symbols) {
-    HandleEqu(operands, label, section, symbols);
-  };
-
-  directive_registry_[SET] = [this](const std::string &operands,
-                                    const std::string &label, Section &section,
-                                    ConcreteSymbolTable &symbols) {
-    HandleSet(operands, label, section, symbols);
-  };
-
-  directive_registry_[FCB] = [this](const std::string &operands,
-                                    const std::string &label, Section &section,
-                                    ConcreteSymbolTable &symbols) {
-    HandleFcb(operands, label, section, symbols);
-  };
-
-  directive_registry_[FDB] = [this](const std::string &operands,
-                                    const std::string &label, Section &section,
-                                    ConcreteSymbolTable &symbols) {
-    HandleFdb(operands, label, section, symbols);
-  };
-
-  directive_registry_[FCC] = [this](const std::string &operands,
-                                    const std::string &label, Section &section,
-                                    ConcreteSymbolTable &symbols) {
-    HandleFcc(operands, label, section, symbols);
-  };
-
-  directive_registry_[RMB] = [this](const std::string &operands,
-                                    const std::string &label, Section &section,
-                                    ConcreteSymbolTable &symbols) {
-    HandleRmb(operands, label, section, symbols);
-  };
-
-  directive_registry_[SETDP] = [this](const std::string &operands,
-                                      const std::string &label,
-                                      Section &section,
-                                      ConcreteSymbolTable &symbols) {
-    HandleSetdp(operands, label, section, symbols);
-  };
+  // Register directive handlers from edtasm namespace (direct assignment)
+  directive_registry_[ORG] = edtasm::HandleOrg;
+  directive_registry_[END] = edtasm::HandleEnd;
+  directive_registry_[EQU] = edtasm::HandleEqu;
+  directive_registry_[SET] = edtasm::HandleSet;
+  directive_registry_[FCB] = edtasm::HandleFcb;
+  directive_registry_[FDB] = edtasm::HandleFdb;
+  directive_registry_[FCC] = edtasm::HandleFcc;
+  directive_registry_[RMB] = edtasm::HandleRmb;
+  directive_registry_[SETDP] = edtasm::HandleSetdp;
 }
 
 // ===========================================================================
@@ -160,152 +116,7 @@ uint32_t EdtasmSyntaxParser::ParseNumber(const std::string &str) {
 }
 
 // ===========================================================================
-// Directive Handlers
-// ===========================================================================
-
-// ORG - Set origin address
-void EdtasmSyntaxParser::HandleOrg(const std::string &operands,
-                                   const std::string &label, Section &section,
-                                   ConcreteSymbolTable &symbols) {
-  (void)label;   // Label handled in ParseLine
-  (void)symbols; // Not used in ORG
-  uint32_t address = ParseNumber(operands);
-  section.atoms.push_back(std::make_shared<OrgAtom>(address));
-  current_address_ = address;
-}
-
-// END - End assembly (may have entry point)
-void EdtasmSyntaxParser::HandleEnd(const std::string &operands,
-                                   const std::string &label, Section &section,
-                                   ConcreteSymbolTable &symbols) {
-  (void)operands; // Entry point not currently used
-  (void)label;    // Label handled in ParseLine
-  (void)section;  // END produces no atoms
-  (void)symbols;  // Not used in END
-  // END directive produces no atoms, signals end of assembly
-}
-
-// EQU - Equate symbol (constant)
-void EdtasmSyntaxParser::HandleEqu(const std::string &operands,
-                                   const std::string &label, Section &section,
-                                   ConcreteSymbolTable &symbols) {
-  (void)section; // EQU produces no atoms
-  if (label.empty()) {
-    throw std::runtime_error("EQU requires a label");
-  }
-  uint32_t value = ParseNumber(operands);
-  symbols.Define(label, SymbolType::Equate,
-                 std::make_shared<LiteralExpr>(value));
-}
-
-// SET - Set variable (can be redefined)
-void EdtasmSyntaxParser::HandleSet(const std::string &operands,
-                                   const std::string &label, Section &section,
-                                   ConcreteSymbolTable &symbols) {
-  (void)section; // SET produces no atoms
-  if (label.empty()) {
-    throw std::runtime_error("SET requires a label");
-  }
-  uint32_t value = ParseNumber(operands);
-  // SET allows redefinition, so we define it as Set type
-  symbols.Define(label, SymbolType::Set, std::make_shared<LiteralExpr>(value));
-}
-
-// FCB - Form Constant Byte
-void EdtasmSyntaxParser::HandleFcb(const std::string &operands,
-                                   const std::string &label, Section &section,
-                                   ConcreteSymbolTable &symbols) {
-  (void)label;   // Label handled in ParseLine
-  (void)symbols; // Not used in FCB
-  std::vector<uint8_t> bytes;
-  std::istringstream ops(operands);
-  std::string value;
-
-  while (std::getline(ops, value, ',')) {
-    value = Trim(value);
-    if (!value.empty()) {
-      bytes.push_back(static_cast<uint8_t>(ParseNumber(value)));
-    }
-  }
-
-  section.atoms.push_back(std::make_shared<DataAtom>(bytes));
-  current_address_ += bytes.size();
-}
-
-// FDB - Form Double Byte (16-bit, big-endian)
-void EdtasmSyntaxParser::HandleFdb(const std::string &operands,
-                                   const std::string &label, Section &section,
-                                   ConcreteSymbolTable &symbols) {
-  (void)label;   // Label handled in ParseLine
-  (void)symbols; // Not used in FDB
-  std::vector<uint8_t> bytes;
-  std::istringstream ops(operands);
-  std::string value;
-
-  while (std::getline(ops, value, ',')) {
-    value = Trim(value);
-    if (!value.empty()) {
-      uint32_t word = ParseNumber(value);
-      // 6809 uses big-endian (MSB first)
-      bytes.push_back(static_cast<uint8_t>((word >> 8) & 0xFF)); // High byte
-      bytes.push_back(static_cast<uint8_t>(word & 0xFF));        // Low byte
-    }
-  }
-
-  section.atoms.push_back(std::make_shared<DataAtom>(bytes));
-  current_address_ += bytes.size();
-}
-
-// FCC - Form Constant Characters (flexible delimiter)
-void EdtasmSyntaxParser::HandleFcc(const std::string &operands,
-                                   const std::string &label, Section &section,
-                                   ConcreteSymbolTable &symbols) {
-  (void)label;   // Label handled in ParseLine
-  (void)symbols; // Not used in FCC
-  std::string trimmed = Trim(operands);
-  if (trimmed.empty()) {
-    throw std::runtime_error("FCC requires operand");
-  }
-
-  // First non-whitespace character is the delimiter
-  char delimiter = trimmed[0];
-  size_t end_pos = trimmed.find(delimiter, 1);
-
-  if (end_pos == std::string::npos) {
-    throw std::runtime_error("FCC: Missing closing delimiter");
-  }
-
-  std::string text = trimmed.substr(1, end_pos - 1);
-  std::vector<uint8_t> bytes(text.begin(), text.end());
-
-  section.atoms.push_back(std::make_shared<DataAtom>(bytes));
-  current_address_ += bytes.size();
-}
-
-// RMB - Reserve Memory Bytes
-void EdtasmSyntaxParser::HandleRmb(const std::string &operands,
-                                   const std::string &label, Section &section,
-                                   ConcreteSymbolTable &symbols) {
-  (void)label;   // Label handled in ParseLine
-  (void)symbols; // Not used in RMB
-  uint32_t size = ParseNumber(operands);
-  section.atoms.push_back(std::make_shared<SpaceAtom>(size));
-  current_address_ += size;
-}
-
-// SETDP - Set Direct Page (assembler directive only)
-void EdtasmSyntaxParser::HandleSetdp(const std::string &operands,
-                                     const std::string &label, Section &section,
-                                     ConcreteSymbolTable &symbols) {
-  (void)label;   // Label handled in ParseLine
-  (void)section; // SETDP produces no atoms
-  (void)symbols; // Not used in SETDP
-  direct_page_ = static_cast<uint8_t>(ParseNumber(operands));
-  // SETDP produces no atoms, just informs assembler
-}
-
-// ===========================================================================
-// Directive Parsing (Refactored)
+// Directive Parsing (Using DirectiveContext Pattern)
 // ===========================================================================
 
 // Parse directive using registry pattern (O(1) lookup)
@@ -319,8 +130,15 @@ void EdtasmSyntaxParser::ParseDirective(const std::string &directive,
   // Lookup directive handler in registry
   auto it = directive_registry_.find(dir_upper);
   if (it != directive_registry_.end()) {
-    // Call registered handler
-    it->second(operands, label, section, symbols);
+    // Create DirectiveContext for handler
+    DirectiveContext context;
+    context.section = &section;
+    context.symbols = &symbols;
+    context.current_address = &current_address_;
+    context.parser_state = this;
+
+    // Call registered handler with correct parameter order (label, operand, context)
+    it->second(label, operands, context);
     return;
   }
 
