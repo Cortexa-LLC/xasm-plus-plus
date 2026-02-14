@@ -1214,7 +1214,7 @@ std::vector<uint8_t> Cpu6502::EncodeWAI() const {
     return {}; // Not available in this CPU mode
   }
 
-  return {0xCB}; // WAI opcode
+  return {Opcodes::WAI};
 }
 
 /**
@@ -1232,7 +1232,7 @@ std::vector<uint8_t> Cpu6502::EncodeSTP() const {
     return {}; // Not available in this CPU mode
   }
 
-  return {0xDB}; // STP opcode
+  return {Opcodes::STP};
 }
 
 // ============================================================================
@@ -1543,28 +1543,28 @@ std::vector<uint8_t> Cpu6502::EncodePHX() const {
   if (cpu_mode_ == CpuMode::Cpu6502) {
     return {}; // Not available in base 6502
   }
-  return {0xDA}; // PHX opcode
+  return {Opcodes::PHX};
 }
 
 std::vector<uint8_t> Cpu6502::EncodePLX() const {
   if (cpu_mode_ == CpuMode::Cpu6502) {
     return {};
   }
-  return {0xFA}; // PLX opcode
+  return {Opcodes::PLX};
 }
 
 std::vector<uint8_t> Cpu6502::EncodePHY() const {
   if (cpu_mode_ == CpuMode::Cpu6502) {
     return {};
   }
-  return {0x5A}; // PHY opcode
+  return {Opcodes::PHY};
 }
 
 std::vector<uint8_t> Cpu6502::EncodePLY() const {
   if (cpu_mode_ == CpuMode::Cpu6502) {
     return {};
   }
-  return {0x7A}; // PLY opcode
+  return {Opcodes::PLY};
 }
 
 // ============================================================================
@@ -1579,11 +1579,11 @@ std::vector<uint8_t> Cpu6502::EncodeSTZ(uint16_t operand,
 
   static const OpcodeTable STZ_TABLE = {
       .immediate = std::nullopt,
-      .zero_page = 0x64,
-      .zero_page_x = 0x74,
+      .zero_page = Opcodes::STZ_ZP,
+      .zero_page_x = Opcodes::STZ_ZPX,
       .zero_page_y = std::nullopt,
-      .absolute = 0x9C,
-      .absolute_x = 0x9E,
+      .absolute = Opcodes::STZ_ABS,
+      .absolute_x = Opcodes::STZ_ABX,
       .absolute_y = std::nullopt,
       .indirect = std::nullopt,
       .indirect_x = std::nullopt,
@@ -1612,10 +1612,10 @@ std::vector<uint8_t> Cpu6502::EncodeTRB(uint16_t operand,
 
   static const OpcodeTable TRB_TABLE = {
       .immediate = std::nullopt,
-      .zero_page = 0x14,
+      .zero_page = Opcodes::TRB_ZP,
       .zero_page_x = std::nullopt,
       .zero_page_y = std::nullopt,
-      .absolute = 0x1C,
+      .absolute = Opcodes::TRB_ABS,
       .absolute_x = std::nullopt,
       .absolute_y = std::nullopt,
       .indirect = std::nullopt,
@@ -1641,10 +1641,10 @@ std::vector<uint8_t> Cpu6502::EncodeTSB(uint16_t operand,
 
   static const OpcodeTable TSB_TABLE = {
       .immediate = std::nullopt,
-      .zero_page = 0x04,
+      .zero_page = Opcodes::TSB_ZP,
       .zero_page_x = std::nullopt,
       .zero_page_y = std::nullopt,
-      .absolute = 0x0C,
+      .absolute = Opcodes::TSB_ABS,
       .absolute_x = std::nullopt,
       .absolute_y = std::nullopt,
       .indirect = std::nullopt,
@@ -1684,7 +1684,7 @@ std::vector<uint8_t> Cpu6502::EncodeBRA(uint16_t operand,
       .indirect_x = std::nullopt,
       .indirect_y = std::nullopt,
       .accumulator = std::nullopt,
-      .relative = 0x80,
+      .relative = Opcodes::BRA,
       .indirect_zero_page = std::nullopt,
       .absolute_indexed_indirect = std::nullopt,
       .absolute_long = std::nullopt,
@@ -1702,55 +1702,55 @@ std::vector<uint8_t> Cpu6502::EncodeBRA(uint16_t operand,
 std::vector<uint8_t> Cpu6502::EncodePHB() const {
   if (cpu_mode_ != CpuMode::Cpu65816)
     return {};
-  return {0x8B};
+  return {Opcodes::PHB};
 }
 
 std::vector<uint8_t> Cpu6502::EncodePLB() const {
   if (cpu_mode_ != CpuMode::Cpu65816)
     return {};
-  return {0xAB};
+  return {Opcodes::PLB};
 }
 
 std::vector<uint8_t> Cpu6502::EncodePHK() const {
   if (cpu_mode_ != CpuMode::Cpu65816)
     return {};
-  return {0x4B};
+  return {Opcodes::PHK};
 }
 
 std::vector<uint8_t> Cpu6502::EncodePHD() const {
   if (cpu_mode_ != CpuMode::Cpu65816)
     return {};
-  return {0x0B};
+  return {Opcodes::PHD};
 }
 
 std::vector<uint8_t> Cpu6502::EncodePLD() const {
   if (cpu_mode_ != CpuMode::Cpu65816)
     return {};
-  return {0x2B};
+  return {Opcodes::PLD};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeTCD() const {
   if (cpu_mode_ != CpuMode::Cpu65816)
     return {};
-  return {0x5B};
+  return {Opcodes::TCD};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeTDC() const {
   if (cpu_mode_ != CpuMode::Cpu65816)
     return {};
-  return {0x7B};
+  return {Opcodes::TDC};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeTCS() const {
   if (cpu_mode_ != CpuMode::Cpu65816)
     return {};
-  return {0x1B};
+  return {Opcodes::TCS};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeTSC() const {
   if (cpu_mode_ != CpuMode::Cpu65816)
     return {};
-  return {0x3B};
+  return {Opcodes::TSC};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeJML(uint32_t operand,
@@ -1759,13 +1759,13 @@ std::vector<uint8_t> Cpu6502::EncodeJML(uint32_t operand,
     return {};
 
   if (mode == AddressingMode::AbsoluteLong) {
-    std::vector<uint8_t> bytes = {0x5C};
+    std::vector<uint8_t> bytes = {Opcodes::JML_ALG};
     bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
     bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF));
     bytes.push_back(static_cast<uint8_t>((operand >> 16) & 0xFF));
     return bytes;
   } else if (mode == AddressingMode::Indirect) {
-    std::vector<uint8_t> bytes = {0xDC};
+    std::vector<uint8_t> bytes = {Opcodes::JML_IND};
     bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
     bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF));
     return bytes;
@@ -1779,7 +1779,7 @@ std::vector<uint8_t> Cpu6502::EncodeJSL(uint32_t operand,
     return {};
 
   if (mode == AddressingMode::AbsoluteLong) {
-    std::vector<uint8_t> bytes = {0x22};
+    std::vector<uint8_t> bytes = {Opcodes::JSL_ALG};
     bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
     bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF));
     bytes.push_back(static_cast<uint8_t>((operand >> 16) & 0xFF));
@@ -1791,7 +1791,7 @@ std::vector<uint8_t> Cpu6502::EncodeJSL(uint32_t operand,
 std::vector<uint8_t> Cpu6502::EncodeRTL() const {
   if (cpu_mode_ != CpuMode::Cpu65816)
     return {};
-  return {0x6B};
+  return {Opcodes::RTL};
 }
 
 std::vector<uint8_t> Cpu6502::EncodePEA(uint16_t operand,
@@ -1800,7 +1800,7 @@ std::vector<uint8_t> Cpu6502::EncodePEA(uint16_t operand,
     return {};
 
   if (mode == AddressingMode::Absolute) {
-    std::vector<uint8_t> bytes = {0xF4};
+    std::vector<uint8_t> bytes = {Opcodes::PEA};
     bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
     bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF));
     return bytes;
@@ -1814,7 +1814,7 @@ std::vector<uint8_t> Cpu6502::EncodePEI(uint8_t operand,
     return {};
 
   if (mode == AddressingMode::ZeroPage) {
-    return {0xD4, operand};
+    return {Opcodes::PEI, operand};
   }
   return {};
 }
@@ -1825,7 +1825,7 @@ std::vector<uint8_t> Cpu6502::EncodePER(uint16_t operand,
     return {};
 
   if (mode == AddressingMode::Relative) {
-    std::vector<uint8_t> bytes = {0x62};
+    std::vector<uint8_t> bytes = {Opcodes::PER};
     bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
     bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF));
     return bytes;
@@ -1837,14 +1837,14 @@ std::vector<uint8_t> Cpu6502::EncodeMVN(uint8_t srcbank,
                                         uint8_t destbank) const {
   if (cpu_mode_ != CpuMode::Cpu65816)
     return {};
-  return {0x54, srcbank, destbank};
+  return {Opcodes::MVN, srcbank, destbank};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeMVP(uint8_t srcbank,
                                         uint8_t destbank) const {
   if (cpu_mode_ != CpuMode::Cpu65816)
     return {};
-  return {0x44, srcbank, destbank};
+  return {Opcodes::MVP, srcbank, destbank};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeCOP(uint8_t operand,
@@ -1853,7 +1853,7 @@ std::vector<uint8_t> Cpu6502::EncodeCOP(uint8_t operand,
     return {};
 
   if (mode == AddressingMode::Immediate) {
-    return {0x02, operand};
+    return {Opcodes::COP, operand};
   }
   return {};
 }
@@ -1864,7 +1864,7 @@ std::vector<uint8_t> Cpu6502::EncodeWDM(uint8_t operand,
     return {};
 
   if (mode == AddressingMode::Immediate) {
-    return {0x42, operand};
+    return {Opcodes::WDM, operand};
   }
   return {};
 }
@@ -1872,13 +1872,13 @@ std::vector<uint8_t> Cpu6502::EncodeWDM(uint8_t operand,
 std::vector<uint8_t> Cpu6502::EncodeXBA() const {
   if (cpu_mode_ != CpuMode::Cpu65816)
     return {};
-  return {0xEB};
+  return {Opcodes::XBA};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeXCE() const {
   if (cpu_mode_ != CpuMode::Cpu65816)
     return {};
-  return {0xFB};
+  return {Opcodes::XCE};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeSEP(uint16_t value,
@@ -1887,7 +1887,7 @@ std::vector<uint8_t> Cpu6502::EncodeSEP(uint16_t value,
     return {};
 
   if (mode == AddressingMode::Immediate) {
-    return {0xE2, static_cast<uint8_t>(value & 0xFF)};
+    return {Opcodes::SEP, static_cast<uint8_t>(value & 0xFF)};
   }
   return {};
 }
@@ -1898,7 +1898,7 @@ std::vector<uint8_t> Cpu6502::EncodeREP(uint16_t value,
     return {};
 
   if (mode == AddressingMode::Immediate) {
-    return {0xC2, static_cast<uint8_t>(value & 0xFF)};
+    return {Opcodes::REP, static_cast<uint8_t>(value & 0xFF)};
   }
   return {};
 }

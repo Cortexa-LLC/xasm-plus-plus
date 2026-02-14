@@ -63,6 +63,12 @@ constexpr uint8_t STY_ZP = 0x84;  // STY zp       - Zero Page
 constexpr uint8_t STY_ZPX = 0x94; // STY zp,X     - Zero Page,X
 constexpr uint8_t STY_ABS = 0x8C; // STY abs      - Absolute
 
+// STZ - Store Zero (65C02+)
+constexpr uint8_t STZ_ZP = 0x64;  // STZ zp       - Zero Page
+constexpr uint8_t STZ_ZPX = 0x74; // STZ zp,X     - Zero Page,X
+constexpr uint8_t STZ_ABS = 0x9C; // STZ abs      - Absolute
+constexpr uint8_t STZ_ABX = 0x9E; // STZ abs,X    - Absolute,X
+
 // ============================================================================
 // Arithmetic Instructions
 // ============================================================================
@@ -212,6 +218,10 @@ constexpr uint8_t PHA = 0x48; // PHA          - Push Accumulator
 constexpr uint8_t PLA = 0x68; // PLA          - Pull Accumulator
 constexpr uint8_t PHP = 0x08; // PHP          - Push Processor Status
 constexpr uint8_t PLP = 0x28; // PLP          - Pull Processor Status
+constexpr uint8_t PHX = 0xDA; // PHX          - Push X Register (65C02+)
+constexpr uint8_t PLX = 0xFA; // PLX          - Pull X Register (65C02+)
+constexpr uint8_t PHY = 0x5A; // PHY          - Push Y Register (65C02+)
+constexpr uint8_t PLY = 0x7A; // PLY          - Pull Y Register (65C02+)
 constexpr uint8_t TSX = 0xBA; // TSX          - Transfer SP to X
 constexpr uint8_t TXS = 0x9A; // TXS          - Transfer X to SP
 
@@ -263,6 +273,8 @@ constexpr uint8_t TYA = 0x98; // TYA          - Transfer Y to A
 
 constexpr uint8_t NOP = 0xEA; // NOP          - No Operation
 constexpr uint8_t BRK = 0x00; // BRK          - Break
+constexpr uint8_t WAI = 0xCB; // WAI          - Wait for Interrupt (65C02 Rockwell)
+constexpr uint8_t STP = 0xDB; // STP          - Stop Processor (65C02 Rockwell)
 
 // BIT - Test Bits
 constexpr uint8_t BIT_ZP = 0x24;  // BIT zp       - Zero Page
@@ -270,6 +282,54 @@ constexpr uint8_t BIT_ABS = 0x2C; // BIT abs      - Absolute
 constexpr uint8_t BIT_IMM = 0x89; // BIT #imm     - Immediate (65C02+)
 constexpr uint8_t BIT_ZPX = 0x34; // BIT zp,X     - Zero Page,X (65C02+)
 constexpr uint8_t BIT_ABX = 0x3C; // BIT abs,X    - Absolute,X (65C02+)
+
+// TRB - Test and Reset Bits (65C02+)
+constexpr uint8_t TRB_ZP = 0x14;  // TRB zp       - Zero Page
+constexpr uint8_t TRB_ABS = 0x1C; // TRB abs      - Absolute
+
+// TSB - Test and Set Bits (65C02+)
+constexpr uint8_t TSB_ZP = 0x04;  // TSB zp       - Zero Page
+constexpr uint8_t TSB_ABS = 0x0C; // TSB abs      - Absolute
+
+// ============================================================================
+// 65816-Specific Instructions
+// ============================================================================
+
+// 65816 Stack Operations
+constexpr uint8_t PHB = 0x8B; // PHB          - Push Data Bank Register
+constexpr uint8_t PLB = 0xAB; // PLB          - Pull Data Bank Register
+constexpr uint8_t PHK = 0x4B; // PHK          - Push Program Bank Register
+constexpr uint8_t PHD = 0x0B; // PHD          - Push Direct Page Register
+constexpr uint8_t PLD = 0x2B; // PLD          - Pull Direct Page Register
+
+// 65816 Transfer Operations
+constexpr uint8_t TCD = 0x5B; // TCD          - Transfer C to Direct Page
+constexpr uint8_t TDC = 0x7B; // TDC          - Transfer Direct Page to C
+constexpr uint8_t TCS = 0x1B; // TCS          - Transfer C to Stack Pointer
+constexpr uint8_t TSC = 0x3B; // TSC          - Transfer Stack Pointer to C
+
+// 65816 Jump Operations
+constexpr uint8_t JML_ALG = 0x5C; // JML long     - Jump Long Absolute
+constexpr uint8_t JML_IND = 0xDC; // JML [ind]    - Jump Long Indirect
+constexpr uint8_t JSL_ALG = 0x22; // JSL long     - Jump Subroutine Long
+constexpr uint8_t RTL = 0x6B;     // RTL          - Return from Subroutine Long
+
+// 65816 Stack Addressing
+constexpr uint8_t PEA = 0xF4; // PEA abs      - Push Effective Absolute
+constexpr uint8_t PEI = 0xD4; // PEI zp       - Push Effective Indirect
+constexpr uint8_t PER = 0x62; // PER rel      - Push Effective PC Relative
+
+// 65816 Block Move
+constexpr uint8_t MVN = 0x54; // MVN src,dst  - Block Move Negative
+constexpr uint8_t MVP = 0x44; // MVP src,dst  - Block Move Positive
+
+// 65816 Special Operations
+constexpr uint8_t COP = 0x02; // COP #imm     - Coprocessor Enable
+constexpr uint8_t WDM = 0x42; // WDM #imm     - Reserved (WDC)
+constexpr uint8_t XBA = 0xEB; // XBA          - Exchange B and A
+constexpr uint8_t XCE = 0xFB; // XCE          - Exchange Carry and Emulation
+constexpr uint8_t SEP = 0xE2; // SEP #imm     - Set Processor Status Bits
+constexpr uint8_t REP = 0xC2; // REP #imm     - Reset Processor Status Bits
 
 // ============================================================================
 // Branch Relaxation Helper
@@ -282,6 +342,14 @@ constexpr uint8_t BRANCH_COMPLEMENT_MASK = 0x20;
 
 // Offset used in branch relaxation sequence: B!cc +3; JMP target
 constexpr uint8_t BRANCH_RELAXATION_OFFSET = 0x03;
+
+// ============================================================================
+// Numeric Radix Constants
+// ============================================================================
+
+// Radix values for std::stoul and similar parsing functions
+constexpr int RADIX_HEXADECIMAL = 16; // Hexadecimal (base 16)
+constexpr int RADIX_DECIMAL = 10;     // Decimal (base 10)
 
 } // namespace Opcodes
 
