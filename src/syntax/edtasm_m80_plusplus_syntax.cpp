@@ -7,6 +7,7 @@
 #include "edtasm_directive_handlers.h"
 #include "xasm++/atom.h"
 #include "xasm++/cpu/cpu_z80.h"
+#include "xasm++/cpu/opcodes_z80.h"
 #include "xasm++/directives/common_directives.h"
 #include "xasm++/directives/directive_constants.h"
 #include "xasm++/directives/z80_directives.h"
@@ -21,9 +22,39 @@
 
 namespace xasm {
 
+namespace {
+
+// Numeric literal prefixes
+constexpr char HEX_PREFIX_DOLLAR = '$';    // $FF
+constexpr char HEX_PREFIX_0X = 'x';        // 0xFF
+
+// Radix values
+constexpr int RADIX_BINARY = 2;
+constexpr int RADIX_OCTAL = 8;
+constexpr int RADIX_DECIMAL = 10;
+constexpr int RADIX_HEXADECIMAL = 16;
+
+// String delimiters
+constexpr char SINGLE_QUOTE = '\'';
+constexpr char DOUBLE_QUOTE = '"';
+
+// Z80 instruction size constants (for size estimation)
+constexpr int INSTRUCTION_SIZE_SINGLE_BYTE = 1;   // RST, register-only operations
+constexpr int INSTRUCTION_SIZE_TWO_BYTES = 2;     // JR, DJNZ, immediate 8-bit operands
+constexpr int INSTRUCTION_SIZE_THREE_BYTES = 3;   // JP, CALL, 16-bit immediate operands
+
+} // anonymous namespace
+
 // Namespace aliases for directive constants
 using namespace CommonDirectives;
 using namespace Z80Directives;
+
+// Import specific Z80 mnemonics (avoid conflicts with CommonDirectives::SET)
+using Z80Mnemonics::JR;
+using Z80Mnemonics::DJNZ;
+using Z80Mnemonics::JP;
+using Z80Mnemonics::CALL;
+using Z80Mnemonics::RST;
 
 // Import EDTASM-M80++ specific directive constants
 using xasm::directives::DOT_LIST;
@@ -66,7 +97,7 @@ bool Z80NumberParser::TryParse(const std::string &token, int64_t &value) const {
     // Convert to value
     value = 0;
     for (char c : hex_part) {
-      value *= 16;
+      value *= RADIX_HEXADECIMAL;
       if (c >= '0' && c <= '9') {
         value += c - '0';
       } else if (c >= 'A' && c <= 'F') {
@@ -97,7 +128,7 @@ bool Z80NumberParser::TryParse(const std::string &token, int64_t &value) const {
     // Convert to value
     value = 0;
     for (char c : octal_part) {
-      value = value * 8 + (c - '0');
+      value = value * RADIX_OCTAL + (c - '0');
     }
     return true;
   }
@@ -121,7 +152,7 @@ bool Z80NumberParser::TryParse(const std::string &token, int64_t &value) const {
     // Convert to value
     value = 0;
     for (char c : binary_part) {
-      value = value * 2 + (c - '0');
+      value = value * RADIX_BINARY + (c - '0');
     }
     return true;
   }
@@ -196,7 +227,7 @@ EdtasmM80PlusPlusSyntaxParser::EdtasmM80PlusPlusSyntaxParser()
       exitm_triggered_(false), macro_nesting_depth_(0),
       in_repeat_block_(RepeatType::NONE), rept_count_(0),
       repeat_nesting_depth_(0), current_address_(0), end_directive_seen_(false),
-      current_line_(0), listing_enabled_(true), current_radix_(10) {
+      current_line_(0), listing_enabled_(true), current_radix_(RADIX_DECIMAL) {
   InitializeDirectiveRegistry();
 }
 
@@ -261,7 +292,7 @@ void EdtasmM80PlusPlusSyntaxParser::Parse(const std::string &source,
   listing_subtitle_.clear();
   module_name_.clear();
   current_radix_ = 10;
-  z80_number_parser_.SetRadix(10);
+  z80_number_parser_.SetRadix(RADIX_DECIMAL);
   in_macro_definition_ = false;
   in_repeat_block_ = RepeatType::NONE;
   macro_expansion_depth_ = 0;
@@ -675,7 +706,7 @@ uint32_t EdtasmM80PlusPlusSyntaxParser::EstimateZ80InstructionSize(
                                    operand.find("R,") != std::string::npos ||
                                    operand.find(",I") != std::string::npos ||
                                    operand.find(",R") != std::string::npos)) {
-    return 2; // ED-prefixed LD I/R instructions
+    return INSTRUCTION_SIZE_TWO_BYTES; // ED-prefixed LD I/R instructions
   }
 
   // Index register instructions (DD/FD prefix)
@@ -685,9 +716,9 @@ uint32_t EdtasmM80PlusPlusSyntaxParser::EstimateZ80InstructionSize(
     if (operand.find("(") != std::string::npos) {
       return operand.find(",") != std::string::npos
                  ? 4
-                 : 3; // With or without immediate
+                 : INSTRUCTION_SIZE_THREE_BYTES; // With or without immediate
     }
-    return 2; // Without displacement
+    return INSTRUCTION_SIZE_TWO_BYTES; // Without displacement
   }
 
   // Immediate 16-bit operands (e.g., LD HL,nnnn)
@@ -704,33 +735,33 @@ uint32_t EdtasmM80PlusPlusSyntaxParser::EstimateZ80InstructionSize(
         hex_end++;
       }
       if (hex_end - hex_start > 2) {
-        return 3; // opcode + 16-bit immediate
+        return INSTRUCTION_SIZE_THREE_BYTES; // opcode + 16-bit immediate
       }
     }
   }
 
   // Immediate 8-bit operands (e.g., LD A,n)
   if (operand.find(",") != std::string::npos) {
-    return 2; // opcode + byte operand (default for immediate data)
+    return INSTRUCTION_SIZE_TWO_BYTES; // opcode + byte operand (default for immediate data)
   }
 
   // Relative jumps (JR, DJNZ) - opcode + displacement
-  if (mnemonic == "JR" || mnemonic == "DJNZ") {
-    return 2;
+  if (mnemonic == JR || mnemonic == DJNZ) {
+    return INSTRUCTION_SIZE_TWO_BYTES;
   }
 
   // Absolute jumps/calls - opcode + 16-bit address
-  if (mnemonic == "JP" || mnemonic == "CALL") {
-    return 3;
+  if (mnemonic == JP || mnemonic == CALL) {
+    return INSTRUCTION_SIZE_THREE_BYTES;
   }
 
   // RST instructions - single byte
-  if (mnemonic == "RST") {
-    return 1;
+  if (mnemonic == RST) {
+    return INSTRUCTION_SIZE_SINGLE_BYTE;
   }
 
   // Default: assume single-byte instruction (register-only, implicit, etc.)
-  return 1;
+  return INSTRUCTION_SIZE_SINGLE_BYTE;
 }
 
 std::string
@@ -810,30 +841,30 @@ uint32_t EdtasmM80PlusPlusSyntaxParser::ParseNumber(const std::string &str) {
 
   // Explicit format overrides radix
   // Hex: $FF, 0xFF, 0FFH
-  if (trimmed[0] == '$') {
-    return std::stoul(trimmed.substr(1), nullptr, 16);
+  if (trimmed[0] == HEX_PREFIX_DOLLAR) {
+    return std::stoul(trimmed.substr(1), nullptr, RADIX_HEXADECIMAL);
   } else if (trimmed.size() >= 2 && trimmed[0] == '0' &&
-             (trimmed[1] == 'x' || trimmed[1] == 'X')) {
-    return std::stoul(trimmed.substr(2), nullptr, 16);
+             (trimmed[1] == HEX_PREFIX_0X || trimmed[1] == 'X')) {
+    return std::stoul(trimmed.substr(2), nullptr, RADIX_HEXADECIMAL);
   } else if (trimmed.size() >= 2 &&
              (trimmed.back() == 'H' || trimmed.back() == 'h')) {
-    return std::stoul(trimmed.substr(0, trimmed.size() - 1), nullptr, 16);
+    return std::stoul(trimmed.substr(0, trimmed.size() - 1), nullptr, RADIX_HEXADECIMAL);
   }
   // Binary: 11110000B
   else if (trimmed.size() >= 2 &&
            (trimmed.back() == 'B' || trimmed.back() == 'b')) {
-    return std::stoul(trimmed.substr(0, trimmed.size() - 1), nullptr, 2);
+    return std::stoul(trimmed.substr(0, trimmed.size() - 1), nullptr, RADIX_BINARY);
   }
   // Octal: 377O, 377Q
   else if (trimmed.size() >= 2 &&
            (trimmed.back() == 'O' || trimmed.back() == 'o' ||
             trimmed.back() == 'Q' || trimmed.back() == 'q')) {
-    return std::stoul(trimmed.substr(0, trimmed.size() - 1), nullptr, 8);
+    return std::stoul(trimmed.substr(0, trimmed.size() - 1), nullptr, RADIX_OCTAL);
   }
   // Decimal with D suffix: 255D
   else if (trimmed.size() >= 2 &&
            (trimmed.back() == 'D' || trimmed.back() == 'd')) {
-    return std::stoul(trimmed.substr(0, trimmed.size() - 1), nullptr, 10);
+    return std::stoul(trimmed.substr(0, trimmed.size() - 1), nullptr, RADIX_DECIMAL);
   }
   // No explicit format - use current radix
   else {
@@ -1101,7 +1132,7 @@ void EdtasmM80PlusPlusSyntaxParser::InitializeDirectiveRegistry() {
             // End of string literal (not escaped)
             in_string = false;
             current_token += c;
-          } else if (!in_string && (c == '\'' || c == '"')) {
+          } else if (!in_string && (c == SINGLE_QUOTE || c == DOUBLE_QUOTE)) {
             // Start of string literal
             in_string = true;
             string_delimiter = c;
@@ -1132,7 +1163,7 @@ void EdtasmM80PlusPlusSyntaxParser::InitializeDirectiveRegistry() {
           }
 
           // Check if token is a string literal (starts with ' or ")
-          if (token.size() >= 2 && (token[0] == '\'' || token[0] == '"')) {
+          if (token.size() >= 2 && (token[0] == SINGLE_QUOTE || token[0] == DOUBLE_QUOTE)) {
             char delimiter = token[0];
 
             // Find the real end delimiter (accounting for escape sequences)
