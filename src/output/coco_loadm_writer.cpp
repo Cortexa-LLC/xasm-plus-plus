@@ -4,6 +4,7 @@
  */
 
 #include "xasm++/output/coco_loadm_writer.h"
+#include "xasm++/output/output_format_constants.h"
 #include "xasm++/atom.h"
 
 #include <stdexcept>
@@ -70,11 +71,11 @@ void CocoLoadmWriter::WritePreamble(std::ostream &output,
                                     uint64_t first_address,
                                     size_t total_length) {
   // Validate address fits in 16-bit
-  if (first_address > 0xFFFF) {
+  if (first_address > output_format::bit_ops::MASK_LOW_WORD) {
     throw std::runtime_error("CoCo DOS format: Address exceeds 16-bit limit");
   }
 
-  output.put(0x00); // Preamble type
+  output.put(output_format::coco_loadm::RECORD_TYPE_PREAMBLE); // Preamble type
   WriteBE16(output, static_cast<uint16_t>(total_length));
   WriteBE16(output, static_cast<uint16_t>(first_address));
 }
@@ -82,11 +83,11 @@ void CocoLoadmWriter::WritePreamble(std::ostream &output,
 void CocoLoadmWriter::WriteDataBlock(std::ostream &output, uint64_t address,
                                      const std::vector<uint8_t> &data) {
   // Validate address fits in 16-bit
-  if (address > 0xFFFF) {
+  if (address > output_format::bit_ops::MASK_LOW_WORD) {
     throw std::runtime_error("CoCo DOS format: Address exceeds 16-bit limit");
   }
 
-  output.put(0x00); // Data block type
+  output.put(output_format::coco_loadm::RECORD_TYPE_DATA_BLOCK); // Data block type
   WriteBE16(output, static_cast<uint16_t>(data.size()));
   WriteBE16(output, static_cast<uint16_t>(address));
 
@@ -97,24 +98,28 @@ void CocoLoadmWriter::WriteDataBlock(std::ostream &output, uint64_t address,
 }
 
 void CocoLoadmWriter::WritePostamble(std::ostream &output) {
-  output.put(static_cast<char>(0xFF)); // Postamble type
-  output.put(0x00);                    // Subtype
+  output.put(
+      static_cast<char>(output_format::coco_loadm::RECORD_TYPE_POSTAMBLE)); // Postamble type
+  output.put(output_format::coco_loadm::POSTAMBLE_SUBTYPE); // Subtype
 
   if (has_entry_point_) {
     // Validate address fits in 16-bit
-    if (entry_point_addr_ > 0xFFFF) {
+    if (entry_point_addr_ > output_format::bit_ops::MASK_LOW_WORD) {
       throw std::runtime_error(
           "CoCo DOS format: Entry point exceeds 16-bit limit");
     }
 
-    output.put(0x00); // Padding
+    output.put(output_format::coco_loadm::POSTAMBLE_PADDING); // Padding
     WriteBE16(output, static_cast<uint16_t>(entry_point_addr_));
   }
 }
 
 void CocoLoadmWriter::WriteBE16(std::ostream &output, uint16_t value) {
-  output.put(static_cast<char>((value >> 8) & 0xFF)); // High byte
-  output.put(static_cast<char>(value & 0xFF));        // Low byte
+  output.put(static_cast<char>(
+      (value >> output_format::bit_ops::SHIFT_HIGH_BYTE) &
+      output_format::bit_ops::MASK_LOW_BYTE)); // High byte
+  output.put(static_cast<char>(
+      value & output_format::bit_ops::MASK_LOW_BYTE)); // Low byte
 }
 
 std::vector<std::pair<uint64_t, uint8_t>>

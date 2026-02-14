@@ -89,6 +89,31 @@ std::vector<std::string> SplitByComma(const std::string &str) {
 } // anonymous namespace
 
 // ============================================================================
+// Registry Initialization
+// ============================================================================
+
+void RegisterCoreDirectiveHandlers(DirectiveRegistry &registry) {
+  // ORG directive - Set origin address
+  registry.Register(directives::ORG, HandleOrg);
+
+  // EQU directive - Define constant symbol
+  registry.Register(directives::EQU, HandleEqu);
+
+  // DB directive and aliases - Define byte data
+  registry.Register({directives::DB, directives::DEFB, directives::BYTE},
+                    HandleDb);
+
+  // DW directive and aliases - Define word data
+  registry.Register({directives::DW, directives::DEFW, directives::WORD},
+                    HandleDw);
+
+  // DS directive and aliases - Define space
+  registry.Register(
+      {directives::DS, directives::DEFS, directives::BLOCK, directives::RMB},
+      HandleDs);
+}
+
+// ============================================================================
 // Public Handler Functions
 // ============================================================================
 
@@ -214,26 +239,5 @@ void HandleDs(const std::string &label, const std::string &operand,
 // ============================================================================
 // DirectiveRegistry Integration
 // ============================================================================
-
-void RegisterCoreDirectiveHandlers(DirectiveRegistry &registry) {
-  // ORG directive - Set origin address
-  registry.Register(directives::ORG, HandleOrg);
-
-  // EQU directive - Define constant symbol
-  registry.Register(directives::EQU, HandleEqu);
-
-  // DB directive and aliases - Define byte data
-  registry.Register({directives::DB, directives::DEFB, directives::BYTE},
-                    HandleDb);
-
-  // DW directive and aliases - Define word data
-  registry.Register({directives::DW, directives::DEFW, directives::WORD},
-                    HandleDw);
-
-  // DS directive and aliases - Define space
-  registry.Register(
-      {directives::DS, directives::DEFS, directives::BLOCK, directives::RMB},
-      HandleDs);
-}
 
 } // namespace xasm

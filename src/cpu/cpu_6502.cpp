@@ -1955,7 +1955,7 @@ Cpu6502::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
   auto parse_hex = [](const std::string &s) -> uint32_t {
     if (s.empty() || s[0] != '$')
       return 0;
-    return std::stoul(s.substr(1), nullptr, 16);
+    return std::stoul(s.substr(1), nullptr, Opcodes::RADIX_HEXADECIMAL);
   };
 
   // Determine addressing mode from operand_str
@@ -2319,7 +2319,7 @@ Cpu6502::EncodeInstructionSpecial(const std::string &mnemonic,
   auto parse_hex = [](const std::string &s) -> uint32_t {
     if (s.empty() || s[0] != '$')
       throw std::runtime_error("Expected hex value starting with $");
-    return std::stoul(s.substr(1), nullptr, 16);
+    return std::stoul(s.substr(1), nullptr, Opcodes::RADIX_HEXADECIMAL);
   };
 
   // Branch instructions with relaxation
@@ -2386,7 +2386,7 @@ Cpu6502::EncodeInstructionSpecial(const std::string &mnemonic,
       if (!str.empty() && str[0] == '$') {
         return static_cast<uint8_t>(parse_hex(str) & 0xFF);
       }
-      return static_cast<uint8_t>(std::stoul(str, nullptr, 10) & 0xFF);
+      return static_cast<uint8_t>(std::stoul(str, nullptr, Opcodes::RADIX_DECIMAL) & 0xFF);
     };
 
     try {

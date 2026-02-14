@@ -21,6 +21,13 @@ namespace merlin {
 using xasm::util::ToUpper;
 using xasm::util::Trim;
 
+namespace {
+
+// Radix values for number parsing
+constexpr int RADIX_HEXADECIMAL = 16;
+
+} // anonymous namespace
+
 // ============================================================================
 // Helper Functions (temporary delegation to parser methods)
 // ============================================================================
@@ -247,7 +254,7 @@ void HandleHex(const std::string &label, const std::string &operand,
           }
         }
         try {
-          bytes.push_back(static_cast<uint8_t>(std::stoul(token, nullptr, 16)));
+          bytes.push_back(static_cast<uint8_t>(std::stoul(token, nullptr, RADIX_HEXADECIMAL)));
         } catch (const std::exception &e) {
           throw std::runtime_error(
               FormatError("Invalid hex value in HEX directive: '" + token +
@@ -275,7 +282,7 @@ void HandleHex(const std::string &label, const std::string &operand,
       std::string byte_str = hex_str.substr(i, 2);
       try {
         bytes.push_back(
-            static_cast<uint8_t>(std::stoul(byte_str, nullptr, 16)));
+            static_cast<uint8_t>(std::stoul(byte_str, nullptr, RADIX_HEXADECIMAL)));
       } catch (const std::exception &e) {
         throw std::runtime_error(
             FormatError("Invalid hex value in HEX directive: '" + byte_str +

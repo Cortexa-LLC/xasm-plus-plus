@@ -12,6 +12,13 @@
 
 namespace xasm {
 
+namespace {
+
+// Radix values for number parsing
+constexpr int RADIX_DECIMAL = 10;
+
+} // anonymous namespace
+
 // ===========================================================================
 // Constructor
 // ===========================================================================
@@ -109,7 +116,7 @@ uint32_t EdtasmSyntaxParser::ParseNumber(const std::string &str) {
 
   // Decimal (default)
   try {
-    return static_cast<uint32_t>(std::stoul(trimmed, nullptr, 10));
+    return static_cast<uint32_t>(std::stoul(trimmed, nullptr, RADIX_DECIMAL));
   } catch (const std::exception &e) {
     throw std::runtime_error("Invalid decimal number: " + trimmed);
   }

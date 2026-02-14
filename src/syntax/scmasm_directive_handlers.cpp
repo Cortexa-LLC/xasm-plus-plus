@@ -33,6 +33,9 @@ namespace {
 
 using namespace constants;
 
+// Radix values for number parsing
+constexpr int RADIX_HEXADECIMAL = 16;
+
 /**
  * @brief Trim whitespace from both ends of string
  */
@@ -401,7 +404,7 @@ void HandleHs(const std::string &label, const std::string &operand,
   for (size_t i = 0; i < hex_digits.length();
        i += constants::HEX_DIGITS_PER_BYTE) {
     std::string byte_str = hex_digits.substr(i, constants::HEX_DIGITS_PER_BYTE);
-    uint8_t byte = static_cast<uint8_t>(std::stoi(byte_str, nullptr, 16));
+    uint8_t byte = static_cast<uint8_t>(std::stoi(byte_str, nullptr, RADIX_HEXADECIMAL));
     data.push_back(byte);
   }
 

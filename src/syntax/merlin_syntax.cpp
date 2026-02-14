@@ -20,6 +20,15 @@ using xasm::util::ToUpper;
 using xasm::util::Trim;
 using namespace xasm::directives;
 
+namespace {
+
+// Radix values for number parsing
+constexpr int RADIX_BINARY = 2;
+constexpr int RADIX_DECIMAL = 10;
+constexpr int RADIX_HEXADECIMAL = 16;
+
+} // anonymous namespace
+
 // ============================================================================
 // Constructor
 // ============================================================================
@@ -416,13 +425,13 @@ void MerlinSyntaxParser::HandleDum(const std::string &operand,
   // Parse number (decimal, hex, or binary)
   if (op[0] == '$') {
     // Hex
-    dum_address_ = std::stoul(op.substr(1), nullptr, 16);
+    dum_address_ = std::stoul(op.substr(1), nullptr, RADIX_HEXADECIMAL);
   } else if (op[0] == '%') {
     // Binary
-    dum_address_ = std::stoul(op.substr(1), nullptr, 2);
+    dum_address_ = std::stoul(op.substr(1), nullptr, RADIX_BINARY);
   } else if (std::isdigit(op[0])) {
     // Decimal
-    dum_address_ = std::stoul(op, nullptr, 10);
+    dum_address_ = std::stoul(op, nullptr, RADIX_DECIMAL);
   } else {
     // Symbol - look it up
     int64_t value = 0;
@@ -500,13 +509,13 @@ void MerlinSyntaxParser::HandleDo(const std::string &operand,
   uint32_t value = 0;
   if (op[0] == '$') {
     // Hex literal
-    value = std::stoul(op.substr(1), nullptr, 16);
+    value = std::stoul(op.substr(1), nullptr, RADIX_HEXADECIMAL);
   } else if (op[0] == '%') {
     // Binary literal
-    value = std::stoul(op.substr(1), nullptr, 2);
+    value = std::stoul(op.substr(1), nullptr, RADIX_BINARY);
   } else if (std::isdigit(op[0])) {
     // Decimal literal
-    value = std::stoul(op, nullptr, 10);
+    value = std::stoul(op, nullptr, RADIX_DECIMAL);
   } else {
     // Symbol - look it up
     int64_t sym_value = 0;

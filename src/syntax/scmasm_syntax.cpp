@@ -22,6 +22,15 @@
 
 namespace xasm {
 
+namespace {
+
+// Radix values for number parsing
+constexpr int RADIX_BINARY = 2;
+constexpr int RADIX_DECIMAL = 10;
+constexpr int RADIX_HEXADECIMAL = 16;
+
+} // anonymous namespace
+
 // ============================================================================
 // SCMASMNumberParser Implementation
 // ============================================================================
@@ -48,7 +57,7 @@ bool SCMASMNumberParser::TryParse(const std::string &token,
     }
 
     try {
-      value = std::stoll(hex, nullptr, 16);
+      value = std::stoll(hex, nullptr, RADIX_HEXADECIMAL);
       return true;
     } catch (...) {
       return false;
@@ -78,7 +87,7 @@ bool SCMASMNumberParser::TryParse(const std::string &token,
     }
 
     try {
-      value = std::stoll(binary, nullptr, 2);
+      value = std::stoll(binary, nullptr, RADIX_BINARY);
       return true;
     } catch (...) {
       return false;
@@ -120,7 +129,7 @@ bool SCMASMNumberParser::TryParse(const std::string &token,
 
   // Decimal
   try {
-    value = std::stoll(token, nullptr, 10);
+    value = std::stoll(token, nullptr, RADIX_DECIMAL);
     return true;
   } catch (...) {
     return false;
@@ -135,6 +144,67 @@ ScmasmSyntaxParser::ScmasmSyntaxParser()
     : current_address_(0), current_file_("<source>"), current_line_(0),
       cpu_(nullptr), in_macro_definition_(false), macro_invocation_depth_(0) {
   InitializeDirectiveRegistry();
+}
+
+void ScmasmSyntaxParser::InitializeDirectiveRegistry() {
+  // Phase 6c.2: Use extracted free functions with directive name constants
+  using namespace scmasm::directives;
+
+  // .OR - Set origin address
+  directive_registry_[OR] = scmasm::HandleOr;
+
+  // .EQ - Define constant
+  directive_registry_[EQ] = scmasm::HandleEq;
+
+  // .SE - Set variable (redefinable)
+  directive_registry_[SE] = scmasm::HandleSe;
+
+  // .AS - ASCII string
+  directive_registry_[AS] = scmasm::HandleAs;
+
+  // .AT - ASCII text (high bit on last char)
+  directive_registry_[AT] = scmasm::HandleAt;
+
+  // .AZ - ASCII zero-terminated
+  directive_registry_[AZ] = scmasm::HandleAz;
+
+  // .DA / .DFB - Define byte(s)
+  directive_registry_[DA] = scmasm::HandleDa;
+  directive_registry_[DFB] = scmasm::HandleDa; // Alias
+
+  // .HS - Hex string
+  directive_registry_[HS] = scmasm::HandleHs;
+
+  // .BS - Binary string
+  directive_registry_[BS] = scmasm::HandleBs;
+
+  // .MA - Begin macro definition
+  directive_registry_[MA] = scmasm::HandleMa;
+
+  // .ENDM / .EM - End macro definition
+  directive_registry_[ENDM] = scmasm::HandleEndm;
+  directive_registry_[EM] = scmasm::HandleEndm; // Alias
+
+  // P0 Priority Directives (A2oSX Critical)
+  directive_registry_[PS] = scmasm::HandlePs;       // Pascal string
+  directive_registry_[INB] = scmasm::HandleInb;     // Include binary
+  directive_registry_[LIST] = scmasm::HandleList;   // Listing control
+  directive_registry_[DUMMY] = scmasm::HandleDummy; // Dummy section
+  directive_registry_[OP] = scmasm::HandleOp;       // CPU operation mode
+
+  // Phase 3: 100% Coverage Directives
+  directive_registry_[CS] = scmasm::HandleCs; // C-string with escapes
+  directive_registry_[CZ] = scmasm::HandleCz; // C-string zero-terminated
+  directive_registry_[TF] = scmasm::HandleTf; // Text file/title metadata
+  directive_registry_[EP] = scmasm::HandleEp; // Entry point
+  directive_registry_[HX] = scmasm::HandleHx; // Hex nibble storage
+  directive_registry_[TA] = scmasm::HandleTa; // Target address (no-op)
+  directive_registry_[AC] = scmasm::HandleAc; // ASCII with prefix
+
+  // Note: Control flow directives (.DO, .ELSE, .FIN, .LU, .ENDU) are NOT
+  // registered here because they require special handling in ParseLine with
+  // line skipping and nested scoping. They cannot be dispatched via the simple
+  // registry pattern.
 }
 
 // ============================================================================
@@ -645,7 +715,7 @@ uint32_t ScmasmSyntaxParser::ParseNumber(const std::string &str) {
     }
 
     try {
-      return std::stoul(hex, nullptr, 16);
+      return std::stoul(hex, nullptr, RADIX_HEXADECIMAL);
     } catch (const std::exception &e) {
       throw std::runtime_error("Failed to parse hex number '" + trimmed +
                                "': " + e.what());
@@ -677,7 +747,7 @@ uint32_t ScmasmSyntaxParser::ParseNumber(const std::string &str) {
     }
 
     try {
-      return std::stoul(binary, nullptr, 2);
+      return std::stoul(binary, nullptr, RADIX_BINARY);
     } catch (const std::exception &e) {
       throw std::runtime_error("Failed to parse binary number '" + trimmed +
                                "': " + e.what());
@@ -708,7 +778,7 @@ uint32_t ScmasmSyntaxParser::ParseNumber(const std::string &str) {
 
   // Decimal
   try {
-    return std::stoul(trimmed, nullptr, 10);
+    return std::stoul(trimmed, nullptr, RADIX_DECIMAL);
   } catch (const std::exception &e) {
     throw std::runtime_error("Failed to parse decimal number '" + trimmed +
                              "': " + e.what());
@@ -980,7 +1050,7 @@ void ScmasmSyntaxParser::HandleHs(const std::string &operand, Section &section,
   // Convert pairs to bytes
   for (size_t i = 0; i < hex_digits.length(); i += 2) {
     std::string byte_str = hex_digits.substr(i, 2);
-    uint8_t byte = static_cast<uint8_t>(std::stoi(byte_str, nullptr, 16));
+    uint8_t byte = static_cast<uint8_t>(std::stoi(byte_str, nullptr, RADIX_HEXADECIMAL));
     data.push_back(byte);
   }
 
@@ -1303,66 +1373,5 @@ void ScmasmSyntaxParser::HandleLu(const std::string &operand, Section &section,
 // ============================================================================
 // Directive Registry
 // ============================================================================
-
-void ScmasmSyntaxParser::InitializeDirectiveRegistry() {
-  // Phase 6c.2: Use extracted free functions with directive name constants
-  using namespace scmasm::directives;
-
-  // .OR - Set origin address
-  directive_registry_[OR] = scmasm::HandleOr;
-
-  // .EQ - Define constant
-  directive_registry_[EQ] = scmasm::HandleEq;
-
-  // .SE - Set variable (redefinable)
-  directive_registry_[SE] = scmasm::HandleSe;
-
-  // .AS - ASCII string
-  directive_registry_[AS] = scmasm::HandleAs;
-
-  // .AT - ASCII text (high bit on last char)
-  directive_registry_[AT] = scmasm::HandleAt;
-
-  // .AZ - ASCII zero-terminated
-  directive_registry_[AZ] = scmasm::HandleAz;
-
-  // .DA / .DFB - Define byte(s)
-  directive_registry_[DA] = scmasm::HandleDa;
-  directive_registry_[DFB] = scmasm::HandleDa; // Alias
-
-  // .HS - Hex string
-  directive_registry_[HS] = scmasm::HandleHs;
-
-  // .BS - Binary string
-  directive_registry_[BS] = scmasm::HandleBs;
-
-  // .MA - Begin macro definition
-  directive_registry_[MA] = scmasm::HandleMa;
-
-  // .ENDM / .EM - End macro definition
-  directive_registry_[ENDM] = scmasm::HandleEndm;
-  directive_registry_[EM] = scmasm::HandleEndm; // Alias
-
-  // P0 Priority Directives (A2oSX Critical)
-  directive_registry_[PS] = scmasm::HandlePs;       // Pascal string
-  directive_registry_[INB] = scmasm::HandleInb;     // Include binary
-  directive_registry_[LIST] = scmasm::HandleList;   // Listing control
-  directive_registry_[DUMMY] = scmasm::HandleDummy; // Dummy section
-  directive_registry_[OP] = scmasm::HandleOp;       // CPU operation mode
-
-  // Phase 3: 100% Coverage Directives
-  directive_registry_[CS] = scmasm::HandleCs; // C-string with escapes
-  directive_registry_[CZ] = scmasm::HandleCz; // C-string zero-terminated
-  directive_registry_[TF] = scmasm::HandleTf; // Text file/title metadata
-  directive_registry_[EP] = scmasm::HandleEp; // Entry point
-  directive_registry_[HX] = scmasm::HandleHx; // Hex nibble storage
-  directive_registry_[TA] = scmasm::HandleTa; // Target address (no-op)
-  directive_registry_[AC] = scmasm::HandleAc; // ASCII with prefix
-
-  // Note: Control flow directives (.DO, .ELSE, .FIN, .LU, .ENDU) are NOT
-  // registered here because they require special handling in ParseLine with
-  // line skipping and nested scoping. They cannot be dispatched via the simple
-  // registry pattern.
-}
 
 } // namespace xasm

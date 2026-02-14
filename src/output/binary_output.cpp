@@ -2,6 +2,7 @@
 // Phase 1: Minimal Viable Assembler - Binary Output Plugin
 
 #include "xasm++/output/binary_output.h"
+#include "xasm++/output/output_format_constants.h"
 #include "xasm++/section.h"
 #include "xasm++/symbol.h"
 #include <fstream>
@@ -48,7 +49,8 @@ void BinaryOutput::WriteOutput(const std::string &filename,
         // Serialize SpaceAtom (write zeros)
         auto space_atom = std::dynamic_pointer_cast<SpaceAtom>(atom);
         if (space_atom) {
-          std::vector<uint8_t> zeros(space_atom->count, 0x00);
+          std::vector<uint8_t> zeros(space_atom->count,
+                                      output_format::binary::ZERO_BYTE);
           out.write(reinterpret_cast<const char *>(zeros.data()), zeros.size());
           position += space_atom->count;
         }
@@ -62,7 +64,8 @@ void BinaryOutput::WriteOutput(const std::string &filename,
           size_t alignment = align_atom->alignment;
           size_t padding = (alignment - (position % alignment)) % alignment;
           if (padding > 0) {
-            std::vector<uint8_t> pad_bytes(padding, 0x00);
+            std::vector<uint8_t> pad_bytes(padding,
+                                            output_format::binary::ZERO_BYTE);
             out.write(reinterpret_cast<const char *>(pad_bytes.data()),
                       pad_bytes.size());
             position += padding;

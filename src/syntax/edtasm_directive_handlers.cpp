@@ -106,6 +106,10 @@ static void ProcessStringLiteral(const std::string &token,
   }
 }
 
+// ============================================================================
+// Directive Handler Implementations
+// ============================================================================
+
 // DB/DEFB/BYTE/DM/DEFM/TEXT/ASCII - Define byte(s)
 void HandleDbDirective(const std::string & /*label*/,
                        const std::string &operand, DirectiveContext &ctx) {
@@ -875,7 +879,10 @@ void HandleIrpcDirective(const std::string & /*label*/,
   parser->repeat_nesting_depth_ = 0;
 }
 
-// Register all EDTASM directive handlers
+// ============================================================================
+// Registry Initialization
+// ============================================================================
+
 void RegisterEdtasmDirectiveHandlers(DirectiveRegistry &registry) {
   // Data definition directives
   registry.Register({"DB", "DEFB", "DM", "DEFM", "TEXT", "ASCII", "BYTE"}, HandleDbDirective);

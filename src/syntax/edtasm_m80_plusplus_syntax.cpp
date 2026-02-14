@@ -231,6 +231,11 @@ EdtasmM80PlusPlusSyntaxParser::EdtasmM80PlusPlusSyntaxParser()
   InitializeDirectiveRegistry();
 }
 
+void EdtasmM80PlusPlusSyntaxParser::InitializeDirectiveRegistry() {
+  // Register all EDTASM directive handlers (implemented as free functions)
+  RegisterEdtasmDirectiveHandlers(directive_registry_);
+}
+
 void EdtasmM80PlusPlusSyntaxParser::SetCpu(CpuZ80 *cpu) { cpu_ = cpu; }
 
 void EdtasmM80PlusPlusSyntaxParser::SetRadix(int radix) {
@@ -1041,11 +1046,6 @@ std::string EdtasmM80PlusPlusSyntaxParser::MakeLocalLabelUnique(
   }
 
   return result;
-}
-
-void EdtasmM80PlusPlusSyntaxParser::InitializeDirectiveRegistry() {
-  // Register all EDTASM directive handlers (implemented as free functions)
-  RegisterEdtasmDirectiveHandlers(directive_registry_);
 }
 
 std::vector<std::string>
