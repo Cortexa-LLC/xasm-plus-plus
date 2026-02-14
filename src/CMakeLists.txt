@@ -45,6 +45,7 @@ target_link_libraries(xasm_core PUBLIC
 # Syntax plugins library (Phase 1+)
 add_library(xasm_syntax STATIC
     syntax/simple_syntax.cpp
+    syntax/simple_directive_handlers.cpp
     syntax/merlin_syntax.cpp
     syntax/merlin_directive_handlers.cpp
     syntax/scmasm_syntax.cpp

@@ -2,6 +2,7 @@
 // Phase 1: Minimal Viable Assembler - SimpleSyntax Plugin
 
 #include "xasm++/syntax/simple_syntax.h"
+#include "xasm++/directives/simple_directive_handlers.h"
 #include "xasm++/parse_utils.h"
 #include <algorithm>
 #include <cctype>
@@ -46,53 +47,13 @@ SimpleSyntaxParser::SimpleSyntaxParser() { InitializeDirectives(); }
 
 void SimpleSyntaxParser::InitializeDirectives() {
   // Register .ORG directive
-  directive_registry_.Register("ORG", [](const std::string & /*label*/,
-                                         const std::string &operand,
-                                         DirectiveContext &context) {
-    uint32_t address = ParseHex(operand);
-    context.section->atoms.push_back(std::make_shared<OrgAtom>(address));
-    *context.current_address = address;
-  });
+  directive_registry_.Register("ORG", simple::HandleOrg);
 
   // Register .DB directive
-  directive_registry_.Register("DB", [](const std::string & /*label*/,
-                                        const std::string &operand,
-                                        DirectiveContext &context) {
-    std::vector<uint8_t> bytes;
-    std::istringstream ops(operand);
-    std::string value;
-
-    while (std::getline(ops, value, ',')) {
-      value = Trim(value);
-      if (!value.empty()) {
-        bytes.push_back(static_cast<uint8_t>(ParseHex(value)));
-      }
-    }
-
-    context.section->atoms.push_back(std::make_shared<DataAtom>(bytes));
-    *context.current_address += bytes.size();
-  });
+  directive_registry_.Register("DB", simple::HandleDb);
 
   // Register .DW directive
-  directive_registry_.Register("DW", [](const std::string & /*label*/,
-                                        const std::string &operand,
-                                        DirectiveContext &context) {
-    std::vector<uint8_t> bytes;
-    std::istringstream ops(operand);
-    std::string value;
-
-    while (std::getline(ops, value, ',')) {
-      value = Trim(value);
-      if (!value.empty()) {
-        uint32_t word = ParseHex(value);
-        bytes.push_back(static_cast<uint8_t>(word & 0xFF));        // Low byte
-        bytes.push_back(static_cast<uint8_t>((word >> 8) & 0xFF)); // High byte
-      }
-    }
-
-    context.section->atoms.push_back(std::make_shared<DataAtom>(bytes));
-    *context.current_address += bytes.size();
-  });
+  directive_registry_.Register("DW", simple::HandleDw);
 }
 
 void SimpleSyntaxParser::Parse(const std::string &source, Section &section,
