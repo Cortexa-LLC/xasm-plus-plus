@@ -58,16 +58,19 @@ namespace xasm {
  * - Binary number: "%11111111"
  * - Symbol reference: "START"
  *
+ * @param label Label on the line (unused for ORG)
  * @param operand Address operand (number or symbol)
- * @param section Section to add OrgAtom to
- * @param symbols Symbol table for resolving symbol references
- * @param current_address Current address (updated to new origin)
+ * @param context Directive execution context
  *
  * @throws std::runtime_error if operand is empty or invalid
  *
  * @par Example
  * @code
- * HandleOrgDirective("$C000", section, symbols, address);
+ * DirectiveContext ctx;
+ * ctx.section = &section;
+ * ctx.symbols = &symbols;
+ * ctx.current_address = &address;
+ * HandleOrg("", "$C000", ctx);
  * // address is now 0xC000
  * // section contains OrgAtom(0xC000)
  * @endcode
@@ -75,9 +78,8 @@ namespace xasm {
 // Forward declare DirectiveContext
 struct DirectiveContext;
 
-void HandleOrgDirective(const std::string &operand, Section &section,
-                        ConcreteSymbolTable &symbols, uint32_t &current_address,
-                        const DirectiveContext *ctx = nullptr);
+void HandleOrg(const std::string &label, const std::string &operand,
+               DirectiveContext &context);
 
 /**
  * @brief Handle EQU directive - define constant symbol
@@ -85,24 +87,25 @@ void HandleOrgDirective(const std::string &operand, Section &section,
  * Defines a symbol with a constant value. The operand is evaluated as an
  * expression and associated with the label. Does not create any atoms.
  *
- * @param label Symbol name to define
+ * @param label Symbol name to define (required)
  * @param operand Value expression (number, symbol, or arithmetic)
- * @param symbols Symbol table to define symbol in
+ * @param context Directive execution context
  *
  * @throws std::runtime_error if label is empty or expression is invalid
  *
  * @par Example
  * @code
- * HandleEquDirective("BUFFER_SIZE", "256", symbols);
+ * DirectiveContext ctx;
+ * ctx.symbols = &symbols;
+ * HandleEqu("BUFFER_SIZE", "256", ctx);
  * // symbols now contains BUFFER_SIZE=256
  *
- * HandleEquDirective("IO_PORT", "$D000", symbols);
+ * HandleEqu("IO_PORT", "$D000", ctx);
  * // symbols now contains IO_PORT=0xD000
  * @endcode
  */
-void HandleEquDirective(const std::string &label, const std::string &operand,
-                        ConcreteSymbolTable &symbols,
-                        const DirectiveContext *ctx = nullptr);
+void HandleEqu(const std::string &label, const std::string &operand,
+               DirectiveContext &context);
 
 /**
  * @brief Handle DB directive - define byte data
@@ -110,20 +113,23 @@ void HandleEquDirective(const std::string &label, const std::string &operand,
  * Creates a DataAtom with byte-sized data. The operand is a comma-separated
  * list of expressions that will be evaluated to bytes.
  *
+ * @param label Label on the line (optional)
  * @param operand Comma-separated byte expressions
- * @param section Section to add DataAtom to
- * @param symbols Symbol table for expression evaluation
- * @param current_address Current address (advanced by number of bytes)
+ * @param context Directive execution context
  *
  * @par Example
  * @code
- * HandleDbDirective("1,2,3,$FF", section, symbols, address);
+ * DirectiveContext ctx;
+ * ctx.section = &section;
+ * ctx.symbols = &symbols;
+ * ctx.current_address = &address;
+ * HandleDb("", "1,2,3,$FF", ctx);
  * // section contains DataAtom with 4 byte expressions
  * // address advanced by 4
  * @endcode
  */
-void HandleDbDirective(const std::string &operand, Section &section,
-                       ConcreteSymbolTable &symbols, uint32_t &current_address);
+void HandleDb(const std::string &label, const std::string &operand,
+              DirectiveContext &context);
 
 /**
  * @brief Handle DW directive - define word data
@@ -131,20 +137,23 @@ void HandleDbDirective(const std::string &operand, Section &section,
  * Creates a DataAtom with word-sized (16-bit) data. The operand is a
  * comma-separated list of expressions that will be evaluated to words.
  *
+ * @param label Label on the line (optional)
  * @param operand Comma-separated word expressions
- * @param section Section to add DataAtom to
- * @param symbols Symbol table for expression evaluation
- * @param current_address Current address (advanced by number of words * 2)
+ * @param context Directive execution context
  *
  * @par Example
  * @code
- * HandleDwDirective("$1000,$2000", section, symbols, address);
+ * DirectiveContext ctx;
+ * ctx.section = &section;
+ * ctx.symbols = &symbols;
+ * ctx.current_address = &address;
+ * HandleDw("", "$1000,$2000", ctx);
  * // section contains DataAtom with 2 word expressions
  * // address advanced by 4 (2 words * 2 bytes)
  * @endcode
  */
-void HandleDwDirective(const std::string &operand, Section &section,
-                       ConcreteSymbolTable &symbols, uint32_t &current_address);
+void HandleDw(const std::string &label, const std::string &operand,
+              DirectiveContext &context);
 
 /**
  * @brief Handle DS directive - define space (reserve bytes)
@@ -152,26 +161,28 @@ void HandleDwDirective(const std::string &operand, Section &section,
  * Creates a SpaceAtom to reserve uninitialized space. The operand specifies
  * the number of bytes to reserve and can be a number, symbol, or expression.
  *
+ * @param label Label on the line (optional)
  * @param operand Count expression (number, symbol, or arithmetic)
- * @param section Section to add SpaceAtom to
- * @param symbols Symbol table for expression evaluation
- * @param current_address Current address (advanced by count)
+ * @param context Directive execution context
  *
  * @throws std::runtime_error if count is negative
  *
  * @par Example
  * @code
- * HandleDsDirective("100", section, symbols, address);
+ * DirectiveContext ctx;
+ * ctx.section = &section;
+ * ctx.symbols = &symbols;
+ * ctx.current_address = &address;
+ * HandleDs("", "100", ctx);
  * // section contains SpaceAtom(100)
  * // address advanced by 100
  *
- * HandleDsDirective("SIZE*2", section, symbols, address);
+ * HandleDs("", "SIZE*2", ctx);
  * // Evaluates SIZE*2 and reserves that many bytes
  * @endcode
  */
-void HandleDsDirective(const std::string &operand, Section &section,
-                       ConcreteSymbolTable &symbols, uint32_t &current_address,
-                       const DirectiveContext *ctx = nullptr);
+void HandleDs(const std::string &label, const std::string &operand,
+              DirectiveContext &context);
 
 // ============================================================================
 // DirectiveRegistry Integration
