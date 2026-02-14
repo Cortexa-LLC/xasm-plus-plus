@@ -345,14 +345,8 @@ private:
                          ConcreteSymbolTable &symbols);
 
   // Directive handlers
-  void HandleOrg(const std::string &operand, Section &section,
-                 ConcreteSymbolTable &symbols);
   void HandleEqu(const std::string &label, const std::string &operand,
                  ConcreteSymbolTable &symbols);
-  void HandleDB(const std::string &operand, Section &section,
-                ConcreteSymbolTable &symbols);
-  void HandleDW(const std::string &operand, Section &section,
-                ConcreteSymbolTable &symbols);
   void HandleHex(const std::string &operand, Section &section);
   void HandleDS(const std::string &operand, Section &section,
                 ConcreteSymbolTable &symbols);
@@ -383,9 +377,6 @@ private:
   // Macro directives
   void HandlePMC(const std::string &operand);
   void HandleEOM();
-  void HandleMAC(const std::string &macro_name, const std::string &params,
-                 Section &section,
-                 ConcreteSymbolTable &symbols); // Invoke macro (Merlin style)
   void HandleMacroEnd();                        // End macro definition (<<<)
   void ExpandMacro(const std::string &macro_name, const std::string &operand,
                    Section &section, ConcreteSymbolTable &symbols);

@@ -5,7 +5,6 @@
 #include "xasm++/common/expression_parser.h"
 #include "xasm++/cpu/cpu_6502.h"
 #include "xasm++/directives/directive_constants.h"
-#include "xasm++/directives/merlin_directives.h"
 #include "xasm++/directives/merlin_directive_handlers.h"
 #include "xasm++/util/string_utils.h"
 #include <algorithm>
@@ -288,36 +287,6 @@ std::string MerlinSyntaxParser::ParseLabel(const std::string &line, size_t &pos,
 // Directive Handlers
 // ============================================================================
 
-void MerlinSyntaxParser::HandleOrg(const std::string &operand, Section &section,
-                                   ConcreteSymbolTable &symbols) {
-  // ORG directive - set assembly origin address
-  std::string op = Trim(operand);
-  uint32_t address = 0;
-
-  if (op.empty()) {
-    throw std::runtime_error(
-        FormatError("ORG directive requires an address operand"));
-  }
-
-  // Parse address (number or symbol)
-  if (op[0] == '$' || op[0] == '%' || std::isdigit(op[0])) {
-    // Numeric literal
-    address = ParseNumber(op);
-  } else {
-    // Symbol - look it up
-    int64_t value = 0;
-    if (symbols.Lookup(op, value)) {
-      address = static_cast<uint32_t>(value);
-    } else {
-      // Undefined symbol - use 0 (forward reference issue)
-      address = 0;
-    }
-  }
-
-  section.atoms.push_back(std::make_shared<OrgAtom>(address));
-  current_address_ = address;
-}
-
 void MerlinSyntaxParser::HandleEqu(const std::string &label,
                                    const std::string &operand,
                                    ConcreteSymbolTable &symbols) {
@@ -326,54 +295,6 @@ void MerlinSyntaxParser::HandleEqu(const std::string &label,
   symbols.Define(label, SymbolType::Label, expr);
 }
 
-void MerlinSyntaxParser::HandleDB(const std::string &operand, Section &section,
-                                  ConcreteSymbolTable &symbols) {
-  // DB directive - define byte(s)
-  // Parse comma-separated expressions and evaluate immediately
-  std::vector<uint8_t> bytes;
-  std::istringstream iss(operand);
-  std::string value;
-
-  while (std::getline(iss, value, ',')) {
-    value = Trim(value);
-    if (!value.empty()) {
-      auto expr = ParseExpression(value, symbols);
-      int64_t result = expr->Evaluate(symbols);
-      bytes.push_back(static_cast<uint8_t>(result & 0xFF));
-    }
-  }
-
-  section.atoms.push_back(std::make_shared<DataAtom>(bytes));
-  current_address_ += bytes.size();
-}
-
-void MerlinSyntaxParser::HandleDW(const std::string &operand, Section &section,
-                                  ConcreteSymbolTable & /*symbols*/) {
-  // DW directive - define word(s) (16-bit values)
-  // Store expressions for multi-pass evaluation (support forward references)
-  std::vector<std::string> expressions;
-  std::istringstream iss(operand);
-  std::string value;
-
-  while (std::getline(iss, value, ',')) {
-    value = Trim(value);
-    if (!value.empty()) {
-      expressions.push_back(value);
-    }
-  }
-
-  // Create DataAtom with expressions (assembler will evaluate in multi-pass)
-  auto data_atom = std::make_shared<DataAtom>(expressions, DataSize::Word);
-  section.atoms.push_back(data_atom);
-
-  // Reserve space (2 bytes per word expression)
-  current_address_ += expressions.size() * 2;
-}
-
-void MerlinSyntaxParser::HandleHex(const std::string &operand,
-                                   Section &section) {
-  HandleHexDirective(operand, section, current_address_);
-}
 
 void MerlinSyntaxParser::HandleDS(const std::string &operand, Section &section,
                                   ConcreteSymbolTable &symbols) {
@@ -482,10 +403,42 @@ void MerlinSyntaxParser::HandleDS(const std::string &operand, Section &section,
 
 void MerlinSyntaxParser::HandleDum(const std::string &operand,
                                    ConcreteSymbolTable &symbols) {
-  HandleDumDirective(operand, symbols, in_dum_block_, dum_address_, nullptr);
+  // DUM (Dummy section) - start variable definition block
+  in_dum_block_ = true;
+
+  std::string op = Trim(operand);
+
+  // Check if operand is empty
+  if (op.empty()) {
+    throw std::runtime_error(FormatError("DUM directive requires an address operand"));
+  }
+
+  // Parse number (decimal, hex, or binary)
+  if (op[0] == '$') {
+    // Hex
+    dum_address_ = std::stoul(op.substr(1), nullptr, 16);
+  } else if (op[0] == '%') {
+    // Binary
+    dum_address_ = std::stoul(op.substr(1), nullptr, 2);
+  } else if (std::isdigit(op[0])) {
+    // Decimal
+    dum_address_ = std::stoul(op, nullptr, 10);
+  } else {
+    // Symbol - look it up
+    int64_t value = 0;
+    if (symbols.Lookup(op, value)) {
+      dum_address_ = static_cast<uint32_t>(value);
+    } else {
+      // Symbol not found - use 0 for now (forward reference issue)
+      dum_address_ = 0;
+    }
+  }
 }
 
-void MerlinSyntaxParser::HandleDend() { HandleDendDirective(in_dum_block_); }
+void MerlinSyntaxParser::HandleDend() {
+  // DEND - end dummy section
+  in_dum_block_ = false;
+}
 
 void MerlinSyntaxParser::HandlePut(const std::string &operand, Section &section,
                                    ConcreteSymbolTable &symbols) {
@@ -606,7 +559,8 @@ void MerlinSyntaxParser::HandleFin() {
 }
 
 void MerlinSyntaxParser::HandleEnd() {
-  HandleEndDirective(end_directive_seen_);
+  // END - mark end of source (stop processing further lines)
+  end_directive_seen_ = true;
 }
 
 // ============================================================================
@@ -636,13 +590,6 @@ void MerlinSyntaxParser::HandleEOM() {
   }
   macros_[current_macro_.name] = current_macro_;
   in_macro_definition_ = false;
-}
-
-void MerlinSyntaxParser::HandleMAC(const std::string &macro_name,
-                                   const std::string &params, Section &section,
-                                   ConcreteSymbolTable &symbols) {
-  // MAC - Invoke macro (expand and execute)
-  ExpandMacro(macro_name, params, section, symbols);
 }
 
 void MerlinSyntaxParser::HandleMacroEnd() {
@@ -747,58 +694,87 @@ std::string MerlinSyntaxParser::SubstituteParameters(
   return result;
 }
 
-void MerlinSyntaxParser::HandleLst(const std::string &operand) {
-  HandleLstDirective(operand);
-}
 
-void MerlinSyntaxParser::HandleLstdo() { HandleLstdoDirective(); }
 
-void MerlinSyntaxParser::HandleTr(const std::string &operand) {
-  HandleTrDirective(operand);
-}
 
-void MerlinSyntaxParser::HandleAsc(const std::string &operand,
-                                   Section &section) {
-  HandleAscDirective(operand, section, current_address_);
-}
 
-void MerlinSyntaxParser::HandleDA(const std::string &operand, Section &section,
-                                  ConcreteSymbolTable &symbols) {
-  HandleDaDirective(operand, section, symbols, current_address_);
-}
 
-void MerlinSyntaxParser::HandleDCI(const std::string &operand,
-                                   Section &section) {
-  HandleDciDirective(operand, section, current_address_);
-}
 
-void MerlinSyntaxParser::HandleINV(const std::string &operand,
-                                   Section &section) {
-  HandleInvDirective(operand, section, current_address_);
-}
 
-void MerlinSyntaxParser::HandleFLS(const std::string &operand,
-                                   Section &section) {
-  HandleFlsDirective(operand, section, current_address_);
-}
 
-void MerlinSyntaxParser::HandleSav(const std::string &operand) {
-  HandleSavDirective(operand);
-}
+
+
+
+
+
+
+
+
+
 
 void MerlinSyntaxParser::HandleXc(const std::string &operand) {
-  HandleXcDirective(operand, cpu_);
+  // XC [ON|OFF] - Toggle 65C02 CPU instruction set
+
+  if (!cpu_) {
+    // No CPU set - silently ignore (for tests that don't need CPU)
+    return;
+  }
+
+  std::string op = ToUpper(Trim(operand));
+
+  if (op.empty() || op == directives::ON) {
+    // Enable 65C02 mode
+    cpu_->SetCpuMode(CpuMode::Cpu65C02);
+  } else if (op == directives::OFF) {
+    // Disable 65C02 mode (back to 6502)
+    cpu_->SetCpuMode(CpuMode::Cpu6502);
+  } else {
+    throw std::runtime_error(
+        FormatError("XC: invalid operand (expected ON or OFF)"));
+  }
 }
 
 void MerlinSyntaxParser::HandleMx(const std::string &operand) {
-  HandleMxDirective(operand);
+  // MX mode - Set 65816 accumulator and index register widths
+  // This is a directive only - tracks state but doesn't change CPU encoding
+
+  std::string op = Trim(operand);
+  if (op.empty()) {
+    throw std::runtime_error(FormatError("MX directive requires an operand"));
+  }
+
+  int mode = -1;
+
+  // Check for binary format %00-%11
+  if (op[0] == '%') {
+    std::string binary = op.substr(1);
+    if (binary == "00")
+      mode = 0;
+    else if (binary == "01")
+      mode = 1;
+    else if (binary == "10")
+      mode = 2;
+    else if (binary == "11")
+      mode = 3;
+    else {
+      throw std::runtime_error(
+          FormatError("MX directive expects binary %00-%11 or decimal 0-3"));
+    }
+  }
+  // Check for decimal format 0-3
+  else if (op.length() == 1 && op[0] >= '0' && op[0] <= '3') {
+    mode = op[0] - '0';
+  } else {
+    throw std::runtime_error(
+        FormatError("MX directive expects binary %00-%11 or decimal 0-3"));
+  }
+
+  // Mode validated - in full implementation, would affect 65816 encoding
+  // For now, just validate and accept
+  (void)mode; // Suppress unused variable warning
 }
 
-void MerlinSyntaxParser::HandleRev(const std::string &label,
-                                   const std::string &operand, Section &section,
-                                   ConcreteSymbolTable &symbols) {
-  HandleRevDirective(label, operand, section, symbols, current_address_);
-}
+
 
 void MerlinSyntaxParser::HandleLup(const std::string &operand) {
   // LUP count - Loop directive (repeat following code count times)
