@@ -55,6 +55,7 @@ add_library(xasm_syntax STATIC
     syntax/directive_registry.cpp
     syntax/edtasm_m80_plusplus_syntax.cpp
     syntax/edtasm_directive_handlers.cpp
+    syntax/edtasm_directive_handlers.cpp
     syntax/core_directive_handlers.cpp
     # Future syntax plugins:
     # syntax/mos_base_syntax.cpp

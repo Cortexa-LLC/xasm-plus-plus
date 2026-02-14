@@ -148,6 +148,58 @@ void HandleIfdifDirective(const std::string &label, const std::string &operand,
                           DirectiveContext &ctx);
 
 // ============================================================================
+// Data and Symbol Directives
+// ============================================================================
+
+/**
+ * @brief Handle ORG directive - Set origin address
+ */
+void HandleOrgDirective(const std::string &label, const std::string &operand,
+                        DirectiveContext &ctx);
+
+/**
+ * @brief Handle EQU directive - Define constant symbol
+ */
+void HandleEquDirective(const std::string &label, const std::string &operand,
+                        DirectiveContext &ctx);
+
+/**
+ * @brief Handle SET/=/DEFL directive - Define redefinable symbol
+ */
+void HandleSetDirective(const std::string &label, const std::string &operand,
+                        DirectiveContext &ctx);
+
+/**
+ * @brief Handle DB/DEFB/BYTE/DM/DEFM/TEXT/ASCII directive - Define byte(s)
+ */
+void HandleDbDirective(const std::string &label, const std::string &operand,
+                       DirectiveContext &ctx);
+
+/**
+ * @brief Handle DW/DEFW/WORD directive - Define word(s)
+ */
+void HandleDwDirective(const std::string &label, const std::string &operand,
+                       DirectiveContext &ctx);
+
+/**
+ * @brief Handle DS/DEFS/DSPACE/BLOCK directive - Reserve space
+ */
+void HandleDsDirective(const std::string &label, const std::string &operand,
+                       DirectiveContext &ctx);
+
+/**
+ * @brief Handle PUBLIC/GLOBAL/ENTRY directive - Export symbols
+ */
+void HandlePublicDirective(const std::string &label, const std::string &operand,
+                           DirectiveContext &ctx);
+
+/**
+ * @brief Handle EXTERN/EXTRN/EXT directive - Import symbols
+ */
+void HandleExternDirective(const std::string &label, const std::string &operand,
+                           DirectiveContext &ctx);
+
+// ============================================================================
 // Macro System Handlers
 // ============================================================================
 
