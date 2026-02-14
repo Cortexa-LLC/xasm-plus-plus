@@ -131,10 +131,6 @@ bool SCMASMNumberParser::TryParse(const std::string &token,
 // Constructor
 // ============================================================================
 
-// ============================================================================
-// Constructor
-// ============================================================================
-
 ScmasmSyntaxParser::ScmasmSyntaxParser()
     : current_address_(0), current_file_("<source>"), current_line_(0),
       cpu_(nullptr), in_macro_definition_(false), macro_invocation_depth_(0) {
@@ -998,13 +994,13 @@ void ScmasmSyntaxParser::HandleBs(const std::string &operand, Section &section,
   // SCMASM syntax: .BS count
   // Where count is a decimal or hex number ($hex, %binary)
   // This reserves 'count' bytes filled with zeros
-  
+
   if (operand.empty()) {
     throw std::runtime_error(".BS requires a byte count");
   }
 
   std::string trimmed = Trim(operand);
-  
+
   // Evaluate the byte count expression (supports symbols, hex, decimal)
   uint32_t byte_count = EvaluateExpression(trimmed, symbols);
 
@@ -1018,7 +1014,7 @@ void ScmasmSyntaxParser::HandleBs(const std::string &operand, Section &section,
 
   auto atom = std::make_shared<DataAtom>(data);
   section.atoms.push_back(atom);
-  
+
   // Update address counter
   current_address_ += byte_count;
 }
