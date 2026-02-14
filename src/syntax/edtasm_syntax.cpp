@@ -11,6 +11,82 @@
 
 namespace xasm {
 
+// ===========================================================================
+// Constructor
+// ===========================================================================
+
+EdtasmSyntaxParser::EdtasmSyntaxParser() {
+  RegisterDirectives();
+}
+
+// ===========================================================================
+// Directive Registration
+// ===========================================================================
+
+void EdtasmSyntaxParser::RegisterDirectives() {
+  using namespace directives;
+
+  // Register all EDTASM+ directives with case-insensitive lookup
+  directive_registry_[ORG] = [this](const std::string &operands,
+                                    const std::string &label, Section &section,
+                                    ConcreteSymbolTable &symbols) {
+    HandleOrg(operands, label, section, symbols);
+  };
+
+  directive_registry_[END] = [this](const std::string &operands,
+                                    const std::string &label, Section &section,
+                                    ConcreteSymbolTable &symbols) {
+    HandleEnd(operands, label, section, symbols);
+  };
+
+  directive_registry_[EQU] = [this](const std::string &operands,
+                                    const std::string &label, Section &section,
+                                    ConcreteSymbolTable &symbols) {
+    HandleEqu(operands, label, section, symbols);
+  };
+
+  directive_registry_[SET] = [this](const std::string &operands,
+                                    const std::string &label, Section &section,
+                                    ConcreteSymbolTable &symbols) {
+    HandleSet(operands, label, section, symbols);
+  };
+
+  directive_registry_[FCB] = [this](const std::string &operands,
+                                    const std::string &label, Section &section,
+                                    ConcreteSymbolTable &symbols) {
+    HandleFcb(operands, label, section, symbols);
+  };
+
+  directive_registry_[FDB] = [this](const std::string &operands,
+                                    const std::string &label, Section &section,
+                                    ConcreteSymbolTable &symbols) {
+    HandleFdb(operands, label, section, symbols);
+  };
+
+  directive_registry_[FCC] = [this](const std::string &operands,
+                                    const std::string &label, Section &section,
+                                    ConcreteSymbolTable &symbols) {
+    HandleFcc(operands, label, section, symbols);
+  };
+
+  directive_registry_[RMB] = [this](const std::string &operands,
+                                    const std::string &label, Section &section,
+                                    ConcreteSymbolTable &symbols) {
+    HandleRmb(operands, label, section, symbols);
+  };
+
+  directive_registry_[SETDP] = [this](const std::string &operands,
+                                      const std::string &label,
+                                      Section &section,
+                                      ConcreteSymbolTable &symbols) {
+    HandleSetdp(operands, label, section, symbols);
+  };
+}
+
+// ===========================================================================
+// Helper Functions
+// ===========================================================================
+
 // Helper: Trim whitespace from both ends
 std::string EdtasmSyntaxParser::Trim(const std::string &str) {
   size_t start = str.find_first_not_of(" \t");
@@ -83,7 +159,156 @@ uint32_t EdtasmSyntaxParser::ParseNumber(const std::string &str) {
   }
 }
 
-// Parse directive (ORG, END, EQU, SET, FCB, FDB, FCC, RMB, SETDP)
+// ===========================================================================
+// Directive Handlers
+// ===========================================================================
+
+// ORG - Set origin address
+void EdtasmSyntaxParser::HandleOrg(const std::string &operands,
+                                   const std::string &label, Section &section,
+                                   ConcreteSymbolTable &symbols) {
+  (void)label;   // Label handled in ParseLine
+  (void)symbols; // Not used in ORG
+  uint32_t address = ParseNumber(operands);
+  section.atoms.push_back(std::make_shared<OrgAtom>(address));
+  current_address_ = address;
+}
+
+// END - End assembly (may have entry point)
+void EdtasmSyntaxParser::HandleEnd(const std::string &operands,
+                                   const std::string &label, Section &section,
+                                   ConcreteSymbolTable &symbols) {
+  (void)operands; // Entry point not currently used
+  (void)label;    // Label handled in ParseLine
+  (void)section;  // END produces no atoms
+  (void)symbols;  // Not used in END
+  // END directive produces no atoms, signals end of assembly
+}
+
+// EQU - Equate symbol (constant)
+void EdtasmSyntaxParser::HandleEqu(const std::string &operands,
+                                   const std::string &label, Section &section,
+                                   ConcreteSymbolTable &symbols) {
+  (void)section; // EQU produces no atoms
+  if (label.empty()) {
+    throw std::runtime_error("EQU requires a label");
+  }
+  uint32_t value = ParseNumber(operands);
+  symbols.Define(label, SymbolType::Equate,
+                 std::make_shared<LiteralExpr>(value));
+}
+
+// SET - Set variable (can be redefined)
+void EdtasmSyntaxParser::HandleSet(const std::string &operands,
+                                   const std::string &label, Section &section,
+                                   ConcreteSymbolTable &symbols) {
+  (void)section; // SET produces no atoms
+  if (label.empty()) {
+    throw std::runtime_error("SET requires a label");
+  }
+  uint32_t value = ParseNumber(operands);
+  // SET allows redefinition, so we define it as Set type
+  symbols.Define(label, SymbolType::Set, std::make_shared<LiteralExpr>(value));
+}
+
+// FCB - Form Constant Byte
+void EdtasmSyntaxParser::HandleFcb(const std::string &operands,
+                                   const std::string &label, Section &section,
+                                   ConcreteSymbolTable &symbols) {
+  (void)label;   // Label handled in ParseLine
+  (void)symbols; // Not used in FCB
+  std::vector<uint8_t> bytes;
+  std::istringstream ops(operands);
+  std::string value;
+
+  while (std::getline(ops, value, ',')) {
+    value = Trim(value);
+    if (!value.empty()) {
+      bytes.push_back(static_cast<uint8_t>(ParseNumber(value)));
+    }
+  }
+
+  section.atoms.push_back(std::make_shared<DataAtom>(bytes));
+  current_address_ += bytes.size();
+}
+
+// FDB - Form Double Byte (16-bit, big-endian)
+void EdtasmSyntaxParser::HandleFdb(const std::string &operands,
+                                   const std::string &label, Section &section,
+                                   ConcreteSymbolTable &symbols) {
+  (void)label;   // Label handled in ParseLine
+  (void)symbols; // Not used in FDB
+  std::vector<uint8_t> bytes;
+  std::istringstream ops(operands);
+  std::string value;
+
+  while (std::getline(ops, value, ',')) {
+    value = Trim(value);
+    if (!value.empty()) {
+      uint32_t word = ParseNumber(value);
+      // 6809 uses big-endian (MSB first)
+      bytes.push_back(static_cast<uint8_t>((word >> 8) & 0xFF)); // High byte
+      bytes.push_back(static_cast<uint8_t>(word & 0xFF));        // Low byte
+    }
+  }
+
+  section.atoms.push_back(std::make_shared<DataAtom>(bytes));
+  current_address_ += bytes.size();
+}
+
+// FCC - Form Constant Characters (flexible delimiter)
+void EdtasmSyntaxParser::HandleFcc(const std::string &operands,
+                                   const std::string &label, Section &section,
+                                   ConcreteSymbolTable &symbols) {
+  (void)label;   // Label handled in ParseLine
+  (void)symbols; // Not used in FCC
+  std::string trimmed = Trim(operands);
+  if (trimmed.empty()) {
+    throw std::runtime_error("FCC requires operand");
+  }
+
+  // First non-whitespace character is the delimiter
+  char delimiter = trimmed[0];
+  size_t end_pos = trimmed.find(delimiter, 1);
+
+  if (end_pos == std::string::npos) {
+    throw std::runtime_error("FCC: Missing closing delimiter");
+  }
+
+  std::string text = trimmed.substr(1, end_pos - 1);
+  std::vector<uint8_t> bytes(text.begin(), text.end());
+
+  section.atoms.push_back(std::make_shared<DataAtom>(bytes));
+  current_address_ += bytes.size();
+}
+
+// RMB - Reserve Memory Bytes
+void EdtasmSyntaxParser::HandleRmb(const std::string &operands,
+                                   const std::string &label, Section &section,
+                                   ConcreteSymbolTable &symbols) {
+  (void)label;   // Label handled in ParseLine
+  (void)symbols; // Not used in RMB
+  uint32_t size = ParseNumber(operands);
+  section.atoms.push_back(std::make_shared<SpaceAtom>(size));
+  current_address_ += size;
+}
+
+// SETDP - Set Direct Page (assembler directive only)
+void EdtasmSyntaxParser::HandleSetdp(const std::string &operands,
+                                     const std::string &label, Section &section,
+                                     ConcreteSymbolTable &symbols) {
+  (void)label;   // Label handled in ParseLine
+  (void)section; // SETDP produces no atoms
+  (void)symbols; // Not used in SETDP
+  direct_page_ = static_cast<uint8_t>(ParseNumber(operands));
+  // SETDP produces no atoms, just informs assembler
+}
+
+// ===========================================================================
+// Directive Parsing (Refactored)
+// ===========================================================================
+
+// Parse directive using registry pattern (O(1) lookup)
 void EdtasmSyntaxParser::ParseDirective(const std::string &directive,
                                         const std::string &operands,
                                         const std::string &label,
@@ -91,117 +316,11 @@ void EdtasmSyntaxParser::ParseDirective(const std::string &directive,
                                         ConcreteSymbolTable &symbols) {
   std::string dir_upper = ToUpper(directive);
 
-  // ORG - Set origin address
-  if (dir_upper == directives::ORG) {
-    uint32_t address = ParseNumber(operands);
-    section.atoms.push_back(std::make_shared<OrgAtom>(address));
-    current_address_ = address;
-    return;
-  }
-
-  // END - End assembly (may have entry point)
-  if (dir_upper == directives::END) {
-    // END directive produces no atoms, signals end of assembly
-    return;
-  }
-
-  // EQU - Equate symbol (constant)
-  if (dir_upper == directives::EQU) {
-    if (label.empty()) {
-      throw std::runtime_error("EQU requires a label");
-    }
-    uint32_t value = ParseNumber(operands);
-    symbols.Define(label, SymbolType::Equate,
-                   std::make_shared<LiteralExpr>(value));
-    return;
-  }
-
-  // SET - Set variable (can be redefined)
-  if (dir_upper == directives::SET) {
-    if (label.empty()) {
-      throw std::runtime_error("SET requires a label");
-    }
-    uint32_t value = ParseNumber(operands);
-    // SET allows redefinition, so we define it as Set type
-    symbols.Define(label, SymbolType::Set,
-                   std::make_shared<LiteralExpr>(value));
-    return;
-  }
-
-  // FCB - Form Constant Byte
-  if (dir_upper == directives::FCB) {
-    std::vector<uint8_t> bytes;
-    std::istringstream ops(operands);
-    std::string value;
-
-    while (std::getline(ops, value, ',')) {
-      value = Trim(value);
-      if (!value.empty()) {
-        bytes.push_back(static_cast<uint8_t>(ParseNumber(value)));
-      }
-    }
-
-    section.atoms.push_back(std::make_shared<DataAtom>(bytes));
-    current_address_ += bytes.size();
-    return;
-  }
-
-  // FDB - Form Double Byte (16-bit, big-endian)
-  if (dir_upper == directives::FDB) {
-    std::vector<uint8_t> bytes;
-    std::istringstream ops(operands);
-    std::string value;
-
-    while (std::getline(ops, value, ',')) {
-      value = Trim(value);
-      if (!value.empty()) {
-        uint32_t word = ParseNumber(value);
-        // 6809 uses big-endian (MSB first)
-        bytes.push_back(static_cast<uint8_t>((word >> 8) & 0xFF)); // High byte
-        bytes.push_back(static_cast<uint8_t>(word & 0xFF));        // Low byte
-      }
-    }
-
-    section.atoms.push_back(std::make_shared<DataAtom>(bytes));
-    current_address_ += bytes.size();
-    return;
-  }
-
-  // FCC - Form Constant Characters (flexible delimiter)
-  if (dir_upper == directives::FCC) {
-    std::string trimmed = Trim(operands);
-    if (trimmed.empty()) {
-      throw std::runtime_error("FCC requires operand");
-    }
-
-    // First non-whitespace character is the delimiter
-    char delimiter = trimmed[0];
-    size_t end_pos = trimmed.find(delimiter, 1);
-
-    if (end_pos == std::string::npos) {
-      throw std::runtime_error("FCC: Missing closing delimiter");
-    }
-
-    std::string text = trimmed.substr(1, end_pos - 1);
-    std::vector<uint8_t> bytes(text.begin(), text.end());
-
-    section.atoms.push_back(std::make_shared<DataAtom>(bytes));
-    current_address_ += bytes.size();
-    return;
-  }
-
-  // RMB - Reserve Memory Bytes
-  if (dir_upper == directives::RMB) {
-    uint32_t size = ParseNumber(operands);
-    section.atoms.push_back(std::make_shared<SpaceAtom>(size));
-    current_address_ += size;
-    return;
-  }
-
-  // SETDP - Set Direct Page (assembler directive only)
-  if (dir_upper == directives::SETDP) {
-    direct_page_ = static_cast<uint8_t>(ParseNumber(operands));
-    // SETDP produces no atoms, just informs assembler
+  // Lookup directive handler in registry
+  auto it = directive_registry_.find(dir_upper);
+  if (it != directive_registry_.end()) {
+    // Call registered handler
+    it->second(operands, label, section, symbols);
     return;
   }
 

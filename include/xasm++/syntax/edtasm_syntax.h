@@ -13,7 +13,9 @@
 
 #include "xasm++/section.h"
 #include "xasm++/symbol.h"
+#include <functional>
 #include <string>
+#include <unordered_map>
 
 namespace xasm {
 
@@ -67,9 +69,9 @@ namespace xasm {
 class EdtasmSyntaxParser {
 public:
   /**
-   * @brief Default constructor
+   * @brief Default constructor - initializes directive registry
    */
-  EdtasmSyntaxParser() = default;
+  EdtasmSyntaxParser();
 
   /**
    * @brief Parse EDTASM+ assembly source into atoms and symbols
@@ -91,6 +93,40 @@ public:
 private:
   uint32_t current_address_ = 0; ///< Current assembly address
   uint8_t direct_page_ = 0;      ///< Current direct page value (for SETDP)
+
+  // Directive registry pattern (O(1) lookup)
+  using DirectiveHandler = std::function<void(
+      const std::string &operands, const std::string &label, Section &section,
+      ConcreteSymbolTable &symbols)>;
+  std::unordered_map<std::string, DirectiveHandler> directive_registry_;
+
+  /**
+   * @brief Register all EDTASM+ directives
+   *
+   * Populates directive_registry_ with handlers for all supported directives.
+   * Called from constructor.
+   */
+  void RegisterDirectives();
+
+  // Directive handler methods
+  void HandleOrg(const std::string &operands, const std::string &label,
+                 Section &section, ConcreteSymbolTable &symbols);
+  void HandleEnd(const std::string &operands, const std::string &label,
+                 Section &section, ConcreteSymbolTable &symbols);
+  void HandleEqu(const std::string &operands, const std::string &label,
+                 Section &section, ConcreteSymbolTable &symbols);
+  void HandleSet(const std::string &operands, const std::string &label,
+                 Section &section, ConcreteSymbolTable &symbols);
+  void HandleFcb(const std::string &operands, const std::string &label,
+                 Section &section, ConcreteSymbolTable &symbols);
+  void HandleFdb(const std::string &operands, const std::string &label,
+                 Section &section, ConcreteSymbolTable &symbols);
+  void HandleFcc(const std::string &operands, const std::string &label,
+                 Section &section, ConcreteSymbolTable &symbols);
+  void HandleRmb(const std::string &operands, const std::string &label,
+                 Section &section, ConcreteSymbolTable &symbols);
+  void HandleSetdp(const std::string &operands, const std::string &label,
+                   Section &section, ConcreteSymbolTable &symbols);
 
   /**
    * @brief Parse a single line of EDTASM+ source
