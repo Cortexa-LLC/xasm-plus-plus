@@ -497,6 +497,7 @@ namespace Page2 {
 
 // Long Branch Instructions (16-bit relative offset)
 constexpr uint8_t LBRA = 0x16; // LBRA rel16   - Long Branch Always
+constexpr uint8_t LBSR = 0x17; // LBSR rel16   - Long Branch to Subroutine
 constexpr uint8_t LBRN = 0x21; // LBRN rel16   - Long Branch Never
 constexpr uint8_t LBHI = 0x22; // LBHI rel16   - Long Branch if Higher
 constexpr uint8_t LBLS = 0x23; // LBLS rel16   - Long Branch if Lower or Same
