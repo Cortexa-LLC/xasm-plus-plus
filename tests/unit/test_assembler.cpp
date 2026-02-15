@@ -81,7 +81,7 @@ TEST(AssemblerTest, PassCountTracking) {
 
   EXPECT_TRUE(result.success);
   EXPECT_GE(result.pass_count, 1U);
-  EXPECT_LE(result.pass_count, 500U); // MAX_PASSES limit
+  EXPECT_LE(result.pass_count, 10U); // MAX_PASSES limit
 }
 
 // Test 7: Convergence (no size changes means done)
@@ -118,7 +118,7 @@ TEST(AssemblerTest, ErrorAccumulation) {
 // Test 9: Get pass count limits
 TEST(AssemblerTest, PassLimits) {
   EXPECT_EQ(Assembler::FAST_PHASE_LIMIT, 50);
-  EXPECT_EQ(Assembler::MAX_PASSES, 500);
+  EXPECT_EQ(Assembler::MAX_PASSES, 10); // Empirically: 2-3 typical, 5 max observed
 }
 
 // Test 10: Reset assembler

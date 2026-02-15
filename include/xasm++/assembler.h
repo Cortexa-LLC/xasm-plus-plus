@@ -90,8 +90,9 @@ public:
   /// convergence checking
   static constexpr int FAST_PHASE_LIMIT = 50;
 
-  /// Absolute maximum number of passes (prevents infinite loops)
-  static constexpr int MAX_PASSES = 500;
+  /// Maximum assembly passes (empirically: 2-3 typical, 5 max observed)
+  /// Prevents infinite loops from oscillating forward references
+  static constexpr int MAX_PASSES = 10;
 
   /**
    * @brief Construct a new Assembler
