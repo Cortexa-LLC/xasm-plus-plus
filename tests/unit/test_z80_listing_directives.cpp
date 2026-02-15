@@ -10,6 +10,7 @@
 #include "xasm++/output/listing_output.h"
 #include "xasm++/section.h"
 #include "xasm++/symbol.h"
+#include <algorithm>
 #include <fstream>
 #include <gtest/gtest.h>
 #include <sstream>
