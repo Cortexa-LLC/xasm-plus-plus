@@ -487,6 +487,9 @@ void HandleListDirective(const std::string & /*label*/,
                          DirectiveContext &ctx) {
   auto parser = static_cast<EdtasmM80PlusPlusSyntaxParser *>(ctx.parser_state);
   parser->EnableListing();
+  // Create atom for listing control
+  auto atom = std::make_shared<ListingControlAtom>(ListingControlType::List, "");
+  ctx.section->atoms.push_back(atom);
 }
 
 // NOLIST - Disable listing
@@ -495,6 +498,9 @@ void HandleNolistDirective(const std::string & /*label*/,
                            DirectiveContext &ctx) {
   auto parser = static_cast<EdtasmM80PlusPlusSyntaxParser *>(ctx.parser_state);
   parser->DisableListing();
+  // Create atom for listing control
+  auto atom = std::make_shared<ListingControlAtom>(ListingControlType::Nolist, "");
+  ctx.section->atoms.push_back(atom);
 }
 
 // TITLE - Set listing title
@@ -502,6 +508,9 @@ void HandleTitleDirective(const std::string & /*label*/,
                           const std::string &operand, DirectiveContext &ctx) {
   auto parser = static_cast<EdtasmM80PlusPlusSyntaxParser *>(ctx.parser_state);
   parser->SetListingTitle(operand);
+  // Create atom for listing control
+  auto atom = std::make_shared<ListingControlAtom>(ListingControlType::Title, operand);
+  ctx.section->atoms.push_back(atom);
 }
 
 // SUBTTL - Set listing subtitle
@@ -509,6 +518,9 @@ void HandleSubttlDirective(const std::string & /*label*/,
                            const std::string &operand, DirectiveContext &ctx) {
   auto parser = static_cast<EdtasmM80PlusPlusSyntaxParser *>(ctx.parser_state);
   parser->SetListingSubtitle(operand);
+  // Create atom for listing control
+  auto atom = std::make_shared<ListingControlAtom>(ListingControlType::Subtitle, operand);
+  ctx.section->atoms.push_back(atom);
 }
 
 // NAME - Set module name
@@ -567,14 +579,33 @@ void HandleOrgDirective(const std::string & /*label*/,
 
 // *LIST - Toggle listing (Z80ASM style)
 void HandleStarListDirective(const std::string & /*label*/,
-                             const std::string & /*operand*/,
+                             const std::string &operand,
                              DirectiveContext &ctx) {
   auto parser = static_cast<EdtasmM80PlusPlusSyntaxParser *>(ctx.parser_state);
-  // Toggle listing state
-  if (parser->IsListingEnabled()) {
-    parser->DisableListing();
-  } else {
+  
+  // Parse operand to determine ON or OFF
+  bool enable = true; // Default to ON
+  std::string upper_operand = operand;
+  std::transform(upper_operand.begin(), upper_operand.end(), 
+                 upper_operand.begin(), ::toupper);
+  
+  if (upper_operand == "OFF") {
+    enable = false;
+  } else if (upper_operand == "ON" || upper_operand.empty()) {
+    enable = true;
+  }
+  
+  // Update parser state
+  if (enable) {
     parser->EnableListing();
+    // Create atom for listing control
+    auto atom = std::make_shared<ListingControlAtom>(ListingControlType::List, "");
+    ctx.section->atoms.push_back(atom);
+  } else {
+    parser->DisableListing();
+    // Create atom for listing control
+    auto atom = std::make_shared<ListingControlAtom>(ListingControlType::Nolist, "");
+    ctx.section->atoms.push_back(atom);
   }
 }
 
@@ -597,25 +628,41 @@ void HandleSallDirective(const std::string & /*label*/,
 // EJECT - Page eject (listing control)
 void HandleEjectDirective(const std::string & /*label*/,
                           const std::string & /*operand*/,
-                          DirectiveContext & /*ctx*/) {
-  // TODO: Implement when listing output is supported
-  // For now, this is a no-op as we don't generate listings yet
+                          DirectiveContext &ctx) {
+  // Create atom for listing control (page break)
+  auto atom = std::make_shared<ListingControlAtom>(ListingControlType::Page, "");
+  ctx.section->atoms.push_back(atom);
 }
 
 // SPACE - Add blank lines (listing control)
 void HandleSpaceDirective(const std::string & /*label*/,
-                          const std::string & /*operand*/,
-                          DirectiveContext & /*ctx*/) {
-  // TODO: Implement when listing output is supported
-  // For now, this is a no-op as we don't generate listings yet
+                          const std::string &operand,
+                          DirectiveContext &ctx) {
+  // Parse the operand to get line count
+  int count = 1; // Default to 1 line
+  if (!operand.empty()) {
+    try {
+      count = std::stoi(operand);
+    } catch (...) {
+      count = 1;
+    }
+  }
+  // Create atom for listing control
+  auto atom = std::make_shared<ListingControlAtom>(ListingControlType::Space, count);
+  ctx.section->atoms.push_back(atom);
 }
 
 // RADIX - Set number radix
 void HandleRadixDirective(const std::string & /*label*/,
                           const std::string &operand, DirectiveContext &ctx) {
   auto parser = static_cast<EdtasmM80PlusPlusSyntaxParser *>(ctx.parser_state);
+  
+  // RADIX operand must be parsed in decimal (base 10) always
+  // to avoid chicken-and-egg problem with current radix
+  parser->SetRadix(10);  // Temporarily set to decimal for parsing
+  
   int radix = static_cast<int>(ParseAndEvaluateExpression(operand, *parser, *ctx.symbols, "RADIX"));
-  parser->SetRadix(radix);
+  parser->SetRadix(radix);  // Set to the new radix value
 }
 
 // MACRO - Start macro definition
@@ -861,16 +908,21 @@ void RegisterEdtasmDirectiveHandlers(DirectiveRegistry &registry) {
 
   // Listing control
   registry.Register("LIST", HandleListDirective);
+  registry.Register(DOT_LIST, HandleListDirective);  // .LIST alias
   registry.Register("NOLIST", HandleNolistDirective);
+  registry.Register(DOT_XLIST, HandleNolistDirective);  // .XLIST alias
   registry.Register(STAR_LIST, HandleStarListDirective);
   registry.Register("LALL", HandleLallDirective);
   registry.Register("SALL", HandleSallDirective);
   registry.Register("TITLE", HandleTitleDirective);
+  registry.Register(DOT_TITLE, HandleTitleDirective);  // .TITLE alias
   registry.Register("SUBTTL", HandleSubttlDirective);
+  registry.Register(DOT_SUBTTL, HandleSubttlDirective);  // .SUBTTL alias
   registry.Register("EJECT", HandleEjectDirective);
   registry.Register("SPACE", HandleSpaceDirective);
   registry.Register("NAME", HandleNameDirective);
   registry.Register("RADIX", HandleRadixDirective);
+  registry.Register(DOT_RADIX, HandleRadixDirective);  // .RADIX alias
   registry.Register(STAR_RADIX, HandleRadixDirective);
 
   // Macro system

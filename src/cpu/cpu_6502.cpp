@@ -2006,13 +2006,16 @@ Cpu6502::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
       std::string addr_part = trim(trimmed.substr(0, comma_pos));
 
       if (!addr_part.empty() && addr_part[0] == '$') {
+        // Explicit hex value - use value to determine mode
         uint32_t val = parse_hex(addr_part);
         mode = (val <= 0xFF) ? AddressingMode::ZeroPageX
                              : AddressingMode::AbsoluteX;
       } else {
+        // Symbol reference - default to Absolute for compatibility
         // BUG-001 FIX: Symbol - use resolved operand value to determine mode
-        mode = (operand <= 0xFF) ? AddressingMode::ZeroPageX
-                                 : AddressingMode::AbsoluteX;
+        // BUT: Only use ZeroPage if value is clearly in ZeroPage range (1-255)
+        mode = (operand >= 1 && operand <= 0xFF) ? AddressingMode::ZeroPageX
+                                                  : AddressingMode::AbsoluteX;
       }
     } else if (trimmed.find(",Y") != std::string::npos ||
                trimmed.find(", Y") != std::string::npos) {
@@ -2022,25 +2025,33 @@ Cpu6502::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
       std::string addr_part = trim(trimmed.substr(0, comma_pos));
 
       if (!addr_part.empty() && addr_part[0] == '$') {
+        // Explicit hex value - use value to determine mode
         uint32_t val = parse_hex(addr_part);
         mode = (val <= 0xFF) ? AddressingMode::ZeroPageY
                              : AddressingMode::AbsoluteY;
       } else {
+        // Symbol reference - default to Absolute for compatibility
         // BUG-001 FIX: Symbol - use resolved operand value to determine mode
-        mode = (operand <= 0xFF) ? AddressingMode::ZeroPageY
-                                 : AddressingMode::AbsoluteY;
+        // BUT: Only use ZeroPage if value is clearly in ZeroPage range (1-255)
+        mode = (operand >= 1 && operand <= 0xFF) ? AddressingMode::ZeroPageY
+                                                  : AddressingMode::AbsoluteY;
       }
     }
     // Absolute or ZeroPage
     else {
       if (trimmed[0] == '$') {
+        // Explicit hex value - use value to determine mode
         uint32_t val = parse_hex(trimmed);
         mode =
             (val <= 0xFF) ? AddressingMode::ZeroPage : AddressingMode::Absolute;
       } else {
+        // Symbol reference - default to Absolute for compatibility
         // BUG-001 FIX: Symbol - use resolved operand value to determine mode
-        mode = (operand <= 0xFF) ? AddressingMode::ZeroPage
-                                 : AddressingMode::Absolute;
+        // BUT: Only use ZeroPage if value is clearly in ZeroPage range (1-255)
+        //      A value of 0 could be an undefined label, so default to Absolute
+        //      This ensures JMP/JSR work with undefined labels (single-pass assembly)
+        mode = (operand >= 1 && operand <= 0xFF) ? AddressingMode::ZeroPage
+                                                  : AddressingMode::Absolute;
       }
     }
   }
