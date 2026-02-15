@@ -52,37 +52,33 @@
 
 ## Document Relationships
 
-```
-┌─────────────────────────────────────────────────┐
-│         README.md (START HERE)                  │
-│         System Architecture Overview            │
-│  • High-level architecture                      │
-│  • Component overview                           │
-│  • Quick reference                              │
-└────────┬────────────────────────────────────────┘
-         │
-         ├──────────────┬──────────────┬──────────────┐
-         │              │              │              │
-         ▼              ▼              ▼              ▼
-┌──────────────┐ ┌──────────────┐ ┌──────────────┐ ┌──────────────┐
-│   Plugin     │ │  Multi-Pass  │ │   Design     │ │     ADR      │
-│ Architecture │ │  Assembly    │ │  Patterns    │ │   Summary    │
-│              │ │              │ │              │ │              │
-│ Deep dive on │ │ Deep dive on │ │ Pattern      │ │ Architecture │
-│ CPU, Syntax, │ │ assembly     │ │ catalog and  │ │ decisions    │
-│ Output       │ │ algorithm    │ │ guidelines   │ │ with context │
-│ plugins      │ │              │ │              │ │              │
-└──────────────┘ └──────────────┘ └──────────────┘ └──────────────┘
-         │              │              │              │
-         └──────────────┴──────────────┴──────────────┘
-                         │
-                         ▼
-              ┌────────────────────┐
-              │  Related Documents │
-              │  • Coding Standards│
-              │  • Style Guide     │
-              │  • README.md       │
-              └────────────────────┘
+```mermaid
+graph TD
+    README["README.md (START HERE)<br/>System Architecture Overview<br/>• High-level architecture<br/>• Component overview<br/>• Quick reference"]
+    
+    Plugin["Plugin Architecture<br/><br/>Deep dive on<br/>CPU, Syntax,<br/>Output plugins"]
+    MultiPass["Multi-Pass Assembly<br/><br/>Deep dive on<br/>assembly<br/>algorithm"]
+    Patterns["Design Patterns<br/><br/>Pattern<br/>catalog and<br/>guidelines"]
+    ADR["ADR Summary<br/><br/>Architecture<br/>decisions<br/>with context"]
+    
+    Related["Related Documents<br/>• Coding Standards<br/>• Style Guide<br/>• README.md"]
+    
+    README --> Plugin
+    README --> MultiPass
+    README --> Patterns
+    README --> ADR
+    
+    Plugin --> Related
+    MultiPass --> Related
+    Patterns --> Related
+    ADR --> Related
+    
+    style README fill:#e1f5ff
+    style Plugin fill:#fff4e1
+    style MultiPass fill:#ffe1f5
+    style Patterns fill:#e1ffe1
+    style ADR fill:#ffe1e1
+    style Related fill:#f0f0f0
 ```
 
 ---

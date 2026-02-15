@@ -77,52 +77,33 @@ skip:
 
 ### High-Level Overview
 
-```
-┌────────────────────────────────────────────────┐
-│ Phase 1: Initial Pass (Symbol Collection)     │
-│ • Assume all instructions at maximum size     │
-│ • Collect label addresses                     │
-│ • Create initial symbol table                 │
-└────────────────┬───────────────────────────────┘
-                 │
-                 ▼
-┌────────────────────────────────────────────────┐
-│ Phase 2: Fast Optimization (Passes 2-50)      │
-│ • Optimize ALL instructions simultaneously    │
-│ • Re-encode based on updated symbol table     │
-│ • Check convergence after each pass           │
-│ • Continue until stable OR 50 passes reached  │
-└────────────────┬───────────────────────────────┘
-                 │
-                 ▼
-        ┌────────────────┐
-        │  Converged?    │
-        └───┬────────┬───┘
-            │        │
-          YES       NO (after 50 passes)
-            │        │
-            │        ▼
-            │  ┌─────────────────────────────────────┐
-            │  │ Phase 3: Safe Optimization          │
-            │  │          (Passes 51-500)            │
-            │  │ • Optimize ONE instruction per pass │
-            │  │ • Prevents oscillation             │
-            │  │ • Guarantees eventual convergence  │
-            │  └──────────────┬──────────────────────┘
-            │                 │
-            │                 ▼
-            │         ┌──────────────┐
-            │         │  Converged?  │
-            │         │  OR Max 500? │
-            │         └──────┬───────┘
-            │                │
-            └────────────────┘
-                     │
-                     ▼
-          ┌─────────────────────┐
-          │ Success: Generate   │
-          │        Output       │
-          └─────────────────────┘
+```mermaid
+flowchart TD
+    Phase1["Phase 1: Initial Pass<br/>(Symbol Collection)<br/>• Assume all instructions at maximum size<br/>• Collect label addresses<br/>• Create initial symbol table"]
+    
+    Phase2["Phase 2: Fast Optimization<br/>(Passes 2-50)<br/>• Optimize ALL instructions simultaneously<br/>• Re-encode based on updated symbol table<br/>• Check convergence after each pass<br/>• Continue until stable OR 50 passes reached"]
+    
+    Conv1{"Converged?"}
+    
+    Phase3["Phase 3: Safe Optimization<br/>(Passes 51-500)<br/>• Optimize ONE instruction per pass<br/>• Prevents oscillation<br/>• Guarantees eventual convergence"]
+    
+    Conv2{"Converged?<br/>OR Max 500?"}
+    
+    Output["Success: Generate Output"]
+    
+    Phase1 --> Phase2
+    Phase2 --> Conv1
+    Conv1 -->|YES| Output
+    Conv1 -->|NO (after 50 passes)| Phase3
+    Phase3 --> Conv2
+    Conv2 --> Output
+    
+    style Phase1 fill:#e1f5ff
+    style Phase2 fill:#fff4e1
+    style Phase3 fill:#ffe1f5
+    style Conv1 fill:#fffacd
+    style Conv2 fill:#fffacd
+    style Output fill:#e1ffe1
 ```
 
 ---

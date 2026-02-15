@@ -701,29 +701,21 @@ TEST(Assembler, EncodesInstructions) {
 
 **Implementation:** xasm++ Layer Structure
 
-```
-┌─────────────────────────────────┐
-│   Presentation Layer            │
-│   (CLI, main.cpp)               │  ← Depends on Application Layer
-└─────────────┬───────────────────┘
-              │
-              ▼
-┌─────────────────────────────────┐
-│   Application Layer             │
-│   (Assembler, workflows)        │  ← Depends on Domain Layer
-└─────────────┬───────────────────┘
-              │
-              ▼
-┌─────────────────────────────────┐
-│   Domain Layer                  │
-│   (CPU plugins, syntax plugins) │  ← Depends on Core
-└─────────────┬───────────────────┘
-              │
-              ▼
-┌─────────────────────────────────┐
-│   Core Layer                    │
-│   (Atom, Expression, Symbol)    │  ← No dependencies (foundation)
-└─────────────────────────────────┘
+```mermaid
+graph TD
+    Presentation["Presentation Layer<br/>(CLI, main.cpp)"]
+    Application["Application Layer<br/>(Assembler, workflows)"]
+    Domain["Domain Layer<br/>(CPU plugins, syntax plugins)"]
+    Core["Core Layer<br/>(Atom, Expression, Symbol)"]
+    
+    Presentation -->|depends on| Application
+    Application -->|depends on| Domain
+    Domain -->|depends on| Core
+    
+    style Presentation fill:#ff6b6b
+    style Application fill:#ffa500
+    style Domain fill:#4ecdc4
+    style Core fill:#95e1d3
 ```
 
 **Dependency Rules:**
