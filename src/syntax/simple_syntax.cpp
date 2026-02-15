@@ -2,6 +2,7 @@
 // Phase 1: Minimal Viable Assembler - SimpleSyntax Plugin
 
 #include "xasm++/syntax/simple_syntax.h"
+#include "xasm++/directives/directive_constants.h"
 #include "xasm++/directives/simple_directive_handlers.h"
 #include "xasm++/parse_utils.h"
 #include <algorithm>
@@ -46,14 +47,16 @@ static bool IsIdentifierStart(char c) {
 SimpleSyntaxParser::SimpleSyntaxParser() { InitializeDirectives(); }
 
 void SimpleSyntaxParser::InitializeDirectives() {
+  using namespace directives;
+
   // Register .ORG directive
-  directive_registry_.Register("ORG", simple::HandleOrg);
+  directive_registry_.Register(ORG, simple::HandleOrg);
 
   // Register .DB directive
-  directive_registry_.Register("DB", simple::HandleDb);
+  directive_registry_.Register(DB, simple::HandleDb);
 
   // Register .DW directive
-  directive_registry_.Register("DW", simple::HandleDw);
+  directive_registry_.Register(DW, simple::HandleDw);
 }
 
 void SimpleSyntaxParser::Parse(const std::string &source, Section &section,
