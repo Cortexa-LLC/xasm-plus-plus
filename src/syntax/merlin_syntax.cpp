@@ -53,7 +53,7 @@ void MerlinSyntaxParser::InitializeDirectiveRegistry() {
   directive_registry_[ORG] = merlin::HandleOrg;
   directive_registry_[EQU] = merlin::HandleEqu;
   directive_registry_[DB] = merlin::HandleDb;
-  directive_registry_[DFB] = merlin::HandleDb;  // Alias
+  directive_registry_[DFB] = merlin::HandleDb; // Alias
   directive_registry_[DW] = merlin::HandleDw;
   directive_registry_[HEX] = merlin::HandleHex;
   directive_registry_[DS] = merlin::HandleDs;
@@ -82,7 +82,6 @@ void MerlinSyntaxParser::InitializeDirectiveRegistry() {
   directive_registry_[REV] = merlin::HandleRev;
   directive_registry_[LUP] = merlin::HandleLup;
 }
-
 
 bool MerlinSyntaxParser::DispatchDirective(const std::string &directive,
                                            const std::string &label,
@@ -229,7 +228,8 @@ MerlinSyntaxParser::ParseExpression(const std::string &str,
   // ========================================================================
 
   // Check for empty expression (legacy behavior: treat as 0)
-  // This handles edge cases like "X+" where trailing operator leaves empty right side
+  // This handles edge cases like "X+" where trailing operator leaves empty
+  // right side
   if (expr.empty()) {
     return std::make_shared<LiteralExpr>(0);
   }
@@ -242,8 +242,8 @@ MerlinSyntaxParser::ParseExpression(const std::string &str,
         FormatError("Invalid hex number: '$' (no digits after $)"));
   }
 
-  // Check for trailing operators (legacy Merlin behavior: treat missing operand as 0)
-  // Examples: "X+", "Y-", "Z*"
+  // Check for trailing operators (legacy Merlin behavior: treat missing operand
+  // as 0) Examples: "X+", "Y-", "Z*"
   if (!expr.empty()) {
     char last_char = expr[expr.length() - 1];
     if (last_char == '+' || last_char == '-' || last_char == '*') {
@@ -256,7 +256,8 @@ MerlinSyntaxParser::ParseExpression(const std::string &str,
     }
   }
 
-  // All other expressions (arithmetic, symbols, literals) handled by shared parser
+  // All other expressions (arithmetic, symbols, literals) handled by shared
+  // parser
   ExpressionParser parser(&symbols);
   try {
     return parser.Parse(expr);
@@ -308,7 +309,6 @@ void MerlinSyntaxParser::HandleEqu(const std::string &label,
   auto expr = ParseExpression(operand, symbols);
   symbols.Define(label, SymbolType::Label, expr);
 }
-
 
 void MerlinSyntaxParser::HandleDS(const std::string &operand, Section &section,
                                   ConcreteSymbolTable &symbols) {
@@ -424,7 +424,8 @@ void MerlinSyntaxParser::HandleDum(const std::string &operand,
 
   // Check if operand is empty
   if (op.empty()) {
-    throw std::runtime_error(FormatError("DUM directive requires an address operand"));
+    throw std::runtime_error(
+        FormatError("DUM directive requires an address operand"));
   }
 
   // Parse number (decimal, hex, or binary)
@@ -708,24 +709,6 @@ std::string MerlinSyntaxParser::SubstituteParameters(
   return result;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 void MerlinSyntaxParser::HandleXc(const std::string &operand) {
   // XC [ON|OFF] - Toggle 65C02 CPU instruction set
 
@@ -787,8 +770,6 @@ void MerlinSyntaxParser::HandleMx(const std::string &operand) {
   // For now, just validate and accept
   (void)mode; // Suppress unused variable warning
 }
-
-
 
 void MerlinSyntaxParser::HandleLup(const std::string &operand) {
   // LUP count - Loop directive (repeat following code count times)

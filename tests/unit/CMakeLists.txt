@@ -665,6 +665,7 @@ target_link_libraries(test_parser_error_utils
     xasm_core
     gtest_main
     gtest
+    GTest::gmock
 )
 
 gtest_discover_tests(test_parser_error_utils)

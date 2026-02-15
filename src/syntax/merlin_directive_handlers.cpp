@@ -81,13 +81,13 @@ static uint32_t ParseNumber(const std::string &str,
 void HandleOrg(const std::string &label, const std::string &operand,
                DirectiveContext &context) {
   (void)label;
-  
+
   // ORG directive - set assembly origin address
   RequireOperand(operand, "ORG", context);
   std::string op = Trim(operand);
-  
+
   uint32_t address = 0;
-  
+
   // Parse address (number or symbol)
   if (op[0] == '$' || op[0] == '%' || std::isdigit(op[0])) {
     // Numeric literal
@@ -102,7 +102,7 @@ void HandleOrg(const std::string &label, const std::string &operand,
       address = 0;
     }
   }
-  
+
   context.section->atoms.push_back(std::make_shared<OrgAtom>(address));
   *context.current_address = address;
 }
@@ -110,11 +110,11 @@ void HandleOrg(const std::string &label, const std::string &operand,
 void HandleEqu(const std::string &label, const std::string &operand,
                DirectiveContext &context) {
   (void)context.section;
-  
+
   // Get parser instance for expression parsing
   ValidateParser(context.parser_state);
   auto *parser = static_cast<MerlinSyntaxParser *>(context.parser_state);
-  
+
   // EQU directive - define symbolic constant (no code generated)
   auto expr = parser->ParseExpression(operand, *context.symbols);
   context.symbols->Define(label, SymbolType::Label, expr);
@@ -125,7 +125,7 @@ void HandleDb(const std::string &label, const std::string &operand,
   // Get parser instance for label handling
   ValidateParser(context.parser_state);
   auto *parser = static_cast<MerlinSyntaxParser *>(context.parser_state);
-  
+
   // Create label atom first if label present
   if (!label.empty()) {
     uint32_t current_address = *context.current_address;
@@ -135,7 +135,7 @@ void HandleDb(const std::string &label, const std::string &operand,
         std::make_shared<LabelAtom>(label, current_address));
     parser->SetGlobalLabel(label);
   }
-  
+
   // DB directive - define byte(s)
   // Parse comma-separated expressions and evaluate immediately
   std::vector<uint8_t> bytes;
@@ -145,7 +145,8 @@ void HandleDb(const std::string &label, const std::string &operand,
   while (std::getline(iss, value, ',')) {
     value = Trim(value);
     if (!value.empty()) {
-      uint8_t byte_value = ParseAndEvaluateAsByte(value, *parser, *context.symbols, "DB");
+      uint8_t byte_value =
+          ParseAndEvaluateAsByte(value, *parser, *context.symbols, "DB");
       bytes.push_back(byte_value);
     }
   }
@@ -159,7 +160,7 @@ void HandleDw(const std::string &label, const std::string &operand,
   // Get parser instance for label handling
   ValidateParser(context.parser_state);
   auto *parser = static_cast<MerlinSyntaxParser *>(context.parser_state);
-  
+
   // Create label atom first if label present
   if (!label.empty()) {
     uint32_t current_address = *context.current_address;
@@ -169,7 +170,7 @@ void HandleDw(const std::string &label, const std::string &operand,
         std::make_shared<LabelAtom>(label, current_address));
     parser->SetGlobalLabel(label);
   }
-  
+
   // DW directive - define word(s) (16-bit values)
   // Store expressions for multi-pass evaluation (support forward references)
   std::vector<std::string> expressions;
@@ -196,7 +197,7 @@ void HandleHex(const std::string &label, const std::string &operand,
   // Get parser instance for label handling
   ValidateParser(context.parser_state);
   auto *parser = static_cast<MerlinSyntaxParser *>(context.parser_state);
-  
+
   // Create label atom first if label present
   if (!label.empty()) {
     uint32_t current_address = *context.current_address;
@@ -206,7 +207,7 @@ void HandleHex(const std::string &label, const std::string &operand,
         std::make_shared<LabelAtom>(label, current_address));
     parser->SetGlobalLabel(label);
   }
-  
+
   // HEX directive - Direct implementation from merlin_directives.cpp
   std::vector<uint8_t> bytes;
   std::string hex_str = Trim(operand);
@@ -224,14 +225,17 @@ void HandleHex(const std::string &label, const std::string &operand,
         for (char c : token) {
           if (!std::isxdigit(static_cast<unsigned char>(c))) {
             ThrowFormattedError("Invalid hex digit '" + std::string(1, c) +
-                            "' in HEX directive: '" + token + "'", context);
+                                    "' in HEX directive: '" + token + "'",
+                                context);
           }
         }
         try {
-          bytes.push_back(static_cast<uint8_t>(std::stoul(token, nullptr, RADIX_HEXADECIMAL)));
+          bytes.push_back(static_cast<uint8_t>(
+              std::stoul(token, nullptr, RADIX_HEXADECIMAL)));
         } catch (const std::exception &e) {
           ThrowFormattedError("Invalid hex value in HEX directive: '" + token +
-                          "' - " + e.what(), context);
+                                  "' - " + e.what(),
+                              context);
         }
       }
     }
@@ -245,7 +249,8 @@ void HandleHex(const std::string &label, const std::string &operand,
     for (char c : hex_str) {
       if (!std::isxdigit(static_cast<unsigned char>(c))) {
         ThrowFormattedError("Invalid hex digit '" + std::string(1, c) +
-                        "' in HEX directive: '" + operand + "'", context);
+                                "' in HEX directive: '" + operand + "'",
+                            context);
       }
     }
 
@@ -253,11 +258,12 @@ void HandleHex(const std::string &label, const std::string &operand,
     for (size_t i = 0; i + 1 < hex_str.length(); i += 2) {
       std::string byte_str = hex_str.substr(i, 2);
       try {
-        bytes.push_back(
-            static_cast<uint8_t>(std::stoul(byte_str, nullptr, RADIX_HEXADECIMAL)));
+        bytes.push_back(static_cast<uint8_t>(
+            std::stoul(byte_str, nullptr, RADIX_HEXADECIMAL)));
       } catch (const std::exception &e) {
         ThrowFormattedError("Invalid hex value in HEX directive: '" + byte_str +
-                        "' - " + e.what(), context);
+                                "' - " + e.what(),
+                            context);
       }
     }
   }
@@ -271,31 +277,31 @@ void HandleDs(const std::string &label, const std::string &operand,
   // Get parser instance from context
   ValidateParser(context.parser_state);
   auto *parser = static_cast<MerlinSyntaxParser *>(context.parser_state);
-  
+
   // Create label atom first if label present
   if (!label.empty()) {
     // Use dum_address_ if in DUM block, otherwise current_address_
-    uint32_t label_address = parser->IsInDumBlock() 
-        ? parser->GetDumAddress() 
-        : parser->GetCurrentAddress();
+    uint32_t label_address = parser->IsInDumBlock()
+                                 ? parser->GetDumAddress()
+                                 : parser->GetCurrentAddress();
     context.symbols->Define(label, SymbolType::Label,
                             std::make_shared<LiteralExpr>(label_address));
     context.section->atoms.push_back(
         std::make_shared<LabelAtom>(label, label_address));
     parser->SetGlobalLabel(label);
   }
-  
+
   parser->HandleDS(operand, *context.section, *context.symbols);
 }
 
 void HandleDum(const std::string &label, const std::string &operand,
                DirectiveContext &context) {
   (void)label;
-  
+
   // Get parser instance from context
   ValidateParser(context.parser_state);
   auto *parser = static_cast<MerlinSyntaxParser *>(context.parser_state);
-  
+
   parser->HandleDum(operand, *context.symbols);
 }
 
@@ -305,22 +311,22 @@ void HandleDend(const std::string &label, const std::string &operand,
   (void)operand;
   (void)context.section;
   (void)context.symbols;
-  
+
   // Get parser instance from context
   ValidateParser(context.parser_state);
   auto *parser = static_cast<MerlinSyntaxParser *>(context.parser_state);
-  
+
   parser->HandleDend();
 }
 
 void HandlePut(const std::string &label, const std::string &operand,
                DirectiveContext &context) {
   (void)label;
-  
+
   // Get parser instance from context
   ValidateParser(context.parser_state);
   auto *parser = static_cast<MerlinSyntaxParser *>(context.parser_state);
-  
+
   parser->HandlePut(operand, *context.section, *context.symbols);
 }
 
@@ -328,11 +334,11 @@ void HandleDo(const std::string &label, const std::string &operand,
               DirectiveContext &context) {
   (void)label;
   (void)context.section;
-  
+
   // Get parser instance from context
   ValidateParser(context.parser_state);
   auto *parser = static_cast<MerlinSyntaxParser *>(context.parser_state);
-  
+
   parser->HandleDo(operand, *context.symbols);
 }
 
@@ -342,11 +348,11 @@ void HandleElse(const std::string &label, const std::string &operand,
   (void)operand;
   (void)context.section;
   (void)context.symbols;
-  
+
   // Get parser instance from context
   ValidateParser(context.parser_state);
   auto *parser = static_cast<MerlinSyntaxParser *>(context.parser_state);
-  
+
   parser->HandleElse();
 }
 
@@ -356,11 +362,11 @@ void HandleFin(const std::string &label, const std::string &operand,
   (void)operand;
   (void)context.section;
   (void)context.symbols;
-  
+
   // Get parser instance from context
   ValidateParser(context.parser_state);
   auto *parser = static_cast<MerlinSyntaxParser *>(context.parser_state);
-  
+
   parser->HandleFin();
 }
 
@@ -369,7 +375,7 @@ void HandleLst(const std::string &label, const std::string &operand,
   (void)label;
   (void)operand;
   (void)context;
-  
+
   // LST directive - Direct implementation from merlin_directives.cpp
   // LST/LST OFF - listing control
   // No-op for compatibility (listing not implemented)
@@ -380,7 +386,7 @@ void HandleLstdo(const std::string &label, const std::string &operand,
   (void)label;
   (void)operand;
   (void)context;
-  
+
   // LSTDO directive - Direct implementation from merlin_directives.cpp
   // LSTDO - list during DO blocks
   // No-op for compatibility (listing not implemented)
@@ -391,7 +397,7 @@ void HandleTr(const std::string &label, const std::string &operand,
   (void)label;
   (void)operand;
   (void)context;
-  
+
   // TR directive - Direct implementation from merlin_directives.cpp
   // TR [ADR|ON|OFF] - truncate listing
   // No-op for compatibility (listing not implemented)
@@ -402,7 +408,7 @@ void HandleAsc(const std::string &label, const std::string &operand,
   // Get parser instance for label handling
   ValidateParser(context.parser_state);
   auto *parser = static_cast<MerlinSyntaxParser *>(context.parser_state);
-  
+
   // Create label atom first if label present
   if (!label.empty()) {
     uint32_t current_address = *context.current_address;
@@ -412,11 +418,11 @@ void HandleAsc(const std::string &label, const std::string &operand,
         std::make_shared<LabelAtom>(label, current_address));
     parser->SetGlobalLabel(label);
   }
-  
+
   // ASC directive - Direct implementation from merlin_directives.cpp
   // ASC 'string' or ASC "string" - ASCII string directive
   // Apple II/Merlin standard: Sets high bit on ALL characters (0x80 | char)
-  
+
   std::vector<uint8_t> bytes;
   std::string op = Trim(operand);
 
@@ -467,7 +473,7 @@ void HandleDci(const std::string &label, const std::string &operand,
   // Get parser instance for label handling
   ValidateParser(context.parser_state);
   auto *parser = static_cast<MerlinSyntaxParser *>(context.parser_state);
-  
+
   // Create label atom first if label present
   if (!label.empty()) {
     uint32_t current_address = *context.current_address;
@@ -477,10 +483,10 @@ void HandleDci(const std::string &label, const std::string &operand,
         std::make_shared<LabelAtom>(label, current_address));
     parser->SetGlobalLabel(label);
   }
-  
+
   // DCI directive - Direct implementation from merlin_directives.cpp
   // DCI 'string' - DCI string (last character with high bit set)
-  
+
   std::vector<uint8_t> bytes;
   std::string op = Trim(operand);
 
@@ -533,7 +539,7 @@ void HandleInv(const std::string &label, const std::string &operand,
   // Get parser instance for label handling
   ValidateParser(context.parser_state);
   auto *parser = static_cast<MerlinSyntaxParser *>(context.parser_state);
-  
+
   // Create label atom first if label present
   if (!label.empty()) {
     uint32_t current_address = *context.current_address;
@@ -543,10 +549,10 @@ void HandleInv(const std::string &label, const std::string &operand,
         std::make_shared<LabelAtom>(label, current_address));
     parser->SetGlobalLabel(label);
   }
-  
+
   // INV directive - Direct implementation from merlin_directives.cpp
   // INV 'string' - Inverse ASCII (all characters with high bit set)
-  
+
   std::vector<uint8_t> bytes;
   std::string op = Trim(operand);
 
@@ -593,7 +599,7 @@ void HandleFls(const std::string &label, const std::string &operand,
   // Get parser instance for label handling
   ValidateParser(context.parser_state);
   auto *parser = static_cast<MerlinSyntaxParser *>(context.parser_state);
-  
+
   // Create label atom first if label present
   if (!label.empty()) {
     uint32_t current_address = *context.current_address;
@@ -603,10 +609,10 @@ void HandleFls(const std::string &label, const std::string &operand,
         std::make_shared<LabelAtom>(label, current_address));
     parser->SetGlobalLabel(label);
   }
-  
+
   // FLS directive - Direct implementation from merlin_directives.cpp
   // FLS 'string' - Flash ASCII (alternating high bit for flashing effect)
-  
+
   std::vector<uint8_t> bytes;
   std::string op = Trim(operand);
 
@@ -665,11 +671,11 @@ void HandlePmc(const std::string &label, const std::string &operand,
                DirectiveContext &context) {
   (void)context.section;
   (void)context.symbols;
-  
+
   // Get parser instance from context
   ValidateParser(context.parser_state);
   auto *parser = static_cast<MerlinSyntaxParser *>(context.parser_state);
-  
+
   parser->HandlePMC(label.empty() ? operand : label);
 }
 
@@ -679,11 +685,11 @@ void HandleEom(const std::string &label, const std::string &operand,
   (void)operand;
   (void)context.section;
   (void)context.symbols;
-  
+
   // Get parser instance from context
   ValidateParser(context.parser_state);
   auto *parser = static_cast<MerlinSyntaxParser *>(context.parser_state);
-  
+
   parser->HandleEOM();
 }
 
@@ -692,7 +698,7 @@ void HandleMac(const std::string &label, const std::string &operand,
   // Get parser instance from context
   ValidateParser(context.parser_state);
   auto *parser = static_cast<MerlinSyntaxParser *>(context.parser_state);
-  
+
   std::string macro_name;
   std::string params_str;
 
@@ -719,7 +725,8 @@ void HandleMac(const std::string &label, const std::string &operand,
   // Check if macro exists (invocation) or is being defined
   if (parser->MacroExists(macro_name)) {
     // Macro exists - invoke it
-    parser->ExpandMacro(macro_name, params_str, *context.section, *context.symbols);
+    parser->ExpandMacro(macro_name, params_str, *context.section,
+                        *context.symbols);
   } else {
     // Macro doesn't exist - start definition
     if (parser->IsInMacroDefinition()) {
@@ -732,11 +739,11 @@ void HandleMac(const std::string &label, const std::string &operand,
 void HandleUsr(const std::string &label, const std::string &operand,
                DirectiveContext &context) {
   (void)operand;
-  
+
   // Get parser instance for label handling
   ValidateParser(context.parser_state);
   auto *parser = static_cast<MerlinSyntaxParser *>(context.parser_state);
-  
+
   // USR directive - Direct implementation from merlin_directives.cpp
   // Create label if present
   if (!label.empty()) {
@@ -753,11 +760,11 @@ void HandleUsr(const std::string &label, const std::string &operand,
 void HandleEnd(const std::string &label, const std::string &operand,
                DirectiveContext &context) {
   (void)operand;
-  
+
   // Get parser instance for label handling and state
   ValidateParser(context.parser_state);
   auto *parser = static_cast<MerlinSyntaxParser *>(context.parser_state);
-  
+
   // END directive - Direct implementation from merlin_directives.cpp
   // Create label if present
   if (!label.empty()) {
@@ -768,7 +775,7 @@ void HandleEnd(const std::string &label, const std::string &operand,
         std::make_shared<LabelAtom>(label, current_address));
     parser->SetGlobalLabel(label);
   }
-  
+
   // END - mark end of source (stop processing further lines)
   // Note: Needs parser state access for end_directive_seen_ flag
   parser->HandleEnd();
@@ -779,7 +786,7 @@ void HandleSav(const std::string &label, const std::string &operand,
   (void)label;
   (void)operand;
   (void)context;
-  
+
   // SAV directive - Direct implementation from merlin_directives.cpp
   // SAV filename - Save output filename directive
   // No-op for compatibility (output filename controlled by command-line args)
@@ -790,11 +797,11 @@ void HandleXc(const std::string &label, const std::string &operand,
   (void)label;
   (void)context.section;
   (void)context.symbols;
-  
+
   // Get parser instance from context
   ValidateParser(context.parser_state);
   auto *parser = static_cast<MerlinSyntaxParser *>(context.parser_state);
-  
+
   parser->HandleXc(operand);
 }
 
@@ -803,11 +810,11 @@ void HandleMx(const std::string &label, const std::string &operand,
   (void)label;
   (void)context.section;
   (void)context.symbols;
-  
+
   // Get parser instance from context
   ValidateParser(context.parser_state);
   auto *parser = static_cast<MerlinSyntaxParser *>(context.parser_state);
-  
+
   parser->HandleMx(operand);
 }
 
@@ -816,7 +823,7 @@ void HandleRev(const std::string &label, const std::string &operand,
   // Get parser instance for label handling
   ValidateParser(context.parser_state);
   auto *parser = static_cast<MerlinSyntaxParser *>(context.parser_state);
-  
+
   // REV "string" - Reverse ASCII string
   std::string op = Trim(operand);
 
@@ -877,11 +884,11 @@ void HandleLup(const std::string &label, const std::string &operand,
   (void)label;
   (void)context.section;
   (void)context.symbols;
-  
+
   // Get parser instance from context
   ValidateParser(context.parser_state);
   auto *parser = static_cast<MerlinSyntaxParser *>(context.parser_state);
-  
+
   parser->HandleLup(operand);
 }
 

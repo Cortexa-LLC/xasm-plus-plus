@@ -537,7 +537,8 @@ int64_t ExpressionParser::ParseNumber() {
     Consume();
     int64_t value = 0;
     if (Peek() != '0' && Peek() != '1') {
-      throw std::runtime_error("Invalid binary number: expected 0 or 1 after %");
+      throw std::runtime_error(
+          "Invalid binary number: expected 0 or 1 after %");
     }
     while (Peek() == '0' || Peek() == '1') {
       value = value * 2 + (Consume() - '0');
@@ -578,7 +579,8 @@ int64_t ExpressionParser::ParseNumber() {
     Consume(); // 'b' or 'B'
     int64_t value = 0;
     if (Peek() != '0' && Peek() != '1') {
-      throw std::runtime_error("Invalid binary number: expected 0 or 1 after 0b");
+      throw std::runtime_error(
+          "Invalid binary number: expected 0 or 1 after 0b");
     }
     while (Peek() == '0' || Peek() == '1') {
       value = value * 2 + (Consume() - '0');

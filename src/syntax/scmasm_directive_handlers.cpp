@@ -396,7 +396,8 @@ void HandleHs(const std::string &label, const std::string &operand,
   // Convert pairs to bytes using ParseHex utility
   for (size_t i = 0; i < hex_digits.length();
        i += constants::HEX_DIGITS_PER_BYTE) {
-    std::string byte_str = "$" + hex_digits.substr(i, constants::HEX_DIGITS_PER_BYTE);
+    std::string byte_str =
+        "$" + hex_digits.substr(i, constants::HEX_DIGITS_PER_BYTE);
     bool success;
     std::string error_msg;
     uint32_t byte_val = xasm::ParseHexSafe(byte_str, success, error_msg);
@@ -421,13 +422,13 @@ void HandleBs(const std::string &label, const std::string &operand,
   // SCMASM syntax: .BS count
   // Where count is a decimal or hex number ($hex, %binary)
   // This reserves 'count' bytes filled with zeros
-  
+
   if (operand.empty()) {
     ThrowFormattedError(".BS requires a byte count", context);
   }
 
   std::string trimmed = Trim(operand);
-  
+
   // Evaluate the byte count expression (supports symbols, hex, decimal)
   uint32_t byte_count =
       EvaluateExpression(trimmed, *context.symbols, context.parser_state);

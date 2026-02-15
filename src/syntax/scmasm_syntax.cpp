@@ -1050,7 +1050,8 @@ void ScmasmSyntaxParser::HandleHs(const std::string &operand, Section &section,
   // Convert pairs to bytes
   for (size_t i = 0; i < hex_digits.length(); i += 2) {
     std::string byte_str = hex_digits.substr(i, 2);
-    uint8_t byte = static_cast<uint8_t>(std::stoi(byte_str, nullptr, RADIX_HEXADECIMAL));
+    uint8_t byte =
+        static_cast<uint8_t>(std::stoi(byte_str, nullptr, RADIX_HEXADECIMAL));
     data.push_back(byte);
   }
 

@@ -12,16 +12,13 @@
 
 namespace xasm {
 
-namespace {
-} // anonymous namespace
+namespace {} // anonymous namespace
 
 // ===========================================================================
 // Constructor
 // ===========================================================================
 
-EdtasmSyntaxParser::EdtasmSyntaxParser() {
-  InitializeDirectiveRegistry();
-}
+EdtasmSyntaxParser::EdtasmSyntaxParser() { InitializeDirectiveRegistry(); }
 
 // ===========================================================================
 // Directive Registration
@@ -141,7 +138,8 @@ void EdtasmSyntaxParser::ParseDirective(const std::string &directive,
     context.current_address = &current_address_;
     context.parser_state = this;
 
-    // Call registered handler with correct parameter order (label, operand, context)
+    // Call registered handler with correct parameter order (label, operand,
+    // context)
     it->second(label, operands, context);
     return;
   }
