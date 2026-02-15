@@ -3,10 +3,10 @@
  * @brief Unit tests for parser error utility functions
  */
 
-#include "xasm++/syntax/parser_error_utils.h"
 #include "xasm++/syntax/directive_registry.h"
-#include <gtest/gtest.h>
+#include "xasm++/syntax/parser_error_utils.h"
 #include <gmock/gmock.h>
+#include <gtest/gtest.h>
 #include <stdexcept>
 
 using namespace xasm;

@@ -5,7 +5,8 @@
  * Provides reusable error formatting and throwing functions that eliminate
  * duplicate error handling patterns across parser implementations.
  *
- * **Purpose:** Extract common error patterns from parser code (P2.3 refactoring)
+ * **Purpose:** Extract common error patterns from parser code (P2.3
+ * refactoring)
  *
  * **Benefits:**
  * - Consistent error message formatting across all parsers

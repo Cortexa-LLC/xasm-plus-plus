@@ -273,7 +273,8 @@ constexpr uint8_t TYA = 0x98; // TYA          - Transfer Y to A
 
 constexpr uint8_t NOP = 0xEA; // NOP          - No Operation
 constexpr uint8_t BRK = 0x00; // BRK          - Break
-constexpr uint8_t WAI = 0xCB; // WAI          - Wait for Interrupt (65C02 Rockwell)
+constexpr uint8_t WAI =
+    0xCB; // WAI          - Wait for Interrupt (65C02 Rockwell)
 constexpr uint8_t STP = 0xDB; // STP          - Stop Processor (65C02 Rockwell)
 
 // BIT - Test Bits

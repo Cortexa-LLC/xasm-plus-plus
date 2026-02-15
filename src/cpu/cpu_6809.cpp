@@ -115,7 +115,7 @@ std::vector<uint8_t> Cpu6809::EncodeLDA(uint32_t operand,
   }
 
   case AddressingMode6809::Extended: {
-    auto result = std::vector<uint8_t>{ Opcodes6809::LDA_EXT};
+    auto result = std::vector<uint8_t>{Opcodes6809::LDA_EXT};
     auto addr_bytes = ToBigEndian(static_cast<uint16_t>(operand));
     result.insert(result.end(), addr_bytes.begin(), addr_bytes.end());
     return result;
@@ -138,7 +138,7 @@ std::vector<uint8_t> Cpu6809::EncodeLDA(uint32_t operand,
   case AddressingMode6809::IndexedIndirect:
   case AddressingMode6809::IndexedExtendedIndirect: {
     // LDA indexed opcode is 0xA6
-    auto result = std::vector<uint8_t>{ Opcodes6809::LDA_IDX};
+    auto result = std::vector<uint8_t>{Opcodes6809::LDA_IDX};
     // Default to X register (reg=0)
     auto postbyte =
         EncodeIndexedPostByte(mode, static_cast<int32_t>(operand), 0);
@@ -201,7 +201,7 @@ std::vector<uint8_t> Cpu6809::EncodeLDD(uint32_t operand,
   switch (mode) {
   case AddressingMode6809::Immediate16: {
     // LDD #$1234 -> {0xCC, 0x12, 0x34} (big-endian)
-    auto result = std::vector<uint8_t>{ Opcodes6809::LDD_IMM};
+    auto result = std::vector<uint8_t>{Opcodes6809::LDD_IMM};
     auto value_bytes = ToBigEndian(static_cast<uint16_t>(operand));
     result.insert(result.end(), value_bytes.begin(), value_bytes.end());
     return result;
@@ -434,17 +434,20 @@ std::vector<uint8_t> Cpu6809::EncodeLDY(uint32_t operand,
   // LDY uses page 2 prefix ($10)
   switch (mode) {
   case AddressingMode6809::Immediate16: {
-    auto result = std::vector<uint8_t>{Opcodes6809::PAGE2_PREFIX, Opcodes6809::Page2::LDY_IMM};
+    auto result = std::vector<uint8_t>{Opcodes6809::PAGE2_PREFIX,
+                                       Opcodes6809::Page2::LDY_IMM};
     auto value_bytes = ToBigEndian(static_cast<uint16_t>(operand));
     result.insert(result.end(), value_bytes.begin(), value_bytes.end());
     return result;
   }
 
   case AddressingMode6809::Direct:
-    return {Opcodes6809::PAGE2_PREFIX, Opcodes6809::Page2::LDY_DIR, static_cast<uint8_t>(operand & 0xFF)};
+    return {Opcodes6809::PAGE2_PREFIX, Opcodes6809::Page2::LDY_DIR,
+            static_cast<uint8_t>(operand & 0xFF)};
 
   case AddressingMode6809::Extended: {
-    auto result = std::vector<uint8_t>{Opcodes6809::PAGE2_PREFIX, Opcodes6809::Page2::LDY_EXT};
+    auto result = std::vector<uint8_t>{Opcodes6809::PAGE2_PREFIX,
+                                       Opcodes6809::Page2::LDY_EXT};
     auto addr_bytes = ToBigEndian(static_cast<uint16_t>(operand));
     result.insert(result.end(), addr_bytes.begin(), addr_bytes.end());
     return result;
@@ -467,7 +470,8 @@ std::vector<uint8_t> Cpu6809::EncodeLDY(uint32_t operand,
   case AddressingMode6809::IndexedIndirect:
   case AddressingMode6809::IndexedExtendedIndirect: {
     // LDY indexed opcode is 0x10 0xAE (page 2)
-    auto result = std::vector<uint8_t>{Opcodes6809::PAGE2_PREFIX, Opcodes6809::Page2::LDY_IDX};
+    auto result = std::vector<uint8_t>{Opcodes6809::PAGE2_PREFIX,
+                                       Opcodes6809::Page2::LDY_IDX};
     auto postbyte =
         EncodeIndexedPostByte(mode, static_cast<int32_t>(operand), 0);
     result.insert(result.end(), postbyte.begin(), postbyte.end());
@@ -526,10 +530,12 @@ std::vector<uint8_t> Cpu6809::EncodeSTY(uint32_t operand,
   // STY uses page 2 prefix ($10)
   switch (mode) {
   case AddressingMode6809::Direct:
-    return {Opcodes6809::PAGE2_PREFIX, Opcodes6809::Page2::STY_DIR, static_cast<uint8_t>(operand & 0xFF)};
+    return {Opcodes6809::PAGE2_PREFIX, Opcodes6809::Page2::STY_DIR,
+            static_cast<uint8_t>(operand & 0xFF)};
 
   case AddressingMode6809::Extended: {
-    auto result = std::vector<uint8_t>{Opcodes6809::PAGE2_PREFIX, Opcodes6809::Page2::STY_EXT};
+    auto result = std::vector<uint8_t>{Opcodes6809::PAGE2_PREFIX,
+                                       Opcodes6809::Page2::STY_EXT};
     auto addr_bytes = ToBigEndian(static_cast<uint16_t>(operand));
     result.insert(result.end(), addr_bytes.begin(), addr_bytes.end());
     return result;
@@ -552,7 +558,8 @@ std::vector<uint8_t> Cpu6809::EncodeSTY(uint32_t operand,
   case AddressingMode6809::IndexedIndirect:
   case AddressingMode6809::IndexedExtendedIndirect: {
     // STY indexed opcode is 0x10 0xAF (page 2)
-    auto result = std::vector<uint8_t>{Opcodes6809::PAGE2_PREFIX, Opcodes6809::Page2::STY_IDX};
+    auto result = std::vector<uint8_t>{Opcodes6809::PAGE2_PREFIX,
+                                       Opcodes6809::Page2::STY_IDX};
     auto postbyte =
         EncodeIndexedPostByte(mode, static_cast<int32_t>(operand), 0);
     result.insert(result.end(), postbyte.begin(), postbyte.end());
@@ -886,7 +893,8 @@ std::vector<uint8_t> Cpu6809::EncodeBSR(int32_t offset,
 
 std::vector<uint8_t> Cpu6809::EncodeLBRA(int16_t offset) const {
   // LBRA - Long Branch Always (Opcode: 0x10 0x16)
-  std::vector<uint8_t> result = {Opcodes6809::PAGE2_PREFIX, Opcodes6809::Page2::LBRA};
+  std::vector<uint8_t> result = {Opcodes6809::PAGE2_PREFIX,
+                                 Opcodes6809::Page2::LBRA};
   auto offset_bytes = ToBigEndian(static_cast<uint16_t>(offset));
   result.insert(result.end(), offset_bytes.begin(), offset_bytes.end());
   return result;
@@ -894,7 +902,8 @@ std::vector<uint8_t> Cpu6809::EncodeLBRA(int16_t offset) const {
 
 std::vector<uint8_t> Cpu6809::EncodeLBSR(int16_t offset) const {
   // LBSR - Long Branch to Subroutine (Opcode: 0x10 0x17)
-  std::vector<uint8_t> result = {Opcodes6809::PAGE2_PREFIX, Opcodes6809::Page2::LBSR};
+  std::vector<uint8_t> result = {Opcodes6809::PAGE2_PREFIX,
+                                 Opcodes6809::Page2::LBSR};
   auto offset_bytes = ToBigEndian(static_cast<uint16_t>(offset));
   result.insert(result.end(), offset_bytes.begin(), offset_bytes.end());
   return result;
@@ -902,7 +911,8 @@ std::vector<uint8_t> Cpu6809::EncodeLBSR(int16_t offset) const {
 
 std::vector<uint8_t> Cpu6809::EncodeLBRN(int16_t offset) const {
   // LBRN - Long Branch Never (Opcode: 0x10 0x21)
-  std::vector<uint8_t> result = {Opcodes6809::PAGE2_PREFIX, Opcodes6809::Page2::LBRN};
+  std::vector<uint8_t> result = {Opcodes6809::PAGE2_PREFIX,
+                                 Opcodes6809::Page2::LBRN};
   auto offset_bytes = ToBigEndian(static_cast<uint16_t>(offset));
   result.insert(result.end(), offset_bytes.begin(), offset_bytes.end());
   return result;
@@ -910,7 +920,8 @@ std::vector<uint8_t> Cpu6809::EncodeLBRN(int16_t offset) const {
 
 std::vector<uint8_t> Cpu6809::EncodeLBHI(int16_t offset) const {
   // LBHI - Long Branch if Higher, unsigned (Opcode: 0x10 0x22)
-  std::vector<uint8_t> result = {Opcodes6809::PAGE2_PREFIX, Opcodes6809::Page2::LBHI};
+  std::vector<uint8_t> result = {Opcodes6809::PAGE2_PREFIX,
+                                 Opcodes6809::Page2::LBHI};
   auto offset_bytes = ToBigEndian(static_cast<uint16_t>(offset));
   result.insert(result.end(), offset_bytes.begin(), offset_bytes.end());
   return result;
@@ -918,7 +929,8 @@ std::vector<uint8_t> Cpu6809::EncodeLBHI(int16_t offset) const {
 
 std::vector<uint8_t> Cpu6809::EncodeLBLS(int16_t offset) const {
   // LBLS - Long Branch if Lower or Same, unsigned (Opcode: 0x10 0x23)
-  std::vector<uint8_t> result = {Opcodes6809::PAGE2_PREFIX, Opcodes6809::Page2::LBLS};
+  std::vector<uint8_t> result = {Opcodes6809::PAGE2_PREFIX,
+                                 Opcodes6809::Page2::LBLS};
   auto offset_bytes = ToBigEndian(static_cast<uint16_t>(offset));
   result.insert(result.end(), offset_bytes.begin(), offset_bytes.end());
   return result;
@@ -926,7 +938,8 @@ std::vector<uint8_t> Cpu6809::EncodeLBLS(int16_t offset) const {
 
 std::vector<uint8_t> Cpu6809::EncodeLBCC(int16_t offset) const {
   // LBCC/LBHS - Long Branch if Carry Clear (Opcode: 0x10 0x24)
-  std::vector<uint8_t> result = {Opcodes6809::PAGE2_PREFIX, Opcodes6809::Page2::LBCC};
+  std::vector<uint8_t> result = {Opcodes6809::PAGE2_PREFIX,
+                                 Opcodes6809::Page2::LBCC};
   auto offset_bytes = ToBigEndian(static_cast<uint16_t>(offset));
   result.insert(result.end(), offset_bytes.begin(), offset_bytes.end());
   return result;
@@ -934,7 +947,8 @@ std::vector<uint8_t> Cpu6809::EncodeLBCC(int16_t offset) const {
 
 std::vector<uint8_t> Cpu6809::EncodeLBCS(int16_t offset) const {
   // LBCS/LBLO - Long Branch if Carry Set (Opcode: 0x10 0x25)
-  std::vector<uint8_t> result = {Opcodes6809::PAGE2_PREFIX, Opcodes6809::Page2::LBCS};
+  std::vector<uint8_t> result = {Opcodes6809::PAGE2_PREFIX,
+                                 Opcodes6809::Page2::LBCS};
   auto offset_bytes = ToBigEndian(static_cast<uint16_t>(offset));
   result.insert(result.end(), offset_bytes.begin(), offset_bytes.end());
   return result;
@@ -942,7 +956,8 @@ std::vector<uint8_t> Cpu6809::EncodeLBCS(int16_t offset) const {
 
 std::vector<uint8_t> Cpu6809::EncodeLBNE(int16_t offset) const {
   // LBNE - Long Branch if Not Equal (Opcode: 0x10 0x26)
-  std::vector<uint8_t> result = {Opcodes6809::PAGE2_PREFIX, Opcodes6809::Page2::LBNE};
+  std::vector<uint8_t> result = {Opcodes6809::PAGE2_PREFIX,
+                                 Opcodes6809::Page2::LBNE};
   auto offset_bytes = ToBigEndian(static_cast<uint16_t>(offset));
   result.insert(result.end(), offset_bytes.begin(), offset_bytes.end());
   return result;
@@ -950,7 +965,8 @@ std::vector<uint8_t> Cpu6809::EncodeLBNE(int16_t offset) const {
 
 std::vector<uint8_t> Cpu6809::EncodeLBEQ(int16_t offset) const {
   // LBEQ - Long Branch if Equal (Opcode: 0x10 0x27)
-  std::vector<uint8_t> result = {Opcodes6809::PAGE2_PREFIX, Opcodes6809::Page2::LBEQ};
+  std::vector<uint8_t> result = {Opcodes6809::PAGE2_PREFIX,
+                                 Opcodes6809::Page2::LBEQ};
   auto offset_bytes = ToBigEndian(static_cast<uint16_t>(offset));
   result.insert(result.end(), offset_bytes.begin(), offset_bytes.end());
   return result;
@@ -958,7 +974,8 @@ std::vector<uint8_t> Cpu6809::EncodeLBEQ(int16_t offset) const {
 
 std::vector<uint8_t> Cpu6809::EncodeLBVC(int16_t offset) const {
   // LBVC - Long Branch if Overflow Clear (Opcode: 0x10 0x28)
-  std::vector<uint8_t> result = {Opcodes6809::PAGE2_PREFIX, Opcodes6809::Page2::LBVC};
+  std::vector<uint8_t> result = {Opcodes6809::PAGE2_PREFIX,
+                                 Opcodes6809::Page2::LBVC};
   auto offset_bytes = ToBigEndian(static_cast<uint16_t>(offset));
   result.insert(result.end(), offset_bytes.begin(), offset_bytes.end());
   return result;
@@ -966,7 +983,8 @@ std::vector<uint8_t> Cpu6809::EncodeLBVC(int16_t offset) const {
 
 std::vector<uint8_t> Cpu6809::EncodeLBVS(int16_t offset) const {
   // LBVS - Long Branch if Overflow Set (Opcode: 0x10 0x29)
-  std::vector<uint8_t> result = {Opcodes6809::PAGE2_PREFIX, Opcodes6809::Page2::LBVS};
+  std::vector<uint8_t> result = {Opcodes6809::PAGE2_PREFIX,
+                                 Opcodes6809::Page2::LBVS};
   auto offset_bytes = ToBigEndian(static_cast<uint16_t>(offset));
   result.insert(result.end(), offset_bytes.begin(), offset_bytes.end());
   return result;
@@ -974,7 +992,8 @@ std::vector<uint8_t> Cpu6809::EncodeLBVS(int16_t offset) const {
 
 std::vector<uint8_t> Cpu6809::EncodeLBPL(int16_t offset) const {
   // LBPL - Long Branch if Plus (Opcode: 0x10 0x2A)
-  std::vector<uint8_t> result = {Opcodes6809::PAGE2_PREFIX, Opcodes6809::Page2::LBPL};
+  std::vector<uint8_t> result = {Opcodes6809::PAGE2_PREFIX,
+                                 Opcodes6809::Page2::LBPL};
   auto offset_bytes = ToBigEndian(static_cast<uint16_t>(offset));
   result.insert(result.end(), offset_bytes.begin(), offset_bytes.end());
   return result;
@@ -982,7 +1001,8 @@ std::vector<uint8_t> Cpu6809::EncodeLBPL(int16_t offset) const {
 
 std::vector<uint8_t> Cpu6809::EncodeLBMI(int16_t offset) const {
   // LBMI - Long Branch if Minus (Opcode: 0x10 0x2B)
-  std::vector<uint8_t> result = {Opcodes6809::PAGE2_PREFIX, Opcodes6809::Page2::LBMI};
+  std::vector<uint8_t> result = {Opcodes6809::PAGE2_PREFIX,
+                                 Opcodes6809::Page2::LBMI};
   auto offset_bytes = ToBigEndian(static_cast<uint16_t>(offset));
   result.insert(result.end(), offset_bytes.begin(), offset_bytes.end());
   return result;
@@ -990,7 +1010,8 @@ std::vector<uint8_t> Cpu6809::EncodeLBMI(int16_t offset) const {
 
 std::vector<uint8_t> Cpu6809::EncodeLBGE(int16_t offset) const {
   // LBGE - Long Branch if Greater or Equal, signed (Opcode: 0x10 0x2C)
-  std::vector<uint8_t> result = {Opcodes6809::PAGE2_PREFIX, Opcodes6809::Page2::LBGE};
+  std::vector<uint8_t> result = {Opcodes6809::PAGE2_PREFIX,
+                                 Opcodes6809::Page2::LBGE};
   auto offset_bytes = ToBigEndian(static_cast<uint16_t>(offset));
   result.insert(result.end(), offset_bytes.begin(), offset_bytes.end());
   return result;
@@ -998,7 +1019,8 @@ std::vector<uint8_t> Cpu6809::EncodeLBGE(int16_t offset) const {
 
 std::vector<uint8_t> Cpu6809::EncodeLBLT(int16_t offset) const {
   // LBLT - Long Branch if Less Than, signed (Opcode: 0x10 0x2D)
-  std::vector<uint8_t> result = {Opcodes6809::PAGE2_PREFIX, Opcodes6809::Page2::LBLT};
+  std::vector<uint8_t> result = {Opcodes6809::PAGE2_PREFIX,
+                                 Opcodes6809::Page2::LBLT};
   auto offset_bytes = ToBigEndian(static_cast<uint16_t>(offset));
   result.insert(result.end(), offset_bytes.begin(), offset_bytes.end());
   return result;
@@ -1006,7 +1028,8 @@ std::vector<uint8_t> Cpu6809::EncodeLBLT(int16_t offset) const {
 
 std::vector<uint8_t> Cpu6809::EncodeLBGT(int16_t offset) const {
   // LBGT - Long Branch if Greater Than, signed (Opcode: 0x10 0x2E)
-  std::vector<uint8_t> result = {Opcodes6809::PAGE2_PREFIX, Opcodes6809::Page2::LBGT};
+  std::vector<uint8_t> result = {Opcodes6809::PAGE2_PREFIX,
+                                 Opcodes6809::Page2::LBGT};
   auto offset_bytes = ToBigEndian(static_cast<uint16_t>(offset));
   result.insert(result.end(), offset_bytes.begin(), offset_bytes.end());
   return result;
@@ -1014,7 +1037,8 @@ std::vector<uint8_t> Cpu6809::EncodeLBGT(int16_t offset) const {
 
 std::vector<uint8_t> Cpu6809::EncodeLBLE(int16_t offset) const {
   // LBLE - Long Branch if Less or Equal, signed (Opcode: 0x10 0x2F)
-  std::vector<uint8_t> result = {Opcodes6809::PAGE2_PREFIX, Opcodes6809::Page2::LBLE};
+  std::vector<uint8_t> result = {Opcodes6809::PAGE2_PREFIX,
+                                 Opcodes6809::Page2::LBLE};
   auto offset_bytes = ToBigEndian(static_cast<uint16_t>(offset));
   result.insert(result.end(), offset_bytes.begin(), offset_bytes.end());
   return result;
@@ -1096,17 +1120,20 @@ std::vector<uint8_t> Cpu6809::EncodeCMPY(uint32_t operand,
   // CMPY uses page 2 prefix ($10)
   switch (mode) {
   case AddressingMode6809::Immediate16: {
-    auto result = std::vector<uint8_t>{Opcodes6809::PAGE2_PREFIX, Opcodes6809::Page2::CMPY_IMM};
+    auto result = std::vector<uint8_t>{Opcodes6809::PAGE2_PREFIX,
+                                       Opcodes6809::Page2::CMPY_IMM};
     auto value_bytes = ToBigEndian(static_cast<uint16_t>(operand));
     result.insert(result.end(), value_bytes.begin(), value_bytes.end());
     return result;
   }
 
   case AddressingMode6809::Direct:
-    return {Opcodes6809::PAGE2_PREFIX, Opcodes6809::Page2::CMPY_DIR, static_cast<uint8_t>(operand & 0xFF)};
+    return {Opcodes6809::PAGE2_PREFIX, Opcodes6809::Page2::CMPY_DIR,
+            static_cast<uint8_t>(operand & 0xFF)};
 
   case AddressingMode6809::Extended: {
-    auto result = std::vector<uint8_t>{Opcodes6809::PAGE2_PREFIX, Opcodes6809::Page2::CMPY_EXT};
+    auto result = std::vector<uint8_t>{Opcodes6809::PAGE2_PREFIX,
+                                       Opcodes6809::Page2::CMPY_EXT};
     auto addr_bytes = ToBigEndian(static_cast<uint16_t>(operand));
     result.insert(result.end(), addr_bytes.begin(), addr_bytes.end());
     return result;

@@ -30,13 +30,16 @@ ParseExpression(const std::string &str, ConcreteSymbolTable &symbols) {
 
   // Strip outer parentheses for grouping: (EXPR)
   // BUG-003 FIX: Support parentheses in complex expressions like <(MESSAGE+$10)
-  if (!trimmed.empty() && trimmed[0] == '(' && trimmed[trimmed.length() - 1] == ')') {
+  if (!trimmed.empty() && trimmed[0] == '(' &&
+      trimmed[trimmed.length() - 1] == ')') {
     // Check if these are matching outer parentheses
     int depth = 0;
     bool is_outer = true;
     for (size_t i = 0; i < trimmed.length(); ++i) {
-      if (trimmed[i] == '(') depth++;
-      if (trimmed[i] == ')') depth--;
+      if (trimmed[i] == '(')
+        depth++;
+      if (trimmed[i] == ')')
+        depth--;
       // If depth hits 0 before the end, these aren't outer parens
       if (depth == 0 && i < trimmed.length() - 1) {
         is_outer = false;

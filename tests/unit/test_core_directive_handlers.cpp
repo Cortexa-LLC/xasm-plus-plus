@@ -26,7 +26,7 @@ protected:
     symbols_ = std::make_unique<ConcreteSymbolTable>();
     section_ = std::make_unique<Section>("test_section", 0x01);
     current_address_ = 0x1000;
-    
+
     // Set up DirectiveContext
     context_.section = section_.get();
     context_.symbols = symbols_.get();
@@ -112,8 +112,7 @@ TEST_F(CoreDirectiveHandlersTest, OrgWithSymbolAddress) {
  */
 TEST_F(CoreDirectiveHandlersTest, OrgWithEmptyOperandThrows) {
   // Act & Assert
-  EXPECT_THROW(HandleOrg("", "", context_),
-               std::runtime_error);
+  EXPECT_THROW(HandleOrg("", "", context_), std::runtime_error);
 }
 
 /**
@@ -395,8 +394,7 @@ TEST_F(CoreDirectiveHandlersTest, DsWithExpression) {
  */
 TEST_F(CoreDirectiveHandlersTest, DsWithNegativeCountThrows) {
   // Act & Assert
-  EXPECT_THROW(HandleDs("", "-10", context_),
-               std::runtime_error);
+  EXPECT_THROW(HandleDs("", "-10", context_), std::runtime_error);
 }
 
 /**

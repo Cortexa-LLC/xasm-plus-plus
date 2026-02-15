@@ -2,9 +2,9 @@
  * @file edtasm_simple_directive_handlers.h
  * @brief EDTASM+ simple directive handler function declarations
  *
- * This file contains forward declarations for EDTASM+ (simple/CoCo) directive handlers.
- * These are free functions in the xasm::edtasm namespace that follow the
- * common DirectiveContext pattern for consistency across syntax parsers.
+ * This file contains forward declarations for EDTASM+ (simple/CoCo) directive
+ * handlers. These are free functions in the xasm::edtasm namespace that follow
+ * the common DirectiveContext pattern for consistency across syntax parsers.
  *
  * @note Pattern matches Merlin directive handlers for architectural consistency
  * @note This is for the simple EDTASM parser (edtasm_syntax.cpp), not the

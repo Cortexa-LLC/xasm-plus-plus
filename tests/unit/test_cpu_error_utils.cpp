@@ -14,10 +14,7 @@ using namespace xasm::cpu;
 
 TEST(CpuErrorUtilsTest, ThrowUnsupportedInstruction_ThrowsInvalidArgument) {
   EXPECT_THROW(
-      {
-        ThrowUnsupportedInstruction("INVALID");
-      },
-      std::invalid_argument);
+      { ThrowUnsupportedInstruction("INVALID"); }, std::invalid_argument);
 }
 
 TEST(CpuErrorUtilsTest, ThrowUnsupportedInstruction_MessageContainsMnemonic) {
@@ -48,15 +45,14 @@ TEST(CpuErrorUtilsTest, ThrowUnsupportedInstruction_ConsistentFormat) {
 // Test Group 2: Special Encoding Not Supported Error
 // ==============================================================================
 
-TEST(CpuErrorUtilsTest, ThrowSpecialEncodingNotSupported_ThrowsInvalidArgument) {
+TEST(CpuErrorUtilsTest,
+     ThrowSpecialEncodingNotSupported_ThrowsInvalidArgument) {
   EXPECT_THROW(
-      {
-        ThrowSpecialEncodingNotSupported("JMP");
-      },
-      std::invalid_argument);
+      { ThrowSpecialEncodingNotSupported("JMP"); }, std::invalid_argument);
 }
 
-TEST(CpuErrorUtilsTest, ThrowSpecialEncodingNotSupported_MessageContainsMnemonic) {
+TEST(CpuErrorUtilsTest,
+     ThrowSpecialEncodingNotSupported_MessageContainsMnemonic) {
   try {
     ThrowSpecialEncodingNotSupported("JSR");
     FAIL() << "Expected std::invalid_argument";
@@ -75,7 +71,8 @@ TEST(CpuErrorUtilsTest, ThrowSpecialEncodingNotSupported_ConsistentFormat) {
     FAIL() << "Expected std::invalid_argument";
   } catch (const std::invalid_argument &e) {
     std::string message(e.what());
-    // Should match format: "Special encoding not supported for instruction: BRA"
+    // Should match format: "Special encoding not supported for instruction:
+    // BRA"
     EXPECT_EQ(message, "Special encoding not supported for instruction: BRA");
   }
 }
@@ -85,11 +82,7 @@ TEST(CpuErrorUtilsTest, ThrowSpecialEncodingNotSupported_ConsistentFormat) {
 // ==============================================================================
 
 TEST(CpuErrorUtilsTest, ThrowExpectedHexValue_ThrowsRuntimeError) {
-  EXPECT_THROW(
-      {
-        ThrowExpectedHexValue();
-      },
-      std::runtime_error);
+  EXPECT_THROW({ ThrowExpectedHexValue(); }, std::runtime_error);
 }
 
 TEST(CpuErrorUtilsTest, ThrowExpectedHexValue_MessageDescribesExpectedFormat) {
@@ -121,14 +114,11 @@ TEST(CpuErrorUtilsTest, ThrowExpectedHexValue_ConsistentFormat) {
 // ==============================================================================
 
 TEST(CpuErrorUtilsTest, ThrowBranchTargetMustBeResolved_ThrowsRuntimeError) {
-  EXPECT_THROW(
-      {
-        ThrowBranchTargetMustBeResolved();
-      },
-      std::runtime_error);
+  EXPECT_THROW({ ThrowBranchTargetMustBeResolved(); }, std::runtime_error);
 }
 
-TEST(CpuErrorUtilsTest, ThrowBranchTargetMustBeResolved_MessageDescribesRequirement) {
+TEST(CpuErrorUtilsTest,
+     ThrowBranchTargetMustBeResolved_MessageDescribesRequirement) {
   try {
     ThrowBranchTargetMustBeResolved();
     FAIL() << "Expected std::runtime_error";
@@ -158,13 +148,12 @@ TEST(CpuErrorUtilsTest, ThrowBranchTargetMustBeResolved_ConsistentFormat) {
 
 TEST(CpuErrorUtilsTest, ThrowRequiresTwoOperands_ThrowsRuntimeError) {
   EXPECT_THROW(
-      {
-        ThrowRequiresTwoOperands("MVN", "srcbank,destbank");
-      },
+      { ThrowRequiresTwoOperands("MVN", "srcbank,destbank"); },
       std::runtime_error);
 }
 
-TEST(CpuErrorUtilsTest, ThrowRequiresTwoOperands_MessageContainsMnemonicAndFormat) {
+TEST(CpuErrorUtilsTest,
+     ThrowRequiresTwoOperands_MessageContainsMnemonicAndFormat) {
   try {
     ThrowRequiresTwoOperands("MVP", "src,dest");
     FAIL() << "Expected std::runtime_error";
@@ -196,10 +185,7 @@ TEST(CpuErrorUtilsTest, ThrowRequiresTwoOperands_ConsistentFormat) {
 
 TEST(CpuErrorUtilsTest, ThrowInvalidValues_ThrowsRuntimeError) {
   EXPECT_THROW(
-      {
-        ThrowInvalidValues("MVN", "out of range");
-      },
-      std::runtime_error);
+      { ThrowInvalidValues("MVN", "out of range"); }, std::runtime_error);
 }
 
 TEST(CpuErrorUtilsTest, ThrowInvalidValues_MessageContainsMnemonicAndReason) {

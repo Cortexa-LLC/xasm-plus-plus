@@ -40,7 +40,8 @@ void ThrowRequiresOperand(const DirectiveContext &ctx,
 void ThrowMissingMatchingDirective(const DirectiveContext &ctx,
                                    const std::string &closing_directive,
                                    const std::string &opening_directive) {
-  std::string message = closing_directive + " without matching " + opening_directive;
+  std::string message =
+      closing_directive + " without matching " + opening_directive;
   throw std::runtime_error(FormatError(ctx, message));
 }
 
@@ -55,8 +56,7 @@ void ThrowNotImplemented(const DirectiveContext &ctx,
 }
 
 void ThrowInvalidValue(const DirectiveContext &ctx,
-                       const std::string &value_type,
-                       const std::string &value,
+                       const std::string &value_type, const std::string &value,
                        const std::string &reason) {
   std::string message = "Invalid " + value_type + " value: " + value;
   if (!reason.empty()) {

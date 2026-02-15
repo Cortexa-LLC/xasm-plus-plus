@@ -118,7 +118,8 @@ TEST(AssemblerTest, ErrorAccumulation) {
 // Test 9: Get pass count limits
 TEST(AssemblerTest, PassLimits) {
   EXPECT_EQ(Assembler::FAST_PHASE_LIMIT, 50);
-  EXPECT_EQ(Assembler::MAX_PASSES, 10); // Empirically: 2-3 typical, 5 max observed
+  EXPECT_EQ(Assembler::MAX_PASSES,
+            10); // Empirically: 2-3 typical, 5 max observed
 }
 
 // Test 10: Reset assembler

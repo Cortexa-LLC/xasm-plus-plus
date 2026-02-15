@@ -175,7 +175,8 @@ constexpr int TERMINATOR_BASE = 10;
 /// @brief Threshold for using 16-bit addresses (same as 24-bit threshold)
 constexpr uint64_t ADDRESS_16BIT_THRESHOLD = 0x10000;
 
-/// @brief Threshold for using 24-bit addresses (same as THRESHOLD_24BIT_ADDRESS)
+/// @brief Threshold for using 24-bit addresses (same as
+/// THRESHOLD_24BIT_ADDRESS)
 constexpr uint64_t ADDRESS_24BIT_THRESHOLD = 0x1000000;
 
 /// @brief Threshold for using 16-bit count (same as THRESHOLD_COUNT_24BIT)

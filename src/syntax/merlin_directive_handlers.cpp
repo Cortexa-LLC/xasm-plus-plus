@@ -14,6 +14,7 @@
 #include "xasm++/expression_utils.h"
 #include "xasm++/syntax/merlin_syntax.h"
 #include "xasm++/util/string_utils.h"
+#include <algorithm>
 #include <sstream>
 #include <stdexcept>
 

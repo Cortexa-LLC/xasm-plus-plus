@@ -60,7 +60,8 @@ uint64_t ParseBinary(const std::string &str);
  *
  * @param str Decimal string containing only '0'-'9' characters
  * @return Parsed uint64_t value
- * @throws std::invalid_argument if string is empty or contains non-decimal chars
+ * @throws std::invalid_argument if string is empty or contains non-decimal
+ * chars
  */
 uint64_t ParseDecimal(const std::string &str);
 

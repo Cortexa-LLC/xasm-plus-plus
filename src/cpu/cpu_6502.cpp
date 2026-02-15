@@ -2015,7 +2015,7 @@ Cpu6502::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
         // BUG-001 FIX: Symbol - use resolved operand value to determine mode
         // BUT: Only use ZeroPage if value is clearly in ZeroPage range (1-255)
         mode = (operand >= 1 && operand <= 0xFF) ? AddressingMode::ZeroPageX
-                                                  : AddressingMode::AbsoluteX;
+                                                 : AddressingMode::AbsoluteX;
       }
     } else if (trimmed.find(",Y") != std::string::npos ||
                trimmed.find(", Y") != std::string::npos) {
@@ -2034,7 +2034,7 @@ Cpu6502::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
         // BUG-001 FIX: Symbol - use resolved operand value to determine mode
         // BUT: Only use ZeroPage if value is clearly in ZeroPage range (1-255)
         mode = (operand >= 1 && operand <= 0xFF) ? AddressingMode::ZeroPageY
-                                                  : AddressingMode::AbsoluteY;
+                                                 : AddressingMode::AbsoluteY;
       }
     }
     // Absolute or ZeroPage
@@ -2049,9 +2049,10 @@ Cpu6502::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
         // BUG-001 FIX: Symbol - use resolved operand value to determine mode
         // BUT: Only use ZeroPage if value is clearly in ZeroPage range (1-255)
         //      A value of 0 could be an undefined label, so default to Absolute
-        //      This ensures JMP/JSR work with undefined labels (single-pass assembly)
+        //      This ensures JMP/JSR work with undefined labels (single-pass
+        //      assembly)
         mode = (operand >= 1 && operand <= 0xFF) ? AddressingMode::ZeroPage
-                                                  : AddressingMode::Absolute;
+                                                 : AddressingMode::Absolute;
       }
     }
   }
@@ -2397,7 +2398,8 @@ Cpu6502::EncodeInstructionSpecial(const std::string &mnemonic,
       if (!str.empty() && str[0] == '$') {
         return static_cast<uint8_t>(parse_hex(str) & 0xFF);
       }
-      return static_cast<uint8_t>(std::stoul(str, nullptr, Opcodes::RADIX_DECIMAL) & 0xFF);
+      return static_cast<uint8_t>(
+          std::stoul(str, nullptr, Opcodes::RADIX_DECIMAL) & 0xFF);
     };
 
     try {

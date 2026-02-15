@@ -676,7 +676,8 @@ TEST_F(ScmasmSyntaxTest, BsDirectiveBinary) {
 
 TEST_F(ScmasmSyntaxTest, BsDirectiveWithSymbol) {
   // .BS with symbol reference
-  symbols.Define("BUFSIZE", SymbolType::Equate, std::make_shared<LiteralExpr>(64));
+  symbols.Define("BUFSIZE", SymbolType::Equate,
+                 std::make_shared<LiteralExpr>(64));
   parser->Parse("        .BS BUFSIZE\n", section, symbols);
 
   ASSERT_EQ(section.atoms.size(), 1u);

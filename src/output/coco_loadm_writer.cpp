@@ -4,8 +4,8 @@
  */
 
 #include "xasm++/output/coco_loadm_writer.h"
-#include "xasm++/output/output_format_constants.h"
 #include "xasm++/atom.h"
+#include "xasm++/output/output_format_constants.h"
 
 #include <stdexcept>
 
@@ -87,7 +87,8 @@ void CocoLoadmWriter::WriteDataBlock(std::ostream &output, uint64_t address,
     throw std::runtime_error("CoCo DOS format: Address exceeds 16-bit limit");
   }
 
-  output.put(output_format::coco_loadm::RECORD_TYPE_DATA_BLOCK); // Data block type
+  output.put(
+      output_format::coco_loadm::RECORD_TYPE_DATA_BLOCK); // Data block type
   WriteBE16(output, static_cast<uint16_t>(data.size()));
   WriteBE16(output, static_cast<uint16_t>(address));
 
@@ -98,8 +99,8 @@ void CocoLoadmWriter::WriteDataBlock(std::ostream &output, uint64_t address,
 }
 
 void CocoLoadmWriter::WritePostamble(std::ostream &output) {
-  output.put(
-      static_cast<char>(output_format::coco_loadm::RECORD_TYPE_POSTAMBLE)); // Postamble type
+  output.put(static_cast<char>(
+      output_format::coco_loadm::RECORD_TYPE_POSTAMBLE));   // Postamble type
   output.put(output_format::coco_loadm::POSTAMBLE_SUBTYPE); // Subtype
 
   if (has_entry_point_) {
@@ -115,9 +116,9 @@ void CocoLoadmWriter::WritePostamble(std::ostream &output) {
 }
 
 void CocoLoadmWriter::WriteBE16(std::ostream &output, uint16_t value) {
-  output.put(static_cast<char>(
-      (value >> output_format::bit_ops::SHIFT_HIGH_BYTE) &
-      output_format::bit_ops::MASK_LOW_BYTE)); // High byte
+  output.put(
+      static_cast<char>((value >> output_format::bit_ops::SHIFT_HIGH_BYTE) &
+                        output_format::bit_ops::MASK_LOW_BYTE)); // High byte
   output.put(static_cast<char>(
       value & output_format::bit_ops::MASK_LOW_BYTE)); // Low byte
 }

@@ -9,8 +9,8 @@
  */
 
 #include "xasm++/output/listing_output.h"
-#include "xasm++/output/output_format_constants.h"
 #include "xasm++/atom.h"
+#include "xasm++/output/output_format_constants.h"
 #include "xasm++/section.h"
 #include "xasm++/symbol.h"
 #include <fstream>
@@ -31,8 +31,9 @@ std::string ListingOutput::GetFileExtension() const { return ".lst"; }
  * @param width Field width (default: 4 for 16-bit addresses)
  * @return Formatted string
  */
-static std::string FormatAddress(
-    uint32_t addr, int width = output_format::HEX_ADDRESS_16BIT_WIDTH) {
+static std::string
+FormatAddress(uint32_t addr,
+              int width = output_format::HEX_ADDRESS_16BIT_WIDTH) {
   std::ostringstream oss;
   oss << std::uppercase << std::hex << std::setw(width)
       << std::setfill(output_format::HEX_FILL_CHAR) << addr;
@@ -45,15 +46,16 @@ static std::string FormatAddress(
  * @param max_bytes Maximum bytes to show per line (default: 8)
  * @return Formatted string
  */
-static std::string FormatBytes(
-    const std::vector<uint8_t> &bytes,
-    size_t max_bytes = output_format::LISTING_MAX_BYTES_PER_LINE) {
+static std::string
+FormatBytes(const std::vector<uint8_t> &bytes,
+            size_t max_bytes = output_format::LISTING_MAX_BYTES_PER_LINE) {
   std::ostringstream oss;
   size_t count = std::min(bytes.size(), max_bytes);
   for (size_t i = 0; i < count; ++i) {
     if (i > 0)
       oss << ' ';
-    oss << std::uppercase << std::hex << std::setw(output_format::HEX_BYTE_WIDTH)
+    oss << std::uppercase << std::hex
+        << std::setw(output_format::HEX_BYTE_WIDTH)
         << std::setfill(output_format::HEX_FILL_CHAR)
         << static_cast<int>(bytes[i]);
   }
@@ -171,8 +173,8 @@ void ListingOutput::WriteOutput(const std::string &filename,
       std::string line_num = "     ";
       if (atom->location.line > 0) {
         std::ostringstream oss;
-        oss << std::setw(output_format::LISTING_LINE_NUMBER_WIDTH)
-            << std::right << atom->location.line;
+        oss << std::setw(output_format::LISTING_LINE_NUMBER_WIDTH) << std::right
+            << atom->location.line;
         line_num = oss.str();
       }
 
@@ -215,14 +217,16 @@ void ListingOutput::WriteOutput(const std::string &filename,
         // Instruction atom - show address, bytes, and source
         std::string bytes_str = FormatBytes(inst->encoded_bytes);
         file << line_num << "  " << FormatAddress(current_address) << "     "
-             << std::left << std::setw(output_format::LISTING_BYTES_COLUMN_WIDTH)
+             << std::left
+             << std::setw(output_format::LISTING_BYTES_COLUMN_WIDTH)
              << bytes_str << "  " << source_text << "\n";
         current_address += inst->encoded_bytes.size();
       } else if (auto *data = dynamic_cast<const DataAtom *>(atom.get())) {
         // Data atom - show address and bytes
         std::string bytes_str = FormatBytes(data->data);
         file << line_num << "  " << FormatAddress(current_address) << "     "
-             << std::left << std::setw(output_format::LISTING_BYTES_COLUMN_WIDTH)
+             << std::left
+             << std::setw(output_format::LISTING_BYTES_COLUMN_WIDTH)
              << bytes_str << "  " << source_text << "\n";
         current_address += data->data.size();
       } else if (auto *org = dynamic_cast<const OrgAtom *>(atom.get())) {

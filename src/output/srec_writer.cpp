@@ -4,8 +4,8 @@
  */
 
 #include "xasm++/output/srec_writer.h"
-#include "xasm++/output/output_format_constants.h"
 #include "xasm++/atom.h"
+#include "xasm++/output/output_format_constants.h"
 
 #include <iomanip>
 #include <sstream>
@@ -128,8 +128,8 @@ uint8_t SRecordWriter::CalculateChecksum(uint8_t byte_count, uint64_t address,
 
   // Add address bytes
   for (size_t i = 0; i < addr_size; ++i) {
-    sum += (address >> (output_format::bit_ops::SHIFT_HIGH_BYTE *
-                        (addr_size - 1 - i))) &
+    sum += (address >>
+            (output_format::bit_ops::SHIFT_HIGH_BYTE * (addr_size - 1 - i))) &
            output_format::bit_ops::MASK_LOW_BYTE;
   }
 
@@ -158,18 +158,16 @@ void SRecordWriter::WriteTerminator(std::ostream &output, int format,
                                     uint64_t start_address) {
   // S9 for S1, S8 for S2, S7 for S3
   int terminator_type =
-      output_format::srec::TERMINATOR_BASE -
-      format; // S9=9, S8=8, S7=7
+      output_format::srec::TERMINATOR_BASE - format; // S9=9, S8=8, S7=7
   WriteRecord(output, terminator_type, start_address, {});
 }
 
 void SRecordWriter::WriteCountRecord(std::ostream &output, size_t record_count,
                                      int /* format */) {
   // S5 for counts < 65536, S6 for larger counts
-  int count_type =
-      (record_count < output_format::srec::COUNT_16BIT_THRESHOLD)
-          ? output_format::srec::RECORD_TYPE_COUNT_16BIT
-          : output_format::srec::RECORD_TYPE_COUNT_24BIT;
+  int count_type = (record_count < output_format::srec::COUNT_16BIT_THRESHOLD)
+                       ? output_format::srec::RECORD_TYPE_COUNT_16BIT
+                       : output_format::srec::RECORD_TYPE_COUNT_24BIT;
   WriteRecord(output, count_type, record_count, {});
 }
 

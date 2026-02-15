@@ -134,8 +134,8 @@ uint64_t ParseDecimal(const std::string &str) {
   for (char c : str) {
     if (c < '0' || c > '9') {
       throw std::invalid_argument("Invalid decimal digit '" +
-                                  std::string(1, c) +
-                                  "' in decimal string: '" + str + "'");
+                                  std::string(1, c) + "' in decimal string: '" +
+                                  str + "'");
     }
     value = value * 10 + (c - '0');
   }

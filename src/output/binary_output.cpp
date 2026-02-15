@@ -50,7 +50,7 @@ void BinaryOutput::WriteOutput(const std::string &filename,
         auto space_atom = std::dynamic_pointer_cast<SpaceAtom>(atom);
         if (space_atom) {
           std::vector<uint8_t> zeros(space_atom->count,
-                                      output_format::binary::ZERO_BYTE);
+                                     output_format::binary::ZERO_BYTE);
           out.write(reinterpret_cast<const char *>(zeros.data()), zeros.size());
           position += space_atom->count;
         }
@@ -65,7 +65,7 @@ void BinaryOutput::WriteOutput(const std::string &filename,
           size_t padding = (alignment - (position % alignment)) % alignment;
           if (padding > 0) {
             std::vector<uint8_t> pad_bytes(padding,
-                                            output_format::binary::ZERO_BYTE);
+                                           output_format::binary::ZERO_BYTE);
             out.write(reinterpret_cast<const char *>(pad_bytes.data()),
                       pad_bytes.size());
             position += padding;

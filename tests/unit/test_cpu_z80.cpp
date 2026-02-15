@@ -423,7 +423,8 @@ TEST_F(CpuZ80Test, JR_NC_e) {
 
 TEST_F(CpuZ80Test, JR_C_e) {
   // JR C, e -> 0x38 ee
-  auto bytes = cpu.EncodeJR_C_e(static_cast<int8_t>(0xFC)); // Negative displacement (-4)
+  auto bytes =
+      cpu.EncodeJR_C_e(static_cast<int8_t>(0xFC)); // Negative displacement (-4)
   ASSERT_EQ(bytes.size(), 2UL);
   EXPECT_EQ(0x38, bytes[0]); // JR C, e opcode
   EXPECT_EQ(0xFC, bytes[1]); // Signed displacement (-4)
@@ -1019,7 +1020,8 @@ TEST_F(CpuZ80Test, JP_nn_EdgeCase_Max) {
 
 TEST_F(CpuZ80Test, JR_e_EdgeCase_NegativeOffset) {
   // JR -1 -> 0x18 0xFF (edge case: negative displacement, backward jump)
-  auto bytes = cpu.EncodeJR_e(static_cast<int8_t>(0xFF)); // -1 in two's complement
+  auto bytes =
+      cpu.EncodeJR_e(static_cast<int8_t>(0xFF)); // -1 in two's complement
   ASSERT_EQ(bytes.size(), 2UL);
   EXPECT_EQ(0x18, bytes[0]); // JR e opcode
   EXPECT_EQ(0xFF, bytes[1]); // -1 signed displacement
@@ -1035,7 +1037,8 @@ TEST_F(CpuZ80Test, JR_e_EdgeCase_MaxForward) {
 
 TEST_F(CpuZ80Test, JR_e_EdgeCase_MaxBackward) {
   // JR -128 -> 0x18 0x80 (edge case: maximum backward displacement)
-  auto bytes = cpu.EncodeJR_e(static_cast<int8_t>(0x80)); // -128 in two's complement
+  auto bytes =
+      cpu.EncodeJR_e(static_cast<int8_t>(0x80)); // -128 in two's complement
   ASSERT_EQ(bytes.size(), 2UL);
   EXPECT_EQ(0x18, bytes[0]); // JR e opcode
   EXPECT_EQ(0x80, bytes[1]); // Max negative displacement

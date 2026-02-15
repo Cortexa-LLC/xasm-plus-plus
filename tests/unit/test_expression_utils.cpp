@@ -6,8 +6,8 @@
  * to reduce code duplication (P2.2: Extract expression evaluation utilities)
  */
 
-#include "xasm++/expression_utils.h"
 #include "xasm++/expression.h"
+#include "xasm++/expression_utils.h"
 #include "xasm++/symbol.h"
 #include <gtest/gtest.h>
 #include <memory>
@@ -18,7 +18,7 @@ using namespace xasm;
 class MockExpressionParser {
 public:
   std::shared_ptr<Expression> ParseExpression(const std::string &str,
-                                               SymbolTable & /*symbols*/) {
+                                              SymbolTable & /*symbols*/) {
     // Return a simple literal expression for testing
     if (str == "42") {
       return std::make_shared<LiteralExpr>(42);
@@ -173,9 +173,9 @@ TEST(ParseAndEvaluateAsSignedIntTest, Zero) {
 TEST(ParseAndEvaluateAsSignedIntTest, InvalidExpressionThrows) {
   MockExpressionParser parser;
   ConcreteSymbolTable symbols;
-  EXPECT_THROW(
-      ParseAndEvaluateAsSignedInt("invalid", parser, symbols, "test expression"),
-      std::runtime_error);
+  EXPECT_THROW(ParseAndEvaluateAsSignedInt("invalid", parser, symbols,
+                                           "test expression"),
+               std::runtime_error);
 }
 
 // ==============================================================================

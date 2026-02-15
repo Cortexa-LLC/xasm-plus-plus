@@ -9,8 +9,8 @@
  */
 
 #include "xasm++/output/intel_hex_writer.h"
-#include "xasm++/output/output_format_constants.h"
 #include "xasm++/atom.h"
+#include "xasm++/output/output_format_constants.h"
 
 #include <iomanip>
 #include <sstream>
@@ -161,10 +161,10 @@ void IntelHexWriter::WriteExtendedLinearAddress(std::ostream &output,
   data.push_back(upper_address &
                  output_format::bit_ops::MASK_LOW_BYTE); // Low byte
 
-  WriteRecord(output, output_format::intel_hex::EXTENDED_LINEAR_ADDRESS_BYTE_COUNT,
-              output_format::intel_hex::EXTENDED_LINEAR_ADDRESS_FIELD,
-              output_format::intel_hex::RECORD_TYPE_EXTENDED_LINEAR_ADDRESS,
-              data);
+  WriteRecord(
+      output, output_format::intel_hex::EXTENDED_LINEAR_ADDRESS_BYTE_COUNT,
+      output_format::intel_hex::EXTENDED_LINEAR_ADDRESS_FIELD,
+      output_format::intel_hex::RECORD_TYPE_EXTENDED_LINEAR_ADDRESS, data);
 }
 
 void IntelHexWriter::WriteEOF(std::ostream &output) {

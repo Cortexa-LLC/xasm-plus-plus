@@ -26,8 +26,8 @@ namespace xasm {
 namespace {
 
 // Numeric literal prefixes
-constexpr char HEX_PREFIX_DOLLAR = '$';    // $FF
-constexpr char HEX_PREFIX_0X = 'x';        // 0xFF
+constexpr char HEX_PREFIX_DOLLAR = '$'; // $FF
+constexpr char HEX_PREFIX_0X = 'x';     // 0xFF
 
 // Radix values
 constexpr int RADIX_BINARY = 2;
@@ -40,9 +40,11 @@ constexpr int RADIX_HEXADECIMAL = 16;
 // constexpr char DOUBLE_QUOTE = '"';
 
 // Z80 instruction size constants (for size estimation)
-constexpr int INSTRUCTION_SIZE_SINGLE_BYTE = 1;   // RST, register-only operations
-constexpr int INSTRUCTION_SIZE_TWO_BYTES = 2;     // JR, DJNZ, immediate 8-bit operands
-constexpr int INSTRUCTION_SIZE_THREE_BYTES = 3;   // JP, CALL, 16-bit immediate operands
+constexpr int INSTRUCTION_SIZE_SINGLE_BYTE = 1; // RST, register-only operations
+constexpr int INSTRUCTION_SIZE_TWO_BYTES =
+    2; // JR, DJNZ, immediate 8-bit operands
+constexpr int INSTRUCTION_SIZE_THREE_BYTES =
+    3; // JP, CALL, 16-bit immediate operands
 
 } // anonymous namespace
 
@@ -51,10 +53,10 @@ using namespace CommonDirectives;
 using namespace Z80Directives;
 
 // Import specific Z80 mnemonics (avoid conflicts with CommonDirectives::SET)
-using Z80Mnemonics::JR;
+using Z80Mnemonics::CALL;
 using Z80Mnemonics::DJNZ;
 using Z80Mnemonics::JP;
-using Z80Mnemonics::CALL;
+using Z80Mnemonics::JR;
 using Z80Mnemonics::RST;
 
 // Import EDTASM-M80++ specific directive constants
@@ -191,7 +193,8 @@ bool Z80NumberParser::TryParse(const std::string &token, int64_t &value) const {
     }
   }
 
-  // All characters are valid for the radix - convert to value using ParseHexDigit
+  // All characters are valid for the radix - convert to value using
+  // ParseHexDigit
   value = 0;
   for (char c : token) {
     int digit;
@@ -733,7 +736,8 @@ uint32_t EdtasmM80PlusPlusSyntaxParser::EstimateZ80InstructionSize(
 
   // Immediate 8-bit operands (e.g., LD A,n)
   if (operand.find(",") != std::string::npos) {
-    return INSTRUCTION_SIZE_TWO_BYTES; // opcode + byte operand (default for immediate data)
+    return INSTRUCTION_SIZE_TWO_BYTES; // opcode + byte operand (default for
+                                       // immediate data)
   }
 
   // Relative jumps (JR, DJNZ) - opcode + displacement
@@ -866,18 +870,21 @@ uint32_t EdtasmM80PlusPlusSyntaxParser::ParseNumber(const std::string &str) {
   // Binary: 11110000B
   else if (trimmed.size() >= 2 &&
            (trimmed.back() == 'B' || trimmed.back() == 'b')) {
-    return static_cast<uint32_t>(ParseBinary(trimmed.substr(0, trimmed.size() - 1)));
+    return static_cast<uint32_t>(
+        ParseBinary(trimmed.substr(0, trimmed.size() - 1)));
   }
   // Octal: 377O, 377Q
   else if (trimmed.size() >= 2 &&
            (trimmed.back() == 'O' || trimmed.back() == 'o' ||
             trimmed.back() == 'Q' || trimmed.back() == 'q')) {
-    return static_cast<uint32_t>(ParseOctal(trimmed.substr(0, trimmed.size() - 1)));
+    return static_cast<uint32_t>(
+        ParseOctal(trimmed.substr(0, trimmed.size() - 1)));
   }
   // Decimal with D suffix: 255D
   else if (trimmed.size() >= 2 &&
            (trimmed.back() == 'D' || trimmed.back() == 'd')) {
-    return static_cast<uint32_t>(ParseDecimal(trimmed.substr(0, trimmed.size() - 1)));
+    return static_cast<uint32_t>(
+        ParseDecimal(trimmed.substr(0, trimmed.size() - 1)));
   }
   // No explicit format - use current radix
   else {

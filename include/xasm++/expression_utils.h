@@ -49,8 +49,9 @@ class ConcreteSymbolTable;
 
 template <typename ParserType>
 uint32_t ParseAndEvaluateExpression(const std::string &expr_str,
-                                     ParserType &parser, ConcreteSymbolTable &symbols,
-                                     const std::string &context_name) {
+                                    ParserType &parser,
+                                    ConcreteSymbolTable &symbols,
+                                    const std::string &context_name) {
   auto expr = parser.ParseExpression(expr_str, symbols);
   if (!expr) {
     throw std::runtime_error("Invalid " + context_name + " expression");
@@ -80,8 +81,8 @@ uint32_t ParseAndEvaluateExpression(const std::string &expr_str,
  */
 template <typename ParserType>
 uint8_t ParseAndEvaluateAsByte(const std::string &expr_str, ParserType &parser,
-                                ConcreteSymbolTable &symbols,
-                                const std::string &context_name) {
+                               ConcreteSymbolTable &symbols,
+                               const std::string &context_name) {
   auto expr = parser.ParseExpression(expr_str, symbols);
   if (!expr) {
     throw std::runtime_error("Invalid " + context_name + " expression");
@@ -110,9 +111,9 @@ uint8_t ParseAndEvaluateAsByte(const std::string &expr_str, ParserType &parser,
  * @throws std::runtime_error if expression is invalid or evaluation fails
  */
 template <typename ParserType>
-uint16_t ParseAndEvaluateAsWord(const std::string &expr_str,
-                                 ParserType &parser, ConcreteSymbolTable &symbols,
-                                 const std::string &context_name) {
+uint16_t ParseAndEvaluateAsWord(const std::string &expr_str, ParserType &parser,
+                                ConcreteSymbolTable &symbols,
+                                const std::string &context_name) {
   auto expr = parser.ParseExpression(expr_str, symbols);
   if (!expr) {
     throw std::runtime_error("Invalid " + context_name + " expression");
@@ -142,8 +143,9 @@ uint16_t ParseAndEvaluateAsWord(const std::string &expr_str,
  */
 template <typename ParserType>
 int32_t ParseAndEvaluateAsSignedInt(const std::string &expr_str,
-                                     ParserType &parser, ConcreteSymbolTable &symbols,
-                                     const std::string &context_name) {
+                                    ParserType &parser,
+                                    ConcreteSymbolTable &symbols,
+                                    const std::string &context_name) {
   auto expr = parser.ParseExpression(expr_str, symbols);
   if (!expr) {
     throw std::runtime_error("Invalid " + context_name + " expression");
@@ -177,8 +179,9 @@ int32_t ParseAndEvaluateAsSignedInt(const std::string &expr_str,
  */
 template <typename ParserType>
 bool TryParseAndEvaluateExpression(const std::string &expr_str,
-                                    ParserType &parser, ConcreteSymbolTable &symbols,
-                                    uint32_t &result) {
+                                   ParserType &parser,
+                                   ConcreteSymbolTable &symbols,
+                                   uint32_t &result) {
   try {
     auto expr = parser.ParseExpression(expr_str, symbols);
     if (expr) {
