@@ -12,29 +12,46 @@ This document defines the technical architecture for adding Motorola 6809 CPU su
 
 **High-Level Architecture:**
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                          xasm++ Core                             │
-│  ┌──────────────┐  ┌──────────────┐  ┌───────────────────┐    │
-│  │  Assembler   │  │   Symbol     │  │    Expression      │    │
-│  │   Engine     │  │   Table      │  │    Evaluator       │    │
-│  └──────────────┘  └──────────────┘  └───────────────────┘    │
-└─────────────────────────────────────────────────────────────────┘
-           │                    │                    │
-           ▼                    ▼                    ▼
-┌─────────────────────┐  ┌──────────────────────────────────────┐
-│   CPU Plugin API    │  │     Syntax Parser API                │
-├─────────────────────┤  ├──────────────────────────────────────┤
-│ • Cpu6502           │  │ • MerlinSyntaxParser                 │
-│ • Cpu65816          │  │ • ScmasmSyntaxParser                 │
-│ • Cpu6809 (NEW) ────┼──┼─→ EdtasmSyntaxParser (NEW)           │
-└─────────────────────┘  └──────────────────────────────────────┘
-           │                                │
-           ▼                                ▼
-    ┌─────────────┐                ┌──────────────┐
-    │  Opcode     │                │  Directive   │
-    │  Encoding   │                │  Handlers    │
-    └─────────────┘                └──────────────┘
+```mermaid
+graph TD
+    subgraph Core["xasm++ Core"]
+        Assembler["Assembler<br/>Engine"]
+        SymbolTable["Symbol<br/>Table"]
+        Expression["Expression<br/>Evaluator"]
+    end
+    
+    subgraph CPUPlugins["CPU Plugin API"]
+        Cpu6502["Cpu6502"]
+        Cpu65816["Cpu65816"]
+        Cpu6809["Cpu6809 (NEW)"]
+    end
+    
+    subgraph SyntaxParsers["Syntax Parser API"]
+        Merlin["MerlinSyntaxParser"]
+        Scmasm["ScmasmSyntaxParser"]
+        Edtasm["EdtasmSyntaxParser (NEW)"]
+    end
+    
+    Opcode["Opcode<br/>Encoding"]
+    Directive["Directive<br/>Handlers"]
+    
+    Assembler --> CPUPlugins
+    SymbolTable --> CPUPlugins
+    Expression --> CPUPlugins
+    
+    Assembler --> SyntaxParsers
+    SymbolTable --> SyntaxParsers
+    Expression --> SyntaxParsers
+    
+    Cpu6809 --> Edtasm
+    CPUPlugins --> Opcode
+    SyntaxParsers --> Directive
+    
+    style Core fill:#e1f5ff
+    style CPUPlugins fill:#fff4e1
+    style SyntaxParsers fill:#ffe1f5
+    style Cpu6809 fill:#90EE90
+    style Edtasm fill:#90EE90
 ```
 
 **Integration Points:**
@@ -642,33 +659,33 @@ Bit 4-0: Mode encoding (varies by sub-mode)
 
 **Flow:**
 
-```
-User Source File (EDTASM+ syntax)
-         │
-         ▼
-EdtasmSyntaxParser::Parse()
-         │
-         ├─→ Parse labels → ConcreteSymbolTable
-         ├─→ Parse directives → HandleXXX()
-         └─→ Parse instructions → ParseInstruction()
-                    │
-                    ▼
-         DetermineAddressingMode()
-                    │
-                    ▼
-         Cpu6809::EncodeXXX(operand, mode)
-                    │
-                    ▼
-         std::vector<uint8_t> (machine code)
-                    │
-                    ▼
-         Section::AddAtom(ByteAtom)
-                    │
-                    ▼
-         Multi-Pass Assembly (resolve symbols)
-                    │
-                    ▼
-         Binary Output
+```mermaid
+flowchart TD
+    Source["User Source File<br/>(EDTASM+ syntax)"]
+    Parse["EdtasmSyntaxParser::Parse()"]
+    Labels["Parse labels → ConcreteSymbolTable"]
+    Directives["Parse directives → HandleXXX()"]
+    Instructions["Parse instructions → ParseInstruction()"]
+    Mode["DetermineAddressingMode()"]
+    Encode["Cpu6809::EncodeXXX(operand, mode)"]
+    MachineCode["std::vector&lt;uint8_t&gt;<br/>(machine code)"]
+    AddAtom["Section::AddAtom(ByteAtom)"]
+    MultiPass["Multi-Pass Assembly<br/>(resolve symbols)"]
+    Output["Binary Output"]
+    
+    Source --> Parse
+    Parse --> Labels
+    Parse --> Directives
+    Parse --> Instructions
+    Instructions --> Mode
+    Mode --> Encode
+    Encode --> MachineCode
+    MachineCode --> AddAtom
+    AddAtom --> MultiPass
+    MultiPass --> Output
+    
+    style Source fill:#e1f5ff
+    style Output fill:#e1ffe1
 ```
 
 **Multi-Pass Resolution:**
