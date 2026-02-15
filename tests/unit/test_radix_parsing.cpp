@@ -73,7 +73,8 @@ TEST(ParseOctalTest, EmptyString) {
 }
 
 TEST(ParseOctalTest, InvalidCharacters) {
-  EXPECT_THROW(xasm::ParseOctal("89"), std::invalid_argument); // 8 and 9 not valid in octal
+  EXPECT_THROW(xasm::ParseOctal("89"),
+               std::invalid_argument); // 8 and 9 not valid in octal
   EXPECT_THROW(xasm::ParseOctal("12a"), std::invalid_argument);
   EXPECT_THROW(xasm::ParseOctal("1 2"), std::invalid_argument);
 }
@@ -89,17 +90,17 @@ TEST(ParseOctalTest, LeadingZeros) {
 
 TEST(ParseBinaryDigitTest, ValidBinaryDigits) {
   int digit;
-  
+
   EXPECT_TRUE(xasm::ParseBinaryDigit('0', digit));
   EXPECT_EQ(digit, 0);
-  
+
   EXPECT_TRUE(xasm::ParseBinaryDigit('1', digit));
   EXPECT_EQ(digit, 1);
 }
 
 TEST(ParseBinaryDigitTest, InvalidCharacters) {
   int digit;
-  
+
   EXPECT_FALSE(xasm::ParseBinaryDigit('2', digit));
   EXPECT_FALSE(xasm::ParseBinaryDigit('9', digit));
   EXPECT_FALSE(xasm::ParseBinaryDigit('a', digit));
@@ -112,20 +113,20 @@ TEST(ParseBinaryDigitTest, InvalidCharacters) {
 
 TEST(ParseDecimalDigitTest, ValidDecimalDigits) {
   int digit;
-  
+
   EXPECT_TRUE(xasm::ParseDecimalDigit('0', digit));
   EXPECT_EQ(digit, 0);
-  
+
   EXPECT_TRUE(xasm::ParseDecimalDigit('5', digit));
   EXPECT_EQ(digit, 5);
-  
+
   EXPECT_TRUE(xasm::ParseDecimalDigit('9', digit));
   EXPECT_EQ(digit, 9);
 }
 
 TEST(ParseDecimalDigitTest, InvalidCharacters) {
   int digit;
-  
+
   EXPECT_FALSE(xasm::ParseDecimalDigit('a', digit));
   EXPECT_FALSE(xasm::ParseDecimalDigit('f', digit));
   EXPECT_FALSE(xasm::ParseDecimalDigit(' ', digit));
@@ -138,20 +139,20 @@ TEST(ParseDecimalDigitTest, InvalidCharacters) {
 
 TEST(ParseOctalDigitTest, ValidOctalDigits) {
   int digit;
-  
+
   EXPECT_TRUE(xasm::ParseOctalDigit('0', digit));
   EXPECT_EQ(digit, 0);
-  
+
   EXPECT_TRUE(xasm::ParseOctalDigit('3', digit));
   EXPECT_EQ(digit, 3);
-  
+
   EXPECT_TRUE(xasm::ParseOctalDigit('7', digit));
   EXPECT_EQ(digit, 7);
 }
 
 TEST(ParseOctalDigitTest, InvalidCharacters) {
   int digit;
-  
+
   EXPECT_FALSE(xasm::ParseOctalDigit('8', digit));
   EXPECT_FALSE(xasm::ParseOctalDigit('9', digit));
   EXPECT_FALSE(xasm::ParseOctalDigit('a', digit));
@@ -164,35 +165,35 @@ TEST(ParseOctalDigitTest, InvalidCharacters) {
 
 TEST(ParseHexDigitTest, ValidHexDigits) {
   int digit;
-  
+
   // Test digits 0-9
   EXPECT_TRUE(xasm::ParseHexDigit('0', digit));
   EXPECT_EQ(digit, 0);
-  
+
   EXPECT_TRUE(xasm::ParseHexDigit('5', digit));
   EXPECT_EQ(digit, 5);
-  
+
   EXPECT_TRUE(xasm::ParseHexDigit('9', digit));
   EXPECT_EQ(digit, 9);
-  
+
   // Test lowercase a-f
   EXPECT_TRUE(xasm::ParseHexDigit('a', digit));
   EXPECT_EQ(digit, 10);
-  
+
   EXPECT_TRUE(xasm::ParseHexDigit('f', digit));
   EXPECT_EQ(digit, 15);
-  
+
   // Test uppercase A-F
   EXPECT_TRUE(xasm::ParseHexDigit('A', digit));
   EXPECT_EQ(digit, 10);
-  
+
   EXPECT_TRUE(xasm::ParseHexDigit('F', digit));
   EXPECT_EQ(digit, 15);
 }
 
 TEST(ParseHexDigitTest, InvalidCharacters) {
   int digit;
-  
+
   EXPECT_FALSE(xasm::ParseHexDigit('g', digit));
   EXPECT_FALSE(xasm::ParseHexDigit('G', digit));
   EXPECT_FALSE(xasm::ParseHexDigit('z', digit));
