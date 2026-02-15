@@ -67,7 +67,7 @@ All 197 tests should pass.
 
 After a successful build, you'll find:
 
-- `build/src/xasm++` - Main assembler executable (in development)
+- `build/bin/xasm++` - Main assembler executable (in development)
 - `build/tests/unit/test_assembler` - Assembler unit tests
 - `build/tests/unit/test_cpu6502` - 6502 CPU plugin tests
 

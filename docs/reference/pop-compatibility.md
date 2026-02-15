@@ -424,7 +424,7 @@ For each implemented feature:
 
 ```bash
 # Test single file
-./build/src/xasm++ --cpu 6502 --syntax merlin --output test.bin <file.S>
+./build/bin/xasm++ --cpu 6502 --syntax merlin --output test.bin <file.S>
 
 # Test all files
 ./test_pop_files.sh

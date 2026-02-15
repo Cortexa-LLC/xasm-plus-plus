@@ -35,7 +35,7 @@ This document summarizes the comprehensive verification of all Z80 and 6809 opco
 
 **File:** `include/xasm++/cpu/opcodes_z80.h`  
 **Verified By:** Engineer Agent (Beads Task: xasm++-1491)  
-**Report:** [docs/architecture/verification-z80-opcodes.md](verification-z80-opcodes.md)
+**Report:** [verification-z80-opcodes.md](verification-z80-opcodes.md)
 
 ### Statistics
 - **Total Opcodes Verified:** 186 defined opcodes
@@ -81,7 +81,7 @@ This approach is **correct and appropriate** - providing essential opcodes with 
 
 **File:** `include/xasm++/cpu/opcodes_6809.h`  
 **Verified By:** Engineer Agent (Beads Task: xasm++-lkbc)  
-**Report:** [docs/architecture/verification-6809-opcodes.md](verification-6809-opcodes.md)
+**Report:** [verification-6809-opcodes.md](verification-6809-opcodes.md)
 
 ### Statistics
 - **Total Opcodes Verified:** 140+ opcodes across all pages
@@ -352,13 +352,13 @@ Both opcode header files are accurate, well-organized, and production-ready. No 
 ### Detailed Reports
 
 1. **Z80 Verification Report**
-   - Location: [docs/architecture/verification-z80-opcodes.md](verification-z80-opcodes.md)
+   - Location: [verification-z80-opcodes.md](verification-z80-opcodes.md)
    - Opcodes verified: 186
    - Discrepancies: 0 critical, 0 major, 2 minor
    - Status: ✅ Complete
 
 2. **6809 Verification Report**
-   - Location: [docs/architecture/verification-6809-opcodes.md](verification-6809-opcodes.md)
+   - Location: [verification-6809-opcodes.md](verification-6809-opcodes.md)
    - Opcodes verified: 140+
    - Discrepancies: 0 critical, 0 major, 0 minor
    - Status: ✅ Complete

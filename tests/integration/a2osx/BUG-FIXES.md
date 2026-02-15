@@ -198,9 +198,9 @@ ctest --test-dir build --output-on-failure
 ### Integration
 ```bash
 # Test each bug fix
-./build/src/xasm++ --syntax scmasm --cpu 65c02 tests/integration/a2osx/test_bug001.S -o /tmp/test.bin
-./build/src/xasm++ --syntax scmasm --cpu 65c02 tests/integration/a2osx/test_bs.S -o /tmp/test.bin
-./build/src/xasm++ --syntax scmasm --cpu 65c02 tests/integration/a2osx/test_bug003.S -o /tmp/test.bin
+./build/bin/xasm++ --syntax scmasm --cpu 65c02 tests/integration/a2osx/test_bug001.S -o /tmp/test.bin
+./build/bin/xasm++ --syntax scmasm --cpu 65c02 tests/integration/a2osx/test_bs.S -o /tmp/test.bin
+./build/bin/xasm++ --syntax scmasm --cpu 65c02 tests/integration/a2osx/test_bug003.S -o /tmp/test.bin
 # All assemble successfully with correct output ✅
 ```
 

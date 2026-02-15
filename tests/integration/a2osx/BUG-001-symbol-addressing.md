@@ -31,7 +31,7 @@ START   LDA #ZPTEMP      ; ✅ Works - assembles as A9 80
 ### Steps to Reproduce
 
 ```bash
-$ ./build/src/xasm++ --syntax scmasm --cpu 65c02 bug001_repro.S -o output.bin
+$ ./build/bin/xasm++ --syntax scmasm --cpu 65c02 bug001_repro.S -o output.bin
 
 error: Invalid argument for ZPTEMP: Unsupported instruction: ZPTEMP
 ```

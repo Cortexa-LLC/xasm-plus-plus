@@ -304,7 +304,7 @@ def main():
     )
     parser.add_argument(
         "--xasm",
-        default="../../../build/src/xasm++",
+        default="../../../build/bin/xasm++",
         help="Path to xasm++ executable"
     )
     parser.add_argument(

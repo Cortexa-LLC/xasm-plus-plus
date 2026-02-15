@@ -120,7 +120,7 @@ cd tests/integration/a2osx
 
 ```
 A2oSX Build Validation Suite
-xasm++: ../../../build/src/xasm++
+xasm++: ../../../build/bin/xasm++
 Tests: 11
 ================================================================================
 
@@ -172,7 +172,7 @@ Summary:
 
 ```bash
 # Test a single file
-./build/src/xasm++ --syntax scmasm --cpu 65c02 \
+./build/bin/xasm++ --syntax scmasm --cpu 65c02 \
   tests/integration/a2osx/test_minimal.S \
   -o test_minimal.bin
 

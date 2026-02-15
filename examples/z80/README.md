@@ -96,13 +96,13 @@ xasm++ --cpu z80 --syntax edtasm_m80_plusplus data_tables.asm -o tables.bin
 cd examples/z80
 
 # Hello World (CP/M)
-../../build/src/xasm++ --cpu z80 --syntax edtasm_m80_plusplus hello_cpm.asm -o hello.com
+../../build/bin/xasm++ --cpu z80 --syntax edtasm_m80_plusplus hello_cpm.asm -o hello.com
 
 # Interrupt Handler
-../../build/src/xasm++ --cpu z80 --syntax edtasm_m80_plusplus interrupt_handler.asm -o int.bin
+../../build/bin/xasm++ --cpu z80 --syntax edtasm_m80_plusplus interrupt_handler.asm -o int.bin
 
 # Data Tables
-../../build/src/xasm++ --cpu z80 --syntax edtasm_m80_plusplus data_tables.asm -o tables.bin
+../../build/bin/xasm++ --cpu z80 --syntax edtasm_m80_plusplus data_tables.asm -o tables.bin
 ```
 
 ---

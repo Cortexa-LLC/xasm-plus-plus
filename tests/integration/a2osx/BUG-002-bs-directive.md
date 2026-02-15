@@ -26,7 +26,7 @@ BUFFER  .BS 256    ; Reserve 256 bytes
 ### Steps to Reproduce
 
 ```bash
-$ ./build/src/xasm++ --syntax scmasm --cpu 65c02 bug002_repro.S -o output.bin
+$ ./build/bin/xasm++ --syntax scmasm --cpu 65c02 bug002_repro.S -o output.bin
 
 error: Invalid binary digit: 2
 ```

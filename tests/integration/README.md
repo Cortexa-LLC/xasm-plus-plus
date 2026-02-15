@@ -77,7 +77,7 @@ Example:
 
 ```bash
 # Assemble the test program
-./build/src/xasm++ tests/integration/06_new_feature.asm \
+./build/bin/xasm++ tests/integration/06_new_feature.asm \
     -o tests/integration/06_new_feature.bin
 
 # Inspect binary output
@@ -128,7 +128,7 @@ If you modify the assembler or fix a bug, you may need to regenerate golden file
 
 # Regenerate all golden files
 for test in 01_hello 02_labels 03_data 04_org 05_comments; do
-  ./build/src/xasm++ tests/integration/${test}.asm \
+  ./build/bin/xasm++ tests/integration/${test}.asm \
       -o tests/integration/${test}.bin
   cp tests/integration/${test}.bin \
      tests/integration/expected/${test}.bin
@@ -156,7 +156,7 @@ diff /tmp/actual.hex /tmp/expected.hex
 
 ```bash
 # Run xasm++ directly to see error message
-./build/src/xasm++ tests/integration/01_hello.asm \
+./build/bin/xasm++ tests/integration/01_hello.asm \
     -o /tmp/test.bin
 ```
 

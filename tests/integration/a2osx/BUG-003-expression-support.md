@@ -35,7 +35,7 @@ START   LDA #<MESSAGE    ; Get low byte of MESSAGE address
 ```
 
 ```bash
-$ ./build/src/xasm++ --syntax scmasm --cpu 65c02 bug003_lo_repro.S -o output.bin
+$ ./build/bin/xasm++ --syntax scmasm --cpu 65c02 bug003_lo_repro.S -o output.bin
 
 error: Invalid argument for #<MESSAGE: Unsupported instruction: #<MESSAGE
 ```
@@ -54,7 +54,7 @@ START   LDA #>MESSAGE    ; Get high byte of MESSAGE address
 ```
 
 ```bash
-$ ./build/src/xasm++ --syntax scmasm --cpu 65c02 bug003_hi_repro.S -o output.bin
+$ ./build/bin/xasm++ --syntax scmasm --cpu 65c02 bug003_hi_repro.S -o output.bin
 
 error: Invalid argument for #>MESSAGE: Unsupported instruction: #>MESSAGE
 ```
@@ -75,7 +75,7 @@ START   LDA #$12
 ```
 
 ```bash
-$ ./build/src/xasm++ --syntax scmasm --cpu 65c02 bug003_offset_repro.S -o output.bin
+$ ./build/bin/xasm++ --syntax scmasm --cpu 65c02 bug003_offset_repro.S -o output.bin
 
 error: Invalid argument for ZPPTR+1: Unsupported instruction: ZPPTR+1
 ```

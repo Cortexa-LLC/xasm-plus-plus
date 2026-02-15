@@ -51,7 +51,7 @@ cat BUG-001-symbol-addressing.md
 ```bash
 # BUG-001 example
 cd /Users/bryanw/Projects/Vintage/tools/xasm++
-./build/src/xasm++ --syntax scmasm --cpu 65c02 \
+./build/bin/xasm++ --syntax scmasm --cpu 65c02 \
   tests/integration/a2osx/test_symbols.S \
   -o test.bin
 
@@ -222,7 +222,7 @@ cd ../tests/integration/a2osx
 ./validation_suite.py --all
 
 # 4. Check specific test
-./build/src/xasm++ --syntax scmasm --cpu 65c02 \
+./build/bin/xasm++ --syntax scmasm --cpu 65c02 \
   tests/integration/a2osx/test_symbols.S -o test.bin
 xxd test.bin    # Verify output
 ```

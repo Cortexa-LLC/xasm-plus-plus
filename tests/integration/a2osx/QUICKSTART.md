@@ -61,7 +61,7 @@ test_*.S           → Test source files
 ./validation_suite.py -v
 
 # Manual test
-../../../build/src/xasm++ --syntax scmasm --cpu 65c02 \
+../../../build/bin/xasm++ --syntax scmasm --cpu 65c02 \
   test_minimal.S -o test.bin
 ```
 

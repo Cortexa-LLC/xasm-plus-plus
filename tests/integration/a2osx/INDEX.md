@@ -108,7 +108,7 @@
 ./validation_suite.py --all
 
 # Manual test
-../../../build/src/xasm++ --syntax scmasm --cpu 65c02 test_minimal.S -o test.bin
+../../../build/bin/xasm++ --syntax scmasm --cpu 65c02 test_minimal.S -o test.bin
 
 # View binary output
 xxd test_minimal.S.bin

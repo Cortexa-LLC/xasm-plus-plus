@@ -19,7 +19,7 @@ from pathlib import Path
 POP_SOURCE_DEFAULT = os.path.expanduser("~/Projects/Vintage/Apple/Prince-of-Persia-Apple-II/01 POP Source/Source")
 REFERENCE_DIR = Path(__file__).parent / "reference"
 OUTPUT_DIR = Path(__file__).parent / "output"
-XASM_BINARY = Path(__file__).parent.parent.parent.parent.parent / "build" / "src" / "xasm++"
+XASM_BINARY = Path(__file__).parent.parent.parent.parent.parent / "build" / "bin" / "xasm++"
 
 # All 29 PoP source files
 POP_FILES = [

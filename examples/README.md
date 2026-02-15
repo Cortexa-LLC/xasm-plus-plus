@@ -6,12 +6,12 @@ This directory contains example assembly programs demonstrating Phase 1 capabili
 
 ### Simple Syntax (default)
 ```bash
-../build/src/xasm++ hello_6502.asm -o hello_6502.bin
+../build/bin/xasm++ hello_6502.asm -o hello_6502.bin
 ```
 
 ### Merlin Syntax
 ```bash
-../build/src/xasm++ merlin_demo.asm -o merlin_demo.bin --syntax merlin
+../build/bin/xasm++ merlin_demo.asm -o merlin_demo.bin --syntax merlin
 ```
 
 ## Example Programs
