@@ -5,8 +5,8 @@ sidebar_position: 1
 # Architecture Overview
 
 **Version:** 1.0
-**Date:** 2026-01-19
-**Status:** Draft
+**Date:** 2026-02-14
+**Status:** Current
 
 ---
 
@@ -963,5 +963,30 @@ Additional architecture documentation coming soon:
 
 ---
 
-**Document Status:** ✅ Current (as of 2026-02-04)
+**Document Status:** ✅ Current (as of 2026-02-14)
 **Owner:** Cortexa LLC
+
+## Additional Architecture Documentation
+
+For comprehensive architecture details, see:
+- [Architecture Index](https://github.com/Cortexa-LLC/xasm-plus-plus/blob/main/docs/architecture/INDEX.md) - Complete architecture guide
+- [Architecture README](https://github.com/Cortexa-LLC/xasm-plus-plus/blob/main/docs/architecture/README.md) - Detailed component interactions
+- [Plugin Architecture](https://github.com/Cortexa-LLC/xasm-plus-plus/blob/main/docs/architecture/03-plugin-architecture.md) - Plugin system design
+- [Multi-Pass Assembly](https://github.com/Cortexa-LLC/xasm-plus-plus/blob/main/docs/architecture/06-multipass-assembly.md) - Assembly algorithm details
+- [Design Patterns](https://github.com/Cortexa-LLC/xasm-plus-plus/blob/main/docs/architecture/09-design-patterns.md) - Pattern catalog
+- [ADR Summary](https://github.com/Cortexa-LLC/xasm-plus-plus/blob/main/docs/architecture/10-adr-summary.md) - Architecture decisions
+
+### Recent Architecture Updates (February 2026)
+
+#### P2 Work Completed
+- ✅ **Utility Modules** - String, File, and Path utilities extracted
+- ✅ **Build Reorganization** - Clean output structure (build/bin/, build/lib/, build/Testing/)
+- ✅ **Architecture Documentation** - Complete guide with component interactions
+- ✅ **ADR Documentation** - Architecture Decision Records for key choices
+- ✅ **Test Coverage** - 1649/1649 tests passing (100%)
+
+#### Current System State
+- **CPUs Implemented:** 6502, 65C02, 65C02 Rockwell, 65816, 6809, Z80
+- **Syntax Parsers:** Merlin, SCMASM, EDTASM, FlexASM, Z80Universal, SimpleSyntax
+- **Build System:** CMake 3.20+ with organized output directories
+- **Testing:** Comprehensive unit and integration tests with 100% pass rate

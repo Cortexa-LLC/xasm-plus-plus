@@ -58,6 +58,7 @@ xasm++ --cpu <cpu> --syntax <syntax> -o <output> <input>
 | `65c02rock` | Rockwell 65C02 | Enhanced 65C02 variant |
 | `65816` | WDC 65816 | Apple IIgs, SNES |
 | `6809` | Motorola 6809 | TRS-80 Color Computer, Dragon |
+| `z80` | Zilog Z80 | Game Boy, ZX Spectrum, TRS-80 Model I |
 
 ### Supported Syntax Modes
 
@@ -66,6 +67,9 @@ xasm++ --cpu <cpu> --syntax <syntax> -o <output> <input>
 | `merlin` | 6502/65C02/65816 | Merlin assembler syntax (Apple II) |
 | `scmasm` | 6502/65C02/65816 | S-C Macro Assembler syntax |
 | `edtasm` | 6809 | EDTASM+ syntax (TRS-80 CoCo) |
+| `flexasm` | 6809 | Motorola FLEX assembler syntax |
+| `z80universal` | Z80 | Universal Z80 syntax with multiple number formats |
+| `simple` | All | Basic generic syntax for testing |
 
 ### Example Commands
 
@@ -87,6 +91,11 @@ xasm++ --cpu 65816 --syntax merlin -o toolbox.obj toolbox.asm
 **TRS-80 Color Computer (6809):**
 ```bash
 xasm++ --cpu 6809 --syntax edtasm -o game.bin game.asm
+```
+
+**Z80 (Game Boy, ZX Spectrum):**
+```bash
+xasm++ --cpu z80 --syntax z80universal -o program.bin program.asm
 ```
 
 ## Syntax Examples

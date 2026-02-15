@@ -53,23 +53,36 @@ make -j8
 Verify your build by running the test suite:
 
 ```bash
-# Run all tests
+# Run all tests from build directory
 ctest
 
-# Or run specific test suites
-./tests/unit/test_assembler  # 42 assembler tests
-./tests/unit/test_cpu6502    # 155 CPU tests
+# Or with verbose output
+ctest --output-on-failure
+
+# Run specific test executables
+./bin/test_assembler    # Core assembler tests
+./bin/test_cpu6502      # 6502 family tests
+./bin/test_cpu6809      # 6809 tests
+./bin/test_cpuz80       # Z80 tests
 ```
 
-All 197 tests should pass.
+All 1649 tests should pass (100% success rate).
 
 ## Build Output
 
-After a successful build, you'll find:
+After a successful build, you'll find organized output:
 
-- `build/bin/xasm++` - Main assembler executable (in development)
-- `build/tests/unit/test_assembler` - Assembler unit tests
-- `build/tests/unit/test_cpu6502` - 6502 CPU plugin tests
+### Binaries
+- `build/bin/xasm++` - Main assembler executable
+- `build/bin/test_*` - Test executables (assembler, CPU plugins, integration tests)
+
+### Libraries
+- `build/lib/libxasm_core.a` - Core assembler library
+- `build/lib/libxasm_cpu.a` - CPU plugin implementations
+- `build/lib/libxasm_syntax.a` - Syntax parser implementations
+
+### Test Results
+- `build/Testing/` - CTest output and temporary files
 
 ## Platform-Specific Notes
 

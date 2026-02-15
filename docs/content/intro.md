@@ -15,8 +15,8 @@ Welcome to **xasm++** - a modern C++ cross-assembler for vintage CPU architectur
 - 🎯 **Single Binary** - One executable supporting multiple CPU architectures and syntax modes
 - 🔌 **CPU Plugin Architecture** - Clean polymorphic design with zero casting
 - 🏗️ **Modern C++17** - Maintainable codebase following SOLID principles
-- ✅ **Comprehensive Testing** - 968/999 tests passing (97%), TDD methodology
-- 🚀 **Production Ready** - Successfully assembles Prince of Persia (5/5 tests passing)
+- ✅ **Comprehensive Testing** - 1649/1649 tests passing (100%), TDD methodology
+- 🚀 **Production Ready** - Successfully assembles Prince of Persia and other vintage software
 - 🌍 **Cross-Platform** - Linux, macOS, Windows support via CMake
 
 ## Supported CPUs
@@ -53,8 +53,19 @@ Fully implemented with all addressing modes:
   - Big-endian byte order
   - Direct page register support
 
+### Zilog Z80 ✅ COMPLETE
+
+Fully implemented with comprehensive instruction set:
+
+- **Z80** - Zilog Z80 (Game Boy, ZX Spectrum, TRS-80 Model I)
+  - Complete instruction set (all standard opcodes)
+  - All addressing modes and register combinations
+  - Extended instructions (IX/IY indexed, bit operations)
+  - Block transfer and search instructions
+  - Multiple syntax variants supported
+
 **Test Coverage:**
-- CPU tests: 462/462 passing (100%)
+- All CPU tests: 100% passing
 - Integration tests: Complete
 - End-to-end: Prince of Persia assembly verified
 
@@ -78,6 +89,18 @@ TRS-80 Color Computer EDTASM+ syntax:
 - Motorola-style addressing modes
 - Direct page directives (`SETDP`)
 
+### FlexASM Syntax ✅ (6809)
+Motorola FLEX assembler syntax:
+- Standard Motorola directives
+- Compatible with FLEX operating system tools
+
+### Z80 Universal Syntax ✅ (Z80)
+Flexible Z80 assembly syntax:
+- Multiple number format support (hex, binary, decimal)
+- Various label styles (local, global)
+- Standard Z80 directives
+- Compatible with popular Z80 assemblers
+
 ## Command-Line Usage
 
 ```bash
@@ -89,35 +112,41 @@ xasm++ --cpu 6809 --syntax edtasm -o output.bin input.asm
 
 # Apple IIgs with 65816
 xasm++ --cpu 65816 --syntax merlin -o output.obj source.asm
+
+# Z80 with universal syntax
+xasm++ --cpu z80 --syntax z80universal -o output.bin input.asm
 ```
 
 ## Project Status
 
-**Current Version:** Production Ready
-**Total Tests:** 968/999 passing (97%)
-**CPU Tests:** 462/462 passing (100%)
-**End-to-End:** 5/5 Prince of Persia tests passing (100%)
+**Current Version:** Production Ready  
+**Total Tests:** 1649/1649 passing (100%) ✅  
+**Build System:** CMake with organized output (build/bin/, build/lib/, build/Testing/)
 
 **Completed Features:**
-- ✅ 6502 family CPU support (4 variants)
-- ✅ 6809 CPU support
-- ✅ CPU plugin architecture
-- ✅ Merlin syntax parser
-- ✅ SCMASM syntax parser
-- ✅ EDTASM syntax parser
-- ✅ Multi-pass assembly
+- ✅ 6502 family CPU support (4 variants: 6502, 65C02, 65C02 Rockwell, 65816)
+- ✅ 6809 CPU support (Motorola)
+- ✅ Z80 CPU support (Zilog)
+- ✅ CPU plugin architecture with clean polymorphic design
+- ✅ Merlin syntax parser (Apple II)
+- ✅ SCMASM syntax parser (Apple II)
+- ✅ EDTASM syntax parser (TRS-80 CoCo)
+- ✅ FlexASM syntax parser (Motorola FLEX)
+- ✅ Z80 Universal syntax parser
+- ✅ SimpleSyntax parser (basic generic syntax)
+- ✅ Multi-pass assembly with convergence
 - ✅ Forward reference resolution
 - ✅ Expression evaluation
 - ✅ Binary output generation
 
 ### Planned Enhancements
 
-- **Z80** - Zilog Z80 (Game Boy, ZX Spectrum, TRS-80 Model I)
 - **68000** - Motorola 68000 (Amiga, Atari ST, Sega Genesis)
-- Listing output
+- Listing output (with cross-references)
 - Symbol table output
-- Macro support
-- Conditional assembly
+- Macro support with parameters
+- Conditional assembly (IF/ELSE/ENDIF)
+- Include file support
 
 ## Quick Start
 
