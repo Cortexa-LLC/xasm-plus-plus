@@ -135,6 +135,20 @@ target_link_libraries(test_cpu_z80
 
 gtest_discover_tests(test_cpu_z80)
 
+# CPU Error Utilities tests
+add_executable(test_cpu_error_utils
+    test_cpu_error_utils.cpp
+)
+
+target_link_libraries(test_cpu_error_utils
+    xasm_cpu
+    xasm_core
+    gtest_main
+    gtest
+)
+
+gtest_discover_tests(test_cpu_error_utils)
+
 # SimpleSyntax tests
 add_executable(test_simple_syntax
     test_simple_syntax.cpp
@@ -614,4 +628,58 @@ target_include_directories(test_segment_directives PRIVATE
 )
 
 gtest_discover_tests(test_segment_directives)
+
+# Radix parsing utilities tests (P2.1: Extract radix parsing utilities)
+add_executable(test_radix_parsing
+    test_radix_parsing.cpp
+)
+
+target_link_libraries(test_radix_parsing
+    xasm_core
+    gtest_main
+    gtest
+)
+
+gtest_discover_tests(test_radix_parsing)
+
+# Expression evaluation utilities tests (P2.2: Extract expression evaluation utilities)
+add_executable(test_expression_utils
+    test_expression_utils.cpp
+)
+
+target_link_libraries(test_expression_utils
+    xasm_core
+    gtest_main
+    gtest
+)
+
+gtest_discover_tests(test_expression_utils)
+
+# Parser error utilities tests (P2.3: Extract parser error handling patterns)
+add_executable(test_parser_error_utils
+    test_parser_error_utils.cpp
+)
+
+target_link_libraries(test_parser_error_utils
+    xasm_syntax
+    xasm_core
+    gtest_main
+    gtest
+)
+
+gtest_discover_tests(test_parser_error_utils)
+
+# Directive error utilities tests (P2.5: Extract directive error handling patterns)
+add_executable(test_directive_error_utils
+    test_directive_error_utils.cpp
+)
+
+target_link_libraries(test_directive_error_utils
+    xasm_syntax
+    xasm_core
+    gtest_main
+    gtest
+)
+
+gtest_discover_tests(test_directive_error_utils)
 

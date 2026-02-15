@@ -9,6 +9,7 @@
 
 #include "xasm++/cpu/cpu_6809.h"
 #include "xasm++/cpu/cpu_6809_constants.h"
+#include "xasm++/cpu/cpu_error_utils.h"
 #include "xasm++/cpu/opcodes_6809.h"
 #include <algorithm>
 #include <stdexcept>
@@ -1904,7 +1905,7 @@ Cpu6809::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
                      static_cast<uint8_t>(operand & 0xF));
 
   // Unsupported instruction
-  throw std::invalid_argument("Unsupported instruction: " + mnemonic);
+  cpu::ThrowUnsupportedInstruction(mnemonic);
 }
 
 // ============================================================================

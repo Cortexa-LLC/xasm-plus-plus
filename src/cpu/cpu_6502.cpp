@@ -1,6 +1,7 @@
 // 6502 CPU implementation - Core 6502 opcodes
 
 #include "xasm++/cpu/cpu_6502.h"
+#include "xasm++/cpu/cpu_error_utils.h"
 #include "xasm++/cpu/opcodes_6502.h"
 #include <algorithm>
 #include <unordered_set>
@@ -2250,7 +2251,7 @@ Cpu6502::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
     return EncodeSTP();
 
   // Unsupported instruction
-  throw std::invalid_argument("Unsupported instruction: " + mnemonic);
+  cpu::ThrowUnsupportedInstruction(mnemonic);
 }
 
 // ============================================================================
@@ -2318,7 +2319,7 @@ Cpu6502::EncodeInstructionSpecial(const std::string &mnemonic,
   // Helper to parse hex value
   auto parse_hex = [](const std::string &s) -> uint32_t {
     if (s.empty() || s[0] != '$')
-      throw std::runtime_error("Expected hex value starting with $");
+      cpu::ThrowExpectedHexValue();
     return std::stoul(s.substr(1), nullptr, Opcodes::RADIX_HEXADECIMAL);
   };
 
@@ -2337,7 +2338,7 @@ Cpu6502::EncodeInstructionSpecial(const std::string &mnemonic,
       target_addr = static_cast<uint16_t>(parse_hex(trimmed));
     } else {
       // Should not reach here - label resolution happens in assembler
-      throw std::runtime_error("Branch target must be resolved address");
+      cpu::ThrowBranchTargetMustBeResolved();
     }
 
     // Get branch opcode for this mnemonic
@@ -2373,8 +2374,7 @@ Cpu6502::EncodeInstructionSpecial(const std::string &mnemonic,
     size_t comma_pos = trimmed_operand.find(',');
 
     if (comma_pos == std::string::npos) {
-      throw std::runtime_error(mnemonic +
-                               " requires two operands: srcbank,destbank");
+      cpu::ThrowRequiresTwoOperands(mnemonic, "srcbank,destbank");
     }
 
     // Extract source and dest banks
@@ -2398,14 +2398,12 @@ Cpu6502::EncodeInstructionSpecial(const std::string &mnemonic,
                                                : EncodeMVP(srcbank, destbank);
 
     } catch (const std::exception &e) {
-      throw std::runtime_error("Invalid bank values for " + mnemonic + ": " +
-                               e.what());
+      cpu::ThrowInvalidValues(mnemonic, e.what());
     }
   }
 
   // If we get here, instruction doesn't support special encoding
-  throw std::invalid_argument(
-      "Special encoding not supported for instruction: " + mnemonic);
+  cpu::ThrowSpecialEncodingNotSupported(mnemonic);
 }
 
 // ============================================================================

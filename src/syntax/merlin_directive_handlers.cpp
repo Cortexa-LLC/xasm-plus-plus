@@ -9,7 +9,9 @@
 #include "xasm++/directives/merlin_directive_handlers.h"
 #include "xasm++/atom.h"
 #include "xasm++/common/expression_parser.h"
+#include "xasm++/directives/directive_error_utils.h"
 #include "xasm++/expression.h"
+#include "xasm++/expression_utils.h"
 #include "xasm++/syntax/merlin_syntax.h"
 #include "xasm++/util/string_utils.h"
 #include <sstream>
@@ -20,6 +22,7 @@ namespace merlin {
 
 using xasm::util::ToUpper;
 using xasm::util::Trim;
+using namespace xasm::directive_utils;
 
 namespace {
 
@@ -69,22 +72,7 @@ static uint32_t ParseNumber(const std::string &str,
   }
 }
 
-/**
- * @brief Format error message with source location
- *
- * @param message Error message
- * @param context Directive context (contains file/line info)
- * @return Formatted error message
- */
-static std::string FormatError(const std::string &message,
-                               const DirectiveContext &context) {
-  std::ostringstream oss;
-  if (!context.current_file.empty() && context.current_line > 0) {
-    oss << context.current_file << ":" << context.current_line << ": error: ";
-  }
-  oss << message;
-  return oss.str();
-}
+// FormatError moved to directive_error_utils.h (P2.5 refactoring)
 
 // ============================================================================
 // Directive Handlers
@@ -95,12 +83,8 @@ void HandleOrg(const std::string &label, const std::string &operand,
   (void)label;
   
   // ORG directive - set assembly origin address
+  RequireOperand(operand, "ORG", context);
   std::string op = Trim(operand);
-  
-  if (op.empty()) {
-    throw std::runtime_error(
-        FormatError("ORG directive requires an address operand", context));
-  }
   
   uint32_t address = 0;
   
@@ -128,10 +112,8 @@ void HandleEqu(const std::string &label, const std::string &operand,
   (void)context.section;
   
   // Get parser instance for expression parsing
+  ValidateParser(context.parser_state);
   auto *parser = static_cast<MerlinSyntaxParser *>(context.parser_state);
-  if (!parser) {
-    throw std::runtime_error("Internal error: parser_state is null");
-  }
   
   // EQU directive - define symbolic constant (no code generated)
   auto expr = parser->ParseExpression(operand, *context.symbols);
@@ -141,10 +123,8 @@ void HandleEqu(const std::string &label, const std::string &operand,
 void HandleDb(const std::string &label, const std::string &operand,
               DirectiveContext &context) {
   // Get parser instance for label handling
+  ValidateParser(context.parser_state);
   auto *parser = static_cast<MerlinSyntaxParser *>(context.parser_state);
-  if (!parser) {
-    throw std::runtime_error("Internal error: parser_state is null");
-  }
   
   // Create label atom first if label present
   if (!label.empty()) {
@@ -165,9 +145,8 @@ void HandleDb(const std::string &label, const std::string &operand,
   while (std::getline(iss, value, ',')) {
     value = Trim(value);
     if (!value.empty()) {
-      auto expr = parser->ParseExpression(value, *context.symbols);
-      int64_t result = expr->Evaluate(*context.symbols);
-      bytes.push_back(static_cast<uint8_t>(result & 0xFF));
+      uint8_t byte_value = ParseAndEvaluateAsByte(value, *parser, *context.symbols, "DB");
+      bytes.push_back(byte_value);
     }
   }
 
@@ -178,10 +157,8 @@ void HandleDb(const std::string &label, const std::string &operand,
 void HandleDw(const std::string &label, const std::string &operand,
               DirectiveContext &context) {
   // Get parser instance for label handling
+  ValidateParser(context.parser_state);
   auto *parser = static_cast<MerlinSyntaxParser *>(context.parser_state);
-  if (!parser) {
-    throw std::runtime_error("Internal error: parser_state is null");
-  }
   
   // Create label atom first if label present
   if (!label.empty()) {
@@ -217,10 +194,8 @@ void HandleDw(const std::string &label, const std::string &operand,
 void HandleHex(const std::string &label, const std::string &operand,
                DirectiveContext &context) {
   // Get parser instance for label handling
+  ValidateParser(context.parser_state);
   auto *parser = static_cast<MerlinSyntaxParser *>(context.parser_state);
-  if (!parser) {
-    throw std::runtime_error("Internal error: parser_state is null");
-  }
   
   // Create label atom first if label present
   if (!label.empty()) {
@@ -248,17 +223,15 @@ void HandleHex(const std::string &label, const std::string &operand,
         // Validate hex digits before calling stoul
         for (char c : token) {
           if (!std::isxdigit(static_cast<unsigned char>(c))) {
-            throw std::runtime_error(
-                FormatError("Invalid hex digit '" + std::string(1, c) +
-                            "' in HEX directive: '" + token + "'", context));
+            ThrowFormattedError("Invalid hex digit '" + std::string(1, c) +
+                            "' in HEX directive: '" + token + "'", context);
           }
         }
         try {
           bytes.push_back(static_cast<uint8_t>(std::stoul(token, nullptr, RADIX_HEXADECIMAL)));
         } catch (const std::exception &e) {
-          throw std::runtime_error(
-              FormatError("Invalid hex value in HEX directive: '" + token +
-                          "' - " + e.what(), context));
+          ThrowFormattedError("Invalid hex value in HEX directive: '" + token +
+                          "' - " + e.what(), context);
         }
       }
     }
@@ -271,9 +244,8 @@ void HandleHex(const std::string &label, const std::string &operand,
     // Validate all characters are hex digits
     for (char c : hex_str) {
       if (!std::isxdigit(static_cast<unsigned char>(c))) {
-        throw std::runtime_error(
-            FormatError("Invalid hex digit '" + std::string(1, c) +
-                        "' in HEX directive: '" + operand + "'", context));
+        ThrowFormattedError("Invalid hex digit '" + std::string(1, c) +
+                        "' in HEX directive: '" + operand + "'", context);
       }
     }
 
@@ -284,9 +256,8 @@ void HandleHex(const std::string &label, const std::string &operand,
         bytes.push_back(
             static_cast<uint8_t>(std::stoul(byte_str, nullptr, RADIX_HEXADECIMAL)));
       } catch (const std::exception &e) {
-        throw std::runtime_error(
-            FormatError("Invalid hex value in HEX directive: '" + byte_str +
-                        "' - " + e.what(), context));
+        ThrowFormattedError("Invalid hex value in HEX directive: '" + byte_str +
+                        "' - " + e.what(), context);
       }
     }
   }
@@ -298,10 +269,8 @@ void HandleHex(const std::string &label, const std::string &operand,
 void HandleDs(const std::string &label, const std::string &operand,
               DirectiveContext &context) {
   // Get parser instance from context
+  ValidateParser(context.parser_state);
   auto *parser = static_cast<MerlinSyntaxParser *>(context.parser_state);
-  if (!parser) {
-    throw std::runtime_error("Internal error: parser_state is null");
-  }
   
   // Create label atom first if label present
   if (!label.empty()) {
@@ -324,10 +293,8 @@ void HandleDum(const std::string &label, const std::string &operand,
   (void)label;
   
   // Get parser instance from context
+  ValidateParser(context.parser_state);
   auto *parser = static_cast<MerlinSyntaxParser *>(context.parser_state);
-  if (!parser) {
-    throw std::runtime_error("Internal error: parser_state is null");
-  }
   
   parser->HandleDum(operand, *context.symbols);
 }
@@ -340,10 +307,8 @@ void HandleDend(const std::string &label, const std::string &operand,
   (void)context.symbols;
   
   // Get parser instance from context
+  ValidateParser(context.parser_state);
   auto *parser = static_cast<MerlinSyntaxParser *>(context.parser_state);
-  if (!parser) {
-    throw std::runtime_error("Internal error: parser_state is null");
-  }
   
   parser->HandleDend();
 }
@@ -353,10 +318,8 @@ void HandlePut(const std::string &label, const std::string &operand,
   (void)label;
   
   // Get parser instance from context
+  ValidateParser(context.parser_state);
   auto *parser = static_cast<MerlinSyntaxParser *>(context.parser_state);
-  if (!parser) {
-    throw std::runtime_error("Internal error: parser_state is null");
-  }
   
   parser->HandlePut(operand, *context.section, *context.symbols);
 }
@@ -367,10 +330,8 @@ void HandleDo(const std::string &label, const std::string &operand,
   (void)context.section;
   
   // Get parser instance from context
+  ValidateParser(context.parser_state);
   auto *parser = static_cast<MerlinSyntaxParser *>(context.parser_state);
-  if (!parser) {
-    throw std::runtime_error("Internal error: parser_state is null");
-  }
   
   parser->HandleDo(operand, *context.symbols);
 }
@@ -383,10 +344,8 @@ void HandleElse(const std::string &label, const std::string &operand,
   (void)context.symbols;
   
   // Get parser instance from context
+  ValidateParser(context.parser_state);
   auto *parser = static_cast<MerlinSyntaxParser *>(context.parser_state);
-  if (!parser) {
-    throw std::runtime_error("Internal error: parser_state is null");
-  }
   
   parser->HandleElse();
 }
@@ -399,10 +358,8 @@ void HandleFin(const std::string &label, const std::string &operand,
   (void)context.symbols;
   
   // Get parser instance from context
+  ValidateParser(context.parser_state);
   auto *parser = static_cast<MerlinSyntaxParser *>(context.parser_state);
-  if (!parser) {
-    throw std::runtime_error("Internal error: parser_state is null");
-  }
   
   parser->HandleFin();
 }
@@ -443,10 +400,8 @@ void HandleTr(const std::string &label, const std::string &operand,
 void HandleAsc(const std::string &label, const std::string &operand,
                DirectiveContext &context) {
   // Get parser instance for label handling
+  ValidateParser(context.parser_state);
   auto *parser = static_cast<MerlinSyntaxParser *>(context.parser_state);
-  if (!parser) {
-    throw std::runtime_error("Internal error: parser_state is null");
-  }
   
   // Create label atom first if label present
   if (!label.empty()) {
@@ -510,10 +465,8 @@ void HandleAsc(const std::string &label, const std::string &operand,
 void HandleDci(const std::string &label, const std::string &operand,
                DirectiveContext &context) {
   // Get parser instance for label handling
+  ValidateParser(context.parser_state);
   auto *parser = static_cast<MerlinSyntaxParser *>(context.parser_state);
-  if (!parser) {
-    throw std::runtime_error("Internal error: parser_state is null");
-  }
   
   // Create label atom first if label present
   if (!label.empty()) {
@@ -578,10 +531,8 @@ void HandleDci(const std::string &label, const std::string &operand,
 void HandleInv(const std::string &label, const std::string &operand,
                DirectiveContext &context) {
   // Get parser instance for label handling
+  ValidateParser(context.parser_state);
   auto *parser = static_cast<MerlinSyntaxParser *>(context.parser_state);
-  if (!parser) {
-    throw std::runtime_error("Internal error: parser_state is null");
-  }
   
   // Create label atom first if label present
   if (!label.empty()) {
@@ -640,10 +591,8 @@ void HandleInv(const std::string &label, const std::string &operand,
 void HandleFls(const std::string &label, const std::string &operand,
                DirectiveContext &context) {
   // Get parser instance for label handling
+  ValidateParser(context.parser_state);
   auto *parser = static_cast<MerlinSyntaxParser *>(context.parser_state);
-  if (!parser) {
-    throw std::runtime_error("Internal error: parser_state is null");
-  }
   
   // Create label atom first if label present
   if (!label.empty()) {
@@ -718,10 +667,8 @@ void HandlePmc(const std::string &label, const std::string &operand,
   (void)context.symbols;
   
   // Get parser instance from context
+  ValidateParser(context.parser_state);
   auto *parser = static_cast<MerlinSyntaxParser *>(context.parser_state);
-  if (!parser) {
-    throw std::runtime_error("Internal error: parser_state is null");
-  }
   
   parser->HandlePMC(label.empty() ? operand : label);
 }
@@ -734,10 +681,8 @@ void HandleEom(const std::string &label, const std::string &operand,
   (void)context.symbols;
   
   // Get parser instance from context
+  ValidateParser(context.parser_state);
   auto *parser = static_cast<MerlinSyntaxParser *>(context.parser_state);
-  if (!parser) {
-    throw std::runtime_error("Internal error: parser_state is null");
-  }
   
   parser->HandleEOM();
 }
@@ -745,10 +690,8 @@ void HandleEom(const std::string &label, const std::string &operand,
 void HandleMac(const std::string &label, const std::string &operand,
                DirectiveContext &context) {
   // Get parser instance from context
+  ValidateParser(context.parser_state);
   auto *parser = static_cast<MerlinSyntaxParser *>(context.parser_state);
-  if (!parser) {
-    throw std::runtime_error("Internal error: parser_state is null");
-  }
   
   std::string macro_name;
   std::string params_str;
@@ -791,10 +734,8 @@ void HandleUsr(const std::string &label, const std::string &operand,
   (void)operand;
   
   // Get parser instance for label handling
+  ValidateParser(context.parser_state);
   auto *parser = static_cast<MerlinSyntaxParser *>(context.parser_state);
-  if (!parser) {
-    throw std::runtime_error("Internal error: parser_state is null");
-  }
   
   // USR directive - Direct implementation from merlin_directives.cpp
   // Create label if present
@@ -814,10 +755,8 @@ void HandleEnd(const std::string &label, const std::string &operand,
   (void)operand;
   
   // Get parser instance for label handling and state
+  ValidateParser(context.parser_state);
   auto *parser = static_cast<MerlinSyntaxParser *>(context.parser_state);
-  if (!parser) {
-    throw std::runtime_error("Internal error: parser_state is null");
-  }
   
   // END directive - Direct implementation from merlin_directives.cpp
   // Create label if present
@@ -853,10 +792,8 @@ void HandleXc(const std::string &label, const std::string &operand,
   (void)context.symbols;
   
   // Get parser instance from context
+  ValidateParser(context.parser_state);
   auto *parser = static_cast<MerlinSyntaxParser *>(context.parser_state);
-  if (!parser) {
-    throw std::runtime_error("Internal error: parser_state is null");
-  }
   
   parser->HandleXc(operand);
 }
@@ -868,10 +805,8 @@ void HandleMx(const std::string &label, const std::string &operand,
   (void)context.symbols;
   
   // Get parser instance from context
+  ValidateParser(context.parser_state);
   auto *parser = static_cast<MerlinSyntaxParser *>(context.parser_state);
-  if (!parser) {
-    throw std::runtime_error("Internal error: parser_state is null");
-  }
   
   parser->HandleMx(operand);
 }
@@ -879,10 +814,8 @@ void HandleMx(const std::string &label, const std::string &operand,
 void HandleRev(const std::string &label, const std::string &operand,
                DirectiveContext &context) {
   // Get parser instance for label handling
+  ValidateParser(context.parser_state);
   auto *parser = static_cast<MerlinSyntaxParser *>(context.parser_state);
-  if (!parser) {
-    throw std::runtime_error("Internal error: parser_state is null");
-  }
   
   // REV "string" - Reverse ASCII string
   std::string op = Trim(operand);
@@ -946,10 +879,8 @@ void HandleLup(const std::string &label, const std::string &operand,
   (void)context.symbols;
   
   // Get parser instance from context
+  ValidateParser(context.parser_state);
   auto *parser = static_cast<MerlinSyntaxParser *>(context.parser_state);
-  if (!parser) {
-    throw std::runtime_error("Internal error: parser_state is null");
-  }
   
   parser->HandleLup(operand);
 }

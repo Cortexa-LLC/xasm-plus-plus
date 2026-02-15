@@ -9,9 +9,11 @@
 #include "xasm++/directives/scmasm_directive_handlers.h"
 #include "xasm++/atom.h"
 #include "xasm++/common/expression_parser.h"
+#include "xasm++/directives/directive_error_utils.h"
 #include "xasm++/directives/scmasm_constants.h"
 #include "xasm++/directives/scmasm_directive_constants.h"
 #include "xasm++/expression.h"
+#include "xasm++/parse_utils.h" // For radix parsing utilities
 #include "xasm++/section.h"
 #include "xasm++/symbol.h"
 #include "xasm++/syntax/scmasm_syntax.h"
@@ -25,6 +27,8 @@
 namespace xasm {
 namespace scmasm {
 
+using namespace directive_utils;
+
 // ============================================================================
 // Helper Functions (internal)
 // ============================================================================
@@ -32,9 +36,6 @@ namespace scmasm {
 namespace {
 
 using namespace constants;
-
-// Radix values for number parsing
-constexpr int RADIX_HEXADECIMAL = 16;
 
 /**
  * @brief Trim whitespace from both ends of string
@@ -168,10 +169,8 @@ uint32_t EvaluateExpression(const std::string &str,
                             ConcreteSymbolTable &symbols, void *parser_state) {
   // For now, delegate to the parser's method (via context)
   // In future refactoring, expression evaluation could be fully standalone
+  ValidateParser(parser_state);
   auto *parser = static_cast<ScmasmSyntaxParser *>(parser_state);
-  if (!parser) {
-    throw std::runtime_error("Internal error: parser_state is null");
-  }
 
   // Use parser's EvaluateExpression method
   // Note: This creates a temporary coupling that could be eliminated
@@ -189,9 +188,7 @@ void HandleOr(const std::string &label, const std::string &operand,
               DirectiveContext &context) {
   (void)label; // Label handled separately before dispatch
 
-  if (operand.empty()) {
-    throw std::runtime_error(".OR requires an address");
-  }
+  RequireOperand(operand, ".OR", context);
 
   // Evaluate address expression
   uint32_t address =
@@ -207,9 +204,7 @@ void HandleOr(const std::string &label, const std::string &operand,
 
 void HandleEq(const std::string &label, const std::string &operand,
               DirectiveContext &context) {
-  if (operand.empty()) {
-    throw std::runtime_error(".EQ requires a value");
-  }
+  RequireOperand(operand, ".EQ", context);
 
   // Evaluate value expression
   uint32_t value =
@@ -222,9 +217,7 @@ void HandleEq(const std::string &label, const std::string &operand,
 
 void HandleSe(const std::string &label, const std::string &operand,
               DirectiveContext &context) {
-  if (operand.empty()) {
-    throw std::runtime_error(".SE requires a value");
-  }
+  RequireOperand(operand, ".SE", context);
 
   // Evaluate value expression
   uint32_t value =
@@ -400,12 +393,17 @@ void HandleHs(const std::string &label, const std::string &operand,
     throw std::runtime_error(".HS requires even number of hex digits");
   }
 
-  // Convert pairs to bytes
+  // Convert pairs to bytes using ParseHex utility
   for (size_t i = 0; i < hex_digits.length();
        i += constants::HEX_DIGITS_PER_BYTE) {
-    std::string byte_str = hex_digits.substr(i, constants::HEX_DIGITS_PER_BYTE);
-    uint8_t byte = static_cast<uint8_t>(std::stoi(byte_str, nullptr, RADIX_HEXADECIMAL));
-    data.push_back(byte);
+    std::string byte_str = "$" + hex_digits.substr(i, constants::HEX_DIGITS_PER_BYTE);
+    bool success;
+    std::string error_msg;
+    uint32_t byte_val = xasm::ParseHexSafe(byte_str, success, error_msg);
+    if (!success) {
+      ThrowFormattedError(error_msg, context);
+    }
+    data.push_back(static_cast<uint8_t>(byte_val));
   }
 
   auto atom = std::make_shared<DataAtom>(data);
@@ -425,7 +423,7 @@ void HandleBs(const std::string &label, const std::string &operand,
   // This reserves 'count' bytes filled with zeros
   
   if (operand.empty()) {
-    throw std::runtime_error(".BS requires a byte count");
+    ThrowFormattedError(".BS requires a byte count", context);
   }
 
   std::string trimmed = Trim(operand);
@@ -463,10 +461,8 @@ void HandleMa(const std::string &label, const std::string &operand,
   }
 
   // Access parser state to set macro definition mode
+  ValidateParser(context.parser_state);
   auto *parser = static_cast<ScmasmSyntaxParser *>(context.parser_state);
-  if (!parser) {
-    throw std::runtime_error("Internal error: parser_state is null");
-  }
 
   // Delegate to parser's HandleMa method
   // Note: This maintains coupling to parser for macro state management
@@ -480,10 +476,8 @@ void HandleEndm(const std::string &label, const std::string &operand,
   (void)operand;
 
   // Access parser state to end macro definition
+  ValidateParser(context.parser_state);
   auto *parser = static_cast<ScmasmSyntaxParser *>(context.parser_state);
-  if (!parser) {
-    throw std::runtime_error("Internal error: parser_state is null");
-  }
 
   // Delegate to parser's HandleEm method
   parser->HandleEm();
@@ -526,9 +520,7 @@ void HandleInb(const std::string &label, const std::string &operand,
   // Reads entire binary file and emits its bytes at current position
   // Used extensively in A2oSX for modular source file includes
 
-  if (operand.empty()) {
-    throw std::runtime_error(".INB requires filename operand");
-  }
+  RequireOperand(operand, ".INB", context);
 
   // Trim whitespace from filename
   std::string filename = Trim(operand);
@@ -770,9 +762,7 @@ void HandleEp(const std::string &label, const std::string &operand,
   (void)label;   // Label handled separately
   (void)context; // State not needed for validation
 
-  if (operand.empty()) {
-    throw std::runtime_error(".EP requires an address");
-  }
+  RequireOperand(operand, ".EP", context);
 
   // Evaluate entry point address
   uint32_t address =
@@ -797,13 +787,12 @@ void HandleHx(const std::string &label, const std::string &operand,
       continue; // Skip separators
     }
 
-    if (!std::isxdigit(c)) {
+    // Convert single hex digit to nibble value (0-15)
+    int val;
+    if (!ParseHexDigit(c, val)) {
       throw std::runtime_error("Invalid hex digit in .HX: " +
                                std::string(1, c));
     }
-
-    // Convert single hex digit to nibble value (0-15)
-    int val = std::isdigit(c) ? (c - '0') : (std::toupper(c) - 'A' + 10);
     data.push_back(static_cast<uint8_t>(val));
   }
 

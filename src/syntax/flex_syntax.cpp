@@ -21,10 +21,7 @@ namespace xasm {
 using namespace directives;
 
 namespace {
-
-// Radix values for number parsing
-constexpr int RADIX_DECIMAL = 10;
-
+// (No local constants needed - using xasm::ParseDecimal)
 } // anonymous namespace
 
 // ============================================================================
@@ -77,10 +74,11 @@ uint32_t FlexAsmSyntax::ParseNumber(const std::string &str) {
     std::string binary = trimmed.substr(1);
     uint32_t value = 0;
     for (char c : binary) {
-      if (c != '0' && c != '1') {
+      int digit;
+      if (!ParseBinaryDigit(c, digit)) {
         throw std::runtime_error("Invalid binary digit: " + std::string(1, c));
       }
-      value = (value << 1) | (c - '0');
+      value = (value << 1) | digit;
     }
     return value;
   }
@@ -92,7 +90,7 @@ uint32_t FlexAsmSyntax::ParseNumber(const std::string &str) {
 
   // Decimal (default)
   try {
-    return static_cast<uint32_t>(std::stoul(trimmed, nullptr, RADIX_DECIMAL));
+    return static_cast<uint32_t>(xasm::ParseDecimal(trimmed));
   } catch (const std::exception &e) {
     throw std::runtime_error("Invalid decimal number: " + trimmed);
   }

@@ -258,7 +258,12 @@ MerlinSyntaxParser::ParseExpression(const std::string &str,
 
   // All other expressions (arithmetic, symbols, literals) handled by shared parser
   ExpressionParser parser(&symbols);
-  return parser.Parse(expr);
+  try {
+    return parser.Parse(expr);
+  } catch (const std::runtime_error &e) {
+    // Catch exceptions from ExpressionParser and add location context
+    throw std::runtime_error(FormatError(e.what()));
+  }
 }
 
 // ============================================================================

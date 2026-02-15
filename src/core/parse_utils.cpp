@@ -108,6 +108,96 @@ uint32_t ParseHexSafe(const std::string &str, bool &success,
   }
 }
 
+uint64_t ParseBinary(const std::string &str) {
+  if (str.empty()) {
+    throw std::invalid_argument("Empty string cannot be parsed as binary");
+  }
+
+  uint64_t value = 0;
+  for (char c : str) {
+    if (c != '0' && c != '1') {
+      throw std::invalid_argument("Invalid binary digit '" + std::string(1, c) +
+                                  "' in binary string: '" + str + "'");
+    }
+    value = value * 2 + (c - '0');
+  }
+
+  return value;
+}
+
+uint64_t ParseDecimal(const std::string &str) {
+  if (str.empty()) {
+    throw std::invalid_argument("Empty string cannot be parsed as decimal");
+  }
+
+  uint64_t value = 0;
+  for (char c : str) {
+    if (c < '0' || c > '9') {
+      throw std::invalid_argument("Invalid decimal digit '" +
+                                  std::string(1, c) +
+                                  "' in decimal string: '" + str + "'");
+    }
+    value = value * 10 + (c - '0');
+  }
+
+  return value;
+}
+
+uint64_t ParseOctal(const std::string &str) {
+  if (str.empty()) {
+    throw std::invalid_argument("Empty string cannot be parsed as octal");
+  }
+
+  uint64_t value = 0;
+  for (char c : str) {
+    if (c < '0' || c > '7') {
+      throw std::invalid_argument("Invalid octal digit '" + std::string(1, c) +
+                                  "' in octal string: '" + str + "'");
+    }
+    value = value * 8 + (c - '0');
+  }
+
+  return value;
+}
+
+bool ParseBinaryDigit(char c, int &digit) {
+  if (c == '0' || c == '1') {
+    digit = c - '0';
+    return true;
+  }
+  return false;
+}
+
+bool ParseDecimalDigit(char c, int &digit) {
+  if (c >= '0' && c <= '9') {
+    digit = c - '0';
+    return true;
+  }
+  return false;
+}
+
+bool ParseOctalDigit(char c, int &digit) {
+  if (c >= '0' && c <= '7') {
+    digit = c - '0';
+    return true;
+  }
+  return false;
+}
+
+bool ParseHexDigit(char c, int &digit) {
+  if (c >= '0' && c <= '9') {
+    digit = c - '0';
+    return true;
+  } else if (c >= 'a' && c <= 'f') {
+    digit = c - 'a' + 10;
+    return true;
+  } else if (c >= 'A' && c <= 'F') {
+    digit = c - 'A' + 10;
+    return true;
+  }
+  return false;
+}
+
 // Note: Trim() removed from parse_utils.cpp - available from string_utils.h
 // (xasm::util::Trim) This avoids conflicts with static Trim implementations in
 // other modules

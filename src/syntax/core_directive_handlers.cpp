@@ -13,6 +13,7 @@
 #include "xasm++/expression.h"
 #include "xasm++/symbol.h"
 #include "xasm++/syntax/directive_registry.h"
+#include "xasm++/syntax/parser_error_utils.h"
 #include <algorithm>
 #include <cctype>
 #include <sstream>
@@ -35,18 +36,6 @@ std::string Trim(const std::string &str) {
              }).base();
 
   return (start < end) ? std::string(start, end) : std::string();
-}
-
-/**
- * @brief Format error message with file:line: prefix
- */
-std::string FormatError(const DirectiveContext &ctx,
-                        const std::string &message) {
-  if (!ctx.current_file.empty() && ctx.current_line > 0) {
-    return ctx.current_file + ":" + std::to_string(ctx.current_line) + ": " +
-           message;
-  }
-  return message;
 }
 
 /**
@@ -123,10 +112,7 @@ void HandleOrg(const std::string &label, const std::string &operand,
   std::string op = Trim(operand);
 
   if (op.empty()) {
-    std::string error = std::string(directives::errors::ORG_PREFIX) +
-                        directives::errors::MISSING_ADDRESS;
-    error = FormatError(context, error);
-    throw std::runtime_error(error);
+    ThrowRequiresOperand(context, directives::ORG);
   }
 
   // Parse address (number or symbol)
@@ -134,11 +120,8 @@ void HandleOrg(const std::string &label, const std::string &operand,
   int64_t address = expr->Evaluate(*context.symbols);
 
   if (address < 0) {
-    std::string error = std::string(directives::errors::ORG_PREFIX) +
-                        directives::errors::NEGATIVE_ADDRESS + ": " +
-                        std::to_string(address);
-    error = FormatError(context, error);
-    throw std::runtime_error(error);
+    ThrowInvalidValue(context, "ORG address", std::to_string(address),
+                      "must be non-negative");
   }
 
   // Create OrgAtom and update address
@@ -153,10 +136,7 @@ void HandleEqu(const std::string &label, const std::string &operand,
   std::string op = Trim(operand);
 
   if (lbl.empty()) {
-    std::string error = std::string(directives::errors::EQU_PREFIX) +
-                        directives::errors::MISSING_LABEL;
-    error = FormatError(context, error);
-    throw std::runtime_error(error);
+    ThrowRequiresLabel(context, directives::EQU);
   }
 
   // Parse value expression
@@ -219,11 +199,8 @@ void HandleDs(const std::string &label, const std::string &operand,
     int64_t value = expr->Evaluate(*context.symbols);
 
     if (value < 0) {
-      std::string error = std::string(directives::errors::DS_PREFIX) +
-                          directives::errors::NEGATIVE_COUNT + ": " +
-                          std::to_string(value);
-      error = FormatError(context, error);
-      throw std::runtime_error(error);
+      ThrowInvalidValue(context, "DS count", std::to_string(value),
+                        "must be non-negative");
     }
 
     count = static_cast<uint32_t>(value);

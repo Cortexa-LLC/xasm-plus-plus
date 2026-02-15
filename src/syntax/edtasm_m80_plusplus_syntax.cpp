@@ -11,6 +11,7 @@
 #include "xasm++/directives/common_directives.h"
 #include "xasm++/directives/directive_constants.h"
 #include "xasm++/directives/z80_directives.h"
+#include "xasm++/parse_utils.h" // For radix parsing utilities
 #include <algorithm>
 #include <cctype>
 #include <chrono>
@@ -94,17 +95,14 @@ bool Z80NumberParser::TryParse(const std::string &token, int64_t &value) const {
       }
     }
 
-    // Convert to value
+    // Convert to value using ParseHexDigit utility
     value = 0;
     for (char c : hex_part) {
-      value *= RADIX_HEXADECIMAL;
-      if (c >= '0' && c <= '9') {
-        value += c - '0';
-      } else if (c >= 'A' && c <= 'F') {
-        value += c - 'A' + 10;
-      } else if (c >= 'a' && c <= 'f') {
-        value += c - 'a' + 10;
+      int digit;
+      if (!ParseHexDigit(c, digit)) {
+        return false; // Should not happen due to validation above
       }
+      value = value * RADIX_HEXADECIMAL + digit;
     }
     return true;
   }
@@ -118,17 +116,14 @@ bool Z80NumberParser::TryParse(const std::string &token, int64_t &value) const {
 
     std::string octal_part = token.substr(0, token.length() - 1);
 
-    // Validate all characters are octal digits (0-7)
-    for (char c : octal_part) {
-      if (c < '0' || c > '7') {
-        return false;
-      }
-    }
-
-    // Convert to value
+    // Validate all characters are octal digits (0-7) and convert to value
     value = 0;
     for (char c : octal_part) {
-      value = value * RADIX_OCTAL + (c - '0');
+      int digit;
+      if (!ParseOctalDigit(c, digit)) {
+        return false;
+      }
+      value = value * RADIX_OCTAL + digit;
     }
     return true;
   }
@@ -142,17 +137,14 @@ bool Z80NumberParser::TryParse(const std::string &token, int64_t &value) const {
 
     std::string binary_part = token.substr(0, token.length() - 1);
 
-    // Validate all characters are binary digits (0-1)
-    for (char c : binary_part) {
-      if (c != '0' && c != '1') {
-        return false;
-      }
-    }
-
-    // Convert to value
+    // Validate all characters are binary digits (0-1) and convert to value
     value = 0;
     for (char c : binary_part) {
-      value = value * RADIX_BINARY + (c - '0');
+      int digit;
+      if (!ParseBinaryDigit(c, digit)) {
+        return false;
+      }
+      value = value * RADIX_BINARY + digit;
     }
     return true;
   }
@@ -166,17 +158,14 @@ bool Z80NumberParser::TryParse(const std::string &token, int64_t &value) const {
 
     std::string decimal_part = token.substr(0, token.length() - 1);
 
-    // Validate all characters are decimal digits
-    for (char c : decimal_part) {
-      if (!std::isdigit(c)) {
-        return false;
-      }
-    }
-
-    // Convert to value
+    // Validate all characters are decimal digits and convert to value
     value = 0;
     for (char c : decimal_part) {
-      value = value * 10 + (c - '0');
+      int digit;
+      if (!ParseDecimalDigit(c, digit)) {
+        return false;
+      }
+      value = value * 10 + digit;
     }
     return true;
   }
@@ -202,17 +191,14 @@ bool Z80NumberParser::TryParse(const std::string &token, int64_t &value) const {
     }
   }
 
-  // All characters are valid for the radix - convert to value
+  // All characters are valid for the radix - convert to value using ParseHexDigit
   value = 0;
   for (char c : token) {
-    value *= radix_;
-    if (c >= '0' && c <= '9') {
-      value += c - '0';
-    } else if (c >= 'A' && c <= 'F') {
-      value += c - 'A' + 10;
-    } else if (c >= 'a' && c <= 'f') {
-      value += c - 'a' + 10;
+    int digit;
+    if (!ParseHexDigit(c, digit)) {
+      return false; // Should not happen due to validation above
     }
+    value = value * radix_ + digit;
   }
   return true;
 }
@@ -847,33 +833,74 @@ uint32_t EdtasmM80PlusPlusSyntaxParser::ParseNumber(const std::string &str) {
   // Explicit format overrides radix
   // Hex: $FF, 0xFF, 0FFH
   if (trimmed[0] == HEX_PREFIX_DOLLAR) {
-    return std::stoul(trimmed.substr(1), nullptr, RADIX_HEXADECIMAL);
+    bool success;
+    std::string error_msg;
+    uint32_t result = ParseHexSafe(trimmed, success, error_msg);
+    if (!success) {
+      throw std::invalid_argument(error_msg);
+    }
+    return result;
   } else if (trimmed.size() >= 2 && trimmed[0] == '0' &&
              (trimmed[1] == HEX_PREFIX_0X || trimmed[1] == 'X')) {
-    return std::stoul(trimmed.substr(2), nullptr, RADIX_HEXADECIMAL);
+    // 0xFF format - ParseHex expects just hex digits, so add $ prefix
+    std::string hex_str = "$" + trimmed.substr(2);
+    bool success;
+    std::string error_msg;
+    uint32_t result = ParseHexSafe(hex_str, success, error_msg);
+    if (!success) {
+      throw std::invalid_argument(error_msg);
+    }
+    return result;
   } else if (trimmed.size() >= 2 &&
              (trimmed.back() == 'H' || trimmed.back() == 'h')) {
-    return std::stoul(trimmed.substr(0, trimmed.size() - 1), nullptr, RADIX_HEXADECIMAL);
+    // 0FFH format - ParseHex expects $ prefix
+    std::string hex_str = "$" + trimmed.substr(0, trimmed.size() - 1);
+    bool success;
+    std::string error_msg;
+    uint32_t result = ParseHexSafe(hex_str, success, error_msg);
+    if (!success) {
+      throw std::invalid_argument(error_msg);
+    }
+    return result;
   }
   // Binary: 11110000B
   else if (trimmed.size() >= 2 &&
            (trimmed.back() == 'B' || trimmed.back() == 'b')) {
-    return std::stoul(trimmed.substr(0, trimmed.size() - 1), nullptr, RADIX_BINARY);
+    return static_cast<uint32_t>(ParseBinary(trimmed.substr(0, trimmed.size() - 1)));
   }
   // Octal: 377O, 377Q
   else if (trimmed.size() >= 2 &&
            (trimmed.back() == 'O' || trimmed.back() == 'o' ||
             trimmed.back() == 'Q' || trimmed.back() == 'q')) {
-    return std::stoul(trimmed.substr(0, trimmed.size() - 1), nullptr, RADIX_OCTAL);
+    return static_cast<uint32_t>(ParseOctal(trimmed.substr(0, trimmed.size() - 1)));
   }
   // Decimal with D suffix: 255D
   else if (trimmed.size() >= 2 &&
            (trimmed.back() == 'D' || trimmed.back() == 'd')) {
-    return std::stoul(trimmed.substr(0, trimmed.size() - 1), nullptr, RADIX_DECIMAL);
+    return static_cast<uint32_t>(ParseDecimal(trimmed.substr(0, trimmed.size() - 1)));
   }
   // No explicit format - use current radix
   else {
-    return std::stoul(trimmed, nullptr, current_radix_);
+    // Use appropriate parser based on current radix
+    if (current_radix_ == RADIX_BINARY) {
+      return static_cast<uint32_t>(ParseBinary(trimmed));
+    } else if (current_radix_ == RADIX_OCTAL) {
+      return static_cast<uint32_t>(ParseOctal(trimmed));
+    } else if (current_radix_ == RADIX_DECIMAL) {
+      return static_cast<uint32_t>(ParseDecimal(trimmed));
+    } else if (current_radix_ == RADIX_HEXADECIMAL) {
+      std::string hex_str = "$" + trimmed;
+      bool success;
+      std::string error_msg;
+      uint32_t result = ParseHexSafe(hex_str, success, error_msg);
+      if (!success) {
+        throw std::invalid_argument(error_msg);
+      }
+      return result;
+    } else {
+      // Fallback for other radixes (2-16) - use std::stoul
+      return std::stoul(trimmed, nullptr, current_radix_);
+    }
   }
 }
 

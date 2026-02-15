@@ -232,6 +232,24 @@ public:
     current_macro_.param_count = 0;
   }
 
+  /**
+   * @brief Parse an expression string into an Expression object
+   *
+   * @param str Expression string to parse
+   * @param symbols Symbol table for resolving symbol references
+   * @return Parsed expression (may throw on invalid syntax)
+   */
+  std::shared_ptr<Expression> ParseExpression(const std::string &str,
+                                              ConcreteSymbolTable &symbols);
+
+  /**
+   * @brief Parse a numeric literal
+   *
+   * @param str Numeric string (hex, decimal, binary, octal)
+   * @return Parsed numeric value
+   */
+  uint32_t ParseNumber(const std::string &str);
+
 private:
   /**
    * @brief Label scope for managing :LOCAL labels
@@ -384,11 +402,6 @@ private:
   // Macro helpers
   std::string SubstituteParameters(const std::string &line,
                                    const std::vector<std::string> &params);
-
-  // Expression/number parsing
-  uint32_t ParseNumber(const std::string &str);
-  std::shared_ptr<Expression> ParseExpression(const std::string &str,
-                                              ConcreteSymbolTable &symbols);
 
   // Error formatting with source location
   std::string FormatError(const std::string &message) const;

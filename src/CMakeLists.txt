@@ -58,6 +58,7 @@ add_library(xasm_syntax STATIC
     syntax/edtasm_directive_handlers.cpp
     syntax/edtasm_directive_handlers.cpp
     syntax/core_directive_handlers.cpp
+    syntax/parser_error_utils.cpp
     # Future syntax plugins:
     # syntax/mos_base_syntax.cpp
     # syntax/motorola_base_syntax.cpp
