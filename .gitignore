@@ -14,7 +14,9 @@ Testing/
 *.dylib
 *.dll
 *.exe
-/xasm++
+xasm++
+test_*
+placeholder_test
 
 # CMake cache
 CMakeCache.txt
@@ -78,7 +80,6 @@ test.asm
 test.bin
 a.out
 AGENTS.md
-/test_*
 tests/scratch/
 
 # Repository cleanup artifacts

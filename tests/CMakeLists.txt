@@ -1,6 +1,9 @@
 # Test configuration
 include(GoogleTest)
 
+# Put all test executables in build/Testing/ directory
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/Testing)
+
 # Unit tests subdirectory (Phase 1 - in progress)
 add_subdirectory(unit)
 
