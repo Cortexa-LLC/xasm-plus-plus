@@ -19,5 +19,4 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Package lock - regenerate from public registry only
-package-lock.json
+# Package lock - committed for reproducible builds in CI
