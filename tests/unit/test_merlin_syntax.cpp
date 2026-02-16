@@ -6,10 +6,31 @@
 #include "xasm++/symbol.h"
 #include "xasm++/syntax/merlin_syntax.h"
 #include <cstdio>
+#include <cstdlib>
 #include <fstream>
 #include <gtest/gtest.h>
 
 using namespace xasm;
+
+// ============================================================================
+// Platform-Aware Temp Directory Helper
+// ============================================================================
+
+static std::string get_temp_dir() {
+#ifdef _WIN32
+  const char* temp = std::getenv("TEMP");
+  if (!temp) temp = std::getenv("TMP");
+  if (!temp) temp = "C:\\Windows\\Temp";
+  std::string temp_str(temp);
+  // Normalize to forward slashes for consistency
+  for (char& c : temp_str) {
+    if (c == '\\') c = '/';
+  }
+  return temp_str;
+#else
+  return "/tmp";
+#endif
+}
 
 // ============================================================================
 // Phase 1: Foundation - Comment Parsing
@@ -446,14 +467,14 @@ TEST(MerlinSyntaxTest, PutDirectiveBasic) {
   Section section("test", 0);
 
   // Create a temporary test file
-  std::string test_file = "/tmp/xasm_test_include.asm";
+  std::string test_file = get_temp_dir() + "/xasm_test_include.asm";
   std::ofstream out(test_file);
   out << "INCLUDED_LABEL\n";
   out << "         DB $42\n";
   out.close();
 
   // Parse PUT directive
-  parser.Parse("         PUT /tmp/xasm_test_include.asm", section, symbols);
+  parser.Parse(("         PUT " + get_temp_dir() + "/xasm_test_include.asm").c_str(), section, symbols);
 
   // Should have included the label and DB directive
   EXPECT_TRUE(symbols.IsDefined("INCLUDED_LABEL"));
@@ -469,14 +490,14 @@ TEST(MerlinSyntaxTest, PutCircularIncludeSelf) {
   Section section("test", 0);
 
   // Create a file that includes itself
-  std::string test_file = "/tmp/xasm_test_circular.asm";
+  std::string test_file = get_temp_dir() + "/xasm_test_circular.asm";
   std::ofstream out(test_file);
-  out << " PUT /tmp/xasm_test_circular.asm\n";
+  out << " PUT " << get_temp_dir() << "/xasm_test_circular.asm\n";
   out.close();
 
   // Should throw exception for circular include
   EXPECT_THROW(
-      parser.Parse(" PUT /tmp/xasm_test_circular.asm", section, symbols),
+      parser.Parse((" PUT " + get_temp_dir() + "/xasm_test_circular.asm").c_str(), section, symbols),
       std::runtime_error);
 
   // Clean up
@@ -489,19 +510,19 @@ TEST(MerlinSyntaxTest, PutCircularIncludeCycle) {
   Section section("test", 0);
 
   // Create file A that includes B
-  std::string file_a = "/tmp/xasm_test_a.asm";
+  std::string file_a = get_temp_dir() + "/xasm_test_a.asm";
   std::ofstream out_a(file_a);
-  out_a << " PUT /tmp/xasm_test_b.asm\n";
+  out_a << " PUT " << get_temp_dir() << "/xasm_test_b.asm\n";
   out_a.close();
 
   // Create file B that includes A (creates cycle)
-  std::string file_b = "/tmp/xasm_test_b.asm";
+  std::string file_b = get_temp_dir() + "/xasm_test_b.asm";
   std::ofstream out_b(file_b);
-  out_b << " PUT /tmp/xasm_test_a.asm\n";
+  out_b << " PUT " << get_temp_dir() << "/xasm_test_a.asm\n";
   out_b.close();
 
   // Should throw exception for circular include
-  EXPECT_THROW(parser.Parse(" PUT /tmp/xasm_test_a.asm", section, symbols),
+  EXPECT_THROW(parser.Parse((" PUT " + get_temp_dir() + "/xasm_test_a.asm").c_str(), section, symbols),
                std::runtime_error);
 
   // Clean up
@@ -515,30 +536,30 @@ TEST(MerlinSyntaxTest, PutNestedIncludes3Levels) {
   Section section("test", 0);
 
   // Create level 3 file (innermost)
-  std::string file_3 = "/tmp/xasm_test_level3.asm";
+  std::string file_3 = get_temp_dir() + "/xasm_test_level3.asm";
   std::ofstream out_3(file_3);
   out_3 << "LEVEL3_LABEL\n";
   out_3 << " DB $03\n";
   out_3.close();
 
   // Create level 2 file that includes level 3
-  std::string file_2 = "/tmp/xasm_test_level2.asm";
+  std::string file_2 = get_temp_dir() + "/xasm_test_level2.asm";
   std::ofstream out_2(file_2);
   out_2 << "LEVEL2_LABEL\n";
   out_2 << " DB $02\n";
-  out_2 << " PUT /tmp/xasm_test_level3.asm\n";
+  out_2 << " PUT " << get_temp_dir() << "/xasm_test_level3.asm\n";
   out_2.close();
 
   // Create level 1 file that includes level 2
-  std::string file_1 = "/tmp/xasm_test_level1.asm";
+  std::string file_1 = get_temp_dir() + "/xasm_test_level1.asm";
   std::ofstream out_1(file_1);
   out_1 << "LEVEL1_LABEL\n";
   out_1 << " DB $01\n";
-  out_1 << " PUT /tmp/xasm_test_level2.asm\n";
+  out_1 << " PUT " << get_temp_dir() << "/xasm_test_level2.asm\n";
   out_1.close();
 
   // Parse main file that includes level 1 (total 3 levels of nesting)
-  parser.Parse(" PUT /tmp/xasm_test_level1.asm", section, symbols);
+  parser.Parse((" PUT " + get_temp_dir() + "/xasm_test_level1.asm").c_str(), section, symbols);
 
   // Should have all three labels defined
   EXPECT_TRUE(symbols.IsDefined("LEVEL1_LABEL"));
@@ -558,7 +579,7 @@ TEST(MerlinSyntaxTest, PutFileNotFound) {
 
   // Try to include a non-existent file
   EXPECT_THROW(
-      parser.Parse(" PUT /tmp/nonexistent_file_xasm.asm", section, symbols),
+      parser.Parse((" PUT " + get_temp_dir() + "/nonexistent_file_xasm.asm").c_str(), section, symbols),
       std::runtime_error);
 }
 
@@ -568,12 +589,12 @@ TEST(MerlinSyntaxTest, PutEmptyFile) {
   Section section("test", 0);
 
   // Create an empty file
-  std::string test_file = "/tmp/xasm_test_empty.asm";
+  std::string test_file = get_temp_dir() + "/xasm_test_empty.asm";
   std::ofstream out(test_file);
   out.close();
 
   // Should handle empty file gracefully
-  parser.Parse(" PUT /tmp/xasm_test_empty.asm", section, symbols);
+  parser.Parse((" PUT " + get_temp_dir() + "/xasm_test_empty.asm").c_str(), section, symbols);
 
   // Should have no atoms added
   EXPECT_EQ(section.atoms.size(), 0UL);
@@ -588,14 +609,14 @@ TEST(MerlinSyntaxTest, PutAutoAppendSExtension) {
   Section section("test", 0);
 
   // Create a test file with .S extension
-  std::string test_file = "/tmp/xasm_test_include.S";
+  std::string test_file = get_temp_dir() + "/xasm_test_include.S";
   std::ofstream out(test_file);
   out << "AUTOAPPEND_LABEL\n";
   out << " DB $55\n";
   out.close();
 
   // Parse PUT directive WITHOUT .S extension - should auto-append
-  parser.Parse(" PUT /tmp/xasm_test_include", section, symbols);
+  parser.Parse((" PUT " + get_temp_dir() + "/xasm_test_include").c_str(), section, symbols);
 
   // Should have found the file with auto-appended .S extension
   EXPECT_TRUE(symbols.IsDefined("AUTOAPPEND_LABEL"));
@@ -610,14 +631,14 @@ TEST(MerlinSyntaxTest, PutKeepsExistingExtension) {
   Section section("test", 0);
 
   // Create a test file with .HEX extension
-  std::string test_file = "/tmp/xasm_test_data.HEX";
+  std::string test_file = get_temp_dir() + "/xasm_test_data.HEX";
   std::ofstream out(test_file);
   out << "DATA_LABEL\n";
   out << " DB $AA\n";
   out.close();
 
   // Parse PUT directive WITH .HEX extension - should NOT append .S
-  parser.Parse(" PUT /tmp/xasm_test_data.HEX", section, symbols);
+  parser.Parse((" PUT " + get_temp_dir() + "/xasm_test_data.HEX").c_str(), section, symbols);
 
   // Should have found the file with original extension
   EXPECT_TRUE(symbols.IsDefined("DATA_LABEL"));
@@ -632,7 +653,7 @@ TEST(MerlinSyntaxTest, PutAutoAppendRelativePath) {
   Section section("test", 0);
 
   // Create a test file with .S extension in /tmp
-  std::string test_file = "/tmp/eq.S";
+  std::string test_file = get_temp_dir() + "/eq.S";
   std::ofstream out(test_file);
   out << "EQ_LABEL\n";
   out << " DB $EE\n";
@@ -655,14 +676,14 @@ TEST(MerlinSyntaxTest, PutExplicitSExtension) {
   Section section("test", 0);
 
   // Create a test file with .S extension
-  std::string test_file = "/tmp/xasm_explicit.S";
+  std::string test_file = get_temp_dir() + "/xasm_explicit.S";
   std::ofstream out(test_file);
   out << "EXPLICIT_LABEL\n";
   out << " DB $EE\n";
   out.close();
 
   // Parse PUT directive WITH explicit .S extension
-  parser.Parse(" PUT /tmp/xasm_explicit.S", section, symbols);
+  parser.Parse((" PUT " + get_temp_dir() + "/xasm_explicit.S").c_str(), section, symbols);
 
   // Should work as before (backward compatibility)
   EXPECT_TRUE(symbols.IsDefined("EXPLICIT_LABEL"));

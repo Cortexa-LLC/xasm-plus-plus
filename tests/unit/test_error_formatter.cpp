@@ -4,6 +4,7 @@
 #include "xasm++/assembler.h"
 #include "xasm++/core/error_formatter.h"
 #include "xasm++/symbol.h"
+#include <cstdlib>
 #include <fstream>
 #include <gtest/gtest.h>
 #include <sstream>
@@ -26,6 +27,26 @@ inline int setenv_portable(const char *name, const char *value, int overwrite) {
 }
 inline int unsetenv_portable(const char *name) { return unsetenv(name); }
 #endif
+
+// ============================================================================
+// Platform-Aware Temp Directory Helper
+// ============================================================================
+
+static std::string get_temp_dir() {
+#ifdef _WIN32
+  const char* temp = std::getenv("TEMP");
+  if (!temp) temp = std::getenv("TMP");
+  if (!temp) temp = "C:\\Windows\\Temp";
+  std::string temp_str(temp);
+  // Normalize to forward slashes for consistency
+  for (char& c : temp_str) {
+    if (c == '\\') c = '/';
+  }
+  return temp_str;
+#else
+  return "/tmp";
+#endif
+}
 
 // ============================================================================
 // Phase 1: Basic Error Formatting Tests
@@ -58,7 +79,7 @@ TEST(ErrorFormatterTest, FormatWithSourceContext) {
   ErrorFormatter formatter(ErrorFormatter::ColorMode::Disabled);
 
   // Create a test source file
-  std::string test_file = "/tmp/test_error_formatter_source.s";
+  std::string test_file = get_temp_dir() + "/test_error_formatter_source.s";
   std::ofstream out(test_file);
   out << "         ORG $8000\n";
   out << "         LDA PLAYER_X\n";
@@ -148,7 +169,7 @@ TEST(ErrorFormatterTest, GenerateColumnMarker) {
   ErrorFormatter formatter(ErrorFormatter::ColorMode::Disabled);
 
   // Create test file with simple line
-  std::string test_file = "/tmp/test_marker.s";
+  std::string test_file = get_temp_dir() + "/test_marker.s";
   std::ofstream out(test_file);
   out << "         LDA PLAYER_X\n";
   out.close();
@@ -172,7 +193,7 @@ TEST(ErrorFormatterTest, MarkerWithTabsAndSpaces) {
   // RED: Test that tabs are handled correctly in markers
   ErrorFormatter formatter(ErrorFormatter::ColorMode::Disabled);
 
-  std::string test_file = "/tmp/test_tabs.s";
+  std::string test_file = get_temp_dir() + "/test_tabs.s";
   std::ofstream out(test_file);
   out << "\t\tLDA PLAYER_X\n"; // Tabs before instruction
   out.close();
@@ -312,7 +333,7 @@ TEST(ErrorFormatterTest, HandleInvalidLineNumber) {
   // Test that invalid line number doesn't crash
   ErrorFormatter formatter(ErrorFormatter::ColorMode::Disabled);
 
-  std::string test_file = "/tmp/test_invalid_line.s";
+  std::string test_file = get_temp_dir() + "/test_invalid_line.s";
   std::ofstream out(test_file);
   out << "Line 1\n";
   out << "Line 2\n";
@@ -351,7 +372,7 @@ TEST(ErrorFormatterTest, HandleColumnZero) {
   // Test column 0 (start of line)
   ErrorFormatter formatter(ErrorFormatter::ColorMode::Disabled);
 
-  std::string test_file = "/tmp/test_col_zero.s";
+  std::string test_file = get_temp_dir() + "/test_col_zero.s";
   std::ofstream out(test_file);
   out << "LDA #$00\n";
   out.close();
@@ -372,7 +393,7 @@ TEST(ErrorFormatterTest, HandleColumnBeyondLine) {
   // Test column beyond line length
   ErrorFormatter formatter(ErrorFormatter::ColorMode::Disabled);
 
-  std::string test_file = "/tmp/test_col_beyond.s";
+  std::string test_file = get_temp_dir() + "/test_col_beyond.s";
   std::ofstream out(test_file);
   out << "Short\n";
   out.close();

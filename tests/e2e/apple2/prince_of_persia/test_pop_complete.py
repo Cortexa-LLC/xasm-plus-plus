@@ -28,7 +28,10 @@ TARGET_MARK = "*" if IS_WINDOWS else "🎯"
 POP_SOURCE_DEFAULT = os.path.expanduser("~/Projects/Vintage/Apple/Prince-of-Persia-Apple-II/01 POP Source/Source")
 REFERENCE_DIR = Path(__file__).parent / "reference"
 OUTPUT_DIR = Path(__file__).parent / "output"
-XASM_BINARY = Path(__file__).parent.parent.parent.parent.parent / "build" / "bin" / "xasm++"
+
+# Platform-aware executable name
+xasm_name = "xasm++.exe" if IS_WINDOWS else "xasm++"
+XASM_BINARY = Path(__file__).parent.parent.parent.parent.parent / "build" / "bin" / xasm_name
 
 # All 29 PoP source files
 POP_FILES = [

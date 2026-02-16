@@ -3,6 +3,8 @@
 
 #include "xasm++/symbol.h"
 #include "xasm++/syntax/merlin_syntax.h"
+#include <cstdlib>
+#include <fstream>
 #include <gtest/gtest.h>
 #include <regex>
 
@@ -24,6 +26,26 @@ inline int setenv_portable(const char *name, const char *value, int overwrite) {
 }
 inline int unsetenv_portable(const char *name) { return unsetenv(name); }
 #endif
+
+// ============================================================================
+// Platform-Aware Temp Directory Helper
+// ============================================================================
+
+static std::string get_temp_dir() {
+#ifdef _WIN32
+  const char* temp = std::getenv("TEMP");
+  if (!temp) temp = std::getenv("TMP");
+  if (!temp) temp = "C:\\Windows\\Temp";
+  std::string temp_str(temp);
+  // Normalize to forward slashes for consistency
+  for (char& c : temp_str) {
+    if (c == '\\') c = '/';
+  }
+  return temp_str;
+#else
+  return "/tmp";
+#endif
+}
 
 // ============================================================================
 // Helper function to check if error contains file:line format
@@ -310,7 +332,7 @@ TEST(ErrorFormatterTest, FormatWithColors) {
 
 TEST(ErrorFormatterTest, FormatWithSourceContext) {
   // Create a test file
-  std::ofstream test_file("/tmp/test_error_context.s");
+  std::ofstream test_file(get_temp_dir() + "/test_error_context.s");
   test_file << "; Test file\n";
   test_file << "         ORG $6000\n";
   test_file << "         LDA PLAYER_X  ; Undefined symbol\n";
@@ -321,7 +343,7 @@ TEST(ErrorFormatterTest, FormatWithSourceContext) {
 
   AssemblerError error;
   error.message = "undefined symbol 'PLAYER_X'";
-  error.location.filename = "/tmp/test_error_context.s";
+  error.location.filename = get_temp_dir() + "/test_error_context.s";
   error.location.line = 3;
   error.location.column = 14;
 
@@ -334,7 +356,7 @@ TEST(ErrorFormatterTest, FormatWithSourceContext) {
 }
 
 TEST(ErrorFormatterTest, FormatWithColumnMarker) {
-  std::ofstream test_file("/tmp/test_column_marker.s");
+  std::ofstream test_file(get_temp_dir() + "/test_column_marker.s");
   test_file << "         LDA PLAYER_X\n";
   test_file.close();
 
@@ -342,7 +364,7 @@ TEST(ErrorFormatterTest, FormatWithColumnMarker) {
 
   AssemblerError error;
   error.message = "undefined symbol 'PLAYER_X'";
-  error.location.filename = "/tmp/test_column_marker.s";
+  error.location.filename = get_temp_dir() + "/test_column_marker.s";
   error.location.line = 1;
   error.location.column = 14;
 
