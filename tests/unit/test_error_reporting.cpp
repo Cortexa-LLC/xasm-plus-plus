@@ -14,19 +14,15 @@ using namespace xasm;
 
 #ifdef _WIN32
 #include <stdlib.h>
-inline int setenv_portable(const char* name, const char* value, int) {
-    return _putenv_s(name, value);
+inline int setenv_portable(const char *name, const char *value, int) {
+  return _putenv_s(name, value);
 }
-inline int unsetenv_portable(const char* name) {
-    return _putenv_s(name, "");
-}
+inline int unsetenv_portable(const char *name) { return _putenv_s(name, ""); }
 #else
-inline int setenv_portable(const char* name, const char* value, int overwrite) {
-    return setenv(name, value, overwrite);
+inline int setenv_portable(const char *name, const char *value, int overwrite) {
+  return setenv(name, value, overwrite);
 }
-inline int unsetenv_portable(const char* name) {
-    return unsetenv(name);
-}
+inline int unsetenv_portable(const char *name) { return unsetenv(name); }
 #endif
 
 // ============================================================================
