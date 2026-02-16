@@ -22,7 +22,7 @@ placeholder_test
 CMakeCache.txt
 CMakeFiles/
 cmake_install.cmake
-Makefile
+build/Makefile
 *.cmake
 !CMakeLists.txt
 
