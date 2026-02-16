@@ -9,6 +9,27 @@
 using namespace xasm;
 
 // ============================================================================
+// Cross-Platform Environment Variable Helpers
+// ============================================================================
+
+#ifdef _WIN32
+#include <stdlib.h>
+inline int setenv_portable(const char* name, const char* value, int) {
+    return _putenv_s(name, value);
+}
+inline int unsetenv_portable(const char* name) {
+    return _putenv_s(name, "");
+}
+#else
+inline int setenv_portable(const char* name, const char* value, int overwrite) {
+    return setenv(name, value, overwrite);
+}
+inline int unsetenv_portable(const char* name) {
+    return unsetenv(name);
+}
+#endif
+
+// ============================================================================
 // Helper function to check if error contains file:line format
 // ============================================================================
 
@@ -380,7 +401,7 @@ TEST(ErrorFormatterTest, MultipleSuggestions) {
 
 TEST(ErrorFormatterTest, NoColorEnvironmentVariable) {
   // Set NO_COLOR environment variable
-  setenv("NO_COLOR", "1", 1);
+  setenv_portable("NO_COLOR", "1", 1);
 
   ErrorFormatter formatter(ErrorFormatter::ColorMode::Auto);
 
@@ -396,7 +417,7 @@ TEST(ErrorFormatterTest, NoColorEnvironmentVariable) {
   EXPECT_EQ(formatted.find("\033["), std::string::npos);
 
   // Clean up
-  unsetenv("NO_COLOR");
+  unsetenv_portable("NO_COLOR");
 }
 
 TEST(ErrorFormatterTest, AutoColorModeWithTTY) {

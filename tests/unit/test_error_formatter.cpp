@@ -11,6 +11,27 @@
 using namespace xasm;
 
 // ============================================================================
+// Cross-Platform Environment Variable Helpers
+// ============================================================================
+
+#ifdef _WIN32
+#include <stdlib.h>
+inline int setenv_portable(const char* name, const char* value, int) {
+    return _putenv_s(name, value);
+}
+inline int unsetenv_portable(const char* name) {
+    return _putenv_s(name, "");
+}
+#else
+inline int setenv_portable(const char* name, const char* value, int overwrite) {
+    return setenv(name, value, overwrite);
+}
+inline int unsetenv_portable(const char* name) {
+    return unsetenv(name);
+}
+#endif
+
+// ============================================================================
 // Phase 1: Basic Error Formatting Tests
 // ============================================================================
 
@@ -104,7 +125,7 @@ TEST(ErrorFormatterTest, FormatNoColors) {
 
 TEST(ErrorFormatterTest, RespectNoColorEnv) {
   // RED: Test that NO_COLOR environment variable is respected
-  setenv("NO_COLOR", "1", 1);
+  setenv_portable("NO_COLOR", "1", 1);
 
   ErrorFormatter formatter(ErrorFormatter::ColorMode::Auto);
 
@@ -119,7 +140,7 @@ TEST(ErrorFormatterTest, RespectNoColorEnv) {
   // Should NOT contain ANSI color codes when NO_COLOR is set
   EXPECT_EQ(formatted.find("\033["), std::string::npos);
 
-  unsetenv("NO_COLOR");
+  unsetenv_portable("NO_COLOR");
 }
 
 // ============================================================================
