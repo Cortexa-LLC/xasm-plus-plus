@@ -14,6 +14,15 @@ import os
 import sys
 import subprocess
 from pathlib import Path
+import platform
+
+# Platform-aware symbols (Windows console doesn't support emojis)
+IS_WINDOWS = platform.system() == "Windows"
+ERROR_MARK = "X" if IS_WINDOWS else "❌"
+WARNING_MARK = "!" if IS_WINDOWS else "⚠️"
+SUCCESS_MARK = "OK" if IS_WINDOWS else "✓"
+PASS_MARK = "PASS" if IS_WINDOWS else "✅"
+TARGET_MARK = "*" if IS_WINDOWS else "🎯"
 
 # Configuration
 POP_SOURCE_DEFAULT = os.path.expanduser("~/Projects/Vintage/Apple/Prince-of-Persia-Apple-II/01 POP Source/Source")
@@ -105,25 +114,25 @@ def run_tests():
     
     # Check if xasm++ exists
     if not XASM_BINARY.exists():
-        print(f"❌ ERROR: xasm++ not found at {XASM_BINARY}")
+        print(f"{ERROR_MARK} ERROR: xasm++ not found at {XASM_BINARY}")
         print("   Build xasm++ first: cmake --build build")
         return 1
     
     # Find PoP source
     pop_source = find_pop_source()
     if not pop_source:
-        print("⚠️  WARNING: Prince of Persia source not found")
+        print(f"{WARNING_MARK}  WARNING: Prince of Persia source not found")
         print(f"   Expected at: {POP_SOURCE_DEFAULT}")
         print("   Set POP_SOURCE environment variable if in different location")
         print()
-        print("✓ Test SKIPPED (source not available)")
+        print(f"{SUCCESS_MARK} Test SKIPPED (source not available)")
         print()
         print("  xasm++ is ready - PoP sources just not installed on this machine.")
         print("  This is NOT a failure.")
         return 0
     
-    print(f"✓ Found PoP source: {pop_source}")
-    print(f"✓ Using xasm++: {XASM_BINARY}")
+    print(f"{SUCCESS_MARK} Found PoP source: {pop_source}")
+    print(f"{SUCCESS_MARK} Using xasm++: {XASM_BINARY}")
     print()
     
     # Create output directory
@@ -146,7 +155,7 @@ def run_tests():
         
         # Check if source exists
         if not source_file.exists():
-            print(f"  {basename:20s} ❌ Source file not found")
+            print(f"  {basename:20s} {ERROR_MARK} Source file not found")
             results.append((basename, False, "Source not found", None))
             continue
         
@@ -154,7 +163,7 @@ def run_tests():
         success, error = assemble_file(source_file, output_file)
         
         if not success:
-            print(f"  {basename:20s} ❌ Assembly failed")
+            print(f"  {basename:20s} {ERROR_MARK} Assembly failed")
             results.append((basename, False, error, None))
             continue
         
@@ -165,17 +174,17 @@ def run_tests():
         
         if match is None:
             # No reference available
-            print(f"  {basename:20s} ✓ Assembled (no reference)")
+            print(f"  {basename:20s} {SUCCESS_MARK} Assembled (no reference)")
             results.append((basename, True, None, None))
         elif match:
             # Byte-perfect match
-            print(f"  {basename:20s} ✓ Assembled + Verified")
+            print(f"  {basename:20s} {SUCCESS_MARK} Assembled + Verified")
             results.append((basename, True, None, True))
             reference_matches += 1
             reference_available += 1
         else:
             # Binary mismatch
-            print(f"  {basename:20s} ⚠️  Assembled (binary differs)")
+            print(f"  {basename:20s} {WARNING_MARK}  Assembled (binary differs)")
             results.append((basename, True, None, False))
             reference_available += 1
     
@@ -206,19 +215,19 @@ def run_tests():
     # Determine test result
     # Success criteria: At least 8 files (realistic baseline showing Merlin support works)
     if assembled_count == len(POP_FILES):
-        print("✅ TEST PASSED: All 29 PoP files assemble successfully!")
+        print(f"{PASS_MARK} TEST PASSED: All 29 PoP files assemble successfully!")
         print()
-        print("   🎯 100% Prince of Persia Compatibility Achieved!")
+        print(f"   {TARGET_MARK} 100% Prince of Persia Compatibility Achieved!")
         return 0
     elif assembled_count >= 8:
-        print(f"✅ TEST PASSED: {assembled_count}/29 files assemble ({100*assembled_count//len(POP_FILES)}%)")
+        print(f"{PASS_MARK} TEST PASSED: {assembled_count}/29 files assemble ({100*assembled_count//len(POP_FILES)}%)")
         print()
         print("   Merlin syntax support validated with real-world code!")
         if assembled_count < len(POP_FILES):
             print(f"   (Working towards 100% - {len(POP_FILES) - assembled_count} files remaining)")
         return 0
     else:
-        print(f"❌ TEST FAILED: Only {assembled_count}/29 files assemble")
+        print(f"{ERROR_MARK} TEST FAILED: Only {assembled_count}/29 files assemble")
         print("   Expected at least 8 files for basic Merlin compatibility")
         return 1
 

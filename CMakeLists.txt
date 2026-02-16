@@ -25,12 +25,11 @@ endif()
 # Compiler flags
 if(MSVC)
     add_compile_options(/W4 /WX)
-    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-        add_compile_options(/fsanitize=address)
-    endif()
 else()
     add_compile_options(-Wall -Wextra -Wpedantic -Werror)
-    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    # Enable sanitizers on Unix-like systems (Linux/macOS) only
+    # MinGW on Windows doesn't have sanitizer libraries available
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug" AND NOT WIN32)
         add_compile_options(-fsanitize=address -fsanitize=undefined)
         add_link_options(-fsanitize=address -fsanitize=undefined)
     endif()
