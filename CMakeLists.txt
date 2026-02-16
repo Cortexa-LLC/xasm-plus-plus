@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(xasm++ VERSION 0.1.0 LANGUAGES CXX)
+project(xasm++ VERSION 0.9.0 LANGUAGES CXX)
 
 # Get git SHA for version tagging
 execute_process(
