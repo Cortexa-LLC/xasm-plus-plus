@@ -50,6 +50,8 @@ int main(int argc, char **argv) {
 
     if (opts.show_version) {
       std::cout << "xasm++ version 0.1.0\n";
+      std::cout << "Copyright (c) 2026 Cortexa LLC\n";
+      std::cout << "Licensed under the MIT License\n";
       return 0;
     }
 

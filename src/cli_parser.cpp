@@ -65,9 +65,10 @@ CommandLineOptions ParseCommandLine(int argc, char **argv) {
     throw;
   }
 
-  // Validate input file is provided (unless help/version was requested)
+  // If no input file provided, show help
   if (opts.input_file.empty()) {
-    throw CLI::RequiredError("input");
+    opts.show_help = true;
+    opts.help_message = app.help();
   }
 
   return opts;
