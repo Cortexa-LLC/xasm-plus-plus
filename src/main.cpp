@@ -3,6 +3,7 @@
 
 #include "CLI/CLI.hpp"
 #include "xasm++/assembler.h"
+#include "xasm++/version.h"
 #include "xasm++/cli/command_line_options.h"
 #include "xasm++/core/error_formatter.h"
 #include "xasm++/cpu/cpu_6502.h"
@@ -49,9 +50,9 @@ int main(int argc, char **argv) {
     }
 
     if (opts.show_version) {
-      std::cout << "xasm++ version 0.1.0\n";
-      std::cout << "Copyright (c) 2026 Cortexa LLC\n";
-      std::cout << "Licensed under the MIT License\n";
+      std::cout << "xasm++ version " << xasm::version::version_full << "\n";
+      std::cout << xasm::version::copyright << "\n";
+      std::cout << xasm::version::license << "\n";
       return 0;
     }
 

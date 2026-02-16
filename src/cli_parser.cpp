@@ -4,6 +4,7 @@
 #include "CLI/CLI.hpp"
 #include "xasm++/cli/command_line_options.h"
 #include "xasm++/cpu/cpu_constants.h"
+#include "xasm++/version.h"
 
 namespace xasm {
 
@@ -15,7 +16,7 @@ CommandLineOptions ParseCommandLine(int argc, char **argv) {
 
   // Help and version flags (processed by CLI11 automatically)
   app.set_help_flag("--help,-h", "Show help message");
-  app.set_version_flag("--version,-v", "0.1.0");
+  app.set_version_flag("--version,-v", xasm::version::version_full);
 
   // Positional argument: input file (required, but allow --help/--version
   // without it)

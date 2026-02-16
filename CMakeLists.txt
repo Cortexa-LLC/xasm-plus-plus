@@ -2,6 +2,25 @@ cmake_minimum_required(VERSION 3.20)
 
 project(xasm++ VERSION 0.1.0 LANGUAGES CXX)
 
+# Get git SHA for version tagging
+execute_process(
+    COMMAND git rev-parse --short=7 HEAD
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    OUTPUT_VARIABLE GIT_SHA
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    ERROR_QUIET
+)
+if(NOT GIT_SHA)
+    set(GIT_SHA "unknown")
+endif()
+
+# Generate version header
+configure_file(
+    ${CMAKE_SOURCE_DIR}/include/xasm++/version.h.in
+    ${CMAKE_BINARY_DIR}/include/xasm++/version.h
+    @ONLY
+)
+
 # Output directories - keep build artifacts organized
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
@@ -48,7 +67,7 @@ if(ENABLE_COVERAGE)
 endif()
 
 # Include directories
-include_directories(${CMAKE_SOURCE_DIR}/include)
+include_directories(${CMAKE_SOURCE_DIR}/include ${CMAKE_BINARY_DIR}/include)
 
 # External dependencies (fetched via FetchContent)
 include(FetchContent)

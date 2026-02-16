@@ -14,7 +14,8 @@ Testing/
 *.dylib
 *.dll
 *.exe
-xasm++
+/xasm++
+bin/xasm++
 test_*
 placeholder_test
 
@@ -93,3 +94,4 @@ tests/e2e/**/output/*.bin
 cmake_test_discovery_*.json
 __pycache__/
 _deps/
+build/include/
