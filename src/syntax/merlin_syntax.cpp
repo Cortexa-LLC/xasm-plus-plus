@@ -9,6 +9,7 @@
 #include "xasm++/util/string_utils.h"
 #include <algorithm>
 #include <cctype>
+#include <cstdlib>
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -26,6 +27,26 @@ namespace {
 constexpr int RADIX_BINARY = 2;
 constexpr int RADIX_DECIMAL = 10;
 constexpr int RADIX_HEXADECIMAL = 16;
+
+// Platform-aware temp directory helper
+static std::string get_temp_dir() {
+#ifdef _WIN32
+  const char *temp = std::getenv("TEMP");
+  if (!temp)
+    temp = std::getenv("TMP");
+  if (!temp)
+    temp = "C:\\Windows\\Temp";
+  std::string temp_str(temp);
+  // Normalize to forward slashes for consistency
+  for (char &c : temp_str) {
+    if (c == '\\')
+      c = '/';
+  }
+  return temp_str;
+#else
+  return "/tmp";
+#endif
+}
 
 } // anonymous namespace
 
@@ -476,13 +497,13 @@ void MerlinSyntaxParser::HandlePut(const std::string &operand, Section &section,
   // Add to include stack
   include_stack_.push_back(filename);
 
-  // Try to open the file - first as given, then with /tmp/ prefix
+  // Try to open the file - first as given, then with temp directory prefix
   std::ifstream file(filename);
   std::string actual_filename = filename;
 
   if (!file.is_open() && filename[0] != '/') {
-    // Try with /tmp/ prefix for relative paths
-    actual_filename = "/tmp/" + filename;
+    // Try with temp directory prefix for relative paths (platform-aware)
+    actual_filename = get_temp_dir() + "/" + filename;
     file.open(actual_filename);
   }
 
