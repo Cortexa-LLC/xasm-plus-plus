@@ -1,91 +1,90 @@
 # xasm++ - Modern Modular Cross-Assembler
 
-**Version:** 0.2.0 (Active Development - Phase 2.4 Complete)
+**Version:** 1.0.0 (Production Ready)
 **Author:** Bryan Woodruff, Cortexa LLC
 **License:** MIT
+
+[![CI Status](https://github.com/Cortexa-LLC/xasm-plus-plus/workflows/CI/badge.svg)](https://github.com/Cortexa-LLC/xasm-plus-plus/actions)
+[![Code Coverage](https://img.shields.io/badge/coverage-77.9%25-green)](https://github.com/Cortexa-LLC/xasm-plus-plus)
 
 ---
 
 ## Overview
 
-**xasm++** is a modern C++ cross-assembler designed for vintage CPU architectures. It combines proven modular design patterns with modern SOLID principles to create an extensible, maintainable assembler suitable for retro computing and homebrew development.
+**xasm++** is a production-ready cross-assembler for vintage CPU architectures. It combines proven modular design patterns with modern SOLID principles to create an extensible, maintainable assembler suitable for retro computing, homebrew development, and preservation of classic software.
 
 ### Key Features
 
-- 🎯 **Single Binary** - One executable supporting multiple CPU architectures (6502 currently implemented)
-- 🔌 **Plugin Architecture** - Extensible design for new CPUs and syntaxes
-- 🏗️ **Modern C++17/20** - Clean, maintainable codebase with SOLID principles
-- ✅ **Comprehensive Testing** - 197 tests, 100% passing, TDD methodology
-- 🧪 **6502 CPU Support** - Complete implementation with 56 legal opcodes and 13 addressing modes
-- 📝 **Full Syntax Parsing** - All 6502 addressing mode syntaxes supported with whitespace tolerance
-- 🌍 **Cross-Platform** - Linux, macOS, Windows support via CMake
+- 🎯 **Single Binary** - One executable supporting 7 CPU variants (6502, 65C02, 65C02 Rockwell, 65816, 6809, Z80)
+- 🔌 **CPU Plugin Architecture** - Clean polymorphic design with zero casting
+- 🏗️ **Modern C++20** - Maintainable codebase following SOLID principles
+- ✅ **Comprehensive Testing** - 1649/1649 tests passing (100%), TDD methodology
+- 🚀 **Production Ready** - Successfully assembles Prince of Persia and other vintage software
+- 🌍 **Cross-Platform** - Linux, macOS, Windows with full CI coverage
+- 📊 **Quality Assurance** - 77.9% code coverage, automated format checking
 
 ### Supported CPUs
 
-- ✅ **6502** - MOS Technology 6502 (Apple II, Commodore 64, NES) - **COMPLETE**
-  - 56 legal opcodes fully implemented
-  - 13 addressing modes with complete syntax parsing
-  - Branch instruction relative addressing
-  - Multi-pass assembly with label resolution
-  - 155 CPU tests, 100% passing
-
-### Planned CPUs
-
+#### 6502 Family ✅ COMPLETE
+- **6502** - MOS Technology 6502 (Apple II, Commodore 64, NES)
 - **65C02** - WDC 65C02 (Apple IIc, IIe enhanced)
-- **6809** - Motorola 6809 (TRS-80 Color Computer)
-- **68000** - Motorola 68000 (Amiga, Atari ST, Sega Genesis)
-- **Z80** - Zilog Z80 (TRS-80, Sinclair ZX Spectrum, Game Boy)
+- **65C02 Rockwell** - Rockwell R65C02 with bit manipulation
+- **65816** - WDC 65816 (Apple IIgs, SNES) with 16-bit support
 
-### Supported Syntaxes (Planned)
+#### Motorola ✅ COMPLETE
+- **6809** - Motorola 6809 (TRS-80 Color Computer, Dragon)
 
-- **SCMASM** - S-C Macro Assembler (Apple II)
-- **Merlin** - Merlin assembler (Apple IIgs)
-- **EDTASM** - EDTASM+ (TRS-80 Color Computer)
-- **Motorola** - Motorola syntax (68000)
-- **GNU-as** - GNU assembler style
+#### Zilog ✅ COMPLETE
+- **Z80** - Zilog Z80 (Game Boy, ZX Spectrum, TRS-80 Model I)
+
+### Supported Syntax Modes
+
+- ✅ **Merlin** - Apple II assembler syntax (6502/65C02/65816)
+- ✅ **SCMASM** - S-C Macro Assembler (6502/65C02/65816)
+- ✅ **EDTASM** - TRS-80 Color Computer EDTASM+ (6809)
+- ✅ **FlexASM** - Motorola FLEX assembler (6809)
+- ✅ **Z80 Universal** - Flexible Z80 assembly syntax
 
 ---
 
 ## Project Status
 
-**Current Phase:** Phase 2.4 - Complete 6502 Syntax Parsing ✅ **COMPLETE**
+**Status:** Production Ready ✅
+**Total Tests:** 1649/1649 passing (100%)
+**Code Coverage:** 77.9% line coverage
+**CI Status:** 8/8 jobs passing (Ubuntu, macOS, Windows × Debug/Release + Coverage + Format)
 
-### Completed Phases
+### Continuous Integration
 
-✅ **Phase 0:** Architecture and Planning
-✅ **Phase 1:** Project Foundation
-- Build system (CMake)
-- Testing infrastructure (Google Test)
-- Core abstractions (Atom, Section, Assembler)
+All platforms continuously tested via GitHub Actions:
 
-✅ **Phase 2.1-2.3:** 6502 CPU Plugin
-- Complete CPU plugin implementation
-- 56 legal opcodes (ADC, AND, ASL, BCC, BCS, BEQ, BIT, BMI, BNE, BPL, BRK, BVC, BVS, CLC, CLD, CLI, CLV, CMP, CPX, CPY, DEC, DEX, DEY, EOR, INC, INX, INY, JMP, JSR, LDA, LDX, LDY, LSR, NOP, ORA, PHA, PHP, PLA, PLP, ROL, ROR, RTI, RTS, SBC, SEC, SED, SEI, STA, STX, STY, TAX, TAY, TSX, TXA, TXS, TYA)
-- 13 addressing modes fully implemented
-- 155 CPU tests, 100% passing
+- ✅ **Ubuntu** (Debug + Release) - 100% tests passing
+- ✅ **macOS** (Debug + Release) - 100% tests passing
+- ✅ **Windows** (Debug + Release) - 100% tests passing
+- ✅ **Code Coverage** - 77.9% line coverage
+- ✅ **Format Check** - clang-format validation
 
-✅ **Phase 2.4:** Complete 6502 Syntax Parsing
-- All 8 addressing mode syntaxes implemented:
-  - Accumulator (`ASL A`)
-  - ZeroPageX/Y (`LDA $80,X`, `LDX $80,Y`)
-  - AbsoluteX/Y (`LDA $1234,X`, `LDA $1234,Y`)
-  - Indirect (`JMP ($1234)`)
-  - IndexedIndirect (`LDA ($80,X)`)
-  - IndirectIndexed (`LDA ($80),Y`)
-- Branch instruction relative addressing
-- Label support for all indexed modes
-- Whitespace tolerance
-- Multi-pass assembly with convergence
-- 42 assembler tests (20 new), 100% passing
+### Completed Features
 
-### Current Status
+- ✅ 6502 family CPU support (4 variants)
+- ✅ 6809 CPU support (Motorola)
+- ✅ Z80 CPU support (Zilog)
+- ✅ CPU plugin architecture with clean polymorphic design
+- ✅ 5 syntax parsers (Merlin, SCMASM, EDTASM, FlexASM, Z80 Universal)
+- ✅ Multi-pass assembly with convergence
+- ✅ Forward reference resolution
+- ✅ Expression evaluation
+- ✅ Binary output generation
+- ✅ Cross-platform support (Linux, macOS, Windows)
 
-**Total Tests:** 197 (42 assembler + 155 CPU)
-**Test Pass Rate:** 100% (197/197)
-**Code Quality:** Zero compiler warnings, Reviewer approved
-**Documentation:** Comprehensive task packets and inline comments
+### Real-World Validation
 
-See [Project Plan](docs/planning/project-plan.md) for detailed roadmap and [Task Packets](.ai/tasks/) for implementation details.
+xasm++ has been validated by successfully assembling:
+- **Prince of Persia** (Apple II) - Complete 29-file assembly with bootable disk images
+- Demonstrates compatibility with historical source code
+- Proves production readiness
+
+See [Documentation Site](https://cortexa-llc.github.io/xasm-plus-plus/) for comprehensive guides and API reference.
 
 ---
 

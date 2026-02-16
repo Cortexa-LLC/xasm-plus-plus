@@ -119,9 +119,21 @@ xasm++ --cpu z80 --syntax z80universal -o output.bin input.asm
 
 ## Project Status
 
-**Current Version:** Production Ready  
-**Total Tests:** 1649/1649 passing (100%) ✅  
+**Current Version:** Production Ready
+**Total Tests:** 1649/1649 passing (100%) ✅
 **Build System:** CMake with organized output (build/bin/, build/lib/, build/Testing/)
+
+### Continuous Integration
+
+All platforms continuously tested via GitHub Actions:
+
+- ✅ **Ubuntu** (Debug + Release) - 100% tests passing
+- ✅ **macOS** (Debug + Release) - 100% tests passing
+- ✅ **Windows** (Debug + Release) - 100% tests passing
+- ✅ **Code Coverage** - 77.9% line coverage
+- ✅ **Format Check** - clang-format validation
+
+**CI Status:** 8/8 jobs passing ✅
 
 **Completed Features:**
 - ✅ 6502 family CPU support (4 variants: 6502, 65C02, 65C02 Rockwell, 65816)
