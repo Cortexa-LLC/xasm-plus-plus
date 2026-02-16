@@ -18,13 +18,16 @@ using namespace xasm;
 
 static std::string get_temp_dir() {
 #ifdef _WIN32
-  const char* temp = std::getenv("TEMP");
-  if (!temp) temp = std::getenv("TMP");
-  if (!temp) temp = "C:\\Windows\\Temp";
+  const char *temp = std::getenv("TEMP");
+  if (!temp)
+    temp = std::getenv("TMP");
+  if (!temp)
+    temp = "C:\\Windows\\Temp";
   std::string temp_str(temp);
   // Normalize to forward slashes for consistency
-  for (char& c : temp_str) {
-    if (c == '\\') c = '/';
+  for (char &c : temp_str) {
+    if (c == '\\')
+      c = '/';
   }
   return temp_str;
 #else
@@ -474,7 +477,9 @@ TEST(MerlinSyntaxTest, PutDirectiveBasic) {
   out.close();
 
   // Parse PUT directive
-  parser.Parse(("         PUT " + get_temp_dir() + "/xasm_test_include.asm").c_str(), section, symbols);
+  parser.Parse(
+      ("         PUT " + get_temp_dir() + "/xasm_test_include.asm").c_str(),
+      section, symbols);
 
   // Should have included the label and DB directive
   EXPECT_TRUE(symbols.IsDefined("INCLUDED_LABEL"));
@@ -497,7 +502,9 @@ TEST(MerlinSyntaxTest, PutCircularIncludeSelf) {
 
   // Should throw exception for circular include
   EXPECT_THROW(
-      parser.Parse((" PUT " + get_temp_dir() + "/xasm_test_circular.asm").c_str(), section, symbols),
+      parser.Parse(
+          (" PUT " + get_temp_dir() + "/xasm_test_circular.asm").c_str(),
+          section, symbols),
       std::runtime_error);
 
   // Clean up
@@ -522,8 +529,10 @@ TEST(MerlinSyntaxTest, PutCircularIncludeCycle) {
   out_b.close();
 
   // Should throw exception for circular include
-  EXPECT_THROW(parser.Parse((" PUT " + get_temp_dir() + "/xasm_test_a.asm").c_str(), section, symbols),
-               std::runtime_error);
+  EXPECT_THROW(
+      parser.Parse((" PUT " + get_temp_dir() + "/xasm_test_a.asm").c_str(),
+                   section, symbols),
+      std::runtime_error);
 
   // Clean up
   std::remove(file_a.c_str());
@@ -559,7 +568,8 @@ TEST(MerlinSyntaxTest, PutNestedIncludes3Levels) {
   out_1.close();
 
   // Parse main file that includes level 1 (total 3 levels of nesting)
-  parser.Parse((" PUT " + get_temp_dir() + "/xasm_test_level1.asm").c_str(), section, symbols);
+  parser.Parse((" PUT " + get_temp_dir() + "/xasm_test_level1.asm").c_str(),
+               section, symbols);
 
   // Should have all three labels defined
   EXPECT_TRUE(symbols.IsDefined("LEVEL1_LABEL"));
@@ -579,7 +589,9 @@ TEST(MerlinSyntaxTest, PutFileNotFound) {
 
   // Try to include a non-existent file
   EXPECT_THROW(
-      parser.Parse((" PUT " + get_temp_dir() + "/nonexistent_file_xasm.asm").c_str(), section, symbols),
+      parser.Parse(
+          (" PUT " + get_temp_dir() + "/nonexistent_file_xasm.asm").c_str(),
+          section, symbols),
       std::runtime_error);
 }
 
@@ -594,7 +606,8 @@ TEST(MerlinSyntaxTest, PutEmptyFile) {
   out.close();
 
   // Should handle empty file gracefully
-  parser.Parse((" PUT " + get_temp_dir() + "/xasm_test_empty.asm").c_str(), section, symbols);
+  parser.Parse((" PUT " + get_temp_dir() + "/xasm_test_empty.asm").c_str(),
+               section, symbols);
 
   // Should have no atoms added
   EXPECT_EQ(section.atoms.size(), 0UL);
@@ -616,7 +629,8 @@ TEST(MerlinSyntaxTest, PutAutoAppendSExtension) {
   out.close();
 
   // Parse PUT directive WITHOUT .S extension - should auto-append
-  parser.Parse((" PUT " + get_temp_dir() + "/xasm_test_include").c_str(), section, symbols);
+  parser.Parse((" PUT " + get_temp_dir() + "/xasm_test_include").c_str(),
+               section, symbols);
 
   // Should have found the file with auto-appended .S extension
   EXPECT_TRUE(symbols.IsDefined("AUTOAPPEND_LABEL"));
@@ -638,7 +652,8 @@ TEST(MerlinSyntaxTest, PutKeepsExistingExtension) {
   out.close();
 
   // Parse PUT directive WITH .HEX extension - should NOT append .S
-  parser.Parse((" PUT " + get_temp_dir() + "/xasm_test_data.HEX").c_str(), section, symbols);
+  parser.Parse((" PUT " + get_temp_dir() + "/xasm_test_data.HEX").c_str(),
+               section, symbols);
 
   // Should have found the file with original extension
   EXPECT_TRUE(symbols.IsDefined("DATA_LABEL"));
@@ -683,7 +698,8 @@ TEST(MerlinSyntaxTest, PutExplicitSExtension) {
   out.close();
 
   // Parse PUT directive WITH explicit .S extension
-  parser.Parse((" PUT " + get_temp_dir() + "/xasm_explicit.S").c_str(), section, symbols);
+  parser.Parse((" PUT " + get_temp_dir() + "/xasm_explicit.S").c_str(), section,
+               symbols);
 
   // Should work as before (backward compatibility)
   EXPECT_TRUE(symbols.IsDefined("EXPLICIT_LABEL"));

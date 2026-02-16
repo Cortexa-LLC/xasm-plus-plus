@@ -34,13 +34,16 @@ inline int unsetenv_portable(const char *name) { return unsetenv(name); }
 
 static std::string get_temp_dir() {
 #ifdef _WIN32
-  const char* temp = std::getenv("TEMP");
-  if (!temp) temp = std::getenv("TMP");
-  if (!temp) temp = "C:\\Windows\\Temp";
+  const char *temp = std::getenv("TEMP");
+  if (!temp)
+    temp = std::getenv("TMP");
+  if (!temp)
+    temp = "C:\\Windows\\Temp";
   std::string temp_str(temp);
   // Normalize to forward slashes for consistency
-  for (char& c : temp_str) {
-    if (c == '\\') c = '/';
+  for (char &c : temp_str) {
+    if (c == '\\')
+      c = '/';
   }
   return temp_str;
 #else
