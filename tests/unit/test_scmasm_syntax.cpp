@@ -1608,9 +1608,9 @@ TEST_F(ScmasmSyntaxTest, INB_RelativePathResolution) {
   EXPECT_EQ(included_value, 0x42);
 
   // Cleanup
-  std::remove(include_file.c_str());
-  std::remove(main_file.c_str());
-  std::filesystem::remove("test_subdir");
+  std::error_code ec;
+  std::filesystem::remove_all("test_subdir", ec);
+  // Ignore errors - Windows may lock files/directories
 }
 
 TEST_F(ScmasmSyntaxTest, INB_EmptyFile) {
@@ -2189,8 +2189,10 @@ TEST_F(ScmasmSyntaxTest, INB_RelativeToSourceBeforeIncludePaths) {
   EXPECT_EQ(value, 0x11); // From test_source_dir/local.s
 
   // Cleanup
-  std::filesystem::remove_all("test_source_dir");
-  std::filesystem::remove_all("test_include_dir");
+  std::error_code ec;
+  std::filesystem::remove_all("test_source_dir", ec);
+  std::filesystem::remove_all("test_include_dir", ec);
+  // Ignore errors - Windows may lock files/directories
 }
 
 TEST_F(ScmasmSyntaxTest, INB_AbsolutePathIgnoresIncludePaths) {
