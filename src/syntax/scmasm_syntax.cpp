@@ -15,6 +15,7 @@
 #include "xasm++/directives/scmasm_directive_handlers.h"
 #include <algorithm>
 #include <cctype>
+#include <filesystem>
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
@@ -216,6 +217,23 @@ void ScmasmSyntaxParser::InitializeDirectiveRegistry() {
 // ============================================================================
 
 void ScmasmSyntaxParser::SetCpu(CpuPlugin *cpu) { cpu_ = cpu; }
+
+void ScmasmSyntaxParser::SetIncludePaths(const std::vector<std::string> &paths) {
+  include_paths_ = paths;
+}
+
+void ScmasmSyntaxParser::SetPathMappings(const std::map<std::string, std::string> &mappings) {
+  path_mappings_.clear();
+  
+  // Normalize all path mapping keys to use forward slashes for cross-platform compatibility
+  for (const auto& [virtual_path, actual_path] : mappings) {
+    // Manually replace backslashes with forward slashes
+    std::string normalized_virtual = virtual_path;
+    std::replace(normalized_virtual.begin(), normalized_virtual.end(), '\\', '/');
+    
+    path_mappings_[normalized_virtual] = actual_path;
+  }
+}
 
 // ============================================================================
 // Main Parse Function
@@ -489,6 +507,8 @@ void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
             this; // Phase 6c.2: Set parser for handler access
         context.current_file = current_file_;
         context.current_line = current_line_;
+        context.include_paths = &include_paths_;
+        context.path_mappings = &path_mappings_;
         it->second(label, operand, context);
       } else {
         // Not in registry and not a control flow directive

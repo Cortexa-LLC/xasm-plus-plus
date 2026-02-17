@@ -145,6 +145,25 @@ int main(int argc, char **argv) {
         // SCMASM works with both 6502 and 6809
         ScmasmSyntaxParser parser;
         parser.SetCpu(cpu);
+        parser.SetIncludePaths(opts.include_paths);
+        
+        // Parse path mappings from CLI (format: "virtual=actual")
+        if (!opts.path_mappings.empty()) {
+          std::map<std::string, std::string> path_map;
+          for (const auto &mapping : opts.path_mappings) {
+            size_t eq_pos = mapping.find('=');
+            if (eq_pos == std::string::npos) {
+              std::cerr << "Error: Invalid path mapping format: " << mapping
+                        << " (expected format: virtual=actual)" << std::endl;
+              return 1;
+            }
+            std::string virtual_path = mapping.substr(0, eq_pos);
+            std::string actual_path = mapping.substr(eq_pos + 1);
+            path_map[virtual_path] = actual_path;
+          }
+          parser.SetPathMappings(path_map);
+        }
+        
         parser.Parse(source, section, symbols);
       } else if (opts.syntax == "edtasm") {
         // EDTASM works with both 6502 and 6809

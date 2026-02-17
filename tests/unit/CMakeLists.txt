@@ -698,3 +698,18 @@ target_link_libraries(test_phase_directives
 
 gtest_discover_tests(test_phase_directives)
 
+# INB path mapping tests (--path-map CLI option)
+add_executable(test_inb_path_mapping
+    test_inb_path_mapping.cpp
+)
+
+target_link_libraries(test_inb_path_mapping
+    xasm_syntax
+    xasm_cpu
+    xasm_core
+    gtest_main
+    gtest
+)
+
+gtest_discover_tests(test_inb_path_mapping)
+

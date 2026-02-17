@@ -618,23 +618,89 @@ void HandleInb(const std::string &label, const std::string &operand,
   // Parses assembly source file and includes it at current position
   // Used extensively in A2oSX for modular source file includes
   //
-  // Path resolution:
+  // Path resolution (in order):
   // 1. If absolute path → use as-is
   // 2. Try relative to source file directory
-  // 3. Try relative to current working directory (fallback)
+  // 3. Try each directory in include_paths (from --include-path CLI option)
+  // 4. Try relative to current working directory (fallback)
 
   RequireOperand(operand, ".INB", context);
 
   // Trim whitespace from filename
   std::string include_filename = Trim(operand);
 
+  // Apply path mappings (if any)
+  // Example: usr/src/shared/file.s → SHARED/file.s
+  // This allows virtual paths in source to be mapped to actual filesystem paths
+  if (context.path_mappings != nullptr && !context.path_mappings->empty()) {
+    std::filesystem::path include_path_obj(include_filename);
+    
+    // Normalize path separators for comparison (use /)
+    std::string normalized_path = include_path_obj.generic_string();
+    
+    // Find longest matching prefix in path mappings
+    std::string longest_match_key;
+    std::string longest_match_value;
+    size_t longest_match_len = 0;
+    
+    for (const auto& [virtual_path, actual_path] : *context.path_mappings) {
+      // Normalize virtual path for comparison
+      std::filesystem::path virtual_path_obj(virtual_path);
+      std::string normalized_virtual = virtual_path_obj.generic_string();
+      
+      // Check if normalized_path starts with normalized_virtual
+      if (normalized_path.find(normalized_virtual) == 0) {
+        // Ensure it's a complete path component match (not substring)
+        size_t virtual_len = normalized_virtual.length();
+        if (virtual_len > normalized_path.length()) {
+          continue; // Virtual path longer than include path
+        }
+        
+        // Check that match is at path boundary
+        // Empty prefix is always valid (matches everything)
+        if (virtual_len == 0 || 
+            virtual_len == normalized_path.length() || 
+            normalized_path[virtual_len] == '/') {
+          // This is a valid prefix match
+          if (virtual_len >= longest_match_len) {
+            longest_match_len = virtual_len;
+            longest_match_key = normalized_virtual;
+            longest_match_value = actual_path;
+          }
+        }
+      }
+    }
+    
+    // Apply mapping if found
+    // Note: longest_match_len can be 0 for empty prefix mappings
+    if (!longest_match_value.empty()) {
+      // Replace virtual prefix with actual prefix
+      std::string suffix = normalized_path.substr(longest_match_len);
+      
+      // Remove leading separator from suffix if present
+      if (!suffix.empty() && suffix[0] == '/') {
+        suffix = suffix.substr(1);
+      }
+      
+      // Construct mapped path
+      std::filesystem::path actual_base(longest_match_value);
+      if (suffix.empty()) {
+        include_filename = actual_base.string();
+      } else {
+        include_filename = (actual_base / suffix).string();
+      }
+    }
+  }
+
   // Resolve include path
   std::filesystem::path resolved_path;
   bool found = false;
+  std::vector<std::string> tried_paths; // Track attempted paths for error message
 
   // Case 1: Absolute path
   std::filesystem::path include_path(include_filename);
   if (include_path.is_absolute()) {
+    tried_paths.push_back(include_filename);
     if (std::filesystem::exists(include_path)) {
       resolved_path = include_path;
       found = true;
@@ -646,22 +712,97 @@ void HandleInb(const std::string &label, const std::string &operand,
       std::filesystem::path source_dir = source_path.parent_path();
       std::filesystem::path relative_path = source_dir / include_filename;
 
+      tried_paths.push_back(relative_path.string());
       if (std::filesystem::exists(relative_path)) {
         resolved_path = relative_path;
         found = true;
       }
     }
 
-    // Case 3: Relative to current working directory (fallback)
-    if (!found && std::filesystem::exists(include_filename)) {
-      resolved_path = include_filename;
-      found = true;
+    // Case 3: Try each directory in include_paths
+    if (!found && context.include_paths != nullptr) {
+      for (const auto &include_dir : *context.include_paths) {
+        std::filesystem::path search_path = 
+            std::filesystem::path(include_dir) / include_filename;
+        
+        tried_paths.push_back(search_path.string());
+        if (std::filesystem::exists(search_path)) {
+          resolved_path = search_path;
+          found = true;
+          break;
+        }
+      }
+    }
+
+    // Case 4: Relative to current working directory (fallback)
+    if (!found) {
+      tried_paths.push_back(include_filename);
+      if (std::filesystem::exists(include_filename)) {
+        resolved_path = include_filename;
+        found = true;
+      }
     }
   }
 
+  // If not found, try adding .txt extension (A2osX compatibility)
+  // A2osX source files may reference "file.s" but physical file is "FILE.S.txt"
   if (!found) {
-    throw std::runtime_error(".INB cannot open file: " + include_filename +
-                             " (tried: " + include_filename + ")");
+    std::string txt_filename = include_filename + ".txt";
+    std::filesystem::path txt_include_path(txt_filename);
+    
+    if (txt_include_path.is_absolute()) {
+      if (std::filesystem::exists(txt_include_path)) {
+        resolved_path = txt_include_path;
+        found = true;
+      }
+    } else {
+      // Try relative to source directory
+      if (!found && !context.current_file.empty()) {
+        std::filesystem::path source_path(context.current_file);
+        std::filesystem::path source_dir = source_path.parent_path();
+        std::filesystem::path relative_path = source_dir / txt_filename;
+        
+        if (std::filesystem::exists(relative_path)) {
+          resolved_path = relative_path;
+          found = true;
+        }
+      }
+      
+      // Try include paths
+      if (!found && context.include_paths != nullptr) {
+        for (const auto &include_dir : *context.include_paths) {
+          std::filesystem::path search_path = 
+              std::filesystem::path(include_dir) / txt_filename;
+          
+          if (std::filesystem::exists(search_path)) {
+            resolved_path = search_path;
+            found = true;
+            break;
+          }
+        }
+      }
+      
+      // Try current working directory
+      if (!found) {
+        if (std::filesystem::exists(txt_filename)) {
+          resolved_path = txt_filename;
+          found = true;
+        }
+      }
+    }
+  }
+  
+  if (!found) {
+    std::string error_msg = ".INB cannot open file: " + include_filename;
+    if (!tried_paths.empty()) {
+      error_msg += " (searched: ";
+      for (size_t i = 0; i < tried_paths.size(); ++i) {
+        if (i > 0) error_msg += ", ";
+        error_msg += tried_paths[i];
+      }
+      error_msg += ")";
+    }
+    throw std::runtime_error(error_msg);
   }
 
   // Read included file as text

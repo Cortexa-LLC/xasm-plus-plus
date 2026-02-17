@@ -17,6 +17,7 @@
 #include "xasm++/symbol.h"
 #include "xasm++/syntax/directive_registry.h"
 #include <functional>
+#include <map>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -127,6 +128,26 @@ public:
    * @param cpu Pointer to CPU plugin (must remain valid during parsing)
    */
   void SetCpu(CpuPlugin *cpu);
+
+  /**
+   * @brief Set include search paths for .INB directive
+   *
+   * @param paths Vector of directory paths to search for included files
+   */
+  void SetIncludePaths(const std::vector<std::string> &paths);
+
+  /**
+   * @brief Set path mappings for .INB directive
+   *
+   * Path mappings allow virtual paths to be substituted with actual paths.
+   * This is different from include paths which only add search directories.
+   *
+   * Example: mapping["usr/src/shared"] = "SHARED"
+   * converts .INB usr/src/shared/x.printf.s → SHARED/x.printf.s
+   *
+   * @param mappings Map of virtual paths to actual paths
+   */
+  void SetPathMappings(const std::map<std::string, std::string> &mappings);
 
   /**
    * @brief Parse SCMASM assembly source into atoms and symbols
@@ -295,6 +316,12 @@ private:
 
   // CPU plugin for opcode validation
   CpuPlugin *cpu_; ///< CPU plugin for opcode validation (nullable)
+
+  // Include search paths
+  std::vector<std::string> include_paths_; ///< Directories to search for .INB files
+
+  // Path mappings for virtual path substitution
+  std::map<std::string, std::string> path_mappings_; ///< Virtual→actual path mappings for .INB
 
   // Symbol tracking for .SE (redefinable)
   std::unordered_map<std::string, bool>

@@ -2024,3 +2024,242 @@ TEST_F(ScmasmSyntaxTest, DUMMY_NestedNotSupported) {
   // For now, we'll just verify it doesn't crash
   EXPECT_NO_THROW(parser->Parse(source, section, symbols));
 }
+
+// ============================================================================
+// .INB Include Path Search Tests
+// ============================================================================
+
+TEST_F(ScmasmSyntaxTest, INB_SearchesIncludePaths) {
+  // Create include directory and file
+  std::filesystem::create_directories("test_includes/subdir");
+  std::string include_file = "test_includes/subdir/shared.s";
+  std::ofstream inc(include_file);
+  inc << "SHARED .EQ $1234\n";
+  inc.close();
+
+  // Set include paths
+  std::vector<std::string> include_paths = {"test_includes/subdir"};
+  parser->SetIncludePaths(include_paths);
+
+  // Parse source that references file by name only (no path)
+  std::string source = R"(
+        .OR $0800
+        .INB shared.s
+        LDA #>SHARED
+)";
+
+  parser->Parse(source, section, symbols);
+
+  // Verify SHARED symbol was defined from included file
+  EXPECT_TRUE(symbols.IsDefined("SHARED"));
+  int64_t shared_value;
+  EXPECT_TRUE(symbols.Lookup("SHARED", shared_value));
+  EXPECT_EQ(shared_value, 0x1234);
+
+  // Cleanup
+  std::filesystem::remove_all("test_includes");
+}
+
+TEST_F(ScmasmSyntaxTest, INB_SearchesMultipleIncludePaths) {
+  // Create multiple include directories
+  std::filesystem::create_directories("test_inc1");
+  std::filesystem::create_directories("test_inc2");
+  
+  std::string file1 = "test_inc1/config1.s";
+  std::ofstream f1(file1);
+  f1 << "CONFIG1 .EQ $01\n";
+  f1.close();
+  
+  std::string file2 = "test_inc2/config2.s";
+  std::ofstream f2(file2);
+  f2 << "CONFIG2 .EQ $02\n";
+  f2.close();
+
+  // Set multiple include paths
+  std::vector<std::string> include_paths = {"test_inc1", "test_inc2"};
+  parser->SetIncludePaths(include_paths);
+
+  // Parse source that includes from both paths
+  std::string source = R"(
+        .OR $0800
+        .INB config1.s
+        .INB config2.s
+)";
+
+  parser->Parse(source, section, symbols);
+
+  // Verify both symbols defined
+  EXPECT_TRUE(symbols.IsDefined("CONFIG1"));
+  EXPECT_TRUE(symbols.IsDefined("CONFIG2"));
+  
+  int64_t val1, val2;
+  EXPECT_TRUE(symbols.Lookup("CONFIG1", val1));
+  EXPECT_TRUE(symbols.Lookup("CONFIG2", val2));
+  EXPECT_EQ(val1, 0x01);
+  EXPECT_EQ(val2, 0x02);
+
+  // Cleanup
+  std::filesystem::remove_all("test_inc1");
+  std::filesystem::remove_all("test_inc2");
+}
+
+TEST_F(ScmasmSyntaxTest, INB_IncludePathPriorityOrder) {
+  // Test that include paths are searched in order
+  // Create same filename in two directories
+  std::filesystem::create_directories("test_priority1");
+  std::filesystem::create_directories("test_priority2");
+  
+  std::string file1 = "test_priority1/shared.s";
+  std::ofstream f1(file1);
+  f1 << "VALUE .EQ $AA\n";
+  f1.close();
+  
+  std::string file2 = "test_priority2/shared.s";
+  std::ofstream f2(file2);
+  f2 << "VALUE .EQ $BB\n";
+  f2.close();
+
+  // Set include paths with priority1 FIRST
+  std::vector<std::string> include_paths = {"test_priority1", "test_priority2"};
+  parser->SetIncludePaths(include_paths);
+
+  std::string source = R"(
+        .OR $0800
+        .INB shared.s
+)";
+
+  parser->Parse(source, section, symbols);
+
+  // Should use first matching file (priority1)
+  int64_t value;
+  EXPECT_TRUE(symbols.Lookup("VALUE", value));
+  EXPECT_EQ(value, 0xAA); // From priority1, not priority2
+
+  // Cleanup
+  std::filesystem::remove_all("test_priority1");
+  std::filesystem::remove_all("test_priority2");
+}
+
+TEST_F(ScmasmSyntaxTest, INB_RelativeToSourceBeforeIncludePaths) {
+  // Test that relative-to-source-file takes priority over include paths
+  std::filesystem::create_directories("test_source_dir");
+  std::filesystem::create_directories("test_include_dir");
+  
+  // File relative to source
+  std::string source_rel_file = "test_source_dir/local.s";
+  std::ofstream src_f(source_rel_file);
+  src_f << "LOCAL .EQ $11\n";
+  src_f.close();
+  
+  // Same filename in include path
+  std::string inc_file = "test_include_dir/local.s";
+  std::ofstream inc_f(inc_file);
+  inc_f << "LOCAL .EQ $22\n";
+  inc_f.close();
+
+  // Set include path
+  std::vector<std::string> include_paths = {"test_include_dir"};
+  parser->SetIncludePaths(include_paths);
+
+  // Create main source file
+  std::string main_file = "test_source_dir/main.s";
+  std::ofstream main_f(main_file);
+  main_f << "        .OR $0800\n";
+  main_f << "        .INB local.s\n";
+  main_f.close();
+
+  // Parse with main file as current file
+  parser->SetCurrentFile(main_file);
+  std::ifstream in(main_file);
+  std::string source((std::istreambuf_iterator<char>(in)),
+                     std::istreambuf_iterator<char>());
+  parser->Parse(source, section, symbols);
+
+  // Should use source-relative file, not include path file
+  int64_t value;
+  EXPECT_TRUE(symbols.Lookup("LOCAL", value));
+  EXPECT_EQ(value, 0x11); // From test_source_dir/local.s
+
+  // Cleanup
+  std::filesystem::remove_all("test_source_dir");
+  std::filesystem::remove_all("test_include_dir");
+}
+
+TEST_F(ScmasmSyntaxTest, INB_AbsolutePathIgnoresIncludePaths) {
+  // Test that absolute paths are not affected by include paths
+  std::filesystem::create_directories("test_abs_include");
+  
+  // Create file with absolute path
+  std::filesystem::path abs_file = std::filesystem::absolute("test_abs_include/absolute.s");
+  std::ofstream f(abs_file);
+  f << "ABSOLUTE .EQ $99\n";
+  f.close();
+
+  // Set include path (should be ignored for absolute paths)
+  std::vector<std::string> include_paths = {"some_other_dir"};
+  parser->SetIncludePaths(include_paths);
+
+  // Use absolute path in .INB
+  std::string source = "        .OR $0800\n        .INB " + abs_file.string() + "\n";
+
+  parser->Parse(source, section, symbols);
+
+  // Should find file using absolute path
+  EXPECT_TRUE(symbols.IsDefined("ABSOLUTE"));
+  int64_t value;
+  EXPECT_TRUE(symbols.Lookup("ABSOLUTE", value));
+  EXPECT_EQ(value, 0x99);
+
+  // Cleanup
+  std::filesystem::remove_all("test_abs_include");
+}
+
+TEST_F(ScmasmSyntaxTest, INB_CurrentWorkingDirFallback) {
+  // Test that CWD is used as fallback if not found elsewhere
+  std::string cwd_file = "test_cwd_file.s";
+  std::ofstream f(cwd_file);
+  f << "CWD_VAL .EQ $77\n";
+  f.close();
+
+  // Set include paths that DON'T contain the file
+  std::vector<std::string> include_paths = {"nonexistent_dir"};
+  parser->SetIncludePaths(include_paths);
+
+  std::string source = R"(
+        .OR $0800
+        .INB test_cwd_file.s
+)";
+
+  parser->Parse(source, section, symbols);
+
+  // Should find file in CWD
+  EXPECT_TRUE(symbols.IsDefined("CWD_VAL"));
+  int64_t value;
+  EXPECT_TRUE(symbols.Lookup("CWD_VAL", value));
+  EXPECT_EQ(value, 0x77);
+
+  // Cleanup
+  std::remove(cwd_file.c_str());
+}
+
+TEST_F(ScmasmSyntaxTest, INB_ErrorMessageShowsSearchedPaths) {
+  // Test that error message lists all paths that were searched
+  std::vector<std::string> include_paths = {"path1", "path2", "path3"};
+  parser->SetIncludePaths(include_paths);
+
+  std::string source = R"(
+        .OR $0800
+        .INB nonexistent.s
+)";
+
+  try {
+    parser->Parse(source, section, symbols);
+    FAIL() << "Expected exception for missing file";
+  } catch (const std::runtime_error& e) {
+    std::string error_msg = e.what();
+    // Error message should mention the searched paths
+    EXPECT_TRUE(error_msg.find("nonexistent.s") != std::string::npos);
+    EXPECT_TRUE(error_msg.find("searched:") != std::string::npos || 
+                error_msg.find("cannot open") != std::string::npos);
+  }
+}

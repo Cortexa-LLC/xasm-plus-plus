@@ -9,9 +9,11 @@
 #pragma once
 
 #include <functional>
+#include <map>
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 namespace xasm {
 
@@ -37,6 +39,12 @@ struct DirectiveContext {
   std::string current_file; ///< Current source filename
   int current_line = 0;     ///< Current line number
   std::string source_line;  ///< Original source line text
+
+  // Include path search directories
+  const std::vector<std::string> *include_paths = nullptr; ///< Include search paths for .INB directive
+
+  // Path mappings for virtual path substitution
+  const std::map<std::string, std::string> *path_mappings = nullptr; ///< Path substitutions for .INB directive (virtual→actual)
 
   /**
    * @brief Constructor with common context
