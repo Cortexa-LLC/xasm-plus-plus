@@ -26,7 +26,8 @@ protected:
   }
 
   void TearDown() override {
-    // Clean up test directories (Windows requires error_code for permission issues)
+    // Clean up test directories (Windows requires error_code for permission
+    // issues)
     std::error_code ec;
     std::filesystem::remove_all("test_subdir", ec);
     // Ignore errors - directory may not exist or may be locked
