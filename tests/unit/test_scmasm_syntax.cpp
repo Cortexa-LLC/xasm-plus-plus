@@ -25,6 +25,13 @@ protected:
     symbols = ConcreteSymbolTable();
   }
 
+  void TearDown() override {
+    // Clean up test directories (Windows requires error_code for permission issues)
+    std::error_code ec;
+    std::filesystem::remove_all("test_subdir", ec);
+    // Ignore errors - directory may not exist or may be locked
+  }
+
   std::unique_ptr<ScmasmSyntaxParser> parser;
   std::unique_ptr<Cpu6502> cpu;
   Section section;
