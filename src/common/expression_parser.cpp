@@ -611,9 +611,9 @@ std::string ExpressionParser::ParseIdentifier() {
 
   Consume();
 
-  // Continue with alphanumeric, underscore, $, ?
-  while (std::isalnum(Peek()) || Peek() == '_' || Peek() == '$' ||
-         Peek() == '?') {
+  // Continue with alphanumeric, underscore, period, $, ?
+  while (std::isalnum(Peek()) || Peek() == '_' || Peek() == '.' ||
+         Peek() == '$' || Peek() == '?') {
     Consume();
   }
 

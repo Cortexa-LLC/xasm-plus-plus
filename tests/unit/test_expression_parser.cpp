@@ -388,6 +388,33 @@ TEST(ExpressionParserTest, SymbolResolution) {
   EXPECT_THROW(expr->Evaluate(symbols), std::runtime_error);
 }
 
+TEST(ExpressionParserTest, SymbolsWithDots) {
+  MockSymbolTable symbols;
+  symbols.AddSymbol("A2osX.GP", 0x1000);
+  symbols.AddSymbol("A2osX.LIBC", 0x1100);
+  symbols.AddSymbol("MSG.INIT0", 0x2000);
+
+  ExpressionParser parser(&symbols);
+
+  // Test parsing symbols with dots
+  auto expr = parser.Parse("A2osX.GP");
+  EXPECT_EQ(expr->Evaluate(symbols), 0x1000);
+
+  expr = parser.Parse("A2osX.LIBC");
+  EXPECT_EQ(expr->Evaluate(symbols), 0x1100);
+
+  // Test dots in expressions (like A2osX line 59)
+  expr = parser.Parse("A2osX.GP + 0");
+  EXPECT_EQ(expr->Evaluate(symbols), 0x1000);
+
+  expr = parser.Parse("A2osX.LIBC + $10");
+  EXPECT_EQ(expr->Evaluate(symbols), 0x1110);
+
+  // Test multiple dots
+  expr = parser.Parse("MSG.INIT0");
+  EXPECT_EQ(expr->Evaluate(symbols), 0x2000);
+}
+
 // ============================================================================
 // Phase 10: Whitespace handling
 // ============================================================================
