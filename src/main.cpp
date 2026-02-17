@@ -3,7 +3,6 @@
 
 #include "CLI/CLI.hpp"
 #include "xasm++/assembler.h"
-#include "xasm++/version.h"
 #include "xasm++/cli/command_line_options.h"
 #include "xasm++/core/error_formatter.h"
 #include "xasm++/cpu/cpu_6502.h"
@@ -18,6 +17,7 @@
 #include "xasm++/syntax/merlin_syntax.h"
 #include "xasm++/syntax/scmasm_syntax.h"
 #include "xasm++/syntax/simple_syntax.h"
+#include "xasm++/version.h"
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -146,7 +146,7 @@ int main(int argc, char **argv) {
         ScmasmSyntaxParser parser;
         parser.SetCpu(cpu);
         parser.SetIncludePaths(opts.include_paths);
-        
+
         // Parse path mappings from CLI (format: "virtual=actual")
         if (!opts.path_mappings.empty()) {
           std::map<std::string, std::string> path_map;
@@ -163,7 +163,7 @@ int main(int argc, char **argv) {
           }
           parser.SetPathMappings(path_map);
         }
-        
+
         parser.Parse(source, section, symbols);
       } else if (opts.syntax == "edtasm") {
         // EDTASM works with both 6502 and 6809

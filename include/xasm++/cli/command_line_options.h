@@ -41,10 +41,12 @@ struct CommandLineOptions {
   std::string listing_file;        ///< Listing file (.lst) - optional
   std::string symbol_file;         ///< Symbol table file (.sym) - optional
   std::string color_mode = "auto"; ///< Color output mode (auto, always, never)
-  std::vector<std::string> include_paths; ///< Include search paths for .INB directive
-  std::vector<std::string> path_mappings; ///< Path mappings for .INB directive (format: "virtual=actual")
-  bool show_help = false;          ///< True if --help was specified
-  bool show_version = false;       ///< True if --version was specified
+  std::vector<std::string>
+      include_paths; ///< Include search paths for .INB directive
+  std::vector<std::string> path_mappings; ///< Path mappings for .INB directive
+                                          ///< (format: "virtual=actual")
+  bool show_help = false;                 ///< True if --help was specified
+  bool show_version = false;              ///< True if --version was specified
   std::string help_message; ///< Help message text (populated when --help used)
 };
 

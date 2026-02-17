@@ -41,10 +41,12 @@ struct DirectiveContext {
   std::string source_line;  ///< Original source line text
 
   // Include path search directories
-  const std::vector<std::string> *include_paths = nullptr; ///< Include search paths for .INB directive
+  const std::vector<std::string> *include_paths =
+      nullptr; ///< Include search paths for .INB directive
 
   // Path mappings for virtual path substitution
-  const std::map<std::string, std::string> *path_mappings = nullptr; ///< Path substitutions for .INB directive (virtual→actual)
+  const std::map<std::string, std::string> *path_mappings =
+      nullptr; ///< Path substitutions for .INB directive (virtual→actual)
 
   /**
    * @brief Constructor with common context

@@ -53,12 +53,14 @@ CommandLineOptions ParseCommandLine(int argc, char **argv) {
       ->check(CLI::IsMember({"auto", "always", "never"}));
 
   // Include path option (can be specified multiple times)
-  app.add_option("--include-path,-I", opts.include_paths,
-                 "Add directory to include search path (can be used multiple times)");
-  
+  app.add_option(
+      "--include-path,-I", opts.include_paths,
+      "Add directory to include search path (can be used multiple times)");
+
   // Path mapping option for .INB directive (A2osX compatibility)
   app.add_option("--path-map", opts.path_mappings,
-                 "Map virtual paths to actual paths for .INB directive (format: virtual=actual, can be used multiple times)");
+                 "Map virtual paths to actual paths for .INB directive "
+                 "(format: virtual=actual, can be used multiple times)");
 
   try {
     app.parse(argc, argv);

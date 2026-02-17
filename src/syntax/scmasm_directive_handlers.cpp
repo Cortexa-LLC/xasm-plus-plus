@@ -208,7 +208,8 @@ void HandleEq(const std::string &label, const std::string &operand,
   RequireOperand(operand, ".EQ", context);
 
   // Simple comment handling: everything after first whitespace is a comment
-  // This handles all cases: "180 float", "XX+00  5/6 for 50/60Hz", "$Cn comment"
+  // This handles all cases: "180 float", "XX+00  5/6 for 50/60Hz", "$Cn
+  // comment"
   std::string value_expr = operand;
   size_t ws = value_expr.find_first_of(" \t");
   if (ws != std::string::npos) {
@@ -311,65 +312,73 @@ void HandleDa(const std::string &label, const std::string &operand,
   // Convert SCMASM operators to byte-level expressions for deferred evaluation
   // SCMASM .DA: Size determined by operator prefix
   // #expr → 8-bit (low byte) - convert to <expr
-  // /expr → 8-bit (second byte, bits 8-15) - convert to >expr  
+  // /expr → 8-bit (second byte, bits 8-15) - convert to >expr
   // expr  → 16-bit (default, little-endian) - expand to <expr, >expr
   // <expr → 24-bit (little-endian) - expand to 3 byte expressions
   // >expr → 32-bit (little-endian) - expand to 4 byte expressions
   //
-  // All expressions are converted to BYTE-level so DataAtom can use DataSize::Byte
-  // This allows the multi-pass assembler to resolve forward references correctly
+  // All expressions are converted to BYTE-level so DataAtom can use
+  // DataSize::Byte This allows the multi-pass assembler to resolve forward
+  // references correctly
   std::vector<std::string> byte_expressions;
-  std::vector<uint8_t> data;  // For immediate evaluation attempt
-  
+  std::vector<uint8_t> data; // For immediate evaluation attempt
+
   for (const auto &expr : raw_expressions) {
     std::string trimmed_expr = Trim(expr);
-    
+
     if (trimmed_expr.empty()) {
       continue;
     }
 
     char prefix = trimmed_expr[0];
     std::string base_expr;
-    
+
     if (prefix == '#') {
       // SCMASM # (low byte) → generic < (low byte)
       base_expr = Trim(trimmed_expr.substr(1));
       byte_expressions.push_back("<" + base_expr);
-      
+
       // Try immediate evaluation
       try {
-        uint32_t num = EvaluateExpression(base_expr, *context.symbols, context.parser_state);
+        uint32_t num = EvaluateExpression(base_expr, *context.symbols,
+                                          context.parser_state);
         data.push_back(static_cast<uint8_t>(num & constants::BYTE_MASK));
       } catch (...) {
         // Forward reference - evaluation will happen in assembler
-        data.push_back(0);  // Placeholder
+        data.push_back(0); // Placeholder
       }
     } else if (prefix == '/') {
       // SCMASM / (high byte) → generic > (high byte)
       base_expr = Trim(trimmed_expr.substr(1));
       byte_expressions.push_back(">" + base_expr);
-      
+
       // Try immediate evaluation
       try {
-        uint32_t num = EvaluateExpression(base_expr, *context.symbols, context.parser_state);
-        data.push_back(static_cast<uint8_t>((num >> constants::BYTE_1_SHIFT) & constants::BYTE_MASK));
+        uint32_t num = EvaluateExpression(base_expr, *context.symbols,
+                                          context.parser_state);
+        data.push_back(static_cast<uint8_t>((num >> constants::BYTE_1_SHIFT) &
+                                            constants::BYTE_MASK));
       } catch (...) {
         // Forward reference - evaluation will happen in assembler
-        data.push_back(0);  // Placeholder
+        data.push_back(0); // Placeholder
       }
     } else if (prefix == '<') {
       // SCMASM < (24-bit) → expand to 3 bytes
       base_expr = Trim(trimmed_expr.substr(1));
-      byte_expressions.push_back("<" + base_expr);   // Byte 0
-      byte_expressions.push_back(">" + base_expr);   // Byte 1  
-      byte_expressions.push_back("<(" + base_expr + ")");  // Byte 2 - placeholder
-      
+      byte_expressions.push_back("<" + base_expr); // Byte 0
+      byte_expressions.push_back(">" + base_expr); // Byte 1
+      byte_expressions.push_back("<(" + base_expr +
+                                 ")"); // Byte 2 - placeholder
+
       // Try immediate evaluation
       try {
-        uint32_t num = EvaluateExpression(base_expr, *context.symbols, context.parser_state);
+        uint32_t num = EvaluateExpression(base_expr, *context.symbols,
+                                          context.parser_state);
         data.push_back(static_cast<uint8_t>(num & constants::BYTE_MASK));
-        data.push_back(static_cast<uint8_t>((num >> constants::BYTE_1_SHIFT) & constants::BYTE_MASK));
-        data.push_back(static_cast<uint8_t>((num >> constants::BYTE_2_SHIFT) & constants::BYTE_MASK));
+        data.push_back(static_cast<uint8_t>((num >> constants::BYTE_1_SHIFT) &
+                                            constants::BYTE_MASK));
+        data.push_back(static_cast<uint8_t>((num >> constants::BYTE_2_SHIFT) &
+                                            constants::BYTE_MASK));
       } catch (...) {
         // Forward reference
         data.push_back(0);
@@ -379,18 +388,24 @@ void HandleDa(const std::string &label, const std::string &operand,
     } else if (prefix == '>') {
       // SCMASM > (32-bit) → expand to 4 bytes
       base_expr = Trim(trimmed_expr.substr(1));
-      byte_expressions.push_back("<" + base_expr);   // Byte 0
-      byte_expressions.push_back(">" + base_expr);   // Byte 1
-      byte_expressions.push_back("<(" + base_expr + ")");  // Byte 2 - placeholder
-      byte_expressions.push_back(">(" + base_expr + ")");  // Byte 3 - placeholder
-      
+      byte_expressions.push_back("<" + base_expr); // Byte 0
+      byte_expressions.push_back(">" + base_expr); // Byte 1
+      byte_expressions.push_back("<(" + base_expr +
+                                 ")"); // Byte 2 - placeholder
+      byte_expressions.push_back(">(" + base_expr +
+                                 ")"); // Byte 3 - placeholder
+
       // Try immediate evaluation
       try {
-        uint32_t num = EvaluateExpression(base_expr, *context.symbols, context.parser_state);
+        uint32_t num = EvaluateExpression(base_expr, *context.symbols,
+                                          context.parser_state);
         data.push_back(static_cast<uint8_t>(num & constants::BYTE_MASK));
-        data.push_back(static_cast<uint8_t>((num >> constants::BYTE_1_SHIFT) & constants::BYTE_MASK));
-        data.push_back(static_cast<uint8_t>((num >> constants::BYTE_2_SHIFT) & constants::BYTE_MASK));
-        data.push_back(static_cast<uint8_t>((num >> constants::BYTE_3_SHIFT) & constants::BYTE_MASK));
+        data.push_back(static_cast<uint8_t>((num >> constants::BYTE_1_SHIFT) &
+                                            constants::BYTE_MASK));
+        data.push_back(static_cast<uint8_t>((num >> constants::BYTE_2_SHIFT) &
+                                            constants::BYTE_MASK));
+        data.push_back(static_cast<uint8_t>((num >> constants::BYTE_3_SHIFT) &
+                                            constants::BYTE_MASK));
       } catch (...) {
         // Forward reference
         data.push_back(0);
@@ -401,14 +416,16 @@ void HandleDa(const std::string &label, const std::string &operand,
     } else {
       // Default: 16-bit word (no prefix) - expand to 2 bytes (little-endian)
       base_expr = trimmed_expr;
-      byte_expressions.push_back("<" + base_expr);  // Low byte
-      byte_expressions.push_back(">" + base_expr);  // High byte
-      
+      byte_expressions.push_back("<" + base_expr); // Low byte
+      byte_expressions.push_back(">" + base_expr); // High byte
+
       // Try immediate evaluation
       try {
-        uint32_t num = EvaluateExpression(base_expr, *context.symbols, context.parser_state);
+        uint32_t num = EvaluateExpression(base_expr, *context.symbols,
+                                          context.parser_state);
         data.push_back(static_cast<uint8_t>(num & constants::BYTE_MASK));
-        data.push_back(static_cast<uint8_t>((num >> constants::BYTE_1_SHIFT) & constants::BYTE_MASK));
+        data.push_back(static_cast<uint8_t>((num >> constants::BYTE_1_SHIFT) &
+                                            constants::BYTE_MASK));
       } catch (...) {
         // Forward reference
         data.push_back(0);
@@ -449,16 +466,16 @@ void HandleHs(const std::string &label, const std::string &operand,
     while (i < trimmed.length() && std::isspace(trimmed[i])) {
       i++;
     }
-    
+
     // Find end of current word
     size_t word_start = i;
     while (i < trimmed.length() && !std::isspace(trimmed[i])) {
       i++;
     }
-    
+
     if (i > word_start) {
       std::string word = trimmed.substr(word_start, i - word_start);
-      
+
       // Check if ALL characters in word are hex digits
       bool all_hex = true;
       for (char c : word) {
@@ -467,7 +484,7 @@ void HandleHs(const std::string &label, const std::string &operand,
           break;
         }
       }
-      
+
       if (all_hex) {
         hex_digits += word;
       } else {
@@ -634,20 +651,20 @@ void HandleInb(const std::string &label, const std::string &operand,
   // This allows virtual paths in source to be mapped to actual filesystem paths
   if (context.path_mappings != nullptr && !context.path_mappings->empty()) {
     std::filesystem::path include_path_obj(include_filename);
-    
+
     // Normalize path separators for comparison (use /)
     std::string normalized_path = include_path_obj.generic_string();
-    
+
     // Find longest matching prefix in path mappings
     std::string longest_match_key;
     std::string longest_match_value;
     size_t longest_match_len = 0;
-    
-    for (const auto& [virtual_path, actual_path] : *context.path_mappings) {
+
+    for (const auto &[virtual_path, actual_path] : *context.path_mappings) {
       // Normalize virtual path for comparison
       std::filesystem::path virtual_path_obj(virtual_path);
       std::string normalized_virtual = virtual_path_obj.generic_string();
-      
+
       // Check if normalized_path starts with normalized_virtual
       if (normalized_path.find(normalized_virtual) == 0) {
         // Ensure it's a complete path component match (not substring)
@@ -655,11 +672,10 @@ void HandleInb(const std::string &label, const std::string &operand,
         if (virtual_len > normalized_path.length()) {
           continue; // Virtual path longer than include path
         }
-        
+
         // Check that match is at path boundary
         // Empty prefix is always valid (matches everything)
-        if (virtual_len == 0 || 
-            virtual_len == normalized_path.length() || 
+        if (virtual_len == 0 || virtual_len == normalized_path.length() ||
             normalized_path[virtual_len] == '/') {
           // This is a valid prefix match
           if (virtual_len >= longest_match_len) {
@@ -670,18 +686,18 @@ void HandleInb(const std::string &label, const std::string &operand,
         }
       }
     }
-    
+
     // Apply mapping if found
     // Note: longest_match_len can be 0 for empty prefix mappings
     if (!longest_match_value.empty()) {
       // Replace virtual prefix with actual prefix
       std::string suffix = normalized_path.substr(longest_match_len);
-      
+
       // Remove leading separator from suffix if present
       if (!suffix.empty() && suffix[0] == '/') {
         suffix = suffix.substr(1);
       }
-      
+
       // Construct mapped path
       std::filesystem::path actual_base(longest_match_value);
       if (suffix.empty()) {
@@ -695,7 +711,8 @@ void HandleInb(const std::string &label, const std::string &operand,
   // Resolve include path
   std::filesystem::path resolved_path;
   bool found = false;
-  std::vector<std::string> tried_paths; // Track attempted paths for error message
+  std::vector<std::string>
+      tried_paths; // Track attempted paths for error message
 
   // Case 1: Absolute path
   std::filesystem::path include_path(include_filename);
@@ -722,9 +739,9 @@ void HandleInb(const std::string &label, const std::string &operand,
     // Case 3: Try each directory in include_paths
     if (!found && context.include_paths != nullptr) {
       for (const auto &include_dir : *context.include_paths) {
-        std::filesystem::path search_path = 
+        std::filesystem::path search_path =
             std::filesystem::path(include_dir) / include_filename;
-        
+
         tried_paths.push_back(search_path.string());
         if (std::filesystem::exists(search_path)) {
           resolved_path = search_path;
@@ -749,7 +766,7 @@ void HandleInb(const std::string &label, const std::string &operand,
   if (!found) {
     std::string txt_filename = include_filename + ".txt";
     std::filesystem::path txt_include_path(txt_filename);
-    
+
     if (txt_include_path.is_absolute()) {
       if (std::filesystem::exists(txt_include_path)) {
         resolved_path = txt_include_path;
@@ -761,19 +778,19 @@ void HandleInb(const std::string &label, const std::string &operand,
         std::filesystem::path source_path(context.current_file);
         std::filesystem::path source_dir = source_path.parent_path();
         std::filesystem::path relative_path = source_dir / txt_filename;
-        
+
         if (std::filesystem::exists(relative_path)) {
           resolved_path = relative_path;
           found = true;
         }
       }
-      
+
       // Try include paths
       if (!found && context.include_paths != nullptr) {
         for (const auto &include_dir : *context.include_paths) {
-          std::filesystem::path search_path = 
+          std::filesystem::path search_path =
               std::filesystem::path(include_dir) / txt_filename;
-          
+
           if (std::filesystem::exists(search_path)) {
             resolved_path = search_path;
             found = true;
@@ -781,7 +798,7 @@ void HandleInb(const std::string &label, const std::string &operand,
           }
         }
       }
-      
+
       // Try current working directory
       if (!found) {
         if (std::filesystem::exists(txt_filename)) {
@@ -791,13 +808,14 @@ void HandleInb(const std::string &label, const std::string &operand,
       }
     }
   }
-  
+
   if (!found) {
     std::string error_msg = ".INB cannot open file: " + include_filename;
     if (!tried_paths.empty()) {
       error_msg += " (searched: ";
       for (size_t i = 0; i < tried_paths.size(); ++i) {
-        if (i > 0) error_msg += ", ";
+        if (i > 0)
+          error_msg += ", ";
         error_msg += tried_paths[i];
       }
       error_msg += ")";
@@ -858,7 +876,8 @@ void HandleDummy(const std::string &label, const std::string &operand,
   (void)label;   // Label handled separately
   (void)operand; // Optional operand
 
-  // Enter dummy section mode - data directives will update address but not emit bytes
+  // Enter dummy section mode - data directives will update address but not emit
+  // bytes
   ValidateParser(context.parser_state);
   auto *parser = static_cast<ScmasmSyntaxParser *>(context.parser_state);
   parser->StartDummySection();
@@ -1072,7 +1091,7 @@ void HandleEp(const std::string &label, const std::string &operand,
     if (operand.empty()) {
       // End phase and get new real address
       uint32_t new_real_addr = parser->EndPhase(*context.current_address);
-      
+
       // Restore current address to real address + bytes emitted
       *context.current_address = new_real_addr;
       return;
@@ -1124,7 +1143,7 @@ void HandlePh(const std::string &label, const std::string &operand,
     // Not in phase, current_address IS the real address
     real_addr = *context.current_address;
   }
-  
+
   parser->StartPhase(real_addr, virtual_addr);
 
   // Set current address to virtual address

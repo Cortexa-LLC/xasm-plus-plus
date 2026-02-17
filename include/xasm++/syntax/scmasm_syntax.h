@@ -318,10 +318,12 @@ private:
   CpuPlugin *cpu_; ///< CPU plugin for opcode validation (nullable)
 
   // Include search paths
-  std::vector<std::string> include_paths_; ///< Directories to search for .INB files
+  std::vector<std::string>
+      include_paths_; ///< Directories to search for .INB files
 
   // Path mappings for virtual path substitution
-  std::map<std::string, std::string> path_mappings_; ///< Virtual→actual path mappings for .INB
+  std::map<std::string, std::string>
+      path_mappings_; ///< Virtual→actual path mappings for .INB
 
   // Symbol tracking for .SE (redefinable)
   std::unordered_map<std::string, bool>

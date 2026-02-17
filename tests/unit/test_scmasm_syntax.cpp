@@ -669,7 +669,8 @@ TEST_F(ScmasmSyntaxTest, HsDirectiveOddDigits) {
 
 TEST_F(ScmasmSyntaxTest, HsDirectiveWithComment) {
   // .HS should ignore semicolon comments
-  parser->Parse("        .HS 48656C6C6F    ; \"Hello\" in hex\n", section, symbols);
+  parser->Parse("        .HS 48656C6C6F    ; \"Hello\" in hex\n", section,
+                symbols);
 
   ASSERT_EQ(section.atoms.size(), 1u);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
@@ -707,7 +708,7 @@ TEST_F(ScmasmSyntaxTest, HsDirectiveWordBoundary) {
   ASSERT_EQ(section.atoms.size(), 1u);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
-  ASSERT_EQ(data_atom->data.size(), 2u);  // Only AB CD
+  ASSERT_EQ(data_atom->data.size(), 2u); // Only AB CD
   EXPECT_EQ(data_atom->data[0], 0xAB);
   EXPECT_EQ(data_atom->data[1], 0xCD);
 }
@@ -2064,12 +2065,12 @@ TEST_F(ScmasmSyntaxTest, INB_SearchesMultipleIncludePaths) {
   // Create multiple include directories
   std::filesystem::create_directories("test_inc1");
   std::filesystem::create_directories("test_inc2");
-  
+
   std::string file1 = "test_inc1/config1.s";
   std::ofstream f1(file1);
   f1 << "CONFIG1 .EQ $01\n";
   f1.close();
-  
+
   std::string file2 = "test_inc2/config2.s";
   std::ofstream f2(file2);
   f2 << "CONFIG2 .EQ $02\n";
@@ -2091,7 +2092,7 @@ TEST_F(ScmasmSyntaxTest, INB_SearchesMultipleIncludePaths) {
   // Verify both symbols defined
   EXPECT_TRUE(symbols.IsDefined("CONFIG1"));
   EXPECT_TRUE(symbols.IsDefined("CONFIG2"));
-  
+
   int64_t val1, val2;
   EXPECT_TRUE(symbols.Lookup("CONFIG1", val1));
   EXPECT_TRUE(symbols.Lookup("CONFIG2", val2));
@@ -2108,12 +2109,12 @@ TEST_F(ScmasmSyntaxTest, INB_IncludePathPriorityOrder) {
   // Create same filename in two directories
   std::filesystem::create_directories("test_priority1");
   std::filesystem::create_directories("test_priority2");
-  
+
   std::string file1 = "test_priority1/shared.s";
   std::ofstream f1(file1);
   f1 << "VALUE .EQ $AA\n";
   f1.close();
-  
+
   std::string file2 = "test_priority2/shared.s";
   std::ofstream f2(file2);
   f2 << "VALUE .EQ $BB\n";
@@ -2144,13 +2145,13 @@ TEST_F(ScmasmSyntaxTest, INB_RelativeToSourceBeforeIncludePaths) {
   // Test that relative-to-source-file takes priority over include paths
   std::filesystem::create_directories("test_source_dir");
   std::filesystem::create_directories("test_include_dir");
-  
+
   // File relative to source
   std::string source_rel_file = "test_source_dir/local.s";
   std::ofstream src_f(source_rel_file);
   src_f << "LOCAL .EQ $11\n";
   src_f.close();
-  
+
   // Same filename in include path
   std::string inc_file = "test_include_dir/local.s";
   std::ofstream inc_f(inc_file);
@@ -2188,9 +2189,10 @@ TEST_F(ScmasmSyntaxTest, INB_RelativeToSourceBeforeIncludePaths) {
 TEST_F(ScmasmSyntaxTest, INB_AbsolutePathIgnoresIncludePaths) {
   // Test that absolute paths are not affected by include paths
   std::filesystem::create_directories("test_abs_include");
-  
+
   // Create file with absolute path
-  std::filesystem::path abs_file = std::filesystem::absolute("test_abs_include/absolute.s");
+  std::filesystem::path abs_file =
+      std::filesystem::absolute("test_abs_include/absolute.s");
   std::ofstream f(abs_file);
   f << "ABSOLUTE .EQ $99\n";
   f.close();
@@ -2200,7 +2202,8 @@ TEST_F(ScmasmSyntaxTest, INB_AbsolutePathIgnoresIncludePaths) {
   parser->SetIncludePaths(include_paths);
 
   // Use absolute path in .INB
-  std::string source = "        .OR $0800\n        .INB " + abs_file.string() + "\n";
+  std::string source =
+      "        .OR $0800\n        .INB " + abs_file.string() + "\n";
 
   parser->Parse(source, section, symbols);
 
@@ -2255,11 +2258,11 @@ TEST_F(ScmasmSyntaxTest, INB_ErrorMessageShowsSearchedPaths) {
   try {
     parser->Parse(source, section, symbols);
     FAIL() << "Expected exception for missing file";
-  } catch (const std::runtime_error& e) {
+  } catch (const std::runtime_error &e) {
     std::string error_msg = e.what();
     // Error message should mention the searched paths
     EXPECT_TRUE(error_msg.find("nonexistent.s") != std::string::npos);
-    EXPECT_TRUE(error_msg.find("searched:") != std::string::npos || 
+    EXPECT_TRUE(error_msg.find("searched:") != std::string::npos ||
                 error_msg.find("cannot open") != std::string::npos);
   }
 }

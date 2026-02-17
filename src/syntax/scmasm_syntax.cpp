@@ -218,19 +218,23 @@ void ScmasmSyntaxParser::InitializeDirectiveRegistry() {
 
 void ScmasmSyntaxParser::SetCpu(CpuPlugin *cpu) { cpu_ = cpu; }
 
-void ScmasmSyntaxParser::SetIncludePaths(const std::vector<std::string> &paths) {
+void ScmasmSyntaxParser::SetIncludePaths(
+    const std::vector<std::string> &paths) {
   include_paths_ = paths;
 }
 
-void ScmasmSyntaxParser::SetPathMappings(const std::map<std::string, std::string> &mappings) {
+void ScmasmSyntaxParser::SetPathMappings(
+    const std::map<std::string, std::string> &mappings) {
   path_mappings_.clear();
-  
-  // Normalize all path mapping keys to use forward slashes for cross-platform compatibility
-  for (const auto& [virtual_path, actual_path] : mappings) {
+
+  // Normalize all path mapping keys to use forward slashes for cross-platform
+  // compatibility
+  for (const auto &[virtual_path, actual_path] : mappings) {
     // Manually replace backslashes with forward slashes
     std::string normalized_virtual = virtual_path;
-    std::replace(normalized_virtual.begin(), normalized_virtual.end(), '\\', '/');
-    
+    std::replace(normalized_virtual.begin(), normalized_virtual.end(), '\\',
+                 '/');
+
     path_mappings_[normalized_virtual] = actual_path;
   }
 }
@@ -832,12 +836,11 @@ uint32_t ScmasmSyntaxParser::EvaluateExpression(const std::string &str,
   // Transforms "*+4" → "32768+4" (if current_address_ = 0x8000)
   if (trimmed.length() > 1 && trimmed[0] == '*') {
     char op = trimmed[1];
-    if (op == '+' || op == '-' || op == '/' || op == '*' ||
-        op == '&' || op == '|' || op == '^' || 
-        op == '<' || op == '>') {
+    if (op == '+' || op == '-' || op == '/' || op == '*' || op == '&' ||
+        op == '|' || op == '^' || op == '<' || op == '>') {
       // Replace * with current address, then evaluate the expression
-      std::string expr_str = std::to_string(current_address_) + 
-                            trimmed.substr(1);
+      std::string expr_str =
+          std::to_string(current_address_) + trimmed.substr(1);
       auto expr = ParseExpression(expr_str, symbols);
       return static_cast<uint32_t>(expr->Evaluate(symbols));
     }
@@ -1171,9 +1174,7 @@ void ScmasmSyntaxParser::HandleEm() {
   current_macro_body_.clear();
 }
 
-std::string ScmasmSyntaxParser::GetCurrentFile() const {
-  return current_file_;
-}
+std::string ScmasmSyntaxParser::GetCurrentFile() const { return current_file_; }
 
 void ScmasmSyntaxParser::SetCurrentFile(const std::string &file) {
   current_file_ = file;
@@ -1423,21 +1424,13 @@ void ScmasmSyntaxParser::HandleLu(const std::string &operand, Section &section,
 // Dummy Section Management
 // ============================================================================
 
-bool ScmasmSyntaxParser::InDummySection() const {
-  return in_dummy_section_;
-}
+bool ScmasmSyntaxParser::InDummySection() const { return in_dummy_section_; }
 
-void ScmasmSyntaxParser::StartDummySection() {
-  in_dummy_section_ = true;
-}
+void ScmasmSyntaxParser::StartDummySection() { in_dummy_section_ = true; }
 
-void ScmasmSyntaxParser::EndDummySection() {
-  in_dummy_section_ = false;
-}
+void ScmasmSyntaxParser::EndDummySection() { in_dummy_section_ = false; }
 
-bool ScmasmSyntaxParser::InPhase() const {
-  return in_phase_;
-}
+bool ScmasmSyntaxParser::InPhase() const { return in_phase_; }
 
 void ScmasmSyntaxParser::StartPhase(uint32_t real_addr, uint32_t virtual_addr) {
   phase_real_addr_ = real_addr;
@@ -1448,15 +1441,15 @@ void ScmasmSyntaxParser::StartPhase(uint32_t real_addr, uint32_t virtual_addr) {
 uint32_t ScmasmSyntaxParser::EndPhase(uint32_t current_virtual) {
   // Calculate how many bytes were emitted during phase
   uint32_t phase_size = current_virtual - phase_virtual_addr_;
-  
+
   // Calculate new real address
   uint32_t new_real_addr = phase_real_addr_ + phase_size;
-  
+
   // Clear phase state
   in_phase_ = false;
   phase_virtual_addr_ = 0;
   phase_real_addr_ = 0;
-  
+
   return new_real_addr;
 }
 
@@ -1468,14 +1461,15 @@ uint32_t ScmasmSyntaxParser::GetPhaseRealAddress() const {
   return phase_real_addr_;
 }
 
-uint32_t ScmasmSyntaxParser::GetCurrentRealAddress(uint32_t current_virtual) const {
+uint32_t
+ScmasmSyntaxParser::GetCurrentRealAddress(uint32_t current_virtual) const {
   if (!in_phase_) {
-    return current_virtual;  // Not in phase, virtual == real
+    return current_virtual; // Not in phase, virtual == real
   }
-  
+
   // Calculate bytes emitted during phase
   uint32_t phase_size = current_virtual - phase_virtual_addr_;
-  
+
   // Real address = saved real address + bytes emitted
   return phase_real_addr_ + phase_size;
 }
