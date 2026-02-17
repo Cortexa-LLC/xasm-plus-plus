@@ -208,13 +208,37 @@ void HandleEq(const std::string &label, const std::string &operand,
   RequireOperand(operand, ".EQ", context);
 
   // Strip trailing comment text (Merlin allows implicit comments on .EQ lines)
-  // Example: "FPU.f  .EQ 180    float" where "float" is a comment
-  // Look for multiple consecutive spaces/tabs as comment separator
+  // Example: "FPU.f  .EQ 180    float" or "A2osX.HZ .EQ XX+00  5/6 for 50/60Hz"
+  // Look for whitespace followed by non-operator characters as comment separator
   std::string value_expr = operand;
-  size_t comment_pos = value_expr.find("  "); // Two consecutive spaces
-  if (comment_pos == std::string::npos) {
-    comment_pos = value_expr.find("\t\t"); // Or two consecutive tabs
+
+  // Find last position that's part of the expression (alphanumeric, operators, etc.)
+  // Then trim everything after the first whitespace following that
+  size_t comment_pos = std::string::npos;
+  bool in_expression = false;
+
+  for (size_t i = 0; i < value_expr.length(); ++i) {
+    char c = value_expr[i];
+    if (std::isalnum(c) || c == '_' || c == '.' || c == '$' || c == '+' || c == '-' || c == '*' || c == '/' || c == '>' || c == '<' || c == '#') {
+      in_expression = true;
+    } else if (in_expression && (c == ' ' || c == '\t')) {
+      // Found whitespace after expression content
+      // Check if next non-whitespace looks like it's NOT part of expression
+      size_t next_pos = i + 1;
+      while (next_pos < value_expr.length() && (value_expr[next_pos] == ' ' || value_expr[next_pos] == '\t')) {
+        next_pos++;
+      }
+      if (next_pos < value_expr.length()) {
+        char next = value_expr[next_pos];
+        // If next character is alphanumeric but not hex-like, it's probably a comment
+        if (std::isalnum(next) && !(std::isxdigit(next) && (i > 0 && value_expr[i-1] == '$'))) {
+          comment_pos = i;
+          break;
+        }
+      }
+    }
   }
+
   if (comment_pos != std::string::npos) {
     value_expr = value_expr.substr(0, comment_pos);
   }
