@@ -41,6 +41,7 @@ constexpr const char *PS = ".PS";       // Pascal string (length-prefixed)
 constexpr const char *INB = ".INB";     // Include binary file
 constexpr const char *LIST = ".LIST";   // Listing control
 constexpr const char *DUMMY = ".DUMMY"; // Dummy section
+constexpr const char *ED = ".ED";       // End dummy section
 constexpr const char *OP = ".OP";       // CPU operation mode
 
 // Phase 3: 100% Coverage Directives

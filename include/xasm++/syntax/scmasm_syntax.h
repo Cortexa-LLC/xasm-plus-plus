@@ -197,6 +197,30 @@ public:
    */
   void SetCurrentFile(const std::string &file);
 
+  /**
+   * @brief Check if parser is in dummy section mode
+   *
+   * When in dummy section mode (.DUMMY active), data directives
+   * update the address counter but don't emit bytes.
+   *
+   * @return true if in dummy section, false otherwise
+   */
+  bool InDummySection() const;
+
+  /**
+   * @brief Enter dummy section mode
+   *
+   * Called by .DUMMY directive handler.
+   */
+  void StartDummySection();
+
+  /**
+   * @brief Exit dummy section mode
+   *
+   * Called by .ED directive handler.
+   */
+  void EndDummySection();
+
 private:
   // Directive handler function signature (DirectiveContext pattern)
   using DirectiveHandler =
@@ -230,6 +254,9 @@ private:
   std::vector<std::string>
       current_macro_body_;     ///< Lines of macro being defined
   int macro_invocation_depth_; ///< Nesting depth for macro invocations
+
+  // Dummy section support (structure definitions)
+  bool in_dummy_section_; ///< Currently in dummy section (.DUMMY active)
 
   // Directive registry
   std::unordered_map<std::string, DirectiveHandler> directive_registry_;

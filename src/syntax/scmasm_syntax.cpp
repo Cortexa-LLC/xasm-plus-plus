@@ -142,7 +142,8 @@ bool SCMASMNumberParser::TryParse(const std::string &token,
 
 ScmasmSyntaxParser::ScmasmSyntaxParser()
     : current_address_(0), current_file_("<source>"), current_line_(0),
-      cpu_(nullptr), in_macro_definition_(false), macro_invocation_depth_(0) {
+      cpu_(nullptr), in_macro_definition_(false), macro_invocation_depth_(0),
+      in_dummy_section_(false) {
   InitializeDirectiveRegistry();
 }
 
@@ -190,6 +191,7 @@ void ScmasmSyntaxParser::InitializeDirectiveRegistry() {
   directive_registry_[INB] = scmasm::HandleInb;     // Include binary
   directive_registry_[LIST] = scmasm::HandleList;   // Listing control
   directive_registry_[DUMMY] = scmasm::HandleDummy; // Dummy section
+  directive_registry_[ED] = scmasm::HandleEd;       // End dummy section
   directive_registry_[OP] = scmasm::HandleOp;       // CPU operation mode
 
   // Phase 3: 100% Coverage Directives
@@ -1377,6 +1379,22 @@ void ScmasmSyntaxParser::HandleLu(const std::string &operand, Section &section,
 
   // Skip to after .ENDU
   line_idx = endu_line;
+}
+
+// ============================================================================
+// Dummy Section Management
+// ============================================================================
+
+bool ScmasmSyntaxParser::InDummySection() const {
+  return in_dummy_section_;
+}
+
+void ScmasmSyntaxParser::StartDummySection() {
+  in_dummy_section_ = true;
+}
+
+void ScmasmSyntaxParser::EndDummySection() {
+  in_dummy_section_ = false;
 }
 
 // ============================================================================

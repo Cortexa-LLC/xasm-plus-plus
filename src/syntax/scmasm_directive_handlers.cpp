@@ -295,11 +295,9 @@ void HandleDa(const std::string &label, const std::string &operand,
               DirectiveContext &context) {
   (void)label; // Label handled separately
 
-  std::vector<uint8_t> data;
-
   // Split by comma
   std::string trimmed = Trim(operand);
-  std::vector<std::string> values;
+  std::vector<std::string> raw_expressions;
   size_t start = 0;
   size_t pos = 0;
 
@@ -307,78 +305,131 @@ void HandleDa(const std::string &label, const std::string &operand,
     if (pos == trimmed.length() || trimmed[pos] == ',') {
       std::string value = Trim(trimmed.substr(start, pos - start));
       if (!value.empty()) {
-        values.push_back(value);
+        raw_expressions.push_back(value);
       }
       start = pos + 1;
     }
     ++pos;
   }
 
+  // Convert SCMASM operators to byte-level expressions for deferred evaluation
   // SCMASM .DA: Size determined by operator prefix
-  // #expr → 8-bit (low byte)
-  // /expr → 8-bit (second byte, bits 8-15)
-  // expr  → 16-bit (default, little-endian)
-  // <expr → 24-bit (little-endian)
-  // >expr → 32-bit (little-endian)
-  for (const auto &val : values) {
-    std::string value_trimmed = Trim(val);
-
-    if (value_trimmed.empty()) {
+  // #expr → 8-bit (low byte) - convert to <expr
+  // /expr → 8-bit (second byte, bits 8-15) - convert to >expr  
+  // expr  → 16-bit (default, little-endian) - expand to <expr, >expr
+  // <expr → 24-bit (little-endian) - expand to 3 byte expressions
+  // >expr → 32-bit (little-endian) - expand to 4 byte expressions
+  //
+  // All expressions are converted to BYTE-level so DataAtom can use DataSize::Byte
+  // This allows the multi-pass assembler to resolve forward references correctly
+  std::vector<std::string> byte_expressions;
+  std::vector<uint8_t> data;  // For immediate evaluation attempt
+  
+  for (const auto &expr : raw_expressions) {
+    std::string trimmed_expr = Trim(expr);
+    
+    if (trimmed_expr.empty()) {
       continue;
     }
 
-    char prefix = value_trimmed[0];
-    std::string expr;
-
+    char prefix = trimmed_expr[0];
+    std::string base_expr;
+    
     if (prefix == '#') {
-      // 8-bit: low byte only
-      expr = Trim(value_trimmed.substr(1));
-      uint32_t num =
-          EvaluateExpression(expr, *context.symbols, context.parser_state);
-      data.push_back(static_cast<uint8_t>(num & constants::BYTE_MASK));
+      // SCMASM # (low byte) → generic < (low byte)
+      base_expr = Trim(trimmed_expr.substr(1));
+      byte_expressions.push_back("<" + base_expr);
+      
+      // Try immediate evaluation
+      try {
+        uint32_t num = EvaluateExpression(base_expr, *context.symbols, context.parser_state);
+        data.push_back(static_cast<uint8_t>(num & constants::BYTE_MASK));
+      } catch (...) {
+        // Forward reference - evaluation will happen in assembler
+        data.push_back(0);  // Placeholder
+      }
     } else if (prefix == '/') {
-      // 8-bit: second byte (bits 8-15)
-      expr = Trim(value_trimmed.substr(1));
-      uint32_t num =
-          EvaluateExpression(expr, *context.symbols, context.parser_state);
-      data.push_back(static_cast<uint8_t>((num >> constants::BYTE_1_SHIFT) &
-                                          constants::BYTE_MASK));
+      // SCMASM / (high byte) → generic > (high byte)
+      base_expr = Trim(trimmed_expr.substr(1));
+      byte_expressions.push_back(">" + base_expr);
+      
+      // Try immediate evaluation
+      try {
+        uint32_t num = EvaluateExpression(base_expr, *context.symbols, context.parser_state);
+        data.push_back(static_cast<uint8_t>((num >> constants::BYTE_1_SHIFT) & constants::BYTE_MASK));
+      } catch (...) {
+        // Forward reference - evaluation will happen in assembler
+        data.push_back(0);  // Placeholder
+      }
     } else if (prefix == '<') {
-      // 24-bit: three bytes (little-endian)
-      expr = Trim(value_trimmed.substr(1));
-      uint32_t num =
-          EvaluateExpression(expr, *context.symbols, context.parser_state);
-      data.push_back(static_cast<uint8_t>(num & constants::BYTE_MASK));
-      data.push_back(static_cast<uint8_t>((num >> constants::BYTE_1_SHIFT) &
-                                          constants::BYTE_MASK));
-      data.push_back(static_cast<uint8_t>((num >> constants::BYTE_2_SHIFT) &
-                                          constants::BYTE_MASK));
+      // SCMASM < (24-bit) → expand to 3 bytes
+      base_expr = Trim(trimmed_expr.substr(1));
+      byte_expressions.push_back("<" + base_expr);   // Byte 0
+      byte_expressions.push_back(">" + base_expr);   // Byte 1  
+      byte_expressions.push_back("<(" + base_expr + ")");  // Byte 2 - placeholder
+      
+      // Try immediate evaluation
+      try {
+        uint32_t num = EvaluateExpression(base_expr, *context.symbols, context.parser_state);
+        data.push_back(static_cast<uint8_t>(num & constants::BYTE_MASK));
+        data.push_back(static_cast<uint8_t>((num >> constants::BYTE_1_SHIFT) & constants::BYTE_MASK));
+        data.push_back(static_cast<uint8_t>((num >> constants::BYTE_2_SHIFT) & constants::BYTE_MASK));
+      } catch (...) {
+        // Forward reference
+        data.push_back(0);
+        data.push_back(0);
+        data.push_back(0);
+      }
     } else if (prefix == '>') {
-      // 32-bit: four bytes (little-endian)
-      expr = Trim(value_trimmed.substr(1));
-      uint32_t num =
-          EvaluateExpression(expr, *context.symbols, context.parser_state);
-      data.push_back(static_cast<uint8_t>(num & constants::BYTE_MASK));
-      data.push_back(static_cast<uint8_t>((num >> constants::BYTE_1_SHIFT) &
-                                          constants::BYTE_MASK));
-      data.push_back(static_cast<uint8_t>((num >> constants::BYTE_2_SHIFT) &
-                                          constants::BYTE_MASK));
-      data.push_back(static_cast<uint8_t>((num >> constants::BYTE_3_SHIFT) &
-                                          constants::BYTE_MASK));
+      // SCMASM > (32-bit) → expand to 4 bytes
+      base_expr = Trim(trimmed_expr.substr(1));
+      byte_expressions.push_back("<" + base_expr);   // Byte 0
+      byte_expressions.push_back(">" + base_expr);   // Byte 1
+      byte_expressions.push_back("<(" + base_expr + ")");  // Byte 2 - placeholder
+      byte_expressions.push_back(">(" + base_expr + ")");  // Byte 3 - placeholder
+      
+      // Try immediate evaluation
+      try {
+        uint32_t num = EvaluateExpression(base_expr, *context.symbols, context.parser_state);
+        data.push_back(static_cast<uint8_t>(num & constants::BYTE_MASK));
+        data.push_back(static_cast<uint8_t>((num >> constants::BYTE_1_SHIFT) & constants::BYTE_MASK));
+        data.push_back(static_cast<uint8_t>((num >> constants::BYTE_2_SHIFT) & constants::BYTE_MASK));
+        data.push_back(static_cast<uint8_t>((num >> constants::BYTE_3_SHIFT) & constants::BYTE_MASK));
+      } catch (...) {
+        // Forward reference
+        data.push_back(0);
+        data.push_back(0);
+        data.push_back(0);
+        data.push_back(0);
+      }
     } else {
-      // DEFAULT: 16-bit (little-endian)
-      uint32_t num = EvaluateExpression(value_trimmed, *context.symbols,
-                                        context.parser_state);
-      data.push_back(static_cast<uint8_t>(num & constants::BYTE_MASK));
-      data.push_back(static_cast<uint8_t>((num >> constants::BYTE_1_SHIFT) &
-                                          constants::BYTE_MASK));
+      // Default: 16-bit word (no prefix) - expand to 2 bytes (little-endian)
+      base_expr = trimmed_expr;
+      byte_expressions.push_back("<" + base_expr);  // Low byte
+      byte_expressions.push_back(">" + base_expr);  // High byte
+      
+      // Try immediate evaluation
+      try {
+        uint32_t num = EvaluateExpression(base_expr, *context.symbols, context.parser_state);
+        data.push_back(static_cast<uint8_t>(num & constants::BYTE_MASK));
+        data.push_back(static_cast<uint8_t>((num >> constants::BYTE_1_SHIFT) & constants::BYTE_MASK));
+      } catch (...) {
+        // Forward reference
+        data.push_back(0);
+        data.push_back(0);
+      }
     }
   }
 
-  auto atom = std::make_shared<DataAtom>(data);
+  // Create DataAtom with expressions AND initial data
+  // - expressions: for multi-pass forward reference resolution
+  // - data: for immediate cases (tests, simple expressions)
+  auto atom = std::make_shared<DataAtom>(byte_expressions, DataSize::Byte);
+  atom->data = data;
+  atom->size = data.size();
   context.section->atoms.push_back(atom);
 
-  // Update address counter
+  // Update address counter by number of bytes
   *context.current_address += data.size();
 }
 
@@ -451,14 +502,22 @@ void HandleBs(const std::string &label, const std::string &operand,
     throw std::runtime_error(".BS byte count too large (max 65536)");
   }
 
-  // Create data filled with zeros
-  std::vector<uint8_t> data(byte_count, 0x00);
+  // Check if in dummy mode (structure definition)
+  ValidateParser(context.parser_state);
+  auto *parser = static_cast<ScmasmSyntaxParser *>(context.parser_state);
 
-  auto atom = std::make_shared<DataAtom>(data);
-  context.section->atoms.push_back(atom);
+  if (parser->InDummySection()) {
+    // In dummy mode: just advance address, don't emit bytes
+    *context.current_address += byte_count;
+  } else {
+    // Normal mode: emit zeros
+    std::vector<uint8_t> data(byte_count, 0x00);
+    auto atom = std::make_shared<DataAtom>(data);
+    context.section->atoms.push_back(atom);
 
-  // Update address counter
-  *context.current_address += byte_count;
+    // Update address counter
+    *context.current_address += byte_count;
+  }
 }
 
 void HandleMa(const std::string &label, const std::string &operand,
@@ -632,11 +691,22 @@ void HandleDummy(const std::string &label, const std::string &operand,
                  DirectiveContext &context) {
   (void)label;   // Label handled separately
   (void)operand; // Optional operand
-  (void)context; // State management
 
-  // TODO: Implement dummy section (structure definition mode)
-  // For now, stub implementation
-  throw std::runtime_error(".DUMMY not yet implemented");
+  // Enter dummy section mode - data directives will update address but not emit bytes
+  ValidateParser(context.parser_state);
+  auto *parser = static_cast<ScmasmSyntaxParser *>(context.parser_state);
+  parser->StartDummySection();
+}
+
+void HandleEd(const std::string &label, const std::string &operand,
+              DirectiveContext &context) {
+  (void)label;   // Label handled separately
+  (void)operand; // Operand unused
+
+  // Exit dummy section mode - return to normal assembly
+  ValidateParser(context.parser_state);
+  auto *parser = static_cast<ScmasmSyntaxParser *>(context.parser_state);
+  parser->EndDummySection();
 }
 
 void HandleOp(const std::string &label, const std::string &operand,

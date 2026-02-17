@@ -155,6 +155,15 @@ void HandleDummy(const std::string &label, const std::string &operand,
                  DirectiveContext &context);
 
 /**
+ * @brief Handle .ED directive (end dummy section)
+ * @param label Label (unused)
+ * @param operand Operand (unused)
+ * @param context Directive execution context
+ */
+void HandleEd(const std::string &label, const std::string &operand,
+              DirectiveContext &context);
+
+/**
  * @brief Handle .OP directive (CPU operation mode)
  * @param label Label (unused)
  * @param operand CPU type (6502, 65C02, 65816)

@@ -1856,3 +1856,126 @@ TEST_F(ScmasmSyntaxTest, CZ_EmptyString) {
   std::vector<uint8_t> expected = {0x00};
   EXPECT_EQ(data_atom->data, expected);
 }
+
+// ============================================================================
+// .DUMMY/.ED (Dummy Section for Structures) Directive Tests
+// ============================================================================
+
+TEST_F(ScmasmSyntaxTest, DUMMY_SuppressesByteEmission) {
+  // .DUMMY should suppress byte emission but still advance address
+  std::string source = R"(
+        .OR $0800
+        .DUMMY
+FIELD1  .BS 1
+FIELD2  .BS 2
+FIELD3  .BS 4
+        .ED
+DATA    .BS 3
+)";
+
+  parser->Parse(source, section, symbols);
+
+  // Should have OrgAtom and only one DataAtom (from DATA .BS 3)
+  ASSERT_EQ(section.atoms.size(), 2u);
+
+  auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[1]);
+  ASSERT_NE(data_atom, nullptr);
+
+  // Only DATA .BS 3 should emit bytes (3 bytes)
+  EXPECT_EQ(data_atom->data.size(), 3u);
+}
+
+TEST_F(ScmasmSyntaxTest, DUMMY_AdvancesAddress) {
+  // .DUMMY should advance address even though no bytes emitted
+  std::string source = R"(
+        .OR $0800
+START   .EQ *
+        .DUMMY
+FIELD1  .BS 1
+FIELD2  .BS 2
+FIELD3  .BS 4
+        .ED
+END     .EQ *
+)";
+
+  parser->Parse(source, section, symbols);
+
+  // Check that START and END are defined
+  int64_t start_addr, end_addr;
+  ASSERT_TRUE(symbols.Lookup("START", start_addr));
+  ASSERT_TRUE(symbols.Lookup("END", end_addr));
+
+  // START should be $0800, END should be $0807 (7 bytes advanced)
+  EXPECT_EQ(start_addr, 0x0800);
+  EXPECT_EQ(end_addr, 0x0807);
+}
+
+TEST_F(ScmasmSyntaxTest, DUMMY_WithLabels) {
+  // Labels defined in .DUMMY section should have correct addresses
+  std::string source = R"(
+        .OR $0800
+        .DUMMY
+STRUCT  .EQ *
+FIELD1  .BS 1
+FIELD2  .BS 2
+FIELD3  .BS 4
+        .ED
+)";
+
+  parser->Parse(source, section, symbols);
+
+  // Check that labels have correct addresses
+  int64_t struct_addr, field1_addr, field2_addr, field3_addr;
+  ASSERT_TRUE(symbols.Lookup("STRUCT", struct_addr));
+  ASSERT_TRUE(symbols.Lookup("FIELD1", field1_addr));
+  ASSERT_TRUE(symbols.Lookup("FIELD2", field2_addr));
+  ASSERT_TRUE(symbols.Lookup("FIELD3", field3_addr));
+
+  // Verify addresses increment correctly
+  EXPECT_EQ(struct_addr, 0x0800);
+  EXPECT_EQ(field1_addr, 0x0800);
+  EXPECT_EQ(field2_addr, 0x0801);
+  EXPECT_EQ(field3_addr, 0x0803);
+}
+
+TEST_F(ScmasmSyntaxTest, DUMMY_ReturnsToNormalMode) {
+  // .ED should return to normal byte emission
+  std::string source = R"(
+        .OR $0800
+        .BS 2
+        .DUMMY
+        .BS 4
+        .ED
+        .BS 3
+)";
+
+  parser->Parse(source, section, symbols);
+
+  // Should have OrgAtom + 2 DataAtoms (first .BS 2 and last .BS 3)
+  ASSERT_EQ(section.atoms.size(), 3u);
+
+  auto data_atom1 = std::dynamic_pointer_cast<DataAtom>(section.atoms[1]);
+  auto data_atom2 = std::dynamic_pointer_cast<DataAtom>(section.atoms[2]);
+
+  ASSERT_NE(data_atom1, nullptr);
+  ASSERT_NE(data_atom2, nullptr);
+
+  EXPECT_EQ(data_atom1->data.size(), 2u); // First .BS 2
+  EXPECT_EQ(data_atom2->data.size(), 3u); // Last .BS 3
+}
+
+TEST_F(ScmasmSyntaxTest, DUMMY_NestedNotSupported) {
+  // Nested .DUMMY should error or behave correctly (implementation-defined)
+  std::string source = R"(
+        .OR $0800
+        .DUMMY
+        .DUMMY
+        .BS 1
+        .ED
+        .ED
+)";
+
+  // This test documents behavior - may throw or handle gracefully
+  // For now, we'll just verify it doesn't crash
+  EXPECT_NO_THROW(parser->Parse(source, section, symbols));
+}
