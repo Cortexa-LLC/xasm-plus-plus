@@ -1131,6 +1131,14 @@ void ScmasmSyntaxParser::HandleEm() {
   current_macro_body_.clear();
 }
 
+std::string ScmasmSyntaxParser::GetCurrentFile() const {
+  return current_file_;
+}
+
+void ScmasmSyntaxParser::SetCurrentFile(const std::string &file) {
+  current_file_ = file;
+}
+
 void ScmasmSyntaxParser::InvokeMacro(const std::string &name,
                                      const std::vector<std::string> &params,
                                      Section &section,

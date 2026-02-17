@@ -5,6 +5,7 @@
 #include "xasm++/section.h"
 #include "xasm++/symbol.h"
 #include "xasm++/syntax/scmasm_syntax.h"
+#include <filesystem>
 #include <fstream>
 #include <gtest/gtest.h>
 
@@ -169,6 +170,44 @@ TEST_F(ScmasmSyntaxTest, EqWithExpression) {
   int64_t value;
   ASSERT_TRUE(symbols.Lookup("OFFSET", value));
   EXPECT_EQ(value, 320);
+}
+
+TEST_F(ScmasmSyntaxTest, EqWithTrailingComment) {
+  // Merlin allows trailing text on .EQ lines as implicit comments
+  // Example: "FPU.f  .EQ 180    float" where "float" is a comment
+  parser->Parse("FPU.f .EQ 180    float\n", section, symbols);
+
+  int64_t value;
+  ASSERT_TRUE(symbols.Lookup("FPU.f", value));
+  EXPECT_EQ(value, 180);
+}
+
+TEST_F(ScmasmSyntaxTest, EqWithTrailingCommentMultipleSpaces) {
+  // Multiple spaces indicate comment separator
+  parser->Parse("VALUE .EQ $FF  description here\n", section, symbols);
+
+  int64_t value;
+  ASSERT_TRUE(symbols.Lookup("VALUE", value));
+  EXPECT_EQ(value, 0xFF);
+}
+
+TEST_F(ScmasmSyntaxTest, EqWithSemicolonComment) {
+  // Semicolon comments should still work (already stripped by parser)
+  parser->Parse("CONST .EQ 42 ; this is a comment\n", section, symbols);
+
+  int64_t value;
+  ASSERT_TRUE(symbols.Lookup("CONST", value));
+  EXPECT_EQ(value, 42);
+}
+
+TEST_F(ScmasmSyntaxTest, EqWithExpressionAndComment) {
+  // Expression with trailing comment
+  parser->Parse("BASE .EQ $1000\n", section, symbols);
+  parser->Parse("ADDR .EQ BASE+$100  target address\n", section, symbols);
+
+  int64_t value;
+  ASSERT_TRUE(symbols.Lookup("ADDR", value));
+  EXPECT_EQ(value, 0x1100);
 }
 
 // ============================================================================
@@ -1441,29 +1480,34 @@ TEST_F(ScmasmSyntaxTest, PS_NoOperandError) {
 // ============================================================================
 
 TEST_F(ScmasmSyntaxTest, INB_IncludesExistingFile) {
-  // Create a temp binary file for testing
-  std::string test_file = "test_binary.bin";
-  std::ofstream out(test_file, std::ios::binary);
-  std::vector<uint8_t> test_data = {0x01, 0x02, 0x03, 0x04, 0x05};
-  out.write(reinterpret_cast<const char *>(test_data.data()), test_data.size());
+  // Create a temp assembly source file for testing
+  std::string test_file = "test_include.s";
+  std::ofstream out(test_file);
+  out << "        LDA #$42\n";
+  out << "        STA $C000\n";
   out.close();
 
   std::string source = R"(
         .OR $0800
-        .INB test_binary.bin
+START   .INB test_include.s
+        RTS
 )";
 
   parser->Parse(source, section, symbols);
 
-  // Should have OrgAtom and DataAtom
-  ASSERT_GE(section.atoms.size(), 2u);
+  // Should have OrgAtom, LabelAtom, InstructionAtom(s), InstructionAtom(RTS)
+  ASSERT_GE(section.atoms.size(), 4u);
 
-  // Get DataAtom
-  auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[1]);
-  ASSERT_NE(data_atom, nullptr);
-
-  // Should contain exact binary data
-  EXPECT_EQ(data_atom->data, test_data);
+  // Verify it parsed source (not binary data)
+  // Should contain instruction atoms, not data atoms
+  bool has_instruction = false;
+  for (const auto &atom : section.atoms) {
+    if (std::dynamic_pointer_cast<InstructionAtom>(atom)) {
+      has_instruction = true;
+      break;
+    }
+  }
+  EXPECT_TRUE(has_instruction);
 
   // Cleanup
   std::remove(test_file.c_str());
@@ -1478,28 +1522,61 @@ TEST_F(ScmasmSyntaxTest, INB_MissingFileError) {
   EXPECT_THROW(parser->Parse(source, section, symbols), std::runtime_error);
 }
 
+TEST_F(ScmasmSyntaxTest, INB_RelativePathResolution) {
+  // Create subdirectory and include file
+  std::filesystem::create_directory("test_subdir");
+  std::string include_file = "test_subdir/included.s";
+  std::ofstream inc(include_file);
+  inc << "INCLUDED .EQ $42\n";
+  inc.close();
+
+  // Create main file that includes relative path
+  std::string main_file = "test_subdir/main.s";
+  std::ofstream main(main_file);
+  main << "        .OR $0800\n";
+  main << "        .INB included.s\n";
+  main << "        LDA #INCLUDED\n";
+  main.close();
+
+  // Read and parse main file
+  std::ifstream in(main_file);
+  std::string source((std::istreambuf_iterator<char>(in)),
+                     std::istreambuf_iterator<char>());
+
+  // Set current file to main.s so relative includes work
+  parser->SetCurrentFile(main_file);
+
+  parser->Parse(source, section, symbols);
+
+  // Should have parsed included file and defined INCLUDED symbol
+  EXPECT_TRUE(symbols.IsDefined("INCLUDED"));
+  int64_t included_value;
+  EXPECT_TRUE(symbols.Lookup("INCLUDED", included_value));
+  EXPECT_EQ(included_value, 0x42);
+
+  // Cleanup
+  std::remove(include_file.c_str());
+  std::remove(main_file.c_str());
+  std::filesystem::remove("test_subdir");
+}
+
 TEST_F(ScmasmSyntaxTest, INB_EmptyFile) {
-  // Create empty file
-  std::string test_file = "empty.bin";
-  std::ofstream out(test_file, std::ios::binary);
+  // Create empty source file (just comments/whitespace)
+  std::string test_file = "empty.s";
+  std::ofstream out(test_file);
+  out << "; Empty include file\n";
+  out << "\n";
   out.close();
 
   std::string source = R"(
         .OR $0800
-        .INB empty.bin
+        .INB empty.s
 )";
 
   parser->Parse(source, section, symbols);
 
-  // Should have OrgAtom and DataAtom
-  ASSERT_GE(section.atoms.size(), 2u);
-
-  // Get DataAtom
-  auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[1]);
-  ASSERT_NE(data_atom, nullptr);
-
-  // Should be empty
-  EXPECT_TRUE(data_atom->data.empty());
+  // Should have just OrgAtom (empty file contributes nothing)
+  ASSERT_GE(section.atoms.size(), 1u);
 
   // Cleanup
   std::remove(test_file.c_str());

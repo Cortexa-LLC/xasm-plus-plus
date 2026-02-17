@@ -19,6 +19,7 @@
 #include "xasm++/syntax/scmasm_syntax.h"
 #include <algorithm>
 #include <cctype>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -206,9 +207,21 @@ void HandleEq(const std::string &label, const std::string &operand,
               DirectiveContext &context) {
   RequireOperand(operand, ".EQ", context);
 
+  // Strip trailing comment text (Merlin allows implicit comments on .EQ lines)
+  // Example: "FPU.f  .EQ 180    float" where "float" is a comment
+  // Look for multiple consecutive spaces/tabs as comment separator
+  std::string value_expr = operand;
+  size_t comment_pos = value_expr.find("  "); // Two consecutive spaces
+  if (comment_pos == std::string::npos) {
+    comment_pos = value_expr.find("\t\t"); // Or two consecutive tabs
+  }
+  if (comment_pos != std::string::npos) {
+    value_expr = value_expr.substr(0, comment_pos);
+  }
+
   // Evaluate value expression
   uint32_t value =
-      EvaluateExpression(operand, *context.symbols, context.parser_state);
+      EvaluateExpression(value_expr, *context.symbols, context.parser_state);
 
   // Define symbol (immutable) - .EQ creates Equate type
   auto expr = std::make_shared<LiteralExpr>(value);
@@ -517,39 +530,91 @@ void HandleInb(const std::string &label, const std::string &operand,
                DirectiveContext &context) {
   (void)label; // Label handled separately
 
-  // .INB - Include Binary File
-  // Reads entire binary file and emits its bytes at current position
+  // .INB - Include Source File
+  // Parses assembly source file and includes it at current position
   // Used extensively in A2oSX for modular source file includes
+  //
+  // Path resolution:
+  // 1. If absolute path → use as-is
+  // 2. Try relative to source file directory
+  // 3. Try relative to current working directory (fallback)
 
   RequireOperand(operand, ".INB", context);
 
   // Trim whitespace from filename
-  std::string filename = Trim(operand);
+  std::string include_filename = Trim(operand);
 
-  // Open file in binary mode
-  std::ifstream file(filename, std::ios::binary | std::ios::ate);
-  if (!file.is_open()) {
-    throw std::runtime_error(".INB cannot open file: " + filename);
-  }
+  // Resolve include path
+  std::filesystem::path resolved_path;
+  bool found = false;
 
-  // Get file size
-  std::streamsize size = file.tellg();
-  file.seekg(0, std::ios::beg);
+  // Case 1: Absolute path
+  std::filesystem::path include_path(include_filename);
+  if (include_path.is_absolute()) {
+    if (std::filesystem::exists(include_path)) {
+      resolved_path = include_path;
+      found = true;
+    }
+  } else {
+    // Case 2: Relative to source file directory
+    if (!context.current_file.empty()) {
+      std::filesystem::path source_path(context.current_file);
+      std::filesystem::path source_dir = source_path.parent_path();
+      std::filesystem::path relative_path = source_dir / include_filename;
 
-  // Read entire file into vector
-  std::vector<uint8_t> buffer(size);
-  if (size > 0) {
-    if (!file.read(reinterpret_cast<char *>(buffer.data()), size)) {
-      throw std::runtime_error(".INB error reading file: " + filename);
+      if (std::filesystem::exists(relative_path)) {
+        resolved_path = relative_path;
+        found = true;
+      }
+    }
+
+    // Case 3: Relative to current working directory (fallback)
+    if (!found && std::filesystem::exists(include_filename)) {
+      resolved_path = include_filename;
+      found = true;
     }
   }
 
-  // Emit binary data as DataAtom
-  auto atom = std::make_shared<DataAtom>(buffer);
-  context.section->atoms.push_back(atom);
+  if (!found) {
+    throw std::runtime_error(".INB cannot open file: " + include_filename +
+                             " (tried: " + include_filename + ")");
+  }
 
-  // Update address counter
-  *context.current_address += buffer.size();
+  // Read included file as text
+  std::ifstream file(resolved_path);
+  if (!file.is_open()) {
+    throw std::runtime_error(".INB cannot open file: " +
+                             resolved_path.string());
+  }
+
+  // Read entire file content
+  std::stringstream buffer;
+  buffer << file.rdbuf();
+  std::string source_content = buffer.str();
+
+  // Get parser from context
+  auto *parser = static_cast<ScmasmSyntaxParser *>(context.parser_state);
+  if (!parser) {
+    throw std::runtime_error(".INB: parser_state is null");
+  }
+
+  // Save current file for restoration
+  std::string previous_file = parser->GetCurrentFile();
+
+  // Update current file to included file (for nested includes)
+  parser->SetCurrentFile(resolved_path.string());
+
+  try {
+    // Parse included source recursively
+    parser->Parse(source_content, *context.section, *context.symbols);
+
+    // Restore previous file
+    parser->SetCurrentFile(previous_file);
+  } catch (...) {
+    // Restore previous file even on error
+    parser->SetCurrentFile(previous_file);
+    throw;
+  }
 }
 
 void HandleList(const std::string &label, const std::string &operand,

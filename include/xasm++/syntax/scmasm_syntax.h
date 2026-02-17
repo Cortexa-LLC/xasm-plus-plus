@@ -179,6 +179,24 @@ public:
    */
   void HandleEm();
 
+  /**
+   * @brief Get current source file path
+   *
+   * Used by .INB directive to resolve relative includes.
+   *
+   * @return Current source file path
+   */
+  std::string GetCurrentFile() const;
+
+  /**
+   * @brief Set current source file path
+   *
+   * Used by .INB directive to update context for nested includes.
+   *
+   * @param file New source file path
+   */
+  void SetCurrentFile(const std::string &file);
+
 private:
   // Directive handler function signature (DirectiveContext pattern)
   using DirectiveHandler =
