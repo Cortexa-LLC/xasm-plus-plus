@@ -1,0 +1,82 @@
+# .claudeignore - Exclude files from AI agent context to prevent token bloat
+#
+# Syntax: Same as .gitignore (glob patterns)
+# Purpose: Prevent large files from being loaded into Claude/AI agent context
+
+# Build artifacts
+build/
+build_coverage/
+cmake-build-*/
+out/
+Testing/
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.dylib
+*.dll
+
+# A2A Agent execution logs (can be 2MB+ per execution)
+.beads/tasks/*/execution.log
+.beads/tasks/*/agent-prompt.txt
+.beads/tasks/*/00-metadata.json
+
+# Website/Documentation build artifacts
+docs/website/node_modules/
+docs/website/package-lock.json
+docs/website/build/
+docs/website/.docusaurus/
+docs/html/
+docs/latex/
+docs/doxygen_sqlite3.db
+
+# Test artifacts
+tests/integration/binary_compat/*.bin
+tests/e2e/**/build/
+test.sym
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Coverage reports
+coverage/
+htmlcov/
+*.gcov
+*.gcda
+*.gcno
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+
+# Git internals
+.git/
+
+# Large binary files
+*.nib
+*.dsk
+*.do
+*.po
+*.2mg
+*.img
+*.iso
+
+# Python cache (if any)
+__pycache__/
+*.pyc
+*.pyo
+
+# Node modules (anywhere in tree)
+**/node_modules/
+**/package-lock.json
+
+# SonarQube
+.scannerwork/
+.sonar-cache/
