@@ -16,7 +16,7 @@ Testing/
 *.exe
 /xasm++
 bin/xasm++
-test_*
+/test_*
 placeholder_test
 
 # CMake cache
