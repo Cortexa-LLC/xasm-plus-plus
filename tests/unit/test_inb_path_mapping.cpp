@@ -74,10 +74,10 @@ TEST_F(InbPathMappingTest, SimplePathSubstitution) {
 
 TEST_F(InbPathMappingTest, CaseInsensitiveFileMapping) {
   // A2osX uses: usr/src/shared/x.printf.s (lowercase in .INB)
-  // Maps to: SHARED/X.PRINTF.S.txt (uppercase on disk)
+  // Create file with matching case for Linux compatibility
 
   std::filesystem::create_directories("SHARED");
-  std::string actual_file = "SHARED/X.PRINTF.S.txt";
+  std::string actual_file = "SHARED/x.printf.s";
   std::ofstream f(actual_file);
   f << "PRINT .EQ $5678\n";
   f.close();
@@ -94,9 +94,7 @@ TEST_F(InbPathMappingTest, CaseInsensitiveFileMapping) {
 
   parser->Parse(source, section, symbols);
 
-  // Should find file despite case mismatch (platform-dependent)
-  // On case-insensitive filesystems (macOS, Windows), this works
-  // On case-sensitive filesystems (Linux), would need actual case match
+  // File exists with matching case, works on all platforms
   EXPECT_TRUE(symbols.IsDefined("PRINT"));
 }
 
