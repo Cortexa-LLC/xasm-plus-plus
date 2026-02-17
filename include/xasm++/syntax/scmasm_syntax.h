@@ -221,6 +221,61 @@ public:
    */
   void EndDummySection();
 
+  /**
+   * @brief Check if parser is in phase assembly mode
+   *
+   * When in phase assembly mode (.PH active), labels are defined
+   * at virtual addresses while code is emitted at real addresses.
+   *
+   * @return true if in phase assembly, false otherwise
+   */
+  bool InPhase() const;
+
+  /**
+   * @brief Start phase assembly
+   *
+   * Called by .PH directive handler.
+   *
+   * @param real_addr Real address where code is stored
+   * @param virtual_addr Virtual address for labels
+   */
+  void StartPhase(uint32_t real_addr, uint32_t virtual_addr);
+
+  /**
+   * @brief End phase assembly
+   *
+   * Called by .EP directive handler (when used without operand).
+   *
+   * @param current_virtual Current virtual address (for size calculation)
+   * @return New real address after phase
+   */
+  uint32_t EndPhase(uint32_t current_virtual);
+
+  /**
+   * @brief Get phase virtual address
+   *
+   * @return Virtual address set by .PH directive
+   */
+  uint32_t GetPhaseVirtualAddress() const;
+
+  /**
+   * @brief Get phase real address
+   *
+   * @return Real address where phase code is stored
+   */
+  uint32_t GetPhaseRealAddress() const;
+
+  /**
+   * @brief Calculate current real address from virtual address
+   *
+   * When in phase assembly, calculate the real address corresponding
+   * to the given virtual address.
+   *
+   * @param current_virtual Current virtual address
+   * @return Corresponding real address
+   */
+  uint32_t GetCurrentRealAddress(uint32_t current_virtual) const;
+
 private:
   // Directive handler function signature (DirectiveContext pattern)
   using DirectiveHandler =
@@ -257,6 +312,11 @@ private:
 
   // Dummy section support (structure definitions)
   bool in_dummy_section_; ///< Currently in dummy section (.DUMMY active)
+
+  // Phase assembly support (.PH/.EP)
+  bool in_phase_;               ///< Currently in phase assembly
+  uint32_t phase_virtual_addr_; ///< Virtual address for phase
+  uint32_t phase_real_addr_;    ///< Real address where code is stored
 
   // Directive registry
   std::unordered_map<std::string, DirectiveHandler> directive_registry_;

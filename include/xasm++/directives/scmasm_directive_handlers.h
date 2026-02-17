@@ -204,12 +204,21 @@ void HandleTf(const std::string &label, const std::string &operand,
               DirectiveContext &context);
 
 /**
- * @brief Handle .EP directive (entry point)
+ * @brief Handle .EP directive (entry point / end phase)
  * @param label Label (unused)
- * @param operand Entry address expression
+ * @param operand Entry address expression (optional for phase end)
  * @param context Directive execution context
  */
 void HandleEp(const std::string &label, const std::string &operand,
+              DirectiveContext &context);
+
+/**
+ * @brief Handle .PH directive (phase assembly)
+ * @param label Label (unused)
+ * @param operand Virtual address expression
+ * @param context Directive execution context
+ */
+void HandlePh(const std::string &label, const std::string &operand,
               DirectiveContext &context);
 
 /**

@@ -15,6 +15,7 @@ namespace directives {
 
 // Origin and addressing
 constexpr const char *OR = ".OR";
+constexpr const char *PH = ".PH"; // Phase assembly
 
 // Symbol definition
 constexpr const char *EQ = ".EQ";

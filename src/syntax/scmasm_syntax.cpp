@@ -143,7 +143,8 @@ bool SCMASMNumberParser::TryParse(const std::string &token,
 ScmasmSyntaxParser::ScmasmSyntaxParser()
     : current_address_(0), current_file_("<source>"), current_line_(0),
       cpu_(nullptr), in_macro_definition_(false), macro_invocation_depth_(0),
-      in_dummy_section_(false) {
+      in_dummy_section_(false), in_phase_(false), phase_virtual_addr_(0),
+      phase_real_addr_(0) {
   InitializeDirectiveRegistry();
 }
 
@@ -198,7 +199,8 @@ void ScmasmSyntaxParser::InitializeDirectiveRegistry() {
   directive_registry_[CS] = scmasm::HandleCs; // C-string with escapes
   directive_registry_[CZ] = scmasm::HandleCz; // C-string zero-terminated
   directive_registry_[TF] = scmasm::HandleTf; // Text file/title metadata
-  directive_registry_[EP] = scmasm::HandleEp; // Entry point
+  directive_registry_[EP] = scmasm::HandleEp; // Entry point / end phase
+  directive_registry_[PH] = scmasm::HandlePh; // Phase assembly
   directive_registry_[HX] = scmasm::HandleHx; // Hex nibble storage
   directive_registry_[TA] = scmasm::HandleTa; // Target address (no-op)
   directive_registry_[AC] = scmasm::HandleAc; // ASCII with prefix
@@ -1395,6 +1397,51 @@ void ScmasmSyntaxParser::StartDummySection() {
 
 void ScmasmSyntaxParser::EndDummySection() {
   in_dummy_section_ = false;
+}
+
+bool ScmasmSyntaxParser::InPhase() const {
+  return in_phase_;
+}
+
+void ScmasmSyntaxParser::StartPhase(uint32_t real_addr, uint32_t virtual_addr) {
+  phase_real_addr_ = real_addr;
+  phase_virtual_addr_ = virtual_addr;
+  in_phase_ = true;
+}
+
+uint32_t ScmasmSyntaxParser::EndPhase(uint32_t current_virtual) {
+  // Calculate how many bytes were emitted during phase
+  uint32_t phase_size = current_virtual - phase_virtual_addr_;
+  
+  // Calculate new real address
+  uint32_t new_real_addr = phase_real_addr_ + phase_size;
+  
+  // Clear phase state
+  in_phase_ = false;
+  phase_virtual_addr_ = 0;
+  phase_real_addr_ = 0;
+  
+  return new_real_addr;
+}
+
+uint32_t ScmasmSyntaxParser::GetPhaseVirtualAddress() const {
+  return phase_virtual_addr_;
+}
+
+uint32_t ScmasmSyntaxParser::GetPhaseRealAddress() const {
+  return phase_real_addr_;
+}
+
+uint32_t ScmasmSyntaxParser::GetCurrentRealAddress(uint32_t current_virtual) const {
+  if (!in_phase_) {
+    return current_virtual;  // Not in phase, virtual == real
+  }
+  
+  // Calculate bytes emitted during phase
+  uint32_t phase_size = current_virtual - phase_virtual_addr_;
+  
+  // Real address = saved real address + bytes emitted
+  return phase_real_addr_ + phase_size;
 }
 
 // ============================================================================

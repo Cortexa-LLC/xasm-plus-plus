@@ -684,3 +684,17 @@ target_link_libraries(test_directive_error_utils
 
 gtest_discover_tests(test_directive_error_utils)
 
+# Phase directives tests (.PH/.EP for relocatable code)
+add_executable(test_phase_directives
+    test_phase_directives.cpp
+)
+
+target_link_libraries(test_phase_directives
+    xasm_syntax
+    xasm_core
+    gtest_main
+    gtest
+)
+
+gtest_discover_tests(test_phase_directives)
+

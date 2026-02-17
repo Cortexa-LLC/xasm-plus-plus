@@ -667,6 +667,51 @@ TEST_F(ScmasmSyntaxTest, HsDirectiveOddDigits) {
                std::runtime_error);
 }
 
+TEST_F(ScmasmSyntaxTest, HsDirectiveWithComment) {
+  // .HS should ignore semicolon comments
+  parser->Parse("        .HS 48656C6C6F    ; \"Hello\" in hex\n", section, symbols);
+
+  ASSERT_EQ(section.atoms.size(), 1u);
+  auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
+  ASSERT_NE(data_atom, nullptr);
+  ASSERT_EQ(data_atom->data.size(), 5u);
+  EXPECT_EQ(data_atom->data[0], 0x48); // 'H'
+  EXPECT_EQ(data_atom->data[1], 0x65); // 'e'
+  EXPECT_EQ(data_atom->data[2], 0x6C); // 'l'
+  EXPECT_EQ(data_atom->data[3], 0x6C); // 'l'
+  EXPECT_EQ(data_atom->data[4], 0x6F); // 'o'
+}
+
+TEST_F(ScmasmSyntaxTest, HsDirectiveInlineComment) {
+  // .HS should ignore text after hex data (like .EQ does)
+  // Example: .HS DEADBEEF some inline comment
+  parser->Parse("        .HS DEADBEEF some inline comment\n", section, symbols);
+
+  ASSERT_EQ(section.atoms.size(), 1u);
+  auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
+  ASSERT_NE(data_atom, nullptr);
+  ASSERT_EQ(data_atom->data.size(), 4u);
+  EXPECT_EQ(data_atom->data[0], 0xDE);
+  EXPECT_EQ(data_atom->data[1], 0xAD);
+  EXPECT_EQ(data_atom->data[2], 0xBE);
+  EXPECT_EQ(data_atom->data[3], 0xEF);
+}
+
+TEST_F(ScmasmSyntaxTest, HsDirectiveWordBoundary) {
+  // .HS should stop at first WORD containing non-hex character
+  // NOT at first individual non-hex character
+  // Example: .HS AB CD EFG should process AB CD (2 bytes)
+  // not AB CD EF (3 bytes - which would include hex from "EFG")
+  parser->Parse("        .HS AB CD EFG comment\n", section, symbols);
+
+  ASSERT_EQ(section.atoms.size(), 1u);
+  auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
+  ASSERT_NE(data_atom, nullptr);
+  ASSERT_EQ(data_atom->data.size(), 2u);  // Only AB CD
+  EXPECT_EQ(data_atom->data[0], 0xAB);
+  EXPECT_EQ(data_atom->data[1], 0xCD);
+}
+
 // ============================================================================
 // .BS Directive Tests (Block Storage)
 // ============================================================================

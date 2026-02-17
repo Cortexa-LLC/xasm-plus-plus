@@ -436,15 +436,44 @@ void HandleHs(const std::string &label, const std::string &operand,
   std::vector<uint8_t> data;
   std::string trimmed = Trim(operand);
 
-  // Remove all whitespace
+  // Extract hex digits, stopping at first WORD containing non-hex character
+  // This allows inline comments without semicolons, like .EQ directive
+  // Examples:
+  //   .HS 01 02 03        -> 3 bytes (spaces between hex OK)
+  //   .HS DEADBEEF foo    -> 4 bytes (text after hex ignored)
+  //   .HS AB CD EFG       -> 2 bytes (stops at word "EFG" containing 'G')
   std::string hex_digits;
-  for (char c : trimmed) {
-    if (!std::isspace(c)) {
-      if (!std::isxdigit(c)) {
-        throw std::runtime_error("Invalid hex digit in .HS: " +
-                                 std::string(1, c));
+  size_t i = 0;
+  while (i < trimmed.length()) {
+    // Skip whitespace
+    while (i < trimmed.length() && std::isspace(trimmed[i])) {
+      i++;
+    }
+    
+    // Find end of current word
+    size_t word_start = i;
+    while (i < trimmed.length() && !std::isspace(trimmed[i])) {
+      i++;
+    }
+    
+    if (i > word_start) {
+      std::string word = trimmed.substr(word_start, i - word_start);
+      
+      // Check if ALL characters in word are hex digits
+      bool all_hex = true;
+      for (char c : word) {
+        if (!std::isxdigit(c)) {
+          all_hex = false;
+          break;
+        }
       }
-      hex_digits += c;
+      
+      if (all_hex) {
+        hex_digits += word;
+      } else {
+        // Stop at first word with non-hex character
+        break;
+      }
     }
   }
 
@@ -891,10 +920,34 @@ void HandleTf(const std::string &label, const std::string &operand,
 
 void HandleEp(const std::string &label, const std::string &operand,
               DirectiveContext &context) {
-  (void)label;   // Label handled separately
-  (void)context; // State not needed for validation
+  (void)label; // Label handled separately
 
-  RequireOperand(operand, ".EP", context);
+  // Cast parser state to access phase tracking
+  auto *parser = static_cast<ScmasmSyntaxParser *>(context.parser_state);
+
+  // Check if we're ending a phase
+  if (parser && parser->InPhase()) {
+    // .EP without operand ends phase assembly
+    if (operand.empty()) {
+      // End phase and get new real address
+      uint32_t new_real_addr = parser->EndPhase(*context.current_address);
+      
+      // Restore current address to real address + bytes emitted
+      *context.current_address = new_real_addr;
+      return;
+    }
+    // .EP with operand in phase context is an error
+    throw std::runtime_error(
+        ".EP with operand not allowed within .PH/.EP block");
+  }
+
+  // Not in phase - treat as entry point directive
+  // .EP without operand sets entry to current address
+  if (operand.empty()) {
+    // TODO: Store current address as entry point in section metadata
+    // For now, just accept the directive
+    return;
+  }
 
   // Evaluate entry point address
   uint32_t address =
@@ -903,6 +956,38 @@ void HandleEp(const std::string &label, const std::string &operand,
   // TODO: Store entry point in section metadata
   // For now, just validate the expression
   (void)address;
+}
+
+void HandlePh(const std::string &label, const std::string &operand,
+              DirectiveContext &context) {
+  (void)label; // Label handled separately
+
+  RequireOperand(operand, ".PH", context);
+
+  // Cast parser state to access phase tracking
+  auto *parser = static_cast<ScmasmSyntaxParser *>(context.parser_state);
+  if (!parser) {
+    throw std::runtime_error("Parser state not available for .PH directive");
+  }
+
+  // Evaluate virtual address
+  uint32_t virtual_addr =
+      EvaluateExpression(operand, *context.symbols, context.parser_state);
+
+  // Calculate current real address
+  uint32_t real_addr;
+  if (parser->InPhase()) {
+    // If already in phase, calculate real address from phase state
+    real_addr = parser->GetCurrentRealAddress(*context.current_address);
+  } else {
+    // Not in phase, current_address IS the real address
+    real_addr = *context.current_address;
+  }
+  
+  parser->StartPhase(real_addr, virtual_addr);
+
+  // Set current address to virtual address
+  *context.current_address = virtual_addr;
 }
 
 void HandleHx(const std::string &label, const std::string &operand,
