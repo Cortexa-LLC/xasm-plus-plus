@@ -207,48 +207,12 @@ void HandleEq(const std::string &label, const std::string &operand,
               DirectiveContext &context) {
   RequireOperand(operand, ".EQ", context);
 
-  // Strip trailing comment text (Merlin allows implicit comments on .EQ lines)
-  // Example: "FPU.f  .EQ 180    float" or "A2osX.HZ .EQ XX+00  5/6 for 50/60Hz"
-  // Look for whitespace followed by non-operator characters as comment separator
+  // Simple comment handling: everything after first whitespace is a comment
+  // This handles all cases: "180 float", "XX+00  5/6 for 50/60Hz", "$Cn comment"
   std::string value_expr = operand;
-
-  // Find last position that's part of the expression (alphanumeric, operators, etc.)
-  // Then trim everything after the first whitespace following that
-  size_t comment_pos = std::string::npos;
-  bool in_expression = false;
-
-  for (size_t i = 0; i < value_expr.length(); ++i) {
-    char c = value_expr[i];
-    if (std::isalnum(c) || c == '_' || c == '.' || c == '$' || c == '+' || c == '-' || c == '*' || c == '/' || c == '>' || c == '<' || c == '#') {
-      in_expression = true;
-    } else if (in_expression && (c == ' ' || c == '\t')) {
-      // Found whitespace after expression content
-      // Check if next non-whitespace looks like it's NOT part of expression
-      size_t next_pos = i + 1;
-      while (next_pos < value_expr.length() && (value_expr[next_pos] == ' ' || value_expr[next_pos] == '\t')) {
-        next_pos++;
-      }
-      if (next_pos < value_expr.length()) {
-        char next = value_expr[next_pos];
-        // If next character is alphanumeric, opening paren, or slash (not hex-like), it's probably a comment
-        bool looks_like_comment = false;
-        if (next == '(' || next == '/') {
-          // Parenthetical or slash comments
-          looks_like_comment = true;
-        } else if (std::isalnum(next) && !(std::isxdigit(next) && (i > 0 && value_expr[i-1] == '$'))) {
-          // Alphanumeric but not hex
-          looks_like_comment = true;
-        }
-        if (looks_like_comment) {
-          comment_pos = i;
-          break;
-        }
-      }
-    }
-  }
-
-  if (comment_pos != std::string::npos) {
-    value_expr = value_expr.substr(0, comment_pos);
+  size_t ws = value_expr.find_first_of(" \t");
+  if (ws != std::string::npos) {
+    value_expr = value_expr.substr(0, ws);
   }
 
   // Evaluate value expression
