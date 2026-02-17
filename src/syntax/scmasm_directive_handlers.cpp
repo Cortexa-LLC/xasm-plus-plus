@@ -230,8 +230,16 @@ void HandleEq(const std::string &label, const std::string &operand,
       }
       if (next_pos < value_expr.length()) {
         char next = value_expr[next_pos];
-        // If next character is alphanumeric but not hex-like, it's probably a comment
-        if (std::isalnum(next) && !(std::isxdigit(next) && (i > 0 && value_expr[i-1] == '$'))) {
+        // If next character is alphanumeric, opening paren, or slash (not hex-like), it's probably a comment
+        bool looks_like_comment = false;
+        if (next == '(' || next == '/') {
+          // Parenthetical or slash comments
+          looks_like_comment = true;
+        } else if (std::isalnum(next) && !(std::isxdigit(next) && (i > 0 && value_expr[i-1] == '$'))) {
+          // Alphanumeric but not hex
+          looks_like_comment = true;
+        }
+        if (looks_like_comment) {
           comment_pos = i;
           break;
         }
