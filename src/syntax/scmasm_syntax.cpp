@@ -826,24 +826,24 @@ uint32_t ScmasmSyntaxParser::EvaluateExpression(const std::string &str,
                                                 ConcreteSymbolTable &symbols) {
   std::string trimmed = Trim(str);
 
-  // Handle * (current address) - special case before general parsing
-  if (trimmed == "*") {
-    return current_address_;
-  }
-
-  // Handle *+offset, *-offset, etc. (compound expressions with *)
-  // Bug fix: xasm++-exb8-2026-02-17-line-702
-  // Transforms "*+4" → "32768+4" (if current_address_ = 0x8000)
-  if (trimmed.length() > 1 && trimmed[0] == '*') {
-    char op = trimmed[1];
-    if (op == '+' || op == '-' || op == '/' || op == '*' || op == '&' ||
-        op == '|' || op == '^' || op == '<' || op == '>') {
-      // Replace * with current address, then evaluate the expression
-      std::string expr_str =
-          std::to_string(current_address_) + trimmed.substr(1);
-      auto expr = ParseExpression(expr_str, symbols);
-      return static_cast<uint32_t>(expr->Evaluate(symbols));
+  // Handle * (current address) - replace with current address value
+  // Handles all cases: "*", "*+4", "$1300-*", etc.
+  if (trimmed.find('*') != std::string::npos) {
+    // Replace all occurrences of * with current address
+    std::string expr_str = trimmed;
+    size_t pos = 0;
+    std::string star_replacement = std::to_string(current_address_);
+    while ((pos = expr_str.find('*', pos)) != std::string::npos) {
+      expr_str.replace(pos, 1, star_replacement);
+      pos += star_replacement.length();
     }
+    // If the entire expression was just "*", return current address directly
+    if (expr_str == star_replacement) {
+      return current_address_;
+    }
+    // Otherwise, evaluate the transformed expression
+    auto expr = ParseExpression(expr_str, symbols);
+    return static_cast<uint32_t>(expr->Evaluate(symbols));
   }
 
   // Handle local labels (.0-.9) - check if entire expression is a local label

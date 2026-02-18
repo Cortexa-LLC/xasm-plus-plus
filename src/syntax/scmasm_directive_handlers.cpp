@@ -207,10 +207,12 @@ void HandleEq(const std::string &label, const std::string &operand,
               DirectiveContext &context) {
   RequireOperand(operand, ".EQ", context);
 
+  // Trim operand to remove CRLF line endings and whitespace
+  std::string value_expr = Trim(operand);
+
   // Simple comment handling: everything after first whitespace is a comment
   // This handles all cases: "180 float", "XX+00  5/6 for 50/60Hz", "$Cn
   // comment"
-  std::string value_expr = operand;
   size_t ws = value_expr.find_first_of(" \t");
   if (ws != std::string::npos) {
     value_expr = value_expr.substr(0, ws);

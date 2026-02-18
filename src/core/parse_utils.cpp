@@ -27,6 +27,18 @@ uint32_t ParseHex(const std::string &str) {
     hex_str = hex_str.substr(0, comma_pos);
   }
 
+  // Strip whitespace and comments (everything after first non-hex character)
+  size_t first_non_hex = 0;
+  for (size_t i = 0; i < hex_str.length(); ++i) {
+    if (!std::isxdigit(static_cast<unsigned char>(hex_str[i]))) {
+      first_non_hex = i;
+      break;
+    }
+  }
+  if (first_non_hex > 0) {
+    hex_str = hex_str.substr(0, first_non_hex);
+  }
+
   // Validate all characters are hex digits
   for (char c : hex_str) {
     if (!std::isxdigit(static_cast<unsigned char>(c))) {

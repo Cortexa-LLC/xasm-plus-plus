@@ -7,12 +7,18 @@ namespace xasm {
 namespace util {
 
 std::string Trim(const std::string &str) {
-  size_t start = str.find_first_not_of(" \t");
+  std::string result;
+  for (char c : str) {
+    if (c != '\r') { // Remove carriage return characters
+      result += c;
+    }
+  }
+  size_t start = result.find_first_not_of(" \t");
   if (start == std::string::npos) {
     return "";
   }
-  size_t end = str.find_last_not_of(" \t");
-  return str.substr(start, end - start + 1);
+  size_t end = result.find_last_not_of(" \t");
+  return result.substr(start, end - start + 1);
 }
 
 std::string ToUpper(const std::string &str) {
