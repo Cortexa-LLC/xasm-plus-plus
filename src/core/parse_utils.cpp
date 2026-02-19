@@ -27,25 +27,22 @@ uint32_t ParseHex(const std::string &str) {
     hex_str = hex_str.substr(0, comma_pos);
   }
 
-  // Strip whitespace and comments (everything after first non-hex character)
-  size_t first_non_hex = 0;
+  // Validate hex digits and find end (stop at whitespace or comment)
+  size_t hex_end = hex_str.length();
   for (size_t i = 0; i < hex_str.length(); ++i) {
-    if (!std::isxdigit(static_cast<unsigned char>(hex_str[i]))) {
-      first_non_hex = i;
+    char c = hex_str[i];
+    // Allow trailing whitespace or comments
+    if (std::isspace(static_cast<unsigned char>(c)) || c == ';') {
+      hex_end = i;
       break;
     }
-  }
-  if (first_non_hex > 0) {
-    hex_str = hex_str.substr(0, first_non_hex);
-  }
-
-  // Validate all characters are hex digits
-  for (char c : hex_str) {
+    // Throw on invalid hex digit
     if (!std::isxdigit(static_cast<unsigned char>(c))) {
       throw std::invalid_argument("Invalid hex digit '" + std::string(1, c) +
                                   "' in hex string: '" + str + "'");
     }
   }
+  hex_str = hex_str.substr(0, hex_end);
 
   try {
     return std::stoul(hex_str, nullptr, 16);

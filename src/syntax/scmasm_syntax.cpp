@@ -1208,6 +1208,10 @@ void ScmasmSyntaxParser::HandleMa(const std::string &label,
     throw std::runtime_error(".MA requires a macro name");
   }
 
+  // Normalize macro name to uppercase for case-insensitive lookup
+  std::transform(macro_name.begin(), macro_name.end(), macro_name.begin(),
+                 ::toupper);
+
   // Start macro definition
   in_macro_definition_ = true;
   current_macro_name_ = macro_name;
@@ -1291,14 +1295,14 @@ std::string ScmasmSyntaxParser::SubstituteParameters(
     // Handle SCMASM parameter syntax: ]N for parameter, ]# for count
     if (line[pos] == ']' && pos + 1 < line.length()) {
       char next = line[pos + 1];
-      
+
       // ]# = parameter count
       if (next == '#') {
         result += std::to_string(params.size());
         pos += 2;
         continue;
       }
-      
+
       // ]N = parameter N (1-based in SCMASM)
       if (next >= '1' && next <= '9') {
         int param_idx = next - '1';  // Convert to 0-based
@@ -1310,7 +1314,23 @@ std::string ScmasmSyntaxParser::SubstituteParameters(
         continue;
       }
     }
-    
+
+    // Handle alternative SCMASM parameter syntax: \0, \1, \2, etc. (0-based)
+    if (line[pos] == '\\' && pos + 1 < line.length()) {
+      char next = line[pos + 1];
+
+      // \N = parameter N (0-based)
+      if (next >= '0' && next <= '9') {
+        int param_idx = next - '0';  // Already 0-based
+        if (param_idx < static_cast<int>(params.size())) {
+          result += params[param_idx];
+        }
+        // If parameter not provided, substitute with empty string
+        pos += 2;
+        continue;
+      }
+    }
+
     result += line[pos];
     pos++;
   }
