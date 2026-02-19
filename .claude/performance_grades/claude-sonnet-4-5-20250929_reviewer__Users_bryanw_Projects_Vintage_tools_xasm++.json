@@ -1,0 +1,22 @@
+{
+  "model_id": "claude-sonnet-4-5-20250929",
+  "role_id": "reviewer",
+  "project_id": "/Users/bryanw/Projects/Vintage/tools/xasm++",
+  "total_attempts": 16,
+  "successes": 13,
+  "failures": 1,
+  "retries": 0,
+  "total_tokens_used": 0,
+  "total_execution_time_ms": 7808000,
+  "escalation_count": 0,
+  "downgrade_count": 0,
+  "first_used": "2026-01-26T08:08:04-08:00",
+  "last_used": "2026-02-14T08:55:30-08:00",
+  "last_task_id": "xasm++-nvfq-20260214-083726",
+  "success_rate": 0.8125,
+  "error_rate": 0.0625,
+  "retry_rate": 0.0,
+  "average_execution_time": 488.0,
+  "confidence_score": 0.8,
+  "grade": "C"
+}

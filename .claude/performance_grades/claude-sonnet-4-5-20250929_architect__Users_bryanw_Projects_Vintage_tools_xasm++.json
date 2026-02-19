@@ -1,0 +1,22 @@
+{
+  "model_id": "claude-sonnet-4-5-20250929",
+  "role_id": "architect",
+  "project_id": "/Users/bryanw/Projects/Vintage/tools/xasm++",
+  "total_attempts": 12,
+  "successes": 4,
+  "failures": 2,
+  "retries": 0,
+  "total_tokens_used": 0,
+  "total_execution_time_ms": 3393000,
+  "escalation_count": 0,
+  "downgrade_count": 0,
+  "first_used": "2026-02-03T04:31:01+00:00",
+  "last_used": "2026-02-14T20:32:52-08:00",
+  "last_task_id": "xasm++-xvfy-20260214-201844",
+  "success_rate": 0.3333333333333333,
+  "error_rate": 0.16666666666666666,
+  "retry_rate": 0.0,
+  "average_execution_time": 282.75,
+  "confidence_score": 0.6,
+  "grade": "F"
+}

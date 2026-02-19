@@ -1,0 +1,22 @@
+{
+  "model_id": "claude-sonnet-4-5-20250929",
+  "role_id": "cartographer",
+  "project_id": "/Users/bryanw/Projects/Vintage/tools/xasm++",
+  "total_attempts": 1,
+  "successes": 0,
+  "failures": 0,
+  "retries": 0,
+  "total_tokens_used": 0,
+  "total_execution_time_ms": 0,
+  "escalation_count": 0,
+  "downgrade_count": 0,
+  "first_used": "2026-02-02T08:37:10+00:00",
+  "last_used": "2026-02-02T08:37:10+00:00",
+  "last_task_id": "task-cartographer-20260202-083710-000000",
+  "success_rate": 0.0,
+  "error_rate": 0.0,
+  "retry_rate": 0.0,
+  "average_execution_time": 0.0,
+  "confidence_score": 0.05,
+  "grade": "F"
+}

@@ -5,7 +5,8 @@
 
 # Build artifacts
 build/
-build_coverage/
+build-*/
+build_*/
 cmake-build-*/
 out/
 Testing/
@@ -43,6 +44,8 @@ test.sym
 *.swo
 *~
 .DS_Store
+.cache/
+.claude/
 
 # Coverage reports
 coverage/

@@ -50,6 +50,7 @@ add_library(xasm_syntax STATIC
     syntax/merlin_directive_handlers.cpp
     syntax/scmasm_syntax.cpp
     syntax/scmasm_directive_handlers.cpp
+    syntax/scmasm_expression_utils.cpp
     syntax/edtasm_syntax.cpp
     syntax/edtasm_simple_directive_handlers.cpp
     syntax/flex_syntax.cpp
