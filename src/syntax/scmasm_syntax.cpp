@@ -381,7 +381,9 @@ std::string ScmasmSyntaxParser::StripComments(const std::string &line) {
 std::string ScmasmSyntaxParser::StripEditorCommands(const std::string &line) {
   // Apple II line editor commands that should be ignored during assembly
   // Format: command at start of line (case-insensitive), optionally followed by arguments
-  // Commands: NEW, AUTO, MAN, SAVE, ASM, DELETE, LIST
+  static const std::unordered_set<std::string> EDITOR_COMMANDS = {
+    "NEW", "AUTO", "MAN", "SAVE", "ASM", "DELETE", "LIST"
+  };
 
   // Find first non-whitespace/control character
   // Include backspace (\b) which appears before MAN in some files
@@ -405,9 +407,7 @@ std::string ScmasmSyntaxParser::StripEditorCommands(const std::string &line) {
   }
 
   // Check if token is an editor command
-  if (upper_token == "NEW" || upper_token == "AUTO" || upper_token == "MAN" ||
-      upper_token == "SAVE" || upper_token == "ASM" || upper_token == "DELETE" ||
-      upper_token == "LIST") {
+  if (EDITOR_COMMANDS.contains(upper_token)) {
     return ""; // Strip entire line
   }
 
