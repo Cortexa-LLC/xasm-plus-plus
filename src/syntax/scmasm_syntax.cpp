@@ -408,6 +408,36 @@ std::string ScmasmSyntaxParser::StripEditorCommands(const std::string &line) {
 
   // Check if token is an editor command
   if (EDITOR_COMMANDS.contains(upper_token)) {
+    // For commands like SAVE/LOAD that can conflict with mnemonics,
+    // only strip if the rest of the line looks like a file path
+    // (contains slashes or looks like a path, not an assembly operand)
+    if (upper_token == "LOAD" || upper_token == "SAVE") {
+      // Get the rest of the line after the command
+      std::string rest_of_line;
+      if (token_end < line.length()) {
+        rest_of_line = line.substr(token_end);
+        rest_of_line = Trim(rest_of_line);
+      }
+
+      // If there's an operand, check if it looks like an assembly operand
+      if (!rest_of_line.empty()) {
+        char first_char = rest_of_line[0];
+        // Assembly operands typically start with #, $, (, or a letter
+        // File paths contain / or multiple segments with dots
+        if (first_char == '#' || first_char == '$' || first_char == '(' ||
+            first_char == '[' || first_char == '<' || first_char == '>') {
+          // Looks like an assembly operand, don't strip
+          return line;
+        }
+        // Check for file path indicators (slashes or .S/.ASM extension pattern)
+        if (rest_of_line.find('/') != std::string::npos ||
+            rest_of_line.find('\\') != std::string::npos) {
+          // Looks like a file path, strip it
+          return "";
+        }
+      }
+    }
+    // Other editor commands always strip
     return ""; // Strip entire line
   }
 
