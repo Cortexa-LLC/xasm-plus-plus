@@ -104,6 +104,12 @@ std::shared_ptr<Expression> ExpressionParser::ParseComparison() {
       Consume();
       auto right = ParseBitwiseOr();
       left = std::make_shared<BinaryOpExpr>(BinaryOp::GreaterThan, left, right);
+    } else if (Peek() == '=' && pos_ + 1 < expr_.length() &&
+               expr_[pos_ + 1] != '=') {
+      // Single '=' for SCMASM equality (not '==' or assignment)
+      Consume();
+      auto right = ParseBitwiseOr();
+      left = std::make_shared<BinaryOpExpr>(BinaryOp::Equal, left, right);
     } else {
       break;
     }

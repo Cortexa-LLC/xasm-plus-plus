@@ -13,6 +13,8 @@
 #include "xasm++/directives/scmasm_constants.h"
 #include "xasm++/directives/scmasm_directive_constants.h"
 #include "xasm++/directives/scmasm_directive_handlers.h"
+#include "xasm++/syntax/scmasm_expression_utils.h" // For NormalizeExpression
+#include "xasm++/util/string_utils.h"               // For ToUpper
 #include <algorithm>
 #include <cctype>
 #include <filesystem>
@@ -268,6 +270,9 @@ void ScmasmSyntaxParser::Parse(const std::string &source, Section &section,
     // Strip comments
     line = StripComments(line);
 
+    // Strip Apple II editor commands (NEW, AUTO, MAN, SAVE, ASM, etc.)
+    line = StripEditorCommands(line);
+
     // Trim whitespace
     line = Trim(line);
 
@@ -373,6 +378,42 @@ std::string ScmasmSyntaxParser::StripComments(const std::string &line) {
   return line;
 }
 
+std::string ScmasmSyntaxParser::StripEditorCommands(const std::string &line) {
+  // Apple II line editor commands that should be ignored during assembly
+  // Format: command at start of line (case-insensitive), optionally followed by arguments
+  // Commands: NEW, AUTO, MAN, SAVE, ASM, DELETE, LIST
+
+  // Find first non-whitespace/control character
+  // Include backspace (\b) which appears before MAN in some files
+  size_t first_non_space = line.find_first_not_of(" \t\r\n\b");
+  if (first_non_space == std::string::npos) {
+    return line; // Empty line
+  }
+
+  // Extract the first token (up to whitespace or end of line)
+  size_t token_end = first_non_space;
+  while (token_end < line.length() && !std::isspace(line[token_end])) {
+    token_end++;
+  }
+
+  std::string token = line.substr(first_non_space, token_end - first_non_space);
+
+  // Convert to uppercase for case-insensitive comparison
+  std::string upper_token = token;
+  for (char &c : upper_token) {
+    c = std::toupper(static_cast<unsigned char>(c));
+  }
+
+  // Check if token is an editor command
+  if (upper_token == "NEW" || upper_token == "AUTO" || upper_token == "MAN" ||
+      upper_token == "SAVE" || upper_token == "ASM" || upper_token == "DELETE" ||
+      upper_token == "LIST") {
+    return ""; // Strip entire line
+  }
+
+  return line;
+}
+
 std::string ScmasmSyntaxParser::Trim(const std::string &str) {
   size_t start = str.find_first_not_of(" \t\r\n");
   if (start == std::string::npos) {
@@ -415,11 +456,13 @@ void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
         local_labels_[label] = current_address_;
         // Local labels don't create label atoms
       } else {
+        // Normalize label to uppercase for case-insensitive SCMASM compatibility
+        std::string normalized_label = util::ToUpper(label);
         auto expr = std::make_shared<LiteralExpr>(current_address_);
-        symbols.Define(label, SymbolType::Label, expr);
+        symbols.Define(normalized_label, SymbolType::Label, expr);
 
-        // Create label atom for non-local labels
-        auto label_atom = std::make_shared<LabelAtom>(label, current_address_);
+        // Create label atom for non-local labels (use normalized name)
+        auto label_atom = std::make_shared<LabelAtom>(normalized_label, current_address_);
         section.atoms.push_back(label_atom);
       }
     }
@@ -463,12 +506,14 @@ void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
           local_labels_[label] = current_address_;
           // Local labels don't create label atoms
         } else {
+          // Normalize label to uppercase for case-insensitive SCMASM compatibility
+          std::string normalized_label = util::ToUpper(label);
           auto expr = std::make_shared<LiteralExpr>(current_address_);
-          symbols.Define(label, SymbolType::Label, expr);
+          symbols.Define(normalized_label, SymbolType::Label, expr);
 
-          // Create label atom for non-local labels
+          // Create label atom for non-local labels (use normalized name)
           auto label_atom =
-              std::make_shared<LabelAtom>(label, current_address_);
+              std::make_shared<LabelAtom>(normalized_label, current_address_);
           section.atoms.push_back(label_atom);
         }
       } else {
@@ -476,8 +521,10 @@ void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
         if (IsLocalLabel(label)) {
           local_labels_[label] = current_address_;
         } else {
+          // Normalize label to uppercase for case-insensitive SCMASM compatibility
+          std::string normalized_label = util::ToUpper(label);
           auto expr = std::make_shared<LiteralExpr>(current_address_);
-          symbols.Define(label, SymbolType::Label, expr);
+          symbols.Define(normalized_label, SymbolType::Label, expr);
         }
       }
     }
@@ -527,17 +574,26 @@ void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
         local_labels_[label] = current_address_;
         // Local labels don't create label atoms
       } else {
+        // Normalize label to uppercase for case-insensitive SCMASM compatibility
+        std::string normalized_label = util::ToUpper(label);
         auto expr = std::make_shared<LiteralExpr>(current_address_);
-        symbols.Define(label, SymbolType::Label, expr);
+        symbols.Define(normalized_label, SymbolType::Label, expr);
 
-        // Create label atom for non-local labels
-        auto label_atom = std::make_shared<LabelAtom>(label, current_address_);
+        // Create label atom for non-local labels (use normalized name)
+        auto label_atom =
+            std::make_shared<LabelAtom>(normalized_label, current_address_);
         section.atoms.push_back(label_atom);
       }
     }
 
     // Check if it's a macro invocation
-    auto it = macros_.find(opcode_upper);
+    // SCMASM uses >MacroName syntax for invocation
+    std::string macro_lookup_name = opcode_upper;
+    if (!opcode_upper.empty() && opcode_upper[0] == '>') {
+      macro_lookup_name = opcode_upper.substr(1);
+    }
+    
+    auto it = macros_.find(macro_lookup_name);
     if (it != macros_.end()) {
       // Parse macro parameters from operand
       std::vector<std::string> params;
@@ -557,8 +613,8 @@ void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
           ++pos;
         }
       }
-      // Invoke the macro
-      InvokeMacro(opcode_upper, params, section, symbols);
+      // Invoke the macro (use stripped name without > prefix)
+      InvokeMacro(macro_lookup_name, params, section, symbols);
     } else {
       // Assume it's an assembly instruction (6502, 65C02, etc.)
       // Phase 3: We don't parse instructions yet, just store them as
@@ -582,16 +638,16 @@ std::string ScmasmSyntaxParser::ParseLabel(const std::string &line, size_t &pos,
     pos++;
   }
 
-  // Labels must start with letter or .
-  if (pos >= line.length() || (!std::isalpha(line[pos]) && line[pos] != '.')) {
+  // Labels must start with letter, ., :, or _
+  if (pos >= line.length() || (!std::isalpha(line[pos]) && line[pos] != '.' && line[pos] != ':' && line[pos] != '_')) {
     return "";
   }
 
   size_t label_start = pos;
 
-  // Parse label characters (letter, digit, underscore, or .)
+  // Parse label characters (letter, digit, underscore, ., or :)
   while (pos < line.length() &&
-         (std::isalnum(line[pos]) || line[pos] == '_' || line[pos] == '.')) {
+         (std::isalnum(line[pos]) || line[pos] == '_' || line[pos] == '.' || line[pos] == ':')) {
     pos++;
   }
 
@@ -604,8 +660,8 @@ std::string ScmasmSyntaxParser::ParseLabel(const std::string &line, size_t &pos,
 
   // Check if this is actually a directive (not a label)
   // Directives start with . and have letters after (e.g., .OR, .EQ, .SE)
-  // Local labels start with . and have only digits (e.g., .1, .2)
-  if (label.length() >= 2 && label[0] == '.') {
+  // Local labels start with . or : and have only digits (e.g., .1, .2, :1, :2)
+  if (label.length() >= 2 && (label[0] == '.' || label[0] == ':')) {
     bool has_letter = false;
     for (size_t i = 1; i < label.length(); i++) {
       if (std::isalpha(label[i])) {
@@ -613,7 +669,7 @@ std::string ScmasmSyntaxParser::ParseLabel(const std::string &line, size_t &pos,
         break;
       }
     }
-    // If it has letters after the dot, it's a directive, not a label
+    // If it has letters after the . or :, it's a directive or invalid, not a label
     if (has_letter) {
       pos = label_start;
       return "";
@@ -814,9 +870,9 @@ uint32_t ScmasmSyntaxParser::ParseNumber(const std::string &str) {
 }
 
 bool ScmasmSyntaxParser::IsLocalLabel(const std::string &label) {
-  // Local labels are .0-.9
-  if (label.length() == 2 && label[0] == '.' && label[1] >= '0' &&
-      label[1] <= '9') {
+  // Local labels are .0-.9 or :0-:9
+  if (label.length() == 2 && (label[0] == '.' || label[0] == ':') && 
+      label[1] >= '0' && label[1] <= '9') {
     return true;
   }
   return false;
@@ -919,8 +975,10 @@ std::shared_ptr<Expression>
 ScmasmSyntaxParser::ParseExpression(const std::string &str,
                                     ConcreteSymbolTable &symbols) {
   // Phase 2: Use shared ExpressionParser with SCMASM number parser
+  // Normalize expression to uppercase for case-insensitive symbol lookup
+  std::string normalized_expr = scmasm::NormalizeExpression(str);
   ExpressionParser parser(&symbols, &scmasm_number_parser_);
-  return parser.Parse(str);
+  return parser.Parse(normalized_expr);
 }
 
 // ============================================================================
@@ -1185,8 +1243,9 @@ void ScmasmSyntaxParser::InvokeMacro(const std::string &name,
                                      Section &section,
                                      ConcreteSymbolTable &symbols) {
   // Check for infinite recursion
-  if (macro_invocation_depth_ >= 63) {
-    throw std::runtime_error("Macro nesting too deep (max 63 levels)");
+  if (macro_invocation_depth_ >= MAX_MACRO_NESTING_DEPTH) {
+    throw std::runtime_error("Macro nesting too deep (max " +
+                             std::to_string(MAX_MACRO_NESTING_DEPTH) + " levels)");
   }
 
   // Find macro
@@ -1229,11 +1288,20 @@ std::string ScmasmSyntaxParser::SubstituteParameters(
   size_t pos = 0;
 
   while (pos < line.length()) {
-    if (line[pos] == '\\' && pos + 1 < line.length()) {
+    // Handle SCMASM parameter syntax: ]N for parameter, ]# for count
+    if (line[pos] == ']' && pos + 1 < line.length()) {
       char next = line[pos + 1];
-      if (next >= '0' && next <= '9') {
-        // Parameter reference
-        int param_idx = next - '0';
+      
+      // ]# = parameter count
+      if (next == '#') {
+        result += std::to_string(params.size());
+        pos += 2;
+        continue;
+      }
+      
+      // ]N = parameter N (1-based in SCMASM)
+      if (next >= '1' && next <= '9') {
+        int param_idx = next - '1';  // Convert to 0-based
         if (param_idx < static_cast<int>(params.size())) {
           result += params[param_idx];
         }
@@ -1242,6 +1310,7 @@ std::string ScmasmSyntaxParser::SubstituteParameters(
         continue;
       }
     }
+    
     result += line[pos];
     pos++;
   }

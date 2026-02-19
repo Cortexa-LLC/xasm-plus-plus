@@ -309,6 +309,9 @@ private:
     std::vector<std::string> lines; ///< Macro body lines
   };
 
+  // Macro nesting limit (prevent infinite recursion)
+  static constexpr int MAX_MACRO_NESTING_DEPTH = 63;
+
   // Current state
   uint32_t current_address_; ///< Current assembly address
   std::string current_file_; ///< Current source filename
@@ -381,6 +384,17 @@ private:
    * @return Line with comments removed
    */
   std::string StripComments(const std::string &line);
+
+  /**
+   * @brief Strip Apple II editor commands from line
+   *
+   * Removes lines starting with editor commands (NEW, AUTO, MAN, SAVE, ASM, DELETE, LIST).
+   * These commands were used in Apple II line editors and should be ignored during assembly.
+   *
+   * @param line Input line
+   * @return Empty string if line is an editor command, original line otherwise
+   */
+  std::string StripEditorCommands(const std::string &line);
 
   /**
    * @brief Parse a single line of source

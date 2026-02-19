@@ -17,6 +17,7 @@
 #include "xasm++/section.h"
 #include "xasm++/symbol.h"
 #include "xasm++/syntax/scmasm_syntax.h"
+#include "xasm++/util/string_utils.h" // For ToUpper
 #include <algorithm>
 #include <cctype>
 #include <filesystem>
@@ -223,8 +224,9 @@ void HandleEq(const std::string &label, const std::string &operand,
       EvaluateExpression(value_expr, *context.symbols, context.parser_state);
 
   // Define symbol (immutable) - .EQ creates Equate type
+  // Normalize label to uppercase for case-insensitive SCMASM compatibility
   auto expr = std::make_shared<LiteralExpr>(value);
-  context.symbols->Define(label, SymbolType::Equate, expr);
+  context.symbols->Define(util::ToUpper(label), SymbolType::Equate, expr);
 }
 
 void HandleSe(const std::string &label, const std::string &operand,
@@ -236,8 +238,9 @@ void HandleSe(const std::string &label, const std::string &operand,
       EvaluateExpression(operand, *context.symbols, context.parser_state);
 
   // .SE creates Set type (redefinable)
+  // Normalize label to uppercase for case-insensitive SCMASM compatibility
   auto expr = std::make_shared<LiteralExpr>(value);
-  context.symbols->Define(label, SymbolType::Set, expr);
+  context.symbols->Define(util::ToUpper(label), SymbolType::Set, expr);
 }
 
 void HandleAs(const std::string &label, const std::string &operand,

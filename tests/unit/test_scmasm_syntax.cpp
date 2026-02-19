@@ -186,7 +186,8 @@ TEST_F(ScmasmSyntaxTest, EqWithTrailingComment) {
   parser->Parse("FPU.f .EQ 180    float\n", section, symbols);
 
   int64_t value;
-  ASSERT_TRUE(symbols.Lookup("FPU.f", value));
+  // SCMASM normalizes symbols to uppercase
+  ASSERT_TRUE(symbols.Lookup("FPU.F", value));
   EXPECT_EQ(value, 180);
 }
 
@@ -1219,6 +1220,83 @@ TEST_F(ScmasmSyntaxTest, LocalLabelInLoop) {
         CPX #10
         BNE .1
         RTS
+)";
+
+  parser->Parse(source, section, symbols);
+  EXPECT_GT(section.atoms.size(), 0u);
+}
+
+// Tests for :N syntax (colon-based local labels)
+TEST_F(ScmasmSyntaxTest, ColonLocalLabelBasic) {
+  // Basic :N local label
+  std::string source = R"(
+        .OR $0800
+        BEQ :1
+        LDA #$FF
+:1      RTS
+)";
+
+  parser->Parse(source, section, symbols);
+  EXPECT_GT(section.atoms.size(), 0u);
+}
+
+TEST_F(ScmasmSyntaxTest, ColonLocalLabelAllDigits) {
+  // Test all :0 through :9 local labels
+  std::string source = R"(
+        .OR $0800
+:0      NOP
+:1      NOP
+:2      NOP
+:3      NOP
+:4      NOP
+:5      NOP
+:6      NOP
+:7      NOP
+:8      NOP
+:9      NOP
+)";
+
+  parser->Parse(source, section, symbols);
+  EXPECT_EQ(section.atoms.size(), 11u); // ORG + 10 NOPs
+}
+
+TEST_F(ScmasmSyntaxTest, ColonLocalLabelForwardReference) {
+  // Colon local label forward reference
+  std::string source = R"(
+        .OR $0800
+        BEQ :1
+        LDA #$FF
+:1      RTS
+)";
+
+  parser->Parse(source, section, symbols);
+  EXPECT_GT(section.atoms.size(), 0u);
+}
+
+TEST_F(ScmasmSyntaxTest, ColonLocalLabelInLoop) {
+  // Colon local labels in loop contexts
+  std::string source = R"(
+        .OR $0800
+        LDX #0
+:1      INX
+        CPX #10
+        BNE :1
+        RTS
+)";
+
+  parser->Parse(source, section, symbols);
+  EXPECT_GT(section.atoms.size(), 0u);
+}
+
+TEST_F(ScmasmSyntaxTest, MixedDotAndColonLocalLabels) {
+  // Mix of .N and :N local labels
+  std::string source = R"(
+        .OR $0800
+        BEQ .1
+        LDA #$FF
+.1      BNE :2
+        LDA #$00
+:2      RTS
 )";
 
   parser->Parse(source, section, symbols);
@@ -2276,3 +2354,174 @@ TEST_F(ScmasmSyntaxTest, INB_ErrorMessageShowsSearchedPaths) {
                 error_msg.find("cannot open") != std::string::npos);
   }
 }
+
+// ============================================================================
+// Editor Command Stripping Tests
+// ============================================================================
+
+TEST_F(ScmasmSyntaxTest, EditorCommands_NEW_IsStripped) {
+  std::string source = R"(
+        NEW
+        .OR $0800
+        LDA #$00
+)";
+
+  EXPECT_NO_THROW(parser->Parse(source, section, symbols));
+  EXPECT_GT(section.atoms.size(), 0u); // Should parse successfully
+}
+
+TEST_F(ScmasmSyntaxTest, EditorCommands_AUTO_IsStripped) {
+  std::string source = R"(
+        AUTO 100,10
+        .OR $0800
+        LDA #$00
+)";
+
+  EXPECT_NO_THROW(parser->Parse(source, section, symbols));
+  EXPECT_GT(section.atoms.size(), 0u); // Should parse successfully
+}
+
+TEST_F(ScmasmSyntaxTest, EditorCommands_MAN_IsStripped) {
+  std::string source = R"(
+        MAN
+        .OR $0800
+        LDA #$00
+)";
+
+  EXPECT_NO_THROW(parser->Parse(source, section, symbols));
+  EXPECT_GT(section.atoms.size(), 0u); // Should parse successfully
+}
+
+TEST_F(ScmasmSyntaxTest, EditorCommands_SAVE_IsStripped) {
+  std::string source = R"(
+        SAVE PROG.S
+        .OR $0800
+        LDA #$00
+)";
+
+  EXPECT_NO_THROW(parser->Parse(source, section, symbols));
+  EXPECT_GT(section.atoms.size(), 0u); // Should parse successfully
+}
+
+TEST_F(ScmasmSyntaxTest, EditorCommands_ASM_IsStripped) {
+  std::string source = R"(
+        ASM
+        .OR $0800
+        LDA #$00
+)";
+
+  EXPECT_NO_THROW(parser->Parse(source, section, symbols));
+  EXPECT_GT(section.atoms.size(), 0u); // Should parse successfully
+}
+
+TEST_F(ScmasmSyntaxTest, EditorCommands_DELETE_IsStripped) {
+  std::string source = R"(
+        DELETE 100,200
+        .OR $0800
+        LDA #$00
+)";
+
+  EXPECT_NO_THROW(parser->Parse(source, section, symbols));
+  EXPECT_GT(section.atoms.size(), 0u); // Should parse successfully
+}
+
+TEST_F(ScmasmSyntaxTest, EditorCommands_LIST_IsStripped) {
+  std::string source = R"(
+        LIST
+        .OR $0800
+        LDA #$00
+)";
+
+  EXPECT_NO_THROW(parser->Parse(source, section, symbols));
+  EXPECT_GT(section.atoms.size(), 0u); // Should parse successfully
+}
+
+TEST_F(ScmasmSyntaxTest, EditorCommands_CaseInsensitive) {
+  std::string source = R"(
+        new
+        MaN
+        Auto 100,10
+        .OR $0800
+        LDA #$00
+)";
+
+  EXPECT_NO_THROW(parser->Parse(source, section, symbols));
+  EXPECT_GT(section.atoms.size(), 0u); // Should parse successfully
+}
+
+TEST_F(ScmasmSyntaxTest, EditorCommands_WithLeadingWhitespace) {
+  std::string source = R"(
+          NEW
+        MAN
+    AUTO 100,10
+        .OR $0800
+        LDA #$00
+)";
+
+  EXPECT_NO_THROW(parser->Parse(source, section, symbols));
+  EXPECT_GT(section.atoms.size(), 0u); // Should parse successfully
+}
+
+TEST_F(ScmasmSyntaxTest, EditorCommands_MixedWithCode) {
+  std::string source = R"(
+        .OR $0800
+START   LDA #$00
+        MAN
+        STA $C000
+        AUTO 100,10
+        RTS
+        SAVE PROG.S
+)";
+
+  EXPECT_NO_THROW(parser->Parse(source, section, symbols));
+  
+  // Check that label was defined
+  int64_t start_value;
+  EXPECT_TRUE(symbols.Lookup("START", start_value));
+  EXPECT_EQ(start_value, 0x0800);
+  
+  // Code should assemble correctly
+  EXPECT_GT(section.atoms.size(), 0u);
+}
+
+TEST_F(ScmasmSyntaxTest, EditorCommands_NotALabelOrDirective) {
+  // Verify that labels or directives that happen to start with editor command
+  // names are NOT stripped (they should have colons or periods)
+  std::string source = R"(
+        .OR $0800
+MANUAL  LDA #$00      ; Label "MANUAL" should work
+        STA $C000
+)";
+
+  EXPECT_NO_THROW(parser->Parse(source, section, symbols));
+  
+  // Label should be defined
+  int64_t manual_value;
+  EXPECT_TRUE(symbols.Lookup("MANUAL", manual_value));
+  EXPECT_EQ(manual_value, 0x0800);
+}
+
+TEST_F(ScmasmSyntaxTest, EditorCommands_RealWorldA2osX_Pattern) {
+  // Simulate the real A2osX pattern: MAN followed by line number commands
+  std::string source = R"(
+        .OR $0800
+        MAN
+*--------------------------------------
+* Test routine
+*--------------------------------------
+START   LDA #$00
+        STA $C000
+        RTS
+)";
+
+  EXPECT_NO_THROW(parser->Parse(source, section, symbols));
+  
+  // MAN should be stripped, comments preserved as comments
+  int64_t start_value;
+  EXPECT_TRUE(symbols.Lookup("START", start_value));
+  EXPECT_EQ(start_value, 0x0800);
+  
+  // Should assemble successfully
+  EXPECT_GT(section.atoms.size(), 0u);
+}
+
