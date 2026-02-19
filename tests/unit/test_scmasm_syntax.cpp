@@ -2474,12 +2474,12 @@ START   LDA #$00
 )";
 
   EXPECT_NO_THROW(parser->Parse(source, section, symbols));
-  
+
   // Check that label was defined
   int64_t start_value;
   EXPECT_TRUE(symbols.Lookup("START", start_value));
   EXPECT_EQ(start_value, 0x0800);
-  
+
   // Code should assemble correctly
   EXPECT_GT(section.atoms.size(), 0u);
 }
@@ -2494,7 +2494,7 @@ MANUAL  LDA #$00      ; Label "MANUAL" should work
 )";
 
   EXPECT_NO_THROW(parser->Parse(source, section, symbols));
-  
+
   // Label should be defined
   int64_t manual_value;
   EXPECT_TRUE(symbols.Lookup("MANUAL", manual_value));
@@ -2515,13 +2515,12 @@ START   LDA #$00
 )";
 
   EXPECT_NO_THROW(parser->Parse(source, section, symbols));
-  
+
   // MAN should be stripped, comments preserved as comments
   int64_t start_value;
   EXPECT_TRUE(symbols.Lookup("START", start_value));
   EXPECT_EQ(start_value, 0x0800);
-  
+
   // Should assemble successfully
   EXPECT_GT(section.atoms.size(), 0u);
 }
-

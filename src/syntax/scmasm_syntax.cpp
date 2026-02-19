@@ -13,8 +13,7 @@
 #include "xasm++/directives/scmasm_constants.h"
 #include "xasm++/directives/scmasm_directive_constants.h"
 #include "xasm++/directives/scmasm_directive_handlers.h"
-#include "xasm++/syntax/scmasm_expression_utils.h" // For NormalizeExpression
-#include "xasm++/util/string_utils.h"              // For ToUpper
+#include "xasm++/util/string_utils.h" // For ToUpper
 #include <algorithm>
 #include <cctype>
 #include <filesystem>
@@ -1013,7 +1012,7 @@ ScmasmSyntaxParser::ParseExpression(const std::string &str,
                                     ConcreteSymbolTable &symbols) {
   // Phase 2: Use shared ExpressionParser with SCMASM number parser
   // Normalize expression to uppercase for case-insensitive symbol lookup
-  std::string normalized_expr = scmasm::NormalizeExpression(str);
+  std::string normalized_expr = util::ToUpper(str);
   ExpressionParser parser(&symbols, &scmasm_number_parser_);
   return parser.Parse(normalized_expr);
 }

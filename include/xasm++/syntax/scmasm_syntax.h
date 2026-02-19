@@ -388,8 +388,9 @@ private:
   /**
    * @brief Strip Apple II editor commands from line
    *
-   * Removes lines starting with editor commands (NEW, AUTO, MAN, SAVE, ASM, DELETE, LIST).
-   * These commands were used in Apple II line editors and should be ignored during assembly.
+   * Removes lines starting with editor commands (NEW, AUTO, MAN, SAVE, ASM,
+   * DELETE, LIST). These commands were used in Apple II line editors and should
+   * be ignored during assembly.
    *
    * @param line Input line
    * @return Empty string if line is an editor command, original line otherwise
