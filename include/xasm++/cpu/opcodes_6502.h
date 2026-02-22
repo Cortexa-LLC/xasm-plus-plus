@@ -308,6 +308,8 @@ constexpr uint8_t TCD = 0x5B; // TCD          - Transfer C to Direct Page
 constexpr uint8_t TDC = 0x7B; // TDC          - Transfer Direct Page to C
 constexpr uint8_t TCS = 0x1B; // TCS          - Transfer C to Stack Pointer
 constexpr uint8_t TSC = 0x3B; // TSC          - Transfer Stack Pointer to C
+constexpr uint8_t TXY = 0x9B; // TXY          - Transfer X to Y (65816)
+constexpr uint8_t TYX = 0xBB; // TYX          - Transfer Y to X (65816)
 
 // 65816 Jump Operations
 constexpr uint8_t JML_ALG = 0x5C; // JML long     - Jump Long Absolute
@@ -439,6 +441,8 @@ constexpr const char *TCD = "TCD"; // 65816
 constexpr const char *TCS = "TCS"; // 65816
 constexpr const char *TDC = "TDC"; // 65816
 constexpr const char *TSC = "TSC"; // 65816
+constexpr const char *TXY = "TXY"; // 65816
+constexpr const char *TYX = "TYX"; // 65816
 
 // Shift/Rotate Instructions
 constexpr const char *ASL = "ASL";

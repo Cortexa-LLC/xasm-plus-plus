@@ -1167,6 +1167,134 @@ size_t Cpu6502::CalculateInstructionSize(AddressingMode mode) const {
 }
 
 // ============================================================================
+// GetInstructionSize — first-pass address estimation
+// ============================================================================
+
+/**
+ * @brief Estimate instruction size from mnemonic and operand string
+ *
+ * Determines instruction byte count using operand-string syntax heuristics,
+ * without requiring symbol resolution.  Used so that `.BS TARGET-*` and
+ * similar current-address expressions compute correctly during the parse pass.
+ *
+ * Rules (6502/65C02/65816):
+ *  - Empty operand or "A"     → 1 byte  (implied / accumulator)
+ *  - "#..."                   → 2 bytes (immediate)
+ *  - Branch mnemonics         → 2 bytes (relative)
+ *  - "(expr,X)"               → 3 bytes (absolute indexed indirect)
+ *  - "(expr),Y" or "(expr)"   → 2 bytes (ZP indirect / indexed)
+ *  - "[...]"                  → 2 bytes (65816 indirect long)
+ *  - ">..."                   → 4 bytes (65816 absolute long)
+ *  - "$xx"  (1–2 hex digits)  → 2 bytes (explicit zero-page)
+ *  - "$xxxx" or symbol        → 3 bytes (absolute)
+ */
+size_t Cpu6502::GetInstructionSize(const std::string &mnemonic,
+                                   const std::string &operand_str) const {
+  // Local trim helper (avoids dependency on util header here)
+  auto ltrim = [](const std::string &s) -> std::string {
+    size_t start = s.find_first_not_of(" \t");
+    if (start == std::string::npos)
+      return {};
+    size_t end = s.find_last_not_of(" \t");
+    return s.substr(start, end - start + 1);
+  };
+  auto to_upper = [](std::string s) -> std::string {
+    for (char &c : s)
+      c = static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
+    return s;
+  };
+
+  const std::string op = ltrim(operand_str);
+  const std::string mn = to_upper(mnemonic);
+
+  // --- Implied / Accumulator: no operand or bare "A" ---
+  if (op.empty() || op == "A") {
+    return 1;
+  }
+
+  // --- Immediate: #... ---
+  if (op[0] == '#') {
+    return 2;
+  }
+
+  // --- Branch instructions: always relative (2 bytes) ---
+  static const std::unordered_set<std::string> BRANCHES = {
+      M6502Mnemonics::BEQ, M6502Mnemonics::BNE, M6502Mnemonics::BCC,
+      M6502Mnemonics::BCS, M6502Mnemonics::BMI, M6502Mnemonics::BPL,
+      M6502Mnemonics::BVC, M6502Mnemonics::BVS, M6502Mnemonics::BRA,
+      M6502Mnemonics::BLT, // alias for BCC
+  };
+  if (BRANCHES.count(mn)) {
+    return 2;
+  }
+
+  // --- Indirect modes: (...) ---
+  if (op[0] == '(') {
+    size_t close = op.find(')');
+    if (close != std::string::npos) {
+      const std::string inside_upper = to_upper(op.substr(1, close - 1));
+      // (abs,X) → AbsoluteIndexedIndirect = 3 bytes
+      if (inside_upper.find(",X") != std::string::npos) {
+        return 3;
+      }
+      // (zp),Y → IndirectY = 2 bytes
+      if (close + 1 < op.length()) {
+        const std::string after_upper =
+            to_upper(ltrim(op.substr(close + 1)));
+        if (after_upper == ",Y") {
+          return 2;
+        }
+      }
+      // JMP (abs) → absolute indirect = 3 bytes
+      // (JMP is the only 6502/65C02 instruction that uses (abs) indirect;
+      // all other instructions with (sym) use ZP indirect = 2 bytes)
+      if (mn == M6502Mnemonics::JMP || mn == M6502Mnemonics::JSR) {
+        return 3;
+      }
+      // (zp) → ZP indirect (65C02) = 2 bytes
+      return 2;
+    }
+    return 2; // unmatched paren — assume 2
+  }
+
+  // --- 65816 indirect long: [...] ---
+  if (op[0] == '[') {
+    return 2;
+  }
+
+  // --- 65816 absolute long: >... ---
+  if (op[0] == '>') {
+    return 4;
+  }
+
+  // --- Indexed modes: has ,X or ,Y suffix ---
+  const std::string op_upper = to_upper(op);
+  const size_t comma_x = op_upper.find(",X");
+  const size_t comma_y = op_upper.find(",Y");
+  const size_t comma_pos =
+      (comma_x != std::string::npos) ? comma_x : comma_y;
+  if (comma_pos != std::string::npos) {
+    const std::string addr_part = ltrim(op.substr(0, comma_pos));
+    if (!addr_part.empty() && addr_part[0] == '$') {
+      // $xx (≤2 hex digits) → ZP indexed = 2 bytes
+      const size_t hex_digits = addr_part.length() - 1;
+      return (hex_digits <= 2) ? 2 : 3;
+    }
+    return 3; // symbol indexed → absolute
+  }
+
+  // --- Explicit hex literal ---
+  if (op[0] == '$') {
+    // $xx (1–2 hex digits) → ZP = 2 bytes; $xxxx = absolute = 3 bytes
+    const size_t hex_digits = op.length() - 1;
+    return (hex_digits <= 2) ? 2 : 3;
+  }
+
+  // --- Everything else (symbol reference) → assume absolute = 3 bytes ---
+  return 3;
+}
+
+// ============================================================================
 // Branch Relaxation Support (Long Branch Handling)
 // ============================================================================
 
@@ -1754,6 +1882,20 @@ std::vector<uint8_t> Cpu6502::EncodeTSC() const {
   return {Opcodes::TSC};
 }
 
+// TXY - Transfer X to Y (65816 implied, opcode $9B)
+std::vector<uint8_t> Cpu6502::EncodeTXY() const {
+  if (cpu_mode_ != CpuMode::Cpu65816)
+    return {};
+  return {Opcodes::TXY};
+}
+
+// TYX - Transfer Y to X (65816 implied, opcode $BB)
+std::vector<uint8_t> Cpu6502::EncodeTYX() const {
+  if (cpu_mode_ != CpuMode::Cpu65816)
+    return {};
+  return {Opcodes::TYX};
+}
+
 std::vector<uint8_t> Cpu6502::EncodeJML(uint32_t operand,
                                         AddressingMode mode) const {
   if (cpu_mode_ != CpuMode::Cpu65816)
@@ -2231,6 +2373,10 @@ Cpu6502::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
     return EncodeTCS();
   if (mnemonic == TSC)
     return EncodeTSC();
+  if (mnemonic == TXY)
+    return EncodeTXY();
+  if (mnemonic == TYX)
+    return EncodeTYX();
   if (mnemonic == JML)
     return EncodeJML(operand, mode);
   if (mnemonic == JSL)
@@ -2491,6 +2637,7 @@ bool Cpu6502::HasOpcode(const std::string &mnemonic) const {
       M6502Mnemonics::PHB, M6502Mnemonics::PLB, M6502Mnemonics::PHD,
       M6502Mnemonics::PLD, M6502Mnemonics::PHK, M6502Mnemonics::TCD,
       M6502Mnemonics::TCS, M6502Mnemonics::TDC, M6502Mnemonics::TSC,
+      M6502Mnemonics::TXY, M6502Mnemonics::TYX,
       M6502Mnemonics::JML, M6502Mnemonics::JSL, M6502Mnemonics::RTL,
       M6502Mnemonics::PEA, M6502Mnemonics::PEI, M6502Mnemonics::PER,
       M6502Mnemonics::MVN, M6502Mnemonics::MVP, M6502Mnemonics::COP,

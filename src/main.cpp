@@ -165,6 +165,11 @@ int main(int argc, char **argv) {
         }
 
         parser.Parse(source, section, symbols);
+
+        // .TF directive overrides -o when present
+        if (!parser.GetTfOutput().empty()) {
+          opts.output = parser.GetTfOutput();
+        }
       } else if (opts.syntax == "edtasm") {
         // EDTASM works with both 6502 and 6809
         EdtasmSyntaxParser parser;

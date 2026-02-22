@@ -150,6 +150,19 @@ public:
   void SetPathMappings(const std::map<std::string, std::string> &mappings);
 
   /**
+   * @brief Return output path set by a .TF directive during parsing.
+   *
+   * Returns empty string if no .TF was encountered (caller should use the
+   * -o/output value in that case).
+   */
+  const std::string &GetTfOutput() const { return tf_output_; }
+
+  /**
+   * @brief Set the .TF output path (called by HandleTf directive handler).
+   */
+  void SetTfOutput(const std::string &path) { tf_output_ = path; }
+
+  /**
    * @brief Parse SCMASM assembly source into atoms and symbols
    *
    * Parses the provided SCMASM-format assembly source and populates
@@ -327,6 +340,9 @@ private:
   // Path mappings for virtual path substitution
   std::map<std::string, std::string>
       path_mappings_; ///< Virtual→actual path mappings for .INB
+
+  // .TF target output path (overrides -o default when set)
+  std::string tf_output_; ///< Output path set by .TF directive (empty = not set)
 
   // Symbol tracking for .SE (redefinable)
   std::unordered_map<std::string, bool>

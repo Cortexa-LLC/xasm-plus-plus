@@ -192,9 +192,17 @@ void HandleOr(const std::string &label, const std::string &operand,
 
   RequireOperand(operand, ".OR", context);
 
+  // Strip inline comment: anything after the first whitespace is ignored.
+  // This matches SCMASM convention — e.g. ".OR ZPTMP   6 Bytes" is valid.
+  std::string addr_expr = Trim(operand);
+  size_t ws = addr_expr.find_first_of(" \t");
+  if (ws != std::string::npos) {
+    addr_expr = addr_expr.substr(0, ws);
+  }
+
   // Evaluate address expression
   uint32_t address =
-      EvaluateExpression(operand, *context.symbols, context.parser_state);
+      EvaluateExpression(addr_expr, *context.symbols, context.parser_state);
 
   // Create ORG atom
   auto org_atom = std::make_shared<OrgAtom>(address);
@@ -233,9 +241,16 @@ void HandleSe(const std::string &label, const std::string &operand,
               DirectiveContext &context) {
   RequireOperand(operand, ".SE", context);
 
+  // Strip inline comment: anything after first whitespace is ignored.
+  std::string val_expr = Trim(operand);
+  size_t ws = val_expr.find_first_of(" \t");
+  if (ws != std::string::npos) {
+    val_expr = val_expr.substr(0, ws);
+  }
+
   // Evaluate value expression
   uint32_t value =
-      EvaluateExpression(operand, *context.symbols, context.parser_state);
+      EvaluateExpression(val_expr, *context.symbols, context.parser_state);
 
   // .SE creates Set type (redefinable)
   // Normalize label to uppercase for case-insensitive SCMASM compatibility
@@ -330,6 +345,19 @@ void HandleDa(const std::string &label, const std::string &operand,
 
   for (const auto &expr : raw_expressions) {
     std::string trimmed_expr = Trim(expr);
+
+    if (trimmed_expr.empty()) {
+      continue;
+    }
+
+    // Strip SCMASM inline comment: each element may be followed by
+    // whitespace-separated comment text (e.g. ".DA #%100   L").
+    {
+      size_t ws = trimmed_expr.find_first_of(" \t");
+      if (ws != std::string::npos) {
+        trimmed_expr = trimmed_expr.substr(0, ws);
+      }
+    }
 
     if (trimmed_expr.empty()) {
       continue;
@@ -465,6 +493,7 @@ void HandleHs(const std::string &label, const std::string &operand,
   //   .HS DEADBEEF foo    -> 4 bytes (text after hex ignored)
   //   .HS AB CD EFG       -> 2 bytes (stops at word "EFG" containing 'G')
   std::string hex_digits;
+  bool odd_hex_before_data = false; // tracks ".HS 012"-style errors
   size_t i = 0;
   while (i < trimmed.length()) {
     // Skip whitespace
@@ -484,22 +513,36 @@ void HandleHs(const std::string &label, const std::string &operand,
       // Check if ALL characters in word are hex digits
       bool all_hex = true;
       for (char c : word) {
-        if (!std::isxdigit(c)) {
+        if (!std::isxdigit(static_cast<unsigned char>(c))) {
           all_hex = false;
           break;
         }
       }
 
-      if (all_hex) {
+      if (all_hex && (word.length() % 2 == 0)) {
+        // Even-length all-hex word — valid byte data
         hex_digits += word;
+      } else if (all_hex && (word.length() % 2 != 0)) {
+        // Odd-length all-hex word (e.g. "BCC", "JSR", "012")
+        if (hex_digits.empty()) {
+          // No preceding data: this is malformed, not a comment
+          odd_hex_before_data = true;
+        }
+        // Either way, stop — if after valid data it's an inline comment
+        break;
       } else {
-        // Stop at first word with non-hex character
+        // Non-hex word — inline comment, stop
         break;
       }
     }
   }
 
-  // Must have even number of digits
+  // Error if odd hex digits appeared before any valid data (e.g. ".HS 012")
+  if (odd_hex_before_data) {
+    throw std::runtime_error(".HS requires even number of hex digits");
+  }
+
+  // Must have even number of digits (catches concatenation edge cases)
   if (hex_digits.length() % constants::HEX_DIGITS_PER_BYTE != 0) {
     throw std::runtime_error(".HS requires even number of hex digits");
   }
@@ -539,6 +582,13 @@ void HandleBs(const std::string &label, const std::string &operand,
   }
 
   std::string trimmed = Trim(operand);
+
+  // Strip inline comment: anything after first whitespace is ignored.
+  // e.g. ".BS 9   9 bytes, S.IOCTL" -> evaluates "9"
+  size_t ws = trimmed.find_first_of(" \t");
+  if (ws != std::string::npos) {
+    trimmed = trimmed.substr(0, ws);
+  }
 
   // Evaluate the byte count expression (supports symbols, hex, decimal)
   uint32_t byte_count =
@@ -1074,13 +1124,33 @@ void HandleCz(const std::string &label, const std::string &operand,
 
 void HandleTf(const std::string &label, const std::string &operand,
               DirectiveContext &context) {
-  (void)label;   // Label handled separately
-  (void)operand; // File path or title metadata
-  (void)context; // No state changes needed
+  (void)label;
 
-  // Stub implementation - .TF is metadata directive
-  // Used to specify target filename or title in SCMASM
-  // Has no effect on code generation in cross-assembler
+  // .TF <path>[,TSYS]  — sets the output file for this assembly unit.
+  // Strip optional type suffix (e.g. ",TSYS", ",TBIN") — these were ProDOS
+  // file-type hints for the on-device assembler; irrelevant for cross-assembly.
+  std::string path = Trim(operand);
+  auto comma = path.find(',');
+  if (comma != std::string::npos) {
+    path = Trim(path.substr(0, comma));
+  }
+
+  if (path.empty()) {
+    throw std::runtime_error(".TF requires an output file path");
+  }
+
+  // Create parent directories so the assembler never fails to open the file.
+  std::filesystem::path out_path(path);
+  std::filesystem::path parent = out_path.parent_path();
+  if (!parent.empty() && !std::filesystem::exists(parent)) {
+    std::filesystem::create_directories(parent);
+  }
+
+  // Store in parser so main() can retrieve it after Parse() returns.
+  auto *parser = static_cast<ScmasmSyntaxParser *>(context.parser_state);
+  if (parser) {
+    parser->SetTfOutput(path);
+  }
 }
 
 void HandleEp(const std::string &label, const std::string &operand,
@@ -1114,9 +1184,14 @@ void HandleEp(const std::string &label, const std::string &operand,
     return;
   }
 
-  // Evaluate entry point address
+  // Strip inline comment then evaluate entry point address
+  std::string ep_expr = Trim(operand);
+  size_t ep_ws = ep_expr.find_first_of(" \t");
+  if (ep_ws != std::string::npos) {
+    ep_expr = ep_expr.substr(0, ep_ws);
+  }
   uint32_t address =
-      EvaluateExpression(operand, *context.symbols, context.parser_state);
+      EvaluateExpression(ep_expr, *context.symbols, context.parser_state);
 
   // TODO: Store entry point in section metadata
   // For now, just validate the expression
@@ -1135,9 +1210,14 @@ void HandlePh(const std::string &label, const std::string &operand,
     throw std::runtime_error("Parser state not available for .PH directive");
   }
 
-  // Evaluate virtual address
+  // Strip inline comment then evaluate virtual address
+  std::string ph_expr = Trim(operand);
+  size_t ph_ws = ph_expr.find_first_of(" \t");
+  if (ph_ws != std::string::npos) {
+    ph_expr = ph_expr.substr(0, ph_ws);
+  }
   uint32_t virtual_addr =
-      EvaluateExpression(operand, *context.symbols, context.parser_state);
+      EvaluateExpression(ph_expr, *context.symbols, context.parser_state);
 
   // Calculate current real address
   uint32_t real_addr;

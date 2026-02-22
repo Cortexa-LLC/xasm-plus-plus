@@ -96,6 +96,37 @@ public:
                     const std::string &operand_str) const = 0;
 
   /**
+   * @brief Estimate instruction size from mnemonic and operand string
+   *
+   * Returns the number of bytes this instruction will occupy, determined
+   * from the operand string syntax without requiring symbol resolution.
+   * Used during the first parse pass to track the current address accurately
+   * so that expressions like `.BS TARGET-*` compute correctly.
+   *
+   * Implementations should use operand-string heuristics:
+   * - Empty / "A"  → 1 byte  (implied / accumulator)
+   * - "#..."        → 2 bytes (immediate)
+   * - Branch mnemonics → 2 bytes (relative)
+   * - Explicit ZP hex "$xx" → 2 bytes
+   * - Indirect "(abs,X)" → 3 bytes
+   * - Other indirect "(sym)" etc. → 2 bytes
+   * - Everything else → 3 bytes (absolute)
+   *
+   * @param mnemonic Instruction mnemonic (e.g., "LDA", "JMP")
+   * @param operand_str Raw operand string before symbol resolution
+   * @return Estimated instruction size in bytes (1–4)
+   *
+   * @note Default implementation returns 3 (conservative, safe for parsers
+   *       that don't have a CPU plugin set).
+   */
+  virtual size_t GetInstructionSize(const std::string &mnemonic,
+                                    const std::string &operand_str) const {
+    (void)mnemonic;
+    (void)operand_str;
+    return 3;
+  }
+
+  /**
    * @brief Check if an instruction requires special encoding
    *
    * Some instructions (like branches with relaxation or multi-byte

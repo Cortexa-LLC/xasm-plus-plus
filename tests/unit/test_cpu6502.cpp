@@ -3065,6 +3065,44 @@ TEST(Cpu6502Test, BBR_NotAvailableIn6502Mode) {
   EXPECT_EQ(bytes.size(), 0UL);
 }
 
+// Test 279: TXY - Transfer X to Y (65816)
+TEST(Cpu6502Test, TXY_65816) {
+  Cpu6502 cpu;
+  cpu.SetCpuMode(CpuMode::Cpu65816);
+
+  auto bytes = cpu.EncodeTXY();
+  ASSERT_EQ(bytes.size(), 1UL);
+  EXPECT_EQ(bytes[0], 0x9B); // TXY opcode
+}
+
+// Test 280: TXY not available outside 65816 mode
+TEST(Cpu6502Test, TXY_NotAvailableIn65C02) {
+  Cpu6502 cpu;
+  cpu.SetCpuMode(CpuMode::Cpu65C02);
+
+  auto bytes = cpu.EncodeTXY();
+  EXPECT_EQ(bytes.size(), 0UL);
+}
+
+// Test 281: TYX - Transfer Y to X (65816)
+TEST(Cpu6502Test, TYX_65816) {
+  Cpu6502 cpu;
+  cpu.SetCpuMode(CpuMode::Cpu65816);
+
+  auto bytes = cpu.EncodeTYX();
+  ASSERT_EQ(bytes.size(), 1UL);
+  EXPECT_EQ(bytes[0], 0xBB); // TYX opcode
+}
+
+// Test 282: TYX not available outside 65816 mode
+TEST(Cpu6502Test, TYX_NotAvailableIn65C02) {
+  Cpu6502 cpu;
+  cpu.SetCpuMode(CpuMode::Cpu65C02);
+
+  auto bytes = cpu.EncodeTYX();
+  EXPECT_EQ(bytes.size(), 0UL);
+}
+
 // Test 278: BBS not available in standard 65C02 mode
 TEST(Cpu6502Test, BBS_NotAvailableInStandard65C02) {
   Cpu6502 cpu;

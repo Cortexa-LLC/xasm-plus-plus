@@ -632,13 +632,20 @@ void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
       // Parse macro parameters from operand
       std::vector<std::string> params;
       if (!operand.empty()) {
-        // Split by comma
+        // Split by comma; within each parameter strip trailing inline comment
+        // (whitespace-separated text after the value — SCMASM convention).
+        // e.g. ">MLICALL MLI.READ   Read block" -> param[0] = "MLI.READ"
         size_t start = 0;
         size_t pos = 0;
 
         while (pos <= operand.length()) {
           if (pos == operand.length() || operand[pos] == ',') {
             std::string param = Trim(operand.substr(start, pos - start));
+            // Strip inline comment: truncate at first whitespace
+            size_t ws = param.find_first_of(" \t");
+            if (ws != std::string::npos) {
+              param = param.substr(0, ws);
+            }
             if (!param.empty()) {
               params.push_back(param);
             }
@@ -652,14 +659,33 @@ void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
     } else {
       // Assume it's an assembly instruction (6502, 65C02, etc.)
       // Phase 3: We don't parse instructions yet, just store them as
-      // InstructionAtom
+      // InstructionAtom.
+      //
+      // Strip SCMASM inline comment: 6502 operands never have embedded spaces,
+      // so any whitespace-separated trailing text is a comment.
+      // e.g. "TAX  %11000000 or %00111000" → operand = "" (empty after opcode)
+      // e.g. "AND K.LC,y  should be %xx..." → operand = "K.LC,y"
+      std::string instr_operand = operand;
+      {
+        size_t ws = instr_operand.find_first_of(" \t");
+        if (ws != std::string::npos) {
+          instr_operand = instr_operand.substr(0, ws);
+        }
+      }
+
       auto instr_atom =
-          std::make_shared<InstructionAtom>(opcode_upper, operand);
+          std::make_shared<InstructionAtom>(opcode_upper, instr_operand);
       section.atoms.push_back(instr_atom);
 
-      // Assume each instruction is 1-3 bytes (will be properly sized by CPU
-      // plugin later) For now, advance by a conservative 3 bytes
-      current_address_ += 3;
+      // Advance address by the instruction's estimated byte count.
+      // Using the CPU plugin's heuristic (operand-string analysis) so that
+      // current-address expressions like `.BS TARGET-*` compute correctly.
+      if (cpu_) {
+        current_address_ += static_cast<uint32_t>(
+            cpu_->GetInstructionSize(opcode_upper, instr_operand));
+      } else {
+        current_address_ += 3; // conservative fallback when no CPU plugin set
+      }
     }
   }
 }
@@ -920,16 +946,32 @@ uint32_t ScmasmSyntaxParser::EvaluateExpression(const std::string &str,
 
   // Handle * (current address) - replace with current address value
   // Handles all cases: "*", "*+4", "$1300-*", etc.
+  // BUT NOT multiplication: "K.FD.MAX*2" — here * is a binary operator.
+  // Rule: replace * only when it is NOT immediately preceded by an identifier
+  //       character (alphanumeric, '.', '_', '?', '$').
   if (trimmed.find('*') != std::string::npos) {
-    // Replace all occurrences of * with current address
     std::string expr_str = trimmed;
     size_t pos = 0;
     std::string star_replacement = std::to_string(current_address_);
     while ((pos = expr_str.find('*', pos)) != std::string::npos) {
-      expr_str.replace(pos, 1, star_replacement);
-      pos += star_replacement.length();
+      // Check the character immediately before this '*'
+      bool preceded_by_ident = false;
+      if (pos > 0) {
+        char prev = expr_str[pos - 1];
+        preceded_by_ident = std::isalnum(static_cast<unsigned char>(prev)) ||
+                            prev == '.' || prev == '_' || prev == '?' ||
+                            prev == '$';
+      }
+      if (preceded_by_ident) {
+        // This * is multiplication — leave it alone
+        pos++;
+      } else {
+        expr_str.replace(pos, 1, star_replacement);
+        pos += star_replacement.length();
+      }
     }
-    // If the entire expression was just "*", return current address directly
+    // If the expression still contains an unresolved * after substitution, fall
+    // through to the normal ExpressionParser path (handles SYMBOL*2 etc.)
     if (expr_str == star_replacement) {
       return current_address_;
     }

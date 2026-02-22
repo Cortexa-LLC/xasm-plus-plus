@@ -2524,3 +2524,372 @@ START   LDA #$00
   // Should assemble successfully
   EXPECT_GT(section.atoms.size(), 0u);
 }
+
+// ============================================================================
+// Inline Comment Tests (A2osX real-world patterns)
+// These test that directives accept trailing whitespace-separated comments
+// without a semicolon, matching the original SCMASM convention.
+// ============================================================================
+
+TEST_F(ScmasmSyntaxTest, BS_InlineComment_NumericCount) {
+  // .BS 9   9 bytes, S.IOCTL  — inline comment after numeric count
+  std::string source =
+      "\t.OR\t$1000\n"
+      "\t.DUMMY\n"
+      "\t.OR\t$0000\n"
+      "\t.BS 9\t\t9 bytes, S.IOCTL\n"
+      "\t.ED\n";
+  EXPECT_NO_THROW(parser->Parse(source, section, symbols));
+}
+
+TEST_F(ScmasmSyntaxTest, BS_InlineComment_SymbolExpression) {
+  // .BS K.FD.MAX*2   pFDs  — symbol*literal with inline comment
+  std::string source =
+      "K.FD.MAX\t.EQ\t64\n"
+      "\t.OR\t$1000\n"
+      "\t.DUMMY\n"
+      "\t.OR\t$0000\n"
+      "\t.BS K.FD.MAX*2\t\tpFDs\n"
+      "\t.ED\n";
+  EXPECT_NO_THROW(parser->Parse(source, section, symbols));
+}
+
+TEST_F(ScmasmSyntaxTest, OR_InlineComment_ByteCount) {
+  // .OR ZPTMP   6 Bytes  — inline comment after address expression
+  std::string source =
+      "ZPTMP\t.EQ\t$80\n"
+      "\t.OR\t$1000\n"
+      "\t.DUMMY\n"
+      "\t.OR ZPTMP\t\t6 Bytes\n"
+      "\t.ED\n";
+  EXPECT_NO_THROW(parser->Parse(source, section, symbols));
+}
+
+TEST_F(ScmasmSyntaxTest, EQ_InlineComment) {
+  // TIMEOUT   .EQ 180   float  — inline comment after value
+  std::string source =
+      "\t.OR\t$1000\n"
+      "TIMEOUT\t.EQ 180\tfloat\n";
+  EXPECT_NO_THROW(parser->Parse(source, section, symbols));
+  int64_t v;
+  EXPECT_TRUE(symbols.Lookup("TIMEOUT", v));
+  EXPECT_EQ(v, 180);
+}
+
+TEST_F(ScmasmSyntaxTest, SE_InlineComment) {
+  // CNT   .SE 3   loop count  — inline comment after value
+  std::string source =
+      "\t.OR\t$1000\n"
+      "CNT\t.SE 3\tloop count\n";
+  EXPECT_NO_THROW(parser->Parse(source, section, symbols));
+  int64_t v;
+  EXPECT_TRUE(symbols.Lookup("CNT", v));
+  EXPECT_EQ(v, 3);
+}
+
+TEST_F(ScmasmSyntaxTest, CurrentAddress_StarAlone) {
+  // .EQ *  — star as current address (must still work)
+  std::string source =
+      "\t.OR\t$2000\n"
+      "HERE\t.EQ *\n";
+  EXPECT_NO_THROW(parser->Parse(source, section, symbols));
+  int64_t v;
+  EXPECT_TRUE(symbols.Lookup("HERE", v));
+  EXPECT_EQ(v, 0x2000);
+}
+
+TEST_F(ScmasmSyntaxTest, CurrentAddress_StarInExpression) {
+  // .EQ *+4  — star plus offset (must still work)
+  std::string source =
+      "\t.OR\t$2000\n"
+      "NEXT\t.EQ *+4\n";
+  EXPECT_NO_THROW(parser->Parse(source, section, symbols));
+  int64_t v;
+  EXPECT_TRUE(symbols.Lookup("NEXT", v));
+  EXPECT_EQ(v, 0x2004);
+}
+
+TEST_F(ScmasmSyntaxTest, Multiply_StarAsOperator) {
+  // .BS K.FD.MAX*2  — star must be treated as multiply, not current address
+  std::string source =
+      "K.FD.MAX\t.EQ\t64\n"
+      "\t.OR\t$1000\n"
+      "\t.DUMMY\n"
+      "\t.OR\t$0000\n"
+      "\t.BS K.FD.MAX*2\n"
+      "\t.ED\n";
+  EXPECT_NO_THROW(parser->Parse(source, section, symbols));
+}
+
+TEST_F(ScmasmSyntaxTest, Multiply_StarAsOperator_WithCurrentAddress) {
+  // $1300-*  — star is current address when not preceded by identifier
+  std::string source =
+      "\t.OR\t$1000\n"
+      "SZ\t.EQ $1300-*\n";
+  EXPECT_NO_THROW(parser->Parse(source, section, symbols));
+  int64_t v;
+  EXPECT_TRUE(symbols.Lookup("SZ", v));
+  EXPECT_EQ(v, 0x0300); // $1300 - $1000 = $0300
+}
+
+TEST_F(ScmasmSyntaxTest, MacroParam_InlineComment_Stripped) {
+  // >MYMACRO VALUE   trailing comment  — trailing comment must not
+  // be included in the macro parameter ]1
+  std::string source =
+      "\t.MA MYMACRO\n"
+      "RESULT\t.EQ ]1\n"
+      "\t.EM\n"
+      "\t.OR\t$1000\n"
+      "\t>MYMACRO $42\t\tsome inline comment\n";
+  EXPECT_NO_THROW(parser->Parse(source, section, symbols));
+  int64_t v;
+  EXPECT_TRUE(symbols.Lookup("RESULT", v));
+  EXPECT_EQ(v, 0x42);
+}
+
+TEST_F(ScmasmSyntaxTest, HS_MnemonicComment_OddHexWord) {
+  // .HS 90   BCC  — BCC is a valid hex string but odd-length; treat as comment
+  // Result must be exactly 1 byte ($90), not 2.5 bytes
+  std::string source =
+      "\t.OR\t$1000\n"
+      "\t.HS 90\t\t\t\tBCC\n";
+  EXPECT_NO_THROW(parser->Parse(source, section, symbols));
+}
+
+TEST_F(ScmasmSyntaxTest, HS_MnemonicComment_EvenHexWords_Included) {
+  // .HS 2C   BIT ABS  — 2C is even-length all-hex (1 byte), BIT stops (non-hex)
+  std::string source =
+      "\t.OR\t$1000\n"
+      "\t.HS 2C\t\t\t\tBIT ABS\n";
+  EXPECT_NO_THROW(parser->Parse(source, section, symbols));
+}
+
+TEST_F(ScmasmSyntaxTest, HS_MultiByteRun_NoSpaces) {
+  // .HS 03030301030101010404  — continuous hex run (10 bytes, no spaces)
+  std::string source =
+      "\t.OR\t$1000\n"
+      "\t.HS 03030301030101010404\n";
+  EXPECT_NO_THROW(parser->Parse(source, section, symbols));
+}
+
+// ============================================================================
+// Instruction Size Estimation — current_address_ accuracy for .BS TARGET-*
+// ============================================================================
+
+// Helper: after parsing, read back the symbol value set by a trailing .EQ *
+// to check where the parser thinks current_address_ is.
+
+TEST_F(ScmasmSyntaxTest, InstructionSize_ImpliedIs1Byte) {
+  // SEC, CLC, RTS, NOP etc. have no operand → 1 byte each
+  // After two implied instructions from $1000, * should be $1002
+  std::string source =
+      "\t.OR\t$1000\n"
+      "\t\tSEC\n"
+      "\t\tRTS\n"
+      "HERE\t.EQ\t*\n";
+  EXPECT_NO_THROW(parser->Parse(source, section, symbols));
+  int64_t addr = 0;
+  ASSERT_TRUE(symbols.Lookup("HERE", addr));
+  EXPECT_EQ(addr, 0x1002) << "SEC(1)+RTS(1) = 2 bytes from $1000";
+}
+
+TEST_F(ScmasmSyntaxTest, InstructionSize_ImmediateIs2Bytes) {
+  // LDA #$42 is 2 bytes
+  std::string source =
+      "\t.OR\t$1000\n"
+      "\t\tLDA\t#$42\n"
+      "HERE\t.EQ\t*\n";
+  EXPECT_NO_THROW(parser->Parse(source, section, symbols));
+  int64_t addr = 0;
+  ASSERT_TRUE(symbols.Lookup("HERE", addr));
+  EXPECT_EQ(addr, 0x1002) << "LDA #imm = 2 bytes from $1000";
+}
+
+TEST_F(ScmasmSyntaxTest, InstructionSize_AbsoluteIs3Bytes) {
+  // JMP $1234 is 3 bytes
+  std::string source =
+      "\t.OR\t$1000\n"
+      "\t\tJMP\t$1234\n"
+      "HERE\t.EQ\t*\n";
+  EXPECT_NO_THROW(parser->Parse(source, section, symbols));
+  int64_t addr = 0;
+  ASSERT_TRUE(symbols.Lookup("HERE", addr));
+  EXPECT_EQ(addr, 0x1003) << "JMP abs = 3 bytes from $1000";
+}
+
+TEST_F(ScmasmSyntaxTest, InstructionSize_ZeroPageExplicitIs2Bytes) {
+  // LDA $80 has a 1-byte ZP operand → 2 bytes total
+  std::string source =
+      "\t.OR\t$1000\n"
+      "\t\tLDA\t$80\n"
+      "HERE\t.EQ\t*\n";
+  EXPECT_NO_THROW(parser->Parse(source, section, symbols));
+  int64_t addr = 0;
+  ASSERT_TRUE(symbols.Lookup("HERE", addr));
+  EXPECT_EQ(addr, 0x1002) << "LDA $80 (ZP) = 2 bytes from $1000";
+}
+
+TEST_F(ScmasmSyntaxTest, InstructionSize_IndirectZeroPageIs2Bytes) {
+  // LDA (ZP_ADDR) → 65C02 zero-page indirect = 2 bytes
+  std::string source =
+      "ZP_ADDR\t.EQ\t$80\n"
+      "\t\t.OR\t$1000\n"
+      "\t\tLDA\t(ZP_ADDR)\n"
+      "HERE\t.EQ\t*\n";
+  EXPECT_NO_THROW(parser->Parse(source, section, symbols));
+  int64_t addr = 0;
+  ASSERT_TRUE(symbols.Lookup("HERE", addr));
+  EXPECT_EQ(addr, 0x1002) << "LDA (zp) = 2 bytes from $1000";
+}
+
+TEST_F(ScmasmSyntaxTest, InstructionSize_IndirectAbsoluteIs3Bytes) {
+  // JMP (ABS_ADDR) → absolute indirect = 3 bytes
+  std::string source =
+      "ABS_ADDR\t.EQ\t$1234\n"
+      "\t\t.OR\t$1000\n"
+      "\t\tJMP\t(ABS_ADDR)\n"
+      "HERE\t.EQ\t*\n";
+  EXPECT_NO_THROW(parser->Parse(source, section, symbols));
+  int64_t addr = 0;
+  ASSERT_TRUE(symbols.Lookup("HERE", addr));
+  EXPECT_EQ(addr, 0x1003) << "JMP (abs) = 3 bytes from $1000";
+}
+
+TEST_F(ScmasmSyntaxTest, InstructionSize_AbsIndexedIndirectIs3Bytes) {
+  // JMP (ABS,X) → absolute indexed indirect = 3 bytes
+  std::string source =
+      "JMP_TBL\t.EQ\t$C000\n"
+      "\t\t.OR\t$1000\n"
+      "\t\tJMP\t(JMP_TBL,X)\n"
+      "HERE\t.EQ\t*\n";
+  EXPECT_NO_THROW(parser->Parse(source, section, symbols));
+  int64_t addr = 0;
+  ASSERT_TRUE(symbols.Lookup("HERE", addr));
+  EXPECT_EQ(addr, 0x1003) << "JMP (abs,X) = 3 bytes from $1000";
+}
+
+TEST_F(ScmasmSyntaxTest, BS_CurrentAddressMinus_AfterMixedInstructions) {
+  // Simulates A2osX KERNEL.S.GP pattern:
+  //   .PH GPBASE
+  //   jmp LIBC      ; 3 bytes → GPBASE+00
+  //   jmp FPU       ; 3 bytes → GPBASE+03
+  //   lda #$00      ; 2 bytes → GPBASE+06
+  //   sec           ; 1 byte  → GPBASE+08
+  //   rts           ; 1 byte  → GPBASE+09
+  //   .BS TARGET-*  ; should = TARGET - (GPBASE+10)
+  //
+  // Use .EQ addresses so we don't need real symbol resolution
+  // TARGET = GPBASE + 10 → .BS should be 0 bytes (sanity check)
+  // If current_address_ were wrong (e.g., +3 per instr = +15 bytes),
+  // the .BS count would wrap negative → "too large" error.
+  std::string source =
+      "GPBASE\t\t.EQ\t$D400\n"
+      "TARGET\t\t.EQ\t$D40A\n"    // GPBASE + 10
+      "LIBC\t\t.EQ\t$E000\n"
+      "FPU\t\t.EQ\t$E100\n"
+      "\t\t.OR\tGPBASE\n"
+      "\t\tJMP\tLIBC\n"           // 3 bytes
+      "\t\tJMP\tFPU\n"            // 3 bytes
+      "\t\tLDA\t#$00\n"           // 2 bytes
+      "\t\tSEC\n"                 // 1 byte
+      "\t\tRTS\n"                 // 1 byte  → * = $D40A = TARGET
+      "\t\t.BS\tTARGET-*\n"       // 0 bytes — if current_address_ is right
+      "AFTER\t\t.EQ\t*\n";
+  EXPECT_NO_THROW(parser->Parse(source, section, symbols));
+  int64_t after = 0;
+  ASSERT_TRUE(symbols.Lookup("AFTER", after));
+  EXPECT_EQ(after, 0xD40A) << "current_address_ must equal TARGET after exact instructions";
+}
+
+TEST_F(ScmasmSyntaxTest, BS_CurrentAddressMinus_FillGap) {
+  // Similar to above but .BS fills a non-zero gap.
+  // 3 JMPs (9 bytes) + 1 LDA # (2 bytes) = 11 bytes.
+  // TARGET = GPBASE + 16 → gap = 16 - 11 = 5 bytes.
+  std::string source =
+      "GPBASE\t\t.EQ\t$D400\n"
+      "TARGET\t\t.EQ\t$D410\n"    // GPBASE + 16
+      "A1\t\t.EQ\t$E000\n"
+      "A2\t\t.EQ\t$E100\n"
+      "A3\t\t.EQ\t$E200\n"
+      "\t\t.OR\tGPBASE\n"
+      "\t\tJMP\tA1\n"             // 3 bytes
+      "\t\tJMP\tA2\n"             // 3 bytes
+      "\t\tJMP\tA3\n"             // 3 bytes
+      "\t\tLDA\t#$06\n"           // 2 bytes → * = $D40B
+      "\t\t.BS\tTARGET-*\n"       // 5 bytes
+      "AFTER\t\t.EQ\t*\n";
+  EXPECT_NO_THROW(parser->Parse(source, section, symbols));
+  int64_t after = 0;
+  ASSERT_TRUE(symbols.Lookup("AFTER", after));
+  EXPECT_EQ(after, 0xD410) << ".BS must advance address to TARGET";
+}
+
+// ============================================================================
+// Instruction inline comment stripping
+// ============================================================================
+// SCMASM uses whitespace-separated inline comments on instructions too.
+// e.g. "TAX   %11000000 or %00111000" — the binary expression is a comment
+// e.g. "AND K.LC,y   should be %xx..." — only "K.LC,y" is the operand
+
+TEST_F(ScmasmSyntaxTest, Instruction_ImpliedWithInlineComment_NoError) {
+  // TAX with binary-literal inline comment must not cause a parse/assemble error
+  std::string source =
+      "\t\t.OR\t$1000\n"
+      "\t\tTAX\t\t\t\t%11000000 or %00111000\n"
+      "\t\tNOP\n";
+  EXPECT_NO_THROW(parser->Parse(source, section, symbols));
+}
+
+TEST_F(ScmasmSyntaxTest, Instruction_WithOperandAndInlineComment_OperandKept) {
+  // AND K.LC,y   should be %xx…  — only "K.LC,y" should be the operand.
+  // We verify parse succeeds (inline comment stripped) and address advances
+  // correctly: AND abs,Y = 3 bytes from $1000.
+  std::string source =
+      "K_LC\t\t.EQ\t$C300\n"
+      "\t\t.OR\t$1000\n"
+      "\t\tAND\tK_LC,Y\t\t\tshould be %00xxxxxx or %xx000xxx\n"
+      "HERE\t.EQ\t*\n";
+  EXPECT_NO_THROW(parser->Parse(source, section, symbols));
+  int64_t addr = 0;
+  ASSERT_TRUE(symbols.Lookup("HERE", addr));
+  EXPECT_EQ(addr, 0x1003) << "AND abs,Y = 3 bytes; inline comment must not grow operand";
+}
+
+TEST_F(ScmasmSyntaxTest, DA_InlineComment_BinaryLiteral) {
+  // .DA #%100   L  — "#%100" (binary 4) is the datum; "L" is an inline comment
+  // Must parse without error and emit 1 byte = 4
+  std::string source =
+      "\t\t.OR\t$1000\n"
+      "INT.CMPT\t.DA\t#%100\t\t\t\tL\n"
+      "\t\t.DA\t#%101\t\t\t\tNE\n";
+  EXPECT_NO_THROW(parser->Parse(source, section, symbols));
+}
+
+TEST_F(ScmasmSyntaxTest, DA_InlineComment_MultipleElements) {
+  // Multi-element .DA with trailing comment on last element
+  std::string source =
+      "\t\t.OR\t$1000\n"
+      "\t\t.DA\t#$01,#$02\t\t\tsomething\n";
+  EXPECT_NO_THROW(parser->Parse(source, section, symbols));
+}
+
+TEST_F(ScmasmSyntaxTest, TYX_65816_RecognizedAsInstruction) {
+  // TYX is a 65816 instruction (opcode $BB). In SCMASM, a source line like:
+  //   tyx  TYX: if 65C816, x becomes non-zero
+  // was previously parsed as label "tyx" + opcode "TYX:" because TYX was not
+  // in HasOpcode. Verify TYX is now recognized and parsed without error.
+  std::string source =
+      "\t\t.OR\t$1000\n"
+      "\t\t.OP\t65816\n"
+      "\t\ttyx\t\t\t\tTYX: if 65C816, x becomes non-zero\n";
+  EXPECT_NO_THROW(parser->Parse(source, section, symbols));
+}
+
+TEST_F(ScmasmSyntaxTest, TXY_65816_RecognizedAsInstruction) {
+  // TXY is a 65816 instruction (opcode $9B). Verify it is recognized.
+  std::string source =
+      "\t\t.OR\t$1000\n"
+      "\t\t.OP\t65816\n"
+      "\t\ttxy\n";
+  EXPECT_NO_THROW(parser->Parse(source, section, symbols));
+}

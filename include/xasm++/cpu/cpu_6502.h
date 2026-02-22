@@ -140,6 +140,10 @@ public:
   EncodeInstruction(const std::string &mnemonic, uint32_t operand,
                     const std::string &operand_str) const override;
 
+  // CpuPlugin instruction size estimation (first-pass address tracking)
+  size_t GetInstructionSize(const std::string &mnemonic,
+                            const std::string &operand_str) const override;
+
   // CpuPlugin special encoding interface (for branch relaxation and multi-byte
   // instructions)
   bool RequiresSpecialEncoding(const std::string &mnemonic) const override;
@@ -443,6 +447,8 @@ public:
   std::vector<uint8_t> EncodeTDC() const; // Transfer Direct Page to C (65816)
   std::vector<uint8_t> EncodeTCS() const; // Transfer C to Stack Pointer (65816)
   std::vector<uint8_t> EncodeTSC() const; // Transfer Stack Pointer to C (65816)
+  std::vector<uint8_t> EncodeTXY() const; // Transfer X to Y (65816)
+  std::vector<uint8_t> EncodeTYX() const; // Transfer Y to X (65816)
 
   // Phase 2.5 - Group 13: 65816 Long Jumps
   std::vector<uint8_t>
