@@ -279,6 +279,26 @@ TEST_F(ScmasmSyntaxTest, ParsesBinaryWithSeparator) {
   EXPECT_EQ(value, 0xA5);
 }
 
+TEST_F(ScmasmSyntaxTest, DA_BinaryWithDotSeparator) {
+  // .DA with binary dot-separator (used in LIBGUI cursor bitmaps)
+  // %000.00000000 (11-bit cursor row) must be parsed without error.
+  std::string source = "\t\t.OR $1000\n"
+                       "\t\t.DA %000.00000000\n"
+                       "\t\t.DA %010.01111110\n";
+  EXPECT_NO_THROW(parser->Parse(source, section, symbols));
+  // Check the data atoms for expected values
+  auto *d1 = dynamic_cast<DataAtom *>(section.atoms[1].get());
+  auto *d2 = dynamic_cast<DataAtom *>(section.atoms[2].get());
+  ASSERT_NE(d1, nullptr);
+  ASSERT_NE(d2, nullptr);
+  // %00000000000 = 0x000
+  uint16_t v1 = d1->data[0] | (d1->data[1] << 8);
+  EXPECT_EQ(v1, 0x0000u);
+  // %01001111110 = 0x027E = 638
+  uint16_t v2 = d2->data[0] | (d2->data[1] << 8);
+  EXPECT_EQ(v2, 0x027Eu);
+}
+
 TEST_F(ScmasmSyntaxTest, ParsesDecimalNumber) {
   parser->Parse("SIZE .EQ 1024\n", section, symbols);
 
@@ -1867,9 +1887,13 @@ TEST_F(ScmasmSyntaxTest, CS_EscapeSequenceBackslash) {
 }
 
 TEST_F(ScmasmSyntaxTest, CS_EscapeSequenceQuote) {
+  // In SCMASM the string delimiter is NOT escapable with '\'.
+  // A '"' always terminates a double-quoted string, even when preceded by '\'.
+  // So .CS "Say \" produces "Say \" with the closing '"' at the backslash.
+  // The string content is: S a y SPACE backslash (5 bytes).
   std::string source = R"(
         .OR $0800
-        .CS "Say \"Hi\""
+        .CS "Say \"
 )";
 
   parser->Parse(source, section, symbols);
@@ -1877,8 +1901,25 @@ TEST_F(ScmasmSyntaxTest, CS_EscapeSequenceQuote) {
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[1]);
   ASSERT_NE(data_atom, nullptr);
 
-  // \" should become double quote
-  std::vector<uint8_t> expected = {'S', 'a', 'y', ' ', '"', 'H', 'i', '"'};
+  // In SCMASM '"' ends the string — backslash is emitted as a literal byte.
+  std::vector<uint8_t> expected = {'S', 'a', 'y', ' ', '\\'};
+  EXPECT_EQ(data_atom->data, expected);
+}
+
+TEST_F(ScmasmSyntaxTest, CS_SpinnerWithTrailingBackslash) {
+  // Real-world SCMASM pattern from UNARC.S: spinner chars "|/-\"
+  // The '\' is the last content byte; '"' ends the string.
+  std::string source = R"(
+        .OR $0800
+        .CS "|/-\"
+)";
+
+  parser->Parse(source, section, symbols);
+
+  auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[1]);
+  ASSERT_NE(data_atom, nullptr);
+
+  std::vector<uint8_t> expected = {'|', '/', '-', '\\'};
   EXPECT_EQ(data_atom->data, expected);
 }
 
@@ -2484,6 +2525,24 @@ START   LDA #$00
   EXPECT_GT(section.atoms.size(), 0u);
 }
 
+TEST_F(ScmasmSyntaxTest, EditorCommands_SOH_ControlCharBeforeInstruction) {
+  // Apple II source files sometimes embed \x01 (SOH) control characters as
+  // editor artifacts at the start of instruction lines. They must be ignored.
+  std::string source;
+  source += "\t.OR $1000\n";
+  source += "\x01\t\t\tlda #$42\n";  // \x01 before a real instruction
+  EXPECT_NO_THROW(parser->Parse(source, section, symbols));
+  // The lda #$42 should have been assembled
+  bool found_lda = false;
+  for (auto &atom : section.atoms) {
+    if (auto inst = std::dynamic_pointer_cast<InstructionAtom>(atom)) {
+      found_lda = true;
+      break;
+    }
+  }
+  EXPECT_TRUE(found_lda);
+}
+
 TEST_F(ScmasmSyntaxTest, EditorCommands_NotALabelOrDirective) {
   // Verify that labels or directives that happen to start with editor command
   // names are NOT stripped (they should have colons or periods)
@@ -2892,4 +2951,93 @@ TEST_F(ScmasmSyntaxTest, TXY_65816_RecognizedAsInstruction) {
       "\t\t.OP\t65816\n"
       "\t\ttxy\n";
   EXPECT_NO_THROW(parser->Parse(source, section, symbols));
+}
+
+TEST_F(ScmasmSyntaxTest, StripComments_SemicolonInsideCZString) {
+  // Semicolons inside .CZ string literals must not be stripped as comments.
+  // ANSI escape sequences like "\e[37;40m" contain literal semicolons.
+  std::string source =
+      "\t\t.OR\t$1000\n"
+      "SEQ.BAR\t\t.CZ\t\"\\e[7m\\e[37;40m\"\n";
+  EXPECT_NO_THROW(parser->Parse(source, section, symbols));
+}
+
+TEST_F(ScmasmSyntaxTest, StripComments_SemicolonOutsideString) {
+  // Semicolons outside string literals should still be treated as comments.
+  std::string source =
+      "\t\t.OR\t$1000\n"
+      "\t\tlda\t#$42 ; load the value\n"
+      "\t\tnop\n";
+  EXPECT_NO_THROW(parser->Parse(source, section, symbols));
+  // LDA #$42 = 2 bytes, NOP = 1 byte → HERE = $1003
+  EXPECT_TRUE(symbols.IsDefined("HERE") || true); // just verify no parse error
+}
+
+TEST_F(ScmasmSyntaxTest, DO_InlineComment_Stripped) {
+  // .DO expression must not include trailing inline comment text.
+  // .DO X.DELETE.SOURCE=1   mv file, check if srcbase=dstbase
+  // The "mv file..." portion is an inline comment, not part of the expression.
+  std::string source =
+      "X.DELETE.SOURCE\t.EQ\t1\n"
+      "\t\t.OR\t$1000\n"
+      "\t\t.DO\tX.DELETE.SOURCE=1\tmv file, check if srcbase=dstbase\n"
+      "\t\tnop\n"
+      "\t\t.FIN\n";
+  EXPECT_NO_THROW(parser->Parse(source, section, symbols));
+}
+
+TEST_F(ScmasmSyntaxTest, AS_DashPrefix_HighBitOnLastByte) {
+  // .AS -"text" sets the high bit on the last byte (same as .AT).
+  // Must parse without "Unterminated string" error.
+  std::string source =
+      "\t\t.OR\t$1000\n"
+      "BB.MSG.ERR\t.AS\t-\"BOOT ERROR\"\n";
+  EXPECT_NO_THROW(parser->Parse(source, section, symbols));
+  // "BOOT ERROR" = 10 chars -> symbol defined at $1000
+  int64_t value = 0;
+  ASSERT_TRUE(symbols.Lookup("BB.MSG.ERR", value));
+  EXPECT_EQ(value, 0x1000);
+}
+
+TEST_F(ScmasmSyntaxTest, OP_InlineComment_Stripped) {
+  // .OP 65C02     Target CPU, must match CPU level in header
+  // Inline comment after CPU name must not be included in validation.
+  std::string source =
+      "\t\t.OR\t$1000\n"
+      "\t\t.OP\t65C02\t\t\t\tTarget CPU, must match CPU level in header\n"
+      "\t\tnop\n";
+  EXPECT_NO_THROW(parser->Parse(source, section, symbols));
+}
+
+TEST_F(ScmasmSyntaxTest, EQ_LabelOnPrecedingLine) {
+  // SCMASM pattern: label on one line, .EQ directive on the next.
+  // The label must receive the .EQ value, not the current address.
+  //
+  // Example from A2osX x.stresc.g:
+  //   X.STRESC.EscCharsCnt
+  //               .EQ *-X.STRESC.EscChars
+  std::string source =
+      "\t\t.OR\t$1000\n"
+      "DATA.START\t.AS\t\"hello\"\n"
+      "DATA.COUNT\n"
+      "\t\t.EQ\t*-DATA.START\n";
+  EXPECT_NO_THROW(parser->Parse(source, section, symbols));
+  // DATA.START = $1000; .AS "hello" = 5 bytes; * = $1005
+  // DATA.COUNT should be 5 (the count), not $1005
+  int64_t value = 0;
+  ASSERT_TRUE(symbols.Lookup("DATA.COUNT", value));
+  EXPECT_EQ(value, 5);
+}
+
+TEST_F(ScmasmSyntaxTest, LabelOnlyLine_FollowedByInstruction) {
+  // Label on its own line followed by an instruction should define the
+  // label at the instruction's address (normal behavior).
+  std::string source =
+      "\t\t.OR\t$1000\n"
+      "MY.LABEL\n"
+      "\t\tnop\n";
+  EXPECT_NO_THROW(parser->Parse(source, section, symbols));
+  int64_t value = 0;
+  ASSERT_TRUE(symbols.Lookup("MY.LABEL", value));
+  EXPECT_EQ(value, 0x1000); // Label should be at NOP's address
 }

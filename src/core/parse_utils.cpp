@@ -124,6 +124,9 @@ uint64_t ParseBinary(const std::string &str) {
 
   uint64_t value = 0;
   for (char c : str) {
+    if (c == '.') {
+      continue; // Visual separator (e.g., %0000.0000)
+    }
     if (c != '0' && c != '1') {
       throw std::invalid_argument("Invalid binary digit '" + std::string(1, c) +
                                   "' in binary string: '" + str + "'");

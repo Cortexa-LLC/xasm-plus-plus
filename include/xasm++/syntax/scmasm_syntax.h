@@ -358,6 +358,9 @@ private:
       current_macro_body_;     ///< Lines of macro being defined
   int macro_invocation_depth_; ///< Nesting depth for macro invocations
 
+  // Pending label: a label-only line may be associated with the next .EQ/.SE
+  std::string pending_label_; ///< Label deferred from previous label-only line
+
   // Dummy section support (structure definitions)
   bool in_dummy_section_; ///< Currently in dummy section (.DUMMY active)
 

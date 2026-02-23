@@ -262,8 +262,22 @@ void HandleAs(const std::string &label, const std::string &operand,
               DirectiveContext &context) {
   (void)label; // Label handled separately
 
+  // SCMASM prefix modifiers before the opening delimiter:
+  //   -"text"  set high bit on the LAST byte (same as .AT)
+  // Strip the prefix and delegate appropriately.
+  std::string trimmed_op = Trim(operand);
+  bool high_bit_last = false;
+  if (!trimmed_op.empty() && trimmed_op[0] == '-') {
+    high_bit_last = true;
+    trimmed_op = Trim(trimmed_op.substr(1));
+  }
+
   std::vector<uint8_t> data;
-  ParseString(operand, data);
+  ParseString(trimmed_op, data);
+
+  if (high_bit_last && !data.empty()) {
+    data.back() |= constants::HIGH_BIT_MASK;
+  }
 
   auto atom = std::make_shared<DataAtom>(data);
   context.section->atoms.push_back(atom);
@@ -956,6 +970,11 @@ void HandleOp(const std::string &label, const std::string &operand,
   // TODO: Implement CPU operation mode switching
   // For now, stub implementation
   std::string trimmed = Trim(operand);
+  // Strip SCMASM inline comment: take only the first whitespace-delimited token
+  {
+    size_t ws = trimmed.find_first_of(" \t");
+    if (ws != std::string::npos) { trimmed = trimmed.substr(0, ws); }
+  }
   std::transform(trimmed.begin(), trimmed.end(), trimmed.begin(), ::toupper);
 
   // Validate CPU name (6502, 65C02, 65816)
@@ -1060,32 +1079,28 @@ void ParseCString(const std::string &operand, std::vector<uint8_t> &result) {
   // Find delimiter (first character)
   char delimiter = trimmed[0];
 
-  // Find closing delimiter (skip escaped ones)
-  size_t end = std::string::npos;
-  for (size_t i = 1; i < trimmed.length(); ++i) {
-    if (trimmed[i] == delimiter && trimmed[i - 1] != '\\') {
-      end = i;
-      break;
-    }
-    // Handle escaped backslash before delimiter: \\"
-    if (trimmed[i] == delimiter && i >= 2 && trimmed[i - 1] == '\\' &&
-        trimmed[i - 2] == '\\') {
-      end = i;
-      break;
-    }
-  }
-
+  // Find closing delimiter. In SCMASM the delimiter is never escapable —
+  // the very first occurrence of the delimiter after the opening one ends
+  // the string (e.g. "|/-\" ends at the '"' after '\').
+  size_t end = trimmed.find(delimiter, 1);
   if (end == std::string::npos) {
     throw std::runtime_error("Unterminated string");
   }
 
-  // Parse string content with escape sequences
+  // Parse string content with escape sequences.
   const char *s = trimmed.c_str() + 1; // Start after opening delimiter
   const char *s_end = trimmed.c_str() + end;
 
   while (s < s_end) {
-    uint8_t byte = ParseEscapeSequence(s);
-    result.push_back(byte);
+    if (*s == '\\' && s + 1 >= s_end) {
+      // Trailing backslash at end of string content — the delimiter is not
+      // escapable in SCMASM, so this '\' is a literal backslash character.
+      result.push_back(static_cast<uint8_t>('\\'));
+      ++s;
+    } else {
+      uint8_t byte = ParseEscapeSequence(s);
+      result.push_back(byte);
+    }
   }
 }
 

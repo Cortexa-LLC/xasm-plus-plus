@@ -111,6 +111,17 @@ ParseExpression(const std::string &str, ConcreteSymbolTable &symbols) {
                                           right_expr);
   }
 
+  // Check for bitwise XOR (^) operator — e.g. $FF^SYM.Q.AAARRAY
+  size_t xor_pos = trimmed.find('^');
+  if (xor_pos != std::string::npos && xor_pos > 0) {
+    std::string left = Trim(trimmed.substr(0, xor_pos));
+    std::string right = Trim(trimmed.substr(xor_pos + 1));
+    auto left_expr = ParseExpression(left, symbols);
+    auto right_expr = ParseExpression(right, symbols);
+    return std::make_shared<BinaryOpExpr>(BinaryOp::BitwiseXor, left_expr,
+                                          right_expr);
+  }
+
   // Hex literal: $1234 (may have addressing mode suffix like $200,x)
   if (!trimmed.empty() && trimmed[0] == '$') {
     // Strip addressing mode suffix (,X ,Y ,S) before parsing
@@ -123,7 +134,7 @@ ParseExpression(const std::string &str, ConcreteSymbolTable &symbols) {
     return std::make_shared<LiteralExpr>(value);
   }
 
-  // Binary literal: %10101010
+  // Binary literal: %10101010 (dots are visual separators: %0000.0000)
   if (!trimmed.empty() && trimmed[0] == '%') {
     std::string bin_part = trimmed.substr(1);
     if (bin_part.empty()) {
@@ -131,12 +142,21 @@ ParseExpression(const std::string &str, ConcreteSymbolTable &symbols) {
                                "' (no digits after %)");
     }
 
-    // Validate binary digits BEFORE calling stoul
+    // Validate binary digits BEFORE removing separators
     for (char c : bin_part) {
-      if (c != '0' && c != '1') {
+      if (c != '0' && c != '1' && c != '.') {
         throw std::runtime_error("Invalid binary digit '" + std::string(1, c) +
                                  "' in binary number: '" + trimmed + "'");
       }
+    }
+
+    // Remove . separators (visual aid: %0000.0000 = %00000000)
+    bin_part.erase(std::remove(bin_part.begin(), bin_part.end(), '.'),
+                   bin_part.end());
+
+    if (bin_part.empty()) {
+      throw std::runtime_error("Binary number has no digits: '" + trimmed +
+                               "'");
     }
 
     try {

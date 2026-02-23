@@ -145,8 +145,8 @@ bool SCMASMNumberParser::TryParse(const std::string &token,
 ScmasmSyntaxParser::ScmasmSyntaxParser()
     : current_address_(0), current_file_("<source>"), current_line_(0),
       cpu_(nullptr), in_macro_definition_(false), macro_invocation_depth_(0),
-      in_dummy_section_(false), in_phase_(false), phase_virtual_addr_(0),
-      phase_real_addr_(0) {
+      pending_label_(""), in_dummy_section_(false), in_phase_(false),
+      phase_virtual_addr_(0), phase_real_addr_(0) {
   InitializeDirectiveRegistry();
 }
 
@@ -360,7 +360,7 @@ std::string ScmasmSyntaxParser::StripLineNumber(const std::string &line) {
 std::string ScmasmSyntaxParser::StripComments(const std::string &line) {
   // Two comment styles:
   // 1. * in column 1 (full-line comment)
-  // 2. ; anywhere (rest of line is comment)
+  // 2. ; anywhere outside a string literal (rest of line is comment)
 
   // Check for * in column 1 (after any leading whitespace)
   size_t first_non_space = line.find_first_not_of(" \t");
@@ -368,10 +368,26 @@ std::string ScmasmSyntaxParser::StripComments(const std::string &line) {
     return ""; // Entire line is comment
   }
 
-  // Find semicolon comment
-  size_t semicolon = line.find(';');
-  if (semicolon != std::string::npos) {
-    return line.substr(0, semicolon);
+  // Scan for ; comment, skipping over quoted string literals so that
+  // semicolons inside .CS/.CZ strings (e.g. "\e[37;40m") are not stripped.
+  bool in_string = false;
+  char string_delim = 0;
+  for (size_t i = 0; i < line.length(); ++i) {
+    char c = line[i];
+    if (in_string) {
+      // SCMASM: the string delimiter is never escapable by backslash,
+      // so '\"' does NOT extend the string — the '"' ends it.
+      if (c == string_delim) {
+        in_string = false;
+      }
+    } else {
+      if (c == '"' || c == '\'') {
+        in_string = true;
+        string_delim = c;
+      } else if (c == ';') {
+        return line.substr(0, i);
+      }
+    }
   }
 
   return line;
@@ -449,6 +465,16 @@ std::string ScmasmSyntaxParser::Trim(const std::string &str) {
     return "";
   }
 
+  // Strip leading non-printable non-tab control chars (Apple II editor
+  // artifacts like \x01 SOH that sometimes precede instruction lines).
+  while (start < str.length() && (unsigned char)str[start] < 0x20 &&
+         str[start] != '\t') {
+    start++;
+  }
+  if (start >= str.length()) {
+    return "";
+  }
+
   size_t end = str.find_last_not_of(" \t\r\n");
   return str.substr(start, end - start + 1);
 }
@@ -477,25 +503,13 @@ void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
     pos++;
   }
 
-  // If nothing left (just a label, nothing else), define it and create atom
+  // If nothing left (just a label, nothing else), defer it as pending_label_.
+  // It may be the label for a .EQ/.SE on the next line (SCMASM pattern where
+  // the label appears on a separate line before the .EQ directive).
+  // Otherwise it will be defined at the next instruction's address.
   if (pos >= line.length()) {
     if (!label.empty()) {
-      // Define label
-      if (IsLocalLabel(label)) {
-        local_labels_[label] = current_address_;
-        // Local labels don't create label atoms
-      } else {
-        // Normalize label to uppercase for case-insensitive SCMASM
-        // compatibility
-        std::string normalized_label = util::ToUpper(label);
-        auto expr = std::make_shared<LiteralExpr>(current_address_);
-        symbols.Define(normalized_label, SymbolType::Label, expr);
-
-        // Create label atom for non-local labels (use normalized name)
-        auto label_atom =
-            std::make_shared<LabelAtom>(normalized_label, current_address_);
-        section.atoms.push_back(label_atom);
-      }
+      pending_label_ = label; // defer; don't define yet
     }
     return;
   }
@@ -525,6 +539,32 @@ void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
   std::string opcode_upper = opcode;
   std::transform(opcode_upper.begin(), opcode_upper.end(), opcode_upper.begin(),
                  ::toupper);
+
+  // --- Resolve pending label from previous label-only line ---
+  // If pending_label_ is set and the current line has no inline label:
+  //   - For .EQ/.SE: use pending_label_ as the label (SCMASM two-line pattern)
+  //   - For any other instruction/directive: define pending_label_ at current
+  //     address (normal label-before-instruction pattern)
+  if (!pending_label_.empty()) {
+    bool used_for_eq = (label.empty() &&
+                        (opcode_upper == ".EQ" || opcode_upper == ".SE"));
+    if (used_for_eq) {
+      label = pending_label_;
+    } else {
+      // Define pending_label_ at the current address
+      std::string pl = pending_label_;
+      if (IsLocalLabel(pl)) {
+        local_labels_[pl] = current_address_;
+      } else {
+        std::string norm = util::ToUpper(pl);
+        auto expr = std::make_shared<LiteralExpr>(current_address_);
+        symbols.Define(norm, SymbolType::Label, expr);
+        auto atom = std::make_shared<LabelAtom>(norm, current_address_);
+        section.atoms.push_back(atom);
+      }
+    }
+    pending_label_ = "";
+  }
 
   // Handle directives (must start with .)
   if (!opcode.empty() && opcode[0] == '.') {
@@ -570,7 +610,15 @@ void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
     // Control flow directives require special handling (not in registry)
     using namespace scmasm::directives;
     if (opcode_upper == DO) {
-      HandleDo(operand, section, symbols, source, line_idx);
+      // Strip SCMASM inline comment: .DO expression has no embedded spaces
+      std::string do_operand = operand;
+      {
+        size_t ws = do_operand.find_first_of(" \t");
+        if (ws != std::string::npos) {
+          do_operand = do_operand.substr(0, ws);
+        }
+      }
+      HandleDo(do_operand, section, symbols, source, line_idx);
     } else if (opcode_upper == LU) {
       HandleLu(operand, section, symbols, source, line_idx);
     } else if (opcode_upper == ELSE || opcode_upper == FIN ||
