@@ -3313,3 +3313,73 @@ TEST(ScmasmZPAt0, ZeroPageAtAddress0_ProducesZPEncoding) {
   }
   EXPECT_TRUE(found) << "Expected to find an InstructionAtom";
 }
+
+// ============================================================================
+// Phase Directive Label Tests
+// ============================================================================
+
+TEST_F(ScmasmSyntaxTest, PhaseInstructionLabelUsesVirtualAddress) {
+  // Regression test: instruction labels inside .PH/.EP blocks must use the
+  // virtual (phased) address, not the physical storage address.
+  //
+  // .OR $1000
+  // .PH $2000
+  // LABEL  nop      <- LABEL must be $2000 (virtual), not $1000 (physical)
+  // .EP
+  // .DA /LABEL      <- must emit $20 (high byte of $2000)
+  std::string source = R"(
+        .OR $1000
+        .PH $2000
+LABEL   nop
+        .EP
+        .DA /LABEL
+)";
+
+  Assembler assembler;
+  assembler.SetCpuPlugin(cpu.get());
+  assembler.SetSymbolTable(&symbols);
+
+  ASSERT_NO_THROW(parser->Parse(source, section, symbols));
+  assembler.AddSection(section);
+
+  AssemblerResult result = assembler.Assemble();
+  ASSERT_TRUE(result.success) << "Assembly must succeed";
+
+  // Verify LABEL = $2000 in symbol table
+  int64_t label_value = 0;
+  ASSERT_TRUE(symbols.Lookup("LABEL", label_value))
+      << "LABEL must be defined in symbol table";
+  EXPECT_EQ(label_value, 0x2000)
+      << "LABEL inside .PH $2000 must equal $2000 (virtual), not $1000";
+}
+
+TEST_F(ScmasmSyntaxTest, PhaseAfterAddressRestoredToPhysical) {
+  // After .EP, the address counter must be restored to the physical address
+  // (physical start + bytes emitted during phase).
+  std::string source = R"(
+        .OR $1000
+        .PH $2000
+INSIDE  .EQ *
+        .DA #0
+        .EP
+AFTER   .EQ *
+)";
+
+  Assembler assembler;
+  assembler.SetCpuPlugin(cpu.get());
+  assembler.SetSymbolTable(&symbols);
+
+  ASSERT_NO_THROW(parser->Parse(source, section, symbols));
+  assembler.AddSection(section);
+
+  AssemblerResult result = assembler.Assemble();
+  ASSERT_TRUE(result.success) << "Assembly must succeed";
+
+  int64_t inside_val = 0, after_val = 0;
+  ASSERT_TRUE(symbols.Lookup("INSIDE", inside_val));
+  ASSERT_TRUE(symbols.Lookup("AFTER", after_val));
+  EXPECT_EQ(inside_val, 0x2000)
+      << "INSIDE (.EQ * inside .PH $2000) must be $2000";
+  EXPECT_EQ(after_val, 0x1001)
+      << "AFTER (after .EP with 1 byte emitted) must be $1001";
+}

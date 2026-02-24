@@ -95,6 +95,9 @@ void BinaryOutput::WriteOutput(const std::string &filename,
       case AtomType::ListingControl:
         // ListingControlAtom: No bytes generated (listing only)
         break;
+      case AtomType::Phase:
+        // PhaseAtom: No bytes generated (address tracking only)
+        break;
       }
     }
   }

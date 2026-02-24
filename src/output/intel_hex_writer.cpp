@@ -233,6 +233,10 @@ IntelHexWriter::ExtractBytes(const Section &section) {
     case AtomType::ListingControl:
       // Listing control atom - no bytes, no address change
       break;
+
+    case AtomType::Phase:
+      // Phase atom - no bytes generated (address tracking only)
+      break;
     }
   }
 

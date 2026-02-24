@@ -946,10 +946,12 @@ void HandleDummy(const std::string &label, const std::string &operand,
   (void)operand; // Optional operand
 
   // Enter dummy section mode - data directives will update address but not emit
-  // bytes
+  // bytes.  Save the current main-section PC so .ED can restore it; this
+  // prevents a .OR inside the dummy block from permanently repositioning the
+  // main section's current address.
   ValidateParser(context.parser_state);
   auto *parser = static_cast<ScmasmSyntaxParser *>(context.parser_state);
-  parser->StartDummySection();
+  parser->StartDummySection(*context.current_address);
 }
 
 void HandleEd(const std::string &label, const std::string &operand,
@@ -957,10 +959,14 @@ void HandleEd(const std::string &label, const std::string &operand,
   (void)label;   // Label handled separately
   (void)operand; // Operand unused
 
-  // Exit dummy section mode - return to normal assembly
+  // Exit dummy section mode - restore the main-section PC to whatever it was
+  // when .DUMMY was entered.  Without this, any .OR inside the dummy block
+  // (e.g. ".OR ZPDRV" in a2osx.i) would permanently reposition the assembler's
+  // PC, corrupting all subsequent label addresses.
   ValidateParser(context.parser_state);
   auto *parser = static_cast<ScmasmSyntaxParser *>(context.parser_state);
-  parser->EndDummySection();
+  uint32_t saved_addr = parser->EndDummySection();
+  *context.current_address = saved_addr;
 }
 
 void HandleOp(const std::string &label, const std::string &operand,
@@ -1182,6 +1188,10 @@ void HandleEp(const std::string &label, const std::string &operand,
       // End phase and get new real address
       uint32_t new_real_addr = parser->EndPhase(*context.current_address);
 
+      // Emit EndPhaseAtom so ResolveSymbols restores physical address tracking
+      auto ep_atom = std::make_shared<PhaseAtom>(false, 0);
+      context.section->atoms.push_back(ep_atom);
+
       // Restore current address to real address + bytes emitted
       *context.current_address = new_real_addr;
       return;
@@ -1248,6 +1258,10 @@ void HandlePh(const std::string &label, const std::string &operand,
 
   // Set current address to virtual address
   *context.current_address = virtual_addr;
+
+  // Emit PhaseAtom so ResolveSymbols tracks the virtual address for labels
+  auto phase_atom = std::make_shared<PhaseAtom>(true, virtual_addr);
+  context.section->atoms.push_back(phase_atom);
 }
 
 void HandleHx(const std::string &label, const std::string &operand,

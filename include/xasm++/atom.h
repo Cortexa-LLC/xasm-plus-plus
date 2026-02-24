@@ -32,6 +32,7 @@ enum class AtomType {
   Align,          ///< Alignment directive (e.g., ".align 256")
   Org,            ///< Origin directive (e.g., ".org $8000")
   ListingControl, ///< Listing control directive (e.g., "TITLE", "PAGE", "LIST")
+  Phase,          ///< Phase directive (.PH start / .EP end)
 };
 
 /**
@@ -285,6 +286,36 @@ public:
    */
   explicit OrgAtom(uint32_t addr) : Atom(AtomType::Org), address(addr) {
     size = 0; // ORG doesn't generate bytes
+  }
+};
+
+/**
+ * @brief Phase atom - represents .PH (start phase) and .EP (end phase)
+ *
+ * Phase blocks set the virtual program counter to a different address for
+ * label computation while storing bytes at the physical address. Labels
+ * inside a phase block should use the virtual address.
+ *
+ * @par Example
+ * @code
+ * .PH $2000    ; PhaseAtom(is_start=true, virtual_addr=0x2000)
+ * LABEL nop    ; LABEL should be $2000 (virtual), not physical address
+ * .EP          ; PhaseAtom(is_start=false, virtual_addr=0)
+ * @endcode
+ */
+class PhaseAtom : public Atom {
+public:
+  bool is_start;         ///< true = .PH start of phase, false = .EP end
+  uint32_t virtual_addr; ///< Virtual address for phase start (unused for end)
+
+  /**
+   * @brief Construct a phase atom
+   * @param start true for .PH, false for .EP
+   * @param virt Virtual address (for .PH only; pass 0 for .EP)
+   */
+  PhaseAtom(bool start, uint32_t virt)
+      : Atom(AtomType::Phase), is_start(start), virtual_addr(virt) {
+    size = 0; // Phase atoms don't generate bytes
   }
 };
 

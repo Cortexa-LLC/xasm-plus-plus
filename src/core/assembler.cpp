@@ -265,8 +265,13 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
   std::vector<size_t> current_sizes;
   if (cpu_ != nullptr) {
     for (auto &section : sections_) {
-      // Track current address during encoding
+      // Track current address during encoding.
+      // virtual_address tracks the PC seen by the program (virtual during
+      // .PH/.EP phase blocks); used for branch offset calculations.
       uint32_t current_address = section.org;
+      uint32_t virtual_address = section.org;
+      uint32_t phase_real_start = 0;
+      uint32_t phase_virtual_start = 0;
 
       for (auto &atom : section.atoms) {
         // Skip null atoms gracefully
@@ -278,7 +283,27 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
           continue;
         }
 
-        if (atom->type == AtomType::Org) {
+        if (atom->type == AtomType::Phase) {
+          auto phase = std::dynamic_pointer_cast<PhaseAtom>(atom);
+          if (!phase) {
+            AssemblerError error;
+            error.location = atom->location;
+            error.message =
+                "Failed to cast to PhaseAtom - atom corruption detected";
+            result.errors.push_back(error);
+            result.success = false;
+            continue;
+          }
+          if (phase->is_start) {
+            phase_real_start = current_address;
+            phase_virtual_start = phase->virtual_addr;
+            virtual_address = phase->virtual_addr;
+          } else {
+            uint32_t bytes_emitted = virtual_address - phase_virtual_start;
+            current_address = phase_real_start + bytes_emitted;
+            virtual_address = current_address;
+          }
+        } else if (atom->type == AtomType::Org) {
           // Handle .org directive
           auto org = std::dynamic_pointer_cast<OrgAtom>(atom);
           if (!org) {
@@ -292,6 +317,7 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
             continue;
           }
           current_address = org->address;
+          virtual_address = org->address;
         } else if (atom->type == AtomType::Label) {
           // Labels don't advance address yet, but we track them
           // (address will be finalized in Pass 2)
@@ -351,8 +377,9 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
             data->size = data->data.size();
           }
 
-          // Advance address past this data
+          // Advance both address counters past this data
           current_address += data->size;
+          virtual_address += data->size;
           current_sizes.push_back(data->size);
         } else if (atom->type == AtomType::Instruction) {
           auto inst = std::dynamic_pointer_cast<InstructionAtom>(atom);
@@ -405,8 +432,9 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
               // #)
               if (trimmed == "*") {
                 // * means current PC address (branch to self)
+                // Use virtual_address so phased code uses the virtual PC
                 std::ostringstream oss;
-                oss << "$" << std::hex << current_address;
+                oss << "$" << std::hex << virtual_address;
                 resolved_operand = oss.str();
               } else if (!trimmed.empty() && trimmed[0] != '$' &&
                          trimmed[0] != '#' && trimmed[0] != '(') {
@@ -442,12 +470,15 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
 
               // Delegate to CPU plugin for special encoding
               // Plugin handles branch relaxation, multi-byte instructions, etc.
+              // Use virtual_address as the PC so branches in phased code are
+              // computed relative to the virtual address.
               inst->encoded_bytes = cpu_->EncodeInstructionSpecial(
                   mnemonic, resolved_operand,
-                  static_cast<uint16_t>(current_address));
+                  static_cast<uint16_t>(virtual_address));
 
-              // Advance current address past this instruction
+              // Advance both address counters past this instruction
               current_address += inst->encoded_bytes.size();
+              virtual_address += inst->encoded_bytes.size();
               current_sizes.push_back(inst->encoded_bytes.size());
               continue; // Skip to next atom
             } catch (const std::exception &e) {
@@ -593,8 +624,9 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
           // Record size for convergence check
           current_sizes.push_back(inst->encoded_bytes.size());
 
-          // Advance current address past this instruction
+          // Advance both address counters past this instruction
           current_address += inst->encoded_bytes.size();
+          virtual_address += inst->encoded_bytes.size();
         }
       }
     }
@@ -710,6 +742,12 @@ void Assembler::ResolveSymbols(std::vector<std::shared_ptr<Atom>> &atoms,
   // For now, just redefine - this will overwrite parser's placeholder addresses
   uint32_t current_address = org_address;
 
+  // Phase tracking: when inside .PH/.EP block, current_address uses the
+  // virtual address so labels get the correct phased value.
+  bool in_phase = false;
+  uint32_t phase_real_start = 0;
+  uint32_t phase_virtual_start = 0;
+
   // Process atoms to extract label addresses
   for (auto &atom : atoms) {
     // Skip null atoms gracefully
@@ -721,7 +759,31 @@ void Assembler::ResolveSymbols(std::vector<std::shared_ptr<Atom>> &atoms,
       continue;
     }
 
-    if (atom->type == AtomType::Org) {
+    if (atom->type == AtomType::Phase) {
+      auto phase = std::dynamic_pointer_cast<PhaseAtom>(atom);
+      if (!phase) {
+        AssemblerError error;
+        error.location = atom->location;
+        error.message =
+            "Failed to cast to PhaseAtom - atom corruption detected";
+        result.errors.push_back(error);
+        result.success = false;
+        continue;
+      }
+      if (phase->is_start) {
+        // .PH: switch current_address to virtual address for label resolution
+        phase_real_start = current_address;
+        phase_virtual_start = phase->virtual_addr;
+        current_address = phase->virtual_addr;
+        in_phase = true;
+      } else {
+        // .EP: compute bytes emitted in phase and restore physical address
+        uint32_t bytes_emitted = current_address - phase_virtual_start;
+        current_address = phase_real_start + bytes_emitted;
+        in_phase = false;
+      }
+      (void)in_phase; // suppress unused warning if no further use
+    } else if (atom->type == AtomType::Org) {
       // Handle .org directive - updates current address
       auto org = std::dynamic_pointer_cast<OrgAtom>(atom);
       if (!org) {
