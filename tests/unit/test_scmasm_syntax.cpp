@@ -1,6 +1,7 @@
 // SCMASM Syntax Parser Tests - Phase 1: Foundation
 // TDD approach: Tests written first
 
+#include "xasm++/assembler.h"
 #include "xasm++/cpu/cpu_6502.h"
 #include "xasm++/section.h"
 #include "xasm++/symbol.h"
@@ -1228,7 +1229,7 @@ TEST_F(ScmasmSyntaxTest, LocalLabelAllDigits) {
 )";
 
   parser->Parse(source, section, symbols);
-  EXPECT_EQ(section.atoms.size(), 11u); // ORG + 10 NOPs
+  EXPECT_EQ(section.atoms.size(), 21u); // ORG + 10 LabelAtoms + 10 NOPs
 }
 
 TEST_F(ScmasmSyntaxTest, LocalLabelInLoop) {
@@ -1277,7 +1278,7 @@ TEST_F(ScmasmSyntaxTest, ColonLocalLabelAllDigits) {
 )";
 
   parser->Parse(source, section, symbols);
-  EXPECT_EQ(section.atoms.size(), 11u); // ORG + 10 NOPs
+  EXPECT_EQ(section.atoms.size(), 21u); // ORG + 10 LabelAtoms + 10 NOPs
 }
 
 TEST_F(ScmasmSyntaxTest, ColonLocalLabelForwardReference) {
@@ -2058,8 +2059,12 @@ DATA    .BS 3
   EXPECT_EQ(data_atom->data.size(), 3u);
 }
 
-TEST_F(ScmasmSyntaxTest, DUMMY_AdvancesAddress) {
-  // .DUMMY should advance address even though no bytes emitted
+TEST_F(ScmasmSyntaxTest, DUMMY_DoesNotAdvanceMainPC) {
+  // .DUMMY/.ED defines structure labels without advancing the main section PC.
+  // In SCMASM, .DUMMY is a BSS/struct layout section: the assembler assigns
+  // addresses to fields inside the block but the main PC is restored to its
+  // pre-.DUMMY value when .ED is encountered.  Code assembled after .ED
+  // continues from the address that was active when .DUMMY was entered.
   std::string source = R"(
         .OR $0800
 START   .EQ *
@@ -2073,14 +2078,22 @@ END     .EQ *
 
   parser->Parse(source, section, symbols);
 
-  // Check that START and END are defined
   int64_t start_addr, end_addr;
   ASSERT_TRUE(symbols.Lookup("START", start_addr));
   ASSERT_TRUE(symbols.Lookup("END", end_addr));
 
-  // START should be $0800, END should be $0807 (7 bytes advanced)
+  // Both START and END are $0800 — .DUMMY does NOT advance the main PC.
   EXPECT_EQ(start_addr, 0x0800);
-  EXPECT_EQ(end_addr, 0x0807);
+  EXPECT_EQ(end_addr, 0x0800);
+
+  // Fields inside the dummy block get correct sequential addresses.
+  int64_t field1_addr, field2_addr, field3_addr;
+  ASSERT_TRUE(symbols.Lookup("FIELD1", field1_addr));
+  ASSERT_TRUE(symbols.Lookup("FIELD2", field2_addr));
+  ASSERT_TRUE(symbols.Lookup("FIELD3", field3_addr));
+  EXPECT_EQ(field1_addr, 0x0800);
+  EXPECT_EQ(field2_addr, 0x0801);
+  EXPECT_EQ(field3_addr, 0x0803);
 }
 
 TEST_F(ScmasmSyntaxTest, DUMMY_WithLabels) {
@@ -3040,4 +3053,263 @@ TEST_F(ScmasmSyntaxTest, LabelOnlyLine_FollowedByInstruction) {
   int64_t value = 0;
   ASSERT_TRUE(symbols.Lookup("MY.LABEL", value));
   EXPECT_EQ(value, 0x1000); // Label should be at NOP's address
+}
+
+// ============================================================================
+// SCMASM high-byte operator "/" — GetInstructionSize and encoding
+// ============================================================================
+
+TEST_F(ScmasmSyntaxTest, InstructionSize_SCMASM_SlashHighByteIs2Bytes) {
+  // "lda /ADDR" must be treated as 2-byte immediate (not 3-byte absolute).
+  // The '/' prefix in SCMASM means "high byte of expr, immediate mode".
+  std::string source =
+      "ADDR\t.EQ\t$1234\n"
+      "\t\t.OR\t$1000\n"
+      "\t\tlda\t/ADDR\n"
+      "HERE\t.EQ\t*\n";
+  EXPECT_NO_THROW(parser->Parse(source, section, symbols));
+  int64_t addr = 0;
+  ASSERT_TRUE(symbols.Lookup("HERE", addr));
+  EXPECT_EQ(addr, 0x1002)
+      << "lda /ADDR must be sized as 2 bytes (immediate), not 3 (absolute)";
+}
+
+TEST_F(ScmasmSyntaxTest, InstructionSize_SCMASM_SlashHighByteHexIs2Bytes) {
+  // "ldx /$2000" must also be 2 bytes.
+  std::string source =
+      "\t\t.OR\t$1000\n"
+      "\t\tldx\t/$2000\n"
+      "HERE\t.EQ\t*\n";
+  EXPECT_NO_THROW(parser->Parse(source, section, symbols));
+  int64_t addr = 0;
+  ASSERT_TRUE(symbols.Lookup("HERE", addr));
+  EXPECT_EQ(addr, 0x1002)
+      << "ldx /$2000 must be sized as 2 bytes (immediate)";
+}
+
+// ============================================================================
+// Full pipeline: parse + assemble — "/" produces LDA Immediate bytes
+// ============================================================================
+
+// Integration test: assembler.cpp ParseExpression handles leading '/'
+// as the SCMASM high-byte operator, producing the correct immediate value.
+TEST(ScmasmSlashHighByteIntegration, LDA_SlashAddr_ProducesImmediateBytes) {
+  // Assemble: ADDR .EQ $1234 / .OR $1000 / lda /ADDR
+  // Expected: lda #$12 → bytes A9 12
+  ScmasmSyntaxParser parser;
+  Cpu6502 cpu;
+  parser.SetCpu(&cpu);
+  Section section;
+  ConcreteSymbolTable symbols;
+
+  std::string source =
+      "ADDR\t.EQ\t$1234\n"
+      "\t\t.OR\t$1000\n"
+      "\t\tlda\t/ADDR\n";
+
+  ASSERT_NO_THROW(parser.Parse(source, section, symbols));
+
+  Assembler assembler;
+  assembler.SetCpuPlugin(&cpu);
+  assembler.SetSymbolTable(&symbols);
+  assembler.AddSection(section);
+
+  AssemblerResult result = assembler.Assemble();
+  ASSERT_TRUE(result.success) << "Assembly must succeed";
+
+  // Find the instruction atom and check its bytes
+  bool found = false;
+  for (const auto &atom : section.atoms) {
+    if (atom && atom->type == AtomType::Instruction) {
+      auto instr = std::dynamic_pointer_cast<InstructionAtom>(atom);
+      if (instr) {
+        ASSERT_EQ(instr->encoded_bytes.size(), 2UL)
+            << "lda /ADDR must encode as 2 bytes";
+        EXPECT_EQ(instr->encoded_bytes[0], 0xA9)
+            << "Opcode must be LDA Immediate ($A9)";
+        EXPECT_EQ(instr->encoded_bytes[1], 0x12)
+            << "Operand must be high byte of $1234 = $12";
+        found = true;
+      }
+    }
+  }
+  EXPECT_TRUE(found) << "Expected to find an InstructionAtom";
+}
+
+TEST(ScmasmSlashHighByteIntegration, LDX_SlashHexLiteral_ProducesImmediateBytes) {
+  // Assemble: .OR $1000 / ldx /$2000
+  // Expected: ldx #$20 → bytes A2 20
+  ScmasmSyntaxParser parser;
+  Cpu6502 cpu;
+  parser.SetCpu(&cpu);
+  Section section;
+  ConcreteSymbolTable symbols;
+
+  std::string source =
+      "\t\t.OR\t$1000\n"
+      "\t\tldx\t/$2000\n";
+
+  ASSERT_NO_THROW(parser.Parse(source, section, symbols));
+
+  Assembler assembler;
+  assembler.SetCpuPlugin(&cpu);
+  assembler.SetSymbolTable(&symbols);
+  assembler.AddSection(section);
+
+  AssemblerResult result = assembler.Assemble();
+  ASSERT_TRUE(result.success) << "Assembly must succeed";
+
+  bool found = false;
+  for (const auto &atom : section.atoms) {
+    if (atom && atom->type == AtomType::Instruction) {
+      auto instr = std::dynamic_pointer_cast<InstructionAtom>(atom);
+      if (instr) {
+        ASSERT_EQ(instr->encoded_bytes.size(), 2UL)
+            << "ldx /$2000 must encode as 2 bytes";
+        EXPECT_EQ(instr->encoded_bytes[0], 0xA2) << "LDX Immediate opcode";
+        EXPECT_EQ(instr->encoded_bytes[1], 0x20) << "High byte of $2000 = $20";
+        found = true;
+      }
+    }
+  }
+  EXPECT_TRUE(found) << "Expected to find an InstructionAtom";
+}
+
+// ============================================================================
+// Symbol case-insensitivity fix — mixed-case references must resolve
+// ============================================================================
+//
+// SCMASM stores all symbols in UPPERCASE (e.g. "TMPPTR2").  When an instruction
+// operand references the same symbol using mixed case ("TmpPtr2"), the assembler
+// must resolve it to the uppercase table entry instead of failing with
+// "Undefined symbol" → placeholder 0 → wrong absolute $0000 encoding.
+
+TEST(ScmasmCaseInsensitivity, MixedCaseZPSymbol_ProducesZPEncoding) {
+  // Assemble: TmpPtr2 .EQ $02 / .OR $1000 / sta TmpPtr2
+  // Because SCMASM uppercases "TmpPtr2" → "TMPPTR2" = $02, the instruction
+  // must encode as STA ZeroPage $02 → 85 02, not STA Absolute $0000 → 8D 00 00.
+  ScmasmSyntaxParser parser;
+  Cpu6502 cpu;
+  parser.SetCpu(&cpu);
+  Section section;
+  ConcreteSymbolTable symbols;
+
+  std::string source =
+      "TmpPtr2\t.EQ\t$02\n"
+      "\t\t.OR\t$1000\n"
+      "\t\tsta\tTmpPtr2\n";
+
+  ASSERT_NO_THROW(parser.Parse(source, section, symbols));
+
+  Assembler assembler;
+  assembler.SetCpuPlugin(&cpu);
+  assembler.SetSymbolTable(&symbols);
+  assembler.AddSection(section);
+
+  AssemblerResult result = assembler.Assemble();
+  ASSERT_TRUE(result.success) << "Assembly must succeed";
+
+  bool found = false;
+  for (const auto &atom : section.atoms) {
+    if (atom && atom->type == AtomType::Instruction) {
+      auto instr = std::dynamic_pointer_cast<InstructionAtom>(atom);
+      if (instr) {
+        ASSERT_EQ(instr->encoded_bytes.size(), 2UL)
+            << "sta TmpPtr2 ($02) must encode as 2 bytes (ZP)";
+        EXPECT_EQ(instr->encoded_bytes[0], 0x85)
+            << "Opcode must be STA ZeroPage ($85)";
+        EXPECT_EQ(instr->encoded_bytes[1], 0x02)
+            << "Operand must be $02";
+        found = true;
+      }
+    }
+  }
+  EXPECT_TRUE(found) << "Expected to find an InstructionAtom";
+}
+
+TEST(ScmasmCaseInsensitivity, LowerCaseZPSymbol_ProducesZPEncoding) {
+  // Same as above but fully lowercase symbol name.
+  ScmasmSyntaxParser parser;
+  Cpu6502 cpu;
+  parser.SetCpu(&cpu);
+  Section section;
+  ConcreteSymbolTable symbols;
+
+  std::string source =
+      "tmpptr1\t.EQ\t$05\n"
+      "\t\t.OR\t$1000\n"
+      "\t\tlda\ttmpptr1\n";
+
+  ASSERT_NO_THROW(parser.Parse(source, section, symbols));
+
+  Assembler assembler;
+  assembler.SetCpuPlugin(&cpu);
+  assembler.SetSymbolTable(&symbols);
+  assembler.AddSection(section);
+
+  AssemblerResult result = assembler.Assemble();
+  ASSERT_TRUE(result.success) << "Assembly must succeed";
+
+  bool found = false;
+  for (const auto &atom : section.atoms) {
+    if (atom && atom->type == AtomType::Instruction) {
+      auto instr = std::dynamic_pointer_cast<InstructionAtom>(atom);
+      if (instr) {
+        ASSERT_EQ(instr->encoded_bytes.size(), 2UL)
+            << "lda tmpptr1 ($05) must encode as 2 bytes (ZP)";
+        EXPECT_EQ(instr->encoded_bytes[0], 0xA5)
+            << "Opcode must be LDA ZeroPage ($A5)";
+        EXPECT_EQ(instr->encoded_bytes[1], 0x05)
+            << "Operand must be $05";
+        found = true;
+      }
+    }
+  }
+  EXPECT_TRUE(found) << "Expected to find an InstructionAtom";
+}
+
+// ============================================================================
+// ZP address $00 — EncodeInstruction must use ZeroPage mode, not Absolute
+// ============================================================================
+
+TEST(ScmasmZPAt0, ZeroPageAtAddress0_ProducesZPEncoding) {
+  // Assemble: ZpZero .EQ $00 / .OR $1000 / sty ZpZero
+  // Must encode as STY ZeroPage $00 → 84 00 (2 bytes), NOT 8C 00 00 (3 bytes).
+  ScmasmSyntaxParser parser;
+  Cpu6502 cpu;
+  parser.SetCpu(&cpu);
+  Section section;
+  ConcreteSymbolTable symbols;
+
+  std::string source =
+      "ZpZero\t.EQ\t$00\n"
+      "\t\t.OR\t$1000\n"
+      "\t\tsty\tZpZero\n";
+
+  ASSERT_NO_THROW(parser.Parse(source, section, symbols));
+
+  Assembler assembler;
+  assembler.SetCpuPlugin(&cpu);
+  assembler.SetSymbolTable(&symbols);
+  assembler.AddSection(section);
+
+  AssemblerResult result = assembler.Assemble();
+  ASSERT_TRUE(result.success) << "Assembly must succeed";
+
+  bool found = false;
+  for (const auto &atom : section.atoms) {
+    if (atom && atom->type == AtomType::Instruction) {
+      auto instr = std::dynamic_pointer_cast<InstructionAtom>(atom);
+      if (instr) {
+        ASSERT_EQ(instr->encoded_bytes.size(), 2UL)
+            << "sty ZpZero ($00) must encode as 2 bytes (ZP), not 3 (Absolute)";
+        EXPECT_EQ(instr->encoded_bytes[0], 0x84)
+            << "Opcode must be STY ZeroPage ($84)";
+        EXPECT_EQ(instr->encoded_bytes[1], 0x00)
+            << "Operand must be $00";
+        found = true;
+      }
+    }
+  }
+  EXPECT_TRUE(found) << "Expected to find an InstructionAtom";
 }

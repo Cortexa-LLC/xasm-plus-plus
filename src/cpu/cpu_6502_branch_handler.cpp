@@ -33,6 +33,13 @@ std::vector<uint8_t> Cpu6502BranchHandler::EncodeBranchWithRelaxation(
                      static_cast<int16_t>(current_addr + 2);
     bytes.push_back(branch_opcode);
     bytes.push_back(static_cast<uint8_t>(offset & 0xFF));
+  } else if (branch_opcode == Opcodes::BRA) {
+    // BRA ($80) has no complement branch opcode (it always branches).
+    // XOR with BRANCH_COMPLEMENT_MASK ($20) gives $A0 = LDY#, which is wrong.
+    // Emit a plain JMP absolute (3 bytes) instead of the 5-byte B!cc sequence.
+    bytes.push_back(Opcodes::JMP_ABS);
+    bytes.push_back(static_cast<uint8_t>(target_addr & 0xFF));
+    bytes.push_back(static_cast<uint8_t>((target_addr >> 8) & 0xFF));
   } else {
     // Branch is out of range - emit relaxed 5-byte sequence
     // Format: [B!cc] [0x03] [JMP] [target_lo] [target_hi]

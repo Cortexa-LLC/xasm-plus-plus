@@ -82,6 +82,26 @@ ParseExpression(const std::string &str, ConcreteSymbolTable &symbols) {
     return std::make_shared<LiteralExpr>((value >> 8) & 0xFF); // High byte
   }
 
+  // Check for SCMASM high byte operator (/)
+  // In SCMASM syntax, /expr means the high byte of expr (same as >expr).
+  // When used as an instruction operand (e.g. "lda /ADDR"), it implies
+  // immediate mode and extracts bits 8-15 of the expression value.
+  if (!trimmed.empty() && trimmed[0] == '/') {
+    if (trimmed.length() < 2) {
+      throw std::runtime_error(
+          "SCMASM high byte operator (/) requires an operand");
+    }
+    std::string operand = Trim(trimmed.substr(1));
+    if (operand.empty()) {
+      throw std::runtime_error(
+          "SCMASM high byte operator (/) has empty operand");
+    }
+    // Recursively parse the operand
+    auto operand_expr = ParseExpression(operand, symbols);
+    int64_t value = operand_expr->Evaluate(symbols);
+    return std::make_shared<LiteralExpr>((value >> 8) & 0xFF); // High byte
+  }
+
   // Check for addition first (before trying to parse as single value)
   size_t plus_pos = trimmed.find('+');
   if (plus_pos != std::string::npos && plus_pos > 0) {
@@ -203,8 +223,22 @@ ParseExpression(const std::string &str, ConcreteSymbolTable &symbols) {
     return std::make_shared<LiteralExpr>(value);
   }
 
-  // Symbol reference
-  return std::make_shared<SymbolExpr>(trimmed);
+  // Symbol reference - try original case first, then uppercase fallback.
+  // SCMASM normalizes all symbols to UPPERCASE at definition time, so a
+  // mixed-case reference like "TmpPtr2" must resolve to "TMPPTR2".
+  {
+    std::string sym_name = trimmed;
+    int64_t probe = 0;
+    if (!symbols.Lookup(sym_name, probe)) {
+      std::string upper = sym_name;
+      std::transform(upper.begin(), upper.end(), upper.begin(),
+                     [](unsigned char c) { return std::toupper(c); });
+      if (symbols.Lookup(upper, probe)) {
+        sym_name = upper;
+      }
+    }
+    return std::make_shared<SymbolExpr>(sym_name);
+  }
 }
 
 Assembler::Assembler() {
@@ -369,11 +403,31 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
 
               // Check if operand is a label reference (not starting with $ or
               // #)
-              if (!trimmed.empty() && trimmed[0] != '$' && trimmed[0] != '#' &&
-                  trimmed[0] != '(') {
-                // Try to resolve as symbol
+              if (trimmed == "*") {
+                // * means current PC address (branch to self)
+                std::ostringstream oss;
+                oss << "$" << std::hex << current_address;
+                resolved_operand = oss.str();
+              } else if (!trimmed.empty() && trimmed[0] != '$' &&
+                         trimmed[0] != '#' && trimmed[0] != '(') {
+                // Try to resolve as symbol (case-insensitive: try original
+                // case first, then uppercase fallback since SCMASM normalizes
+                // all symbols to UPPERCASE at definition time)
                 int64_t symbol_value;
-                if (symbols.Lookup(trimmed, symbol_value)) {
+                std::string lookup_name = trimmed;
+                if (!symbols.Lookup(lookup_name, symbol_value)) {
+                  std::string upper = trimmed;
+                  std::transform(upper.begin(), upper.end(), upper.begin(),
+                                 [](unsigned char c) {
+                                   return std::toupper(c);
+                                 });
+                  if (symbols.Lookup(upper, symbol_value)) {
+                    lookup_name = upper;
+                  } else {
+                    lookup_name = ""; // not found
+                  }
+                }
+                if (!lookup_name.empty()) {
                   // Convert resolved address to hex string format expected by
                   // CPU plugin
                   std::ostringstream oss;

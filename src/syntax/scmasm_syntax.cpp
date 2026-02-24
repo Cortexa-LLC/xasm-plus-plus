@@ -145,8 +145,9 @@ bool SCMASMNumberParser::TryParse(const std::string &token,
 ScmasmSyntaxParser::ScmasmSyntaxParser()
     : current_address_(0), current_file_("<source>"), current_line_(0),
       cpu_(nullptr), in_macro_definition_(false), macro_invocation_depth_(0),
-      pending_label_(""), in_dummy_section_(false), in_phase_(false),
-      phase_virtual_addr_(0), phase_real_addr_(0) {
+      pending_label_(""), last_global_label_(""), in_dummy_section_(false),
+      dummy_saved_address_(0), in_phase_(false), phase_virtual_addr_(0),
+      phase_real_addr_(0) {
   InitializeDirectiveRegistry();
 }
 
@@ -509,6 +510,28 @@ void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
   // Otherwise it will be defined at the next instruction's address.
   if (pos >= line.length()) {
     if (!label.empty()) {
+      // If there is already a pending_label_ from a previous label-only line,
+      // define it NOW at current_address_ before overwriting.  Consecutive
+      // label-only lines all share the same address (the address of whatever
+      // instruction follows), so it is correct to emit the earlier label here.
+      if (!pending_label_.empty()) {
+        std::string pl = pending_label_;
+        if (IsLocalLabel(pl)) {
+          local_labels_[pl] = current_address_;
+          std::string scoped = last_global_label_ + pl;
+          auto expr = std::make_shared<LiteralExpr>(current_address_);
+          symbols.Define(scoped, SymbolType::Label, expr);
+          auto atom = std::make_shared<LabelAtom>(scoped, current_address_);
+          section.atoms.push_back(atom);
+        } else {
+          std::string norm = util::ToUpper(pl);
+          auto expr = std::make_shared<LiteralExpr>(current_address_);
+          symbols.Define(norm, SymbolType::Label, expr);
+          auto atom = std::make_shared<LabelAtom>(norm, current_address_);
+          section.atoms.push_back(atom);
+          last_global_label_ = norm;
+        }
+      }
       pending_label_ = label; // defer; don't define yet
     }
     return;
@@ -555,12 +578,19 @@ void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
       std::string pl = pending_label_;
       if (IsLocalLabel(pl)) {
         local_labels_[pl] = current_address_;
+        // Also add scoped version to global symbol table for branch resolution
+        std::string scoped = last_global_label_ + pl;
+        auto expr = std::make_shared<LiteralExpr>(current_address_);
+        symbols.Define(scoped, SymbolType::Label, expr);
+        auto atom = std::make_shared<LabelAtom>(scoped, current_address_);
+        section.atoms.push_back(atom);
       } else {
         std::string norm = util::ToUpper(pl);
         auto expr = std::make_shared<LiteralExpr>(current_address_);
         symbols.Define(norm, SymbolType::Label, expr);
         auto atom = std::make_shared<LabelAtom>(norm, current_address_);
         section.atoms.push_back(atom);
+        last_global_label_ = norm;
       }
     }
     pending_label_ = "";
@@ -575,7 +605,13 @@ void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
         // Label before .OR - define it and create label atom at current address
         if (IsLocalLabel(label)) {
           local_labels_[label] = current_address_;
-          // Local labels don't create label atoms
+          // Also add scoped version to global symbol table for branch resolution
+          std::string scoped = last_global_label_ + label;
+          auto expr = std::make_shared<LiteralExpr>(current_address_);
+          symbols.Define(scoped, SymbolType::Label, expr);
+          auto label_atom =
+              std::make_shared<LabelAtom>(scoped, current_address_);
+          section.atoms.push_back(label_atom);
         } else {
           // Normalize label to uppercase for case-insensitive SCMASM
           // compatibility
@@ -587,17 +623,23 @@ void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
           auto label_atom =
               std::make_shared<LabelAtom>(normalized_label, current_address_);
           section.atoms.push_back(label_atom);
+          last_global_label_ = normalized_label;
         }
       } else {
         // Other directives: just define the label, no atom
         if (IsLocalLabel(label)) {
           local_labels_[label] = current_address_;
+          // Also add scoped version to global symbol table for branch resolution
+          std::string scoped = last_global_label_ + label;
+          auto expr = std::make_shared<LiteralExpr>(current_address_);
+          symbols.Define(scoped, SymbolType::Label, expr);
         } else {
           // Normalize label to uppercase for case-insensitive SCMASM
           // compatibility
           std::string normalized_label = util::ToUpper(label);
           auto expr = std::make_shared<LiteralExpr>(current_address_);
           symbols.Define(normalized_label, SymbolType::Label, expr);
+          last_global_label_ = normalized_label;
         }
       }
     }
@@ -653,7 +695,12 @@ void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
     if (!label.empty()) {
       if (IsLocalLabel(label)) {
         local_labels_[label] = current_address_;
-        // Local labels don't create label atoms
+        // Also add scoped version to global symbol table for branch resolution
+        std::string scoped = last_global_label_ + label;
+        auto expr = std::make_shared<LiteralExpr>(current_address_);
+        symbols.Define(scoped, SymbolType::Label, expr);
+        auto label_atom = std::make_shared<LabelAtom>(scoped, current_address_);
+        section.atoms.push_back(label_atom);
       } else {
         // Normalize label to uppercase for case-insensitive SCMASM
         // compatibility
@@ -665,6 +712,7 @@ void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
         auto label_atom =
             std::make_shared<LabelAtom>(normalized_label, current_address_);
         section.atoms.push_back(label_atom);
+        last_global_label_ = normalized_label;
       }
     }
 
@@ -718,6 +766,22 @@ void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
         size_t ws = instr_operand.find_first_of(" \t");
         if (ws != std::string::npos) {
           instr_operand = instr_operand.substr(0, ws);
+        }
+      }
+
+      // Translate local label operands to scoped names for multi-pass
+      // branch resolution.  e.g. ".8" → "GLOBALNAME.8",
+      //                          ".8,X" → "GLOBALNAME.8,X"
+      if (!instr_operand.empty()) {
+        std::string label_part = instr_operand;
+        std::string suffix;
+        size_t comma = instr_operand.find(',');
+        if (comma != std::string::npos) {
+          label_part = instr_operand.substr(0, comma);
+          suffix = instr_operand.substr(comma);
+        }
+        if (IsLocalLabel(label_part)) {
+          instr_operand = last_global_label_ + label_part + suffix;
         }
       }
 
@@ -980,9 +1044,14 @@ uint32_t ScmasmSyntaxParser::ParseNumber(const std::string &str) {
 }
 
 bool ScmasmSyntaxParser::IsLocalLabel(const std::string &label) {
-  // Local labels are .0-.9 or :0-:9
-  if (label.length() == 2 && (label[0] == '.' || label[0] == ':') &&
-      label[1] >= '0' && label[1] <= '9') {
+  // Local labels are . or : followed by one or more digits
+  // Examples: .0-.9 (single digit), .10, .70, .81, .98, .99 (multi-digit)
+  if (label.length() >= 2 && (label[0] == '.' || label[0] == ':')) {
+    for (size_t i = 1; i < label.length(); i++) {
+      if (!std::isdigit(static_cast<unsigned char>(label[i]))) {
+        return false;
+      }
+    }
     return true;
   }
   return false;
@@ -1569,6 +1638,56 @@ void ScmasmSyntaxParser::HandleDo(const std::string &operand, Section &section,
     }
   }
 
+  // Define any label on a boundary line (.ELSE or .FIN).
+  // SCMASM allows labels on the same line as structural directives, e.g.:
+  //   :2    .FIN   or   :1    .ELSE
+  // The DO handler never calls ParseLine for the boundary line itself, so
+  // labels on those lines would otherwise be silently dropped.
+  auto define_boundary_label = [&](size_t boundary_idx) {
+    if (boundary_idx >= source.size())
+      return;
+    std::string bline = source[boundary_idx];
+    bline = StripLineNumber(bline);
+    bline = StripComments(bline);
+    bline = Trim(bline);
+    if (bline.empty())
+      return;
+    // Extract the first whitespace-delimited token
+    size_t lend = 0;
+    while (lend < bline.length() && !std::isspace(bline[lend]))
+      lend++;
+    std::string blabel = bline.substr(0, lend);
+    // If the first token starts with '.' it's the directive itself, not a label
+    if (blabel.empty() || blabel[0] == '.')
+      return;
+    // Define the label at the current address
+    if (IsLocalLabel(blabel)) {
+      local_labels_[blabel] = current_address_;
+      std::string scoped = last_global_label_ + blabel;
+      auto expr = std::make_shared<LiteralExpr>(current_address_);
+      symbols.Define(scoped, SymbolType::Label, expr);
+      auto atom = std::make_shared<LabelAtom>(scoped, current_address_);
+      section.atoms.push_back(atom);
+    } else {
+      std::string norm = util::ToUpper(blabel);
+      auto expr = std::make_shared<LiteralExpr>(current_address_);
+      symbols.Define(norm, SymbolType::Label, expr);
+      auto atom = std::make_shared<LabelAtom>(norm, current_address_);
+      section.atoms.push_back(atom);
+      last_global_label_ = norm;
+    }
+  };
+
+  // Define label on end_line (.ELSE when TRUE was taken, .FIN when ELSE was taken)
+  define_boundary_label(end_line);
+
+  // When the TRUE block was taken, the ELSE block is skipped entirely, so the
+  // .FIN label is at the same address.  Define it too so that ELSE-block forward
+  // references that happen to share the .FIN label still resolve correctly.
+  if (condition != 0 && fin_line != end_line) {
+    define_boundary_label(fin_line);
+  }
+
   // Skip to after .FIN
   line_idx = fin_line;
 }
@@ -1642,9 +1761,15 @@ void ScmasmSyntaxParser::HandleLu(const std::string &operand, Section &section,
 
 bool ScmasmSyntaxParser::InDummySection() const { return in_dummy_section_; }
 
-void ScmasmSyntaxParser::StartDummySection() { in_dummy_section_ = true; }
+void ScmasmSyntaxParser::StartDummySection(uint32_t current_address) {
+  dummy_saved_address_ = current_address;
+  in_dummy_section_ = true;
+}
 
-void ScmasmSyntaxParser::EndDummySection() { in_dummy_section_ = false; }
+uint32_t ScmasmSyntaxParser::EndDummySection() {
+  in_dummy_section_ = false;
+  return dummy_saved_address_;
+}
 
 bool ScmasmSyntaxParser::InPhase() const { return in_phase_; }
 
