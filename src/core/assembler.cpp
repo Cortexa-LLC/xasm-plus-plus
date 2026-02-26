@@ -901,6 +901,17 @@ AssemblerResult Assembler::Assemble() {
     previous_sizes = current_sizes;
   }
 
+  // Check if we hit the pass limit without converging
+  if (!converged) {
+    AssemblerError error;
+    error.message =
+        "Assembly did not converge after " + std::to_string(MAX_PASSES) +
+        " passes — possible oscillating forward references or too many "
+        "cascading branches";
+    result.errors.push_back(error);
+    result.success = false;
+  }
+
   // Final data fixup: re-evaluate DataAtoms and EquateAtoms with the converged
   // symbol values, WITHOUT re-encoding instructions.
   //

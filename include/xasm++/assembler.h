@@ -90,9 +90,10 @@ public:
   /// convergence checking
   static constexpr int FAST_PHASE_LIMIT = 50;
 
-  /// Maximum assembly passes (empirically: 2-3 typical, 5 max observed)
-  /// Prevents infinite loops from oscillating forward references
-  static constexpr int MAX_PASSES = 10;
+  /// Maximum assembly passes before reporting non-convergence error.
+  /// Complex kernels with many cascading forward references may need 15-20
+  /// passes; 50 is a safe upper bound that still catches infinite loops.
+  static constexpr int MAX_PASSES = 50;
 
   /**
    * @brief Construct a new Assembler
