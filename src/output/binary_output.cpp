@@ -98,6 +98,9 @@ void BinaryOutput::WriteOutput(const std::string &filename,
       case AtomType::Phase:
         // PhaseAtom: No bytes generated (address tracking only)
         break;
+      case AtomType::Equate:
+        // EquateAtom: No bytes generated (symbol value only)
+        break;
       }
     }
   }

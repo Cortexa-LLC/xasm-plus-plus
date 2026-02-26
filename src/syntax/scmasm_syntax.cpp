@@ -626,13 +626,32 @@ void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
           last_global_label_ = normalized_label;
         }
       } else {
-        // Other directives: just define the label, no atom
+        // Other directives: define the label.
+        // For data-emitting directives (DA, DB, BS, PH, etc.), also push a
+        // LabelAtom so ResolveSymbols updates the address each pass. This
+        // ensures positional labels like "PAKME.CORE .DA CORE.P" and
+        // "CORE.B .PH K.HiMem" track the correct physical address after branch
+        // relaxation changes code sizes.
+        static const std::unordered_set<std::string> kDataEmittingDirectives = {
+            ".DA",  ".DB",  ".DFB", ".DW",  ".DS",  ".DC",  ".HB",  ".HX",
+            ".AS",  ".AT",  ".AZ",  ".CZ",  ".TF",  ".PS",  ".HS",  ".STR",
+            ".BS",  ".BYT", ".WORD", ".PH",
+        };
+        bool emit_label_atom =
+            kDataEmittingDirectives.count(opcode_upper) > 0 &&
+            !in_dummy_section_;
+
         if (IsLocalLabel(label)) {
           local_labels_[label] = current_address_;
           // Also add scoped version to global symbol table for branch resolution
           std::string scoped = last_global_label_ + label;
           auto expr = std::make_shared<LiteralExpr>(current_address_);
           symbols.Define(scoped, SymbolType::Label, expr);
+          if (emit_label_atom) {
+            auto label_atom =
+                std::make_shared<LabelAtom>(scoped, current_address_);
+            section.atoms.push_back(label_atom);
+          }
         } else {
           // Normalize label to uppercase for case-insensitive SCMASM
           // compatibility
@@ -640,6 +659,11 @@ void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
           auto expr = std::make_shared<LiteralExpr>(current_address_);
           symbols.Define(normalized_label, SymbolType::Label, expr);
           last_global_label_ = normalized_label;
+          if (emit_label_atom) {
+            auto label_atom =
+                std::make_shared<LabelAtom>(normalized_label, current_address_);
+            section.atoms.push_back(label_atom);
+          }
         }
       }
     }

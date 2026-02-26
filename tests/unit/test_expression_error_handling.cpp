@@ -1,5 +1,6 @@
-// Test for stoul conversion bug fix
-// Tests that expression evaluator properly handles malformed expressions
+// Expression error handling tests
+// Tests that the expression evaluator properly handles malformed expressions,
+// invalid hex input, and unresolved symbols.
 
 #include "xasm++/assembler.h"
 #include "xasm++/cpu/cpu_6502.h"
@@ -17,7 +18,7 @@ static Assembler CreateTestAssembler() {
 }
 
 // Test that ParseNumber validates hex input properly
-TEST(StoulFixTest, ParseNumberValidatesHexInput) {
+TEST(ExpressionErrorHandlingTest, ParseNumberValidatesHexInput) {
   MerlinSyntaxParser parser;
 
   // Should throw runtime_error, not logic_error
@@ -35,7 +36,7 @@ TEST equ $G0
 }
 
 // Test that parser handles empty hex expression
-TEST(StoulFixTest, EmptyHexAfterDollarSign) {
+TEST(ExpressionErrorHandlingTest, EmptyHexAfterDollarSign) {
   std::string source = R"(
          org $0800
          lda #$      ; $ with no digits
@@ -74,7 +75,7 @@ TEST(StoulFixTest, EmptyHexAfterDollarSign) {
 }
 
 // Test that parser handles malformed binary expression
-TEST(StoulFixTest, MalformedBinaryExpression) {
+TEST(ExpressionErrorHandlingTest, MalformedBinaryExpression) {
   std::string source = R"(
          org $0800
          lda #%1012  ; Invalid binary digit '2'
@@ -104,7 +105,7 @@ TEST(StoulFixTest, MalformedBinaryExpression) {
 }
 
 // Test unresolved symbol reference (forward reference issue)
-TEST(StoulFixTest, UnresolvedSymbolInExpression) {
+TEST(ExpressionErrorHandlingTest, UnresolvedSymbolInExpression) {
   std::string source = R"(
          org $0800
 start    lda #UNDEFINED_SYMBOL
@@ -122,7 +123,7 @@ start    lda #UNDEFINED_SYMBOL
 
 // Test complex expression with forward reference
 // This mimics patterns found in POP source code
-TEST(StoulFixTest, ComplexForwardReferenceExpression) {
+TEST(ExpressionErrorHandlingTest, ComplexForwardReferenceExpression) {
   std::string source = R"(
          org $0800
 start    lda #>FORWARD_LABEL  ; High byte of forward reference

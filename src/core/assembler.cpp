@@ -321,6 +321,41 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
         } else if (atom->type == AtomType::Label) {
           // Labels don't advance address yet, but we track them
           // (address will be finalized in Pass 2)
+        } else if (atom->type == AtomType::Equate) {
+          // Re-evaluate position-dependent equates (.EQ *) on each pass so
+          // they track the correct address after branch relaxation changes
+          // code sizes between passes.
+          auto eq = std::dynamic_pointer_cast<EquateAtom>(atom);
+          if (eq) {
+            std::string expr_str = eq->expression_str;
+            std::string addr_str = std::to_string(virtual_address);
+            size_t star_pos = 0;
+            while ((star_pos = expr_str.find('*', star_pos)) !=
+                   std::string::npos) {
+              bool preceded_by_ident = false;
+              if (star_pos > 0) {
+                char prev = expr_str[star_pos - 1];
+                preceded_by_ident =
+                    std::isalnum(static_cast<unsigned char>(prev)) ||
+                    prev == '.' || prev == '_' || prev == '?';
+              }
+              if (preceded_by_ident) {
+                star_pos++;
+                continue;
+              }
+              expr_str.replace(star_pos, 1, addr_str);
+              star_pos += addr_str.length();
+            }
+            try {
+              auto expr = ParseExpression(expr_str, symbols);
+              int64_t value = expr->Evaluate(symbols);
+              symbols.Define(eq->label_name, SymbolType::Equate,
+                             std::make_shared<LiteralExpr>(
+                                 static_cast<uint32_t>(value)));
+            } catch (const std::exception &) {
+              // Forward reference - ignore this pass, will resolve later
+            }
+          }
         } else if (atom->type == AtomType::Data) {
           auto data = std::dynamic_pointer_cast<DataAtom>(atom);
           if (!data) {
@@ -634,6 +669,141 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
   return current_sizes;
 }
 
+void Assembler::RefixupDataAtoms(ConcreteSymbolTable &symbols,
+                                 AssemblerResult & /*result*/) {
+  // Re-evaluate DataAtom and EquateAtom content with the final converged symbol
+  // values.  InstructionAtoms are intentionally skipped (their encoded_bytes
+  // are left unchanged) to prevent branch-size changes from cascading into
+  // address shifts.
+  if (cpu_ == nullptr)
+    return;
+
+  for (auto &section : sections_) {
+    uint32_t current_address = section.org;
+    uint32_t virtual_address = section.org;
+    uint32_t phase_real_start = 0;
+    uint32_t phase_virtual_start = 0;
+
+    for (auto &atom : section.atoms) {
+      if (!atom)
+        continue;
+
+      if (atom->type == AtomType::Phase) {
+        auto phase = std::dynamic_pointer_cast<PhaseAtom>(atom);
+        if (phase) {
+          if (phase->is_start) {
+            phase_real_start = current_address;
+            phase_virtual_start = phase->virtual_addr;
+            virtual_address = phase->virtual_addr;
+          } else {
+            uint32_t bytes_emitted = virtual_address - phase_virtual_start;
+            current_address = phase_real_start + bytes_emitted;
+            virtual_address = current_address;
+          }
+        }
+      } else if (atom->type == AtomType::Org) {
+        auto org = std::dynamic_pointer_cast<OrgAtom>(atom);
+        if (org) {
+          current_address = org->address;
+          virtual_address = org->address;
+        }
+      } else if (atom->type == AtomType::Equate) {
+        // Re-evaluate position-dependent equates (.EQ *) with the current
+        // virtual address so they track the correct value.
+        auto eq = std::dynamic_pointer_cast<EquateAtom>(atom);
+        if (eq) {
+          std::string expr_str = eq->expression_str;
+          std::string addr_str = std::to_string(virtual_address);
+          size_t star_pos = 0;
+          while ((star_pos = expr_str.find('*', star_pos)) !=
+                 std::string::npos) {
+            bool preceded_by_ident = false;
+            if (star_pos > 0) {
+              char prev = expr_str[star_pos - 1];
+              preceded_by_ident =
+                  std::isalnum(static_cast<unsigned char>(prev)) ||
+                  prev == '.' || prev == '_' || prev == '?';
+            }
+            if (preceded_by_ident) {
+              star_pos++;
+              continue;
+            }
+            expr_str.replace(star_pos, 1, addr_str);
+            star_pos += addr_str.length();
+          }
+          try {
+            auto expr = ParseExpression(expr_str, symbols);
+            int64_t value = expr->Evaluate(symbols);
+            symbols.Define(eq->label_name, SymbolType::Equate,
+                           std::make_shared<LiteralExpr>(
+                               static_cast<uint32_t>(value)));
+          } catch (const std::exception &) {
+            // Should be resolved by now; ignore.
+          }
+        }
+      } else if (atom->type == AtomType::Data) {
+        auto data = std::dynamic_pointer_cast<DataAtom>(atom);
+        if (data && !data->expressions.empty()) {
+          data->data.clear();
+          for (const auto &expr_str : data->expressions) {
+            try {
+              auto expr = ParseExpression(expr_str, symbols);
+              int64_t value = expr->Evaluate(symbols);
+              if (data->data_size == DataSize::Byte) {
+                data->data.push_back(static_cast<uint8_t>(value & 0xFF));
+              } else {
+                uint32_t word = static_cast<uint32_t>(value);
+                data->data.push_back(static_cast<uint8_t>(word & 0xFF));
+                data->data.push_back(
+                    static_cast<uint8_t>((word >> 8) & 0xFF));
+              }
+            } catch (const std::exception &e) {
+              std::string msg(e.what());
+              if (msg.find("Undefined symbol") != std::string::npos) {
+                if (data->data_size == DataSize::Byte) {
+                  data->data.push_back(0);
+                } else {
+                  data->data.push_back(0);
+                  data->data.push_back(0);
+                }
+              } else {
+                throw;
+              }
+            }
+          }
+          data->size = data->data.size();
+        }
+        current_address += data->size;
+        virtual_address += data->size;
+      } else if (atom->type == AtomType::Instruction) {
+        // Do NOT re-encode.  Just advance address past the existing bytes.
+        auto inst = std::dynamic_pointer_cast<InstructionAtom>(atom);
+        if (inst) {
+          current_address += inst->encoded_bytes.size();
+          virtual_address += inst->encoded_bytes.size();
+        }
+      } else if (atom->type == AtomType::Space) {
+        auto space = std::dynamic_pointer_cast<SpaceAtom>(atom);
+        if (space) {
+          current_address += space->size;
+          virtual_address += space->size;
+        }
+      } else if (atom->type == AtomType::Align) {
+        auto align = std::dynamic_pointer_cast<AlignAtom>(atom);
+        if (align) {
+          uint32_t remainder = current_address % align->alignment;
+          if (remainder != 0) {
+            uint32_t padding = align->alignment - remainder;
+            current_address += padding;
+            virtual_address += padding;
+          }
+        }
+      }
+      // Label, ListingControl: no bytes, no address change.
+    }
+  }
+}
+
 AssemblerResult Assembler::Assemble() {
   // WHY MULTI-PASS ASSEMBLY?
   // ========================
@@ -730,6 +900,18 @@ AssemblerResult Assembler::Assemble() {
     }
     previous_sizes = current_sizes;
   }
+
+  // Final data fixup: re-evaluate DataAtoms and EquateAtoms with the converged
+  // symbol values, WITHOUT re-encoding instructions.
+  //
+  // WHY NOT EncodeInstructions?
+  // A full EncodeInstructions call re-encodes branches, which can change branch
+  // sizes (e.g. a previously-relaxed 5-byte long branch may tighten back to 2
+  // bytes when symbol values shift).  That cascades into address changes and
+  // invalidates the label values computed by the last ResolveSymbols call.
+  // RefixupDataAtoms avoids this by leaving InstructionAtom.encoded_bytes
+  // untouched and simply advancing addresses past them.
+  RefixupDataAtoms(*label_table_ptr, result);
 
   result.pass_count = pass;
   return result;

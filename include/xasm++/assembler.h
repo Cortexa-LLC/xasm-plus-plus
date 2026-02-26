@@ -233,6 +233,21 @@ private:
   bool CheckConvergence(const std::vector<size_t> &previous_sizes,
                         const std::vector<size_t> &current_sizes) const;
 
+  /**
+   * @brief Re-evaluate data and equate atoms using final converged symbols
+   *
+   * Called once after the convergence loop to propagate final symbol values
+   * into DataAtoms that referenced forward-declared symbols (e.g. a `.DA
+   * MAIN.P` entry that precedes the MAIN.P label in the atom list). Unlike
+   * EncodeInstructions(), this method intentionally does NOT re-encode
+   * InstructionAtoms, so branch sizes remain stable and no cascading address
+   * shifts occur.
+   *
+   * @param symbols Converged symbol table with final values
+   * @param result Result object to append errors to
+   */
+  void RefixupDataAtoms(ConcreteSymbolTable &symbols, AssemblerResult &result);
+
   std::vector<Section> sections_;  ///< Sections to assemble
   CpuPlugin *cpu_ = nullptr;       ///< CPU plugin for instruction encoding
   SymbolTable *symbols_ = nullptr; ///< Symbol table for symbol resolution

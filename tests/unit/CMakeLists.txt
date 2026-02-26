@@ -392,19 +392,19 @@ target_link_libraries(test_error_formatter
 
 gtest_discover_tests(test_error_formatter)
 
-# Stoul fix tests (Bug: Expression evaluator stoul conversion)
-add_executable(test_stoul_fix
-    test_stoul_fix.cpp
+# Expression error handling tests (invalid hex, malformed binary, unresolved symbols)
+add_executable(test_expression_error_handling
+    test_expression_error_handling.cpp
 )
 
-target_link_libraries(test_stoul_fix
+target_link_libraries(test_expression_error_handling
     xasm_syntax
     xasm_core
     gtest_main
     gtest
 )
 
-gtest_discover_tests(test_stoul_fix)
+gtest_discover_tests(test_expression_error_handling)
 
 # FlexAsmSyntax tests
 add_executable(test_flex_syntax

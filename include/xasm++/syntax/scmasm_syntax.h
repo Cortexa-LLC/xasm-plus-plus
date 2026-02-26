@@ -244,16 +244,27 @@ public:
   /**
    * @brief Enter dummy section mode
    *
+   * Saves the current main-section address so it can be restored by
+   * EndDummySection().  Any .OR inside the dummy block repositions only the
+   * dummy section's label counter; the main PC is unaffected after .ED.
+   *
+   * @param current_address The main-section PC at the point .DUMMY is entered.
+   *        This value is saved and returned by EndDummySection().
+   *
    * Called by .DUMMY directive handler.
    */
-  void StartDummySection();
+  void StartDummySection(uint32_t current_address);
 
   /**
    * @brief Exit dummy section mode
    *
+   * Restores the main-section PC to the value saved by StartDummySection().
+   *
+   * @return The saved main-section address to be restored by the handler.
+   *
    * Called by .ED directive handler.
    */
-  void EndDummySection();
+  uint32_t EndDummySection();
 
   /**
    * @brief Check if parser is in phase assembly mode
@@ -361,8 +372,14 @@ private:
   // Pending label: a label-only line may be associated with the next .EQ/.SE
   std::string pending_label_; ///< Label deferred from previous label-only line
 
+  // Local label scoping: track the most recent global (non-local) label so
+  // that local labels like .8 are stored as "GLOBALNAME.8" in the symbol
+  // table and can be resolved by the assembler during branch encoding.
+  std::string last_global_label_; ///< Most recent global label (scope for local labels)
+
   // Dummy section support (structure definitions)
-  bool in_dummy_section_; ///< Currently in dummy section (.DUMMY active)
+  bool in_dummy_section_;          ///< Currently in dummy section (.DUMMY active)
+  uint32_t dummy_saved_address_;   ///< Main PC saved at .DUMMY entry, restored at .ED
 
   // Phase assembly support (.PH/.EP)
   bool in_phase_;               ///< Currently in phase assembly

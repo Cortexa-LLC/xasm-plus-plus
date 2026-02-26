@@ -1217,6 +1217,12 @@ size_t Cpu6502::GetInstructionSize(const std::string &mnemonic,
     return 2;
   }
 
+  // --- SCMASM high byte immediate: /expr ---
+  // In SCMASM syntax /expr is equivalent to #>expr (immediate high byte).
+  if (op[0] == '/') {
+    return 2;
+  }
+
   // --- Branch instructions: always relative (2 bytes) ---
   static const std::unordered_set<std::string> BRANCHES = {
       M6502Mnemonics::BEQ, M6502Mnemonics::BNE, M6502Mnemonics::BCC,
@@ -2114,6 +2120,10 @@ Cpu6502::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
     else if (trimmed[0] == '#') {
       mode = AddressingMode::Immediate;
     }
+    // SCMASM high byte immediate: /expr (equivalent to #>expr)
+    else if (trimmed[0] == '/') {
+      mode = AddressingMode::Immediate;
+    }
     // Indirect modes
     else if (trimmed[0] == '(') {
       size_t close_paren = trimmed.find(')');
@@ -2156,8 +2166,8 @@ Cpu6502::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
         // Symbol reference - default to Absolute for compatibility
         // BUG-001 FIX: Symbol - use resolved operand value to determine mode
         // BUT: Only use ZeroPage if value is clearly in ZeroPage range (1-255)
-        mode = (operand >= 1 && operand <= 0xFF) ? AddressingMode::ZeroPageX
-                                                 : AddressingMode::AbsoluteX;
+        mode = (operand <= 0xFF) ? AddressingMode::ZeroPageX
+                                 : AddressingMode::AbsoluteX;
       }
     } else if (trimmed.find(",Y") != std::string::npos ||
                trimmed.find(", Y") != std::string::npos) {
@@ -2175,8 +2185,8 @@ Cpu6502::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
         // Symbol reference - default to Absolute for compatibility
         // BUG-001 FIX: Symbol - use resolved operand value to determine mode
         // BUT: Only use ZeroPage if value is clearly in ZeroPage range (1-255)
-        mode = (operand >= 1 && operand <= 0xFF) ? AddressingMode::ZeroPageY
-                                                 : AddressingMode::AbsoluteY;
+        mode = (operand <= 0xFF) ? AddressingMode::ZeroPageY
+                                 : AddressingMode::AbsoluteY;
       }
     }
     // Absolute or ZeroPage
@@ -2187,14 +2197,15 @@ Cpu6502::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
         mode =
             (val <= 0xFF) ? AddressingMode::ZeroPage : AddressingMode::Absolute;
       } else {
-        // Symbol reference - default to Absolute for compatibility
-        // BUG-001 FIX: Symbol - use resolved operand value to determine mode
-        // BUT: Only use ZeroPage if value is clearly in ZeroPage range (1-255)
-        //      A value of 0 could be an undefined label, so default to Absolute
-        //      This ensures JMP/JSR work with undefined labels (single-pass
-        //      assembly)
-        mode = (operand >= 1 && operand <= 0xFF) ? AddressingMode::ZeroPage
-                                                 : AddressingMode::Absolute;
+        // Symbol reference - use resolved operand value to determine mode.
+        // ZeroPage is used for values 0–$FF, EXCEPT for JMP and JSR which have
+        // no ZeroPage variant: a value of 0 there is an undefined-label
+        // placeholder and must default to Absolute so that multi-pass
+        // resolution eventually produces the correct 3-byte encoding.
+        const bool no_zp_form = (mnemonic == JMP || mnemonic == JSR);
+        mode = (operand <= 0xFF && (!no_zp_form || operand >= 1))
+                   ? AddressingMode::ZeroPage
+                   : AddressingMode::Absolute;
       }
     }
   }

@@ -204,9 +204,16 @@ void HandleOr(const std::string &label, const std::string &operand,
   uint32_t address =
       EvaluateExpression(addr_expr, *context.symbols, context.parser_state);
 
-  // Create ORG atom
-  auto org_atom = std::make_shared<OrgAtom>(address);
-  context.section->atoms.push_back(org_atom);
+  // Only emit OrgAtom when NOT in a dummy section.
+  // Inside .DUMMY/.ED, .OR repositions the dummy-section PC for symbol
+  // assignments but must NOT emit an OrgAtom that would persist in the main
+  // section's atom list and corrupt ResolveSymbols.
+  ValidateParser(context.parser_state);
+  auto *parser = static_cast<ScmasmSyntaxParser *>(context.parser_state);
+  if (!parser->InDummySection()) {
+    auto org_atom = std::make_shared<OrgAtom>(address);
+    context.section->atoms.push_back(org_atom);
+  }
 
   // Update current address
   *context.current_address = address;
@@ -233,8 +240,18 @@ void HandleEq(const std::string &label, const std::string &operand,
 
   // Define symbol (immutable) - .EQ creates Equate type
   // Normalize label to uppercase for case-insensitive SCMASM compatibility
+  std::string norm_label = util::ToUpper(label);
   auto expr = std::make_shared<LiteralExpr>(value);
-  context.symbols->Define(util::ToUpper(label), SymbolType::Equate, expr);
+  context.symbols->Define(norm_label, SymbolType::Equate, expr);
+
+  // If the expression contains '*' (current address), push an EquateAtom so
+  // the symbol is re-evaluated each EncodeInstructions pass. This ensures
+  // positional equates like "PAKME.T .EQ *" or "CORE.S .EQ *-CORE.B" track
+  // the correct physical address after branch relaxation changes code sizes.
+  if (value_expr.find('*') != std::string::npos) {
+    auto eq_atom = std::make_shared<EquateAtom>(norm_label, value_expr);
+    context.section->atoms.push_back(eq_atom);
+  }
 }
 
 void HandleSe(const std::string &label, const std::string &operand,

@@ -33,6 +33,7 @@ enum class AtomType {
   Org,            ///< Origin directive (e.g., ".org $8000")
   ListingControl, ///< Listing control directive (e.g., "TITLE", "PAGE", "LIST")
   Phase,          ///< Phase directive (.PH start / .EP end)
+  Equate,         ///< Equate with position-dependent expression (.EQ *-LABEL)
 };
 
 /**
@@ -383,6 +384,36 @@ public:
   explicit ListingControlAtom(ListingControlType type)
       : Atom(AtomType::ListingControl), control_type(type), count(0) {
     size = 0; // Listing control doesn't generate bytes
+  }
+};
+
+/**
+ * @brief Equate atom - represents a position-dependent .EQ expression
+ *
+ * An equate atom stores a symbol name and expression string for equates
+ * that depend on the current address (e.g., "LABEL .EQ *" or
+ * "SIZE .EQ *-START"). These are re-evaluated each EncodeInstructions pass
+ * so the symbol tracks the correct physical address after branch relaxation.
+ *
+ * @par Example
+ * @code
+ * PAKME.T .EQ *        ; EquateAtom(name="PAKME.T", expr="*")
+ * SIZE    .EQ *-START  ; EquateAtom(name="SIZE", expr="*-START")
+ * @endcode
+ */
+class EquateAtom : public Atom {
+public:
+  std::string label_name;    ///< Symbol name (normalized/uppercase)
+  std::string expression_str; ///< Raw expression string (contains '*')
+
+  /**
+   * @brief Construct an equate atom
+   * @param name Symbol name (normalized)
+   * @param expr Expression string (must contain '*')
+   */
+  EquateAtom(const std::string &name, const std::string &expr)
+      : Atom(AtomType::Equate), label_name(name), expression_str(expr) {
+    size = 0; // Equate atoms don't generate bytes
   }
 };
 

@@ -283,6 +283,16 @@ std::shared_ptr<Expression> ExpressionParser::ParseUnary() {
     return std::make_shared<UnaryOpExpr>(UnaryOp::HighByte, operand);
   }
 
+  // SCMASM high byte operator (/)
+  // In SCMASM syntax /expr means the high byte of expr, same as >expr.
+  // Must be handled here as unary so that ParseMulDiv does not consume it
+  // as binary division (0 / expr = 0) when it appears at expression start.
+  if (c == '/') {
+    Consume();
+    auto operand = ParseUnary();
+    return std::make_shared<UnaryOpExpr>(UnaryOp::HighByte, operand);
+  }
+
   // Note: HIGH() and LOW() are also handled as function calls in ParsePrimary
   // (e.g., "HIGH(0x1234)" for Z80 syntax)
 

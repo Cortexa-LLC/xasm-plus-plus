@@ -2049,10 +2049,15 @@ DATA    .BS 3
 
   parser->Parse(source, section, symbols);
 
-  // Should have OrgAtom and only one DataAtom (from DATA .BS 3)
-  ASSERT_EQ(section.atoms.size(), 2u);
+  // Should have OrgAtom, LabelAtom (from DATA label), and DataAtom (.BS 3)
+  // FIELD1/2/3 labels inside .DUMMY do not produce LabelAtoms (dummy suppresses)
+  ASSERT_EQ(section.atoms.size(), 3u);
 
-  auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[1]);
+  auto label_atom = std::dynamic_pointer_cast<LabelAtom>(section.atoms[1]);
+  ASSERT_NE(label_atom, nullptr);
+  EXPECT_EQ(label_atom->name, "DATA");
+
+  auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[2]);
   ASSERT_NE(data_atom, nullptr);
 
   // Only DATA .BS 3 should emit bytes (3 bytes)

@@ -237,6 +237,10 @@ IntelHexWriter::ExtractBytes(const Section &section) {
     case AtomType::Phase:
       // Phase atom - no bytes generated (address tracking only)
       break;
+
+    case AtomType::Equate:
+      // Equate atom - no bytes generated (symbol value only)
+      break;
     }
   }
 

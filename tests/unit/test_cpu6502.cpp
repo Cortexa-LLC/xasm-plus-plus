@@ -3111,3 +3111,76 @@ TEST(Cpu6502Test, BBS_NotAvailableInStandard65C02) {
   auto bytes = cpu.EncodeBBS0(0x80, 0x10);
   EXPECT_EQ(bytes.size(), 0UL);
 }
+
+// ============================================================================
+// SCMASM high-byte operator "/" — EncodeInstruction addressing mode
+// ============================================================================
+
+// Test: "lda /ADDR" → operand_str="/ADDR" → Immediate mode (not Absolute)
+// In SCMASM, /expr means the high byte of expr, used as an immediate value.
+// EncodeInstruction must treat a leading '/' as implicit '#' (immediate mode).
+TEST(Cpu6502Test, EncodeInstruction_SCMASM_SlashHighByte_LDA_IsImmediate) {
+  Cpu6502 cpu;
+  // Simulate: ADDR .EQ $1234, "lda /ADDR" → value already computed as 0x12
+  // by assembler.cpp ParseExpression; operand_str is "/ADDR".
+  auto bytes = cpu.EncodeInstruction("LDA", 0x12, "/ADDR");
+  ASSERT_EQ(bytes.size(), 2UL)
+      << "lda /ADDR must encode as 2 bytes (immediate)";
+  EXPECT_EQ(bytes[0], 0xA9) << "Opcode must be LDA Immediate ($A9)";
+  EXPECT_EQ(bytes[1], 0x12) << "Operand must be the high byte value";
+}
+
+// Test: "ldx /ADDR" → Immediate mode
+TEST(Cpu6502Test, EncodeInstruction_SCMASM_SlashHighByte_LDX_IsImmediate) {
+  Cpu6502 cpu;
+  auto bytes = cpu.EncodeInstruction("LDX", 0x20, "/$2000");
+  ASSERT_EQ(bytes.size(), 2UL)
+      << "ldx /$2000 must encode as 2 bytes (immediate)";
+  EXPECT_EQ(bytes[0], 0xA2); // LDX immediate opcode
+  EXPECT_EQ(bytes[1], 0x20);
+}
+
+// Test: "ldy /ADDR" → Immediate mode
+TEST(Cpu6502Test, EncodeInstruction_SCMASM_SlashHighByte_LDY_IsImmediate) {
+  Cpu6502 cpu;
+  auto bytes = cpu.EncodeInstruction("LDY", 0x10, "/SOME.LABEL");
+  ASSERT_EQ(bytes.size(), 2UL)
+      << "ldy /LABEL must encode as 2 bytes (immediate)";
+  EXPECT_EQ(bytes[0], 0xA0); // LDY immediate opcode
+  EXPECT_EQ(bytes[1], 0x10);
+}
+
+// Test: GetInstructionSize treats /expr as 2 bytes (immediate)
+TEST(Cpu6502Test, GetInstructionSize_SCMASM_SlashHighByte_Is2Bytes) {
+  Cpu6502 cpu;
+  EXPECT_EQ(cpu.GetInstructionSize("LDA", "/ADDR"), 2UL)
+      << "lda /ADDR must be sized as 2 bytes (immediate)";
+  EXPECT_EQ(cpu.GetInstructionSize("LDX", "/$2000"), 2UL)
+      << "ldx /$2000 must be sized as 2 bytes (immediate)";
+  EXPECT_EQ(cpu.GetInstructionSize("CMP", "/LABEL"), 2UL)
+      << "cmp /LABEL must be sized as 2 bytes (immediate)";
+}
+
+// ============================================================================
+// ZP address $00 bug fix — EncodeInstruction must use ZeroPage for address 0
+// ============================================================================
+
+// Previously operand>=1 check excluded $00 from ZP, producing absolute $0000.
+// ZP $00 is valid and common (e.g. TmpPtr1 .EQ $0), so value 0 must → ZP.
+TEST(Cpu6502Test, EncodeInstruction_ZeroPageAt_0x00_IsZeroPage) {
+  Cpu6502 cpu;
+  // STY $00 → 84 00 (ZeroPage, 2 bytes), NOT 8C 00 00 (Absolute, 3 bytes)
+  auto bytes = cpu.EncodeInstruction("STY", 0x00, "ZP_SYM");
+  ASSERT_EQ(bytes.size(), 2UL) << "sty <zp-sym at $00> must be 2 bytes (ZP)";
+  EXPECT_EQ(bytes[0], 0x84) << "Opcode must be STY ZeroPage ($84)";
+  EXPECT_EQ(bytes[1], 0x00) << "Operand must be $00";
+}
+
+TEST(Cpu6502Test, EncodeInstruction_ZeroPageAt_0x00_STA_IsZeroPage) {
+  Cpu6502 cpu;
+  // STA $00 → 85 00 (ZeroPage), NOT 8D 00 00 (Absolute)
+  auto bytes = cpu.EncodeInstruction("STA", 0x00, "ZP_SYM");
+  ASSERT_EQ(bytes.size(), 2UL) << "sta <zp-sym at $00> must be 2 bytes (ZP)";
+  EXPECT_EQ(bytes[0], 0x85) << "Opcode must be STA ZeroPage ($85)";
+  EXPECT_EQ(bytes[1], 0x00);
+}
