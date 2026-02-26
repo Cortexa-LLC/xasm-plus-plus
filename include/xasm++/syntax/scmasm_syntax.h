@@ -653,7 +653,23 @@ private:
    * @param delimiter Delimiter character
    * @return Transformed character
    */
-  uint8_t ApplyHighBitRule(char c, char delimiter);
+  uint8_t ApplyHighBitRule(char c, char delimiter) const;
+
+  /**
+   * @brief Expand character literals in an expression string to hex values.
+   *
+   * Converts SCMASM character literal syntax to numeric hex equivalents
+   * before the expression is passed to the generic ParseExpression engine,
+   * which has no knowledge of SCMASM quoting conventions.
+   *
+   * Rules (SCMASM high-bit convention):
+   *   "X" or "X  (double-quote, ASCII $22 < $27) → high bit SET  (e.g. "0" → $B0)
+   *   'X' or 'X  (apostrophe,   ASCII $27 NOT < $27) → high bit CLEAR (e.g. 'A' → $41)
+   *
+   * @param s Expression string that may contain character literals
+   * @return Expression string with character literals replaced by $XX hex tokens
+   */
+  std::string ExpandCharLiteralsInExpr(const std::string &s) const;
 
   /**
    * @brief Parse string with delimiter semantics

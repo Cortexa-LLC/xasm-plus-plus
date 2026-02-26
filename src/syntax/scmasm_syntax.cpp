@@ -796,6 +796,13 @@ void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
       // Translate local label operands to scoped names for multi-pass
       // branch resolution.  e.g. ".8" → "GLOBALNAME.8",
       //                          ".8,X" → "GLOBALNAME.8,X"
+      // Expand SCMASM character literals to hex before local-label scoping
+      // and InstructionAtom creation.  The generic ParseExpression engine in
+      // assembler.cpp has no knowledge of SCMASM quoting conventions, so
+      // "X" / 'X' would be mis-parsed as undefined symbols and silently
+      // evaluate to 0.  Pre-expand them here: "0"→$B0, 'A'→$41, etc.
+      instr_operand = ExpandCharLiteralsInExpr(instr_operand);
+
       if (!instr_operand.empty()) {
         std::string label_part = instr_operand;
         std::string suffix;
@@ -1172,7 +1179,7 @@ uint32_t ScmasmSyntaxParser::EvaluateExpression(const std::string &str,
   return static_cast<uint32_t>(expr->Evaluate(symbols));
 }
 
-uint8_t ScmasmSyntaxParser::ApplyHighBitRule(char c, char delimiter) {
+uint8_t ScmasmSyntaxParser::ApplyHighBitRule(char c, char delimiter) const {
   // SCMASM high-bit rule:
   // If delimiter ASCII < 0x27 (apostrophe '), high bit is SET
   // Otherwise, high bit is CLEAR
@@ -1187,6 +1194,50 @@ uint8_t ScmasmSyntaxParser::ApplyHighBitRule(char c, char delimiter) {
     result &= 0x7F;
   }
 
+  return result;
+}
+
+std::string ScmasmSyntaxParser::ExpandCharLiteralsInExpr(
+    const std::string &s) const {
+  // Replace SCMASM character literals ("X", 'X', "X", 'X) with their
+  // numeric hex equivalents so that the generic ParseExpression engine can
+  // evaluate expressions like #"0"+1 or #'A'.
+  std::string result;
+  result.reserve(s.size() * 2);
+  size_t i = 0;
+  while (i < s.size()) {
+    char c = s[i];
+    if ((c == '"' || c == '\'') && i + 1 < s.size() &&
+        std::isprint(static_cast<unsigned char>(s[i + 1]))) {
+      // Only expand char literals that follow '#' or an arithmetic operator.
+      // This prevents treating quoted strings in inline comments (e.g. the
+      // operand text left over from  dey "/..";comment  after whitespace
+      // stripping) as character literals.
+      bool valid_context = false;
+      if (i > 0) {
+        char prev = s[i - 1];
+        valid_context = (prev == '#' || prev == '+' || prev == '-' ||
+                         prev == '*' || prev == '/' || prev == '^' ||
+                         prev == '(' || prev == '<' || prev == '>');
+      }
+      if (valid_context) {
+        char delim = c;
+        char ch = s[i + 1];
+        size_t len = 2; // delimiter + char (no closing delimiter)
+        if (i + 2 < s.size() && s[i + 2] == delim) {
+          len = 3; // closing delimiter present: "X" or 'X'
+        }
+        uint8_t val = ApplyHighBitRule(ch, delim);
+        char hex[8];
+        snprintf(hex, sizeof(hex), "$%02X", val);
+        result += hex;
+        i += len;
+        continue;
+      }
+    }
+    result += c;
+    i++;
+  }
   return result;
 }
 

@@ -142,6 +142,19 @@ ParseExpression(const std::string &str, ConcreteSymbolTable &symbols) {
                                           right_expr);
   }
 
+  // Check for division (/ as binary infix operator at position > 0).
+  // Note: '/' at position 0 is the SCMASM unary high-byte operator (already
+  // handled above).  e.g. "$30/2" → $30 / 2 = $18  (from source: #'0'/2)
+  size_t div_pos = trimmed.find('/');
+  if (div_pos != std::string::npos && div_pos > 0) {
+    std::string left = Trim(trimmed.substr(0, div_pos));
+    std::string right = Trim(trimmed.substr(div_pos + 1));
+    auto left_expr = ParseExpression(left, symbols);
+    auto right_expr = ParseExpression(right, symbols);
+    return std::make_shared<BinaryOpExpr>(BinaryOp::Divide, left_expr,
+                                          right_expr);
+  }
+
   // Hex literal: $1234 (may have addressing mode suffix like $200,x)
   if (!trimmed.empty() && trimmed[0] == '$') {
     // Strip addressing mode suffix (,X ,Y ,S) before parsing
