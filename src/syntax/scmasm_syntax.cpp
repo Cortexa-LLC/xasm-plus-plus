@@ -803,17 +803,43 @@ void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
       // evaluate to 0.  Pre-expand them here: "0"→$B0, 'A'→$41, etc.
       instr_operand = ExpandCharLiteralsInExpr(instr_operand);
 
-      if (!instr_operand.empty()) {
-        std::string label_part = instr_operand;
-        std::string suffix;
-        size_t comma = instr_operand.find(',');
-        if (comma != std::string::npos) {
-          label_part = instr_operand.substr(0, comma);
-          suffix = instr_operand.substr(comma);
+      // Expand local label references (.N or :N) anywhere in the operand
+      // expression to their scoped form (GLOBALNAME.N / GLOBALNAME:N).
+      //
+      // The old approach only handled the case where the ENTIRE operand (or
+      // the part before the comma) was a local label.  That missed compound
+      // expressions like:
+      //   sta .1+2    — self-modified absolute address  (X.PrintF.S pattern)
+      //   lda (.1),Y  — indirect indexed through local label address
+      //
+      // A local label reference is '.' or ':' followed by one or more digits,
+      // appearing at the START of the operand string or immediately after a
+      // non-identifier character (operator, paren, '#', etc.).
+      if (!instr_operand.empty() && !last_global_label_.empty()) {
+        std::string expanded;
+        expanded.reserve(instr_operand.size() + last_global_label_.size() * 2);
+        for (size_t k = 0; k < instr_operand.size();) {
+          char c = instr_operand[k];
+          bool at_word_start =
+              (k == 0) || (!std::isalnum((unsigned char)instr_operand[k - 1]) &&
+                           instr_operand[k - 1] != '_');
+          if ((c == '.' || c == ':') && at_word_start &&
+              k + 1 < instr_operand.size() &&
+              std::isdigit((unsigned char)instr_operand[k + 1])) {
+            // Local label reference — prepend current scope
+            expanded += last_global_label_;
+            expanded += c; // '.' or ':'
+            k++;
+            while (k < instr_operand.size() &&
+                   std::isdigit((unsigned char)instr_operand[k])) {
+              expanded += instr_operand[k++];
+            }
+          } else {
+            expanded += c;
+            k++;
+          }
         }
-        if (IsLocalLabel(label_part)) {
-          instr_operand = last_global_label_ + label_part + suffix;
-        }
+        instr_operand = expanded;
       }
 
       auto instr_atom =
