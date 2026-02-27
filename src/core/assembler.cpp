@@ -925,16 +925,62 @@ AssemblerResult Assembler::Assemble() {
     result.success = false;
   }
 
+  // Post-convergence instruction fixup pass.
+  //
+  // WHY IS THIS NEEDED?
+  // ===================
+  // During the convergence loop, EquateAtoms (e.g. "MAIN.S .EQ *-MAIN.B") are
+  // processed IN ATOM ORDER, which means they are evaluated AFTER the
+  // instructions that appear earlier in the source.  Those early instructions
+  // therefore encode with the equate value from the END of the PREVIOUS pass.
+  //
+  // At parse time, position-tracking labels like "MAIN.B" are assigned
+  // addresses based on the CPU plugin's size heuristics, which can differ from
+  // the actual encoded sizes.  After the first full ResolveSymbols pass the
+  // label gets its correct address.  The equate that depends on it (MAIN.S)
+  // is then correct from pass 2 onward.  But an early instruction that
+  // references MAIN.S still encodes with the pass-1 value of MAIN.S (which
+  // used the heuristic-based MAIN.B) rather than the correct pass-2 value.
+  //
+  // Example (A2osX kernel):
+  //   MAIN.B   .PH $800          ; label assigned heuristic file-PC at parse
+  //   ...                        ; (large MAIN section)
+  //   MAIN.S   .EQ *-MAIN.B      ; computed correctly after pass 1
+  //   ...
+  //   LDY #$800+MAIN.S           ; appears BEFORE MAIN.S in atom order
+  //                              ; → encoded with MAIN.S from previous pass
+  //
+  // In the last convergence pass sizes are stable so convergence is declared,
+  // but MAIN.S has the old (slightly wrong) value in the symbol table at the
+  // time the LDY instruction is encoded.  RefixupDataAtoms then updates
+  // .DA MAIN.S with the correct final value, creating an inconsistency:
+  // the instruction has the wrong byte, the data table has the right one.
+  //
+  // SOLUTION: Run one additional EncodeInstructions pass AFTER convergence.
+  // By this point the symbol table holds the final stable values set at the
+  // END of the last convergence pass (including the correct MAIN.S).  All
+  // instructions are therefore re-encoded with correct values.
+  //
+  // SAFETY: All instruction sizes are already stable (convergence guarantees
+  // this), so re-encoding cannot change any instruction size.  Immediate-
+  // value instructions like "LDY #imm" are always 2 bytes regardless of the
+  // immediate value; the extra pass only updates the operand bytes.
+  EncodeInstructions(*label_table_ptr, result);
+
   // Final data fixup: re-evaluate DataAtoms and EquateAtoms with the converged
   // symbol values, WITHOUT re-encoding instructions.
   //
-  // WHY NOT EncodeInstructions?
+  // WHY NOT EncodeInstructions ALONE?
   // A full EncodeInstructions call re-encodes branches, which can change branch
   // sizes (e.g. a previously-relaxed 5-byte long branch may tighten back to 2
   // bytes when symbol values shift).  That cascades into address changes and
   // invalidates the label values computed by the last ResolveSymbols call.
   // RefixupDataAtoms avoids this by leaving InstructionAtom.encoded_bytes
   // untouched and simply advancing addresses past them.
+  //
+  // Together, the extra EncodeInstructions above and RefixupDataAtoms below
+  // ensure that both InstructionAtoms and DataAtoms reflect the same final
+  // symbol values.
   RefixupDataAtoms(*label_table_ptr, result);
 
   result.pass_count = pass;

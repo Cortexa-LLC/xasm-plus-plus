@@ -2109,6 +2109,14 @@ Cpu6502::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
 
   // Determine addressing mode from operand_str
   std::string trimmed = trim(operand_str);
+  // Normalize to uppercase for addressing mode detection.
+  // SCMASM source may use lowercase register suffixes (,x / ,y) while
+  // Merlin uses uppercase.  Symbol values are resolved into the numeric
+  // `operand` parameter before EncodeInstruction is called, so uppercasing
+  // the string here only affects mode-detection string comparisons, not
+  // symbol lookups.
+  std::transform(trimmed.begin(), trimmed.end(), trimmed.begin(),
+                 [](unsigned char c) { return std::toupper(c); });
   AddressingMode mode = AddressingMode::Implied;
 
   if (!trimmed.empty()) {
