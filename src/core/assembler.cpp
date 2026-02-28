@@ -102,33 +102,39 @@ ParseExpression(const std::string &str, ConcreteSymbolTable &symbols) {
     return std::make_shared<LiteralExpr>((value >> 8) & 0xFF); // High byte
   }
 
-  // Check for addition first (before trying to parse as single value)
-  size_t plus_pos = trimmed.find('+');
-  if (plus_pos != std::string::npos && plus_pos > 0) {
-    std::string left = Trim(trimmed.substr(0, plus_pos));
-    std::string right = Trim(trimmed.substr(plus_pos + 1));
+  // Find the rightmost top-level + or - for left-associative evaluation.
+  // Scanning right-to-left ensures A-B-C is parsed as (A-B)-C, not A-(B-C).
+  // We skip position 0 because a leading '-' is a unary minus, not subtraction.
+  // Operators inside parentheses are skipped by tracking paren depth.
+  {
+    size_t add_sub_pos = std::string::npos;
+    char add_sub_op = 0;
+    int paren_depth = 0;
+    for (size_t i = trimmed.size(); i > 1; --i) {
+      char c = trimmed[i - 1];
+      if (c == ')') {
+        paren_depth++;
+      } else if (c == '(') {
+        paren_depth--;
+      } else if (paren_depth == 0 && (c == '+' || c == '-')) {
+        add_sub_pos = i - 1;
+        add_sub_op = c;
+        break;
+      }
+    }
 
-    // Recursively parse both sides
-    auto left_expr = ParseExpression(left, symbols);
-    auto right_expr = ParseExpression(right, symbols);
+    if (add_sub_pos != std::string::npos) {
+      std::string left = Trim(trimmed.substr(0, add_sub_pos));
+      std::string right = Trim(trimmed.substr(add_sub_pos + 1));
 
-    // Return BinaryOpExpr for addition
-    return std::make_shared<BinaryOpExpr>(BinaryOp::Add, left_expr, right_expr);
-  }
+      // Recursively parse both sides
+      auto left_expr = ParseExpression(left, symbols);
+      auto right_expr = ParseExpression(right, symbols);
 
-  // Check for subtraction (skip first char - could be negative sign)
-  size_t minus_pos = trimmed.find('-', 1);
-  if (minus_pos != std::string::npos && minus_pos > 0) {
-    std::string left = Trim(trimmed.substr(0, minus_pos));
-    std::string right = Trim(trimmed.substr(minus_pos + 1));
-
-    // Recursively parse both sides
-    auto left_expr = ParseExpression(left, symbols);
-    auto right_expr = ParseExpression(right, symbols);
-
-    // Return BinaryOpExpr for subtraction
-    return std::make_shared<BinaryOpExpr>(BinaryOp::Subtract, left_expr,
-                                          right_expr);
+      BinaryOp op =
+          (add_sub_op == '+') ? BinaryOp::Add : BinaryOp::Subtract;
+      return std::make_shared<BinaryOpExpr>(op, left_expr, right_expr);
+    }
   }
 
   // Check for bitwise XOR (^) operator — e.g. $FF^SYM.Q.AAARRAY

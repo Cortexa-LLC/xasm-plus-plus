@@ -2119,6 +2119,14 @@ Cpu6502::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
                  [](unsigned char c) { return std::toupper(c); });
   AddressingMode mode = AddressingMode::Implied;
 
+  // Shift/rotate instructions with no operand mean accumulator mode.
+  // SCMASM uses "asl" (no operand) instead of the explicit "asl A" form.
+  if (trimmed.empty() &&
+      (mnemonic == ASL || mnemonic == LSR || mnemonic == ROL ||
+       mnemonic == ROR)) {
+    mode = AddressingMode::Accumulator;
+  }
+
   if (!trimmed.empty()) {
     // Accumulator mode
     if (trimmed == "A") {
@@ -2139,10 +2147,13 @@ Cpu6502::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
         std::string inside = trimmed.substr(1, close_paren - 1);
         inside = trim(inside);
 
-        // Check for indexed indirect: ($80,X)
+        // Check for indexed indirect: ($80,X) or absolute indexed indirect: ($1234,X)
+        // 65C02 JMP (abs,X) uses AbsoluteIndexedIndirect ($7C); zero-page ($80,X)
+        // uses IndirectX.  Distinguish by the resolved operand value.
         if (inside.find(",X") != std::string::npos ||
             inside.find(", X") != std::string::npos) {
-          mode = AddressingMode::IndirectX;
+          mode = (operand > 0xFF) ? AddressingMode::AbsoluteIndexedIndirect
+                                  : AddressingMode::IndirectX;
         }
         // Check for indirect indexed: ($80),Y
         else if (close_paren < trimmed.length() - 1) {
