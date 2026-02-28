@@ -406,29 +406,31 @@ CHAR_LO .EQ 'A
 // ============================================================================
 
 TEST_F(ScmasmSyntaxTest, AsDirectiveWithSimpleString) {
-  // .AS with delimiter " (0x22 < 0x27) → high bit SET
+  // .AS stores plain 7-bit ASCII regardless of delimiter.
+  // The delimiter is used only to delimit the string, not to set high bits.
   parser->Parse("        .AS \"HELLO\"\n", section, symbols);
 
   ASSERT_EQ(section.atoms.size(), 1u);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   ASSERT_EQ(data_atom->data.size(), 5u);
-  EXPECT_EQ(data_atom->data[0], 0xC8); // 'H' with high bit SET
-  EXPECT_EQ(data_atom->data[1], 0xC5); // 'E' with high bit SET
-  EXPECT_EQ(data_atom->data[2], 0xCC); // 'L' with high bit SET
-  EXPECT_EQ(data_atom->data[3], 0xCC); // 'L' with high bit SET
-  EXPECT_EQ(data_atom->data[4], 0xCF); // 'O' with high bit SET
+  EXPECT_EQ(data_atom->data[0], 0x48); // 'H' plain ASCII
+  EXPECT_EQ(data_atom->data[1], 0x45); // 'E' plain ASCII
+  EXPECT_EQ(data_atom->data[2], 0x4C); // 'L' plain ASCII
+  EXPECT_EQ(data_atom->data[3], 0x4C); // 'L' plain ASCII
+  EXPECT_EQ(data_atom->data[4], 0x4F); // 'O' plain ASCII
 }
 
 TEST_F(ScmasmSyntaxTest, AsDirectiveHighBitRule) {
-  // Delimiter < 0x27 should SET high bit for .AS
+  // .AS stores plain ASCII regardless of delimiter.
+  // The " delimiter does NOT set high bit on string data.
   parser->Parse("        .AS \"A\"\n", section, symbols);
 
   ASSERT_EQ(section.atoms.size(), 1u);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   ASSERT_EQ(data_atom->data.size(), 1u);
-  EXPECT_EQ(data_atom->data[0], 0xC1); // 'A' with high bit SET (0x41 | 0x80)
+  EXPECT_EQ(data_atom->data[0], 0x41); // 'A' plain ASCII
 }
 
 TEST_F(ScmasmSyntaxTest, AsDirectiveHighBitClear) {
@@ -472,17 +474,16 @@ TEST_F(ScmasmSyntaxTest, AtDirectiveSetsHighBit) {
 }
 
 TEST_F(ScmasmSyntaxTest, AtDirectiveDelimiterStillApplies) {
-  // .AT with delimiter < 0x27 should set high bit on ALL chars
-  // Then set high bit on LAST char (which already has it)
+  // .AT sets high bit only on the LAST character regardless of delimiter.
+  // The " delimiter does NOT set high bit on preceding characters.
   parser->Parse("        .AT \"AB\"\n", section, symbols);
 
   ASSERT_EQ(section.atoms.size(), 1u);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   ASSERT_EQ(data_atom->data.size(), 2u);
-  EXPECT_EQ(data_atom->data[0], 0xC1); // 'A' with high bit from delimiter
-  EXPECT_EQ(data_atom->data[1],
-            0xC2); // 'B' with high bit (delimiter + .AT rule)
+  EXPECT_EQ(data_atom->data[0], 0x41); // 'A' plain ASCII
+  EXPECT_EQ(data_atom->data[1], 0xC2); // 'B' with high bit from .AT rule
 }
 
 TEST_F(ScmasmSyntaxTest, AtDirectiveSingleChar) {
@@ -517,18 +518,19 @@ TEST_F(ScmasmSyntaxTest, AzDirectiveAddsZero) {
 }
 
 TEST_F(ScmasmSyntaxTest, AzDirectiveHighBitRule) {
-  // .AZ respects delimiter high-bit rule
+  // .AZ stores plain ASCII regardless of delimiter (same rule as .AS).
+  // The " delimiter does NOT set high bit on string data.
   parser->Parse("        .AZ \"TEST\"\n", section, symbols);
 
   ASSERT_EQ(section.atoms.size(), 1u);
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   ASSERT_EQ(data_atom->data.size(), 5u); // 4 chars + null
-  EXPECT_EQ(data_atom->data[0], 0xD4);   // 'T' with high bit
-  EXPECT_EQ(data_atom->data[1], 0xC5);   // 'E' with high bit
-  EXPECT_EQ(data_atom->data[2], 0xD3);   // 'S' with high bit
-  EXPECT_EQ(data_atom->data[3], 0xD4);   // 'T' with high bit
-  EXPECT_EQ(data_atom->data[4], 0x00);   // null terminator (no high bit)
+  EXPECT_EQ(data_atom->data[0], 0x54);   // 'T' plain ASCII
+  EXPECT_EQ(data_atom->data[1], 0x45);   // 'E' plain ASCII
+  EXPECT_EQ(data_atom->data[2], 0x53);   // 'S' plain ASCII
+  EXPECT_EQ(data_atom->data[3], 0x54);   // 'T' plain ASCII
+  EXPECT_EQ(data_atom->data[4], 0x00);   // null terminator
 }
 
 TEST_F(ScmasmSyntaxTest, AzDirectiveEmptyString) {

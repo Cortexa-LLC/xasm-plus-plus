@@ -51,34 +51,15 @@ std::string Trim(const std::string &str) {
   return str.substr(start, end - start + 1);
 }
 
-/**
- * @brief Apply SCMASM high-bit rule based on delimiter
- *
- * If delimiter ASCII < 0x27 (apostrophe '), high bit is SET.
- * Otherwise, high bit is CLEAR.
- *
- * @param c Character to transform
- * @param delimiter Delimiter character
- * @return Transformed character
- */
-uint8_t ApplyHighBitRule(char c, char delimiter) {
-  uint8_t result = static_cast<uint8_t>(c);
-
-  if (delimiter < HIGH_BIT_DELIMITER_THRESHOLD) {
-    // Set high bit
-    result |= HIGH_BIT_MASK;
-  } else {
-    // Clear high bit
-    result &= LOW_7_BITS_MASK;
-  }
-
-  return result;
-}
 
 /**
  * @brief Parse string with delimiter semantics
  *
- * Extracts string from operand and applies high-bit rule.
+ * Extracts string from operand as plain 7-bit ASCII. The delimiter character
+ * is used only to find the start/end of the string; it does NOT affect the
+ * encoding of the string bytes.  The high-bit rule (delimiter < 0x27 → set
+ * bit 7) applies only to single-character literals in instruction operands
+ * (handled by ExpandCharLiteralsInExpr), not to data string directives.
  *
  * @param operand String operand (with delimiters)
  * @param result Output vector of bytes
@@ -102,11 +83,9 @@ char ParseString(const std::string &operand, std::vector<uint8_t> &result) {
     throw std::runtime_error("Unterminated string");
   }
 
-  // Extract string content (between delimiters)
+  // Extract string content as plain 7-bit ASCII (no high-bit manipulation).
   for (size_t i = 1; i < end; ++i) {
-    char c = trimmed[i];
-    uint8_t byte = ApplyHighBitRule(c, delimiter);
-    result.push_back(byte);
+    result.push_back(static_cast<uint8_t>(trimmed[i]));
   }
 
   return delimiter;
