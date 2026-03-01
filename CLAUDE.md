@@ -27,7 +27,7 @@ As Orchestrator:
 task_id=$(bd create "Task description
 
 Working directory: /Users/bryanw/Projects/Vintage/tools/xasm++
-Task packet: .ai/tasks/YYYY-MM-DD_task-name/
+Task packet: .ai/tasks/<beads-id>-<YYYYMMDDHHMMSS>-<short-desc>/
 
 Details..." --priority high --json | jq -r '.id')
 
@@ -267,12 +267,29 @@ This test represents the **gold standard for Merlin compatibility**.
 **CRITICAL:** Every non-trivial task MUST have a task packet in `.ai/tasks/` created BEFORE implementation.
 
 ```bash
-# Create task directory
-TASK_ID=$(date +%Y-%m-%d)_task-name
-mkdir -p .ai/tasks/$TASK_ID
+# 1. Create Beads task first to get the ID
+task_id=$(bd create "Task title
 
-# Copy templates
-cp .ai-pack/templates/task-packet/*.md .ai/tasks/$TASK_ID/
+Working directory: /Users/bryanw/Projects/Vintage/tools/xasm++
+Task packet: .ai/tasks/${task_id}-$(date +%Y%m%d%H%M%S)-<short-desc>/
+
+Detailed description..." --priority high --json | jq -r '.id')
+
+# 2. Create task packet directory using Beads ID
+TASK_DIR=".ai/tasks/${task_id}-$(date +%Y%m%d%H%M%S)-<short-desc>"
+mkdir -p "$TASK_DIR"
+
+# 3. Copy templates
+cp .ai-pack/templates/task-packet/*.md "$TASK_DIR/"
+```
+
+**Acceptance Criteria Must Be Verifiable Commands:**
+```bash
+# ✅ Good — agent can run and verify exit code
+--acceptance "cmake --build build exits 0 and ctest --output-on-failure exits 0"
+
+# ❌ Bad — unverifiable prose
+--acceptance "implementation is correct"
 ```
 
 **Non-trivial = Any task that:**
@@ -384,6 +401,6 @@ agent wait xasm++-task3 --stream
 
 ---
 
-**Last Updated:** 2026-02-19
-**Framework Version:** 2.1.0 (A2A Production)
+**Last Updated:** 2026-03-01
+**Framework Version:** 2.0.0 (8c54e41)
 **Agent CLI Version:** 2.2.0+
