@@ -306,6 +306,22 @@ cp .ai-pack/templates/task-packet/*.md "$TASK_DIR/"
 4. **Review** (`30-review.md`) - Quality assurance
 5. **Acceptance** (`40-acceptance.md`) - Sign-off
 
+### Cross-Project Preflight Context
+
+For tasks that span multiple projects, declare related projects in `00-contract.md`:
+
+```markdown
+Related Projects: /Users/bryanw/Projects/Vintage/Apple/A2osX
+Related Projects: /Users/bryanw/Projects/Vintage/tools/snapNcrackle
+```
+
+The agent-server automatically:
+- Starts a KG server for each referenced project
+- Fetches preflight context from those projects' knowledge graphs
+- Injects combined context into the agent's system prompt
+
+**xasm++ ↔ A2osX tasks** should always declare A2osX as a related project so agents get A2osX symbol/source context alongside xasm++ context.
+
 ---
 
 ## Invariants (Critical)
