@@ -12,8 +12,16 @@
 
 #include <string>
 #include <vector>
+#include <map>
+#include <cstdint>
 
 namespace xasm {
+
+enum class OutputFormat {
+  Binary = 0,
+  IntelHex,
+  SRecord
+};
 
 /**
  * @brief Parsed command-line options
@@ -41,8 +49,16 @@ struct CommandLineOptions {
   std::string listing_file;        ///< Listing file (.lst) - optional
   std::string symbol_file;         ///< Symbol table file (.sym) - optional
   std::string color_mode = "auto"; ///< Color output mode (auto, always, never)
-  std::vector<std::string>
-      include_paths; ///< Include search paths for .INB directive
+  std::vector<std::string> include; ///< Include search path for .INB directive (can be multiple)
+  std::vector<std::string> define; ///< Define macros (format: NAME=VALUE)
+  int max_passes = 50; ///< Maximum assembly passes (must match Assembler::MAX_PASSES default)
+  std::string label_map;           ///< Label map file for debugging
+  int warn = 1;                    ///< Warning level: 0=none, 1=default, 2=extra, 3=all
+  bool werror = false;             ///< Treat warnings as errors
+  bool quiet = false;              ///< Suppress non-essential output
+  bool verbose = false;            ///< Enable verbose output
+  int64_t org = -1;                ///< Origin address override (-1 means not set)
+  OutputFormat format = OutputFormat::Binary; ///< Output format (binary, ihex, srec)
   std::vector<std::string> path_mappings; ///< Path mappings for .INB directive
                                           ///< (format: "virtual=actual")
   bool show_help = false;                 ///< True if --help was specified

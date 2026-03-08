@@ -268,6 +268,12 @@ void Assembler::SetCpuPlugin(CpuPlugin *cpu) { cpu_ = cpu; }
 
 void Assembler::SetSymbolTable(SymbolTable *symbols) { symbols_ = symbols; }
 
+void Assembler::SetMaxPasses(int max_passes) {
+  if (max_passes >= 1) {
+    max_passes_ = max_passes;
+  }
+}
+
 void Assembler::AddSection(const Section &section) {
   sections_.push_back(section);
 }
@@ -894,7 +900,7 @@ AssemblerResult Assembler::Assemble() {
   int pass = 0;
   std::vector<size_t> previous_sizes;
 
-  while (!converged && pass < MAX_PASSES) {
+  while (!converged && pass < max_passes_) {
     pass++;
 
     // Pass 1: Encode instructions using CPU plugin
@@ -924,7 +930,7 @@ AssemblerResult Assembler::Assemble() {
   if (!converged) {
     AssemblerError error;
     error.message =
-        "Assembly did not converge after " + std::to_string(MAX_PASSES) +
+        "Assembly did not converge after " + std::to_string(max_passes_) +
         " passes — possible oscillating forward references or too many "
         "cascading branches";
     result.errors.push_back(error);

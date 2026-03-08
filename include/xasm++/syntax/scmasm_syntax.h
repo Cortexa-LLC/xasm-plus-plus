@@ -12,6 +12,7 @@
 #pragma once
 
 #include "xasm++/common/expression_parser.h"
+#include "xasm++/cpu/cpu_6502.h"
 #include "xasm++/expression.h"
 #include "xasm++/section.h"
 #include "xasm++/symbol.h"
@@ -26,7 +27,7 @@
 namespace xasm {
 
 // Forward declaration
-class CpuPlugin;
+
 
 /**
  * @brief SCMASM-specific number parser
@@ -128,6 +129,14 @@ public:
    * @param cpu Pointer to CPU plugin (must remain valid during parsing)
    */
   void SetCpu(CpuPlugin *cpu);
+
+  /**
+   * @brief Set CPU plugin by name for opcode validation
+   *
+   * @param cpu_name CPU name string (e.g., "6502", "65C02", "65816")
+   * @throws std::runtime_error if invalid CPU name
+   */
+  void SetCpu(const std::string &cpu_name);
 
   /**
    * @brief Set include search paths for .INB directive
@@ -343,6 +352,9 @@ private:
 
   // CPU plugin for opcode validation
   CpuPlugin *cpu_; ///< CPU plugin for opcode validation (nullable)
+  // Owned CPU object when .OP directive overrides the external CPU plugin.
+  // Must outlive cpu_ — SetCpu(string) stores the address of this member.
+  std::unique_ptr<Cpu6502> owned_cpu_; ///< CPU owned by parser (via .OP directive)
 
   // Include search paths
   std::vector<std::string>

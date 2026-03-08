@@ -307,23 +307,22 @@ target_link_libraries(test_symbol_output
 gtest_discover_tests(test_symbol_output)
 
 # CLI tests
-# TODO: Re-enable once cli_parser.cpp exists
-# add_executable(test_cli
-#   test_cli.cpp
-#   ../../src/cli_parser.cpp
-# )
-# 
-# target_link_libraries(test_cli
-#   CLI11::CLI11
-#   gtest_main
-#   gtest
-# )
-# 
-# target_include_directories(test_cli PRIVATE
-#   ${PROJECT_SOURCE_DIR}/include
-# )
-# 
-# gtest_discover_tests(test_cli)
+add_executable(test_cli
+  test_cli.cpp
+  ../../src/cli_parser.cpp
+)
+
+target_link_libraries(test_cli
+  CLI11::CLI11
+  gtest_main
+  gtest
+)
+
+target_include_directories(test_cli PRIVATE
+  ${PROJECT_SOURCE_DIR}/include
+)
+
+gtest_discover_tests(test_cli)
 
 # Exception safety tests
 add_executable(test_exception_safety

@@ -95,3 +95,7 @@ cmake_test_discovery_*.json
 __pycache__/
 _deps/
 build/include/
+
+# Dolt database files (added by bd init)
+.dolt/
+*.db

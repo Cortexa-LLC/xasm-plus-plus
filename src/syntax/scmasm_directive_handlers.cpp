@@ -969,8 +969,6 @@ void HandleOp(const std::string &label, const std::string &operand,
               DirectiveContext &context) {
   (void)label; // Label handled separately
 
-  // TODO: Implement CPU operation mode switching
-  // For now, stub implementation
   std::string trimmed = Trim(operand);
   // Strip SCMASM inline comment: take only the first whitespace-delimited token
   {
@@ -984,10 +982,15 @@ void HandleOp(const std::string &label, const std::string &operand,
     throw std::runtime_error(".OP requires valid CPU (6502, 65C02, 65816)");
   }
 
-  // Stub: Accept valid CPU names but don't switch yet
-  // Full CPU switching requires CPU abstraction changes (out of scope for
-  // immediate P0)
-  (void)context;
+  // Switch CPU plugin based on operand
+  auto *parser = static_cast<ScmasmSyntaxParser *>(context.parser_state);
+  if (trimmed == "6502") {
+    parser->SetCpu("6502");
+  } else if (trimmed == "65C02") {
+    parser->SetCpu("65C02");
+  } else if (trimmed == "65816") {
+    parser->SetCpu("65816");
+  }
 }
 
 // ============================================================================

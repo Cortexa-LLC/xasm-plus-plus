@@ -3029,8 +3029,19 @@ TEST_F(ScmasmSyntaxTest, OP_InlineComment_Stripped) {
   EXPECT_NO_THROW(parser->Parse(source, section, symbols));
 }
 
+TEST_F(ScmasmSyntaxTest, OP_BeforeOR_DoesNotCrash) {
+  // Regression test: .OP followed by .OR and then an instruction used to
+  // segfault because SetCpu(string) stored the address of a local Cpu6502
+  // variable that went out of scope.  The owned_cpu_ member fix ensures
+  // the CPU object's lifetime spans the entire parse.
+  std::string source =
+      "\t\t.OP\t65C02\n"
+      "\t\t.OR\t$2000\n"
+      "\t\tnop\n";
+  EXPECT_NO_THROW(parser->Parse(source, section, symbols));
+}
+
 TEST_F(ScmasmSyntaxTest, EQ_LabelOnPrecedingLine) {
-  // SCMASM pattern: label on one line, .EQ directive on the next.
   // The label must receive the .EQ value, not the current address.
   //
   // Example from A2osX x.stresc.g:

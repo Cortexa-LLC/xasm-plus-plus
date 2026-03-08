@@ -2,6 +2,7 @@
 // Phase 1: Minimal Viable Assembler - Command-Line Interface
 
 #include "CLI/CLI.hpp"
+#include "xasm++/assembler.h"
 #include "xasm++/cli/command_line_options.h"
 #include "xasm++/cpu/cpu_constants.h"
 #include "xasm++/version.h"
@@ -52,15 +53,76 @@ CommandLineOptions ParseCommandLine(int argc, char **argv) {
       ->default_val("auto")
       ->check(CLI::IsMember({"auto", "always", "never"}));
 
-  // Include path option (can be specified multiple times)
+  // Include path option (renamed from --include-path to --include, keeping -I alias)
+  // allow_extra_args(false) prevents CLI11 from greedily consuming the positional
+  // input filename when -I is followed by the source file (e.g. -I /stage src/foo.s)
   app.add_option(
-      "--include-path,-I", opts.include_paths,
-      "Add directory to include search path (can be used multiple times)");
+      "--include,-I", opts.include,
+      "Add directory to include search path (for .INB directive)")
+      ->allow_extra_args(false);
 
   // Path mapping option for .INB directive (A2osX compatibility)
   app.add_option("--path-map", opts.path_mappings,
                  "Map virtual paths to actual paths for .INB directive "
                  "(format: virtual=actual, can be used multiple times)");
+
+  // Define macro option (can be specified multiple times)
+  app.add_option("-D,--define", opts.define,
+                 "Define macro (format: NAME=VALUE, can be used multiple times)")
+      ->allow_extra_args(false);
+
+  // Maximum assembly passes
+  app.add_option("--max-passes", opts.max_passes,
+                 "Maximum assembly passes (default: " +
+                     std::to_string(Assembler::MAX_PASSES) + ")")
+      ->default_val(Assembler::MAX_PASSES);
+
+  // Label map file for debugging
+  app.add_option("--label-map", opts.label_map,
+                 "Generate label map file for debugging");
+
+  // Warning control options
+  // --warn LEVEL sets warning level (0=none,1=default,2=extra,3=all)
+  // --no-warn is shorthand for --warn 0
+  app.add_option("--warn", opts.warn,
+                 "Warning level: 0=none, 1=default, 2=extra, 3=all")
+      ->default_val(1)
+      ->check(CLI::Range(0, 3));
+  app.add_flag("--no-warn", [&opts](int64_t /*count*/) { opts.warn = 0; },
+               "Suppress all warnings (equivalent to --warn 0)");
+  app.add_flag("--werror", opts.werror,
+               "Treat warnings as errors");
+
+  // Quiet mode
+  app.add_flag("-q,--quiet", opts.quiet,
+               "Suppress non-essential output");
+
+  // Verbose mode
+  app.add_flag("-V,--verbose", opts.verbose,
+               "Enable verbose output");
+
+  // Origin address override
+  app.add_option("--org", opts.org,
+                 "Origin address (override default)");
+
+  // Output format
+  // First, parse as string, then convert to enum
+  std::string format_str;
+  app.add_option("--format", format_str,
+                 "Output format (binary, ihex, srec)")
+      ->default_val("binary")
+      ->check(CLI::IsMember({"binary", "ihex", "srec"}));
+  
+  // After parsing, convert string to enum
+  app.callback([&opts, &format_str]() {
+    if (format_str == "binary") {
+      opts.format = OutputFormat::Binary;
+    } else if (format_str == "ihex") {
+      opts.format = OutputFormat::IntelHex;
+    } else if (format_str == "srec") {
+      opts.format = OutputFormat::SRecord;
+    }
+  });
 
   try {
     app.parse(argc, argv);

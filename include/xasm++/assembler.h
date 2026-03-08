@@ -168,6 +168,17 @@ public:
   void Reset();
 
   /**
+   * @brief Set the maximum number of assembly passes
+   *
+   * Overrides the default MAX_PASSES limit. Useful when assembling code
+   * with many forward references that require more convergence passes, or
+   * when limiting passes for faster builds.
+   *
+   * @param max_passes Maximum number of assembly passes (must be >= 1)
+   */
+  void SetMaxPasses(int max_passes);
+
+  /**
    * @brief Assemble all sections with multi-pass resolution
    *
    * Performs multi-pass assembly to resolve forward references and handle
@@ -252,6 +263,7 @@ private:
   std::vector<Section> sections_;  ///< Sections to assemble
   CpuPlugin *cpu_ = nullptr;       ///< CPU plugin for instruction encoding
   SymbolTable *symbols_ = nullptr; ///< Symbol table for symbol resolution
+  int max_passes_ = MAX_PASSES;    ///< Maximum assembly passes (default: MAX_PASSES)
 };
 
 } // namespace xasm

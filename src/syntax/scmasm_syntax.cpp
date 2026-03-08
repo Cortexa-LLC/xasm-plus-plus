@@ -9,6 +9,8 @@
 
 #include "xasm++/syntax/scmasm_syntax.h"
 #include "xasm++/atom.h"
+#include "xasm++/cpu/cpu_6502.h"
+#include "xasm++/cpu/cpu_constants.h"
 #include "xasm++/cpu/cpu_plugin.h"
 #include "xasm++/directives/scmasm_constants.h"
 #include "xasm++/directives/scmasm_directive_constants.h"
@@ -219,6 +221,31 @@ void ScmasmSyntaxParser::InitializeDirectiveRegistry() {
 // ============================================================================
 
 void ScmasmSyntaxParser::SetCpu(CpuPlugin *cpu) { cpu_ = cpu; }
+
+void ScmasmSyntaxParser::SetCpu(const std::string &cpu_name) {
+  // Allocate a Cpu6502 instance owned by this parser.
+  // The pointer is stored in owned_cpu_ so that it outlives this function
+  // and is freed when the parser is destroyed.  Previously cpu6502 was a
+  // local variable, causing cpu_ to become a dangling pointer and crash
+  // the first time an instruction was assembled after a .OP directive.
+  auto cpu6502 = std::make_unique<Cpu6502>();
+
+  // Set the appropriate CPU mode based on the requested variant
+  if (cpu_name == "6502") {
+    cpu6502->SetCpuMode(CpuMode::Cpu6502);
+  } else if (cpu_name == "65C02") {
+    cpu6502->SetCpuMode(CpuMode::Cpu65C02);
+  } else if (cpu_name == "65C02Rock") {
+    cpu6502->SetCpuMode(CpuMode::Cpu65C02Rock);
+  } else if (cpu_name == "65816") {
+    cpu6502->SetCpuMode(CpuMode::Cpu65816);
+  } else {
+    throw std::runtime_error("Invalid CPU name: " + cpu_name);
+  }
+
+  owned_cpu_ = std::move(cpu6502);
+  cpu_ = owned_cpu_.get();
+}
 
 void ScmasmSyntaxParser::SetIncludePaths(
     const std::vector<std::string> &paths) {

@@ -10,7 +10,9 @@
 #include "xasm++/cpu/cpu_constants.h"
 #include "xasm++/cpu/cpu_z80.h"
 #include "xasm++/output/binary_output.h"
+#include "xasm++/output/intel_hex_writer.h"
 #include "xasm++/output/listing_output.h"
+#include "xasm++/output/srec_writer.h"
 #include "xasm++/output/symbol_output.h"
 #include "xasm++/syntax/edtasm_m80_plusplus_syntax.h"
 #include "xasm++/syntax/edtasm_syntax.h"
@@ -73,6 +75,21 @@ int main(int argc, char **argv) {
     // Step 2: Create section, symbol table, and CPU plugin
     Section section;
     ConcreteSymbolTable symbols;
+
+    // Apply --org override if specified (-1 means not set)
+    if (opts.org != -1) {
+      section.org = static_cast<uint64_t>(opts.org);
+    }
+
+    // Apply -D/--define pre-definitions
+    for (const auto &def : opts.define) {
+      auto eq_pos = def.find('=');
+      std::string name = (eq_pos != std::string::npos) ? def.substr(0, eq_pos) : def;
+      int64_t value = (eq_pos != std::string::npos)
+                          ? std::stoll(def.substr(eq_pos + 1), nullptr, 0)
+                          : 1;
+      symbols.DefineLabel(name, value);
+    }
 
     // Create appropriate CPU plugin based on command-line option
     CpuPlugin *cpu = nullptr;
@@ -145,7 +162,10 @@ int main(int argc, char **argv) {
         // SCMASM works with both 6502 and 6809
         ScmasmSyntaxParser parser;
         parser.SetCpu(cpu);
-        parser.SetIncludePaths(opts.include_paths);
+        // Set include paths if specified on CLI
+        if (!opts.include.empty()) {
+          parser.SetIncludePaths(opts.include);
+        }
 
         // Parse path mappings from CLI (format: "virtual=actual")
         if (!opts.path_mappings.empty()) {
@@ -206,6 +226,8 @@ int main(int argc, char **argv) {
         &symbols); // CRITICAL: Link symbol table to assembler
     assembler.AddSection(section);
 
+    assembler.SetMaxPasses(opts.max_passes);
+
     // Step 5: Assemble (encode instructions, resolve symbols)
     AssemblerResult result = assembler.Assemble();
     if (!result.success) {
@@ -215,12 +237,41 @@ int main(int argc, char **argv) {
       return 1;
     }
 
-    // Step 6: Write output file
+    // Step 6: Write output file based on --format
     // Note: Section was modified in-place by Assemble()
     std::vector<Section *> sections = {&section};
-    BinaryOutput output;
     try {
-      output.WriteOutput(opts.output, sections, symbols);
+      if (opts.format == OutputFormat::IntelHex) {
+        // Write Intel HEX format
+        IntelHexWriter ihex_writer;
+        std::ofstream ihex_out(opts.output);
+        if (!ihex_out) {
+          std::cerr << "Error: Cannot open output file: " << opts.output << "\n";
+          return 1;
+        }
+        std::vector<Section> sec_copies;
+        for (const auto *sp : sections) {
+          sec_copies.push_back(*sp);
+        }
+        ihex_writer.Write(sec_copies, ihex_out);
+      } else if (opts.format == OutputFormat::SRecord) {
+        // Write Motorola S-Record format
+        SRecordWriter srec_writer;
+        std::ofstream srec_out(opts.output);
+        if (!srec_out) {
+          std::cerr << "Error: Cannot open output file: " << opts.output << "\n";
+          return 1;
+        }
+        std::vector<Section> sec_copies;
+        for (const auto *sp : sections) {
+          sec_copies.push_back(*sp);
+        }
+        srec_writer.Write(sec_copies, srec_out);
+      } else {
+        // Default: binary format
+        BinaryOutput output;
+        output.WriteOutput(opts.output, sections, symbols);
+      }
     } catch (const std::filesystem::filesystem_error &e) {
       std::cerr << "File I/O error: " << e.what() << "\n";
       return 1;
@@ -229,14 +280,22 @@ int main(int argc, char **argv) {
       return 1;
     }
 
-    std::cout << "Assembly successful: " << opts.output << "\n";
+    if (!opts.quiet) {
+      std::cout << "Assembly successful: " << opts.output << "\n";
+    }
+
+    if (opts.verbose) {
+      std::cout << "Passes completed: " << result.pass_count << "\n";
+    }
 
     // Step 7: Generate listing file if requested
     if (!opts.listing_file.empty()) {
       ListingOutput listing;
       try {
         listing.WriteOutput(opts.listing_file, sections, symbols);
-        std::cout << "Listing file generated: " << opts.listing_file << "\n";
+        if (!opts.quiet) {
+          std::cout << "Listing file generated: " << opts.listing_file << "\n";
+        }
       } catch (const std::exception &e) {
         std::cerr << "Warning: Failed to generate listing file: " << e.what()
                   << "\n";
@@ -248,9 +307,25 @@ int main(int argc, char **argv) {
       SymbolOutput symbol_output;
       try {
         symbol_output.WriteOutput(opts.symbol_file, sections, symbols);
-        std::cout << "Symbol table generated: " << opts.symbol_file << "\n";
+        if (!opts.quiet) {
+          std::cout << "Symbol table generated: " << opts.symbol_file << "\n";
+        }
       } catch (const std::exception &e) {
         std::cerr << "Warning: Failed to generate symbol table: " << e.what()
+                  << "\n";
+      }
+    }
+
+    // Step 9: Generate label map if requested (--label-map)
+    if (!opts.label_map.empty()) {
+      SymbolOutput label_map_output;
+      try {
+        label_map_output.WriteOutput(opts.label_map, sections, symbols);
+        if (!opts.quiet) {
+          std::cout << "Label map generated: " << opts.label_map << "\n";
+        }
+      } catch (const std::exception &e) {
+        std::cerr << "Warning: Failed to generate label map: " << e.what()
                   << "\n";
       }
     }
