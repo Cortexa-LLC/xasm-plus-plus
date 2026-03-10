@@ -1069,20 +1069,31 @@ void Assembler::ResolveSymbols(std::vector<std::shared_ptr<Atom>> &atoms,
       }
       current_address = org->address;
     } else if (atom->type == AtomType::DummyOrg) {
-      // Handle .OR inside .DUMMY/.ED - update address for symbol resolution
-      // only.  The real program counter is not changed (the code emitter and
-      // binary-output writer both skip DummyOrgAtoms).
-      auto dummy_org = std::dynamic_pointer_cast<DummyOrgAtom>(atom);
-      if (!dummy_org) {
-        AssemblerError error;
-        error.location = atom->location;
-        error.message =
-            "Failed to cast to DummyOrgAtom - atom corruption detected";
-        result.errors.push_back(error);
-        result.success = false;
-        continue;
-      }
-      current_address = dummy_org->address;
+      // .OR inside .DUMMY/.ED: skip in ResolveSymbols — do not move the real
+      // PC.  Dummy-section symbols (e.g. ZPTR from "ZPTR .BS 2" inside
+      // .DUMMY/.ED) are placed in the symbol table at their correct zero-page
+      // addresses during parsing (HandleBs in dummy mode calls
+      // symbols.Define() directly, and advances the parse-time address
+      // counter, but does NOT emit a LabelAtom or DataAtom).
+      //
+      // Since there are NO LabelAtoms for dummy-section labels (they are
+      // suppressed when in_dummy_section_ is true), changing current_address
+      // here provides no benefit.  Worse, it permanently corrupts the
+      // main-section PC for every atom that follows the .ED close — including
+      // forward-reference labels like .1 in:
+      //
+      //   jmp (.1,x)      ; operand is a forward reference
+      //   .DA #$61
+      // .1 .DA 0          ; <- LabelAtom address is computed from current_address
+      //
+      // When current_address is stuck in the zero-page range (e.g. $E0+n),
+      // the jmp operand resolves to a ZP address, EncodeInstruction picks
+      // IndirectX instead of AbsoluteIndexedIndirect, JMP has no IndirectX
+      // encoding, and the instruction is silently dropped (empty encoded_bytes).
+      //
+      // Fix: treat DummyOrgAtom as a no-op in ResolveSymbols.  The dummy
+      // symbols are already correct from parse time; the main PC must remain
+      // unaffected so that subsequent LabelAtoms get the right addresses.
     } else if (atom->type == AtomType::Label) {
       auto label = std::dynamic_pointer_cast<LabelAtom>(atom);
       if (!label) {

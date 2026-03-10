@@ -33,6 +33,77 @@ constexpr int RADIX_BINARY = 2;
 constexpr int RADIX_DECIMAL = 10;
 constexpr int RADIX_HEXADECIMAL = 16;
 
+// ---------------------------------------------------------------------------
+// IsEqOperandSafe  (used by StripComments to validate star-label .EQ values)
+//
+// Returns true if the operand can be resolved without consulting the symbol
+// table — i.e. it contains only numeric literals, `*` (current address), and
+// arithmetic operators.  Returns false if it contains:
+//   • A bare symbol name  (e.g. "K.FClose"  — would be a forward reference)
+//   • An invalid character inside a hex literal  (e.g. "$Cn5C" where 'n' is
+//     not a hex digit)
+//
+// When this returns false, StripComments treats the *LABEL .EQ line as an
+// ordinary full-line comment.
+// ---------------------------------------------------------------------------
+static bool IsEqOperandSafe(const std::string &operand) {
+  // Trim leading/trailing whitespace
+  size_t start = operand.find_first_not_of(" \t");
+  if (start == std::string::npos)
+    return false; // empty operand — treat as unsafe
+  size_t end = operand.find_last_not_of(" \t");
+  std::string s = operand.substr(start, end - start + 1);
+
+  size_t i = 0;
+  while (i < s.size()) {
+    char c = s[i];
+
+    if (c == '$') {
+      // Hex literal: all following chars until delimiter must be [0-9A-Fa-f]
+      ++i;
+      if (i >= s.size())
+        return false; // bare '$' with no digits
+      bool any_digit = false;
+      while (i < s.size()) {
+        char h = s[i];
+        if (std::isxdigit(static_cast<unsigned char>(h))) {
+          any_digit = true;
+          ++i;
+        } else {
+          break; // end of hex literal (operator or end-of-string)
+        }
+      }
+      if (!any_digit)
+        return false; // '$' followed by a non-hex char
+    } else if (c == '%') {
+      // Binary literal: following chars must be [0-1.]
+      ++i;
+      if (i >= s.size())
+        return false;
+      bool any_bit = false;
+      while (i < s.size() &&
+             (s[i] == '0' || s[i] == '1' || s[i] == '.')) {
+        any_bit = true;
+        ++i;
+      }
+      if (!any_bit)
+        return false;
+    } else if (std::isdigit(static_cast<unsigned char>(c))) {
+      // Decimal digits
+      while (i < s.size() && std::isdigit(static_cast<unsigned char>(s[i])))
+        ++i;
+    } else if (std::isalpha(static_cast<unsigned char>(c)) || c == '_') {
+      // A letter or underscore NOT preceded by '$' → symbol reference
+      return false;
+    } else {
+      // Operators, parens, '#', ',', '*', '+', '-', '/', whitespace — all ok
+      ++i;
+    }
+  }
+
+  return true;
+}
+
 } // anonymous namespace
 
 // ============================================================================
@@ -438,6 +509,44 @@ std::string ScmasmSyntaxParser::StripComments(const std::string &line) {
                (line[opcode_pos] == ' ' || line[opcode_pos] == '\t'))
           opcode_pos++;
         if (opcode_pos < line.size() && line[opcode_pos] == '.') {
+          // For value-defining directives (.EQ / .SE) also validate that the
+          // operand does not contain forward-reference symbols or invalid
+          // placeholder characters.  Examples that must be treated as comments:
+          //   *K.CloseDir   .EQ K.FClose   (K.FClose defined later → fwd ref)
+          //   *IO.D2.ReadSect .EQ $Cn5C    ('n' is not a valid hex digit)
+          // If the operand fails validation, fall through and return "" (comment).
+          //
+          // Identify the end of the opcode token.
+          size_t op_end = opcode_pos;
+          while (op_end < line.size() && line[op_end] != ' ' &&
+                 line[op_end] != '\t')
+            ++op_end;
+
+          // Extract and upper-case the opcode to compare.
+          std::string opcode_token = line.substr(opcode_pos, op_end - opcode_pos);
+          for (char &ch : opcode_token)
+            ch = static_cast<char>(std::toupper(static_cast<unsigned char>(ch)));
+
+          if (opcode_token == ".EQ" || opcode_token == ".SE") {
+            // Extract the operand (everything after the opcode token).
+            size_t operand_start = op_end;
+            while (operand_start < line.size() &&
+                   (line[operand_start] == ' ' || line[operand_start] == '\t'))
+              ++operand_start;
+            std::string operand_str = line.substr(operand_start);
+
+            // Strip inline comment from operand (semicolon-delimited).
+            size_t semi = operand_str.find(';');
+            if (semi != std::string::npos)
+              operand_str = operand_str.substr(0, semi);
+
+            if (!IsEqOperandSafe(operand_str)) {
+              // Operand contains a forward-reference symbol or an invalid
+              // placeholder character — treat the whole line as a comment.
+              return "";
+            }
+          }
+
           // Strip the leading * — label starts at position 1.
           return line.substr(1);
         }

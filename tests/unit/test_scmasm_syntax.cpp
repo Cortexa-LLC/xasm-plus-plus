@@ -2224,6 +2224,88 @@ ZPTMP2  .BS 2
       << "ZPTMP2 should resolve to ZP address $86 (=$80+6)";
 }
 
+// Regression test for the DummyOrgAtom PC-corruption bug (b850ca5):
+// A .DUMMY/.ED block before jmp (.1,x) was causing the forward-reference
+// local label .1 to receive a zero-page address (because DummyOrgAtom
+// incorrectly repositioned the main-section PC during ResolveSymbols).
+// When the operand resolved to a ZP value, EncodeInstruction picked
+// IndirectX mode; JMP has no IndirectX opcode so the instruction was
+// silently dropped (empty encoded_bytes) from the binary output.
+TEST_F(ScmasmSyntaxTest, DUMMY_OR_DoesNotDropForwardRefJMP) {
+  // Layout:
+  //   $2000: CLD               (1 byte, $D8)
+  //   $2001: JMP (ZPTR.1,X)   (3 bytes, $7C lo hi)  <- must not be dropped
+  //   $2004: .DA #$61          (1 byte,  $61)
+  //   $2005: ZPTR.1:
+  //   $2005: .DA 0             (2 bytes, $00 $00)
+  // Total binary: 7 bytes
+  std::string source = R"(
+ZPBIN .EQ $E0
+      .OR $2000
+      .DUMMY
+      .OR ZPBIN
+ZPTR  .BS 2
+      .ED
+      cld
+      jmp (.1,x)
+      .DA #$61
+.1    .DA 0
+)";
+
+  // 65C02 is required for JMP (abs,X) — AbsoluteIndexedIndirect mode
+  cpu->SetCpuMode(CpuMode::Cpu65C02);
+
+  parser->Parse(source, section, symbols);
+
+  Assembler assembler;
+  assembler.SetCpuPlugin(cpu.get());
+  assembler.SetSymbolTable(&symbols);
+  assembler.AddSection(section);
+  AssemblerResult result = assembler.Assemble();
+  ASSERT_TRUE(result.success) << "Assembly must succeed";
+
+  // Count total encoded bytes across all atoms
+  size_t total_bytes = 0;
+  size_t jmp_bytes = 0;
+  for (const auto &atom : section.atoms) {
+    if (atom->type == AtomType::Instruction) {
+      auto inst = std::dynamic_pointer_cast<InstructionAtom>(atom);
+      if (inst) {
+        total_bytes += inst->encoded_bytes.size();
+        if (inst->mnemonic == "JMP") {
+          jmp_bytes = inst->encoded_bytes.size();
+        }
+      }
+    } else if (atom->type == AtomType::Data) {
+      auto data = std::dynamic_pointer_cast<DataAtom>(atom);
+      if (data) {
+        total_bytes += data->data.size();
+      }
+    }
+  }
+
+  // The JMP instruction must be present (3 bytes: opcode + 2-byte address)
+  EXPECT_EQ(jmp_bytes, 3u)
+      << "jmp (.1,x) must encode to 3 bytes (AbsoluteIndexedIndirect); "
+         "0 bytes means DummyOrgAtom corrupted main-section PC in "
+         "ResolveSymbols, causing the forward-ref label to appear in ZP range";
+
+  // Total binary: CLD(1) + JMP(3) + DA #$61(1) + DA 0(2) = 7 bytes
+  EXPECT_EQ(total_bytes, 7u)
+      << "Total assembled bytes must be 7 (CLD + JMP + .DA #$61 + .DA 0)";
+
+  // Verify the JMP opcode is $7C (JMP abs,X on 65C02)
+  for (const auto &atom : section.atoms) {
+    if (atom->type == AtomType::Instruction) {
+      auto inst = std::dynamic_pointer_cast<InstructionAtom>(atom);
+      if (inst && inst->mnemonic == "JMP" && !inst->encoded_bytes.empty()) {
+        EXPECT_EQ(inst->encoded_bytes[0], 0x7Cu)
+            << "JMP (abs,X) opcode must be $7C on 65C02";
+      }
+    }
+  }
+}
+
 // ============================================================================
 // .INB Include Path Search Tests
 // ============================================================================
@@ -3542,3 +3624,53 @@ TEST_F(ScmasmSyntaxTest, StarLabel_FunctionSigComment_IsFullComment) {
   ASSERT_TRUE(symbols.Lookup("AFTER", after));
   EXPECT_EQ(after, 0x2000) << "AFTER must be $2000 (comment emitted 0 bytes)";
 }
+
+TEST_F(ScmasmSyntaxTest, StarLabel_ForwardRefEQ_IsComment) {
+  // *K.CloseDir .EQ K.FClose  — K.FClose is defined AFTER this line (forward
+  // reference).  In A2osX KERNEL.S.DIRENT.txt:516, this appears before
+  // K.FClose is declared in KERNEL.S.STDIO.  Because the operand is a symbol
+  // name (not a numeric literal) the assembler cannot resolve it during
+  // StripComments pass, so the line must be treated as a full-line comment
+  // rather than propagating an "Undefined symbol" error.
+  //
+  // K.CloseDir must NOT be defined and the subsequent .OR/$2000 must succeed.
+  std::string source =
+      "*K.CloseDir\t.EQ\tK.FClose\n"   // forward ref — treat as comment
+      "\t.OR\t$3000\n"
+      "K.FClose\t.EQ\t$C0A0\n"         // defined here (after the star-label)
+      "AFTER\t.EQ\t*\n";
+  ASSERT_NO_THROW(parser->Parse(source, section, symbols));
+  // K.CloseDir must NOT be defined (line was treated as comment)
+  int64_t val = 0;
+  EXPECT_FALSE(symbols.Lookup("K.CLOSEDIT", val))
+      << "K.CloseDir must not be defined (line was a comment)";
+  // K.FClose must be defined (normal .EQ below)
+  int64_t kfclose = 0;
+  ASSERT_TRUE(symbols.Lookup("K.FCLOSE", kfclose));
+  EXPECT_EQ(kfclose, 0xC0A0);
+  int64_t after = 0;
+  ASSERT_TRUE(symbols.Lookup("AFTER", after));
+  EXPECT_EQ(after, 0x3000);
+}
+
+TEST_F(ScmasmSyntaxTest, StarLabel_PlaceholderHex_IsComment) {
+  // *IO.D2.ReadSect .EQ $Cn5C — "$Cn5C" uses 'n' as a slot-number placeholder
+  // (not a valid hex digit).  Appears in A2osX INC/IO.D2.I.txt:34.
+  // The assembler must treat this line as a full-line comment rather than
+  // producing an "Unexpected character after expression: N" error.
+  //
+  // IO.D2.ReadSect must NOT be defined and the subsequent .OR must succeed.
+  std::string source =
+      "*IO.D2.ReadSect\t.EQ\t$Cn5C\n"  // 'n' is not a hex digit — comment
+      "\t.OR\t$4000\n"
+      "AFTER\t.EQ\t*\n";
+  ASSERT_NO_THROW(parser->Parse(source, section, symbols));
+  // IO.D2.ReadSect must NOT be defined (line was treated as comment)
+  int64_t val = 0;
+  EXPECT_FALSE(symbols.Lookup("IO.D2.READSECT", val))
+      << "IO.D2.ReadSect must not be defined (line was a comment)";
+  int64_t after = 0;
+  ASSERT_TRUE(symbols.Lookup("AFTER", after));
+  EXPECT_EQ(after, 0x4000);
+}
+
