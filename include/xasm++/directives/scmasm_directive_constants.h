@@ -39,7 +39,8 @@ constexpr const char *EM = ".EM"; // Alias to .ENDM
 
 // P0 Priority Directives (A2oSX Critical)
 constexpr const char *PS = ".PS";       // Pascal string (length-prefixed)
-constexpr const char *INB = ".INB";     // Include binary file
+constexpr const char *INB = ".INB";         // Include source file
+constexpr const char *INCLUDE = ".INCLUDE"; // Alias: .INCLUDE = .INB
 constexpr const char *LIST = ".LIST";   // Listing control
 constexpr const char *DUMMY = ".DUMMY"; // Dummy section
 constexpr const char *ED = ".ED";       // End dummy section

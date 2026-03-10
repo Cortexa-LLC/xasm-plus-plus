@@ -194,7 +194,8 @@ void ScmasmSyntaxParser::InitializeDirectiveRegistry() {
 
   // P0 Priority Directives (A2oSX Critical)
   directive_registry_[PS] = scmasm::HandlePs;       // Pascal string
-  directive_registry_[INB] = scmasm::HandleInb;     // Include binary
+  directive_registry_[INB] = scmasm::HandleInb;     // Include source file
+  directive_registry_[INCLUDE] = scmasm::HandleInb; // Alias: .INCLUDE = .INB
   directive_registry_[LIST] = scmasm::HandleList;   // Listing control
   directive_registry_[DUMMY] = scmasm::HandleDummy; // Dummy section
   directive_registry_[ED] = scmasm::HandleEd;       // End dummy section
