@@ -183,13 +183,18 @@ void HandleOr(const std::string &label, const std::string &operand,
   uint32_t address =
       EvaluateExpression(addr_expr, *context.symbols, context.parser_state);
 
-  // Only emit OrgAtom when NOT in a dummy section.
-  // Inside .DUMMY/.ED, .OR repositions the dummy-section PC for symbol
-  // assignments but must NOT emit an OrgAtom that would persist in the main
-  // section's atom list and corrupt ResolveSymbols.
+  // Inside a .DUMMY/.ED block, .OR repositions the dummy-section PC so that
+  // labels defined there get the correct zero-page (or other) address.
+  // We emit a DummyOrgAtom so that ResolveSymbols() can track the ZP address
+  // when it walks the atom list, while the code emitter (EncodeInstructions /
+  // binary output) silently skips it and leaves the real program counter alone.
+  // Outside a dummy section, .OR emits a normal OrgAtom that moves the real PC.
   ValidateParser(context.parser_state);
   auto *parser = static_cast<ScmasmSyntaxParser *>(context.parser_state);
-  if (!parser->InDummySection()) {
+  if (parser->InDummySection()) {
+    auto dummy_org_atom = std::make_shared<DummyOrgAtom>(address);
+    context.section->atoms.push_back(dummy_org_atom);
+  } else {
     auto org_atom = std::make_shared<OrgAtom>(address);
     context.section->atoms.push_back(org_atom);
   }

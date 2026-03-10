@@ -31,6 +31,9 @@ enum class AtomType {
   Space,          ///< Reserved/uninitialized space (e.g., ".ds 100")
   Align,          ///< Alignment directive (e.g., ".align 256")
   Org,            ///< Origin directive (e.g., ".org $8000")
+  DummyOrg,       ///< Dummy-section origin (.OR inside .DUMMY/.ED) - updates
+                  ///< ResolveSymbols PC but emits no bytes and does not move the
+                  ///< real program counter during code generation.
   ListingControl, ///< Listing control directive (e.g., "TITLE", "PAGE", "LIST")
   Phase,          ///< Phase directive (.PH start / .EP end)
   Equate,         ///< Equate with position-dependent expression (.EQ *-LABEL)
@@ -287,6 +290,37 @@ public:
    */
   explicit OrgAtom(uint32_t addr) : Atom(AtomType::Org), address(addr) {
     size = 0; // ORG doesn't generate bytes
+  }
+};
+
+/**
+ * @brief Dummy-section origin atom - represents .OR inside a .DUMMY/.ED block
+ *
+ * This atom is emitted when .OR is encountered inside a dummy section.  It
+ * lets ResolveSymbols() update the running address so labels defined inside
+ * the dummy block receive the correct zero-page (or other) address.  The code
+ * emitter and binary-output writer both skip this atom; it never moves the
+ * real program counter and generates no bytes.
+ *
+ * @par Example
+ * @code
+ * .DUMMY               ; enter dummy section
+ * .OR $00              ; DummyOrgAtom(address=0x0000) - ZP base for symbols
+ * ZPTMP .BS 6          ; ZPTMP should resolve to $0000, not main-section PC
+ * .ED                  ; leave dummy section
+ * @endcode
+ */
+class DummyOrgAtom : public Atom {
+public:
+  uint32_t address; ///< Zero-page (or other) address for symbol resolution
+
+  /**
+   * @brief Construct a dummy-section org atom
+   * @param addr Address for symbol resolution within the dummy block
+   */
+  explicit DummyOrgAtom(uint32_t addr)
+      : Atom(AtomType::DummyOrg), address(addr) {
+    size = 0; // DummyOrg doesn't generate bytes
   }
 };
 

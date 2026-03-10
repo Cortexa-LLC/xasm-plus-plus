@@ -89,6 +89,9 @@ void BinaryOutput::WriteOutput(const std::string &filename,
       case AtomType::Org:
         // OrgAtom: Track address but don't write bytes
         break;
+      case AtomType::DummyOrg:
+        // DummyOrgAtom: .OR inside .DUMMY/.ED — no bytes, no PC change
+        break;
       case AtomType::Label:
         // LabelAtom: No bytes generated
         break;

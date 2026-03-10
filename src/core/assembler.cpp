@@ -343,6 +343,10 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
           }
           current_address = org->address;
           virtual_address = org->address;
+        } else if (atom->type == AtomType::DummyOrg) {
+          // .OR inside .DUMMY/.ED: do NOT change the real program counter.
+          // Symbol addresses are fixed up in ResolveSymbols; the emitter just
+          // skips this atom so no bytes are written and the PC is unaffected.
         } else if (atom->type == AtomType::Label) {
           // Labels don't advance address yet, but we track them
           // (address will be finalized in Pass 2)
@@ -732,6 +736,10 @@ void Assembler::RefixupDataAtoms(ConcreteSymbolTable &symbols,
           current_address = org->address;
           virtual_address = org->address;
         }
+      } else if (atom->type == AtomType::DummyOrg) {
+        // .OR inside .DUMMY/.ED: skip — do not move the real PC during
+        // instruction encoding.  Addresses were already resolved by
+        // ResolveSymbols().
       } else if (atom->type == AtomType::Equate) {
         // Re-evaluate position-dependent equates (.EQ *) with the current
         // virtual address so they track the correct value.
@@ -1060,6 +1068,21 @@ void Assembler::ResolveSymbols(std::vector<std::shared_ptr<Atom>> &atoms,
         continue;
       }
       current_address = org->address;
+    } else if (atom->type == AtomType::DummyOrg) {
+      // Handle .OR inside .DUMMY/.ED - update address for symbol resolution
+      // only.  The real program counter is not changed (the code emitter and
+      // binary-output writer both skip DummyOrgAtoms).
+      auto dummy_org = std::dynamic_pointer_cast<DummyOrgAtom>(atom);
+      if (!dummy_org) {
+        AssemblerError error;
+        error.location = atom->location;
+        error.message =
+            "Failed to cast to DummyOrgAtom - atom corruption detected";
+        result.errors.push_back(error);
+        result.success = false;
+        continue;
+      }
+      current_address = dummy_org->address;
     } else if (atom->type == AtomType::Label) {
       auto label = std::dynamic_pointer_cast<LabelAtom>(atom);
       if (!label) {

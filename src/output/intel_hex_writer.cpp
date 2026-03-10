@@ -226,6 +226,10 @@ IntelHexWriter::ExtractBytes(const Section &section) {
       break;
     }
 
+    case AtomType::DummyOrg:
+      // DummyOrgAtom: .OR inside .DUMMY/.ED — no bytes, no PC change
+      break;
+
     case AtomType::Label:
       // Label atom - no bytes, no address change
       break;

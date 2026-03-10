@@ -2173,6 +2173,57 @@ TEST_F(ScmasmSyntaxTest, DUMMY_NestedNotSupported) {
   EXPECT_NO_THROW(parser->Parse(source, section, symbols));
 }
 
+// .OR inside .DUMMY should emit a DummyOrgAtom so that ResolveSymbols() assigns
+// zero-page (or other) addresses to labels, not the main-section PC.
+TEST_F(ScmasmSyntaxTest, DUMMY_OR_ResolvesToZPAddress) {
+  // Main section starts at $2000; inside the dummy block the ZP base is $80.
+  // Labels inside the dummy block must resolve to ZP addresses ($80, $81…),
+  // not to the main-section address ($2000).
+  std::string source = R"(
+        .OR $2000
+        .DUMMY
+        .OR $80
+ZPTMP   .BS 6
+ZPTMP2  .BS 2
+        .ED
+)";
+
+  parser->Parse(source, section, symbols);
+
+  // Verify a DummyOrgAtom was emitted (not a real OrgAtom that would move PC)
+  bool found_dummy_org = false;
+  for (const auto &atom : section.atoms) {
+    if (atom->type == AtomType::DummyOrg) {
+      found_dummy_org = true;
+      break;
+    }
+  }
+  EXPECT_TRUE(found_dummy_org)
+      << ".OR inside .DUMMY should emit a DummyOrgAtom";
+
+  // After ResolveSymbols the labels should carry ZP addresses.
+  // Run a full assemble so ResolveSymbols is called.
+  Assembler assembler;
+  assembler.SetCpuPlugin(cpu.get());
+  assembler.SetSymbolTable(&symbols);
+  assembler.AddSection(section);
+  AssemblerResult result = assembler.Assemble();
+  ASSERT_TRUE(result.success) << "Assembly should succeed";
+
+  int64_t zptmp_addr = 0;
+  int64_t zptmp2_addr = 0;
+  ASSERT_TRUE(symbols.Lookup("ZPTMP", zptmp_addr))
+      << "ZPTMP must be defined";
+  ASSERT_TRUE(symbols.Lookup("ZPTMP2", zptmp2_addr))
+      << "ZPTMP2 must be defined";
+
+  // ZPTMP starts at $80 (the .OR target), ZPTMP2 follows after 6 bytes
+  EXPECT_EQ(zptmp_addr, 0x80)
+      << "ZPTMP should resolve to ZP address $80, not main-section PC";
+  EXPECT_EQ(zptmp2_addr, 0x86)
+      << "ZPTMP2 should resolve to ZP address $86 (=$80+6)";
+}
+
 // ============================================================================
 // .INB Include Path Search Tests
 // ============================================================================
