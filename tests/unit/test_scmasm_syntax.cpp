@@ -3442,15 +3442,52 @@ TEST_F(ScmasmSyntaxTest, StarLabel_DotInName_DefinesSymbol) {
 }
 
 TEST_F(ScmasmSyntaxTest, StarDash_IsFullLineComment) {
-  // *--- lines and bare * lines must still be full-line comments (no label defined)
+  // *--- lines, bare * lines, and *....or text lines must be full-line comments
+  // (A2osX source uses patterns like "*....or already opened files")
   std::string source =
       "*--------------------------------------\n"
       "* This is a regular comment\n"
       "*\n"
+      "*....or some comment with dots\n"
       "\t.OR\t$2000\n"
       "AFTER\t.EQ\t*\n";
   ASSERT_NO_THROW(parser->Parse(source, section, symbols));
   int64_t after = 0;
   ASSERT_TRUE(symbols.Lookup("AFTER", after));
   EXPECT_EQ(after, 0x2000) << "AFTER must be $2000 (comments emitted 0 bytes)";
+}
+
+TEST_F(ScmasmSyntaxTest, StarLabel_DA_DefinesLabelAndEmitsData) {
+  // *TERM.IAC0 .DA #TN.O.TSPEED — private label with .DA directive must
+  // define the label AND emit data bytes (not be silently ignored as comment).
+  // The follow-up *TERM.IAC0.L .EQ *-TERM.IAC0 computes the data length.
+  std::string source =
+      "\t.OR\t$2000\n"
+      "*MYDATA\t.DA\t#$01,#$02,#$03\n"
+      "MYDATA.LEN\t.EQ\t*-MYDATA\n";
+  ASSERT_NO_THROW(parser->Parse(source, section, symbols));
+  int64_t label_val = 0;
+  ASSERT_TRUE(symbols.Lookup("MYDATA", label_val)) << "MYDATA must be defined";
+  EXPECT_EQ(label_val, 0x2000) << "MYDATA must equal $2000 (start address)";
+  int64_t len = 0;
+  ASSERT_TRUE(symbols.Lookup("MYDATA.LEN", len));
+  EXPECT_EQ(len, 3) << "MYDATA.LEN must be 3 (three bytes emitted)";
+}
+
+TEST_F(ScmasmSyntaxTest, StarLabel_FunctionSigComment_IsFullComment) {
+  // *LCG_PARKMILLER<TAB>(uint32_t seed) — function-signature style comment
+  // used in A2osX kernel math code. Must NOT be treated as private label
+  // because the opcode field starts with '(' not '.' (no SCMASM directive).
+  std::string source =
+      "*LCG_PARKMILLER\t(uint32_t seed) -> uint32_t\n"
+      "\t.OR\t$2000\n"
+      "AFTER\t.EQ\t*\n";
+  ASSERT_NO_THROW(parser->Parse(source, section, symbols));
+  // LCG_PARKMILLER must NOT be defined — the line is a comment
+  int64_t val = 0;
+  EXPECT_FALSE(symbols.Lookup("LCG_PARKMILLER", val))
+      << "LCG_PARKMILLER must not be defined (line is a comment)";
+  int64_t after = 0;
+  ASSERT_TRUE(symbols.Lookup("AFTER", after));
+  EXPECT_EQ(after, 0x2000) << "AFTER must be $2000 (comment emitted 0 bytes)";
 }

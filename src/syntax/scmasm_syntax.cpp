@@ -408,11 +408,40 @@ std::string ScmasmSyntaxParser::StripComments(const std::string &line) {
   size_t first_non_space = line.find_first_not_of(" \t");
   if (first_non_space != std::string::npos && line[first_non_space] == '*') {
     if (first_non_space == 0 && line.size() > 1 &&
-        (std::isalpha(static_cast<unsigned char>(line[1])) ||
-         std::isdigit(static_cast<unsigned char>(line[1])) ||
-         line[1] == '.')) {
-      // Strip the leading * — label starts at position 1
-      return line.substr(1);
+        std::isalpha(static_cast<unsigned char>(line[1]))) {
+      // *LABEL <directive> value — private/reserved label marker in SCMASM.
+      // Strip the leading * and process the rest as a normal line.
+      //
+      // Guard: ensure the label token (chars from pos 1 to first whitespace)
+      // contains only valid SCMASM label characters [A-Za-z0-9._].
+      // Lines like "*LCG_PARKMILLER(uint32_t)" contain '(' and are plain
+      // full-line comments.
+      // Scan label chars: must be [A-Za-z0-9._] only (no parens, commas, etc.)
+      size_t pos = 1;
+      bool label_valid = true;
+      while (pos < line.size() && line[pos] != ' ' && line[pos] != '\t') {
+        char c = line[pos];
+        if (!std::isalnum(static_cast<unsigned char>(c)) && c != '.' &&
+            c != '_') {
+          label_valid = false;
+          break;
+        }
+        ++pos;
+      }
+      if (label_valid && pos > 1) {
+        // Also require that the opcode field starts with '.' (SCMASM directive).
+        // This rejects function-signature comments like:
+        //   *LCG_PARKMILLER<TAB>(uint32_t seed) -> uint32_t
+        // where the opcode would be "(uint32_t" rather than a directive.
+        size_t opcode_pos = pos;
+        while (opcode_pos < line.size() &&
+               (line[opcode_pos] == ' ' || line[opcode_pos] == '\t'))
+          opcode_pos++;
+        if (opcode_pos < line.size() && line[opcode_pos] == '.') {
+          // Strip the leading * — label starts at position 1.
+          return line.substr(1);
+        }
+      }
     }
     return ""; // Entire line is comment
   }
