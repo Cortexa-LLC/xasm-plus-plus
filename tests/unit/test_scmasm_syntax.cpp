@@ -2306,6 +2306,56 @@ ZPTR  .BS 2
   }
 }
 
+TEST_F(ScmasmSyntaxTest, DUMMY_StandaloneLabel_GetsZPAddress) {
+  // Regression: a standalone label-only line inside a .DUMMY block was
+  // getting the main-section address ($2000) instead of the ZP address
+  // set by the .OR inside the dummy block ($E0).
+  // The bug: pending_label_ emitted a LabelAtom that ResolveSymbols()
+  // later overwrote with the wrong physical address.
+  std::string source = R"(
+       .OR $2000
+       .DUMMY
+       .OR $E0
+ZS.START
+ZPTmpPtr .BS 2
+ZS.END   .ED
+)";
+
+  parser->Parse(source, section, symbols);
+
+  // ZS.START is a standalone label-only line — must resolve to $E0.
+  int64_t zsstart_addr;
+  ASSERT_TRUE(symbols.Lookup("ZS.START", zsstart_addr))
+      << "ZS.START must be defined in the symbol table";
+  EXPECT_EQ(zsstart_addr, 0xE0)
+      << "ZS.START should be $E0 (ZP address), not $2000 (main-section address)";
+
+  // ZPTmpPtr is a label+directive line — must resolve to $E0 (same as ZS.START).
+  int64_t zptmpptr_addr;
+  ASSERT_TRUE(symbols.Lookup("ZPTMPPTR", zptmpptr_addr))
+      << "ZPTMPPTR must be defined in the symbol table";
+  EXPECT_EQ(zptmpptr_addr, 0xE0);
+
+  // ZS.END should be $E2 (after 2 bytes from .BS 2).
+  int64_t zsend_addr;
+  ASSERT_TRUE(symbols.Lookup("ZS.END", zsend_addr))
+      << "ZS.END must be defined in the symbol table";
+  EXPECT_EQ(zsend_addr, 0xE2);
+
+  // No LabelAtom for ZS.START should be emitted (dummy section suppresses it).
+  bool found_zsstart_label_atom = false;
+  for (const auto& atom : section.atoms) {
+    if (auto* la = dynamic_cast<LabelAtom*>(atom.get())) {
+      if (la->name == "ZS.START") {
+        found_zsstart_label_atom = true;
+        break;
+      }
+    }
+  }
+  EXPECT_FALSE(found_zsstart_label_atom)
+      << "LabelAtom for ZS.START must NOT be emitted inside .DUMMY block";
+}
+
 // ============================================================================
 // .INB Include Path Search Tests
 // ============================================================================

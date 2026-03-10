@@ -707,14 +707,18 @@ void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
           std::string scoped = last_global_label_ + pl;
           auto expr = std::make_shared<LiteralExpr>(current_address_);
           symbols.Define(scoped, SymbolType::Label, expr);
-          auto atom = std::make_shared<LabelAtom>(scoped, current_address_);
-          section.atoms.push_back(atom);
+          if (!in_dummy_section_) {
+            auto atom = std::make_shared<LabelAtom>(scoped, current_address_);
+            section.atoms.push_back(atom);
+          }
         } else {
           std::string norm = util::ToUpper(pl);
           auto expr = std::make_shared<LiteralExpr>(current_address_);
           symbols.Define(norm, SymbolType::Label, expr);
-          auto atom = std::make_shared<LabelAtom>(norm, current_address_);
-          section.atoms.push_back(atom);
+          if (!in_dummy_section_) {
+            auto atom = std::make_shared<LabelAtom>(norm, current_address_);
+            section.atoms.push_back(atom);
+          }
           last_global_label_ = norm;
         }
       }
@@ -768,14 +772,18 @@ void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
         std::string scoped = last_global_label_ + pl;
         auto expr = std::make_shared<LiteralExpr>(current_address_);
         symbols.Define(scoped, SymbolType::Label, expr);
-        auto atom = std::make_shared<LabelAtom>(scoped, current_address_);
-        section.atoms.push_back(atom);
+        if (!in_dummy_section_) {
+          auto atom = std::make_shared<LabelAtom>(scoped, current_address_);
+          section.atoms.push_back(atom);
+        }
       } else {
         std::string norm = util::ToUpper(pl);
         auto expr = std::make_shared<LiteralExpr>(current_address_);
         symbols.Define(norm, SymbolType::Label, expr);
-        auto atom = std::make_shared<LabelAtom>(norm, current_address_);
-        section.atoms.push_back(atom);
+        if (!in_dummy_section_) {
+          auto atom = std::make_shared<LabelAtom>(norm, current_address_);
+          section.atoms.push_back(atom);
+        }
         last_global_label_ = norm;
       }
     }
