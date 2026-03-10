@@ -3401,3 +3401,56 @@ AFTER   .EQ *
   EXPECT_EQ(after_val, 0x1001)
       << "AFTER (after .EP with 1 byte emitted) must be $1001";
 }
+
+// ─── SCMASM private-label marker (*LABEL .EQ value) ──────────────────────────
+//
+// In SCMASM, a line starting with *<labelchar> at column 0 is NOT a full-line
+// comment — the * is a private/reserved label marker.  The assembler still
+// processes the label and any non-emitting directive (.EQ/.SE) on that line.
+// This is critical for includes like IO.I where symbols such as IO.RROMBNK1
+// are defined with a leading * and then referenced from assembly code.
+
+TEST_F(ScmasmSyntaxTest, StarLabel_EQ_DefinesSymbol) {
+  // *STARVAL .EQ $C08A should define STARVAL = $C08A (not be treated as comment)
+  // In SCMASM, * before a label at column 0 is a private-label marker, not a
+  // comment prefix — the assembler still processes .EQ directives on such lines.
+  std::string source =
+      "*STARVAL\t.EQ\t$C08A\n"
+      "\t.OR\t$2000\n"
+      "RESULT\t.EQ\tSTARVAL\n";
+  ASSERT_NO_THROW(parser->Parse(source, section, symbols));
+  int64_t val = 0;
+  ASSERT_TRUE(symbols.Lookup("STARVAL", val)) << "STARVAL must be defined";
+  EXPECT_EQ(val, 0xC08A) << "STARVAL must equal $C08A";
+  int64_t result = 0;
+  ASSERT_TRUE(symbols.Lookup("RESULT", result));
+  EXPECT_EQ(result, 0xC08A) << "RESULT = STARVAL must also be $C08A";
+}
+
+TEST_F(ScmasmSyntaxTest, StarLabel_DotInName_DefinesSymbol) {
+  // *IO.RROMBNK1 .EQ $C08A — dots in label name must also work
+  // This is the exact pattern in A2osX INC/IO.I.txt that defines the Apple //e
+  // Language Card ROM bank switch address.
+  std::string source =
+      "*IO.RROMBNK1\t.EQ\t$C08A\n"
+      "\t.OR\t$2000\n"
+      "RESULT\t.EQ\tIO.RROMBNK1\n";
+  ASSERT_NO_THROW(parser->Parse(source, section, symbols));
+  int64_t val = 0;
+  ASSERT_TRUE(symbols.Lookup("IO.RROMBNK1", val)) << "IO.RROMBNK1 must be defined";
+  EXPECT_EQ(val, 0xC08A) << "IO.RROMBNK1 must equal $C08A";
+}
+
+TEST_F(ScmasmSyntaxTest, StarDash_IsFullLineComment) {
+  // *--- lines and bare * lines must still be full-line comments (no label defined)
+  std::string source =
+      "*--------------------------------------\n"
+      "* This is a regular comment\n"
+      "*\n"
+      "\t.OR\t$2000\n"
+      "AFTER\t.EQ\t*\n";
+  ASSERT_NO_THROW(parser->Parse(source, section, symbols));
+  int64_t after = 0;
+  ASSERT_TRUE(symbols.Lookup("AFTER", after));
+  EXPECT_EQ(after, 0x2000) << "AFTER must be $2000 (comments emitted 0 bytes)";
+}

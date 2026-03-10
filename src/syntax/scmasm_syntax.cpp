@@ -392,8 +392,28 @@ std::string ScmasmSyntaxParser::StripComments(const std::string &line) {
   // 2. ; anywhere outside a string literal (rest of line is comment)
 
   // Check for * in column 1 (after any leading whitespace)
+  //
+  // SCMASM private-label marker: *LABEL .EQ value
+  // In SCMASM, a line starting with *<labelchar> at column 0 is NOT a full
+  // comment — the * is a private/reserved label marker that the assembler
+  // still processes (defining the label), only the opcode emission is
+  // suppressed for real instructions.  .EQ/.SE directives are zero-emission
+  // anyway, so *LABEL .EQ value fully defines the label.
+  //
+  // Rule:
+  //   * at column 0 followed by a valid label-start char → strip * and
+  //     process the rest of the line as a normal source line.
+  //   * anywhere else (column 0 + non-label char, or after whitespace) →
+  //     full-line comment (return empty).
   size_t first_non_space = line.find_first_not_of(" \t");
   if (first_non_space != std::string::npos && line[first_non_space] == '*') {
+    if (first_non_space == 0 && line.size() > 1 &&
+        (std::isalpha(static_cast<unsigned char>(line[1])) ||
+         std::isdigit(static_cast<unsigned char>(line[1])) ||
+         line[1] == '.')) {
+      // Strip the leading * — label starts at position 1
+      return line.substr(1);
+    }
     return ""; // Entire line is comment
   }
 
