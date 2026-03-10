@@ -2,6 +2,7 @@
 // Phase 1: Minimal Viable Assembler - Command-Line Interface
 
 #include "CLI/CLI.hpp"
+#include "xasm++/assembler.h"
 #include "xasm++/cli/command_line_options.h"
 #include <gtest/gtest.h>
 
@@ -314,14 +315,14 @@ TEST(CLITest, OrgDecimalValue) {
   EXPECT_EQ(opts.org, 2048u);
 }
 
-// Test 27: --org defaults to 0
-TEST(CLITest, OrgDefaultZero) {
+// Test 27: --org defaults to -1 (sentinel meaning "not set")
+TEST(CLITest, OrgDefaultNotSet) {
   const char *argv[] = {"xasm++", "test.asm"};
   int argc = 2;
 
   CommandLineOptions opts = ParseCommandLine(argc, const_cast<char **>(argv));
 
-  EXPECT_EQ(opts.org, 0u);
+  EXPECT_EQ(opts.org, -1);
 }
 
 // Test 28: --format binary
@@ -390,7 +391,7 @@ TEST(CLITest, MaxPassesDefault) {
 
   CommandLineOptions opts = ParseCommandLine(argc, const_cast<char **>(argv));
 
-  EXPECT_EQ(opts.max_passes, 10);
+  EXPECT_EQ(opts.max_passes, Assembler::MAX_PASSES);
 }
 
 // Test 35: --label-map specifies output file for label map

@@ -322,17 +322,47 @@ void HandleDa(const std::string &label, const std::string &operand,
               DirectiveContext &context) {
   (void)label; // Label handled separately
 
-  // Split by comma
+  // Split by comma, stopping when an inline comment is encountered.
+  //
+  // In SCMASM, .DA operands are comma-separated, but each operand may be
+  // followed by whitespace-delimited comment text on the same line. A comment
+  // begins at the first whitespace inside a token (i.e. after the expression
+  // value). Crucially, any comma that appears inside the comment text must NOT
+  // be treated as a .DA list separator.
+  //
+  // Example (from LIBBLKDEV.S.txt):
+  //   .DA #$61   6502,Level 1 (65c02)
+  // Here "6502,Level 1 (65c02)" is a comment. The comma after "6502" must
+  // NOT produce a second .DA operand ("Level"), which would emit two extra
+  // zero bytes and corrupt the binary header.
+  //
+  // Algorithm: scan tokens separated by commas. If a token contains
+  // internal whitespace, the part before the whitespace is the operand
+  // value, and the rest (including any subsequent commas) is a comment.
+  // Stop processing as soon as the first such inline comment is detected.
   std::string trimmed = Trim(operand);
   std::vector<std::string> raw_expressions;
   size_t start = 0;
   size_t pos = 0;
+  bool found_inline_comment = false;
 
-  while (pos <= trimmed.length()) {
+  while (pos <= trimmed.length() && !found_inline_comment) {
     if (pos == trimmed.length() || trimmed[pos] == ',') {
-      std::string value = Trim(trimmed.substr(start, pos - start));
-      if (!value.empty()) {
-        raw_expressions.push_back(value);
+      std::string value = trimmed.substr(start, pos - start);
+      // Check for internal whitespace → inline comment in this token
+      size_t ws = value.find_first_of(" \t");
+      if (ws != std::string::npos) {
+        // Strip the comment portion; remaining commas belong to the comment
+        std::string stripped = Trim(value.substr(0, ws));
+        if (!stripped.empty()) {
+          raw_expressions.push_back(stripped);
+        }
+        found_inline_comment = true;
+      } else {
+        std::string stripped = Trim(value);
+        if (!stripped.empty()) {
+          raw_expressions.push_back(stripped);
+        }
       }
       start = pos + 1;
     }
@@ -496,10 +526,34 @@ void HandleHs(const std::string &label, const std::string &operand,
   std::vector<uint8_t> data;
   std::string trimmed = Trim(operand);
 
+  // SCMASM uses dot ('.') as a hex-nibble separator in .HS operands.
+  // The dot is purely visual punctuation; each dot-separated character is
+  // treated as one hex nibble.  Every two nibbles form one output byte:
+  //
+  //   .HS 01.38.b0.03   -> nibbles 0,1,3,8,B,0,0,3 -> bytes 01 38 B0 03
+  //   .HS 1.2.2.1       -> nibbles 1,2,2,1         -> bytes 12 21
+  //   .HS 1.2.2.1.2.2.2.2.1.2.1.1.B.B.B.3          -> bytes 12 21 22 22 ...
+  //
+  // The space-separated form works the same way (no dots):
+  //   .HS 01 38 B0 03   -> bytes 01 38 B0 03
+  //
+  // Normalise: remove all dots so that the nibble sequence is continuous.
+  {
+    std::string normalised;
+    normalised.reserve(trimmed.size());
+    for (char ch : trimmed) {
+      if (ch != '.') {
+        normalised += ch;
+      }
+    }
+    trimmed = std::move(normalised);
+  }
+
   // Extract hex digits, stopping at first WORD containing non-hex character
   // This allows inline comments without semicolons, like .EQ directive
   // Examples:
   //   .HS 01 02 03        -> 3 bytes (spaces between hex OK)
+  //   .HS 01.38.b0.03     -> 4 bytes (dots removed above)
   //   .HS DEADBEEF foo    -> 4 bytes (text after hex ignored)
   //   .HS AB CD EFG       -> 2 bytes (stops at word "EFG" containing 'G')
   std::string hex_digits;
