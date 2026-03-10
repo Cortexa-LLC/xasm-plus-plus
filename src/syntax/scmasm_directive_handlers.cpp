@@ -77,10 +77,11 @@ char ParseString(const std::string &operand, std::vector<uint8_t> &result) {
   // Find delimiter (first character)
   char delimiter = trimmed[0];
 
-  // Find closing delimiter
+  // Find closing delimiter. Original SCMASM accepts end-of-line as terminator
+  // when no closing delimiter is found (lenient parsing).
   size_t end = trimmed.find(delimiter, 1);
   if (end == std::string::npos) {
-    throw std::runtime_error("Unterminated string");
+    end = trimmed.size();
   }
 
   // Extract string content as plain 7-bit ASCII (no high-bit manipulation).
@@ -121,10 +122,11 @@ char ParseStringInverted(const std::string &operand,
   // Find delimiter (first character)
   char delimiter = trimmed[0];
 
-  // Find closing delimiter
+  // Find closing delimiter. Original SCMASM accepts end-of-line as terminator
+  // when no closing delimiter is found (lenient parsing).
   size_t end = trimmed.find(delimiter, 1);
   if (end == std::string::npos) {
-    throw std::runtime_error("Unterminated string");
+    end = trimmed.size();
   }
 
   // Extract string content (between delimiters) with inverted high-bit rule
@@ -1146,9 +1148,11 @@ void ParseCString(const std::string &operand, std::vector<uint8_t> &result) {
   // Find closing delimiter. In SCMASM the delimiter is never escapable —
   // the very first occurrence of the delimiter after the opening one ends
   // the string (e.g. "|/-\" ends at the '"' after '\').
+  // If no closing delimiter is found, the original SCMASM accepts end-of-line
+  // as the string terminator (same as if the closing delimiter was at EOL).
   size_t end = trimmed.find(delimiter, 1);
   if (end == std::string::npos) {
-    throw std::runtime_error("Unterminated string");
+    end = trimmed.size(); // Accept unterminated string (SCMASM compatible)
   }
 
   // Parse string content with escape sequences.
