@@ -2600,11 +2600,17 @@ Cpu6502::EncodeInstructionSpecial(const std::string &mnemonic,
 // ============================================================================
 
 /**
- * @brief Check if a mnemonic is a valid opcode for the 6502 family
+ * @brief Check if a mnemonic is a valid opcode for the current CPU mode
  *
  * Determines whether the given mnemonic represents a valid instruction
- * for the 6502 family (6502/65C02/65816). Used by syntax parsers to
- * distinguish between opcodes and labels.
+ * for the currently-active CPU mode (6502/65C02/65C02Rock/65816). Used by
+ * syntax parsers to distinguish between opcodes and labels.
+ *
+ * Only opcodes supported by the current mode are recognised:
+ *   - Cpu6502:       base 6502 opcodes only
+ *   - Cpu65C02:      base + 65C02 additions
+ *   - Cpu65C02Rock:  base + 65C02 additions + Rockwell extensions
+ *   - Cpu65816:      base + 65C02 additions + 65816 extensions
  *
  * @param mnemonic Instruction mnemonic (e.g., "LDA", "JMP", "ADD")
  * @return true if mnemonic is a valid opcode, false otherwise
@@ -2618,11 +2624,8 @@ bool Cpu6502::HasOpcode(const std::string &mnemonic) const {
   std::string upper = mnemonic;
   std::transform(upper.begin(), upper.end(), upper.begin(), ::toupper);
 
-  // Create static set of all 6502 family mnemonics for O(1) lookup
-  // Includes: 6502 base, 65C02 additions, 65C02 Rockwell extensions, 65816
-  // additions
-  static const std::unordered_set<std::string> valid_opcodes = {
-      // Base 6502 opcodes
+  // Base 6502 opcodes — valid in all modes
+  static const std::unordered_set<std::string> base_opcodes = {
       M6502Mnemonics::LDA, M6502Mnemonics::LDX, M6502Mnemonics::LDY,
       M6502Mnemonics::STA, M6502Mnemonics::STX, M6502Mnemonics::STY,
       M6502Mnemonics::ADC, M6502Mnemonics::SBC, M6502Mnemonics::INC,
@@ -2642,15 +2645,17 @@ bool Cpu6502::HasOpcode(const std::string &mnemonic) const {
       M6502Mnemonics::SED, M6502Mnemonics::CLI, M6502Mnemonics::SEI,
       M6502Mnemonics::CLV, M6502Mnemonics::TAX, M6502Mnemonics::TXA,
       M6502Mnemonics::TAY, M6502Mnemonics::TYA, M6502Mnemonics::TSX,
-      M6502Mnemonics::TXS, M6502Mnemonics::NOP, M6502Mnemonics::BRK,
+      M6502Mnemonics::TXS, M6502Mnemonics::NOP, M6502Mnemonics::BRK};
 
-      // 65C02 additions
+  // 65C02 additions — valid in Cpu65C02, Cpu65C02Rock, and Cpu65816 modes
+  static const std::unordered_set<std::string> c02_opcodes = {
       M6502Mnemonics::PHX, M6502Mnemonics::PLX, M6502Mnemonics::PHY,
       M6502Mnemonics::PLY, M6502Mnemonics::STZ, M6502Mnemonics::TRB,
       M6502Mnemonics::TSB, M6502Mnemonics::BRA, M6502Mnemonics::STP,
-      M6502Mnemonics::WAI,
+      M6502Mnemonics::WAI};
 
-      // 65C02 Rockwell extensions (RMB, SMB, BBR, BBS)
+  // 65C02 Rockwell extensions (RMB, SMB, BBR, BBS) — Cpu65C02Rock only
+  static const std::unordered_set<std::string> rockwell_opcodes = {
       RockwellMnemonics::RMB0, RockwellMnemonics::RMB1, RockwellMnemonics::RMB2,
       RockwellMnemonics::RMB3, RockwellMnemonics::RMB4, RockwellMnemonics::RMB5,
       RockwellMnemonics::RMB6, RockwellMnemonics::RMB7, RockwellMnemonics::SMB0,
@@ -2661,9 +2666,10 @@ bool Cpu6502::HasOpcode(const std::string &mnemonic) const {
       RockwellMnemonics::BBR5, RockwellMnemonics::BBR6, RockwellMnemonics::BBR7,
       RockwellMnemonics::BBS0, RockwellMnemonics::BBS1, RockwellMnemonics::BBS2,
       RockwellMnemonics::BBS3, RockwellMnemonics::BBS4, RockwellMnemonics::BBS5,
-      RockwellMnemonics::BBS6, RockwellMnemonics::BBS7,
+      RockwellMnemonics::BBS6, RockwellMnemonics::BBS7};
 
-      // 65816 additions
+  // 65816 additions — Cpu65816 only
+  static const std::unordered_set<std::string> w816_opcodes = {
       M6502Mnemonics::PHB, M6502Mnemonics::PLB, M6502Mnemonics::PHD,
       M6502Mnemonics::PLD, M6502Mnemonics::PHK, M6502Mnemonics::TCD,
       M6502Mnemonics::TCS, M6502Mnemonics::TDC, M6502Mnemonics::TSC,
@@ -2674,7 +2680,34 @@ bool Cpu6502::HasOpcode(const std::string &mnemonic) const {
       M6502Mnemonics::WDM, M6502Mnemonics::XBA, M6502Mnemonics::XCE,
       M6502Mnemonics::REP, M6502Mnemonics::SEP};
 
-  return valid_opcodes.find(upper) != valid_opcodes.end();
+  // All modes include the base 6502 opcode set
+  if (base_opcodes.count(upper)) {
+    return true;
+  }
+
+  // 65C02 additions are recognised in 65C02, 65C02 Rockwell, and 65816 modes
+  if (cpu_mode_ == CpuMode::Cpu65C02 || cpu_mode_ == CpuMode::Cpu65C02Rock ||
+      cpu_mode_ == CpuMode::Cpu65816) {
+    if (c02_opcodes.count(upper)) {
+      return true;
+    }
+  }
+
+  // Rockwell extensions are only recognised in the Rockwell variant
+  if (cpu_mode_ == CpuMode::Cpu65C02Rock) {
+    if (rockwell_opcodes.count(upper)) {
+      return true;
+    }
+  }
+
+  // 65816-only opcodes are only recognised in 65816 mode
+  if (cpu_mode_ == CpuMode::Cpu65816) {
+    if (w816_opcodes.count(upper)) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 } // namespace xasm

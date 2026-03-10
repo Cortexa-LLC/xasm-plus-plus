@@ -3156,6 +3156,48 @@ TEST_F(ScmasmSyntaxTest, TXY_65816_RecognizedAsInstruction) {
   EXPECT_NO_THROW(parser->Parse(source, section, symbols));
 }
 
+TEST_F(ScmasmSyntaxTest, MVN_65C02_TreatedAsLabel) {
+  // MVN is a 65816-only opcode ($54). In 65C02 mode it must NOT be
+  // recognised by HasOpcode(), so a line like:
+  //   MVN  .EQ  $1234
+  // must define a label "MVN", not be parsed as an instruction.
+  std::string source =
+      "\t\t.OR\t$1000\n"
+      "\t\t.OP\t65C02\n"
+      "MVN\t\t.EQ\t$1234\n";
+  EXPECT_NO_THROW(parser->Parse(source, section, symbols));
+  int64_t value = 0;
+  ASSERT_TRUE(symbols.Lookup("MVN", value))
+      << "MVN should be a label in 65C02 mode, not an opcode";
+  EXPECT_EQ(value, 0x1234);
+}
+
+TEST_F(ScmasmSyntaxTest, MVP_65C02_TreatedAsLabel) {
+  // MVP is a 65816-only opcode ($44). In 65C02 mode it must NOT be
+  // recognised by HasOpcode(), so a line like:
+  //   MVP  .EQ  $5678
+  // must define a label "MVP", not be parsed as an instruction.
+  std::string source =
+      "\t\t.OR\t$1000\n"
+      "\t\t.OP\t65C02\n"
+      "MVP\t\t.EQ\t$5678\n";
+  EXPECT_NO_THROW(parser->Parse(source, section, symbols));
+  int64_t value = 0;
+  ASSERT_TRUE(symbols.Lookup("MVP", value))
+      << "MVP should be a label in 65C02 mode, not an opcode";
+  EXPECT_EQ(value, 0x5678);
+}
+
+TEST_F(ScmasmSyntaxTest, MVN_65816_RecognizedAsInstruction) {
+  // MVN is a 65816-only opcode. In 65816 mode HasOpcode() must return true
+  // for MVN so it is parsed as an instruction, not a label.
+  std::string source =
+      "\t\t.OR\t$1000\n"
+      "\t\t.OP\t65816\n"
+      "\t\tmvn\t$12,$34\n";
+  EXPECT_NO_THROW(parser->Parse(source, section, symbols));
+}
+
 TEST_F(ScmasmSyntaxTest, StripComments_SemicolonInsideCZString) {
   // Semicolons inside .CZ string literals must not be stripped as comments.
   // ANSI escape sequences like "\e[37;40m" contain literal semicolons.
