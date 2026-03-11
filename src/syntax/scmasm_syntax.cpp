@@ -1026,26 +1026,43 @@ void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
       // Parse macro parameters from operand
       std::vector<std::string> params;
       if (!operand.empty()) {
-        // Split by comma; within each parameter strip trailing inline comment
-        // (whitespace-separated text after the value — SCMASM convention).
-        // e.g. ">MLICALL MLI.READ   Read block" -> param[0] = "MLI.READ"
-        size_t start = 0;
+        // Parse macro arguments: each argument ends at the first whitespace or
+        // comma.  A comma immediately following an argument introduces the next
+        // argument.  Any whitespace following an argument (without a preceding
+        // comma) terminates the argument list — the rest of the line is treated
+        // as an inline comment (SCMASM convention).
+        //
+        // e.g. ">MLICALL MLI.READ   Read block" → ["MLI.READ"]
+        // e.g. ">STYA ZPPtr1,Y"                → ["ZPPtr1", "Y"]
+        // e.g. ">STYA ZPPtr1   f(), starting"  → ["ZPPtr1"]  (comma in comment
+        //                                         must not become a 2nd arg)
         size_t pos = 0;
+        while (pos < operand.length()) {
+          // Skip leading whitespace before each argument (only matters after a
+          // comma separator, e.g. ">MACRO arg1, arg2").
+          while (pos < operand.length() &&
+                 (operand[pos] == ' ' || operand[pos] == '\t'))
+            ++pos;
+          if (pos >= operand.length()) break;
 
-        while (pos <= operand.length()) {
-          if (pos == operand.length() || operand[pos] == ',') {
-            std::string param = Trim(operand.substr(start, pos - start));
-            // Strip inline comment: truncate at first whitespace
-            size_t ws = param.find_first_of(" \t");
-            if (ws != std::string::npos) {
-              param = param.substr(0, ws);
-            }
-            if (!param.empty()) {
-              params.push_back(param);
-            }
-            start = pos + 1;
+          // Scan to the first whitespace or comma (argument boundary).
+          size_t arg_start = pos;
+          while (pos < operand.length() && operand[pos] != ' ' &&
+                 operand[pos] != '\t' && operand[pos] != ',')
+            ++pos;
+
+          std::string param = operand.substr(arg_start, pos - arg_start);
+          if (!param.empty()) {
+            params.push_back(param);
           }
-          ++pos;
+
+          if (pos < operand.length() && operand[pos] == ',') {
+            // Comma separator → another argument follows.
+            ++pos;
+          } else {
+            // Whitespace or end-of-string → rest is inline comment, stop.
+            break;
+          }
         }
       }
       // Invoke the macro (use stripped name without > prefix)

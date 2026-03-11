@@ -246,7 +246,15 @@ void HandleEq(const std::string &label, const std::string &operand,
   // the symbol is re-evaluated each EncodeInstructions pass. This ensures
   // positional equates like "PAKME.T .EQ *" or "CORE.S .EQ *-CORE.B" track
   // the correct physical address after branch relaxation changes code sizes.
-  if (value_expr.find('*') != std::string::npos) {
+  //
+  // EXCEPTION: inside a .DUMMY section, '*' refers to the dummy-section's ZP
+  // address counter (e.g. $EE), which is fixed — it does NOT change with branch
+  // relaxation. Pushing an EquateAtom here would cause re-evaluation against the
+  // main section's PC ($2000+) on subsequent passes, corrupting ZP addresses
+  // (e.g. "PageCount .EQ *" → $EE correct, but EquateAtom re-sets it to $2000).
+  bool in_dummy = context.parser_state &&
+      static_cast<ScmasmSyntaxParser *>(context.parser_state)->InDummySection();
+  if (value_expr.find('*') != std::string::npos && !in_dummy) {
     auto eq_atom = std::make_shared<EquateAtom>(norm_label, value_expr);
     context.section->atoms.push_back(eq_atom);
   }
