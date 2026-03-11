@@ -342,6 +342,23 @@ public:
    */
   const std::string &LocalLabelScope(const std::string &label) const;
 
+  /**
+   * @brief Returns the full scoped name for a local label definition or
+   * reference.
+   *
+   * For '.N' dot-prefix labels, inserts '@' between the scope and the label to
+   * prevent collision with global sub-labels that happen to share the expanded
+   * name (e.g. local '.1' in BITBLT scope must not collide with the global
+   * sub-label 'BITBLT.1').
+   *
+   * For ':N' colon labels, the scope prefix already uses a per-invocation macro
+   * scope that is unique, so no extra separator is needed.
+   *
+   * Exposed publicly so directive handlers (e.g. HandleEq) can use it
+   * consistently.
+   */
+  std::string ScopedLocalLabelName(const std::string &label) const;
+
 private:
   // Directive handler function signature (DirectiveContext pattern)
   using DirectiveHandler =

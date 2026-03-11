@@ -559,6 +559,41 @@ TEST_F(ScmasmSyntaxTest, AzDirectiveEmptyString) {
   EXPECT_EQ(data_atom->data[0], 0x00);
 }
 
+TEST_F(ScmasmSyntaxTest, AzDirectiveHighBitPrefix) {
+  // .AZ -"text" sets HIGH BIT on ALL bytes (Apple II normal-video encoding).
+  // The '-' is a prefix modifier, NOT the string delimiter.
+  // This is how A2osX encodes Apple II screen strings for PM driver messages.
+  parser->Parse("        .AZ -\"HI\"\n", section, symbols);
+
+  ASSERT_EQ(section.atoms.size(), 1u);
+  auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
+  ASSERT_NE(data_atom, nullptr);
+  ASSERT_EQ(data_atom->data.size(), 3u); // 2 chars + null
+  EXPECT_EQ(data_atom->data[0], 0xC8);  // 'H' | 0x80
+  EXPECT_EQ(data_atom->data[1], 0xC9);  // 'I' | 0x80
+  EXPECT_EQ(data_atom->data[2], 0x00);  // null terminator (NO high bit)
+}
+
+TEST_F(ScmasmSyntaxTest, AzDirectiveHighBitPrefixWithDashInString) {
+  // .AZ -"No-Slot" must NOT truncate at the '-' inside the string content.
+  // The '-' is a PREFIX modifier; after stripping it, '"' becomes the delimiter.
+  parser->Parse("        .AZ -\"No-Slot\"\n", section, symbols);
+
+  ASSERT_EQ(section.atoms.size(), 1u);
+  auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
+  ASSERT_NE(data_atom, nullptr);
+  // "No-Slot" = 7 chars + null = 8 bytes, all chars with high bit set
+  ASSERT_EQ(data_atom->data.size(), 8u);
+  EXPECT_EQ(data_atom->data[0], 0x4E | 0x80); // 'N' | 0x80
+  EXPECT_EQ(data_atom->data[1], 0x6F | 0x80); // 'o' | 0x80
+  EXPECT_EQ(data_atom->data[2], 0x2D | 0x80); // '-' | 0x80 (dash IN string)
+  EXPECT_EQ(data_atom->data[3], 0x53 | 0x80); // 'S' | 0x80
+  EXPECT_EQ(data_atom->data[4], 0x6C | 0x80); // 'l' | 0x80
+  EXPECT_EQ(data_atom->data[5], 0x6F | 0x80); // 'o' | 0x80
+  EXPECT_EQ(data_atom->data[6], 0x74 | 0x80); // 't' | 0x80
+  EXPECT_EQ(data_atom->data[7], 0x00);         // null terminator (NO high bit)
+}
+
 // ============================================================================
 // .DA Directive Tests (Define Address/Data - Multi-Value)
 // ============================================================================
@@ -3994,3 +4029,86 @@ TEST(ScmasmPendingLabelEOFIntegration, SlashHighByteOfEOFLabel) {
   EXPECT_TRUE(found) << "Expected to find the lda /DRV.END InstructionAtom";
 }
 
+
+// ============================================================================
+// Regression: ZP instruction size correction prevents false branch relaxation
+// ============================================================================
+
+// A FORWARD branch at exactly the +127 offset limit must NOT be falsely
+// relaxed when there are ZP-addressed instructions between the branch source
+// and the branch target.
+//
+// Root cause: GetInstructionSize() returns 3 for any symbol operand (it has no
+// symbol table), but ZP-addressed instructions are only 2 bytes.  When the
+// syntax pass advances current_address_ by 3 for a ZP instruction, the
+// branch TARGET label is placed 1 byte further than it really is.  This
+// inflates the estimated offset from 127 to 128+, triggering a false
+// branch relaxation (2-byte → 5-byte).
+//
+// The fix: if the operand resolves to a ZP address ($00–$FF) at parse time,
+// correct the estimate to 2.  This keeps the label at the correct position
+// so the forward branch offset stays at exactly 127 → no relaxation.
+TEST(ScmasmBranchRelaxation, ForwardBranch_ZPInGap_NoFalseRelax_At127) {
+  // Layout:
+  //   BEQ BranchTarget        (at $2000, 2 bytes)
+  //   41 x sta $1234          (3 bytes each = 123 bytes)
+  //    2 x inc ZP.SYM         (2 bytes each = 4 bytes, estimated 3 each w/o fix)
+  //   BranchTarget:
+  //
+  // Offset from BEQ to BranchTarget = 123 + 4 = 127 bytes → EXACTLY in range.
+  // Without ZP fix: estimated offset = 123 + 2*3 = 129 → false relaxation.
+  // With ZP fix:    estimated offset = 123 + 2*2 = 127 → correct, no relax.
+  //
+  // ZP.SYM = $20 is defined BEFORE the branch so it's in the symbol table
+  // when the ZP correction runs during the syntax pass.
+
+  ScmasmSyntaxParser parser;
+  Cpu6502 cpu;
+  parser.SetCpu(&cpu);
+  Section section;
+  ConcreteSymbolTable symbols;
+
+  // Build body: 41 absolute STAs + 2 ZP INCs
+  std::string body;
+  body += "\t\tbeq\tBranchTarget\n"; // forward branch (2 bytes)
+  for (int i = 0; i < 41; ++i) {
+    body += "\t\tsta\t$1234\n"; // 3 bytes each
+  }
+  body += "\t\tinc\tZP.SYM\n"; // 2 bytes (ZP)
+  body += "\t\tinc\tZP.SYM\n"; // 2 bytes (ZP)
+  body += "BranchTarget\n";    // label at $2000 + 2 + 123 + 4 = $207D
+
+  std::string source =
+      "\t\t.OP\t65C02\n"
+      "ZP.SYM\t\t.EQ\t$20\n" // ZP symbol defined before branch
+      "\t\t.OR\t$2000\n" + body;
+
+  ASSERT_NO_THROW(parser.Parse(source, section, symbols));
+
+  Assembler assembler;
+  assembler.SetCpuPlugin(&cpu);
+  assembler.SetSymbolTable(&symbols);
+  assembler.AddSection(section);
+  AssemblerResult result = assembler.Assemble();
+  ASSERT_TRUE(result.success) << "Assembly must succeed";
+
+  // Collect all encoded bytes
+  std::vector<uint8_t> code;
+  for (const auto &atom : section.atoms) {
+    if (atom && atom->type == AtomType::Instruction) {
+      auto *inst = static_cast<InstructionAtom *>(atom.get());
+      code.insert(code.end(), inst->encoded_bytes.begin(),
+                  inst->encoded_bytes.end());
+    }
+  }
+
+  // Expected: 2 (BEQ) + 123 (STAs) + 4 (ZP INCs) = 129 bytes.
+  // If falsely relaxed: BEQ becomes B!cc+3;JMP = 5 bytes → 132 total.
+  EXPECT_EQ(code.size(), 129u)
+      << "Forward branch at +127 must NOT relax (expected 129 bytes, not 132)";
+
+  // First instruction must be a 2-byte BEQ with offset +127 (0x7F)
+  ASSERT_GE(code.size(), 2u);
+  EXPECT_EQ(code[0], 0xF0u) << "First byte must be BEQ opcode";
+  EXPECT_EQ(code[1], 0x7Fu) << "BEQ offset must be +127 (0x7F)";
+}

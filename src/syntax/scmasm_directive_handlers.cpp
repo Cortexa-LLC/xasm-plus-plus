@@ -236,10 +236,7 @@ void HandleEq(const std::string &label, const std::string &operand,
   if (context.parser_state && !label.empty() &&
       (label[0] == ':' || label[0] == '.')) {
     auto *eq_parser = static_cast<ScmasmSyntaxParser *>(context.parser_state);
-    const std::string &scope = eq_parser->LocalLabelScope(label);
-    if (!scope.empty()) {
-      norm_label = scope + norm_label;
-    }
+    norm_label = eq_parser->ScopedLocalLabelName(norm_label);
   }
 
   auto expr = std::make_shared<LiteralExpr>(value);
@@ -327,10 +324,26 @@ void HandleAz(const std::string &label, const std::string &operand,
               DirectiveContext &context) {
   (void)label; // Label handled separately
 
-  std::vector<uint8_t> data;
-  ParseString(operand, data);
+  // SCMASM prefix modifiers before the opening delimiter:
+  //   -"text"  set high bit on ALL bytes (Apple II normal-video encoding)
+  // Strip the prefix and set flag for post-processing.
+  std::string trimmed_op = Trim(operand);
+  bool high_bit_all = false;
+  if (!trimmed_op.empty() && trimmed_op[0] == '-') {
+    high_bit_all = true;
+    trimmed_op = Trim(trimmed_op.substr(1));
+  }
 
-  // Add null terminator
+  std::vector<uint8_t> data;
+  ParseString(trimmed_op, data);
+
+  if (high_bit_all) {
+    for (auto &b : data) {
+      b |= constants::HIGH_BIT_MASK;
+    }
+  }
+
+  // Add null terminator (always plain, no high bit)
   data.push_back(constants::NULL_TERMINATOR);
 
   auto atom = std::make_shared<DataAtom>(data);
@@ -582,9 +595,22 @@ void HandleHs(const std::string &label, const std::string &operand,
   bool odd_hex_before_data = false; // tracks ".HS 012"-style errors
   size_t i = 0;
   while (i < trimmed.length()) {
-    // Skip whitespace
+    // Skip whitespace.
+    // In SCMASM 3-column format, 2+ tabs within the operand field indicate
+    // a visual-alignment comment.  Stop parsing if we see 2+ consecutive
+    // tabs between hex words (e.g. ".HS 7E\t\t\t7EFF03" — only "7E" is data,
+    // "7EFF03" is a comment).
+    size_t tabs_skipped = 0;
     while (i < trimmed.length() && std::isspace(trimmed[i])) {
+      if (trimmed[i] == '\t') {
+        ++tabs_skipped;
+      }
       i++;
+    }
+    // If we've already collected some hex data and we skipped 2+ tabs,
+    // treat the rest as a comment and stop.
+    if (!hex_digits.empty() && tabs_skipped >= 2) {
+      break;
     }
 
     // Find end of current word

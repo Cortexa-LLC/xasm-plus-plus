@@ -7,6 +7,7 @@
  */
 
 #include "xasm++/syntax/scmasm_syntax.h"
+#include "xasm++/atom.h"
 #include <gtest/gtest.h>
 
 using namespace xasm;
@@ -254,4 +255,49 @@ TEST_F(DirectiveRegistryTest, DirectivesAreCaseInsensitive) {
 
   ASSERT_TRUE(symbols.Lookup("VAL2", value));
   EXPECT_EQ(value, 0x2000);
+}
+
+/**
+ * @brief Test that .AZ -"text" sets high bit on ALL bytes (Apple II encoding)
+ *
+ * Regression test for bug where '-' was treated as the string delimiter,
+ * causing truncation at the next '-' in the string content.
+ * See: A2osX PM.NSC.S.txt uses .AZ -"NSC 'No-Slot-Clock'/..." which was
+ * being truncated at "No-Slot" (the '-' in "No-Slot" was the false delimiter).
+ */
+TEST_F(DirectiveRegistryTest, AzDirectiveHighBitPrefixSetsAllBytes) {
+  // .AZ -"text" should set HIGH BIT on ALL bytes, with null terminator at end
+  std::string source = "        .AZ -\"Hi\"\n";
+  parser->Parse(source, section, symbols);
+
+  ASSERT_EQ(section.atoms.size(), 1u);
+  auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
+  ASSERT_NE(data_atom, nullptr);
+  ASSERT_EQ(data_atom->data.size(), 3u); // 2 chars + null
+  EXPECT_EQ(data_atom->data[0], 0xC8);   // 'H' | 0x80
+  EXPECT_EQ(data_atom->data[1], 0xE9);   // 'i' | 0x80
+  EXPECT_EQ(data_atom->data[2], 0x00);   // null terminator (no high bit)
+}
+
+/**
+ * @brief Test that .AZ -"text" does NOT truncate at '-' within string content
+ *
+ * Regression test: .AZ -"No-Slot" should emit the FULL string "No-Slot"
+ * with high bits set, not just "No" (truncated at the '-' in "No-Slot").
+ */
+TEST_F(DirectiveRegistryTest, AzDirectiveHighBitPrefixNoDashTruncation) {
+  // '-' in string content must NOT be treated as a delimiter
+  std::string source = "        .AZ -\"No-Slot\"\n";
+  parser->Parse(source, section, symbols);
+
+  ASSERT_EQ(section.atoms.size(), 1u);
+  auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
+  ASSERT_NE(data_atom, nullptr);
+  // "No-Slot" = 7 chars + null = 8 bytes
+  ASSERT_EQ(data_atom->data.size(), 8u);
+  EXPECT_EQ(data_atom->data[0], 0x4E | 0x80); // 'N' | 0x80
+  EXPECT_EQ(data_atom->data[1], 0x6F | 0x80); // 'o' | 0x80
+  EXPECT_EQ(data_atom->data[2], 0x2D | 0x80); // '-' | 0x80 (dash in string)
+  EXPECT_EQ(data_atom->data[3], 0x53 | 0x80); // 'S' | 0x80
+  EXPECT_EQ(data_atom->data[7], 0x00);         // null terminator (no high bit)
 }
