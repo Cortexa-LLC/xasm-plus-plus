@@ -526,9 +526,18 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
                   oss << "$" << std::hex << symbol_value;
                   resolved_operand = oss.str();
                 } else {
-                  // Label not yet defined - use placeholder $0000 for first
-                  // pass Multi-pass assembly will resolve on subsequent passes
-                  resolved_operand = "$0000";
+                  // Label not yet defined - use current PC as placeholder so
+                  // branch offset = 0 (always in range). Using $0000 would
+                  // make the branch appear out of range for any VA > $82,
+                  // triggering false relaxation in pass 1. Once relaxed, the
+                  // +3 bytes push the true target further away, permanently
+                  // locking in unnecessary relaxation for branches near the
+                  // 127-byte limit. Using VA keeps all forward-ref branches
+                  // short in pass 1; multi-pass will extend only those that
+                  // truly need it in later passes.
+                  std::ostringstream oss;
+                  oss << "$" << std::hex << virtual_address;
+                  resolved_operand = oss.str();
                 }
               }
 

@@ -2371,6 +2371,100 @@ ZS.END   .ED
       << "LabelAtom for ZS.START must NOT be emitted inside .DUMMY block";
 }
 
+// Regression: label on an instruction line inside .DUMMY was getting a
+// LabelAtom pushed unconditionally.  ResolveSymbols() later overwrote it
+// with the current main-section PC ($2000+) instead of the ZP address
+// assigned during parsing.  The MEMDUMP ZPReadAux pattern:
+//
+//   .OR $2000
+//   .DUMMY
+//   .OR $E0
+//   ZPPTR1   .BS 2        ; $E0
+//   ...
+//   ZPREADAUX  sta $C0AE  ; label ON instruction line — must get $E8
+//   .ED
+//
+TEST_F(ScmasmSyntaxTest, DUMMY_InstrLabel_GetsZPAddress) {
+  std::string source = R"(
+       .OR $2000
+       .DUMMY
+       .OR $E0
+ZPPTR1   .BS 2
+ZPPTR2   .BS 2
+MEMCNT   .BS 1
+USEDCNT  .BS 1
+LINECNT  .BS 1
+BSTOP    .BS 1
+ZPREADAUX  nop
+           nop
+           nop
+           rts
+ZS.END   .ED
+)";
+
+  parser->Parse(source, section, symbols);
+
+  // ZPREADAUX label is on the 'nop' instruction line — must be $E8
+  int64_t zprda_addr;
+  ASSERT_TRUE(symbols.Lookup("ZPREADAUX", zprda_addr))
+      << "ZPREADAUX must be defined";
+  EXPECT_EQ(zprda_addr, 0xE8)
+      << "ZPREADAUX should be $E8 (ZP address), not $2000 (main-section PC)";
+
+  // ZS.END after the 4-instruction block: $E8 + 1+1+1+1 = $EC
+  int64_t zsend_addr;
+  ASSERT_TRUE(symbols.Lookup("ZS.END", zsend_addr));
+  EXPECT_EQ(zsend_addr, 0xEC);
+
+  // Confirm no LabelAtom for ZPREADAUX was emitted (dummy section suppresses)
+  for (const auto& atom : section.atoms) {
+    if (auto* la = dynamic_cast<LabelAtom*>(atom.get())) {
+      EXPECT_NE(la->name, "ZPREADAUX")
+          << "LabelAtom for ZPREADAUX must NOT be emitted inside .DUMMY block";
+    }
+  }
+}
+
+// Regression: JSR/JMP to a ZP-range address (0x01–0xFF) was incorrectly
+// selecting ZeroPage addressing mode.  JSR and JMP have no ZP variant, so
+// EncodeWithTable returned an empty vector, silently dropping the instruction.
+// Reproduces the MEMDUMP 'jsr ZPReadAux' pattern where ZPReadAux = $E8.
+TEST_F(ScmasmSyntaxTest, JSR_ZPRangeAddress_UsesAbsolute) {
+  std::string source = R"(
+ZPREADAUX  .EQ $E8
+       .OR $2000
+       ldy #0
+       jsr ZPREADAUX
+       bpl $2009
+)";
+
+  parser->Parse(source, section, symbols);
+
+  Assembler assembler;
+  assembler.SetCpuPlugin(cpu.get());
+  assembler.SetSymbolTable(&symbols);
+  assembler.AddSection(section);
+  AssemblerResult result = assembler.Assemble();
+  ASSERT_TRUE(result.success) << "Assembly must succeed";
+
+  // Find the JSR instruction atom
+  std::vector<uint8_t> jsr_bytes;
+  for (const auto& atom : section.atoms) {
+    if (atom->type == AtomType::Instruction) {
+      auto inst = std::dynamic_pointer_cast<InstructionAtom>(atom);
+      if (inst && inst->mnemonic == "JSR") {
+        jsr_bytes = inst->encoded_bytes;
+      }
+    }
+  }
+
+  ASSERT_EQ(jsr_bytes.size(), 3u)
+      << "JSR ZPREADAUX must be 3 bytes (absolute); 0 bytes = ZP mode bug";
+  EXPECT_EQ(jsr_bytes[0], 0x20u) << "JSR opcode is $20";
+  EXPECT_EQ(jsr_bytes[1], 0xE8u) << "JSR address low byte = $E8";
+  EXPECT_EQ(jsr_bytes[2], 0x00u) << "JSR address high byte = $00";
+}
+
 // ============================================================================
 // .INB Include Path Search Tests
 // ============================================================================

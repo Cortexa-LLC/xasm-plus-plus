@@ -2231,11 +2231,9 @@ Cpu6502::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
       } else {
         // Symbol reference - use resolved operand value to determine mode.
         // ZeroPage is used for values 0–$FF, EXCEPT for JMP and JSR which have
-        // no ZeroPage variant: a value of 0 there is an undefined-label
-        // placeholder and must default to Absolute so that multi-pass
-        // resolution eventually produces the correct 3-byte encoding.
+        // no ZeroPage variant and must always use Absolute addressing.
         const bool no_zp_form = (mnemonic == JMP || mnemonic == JSR);
-        mode = (operand <= 0xFF && (!no_zp_form || operand >= 1))
+        mode = (!no_zp_form && operand <= 0xFF)
                    ? AddressingMode::ZeroPage
                    : AddressingMode::Absolute;
       }

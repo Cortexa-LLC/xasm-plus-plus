@@ -992,8 +992,11 @@ void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
         std::string scoped = LocalLabelScope(label) + label;
         auto expr = std::make_shared<LiteralExpr>(current_address_);
         symbols.Define(scoped, SymbolType::Label, expr);
-        auto label_atom = std::make_shared<LabelAtom>(scoped, current_address_);
-        section.atoms.push_back(label_atom);
+        if (!in_dummy_section_) {
+          auto label_atom =
+              std::make_shared<LabelAtom>(scoped, current_address_);
+          section.atoms.push_back(label_atom);
+        }
       } else {
         // Normalize label to uppercase for case-insensitive SCMASM
         // compatibility
@@ -1002,9 +1005,11 @@ void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
         symbols.Define(normalized_label, SymbolType::Label, expr);
 
         // Create label atom for non-local labels (use normalized name)
-        auto label_atom =
-            std::make_shared<LabelAtom>(normalized_label, current_address_);
-        section.atoms.push_back(label_atom);
+        if (!in_dummy_section_) {
+          auto label_atom =
+              std::make_shared<LabelAtom>(normalized_label, current_address_);
+          section.atoms.push_back(label_atom);
+        }
         last_global_label_ = normalized_label;
       }
     }
