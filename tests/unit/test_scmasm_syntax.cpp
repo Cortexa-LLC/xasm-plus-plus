@@ -3682,21 +3682,23 @@ TEST_F(ScmasmSyntaxTest, StarDash_IsFullLineComment) {
   EXPECT_EQ(after, 0x2000) << "AFTER must be $2000 (comments emitted 0 bytes)";
 }
 
-TEST_F(ScmasmSyntaxTest, StarLabel_DA_DefinesLabelAndEmitsData) {
-  // *TERM.IAC0 .DA #TN.O.TSPEED — private label with .DA directive must
-  // define the label AND emit data bytes (not be silently ignored as comment).
-  // The follow-up *TERM.IAC0.L .EQ *-TERM.IAC0 computes the data length.
+TEST_F(ScmasmSyntaxTest, StarLabel_DA_TreatedAsComment) {
+  // In real SCMASM, *LABEL .DA (and *LABEL .BS, .DC, etc.) are commented-out
+  // disabled code blocks, NOT active definitions.  The entire starred line is
+  // a comment — the label is NOT defined and no bytes are emitted.
+  // (See A2osX DRV/DHGR.DRV.S.OSD.txt: the *SHIFT8.LL/*SHIFT8.L1 tables are
+  // disabled alternatives to the active SHIFT8.L table.)
   std::string source =
       "\t.OR\t$2000\n"
       "*MYDATA\t.DA\t#$01,#$02,#$03\n"
-      "MYDATA.LEN\t.EQ\t*-MYDATA\n";
+      "AFTER\t.EQ\t*\n";
   ASSERT_NO_THROW(parser->Parse(source, section, symbols));
   int64_t label_val = 0;
-  ASSERT_TRUE(symbols.Lookup("MYDATA", label_val)) << "MYDATA must be defined";
-  EXPECT_EQ(label_val, 0x2000) << "MYDATA must equal $2000 (start address)";
-  int64_t len = 0;
-  ASSERT_TRUE(symbols.Lookup("MYDATA.LEN", len));
-  EXPECT_EQ(len, 3) << "MYDATA.LEN must be 3 (three bytes emitted)";
+  EXPECT_FALSE(symbols.Lookup("MYDATA", label_val))
+      << "MYDATA must NOT be defined (*LABEL .DA is a comment)";
+  int64_t after_val = 0;
+  ASSERT_TRUE(symbols.Lookup("AFTER", after_val));
+  EXPECT_EQ(after_val, 0x2000) << "No bytes emitted by starred .DA; AFTER=$2000";
 }
 
 TEST_F(ScmasmSyntaxTest, StarLabel_FunctionSigComment_IsFullComment) {

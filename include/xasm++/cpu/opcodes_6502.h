@@ -52,6 +52,7 @@ constexpr uint8_t STA_ABX = 0x9D; // STA abs,X    - Absolute,X
 constexpr uint8_t STA_ABY = 0x99; // STA abs,Y    - Absolute,Y
 constexpr uint8_t STA_INX = 0x81; // STA (zp,X)   - Indexed Indirect
 constexpr uint8_t STA_INY = 0x91; // STA (zp),Y   - Indirect Indexed
+constexpr uint8_t STA_IZP = 0x92; // STA (zp)     - Indirect Zero Page (65C02+)
 
 // STX - Store X Register
 constexpr uint8_t STX_ZP = 0x86;  // STX zp       - Zero Page
@@ -82,6 +83,7 @@ constexpr uint8_t ADC_ABX = 0x7D; // ADC abs,X    - Absolute,X
 constexpr uint8_t ADC_ABY = 0x79; // ADC abs,Y    - Absolute,Y
 constexpr uint8_t ADC_INX = 0x61; // ADC (zp,X)   - Indexed Indirect
 constexpr uint8_t ADC_INY = 0x71; // ADC (zp),Y   - Indirect Indexed
+constexpr uint8_t ADC_IZP = 0x72; // ADC (zp)     - Indirect Zero Page (65C02+)
 
 // SBC - Subtract with Carry
 constexpr uint8_t SBC_IMM = 0xE9; // SBC #imm     - Immediate
@@ -92,6 +94,7 @@ constexpr uint8_t SBC_ABX = 0xFD; // SBC abs,X    - Absolute,X
 constexpr uint8_t SBC_ABY = 0xF9; // SBC abs,Y    - Absolute,Y
 constexpr uint8_t SBC_INX = 0xE1; // SBC (zp,X)   - Indexed Indirect
 constexpr uint8_t SBC_INY = 0xF1; // SBC (zp),Y   - Indirect Indexed
+constexpr uint8_t SBC_IZP = 0xF2; // SBC (zp)     - Indirect Zero Page (65C02+)
 
 // ============================================================================
 // Logic Instructions
@@ -106,6 +109,7 @@ constexpr uint8_t AND_ABX = 0x3D; // AND abs,X    - Absolute,X
 constexpr uint8_t AND_ABY = 0x39; // AND abs,Y    - Absolute,Y
 constexpr uint8_t AND_INX = 0x21; // AND (zp,X)   - Indexed Indirect
 constexpr uint8_t AND_INY = 0x31; // AND (zp),Y   - Indirect Indexed
+constexpr uint8_t AND_IZP = 0x32; // AND (zp)     - Indirect Zero Page (65C02+)
 
 // ORA - Logical OR
 constexpr uint8_t ORA_IMM = 0x09; // ORA #imm     - Immediate
@@ -116,6 +120,7 @@ constexpr uint8_t ORA_ABX = 0x1D; // ORA abs,X    - Absolute,X
 constexpr uint8_t ORA_ABY = 0x19; // ORA abs,Y    - Absolute,Y
 constexpr uint8_t ORA_INX = 0x01; // ORA (zp,X)   - Indexed Indirect
 constexpr uint8_t ORA_INY = 0x11; // ORA (zp),Y   - Indirect Indexed
+constexpr uint8_t ORA_IZP = 0x12; // ORA (zp)     - Indirect Zero Page (65C02+)
 
 // EOR - Exclusive OR
 constexpr uint8_t EOR_IMM = 0x49; // EOR #imm     - Immediate
@@ -126,6 +131,7 @@ constexpr uint8_t EOR_ABX = 0x5D; // EOR abs,X    - Absolute,X
 constexpr uint8_t EOR_ABY = 0x59; // EOR abs,Y    - Absolute,Y
 constexpr uint8_t EOR_INX = 0x41; // EOR (zp,X)   - Indexed Indirect
 constexpr uint8_t EOR_INY = 0x51; // EOR (zp),Y   - Indirect Indexed
+constexpr uint8_t EOR_IZP = 0x52; // EOR (zp)     - Indirect Zero Page (65C02+)
 
 // ============================================================================
 // Shift and Rotate Instructions
@@ -172,6 +178,7 @@ constexpr uint8_t CMP_ABX = 0xDD; // CMP abs,X    - Absolute,X
 constexpr uint8_t CMP_ABY = 0xD9; // CMP abs,Y    - Absolute,Y
 constexpr uint8_t CMP_INX = 0xC1; // CMP (zp,X)   - Indexed Indirect
 constexpr uint8_t CMP_INY = 0xD1; // CMP (zp),Y   - Indirect Indexed
+constexpr uint8_t CMP_IZP = 0xD2; // CMP (zp)     - Indirect Zero Page (65C02+)
 
 // CPX - Compare X Register
 constexpr uint8_t CPX_IMM = 0xE0; // CPX #imm     - Immediate
@@ -239,12 +246,14 @@ constexpr uint8_t INC_ZP = 0xE6;  // INC zp       - Zero Page
 constexpr uint8_t INC_ZPX = 0xF6; // INC zp,X     - Zero Page,X
 constexpr uint8_t INC_ABS = 0xEE; // INC abs      - Absolute
 constexpr uint8_t INC_ABX = 0xFE; // INC abs,X    - Absolute,X
+constexpr uint8_t INC_ACC = 0x1A; // INC / INA    - Accumulator (65C02+)
 
 // DEC - Decrement Memory
 constexpr uint8_t DEC_ZP = 0xC6;  // DEC zp       - Zero Page
 constexpr uint8_t DEC_ZPX = 0xD6; // DEC zp,X     - Zero Page,X
 constexpr uint8_t DEC_ABS = 0xCE; // DEC abs      - Absolute
 constexpr uint8_t DEC_ABX = 0xDE; // DEC abs,X    - Absolute,X
+constexpr uint8_t DEC_ACC = 0x3A; // DEC / DEA    - Accumulator (65C02+)
 
 // ============================================================================
 // Flag Operation Instructions

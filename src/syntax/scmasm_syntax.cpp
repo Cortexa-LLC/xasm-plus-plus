@@ -372,19 +372,29 @@ void ScmasmSyntaxParser::Parse(const std::string &source, Section &section,
     // Strip Apple II editor commands (NEW, AUTO, MAN, SAVE, ASM, etc.)
     line = StripEditorCommands(line);
 
-    // Trim whitespace
-    line = Trim(line);
-
-    // Skip empty lines
-    if (line.empty()) {
+    // Skip empty lines (check against fully trimmed line)
+    if (Trim(line).empty()) {
       line_idx++;
       continue;
     }
 
+    // Strip trailing whitespace only — preserve leading whitespace so that
+    // ParseLabel can detect whether a token is at column 0 (label field) or
+    // in the mnemonic column (after leading whitespace).  The label_start
+    // position in ParseLabel must reflect the original indentation.
+    {
+      size_t end = line.size();
+      while (end > 0 && (line[end - 1] == ' ' || line[end - 1] == '\t' ||
+                         line[end - 1] == '\r' || line[end - 1] == '\n')) {
+        --end;
+      }
+      line = line.substr(0, end);
+    }
+
     // If we're in a macro definition, collect lines
     if (in_macro_definition_) {
-      // Check for .EM or .ENDM
-      std::string upper_line = line;
+      // Check for .EM or .ENDM (trim leading whitespace before checking)
+      std::string upper_line = Trim(line);
       std::transform(upper_line.begin(), upper_line.end(), upper_line.begin(),
                      ::toupper);
 
@@ -545,10 +555,15 @@ std::string ScmasmSyntaxParser::StripComments(const std::string &line) {
               // placeholder character — treat the whole line as a comment.
               return "";
             }
+
+            // Strip the leading * — label starts at position 1.
+            return line.substr(1);
           }
 
-          // Strip the leading * — label starts at position 1.
-          return line.substr(1);
+          // *LABEL .BS/.DA/.DC/etc. — in SCMASM, only .EQ/.SE after *LABEL are
+          // private label definitions. Any other directive makes the entire line
+          // a comment (the *LABEL is just a visual marker for disabled code).
+          return "";
         }
       }
     }
@@ -646,6 +661,19 @@ std::string ScmasmSyntaxParser::StripEditorCommands(const std::string &line) {
   return line;
 }
 
+// Strip trailing whitespace only, preserving leading whitespace.
+// Used when preparing lines for ParseLine so that the original column
+// positions are preserved (leading whitespace distinguishes column-0 labels
+// from mnemonic-column opcodes).
+static std::string TrimRight(const std::string &str) {
+  size_t end = str.size();
+  while (end > 0 && (str[end - 1] == ' ' || str[end - 1] == '\t' ||
+                     str[end - 1] == '\r' || str[end - 1] == '\n')) {
+    --end;
+  }
+  return str.substr(0, end);
+}
+
 std::string ScmasmSyntaxParser::Trim(const std::string &str) {
   size_t start = str.find_first_not_of(" \t\r\n");
   if (start == std::string::npos) {
@@ -739,14 +767,26 @@ void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
 
   std::string opcode = line.substr(opcode_start, pos - opcode_start);
 
-  // Skip whitespace after opcode
+  // Skip whitespace after opcode, counting tabs.
+  // In SCMASM/Merlin 3-column format, a SINGLE tab separates mnemonic from
+  // operand.  When 2+ tabs appear between the mnemonic and the next text, the
+  // text is a visual-alignment comment and the operand column is empty.
+  // e.g. "dec\t\t\t\tA=0"  → 4 tabs → empty operand (= accumulator DEA)
+  //      "sta\t(ZPPtr1)"   → 1 tab  → operand = "(ZPPtr1)"
+  size_t tabs_after_opcode = 0;
   while (pos < line.length() && std::isspace(line[pos])) {
+    if (line[pos] == '\t') {
+      ++tabs_after_opcode;
+    }
     pos++;
   }
 
-  // Rest is operand
-  std::string operand = line.substr(pos);
-  operand = Trim(operand);
+  // Rest is operand — empty when 2+ tabs precede the remaining text.
+  std::string operand;
+  if (tabs_after_opcode < 2) {
+    operand = line.substr(pos);
+    operand = Trim(operand);
+  }
 
   // Convert opcode to uppercase for comparison
   std::string opcode_upper = opcode;
@@ -1061,6 +1101,13 @@ std::string ScmasmSyntaxParser::ParseLabel(const std::string &line, size_t &pos,
     pos++;
   }
 
+  // Skip Apple II editor control chars (0x01–0x1F, excluding tab) that may
+  // appear before the label/opcode in raw Apple II source files.
+  while (pos < line.length() && (unsigned char)line[pos] < 0x20 &&
+         line[pos] != '\t') {
+    pos++;
+  }
+
   // Labels must start with letter, ., :, or _
   if (pos >= line.length() || (!std::isalpha(line[pos]) && line[pos] != '.' &&
                                line[pos] != ':' && line[pos] != '_')) {
@@ -1108,21 +1155,29 @@ std::string ScmasmSyntaxParser::ParseLabel(const std::string &line, size_t &pos,
     return "";
   }
 
-  // Check if this is a known opcode (not a label)
-  // Query CPU plugin for real opcodes, or check pseudo-ops
-  if (cpu_ != nullptr && cpu_->HasOpcode(label_upper)) {
-    // This is a CPU opcode, not a label
-    pos = label_start;
-    return "";
-  }
+  // In SCMASM/Merlin format, column 0 (no leading whitespace) is the LABEL
+  // field.  A token at column 0 is ALWAYS a label, even when it matches an
+  // opcode name (e.g. BCC, BEQ defined as data-table entry labels in ASM.O
+  // files).  Only apply the opcode/pseudo-op rejection when the token appeared
+  // after leading whitespace (i.e. in the mnemonic column).
+  if (label_start > 0) {
+    // Check if this is a known opcode (not a label)
+    // Query CPU plugin for real opcodes, or check pseudo-ops
+    if (cpu_ != nullptr && cpu_->HasOpcode(label_upper)) {
+      // This is a CPU opcode, not a label
+      pos = label_start;
+      return "";
+    }
 
-  // Check for pseudo-ops (not real CPU opcodes, but assembler directives)
-  // These are common mnemonics that define data/storage
-  static const std::unordered_set<std::string> pseudo_ops = {"DB", "DW", "DS"};
-  if (pseudo_ops.find(label_upper) != pseudo_ops.end()) {
-    // This is a pseudo-op, not a label
-    pos = label_start;
-    return "";
+    // Check for pseudo-ops (not real CPU opcodes, but assembler directives)
+    // These are common mnemonics that define data/storage
+    static const std::unordered_set<std::string> pseudo_ops = {"DB", "DW",
+                                                                "DS"};
+    if (pseudo_ops.find(label_upper) != pseudo_ops.end()) {
+      // This is a pseudo-op, not a label
+      pos = label_start;
+      return "";
+    }
   }
 
   // Label must be followed by whitespace or colon (optional)
@@ -1921,9 +1976,9 @@ void ScmasmSyntaxParser::HandleDo(const std::string &operand, Section &section,
     std::string line = source[i];
     line = StripLineNumber(line);
     line = StripComments(line);
-    line = Trim(line);
+    line = TrimRight(line); // preserve leading whitespace for column detection
 
-    if (!line.empty()) {
+    if (!Trim(line).empty()) {
       size_t temp_idx = i;
       ParseLine(line, section, symbols, source, temp_idx);
       // If ParseLine skipped lines (e.g., nested .DO/.FIN), respect that
@@ -2033,9 +2088,9 @@ void ScmasmSyntaxParser::HandleLu(const std::string &operand, Section &section,
       std::string line = source[i];
       line = StripLineNumber(line);
       line = StripComments(line);
-      line = Trim(line);
+      line = TrimRight(line); // preserve leading whitespace for column detection
 
-      if (!line.empty()) {
+      if (!Trim(line).empty()) {
         size_t temp_idx = i;
         ParseLine(line, section, symbols, source, temp_idx);
         // If ParseLine skipped lines (e.g., nested .LU/.ENDU), respect that

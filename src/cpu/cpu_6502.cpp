@@ -246,7 +246,7 @@ std::vector<uint8_t> Cpu6502::EncodeSTA(uint16_t operand,
       .indirect_y = Opcodes::STA_INY,
       .accumulator = std::nullopt,
       .relative = std::nullopt,
-      .indirect_zero_page = std::nullopt,
+      .indirect_zero_page = Opcodes::STA_IZP, // 65C02+
       .absolute_indexed_indirect = std::nullopt,
       .absolute_long = std::nullopt,
       .indirect_long = std::nullopt,
@@ -307,7 +307,7 @@ std::vector<uint8_t> Cpu6502::EncodeADC(uint16_t operand,
       .indirect_y = Opcodes::ADC_INY,
       .accumulator = std::nullopt,
       .relative = std::nullopt,
-      .indirect_zero_page = std::nullopt,
+      .indirect_zero_page = Opcodes::ADC_IZP, // 65C02+
       .absolute_indexed_indirect = std::nullopt,
       .absolute_long = std::nullopt,
       .indirect_long = std::nullopt,
@@ -334,7 +334,7 @@ std::vector<uint8_t> Cpu6502::EncodeSBC(uint16_t operand,
       .indirect_y = Opcodes::SBC_INY,
       .accumulator = std::nullopt,
       .relative = std::nullopt,
-      .indirect_zero_page = std::nullopt,
+      .indirect_zero_page = Opcodes::SBC_IZP, // 65C02+
       .absolute_indexed_indirect = std::nullopt,
       .absolute_long = std::nullopt,
       .indirect_long = std::nullopt,
@@ -363,7 +363,7 @@ std::vector<uint8_t> Cpu6502::EncodeAND(uint16_t operand,
       .indirect_y = Opcodes::AND_INY,
       .accumulator = std::nullopt,
       .relative = std::nullopt,
-      .indirect_zero_page = std::nullopt,
+      .indirect_zero_page = Opcodes::AND_IZP, // 65C02+
       .absolute_indexed_indirect = std::nullopt,
       .absolute_long = std::nullopt,
       .indirect_long = std::nullopt,
@@ -390,7 +390,7 @@ std::vector<uint8_t> Cpu6502::EncodeORA(uint16_t operand,
       .indirect_y = Opcodes::ORA_INY,
       .accumulator = std::nullopt,
       .relative = std::nullopt,
-      .indirect_zero_page = std::nullopt,
+      .indirect_zero_page = Opcodes::ORA_IZP, // 65C02+
       .absolute_indexed_indirect = std::nullopt,
       .absolute_long = std::nullopt,
       .indirect_long = std::nullopt,
@@ -417,7 +417,7 @@ std::vector<uint8_t> Cpu6502::EncodeEOR(uint16_t operand,
       .indirect_y = Opcodes::EOR_INY,
       .accumulator = std::nullopt,
       .relative = std::nullopt,
-      .indirect_zero_page = std::nullopt,
+      .indirect_zero_page = Opcodes::EOR_IZP, // 65C02+
       .absolute_indexed_indirect = std::nullopt,
       .absolute_long = std::nullopt,
       .indirect_long = std::nullopt,
@@ -552,7 +552,7 @@ std::vector<uint8_t> Cpu6502::EncodeCMP(uint16_t operand,
       .indirect_y = Opcodes::CMP_INY,
       .accumulator = std::nullopt,
       .relative = std::nullopt,
-      .indirect_zero_page = std::nullopt,
+      .indirect_zero_page = Opcodes::CMP_IZP, // 65C02+
       .absolute_indexed_indirect = std::nullopt,
       .absolute_long = std::nullopt,
       .indirect_long = std::nullopt,
@@ -852,7 +852,7 @@ std::vector<uint8_t> Cpu6502::EncodeINC(uint16_t operand,
       .indirect = std::nullopt,
       .indirect_x = std::nullopt,
       .indirect_y = std::nullopt,
-      .accumulator = std::nullopt,
+      .accumulator = Opcodes::INC_ACC, // 65C02+ INA
       .relative = std::nullopt,
       .indirect_zero_page = std::nullopt,
       .absolute_indexed_indirect = std::nullopt,
@@ -878,7 +878,7 @@ std::vector<uint8_t> Cpu6502::EncodeDEC(uint16_t operand,
       .indirect = std::nullopt,
       .indirect_x = std::nullopt,
       .indirect_y = std::nullopt,
-      .accumulator = std::nullopt,
+      .accumulator = Opcodes::DEC_ACC, // 65C02+ DEA
       .relative = std::nullopt,
       .indirect_zero_page = std::nullopt,
       .absolute_indexed_indirect = std::nullopt,
@@ -2129,11 +2129,11 @@ Cpu6502::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
                  [](unsigned char c) { return std::toupper(c); });
   AddressingMode mode = AddressingMode::Implied;
 
-  // Shift/rotate instructions with no operand mean accumulator mode.
-  // SCMASM uses "asl" (no operand) instead of the explicit "asl A" form.
+  // Shift/rotate/inc/dec instructions with no operand mean accumulator mode.
+  // SCMASM uses "asl" / "inc" (no operand) instead of the explicit "asl A" form.
   if (trimmed.empty() &&
       (mnemonic == ASL || mnemonic == LSR || mnemonic == ROL ||
-       mnemonic == ROR)) {
+       mnemonic == ROR || mnemonic == INC || mnemonic == DEC)) {
     mode = AddressingMode::Accumulator;
   }
 
