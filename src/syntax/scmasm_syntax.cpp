@@ -1015,15 +1015,32 @@ void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
       // Phase 3: We don't parse instructions yet, just store them as
       // InstructionAtom.
       //
-      // Strip SCMASM inline comment: 6502 operands never have embedded spaces,
-      // so any whitespace-separated trailing text is a comment.
+      // Strip SCMASM inline comment: 6502 operands never have embedded spaces
+      // EXCEPT inside character literals ('x' / "x").  Any whitespace outside
+      // a quoted char literal is treated as a comment delimiter.
       // e.g. "TAX  %11000000 or %00111000" → operand = "" (empty after opcode)
       // e.g. "AND K.LC,y  should be %xx..." → operand = "K.LC,y"
+      // e.g. "#' '" → operand = "#' '" (space inside quotes, NOT a comment)
       std::string instr_operand = operand;
       {
-        size_t ws = instr_operand.find_first_of(" \t");
-        if (ws != std::string::npos) {
-          instr_operand = instr_operand.substr(0, ws);
+        bool in_quote = false;
+        char quote_ch = 0;
+        size_t ws_pos = std::string::npos;
+        for (size_t k = 0; k < instr_operand.size(); ++k) {
+          char ch = instr_operand[k];
+          if (in_quote) {
+            if (ch == quote_ch)
+              in_quote = false;
+          } else if (ch == '\'' || ch == '"') {
+            in_quote = true;
+            quote_ch = ch;
+          } else if (ch == ' ' || ch == '\t') {
+            ws_pos = k;
+            break;
+          }
+        }
+        if (ws_pos != std::string::npos) {
+          instr_operand = instr_operand.substr(0, ws_pos);
         }
       }
 

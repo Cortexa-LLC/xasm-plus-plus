@@ -397,6 +397,21 @@ CHAR_LO .EQ 'A
   EXPECT_EQ(value, 0x41); // High bit clear
 }
 
+TEST_F(ScmasmSyntaxTest, SpaceCharLiteral_InInstruction_ProducesSpaceByte) {
+  // lda #' ' — space character literal in immediate operand must produce $20.
+  // Regression: inline-comment stripping used find_first_of(" \t") which found
+  // the space INSIDE '#'' and truncated the operand to "#'" before expansion.
+  std::string source =
+      "\t.OR\t$1000\n"
+      "\tlda\t#' '\n"
+      "HERE\t.EQ\t*\n";
+  ASSERT_NO_THROW(parser->Parse(source, section, symbols));
+  // HERE should be $1002 (2 bytes for LDA #imm)
+  int64_t here = 0;
+  ASSERT_TRUE(symbols.Lookup("HERE", here));
+  EXPECT_EQ(here, 0x1002) << "LDA #' ' must emit 2 bytes ($A9 $20)";
+}
+
 // ============================================================================
 // Phase 2: String & Data Directives Tests
 // ============================================================================
