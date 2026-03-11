@@ -109,8 +109,6 @@ add_executable(xasm++
 )
 
 target_link_libraries(xasm++
-    xasm_core
-    xasm_cpu
     xasm_syntax
     xasm_output
     CLI11::CLI11

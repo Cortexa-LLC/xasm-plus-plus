@@ -828,8 +828,8 @@ void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
         // relaxation changes code sizes.
         static const std::unordered_set<std::string> kDataEmittingDirectives = {
             ".DA",  ".DB",  ".DFB", ".DW",  ".DS",  ".DC",  ".HB",  ".HX",
-            ".AS",  ".AT",  ".AZ",  ".CZ",  ".TF",  ".PS",  ".HS",  ".STR",
-            ".BS",  ".BYT", ".WORD", ".PH",
+            ".AS",  ".AT",  ".AZ",  ".CS",  ".CZ",  ".TF",  ".PS",  ".HS",
+            ".STR", ".BS",  ".BYT", ".WORD", ".PH",
         };
         bool emit_label_atom =
             kDataEmittingDirectives.count(opcode_upper) > 0 &&

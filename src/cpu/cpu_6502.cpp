@@ -135,6 +135,16 @@ std::vector<uint8_t> Cpu6502::EncodeWithTable(const OpcodeTable &table,
     break;
   }
 
+  // ZeroPageY → AbsoluteY fallback: some instructions (STA, LDA) have no ZP,Y
+  // mode on the 6502/65C02 but do have ABS,Y.  When the caller requested ZP,Y
+  // but the table has no opcode for it, try AbsoluteY instead so that e.g.
+  // `sta 0,y` emits $99 $00 $00 (ABS,Y) rather than being silently dropped.
+  if (!opcode.has_value() && mode == AddressingMode::ZeroPageY &&
+      table.absolute_y.has_value()) {
+    opcode = table.absolute_y;
+    mode = AddressingMode::AbsoluteY;
+  }
+
   // If opcode found, encode instruction
   if (opcode.has_value()) {
     bytes.push_back(opcode.value());
@@ -2162,9 +2172,12 @@ Cpu6502::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
             mode = AddressingMode::IndirectY;
           }
         }
-        // Simple indirect: ($1234) - only for JMP
-        else {
+        // JMP (abs): absolute indirect = Indirect
+        // All other instructions (LDA, STA, ADC, etc.): (zp) = IndirectZeroPage (65C02+)
+        else if (mnemonic == M6502Mnemonics::JMP) {
           mode = AddressingMode::Indirect;
+        } else {
+          mode = AddressingMode::IndirectZeroPage;
         }
       }
     }
