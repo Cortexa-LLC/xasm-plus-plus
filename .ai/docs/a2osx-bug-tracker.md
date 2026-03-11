@@ -22,6 +22,8 @@ to the original SCMASM assembler using A2osX 335cd122 as the reference test case
 | 7 | 75a1f64 | 40³ | 45 | 128 | **MEMDUMP identical!** DUMMY instr-label + JSR/JMP Absolute fix |
 | 8 | f7883f3 | 65 | 56 | 11 | **+25 identical!** '@' separator for scoped local labels |
 | 9 | 3191947 | 65 | 56 | 11 | .CS mixed-delimiter fix; no count change (differences are source changes) |
+| 10 | b19928d | 66 | 58 | 89 | **+1 identical (CSH)!** EquateAtom in .DUMMY + macro arg parsing |
+| 11 | 3a14d43 | 66 | 58 | 89 | .CS-only mixed-delim refinement; SH shifts +3→-3 but count unchanged |
 
 ¹ Scope/script changed; not directly comparable to runs 1-4
 ² Includes ~25 same-size-different-content files (source version differences)
@@ -117,18 +119,54 @@ but the instruction-label path at lines 988-1010 of `scmasm_syntax.cpp` was miss
 **Impact:** `bin/memdump` now byte-identical to stable (was +1 byte from `STA $2000,X`
 instead of `STA $E8,X`).
 
-### Bug 11: .CS mixed-delimiter rule missing (3191947)
+### Bug 11: .CS mixed-delimiter rule missing (3191947 + 3a14d43)
 **Symptom:** `BIN/CUT` was +18 bytes vs stable. `MSG.USAGE .CS 'Usage : CUT "line of text"\r\n'`
 emitted the full string through the closing `'` instead of stopping at the embedded `"`.
 **Root cause:** `ParseCString()` in `scmasm_directive_handlers.cpp` only checked for the
 opening delimiter when finding the end. SCMASM's mixed-delimiter rule: when opening
 delimiter is `'`, an embedded `"` also terminates the string.
-**Fix:** Added `if (delimiter == '\'')` block checking for `'"'` as alternate end marker,
-taking whichever comes first (the `"` or the matching `'`).
+**Fix (3191947):** Added mixed-delimiter rule (check for `'"'` as alternate end marker).
+**Fix (3a14d43):** Refined: the rule applies ONLY to `.CS`, not to `.CZ/.AS/.AT/.AZ`.
+Verified against stable: `.CZ '%s = "%s"\r\n'` emits full string (stable matches).
 **Files:** `src/syntax/scmasm_directive_handlers.cpp`
 **Impact:** BIN/CUT reduced from +18B to -2B. The remaining -2B is a **source change**
 (commit `16e3760c "CUT:bugfix"` added `lda ArgLine` before `>SYSCALL ArgV` after stable was built).
-BIN/CUT cannot be made byte-identical to stable since the source legitimately changed.
+BIN/SH shifted from +3B (incorrectly truncated .CZ) to -3B (correct .CZ string; branch
+relaxation at $2FA3 adds 3 bytes). Neither is assembler-fixable.
+
+### Bug 12: EquateAtom pushed to main section from inside .DUMMY (b19928d)
+**Symptom:** Files with `LABEL .EQ *` inside `.DUMMY` sections (e.g. EDIT, MV, FORTH,
+ACOS, GETTY) had false branch relaxations: branches that should reach within ±127 bytes
+were being expanded to JMP (+3 bytes each), and sizes were wrong.
+**Root cause:** When `HandleEq()` was called inside a `.DUMMY` section with operand `*`,
+it created an `EquateAtom` and pushed it to the main section's atom list. On each
+subsequent pass, the EquateAtom re-evaluated `*` as the main-section PC ($2000+offset)
+rather than the ZP address. After branch relaxation shifted code, the stale `*` value
+caused branches to appear out-of-range, triggering further false relaxations.
+**Fix:** Added `if (in_dummy_section_) return;` guard at the top of `HandleEq()` to
+prevent EquateAtom creation inside `.DUMMY` sections. ZP equates in `.DUMMY` are
+evaluated at parse time (correct ZP address) and must not be re-evaluated.
+**Files:** `src/syntax/scmasm_directive_handlers.cpp`
+**Impact:** EDIT (-8B→+0), MV (-4B→+0), FORTH (-2B→+0), ACOS (-2B→+0) — sizes now
+match stable. Content may still differ due to SYSCALL address changes (source version).
+GETTY (+15B→0B): now **byte-identical** to stable. Same for LOGIN and INITD.
+
+### Bug 13: Macro argument parsing stopped by comma in inline comment (b19928d)
+**Symptom:** `BIN/CSH` was +1 byte vs stable.
+`>STYA ZPPtr1     f() definition, starting at returned type`
+was being assembled as the 2-argument STYA form (STA+TYA+STA = 5 bytes) instead of
+the 1-argument form (STY+STA = 4 bytes), emitting one extra `TYA` byte.
+**Root cause:** Macro argument parsing split the operand on ALL commas in the line.
+The comma in the inline comment text `f() definition, starting` was treated as
+an argument separator, making `starting` appear as a second argument.
+**SCMASM convention:** An argument terminates at the first whitespace; everything
+after that whitespace (to end of line) is an inline comment, not more arguments.
+**Fix:** Rewrote argument scanning in `ExpandMacro()` to scan char-by-char:
+- Skip leading whitespace
+- Scan to first whitespace or comma (argument boundary)
+- If comma: next arg follows; if whitespace: rest is inline comment, stop
+**Files:** `src/syntax/scmasm_syntax.cpp`
+**Impact:** BIN/CSH is now **byte-identical** to stable.
 
 ### Bug 10: JSR/JMP to ZP-range address used ZeroPage mode instead of Absolute (75a1f64)
 **Symptom:** All 9 `jsr ZPReadAux` instructions in MEMDUMP were silently dropped
@@ -178,34 +216,68 @@ a417f7ab and 335cd122, AND our assembler produces correct output for them.
 
 ---
 
-## Remaining Positive-Delta Files (Potential Assembler Bugs)
+## Remaining Differences (Run 11 State — 66 identical)
 
-Files where xasm++ produces MORE bytes than stable — these are candidates for
-further assembler bug investigation:
+### Negative-delta files (built LARGER than stable — potential assembler bugs)
 
 | File | Delta | Priority | Notes |
 |------|-------|----------|-------|
-| bin/csh | +1 | Medium | 1-byte branch relaxation |
-| ~~bin/memdump~~ | ~~+1~~ | ~~Medium~~ | **FIXED** (Bug 9+10: DUMMY label + JSR absolute) |
-| bin/cp | +2 | Medium | Branch relaxation |
-| bin/du | +2 | Medium | Branch relaxation |
-| drv/dhgr.drv | +3 | High | Likely `:N .EQ *` in a different macro |
-| drv/mkboard.drv | +3 | High | Same pattern as dhgr.drv |
-| drv/pppssc.drv | +3 | High | Same pattern |
-| bin/mv | +4 | Medium | Multiple small relaxations |
-| bin/acos | +5 | Medium | |
-| bin/edit | +8 | Medium | |
-| bin/asm.65816 | +9 | Low | 65816 mode differences |
-| bin/sh | +9 | High | Shell is critical binary |
-| bin/forth | +11 | Medium | |
-| bin/fnt2fon | +13 | Low | Font tool |
-| bin/httpget | +14 | Medium | Network utility |
-| sbin/getty | +15 | High | Boot-critical login process |
-| sbin/bbsd | +16 | Medium | |
-| lib/libtcpip | +17 | High | Network library |
-| bin/cc | +29 | Low | Compiler |
-| bin/useradd | +48 | Low | User admin |
-| lib/libgui | +132 | High | GUI library; significant delta |
+| bin/sh | -3 | High | Branch relaxation from .CZ fix shifting code; $2FA3 JMP vs BRA in stable |
+| bin/asm.65816 | -9 | Low | 65816 mode differences |
+| bin/fnt2fon | -13 | Low | Font tool |
+| bin/httpget | -14 | Medium | Network utility |
+| sbin/bbsd | -16 | Medium | Unresolved |
+| bin/useradd | -48 | Low | Significant; unresolved |
+| lib/libgui | -132 | High | GUI library; large delta — likely branch relaxation accumulation |
+| lib/libtui | -286 | Low | Source changed significantly (known source version diff) |
+
+### Positive-delta files (stable LARGER — potential assembler bugs OR source changes)
+
+| File | Delta | Priority | Notes |
+|------|-------|----------|-------|
+| bin/attr | +2 | Low | Source version diff (x.fileenum.s changed) |
+| bin/chaux | +2 | Low | Same |
+| bin/chgrp | +2 | Low | Same |
+| bin/chmod | +2 | Low | Same |
+| bin/chown | +2 | Low | Same |
+| bin/chtyp | +2 | Low | Same |
+| bin/cp | +2 | Low | Same |
+| bin/lc | +2 | Low | Same |
+| bin/pak | +2 | Low | Same |
+| bin/rm | +2 | Low | Same |
+| bin/uc | +2 | Low | Same |
+| bin/wc | +2 | Low | Same |
+| lib/libblkdev | +1 | Low | Minor source diff |
+| bin/bmp2pix | +7 | Low | Source version diff |
+| sys/kernel | +68 | N/A | Completely different source from byte 0 |
+
+### Same-size, different-content files (likely SYSCALL address changes)
+These are correct size but have different address bytes from SYSCALL/SYSCALL2 constant change
+(`$1000→$0140`, `$E200→$0153`). Not assembler bugs.
+
+| File | Notes |
+|------|-------|
+| bin/acos, bin/edit, bin/forth, bin/mv | Fixed size (Bug 12); content differs = SYSCALL addr change |
+| bin/asm, bin/asm.6502, bin/asm.65c02, bin/asm.65r02, bin/asm.sw16, bin/asm.z80 | SYSCALL addr change |
+| bin/cc, bin/dnsinfo, bin/hmacmd5, bin/ls, bin/md4, bin/md5, bin/netstat | SYSCALL addr change |
+| bin/rpcdump, bin/xargs | SYSCALL addr change |
+| drv/dhgr.drv, drv/pppssc.drv, drv/ssc.drv, drv/ssc.i.drv | SYSCALL/IO prefix changes |
+| lib/libcrypt, lib/libetalk, lib/libtcpip | SYSCALL addr change |
+| sbin/cifsd, sbin/gui, sbin/vedd | SYSCALL addr change |
+| sys/pm/pm.appletalk | SYSCALL addr change |
+
+### Previously listed, now FIXED
+| File | Was | Now | Fixed By |
+|------|-----|-----|----------|
+| ~~bin/csh~~ | +1 | **IDENTICAL** | Bug 13 (macro arg parsing) |
+| ~~bin/memdump~~ | +1 | **IDENTICAL** | Bug 9+10 (DUMMY label + JSR absolute) |
+| ~~sbin/getty~~ | +15 | **IDENTICAL** | Bug 12 (EquateAtom in .DUMMY) |
+| ~~sbin/login~~ | ? | **IDENTICAL** | Bug 12 |
+| ~~sbin/initd~~ | ? | **IDENTICAL** | Bug 12 |
+| ~~bin/edit~~ | +8 | +0 (size fixed) | Bug 12 |
+| ~~bin/mv~~ | +4 | +0 (size fixed) | Bug 12 |
+| ~~bin/forth~~ | +11 | +0 (size fixed) | Bug 12 |
+| ~~bin/acos~~ | +5 | +0 (size fixed) | Bug 12 |
 
 ---
 
