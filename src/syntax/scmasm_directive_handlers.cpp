@@ -1191,7 +1191,23 @@ void ParseCString(const std::string &operand, std::vector<uint8_t> &result) {
   // the string (e.g. "|/-\" ends at the '"' after '\').
   // If no closing delimiter is found, the original SCMASM accepts end-of-line
   // as the string terminator (same as if the closing delimiter was at EOL).
+  //
+  // SCMASM mixed-delimiter rule for .CS/.CZ: when the opening delimiter is
+  // single-quote ('), a double-quote (") also terminates the string.  This
+  // replicates the original SCMASM behaviour where
+  //   .CS 'Usage : CUT "line of text"\r\n'
+  // emits only "Usage : CUT " (stops at the first ").  When the opening
+  // delimiter is " the string is only terminated by ".
+  //
+  // This matches the reference SCMASM.SYSTEM binary output verified against
+  // the STABLE.800.po disk image.
   size_t end = trimmed.find(delimiter, 1);
+  if (delimiter == '\'') {
+    size_t alt = trimmed.find('"', 1);
+    if (alt != std::string::npos && (end == std::string::npos || alt < end)) {
+      end = alt;
+    }
+  }
   if (end == std::string::npos) {
     end = trimmed.size(); // Accept unterminated string (SCMASM compatible)
   }
