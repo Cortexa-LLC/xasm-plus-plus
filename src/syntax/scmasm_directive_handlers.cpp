@@ -227,6 +227,21 @@ void HandleEq(const std::string &label, const std::string &operand,
   // Define symbol (immutable) - .EQ creates Equate type
   // Normalize label to uppercase for case-insensitive SCMASM compatibility
   std::string norm_label = util::ToUpper(label);
+
+  // For local labels (':N' or '.N'), use the scoped name to match how branch
+  // operands reference them (via LocalLabelScope in ParseLine). This is
+  // critical for ':1 .EQ *' patterns inside macros (e.g. INCW.G), where each
+  // macro invocation must have its own per-invocation scope prefix so that the
+  // EquateAtom re-evaluates the correct scoped symbol across multi-pass runs.
+  if (context.parser_state && !label.empty() &&
+      (label[0] == ':' || label[0] == '.')) {
+    auto *eq_parser = static_cast<ScmasmSyntaxParser *>(context.parser_state);
+    const std::string &scope = eq_parser->LocalLabelScope(label);
+    if (!scope.empty()) {
+      norm_label = scope + norm_label;
+    }
+  }
+
   auto expr = std::make_shared<LiteralExpr>(value);
   context.symbols->Define(norm_label, SymbolType::Equate, expr);
 

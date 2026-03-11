@@ -3783,3 +3783,120 @@ TEST_F(ScmasmSyntaxTest, StarLabel_PlaceholderHex_IsComment) {
   EXPECT_EQ(after, 0x4000);
 }
 
+// ============================================================================
+// Pending label at end-of-file (DRV.END pattern)
+// ============================================================================
+//
+// Regression test for a bug where a label-only line at the end of a source
+// file was left as pending_label_ and never added to the symbol table when the
+// only following lines were editor commands (MAN, SAVE, ASM) stripped to empty
+// by StripEditorCommands.
+//
+// Real example: GRAPPLER.DRV.S.txt ends with:
+//   DRV.END              <- label-only line → pending_label_ = "DRV.END"
+//   \x08\x08\x08\x08\x08MAN  <- stripped to "" → pending label never flushed
+//
+// Without the fix, DRV.END resolved as 0, so `lda /DRV.END` produced A9 00
+// instead of A9 22 (high byte of the actual DRV.END address).
+
+TEST_F(ScmasmSyntaxTest, PendingLabelFlushedAtEOF_AfterEditorCommand) {
+  // A label-only line immediately before a MAN editor command at end-of-file
+  // must be defined with the current assembly address at that point.
+  //
+  //   .OR $2000
+  //   nop             ; 1 byte → address $2001
+  //   nop             ; 1 byte → address $2002
+  //   DRV.END         ; label-only → should define DRV.END = $2002
+  //   MAN             ; editor command, stripped → no instruction follows
+  std::string source =
+      "\t.OR\t$2000\n"
+      "\tnop\n"
+      "\tnop\n"
+      "DRV.END\n"
+      "MAN\n";
+
+  ASSERT_NO_THROW(parser->Parse(source, section, symbols));
+
+  int64_t drv_end = 0;
+  ASSERT_TRUE(symbols.Lookup("DRV.END", drv_end))
+      << "DRV.END must be defined even though the next line is a MAN editor "
+         "command";
+  EXPECT_EQ(drv_end, 0x2002)
+      << "DRV.END must equal $2002 (after two nop bytes at $2000)";
+}
+
+TEST_F(ScmasmSyntaxTest, PendingLabelFlushedAtEOF_ControlCharsBeforeMAN) {
+  // Same as above but with AppleWriter-style backspace control chars before MAN
+  // (the real A2osX pattern: \x08\x08\x08\x08\x08MAN).
+  std::string source =
+      "\t.OR\t$3000\n"
+      "\tlda\t#$FF\n"   // 2 bytes → $3000..$3001
+      "DRV.END\n"        // label-only → DRV.END = $3002
+      "\x08\x08\x08\x08\x08MAN\n";  // control chars + MAN stripped to ""
+
+  ASSERT_NO_THROW(parser->Parse(source, section, symbols));
+
+  int64_t drv_end = 0;
+  ASSERT_TRUE(symbols.Lookup("DRV.END", drv_end))
+      << "DRV.END must be defined when pending_label_ is flushed at EOF";
+  EXPECT_EQ(drv_end, 0x3002)
+      << "DRV.END must equal $3002 (after 2-byte LDA immediate at $3000)";
+}
+
+TEST(ScmasmPendingLabelEOFIntegration, SlashHighByteOfEOFLabel) {
+  // Full pipeline test: `lda /DRV.END` where DRV.END is defined by a pending
+  // label at EOF (followed only by a stripped MAN editor command).
+  //
+  // Expected: DRV.END = $2002, so `lda /DRV.END` → A9 20 (high byte of $2002)
+  ScmasmSyntaxParser parser;
+  Cpu6502 cpu;
+  parser.SetCpu(&cpu);
+  Section section;
+  ConcreteSymbolTable symbols;
+
+  // First file: defines DRV.END as a pending label before MAN
+  std::string drv_source =
+      "\t.OR\t$2000\n"
+      "\tnop\n"
+      "\tnop\n"
+      "DRV.END\n"
+      "MAN\n";
+
+  // Second file: uses DRV.END via the / high-byte operator
+  std::string main_source =
+      "\t.OR\t$1000\n"
+      "\tlda\t/DRV.END\n";
+
+  // Parse drv_source first to populate the symbol table
+  Section drv_section;
+  ASSERT_NO_THROW(parser.Parse(drv_source, drv_section, symbols));
+
+  // Parse main_source using the shared symbol table
+  ASSERT_NO_THROW(parser.Parse(main_source, section, symbols));
+
+  Assembler assembler;
+  assembler.SetCpuPlugin(&cpu);
+  assembler.SetSymbolTable(&symbols);
+  assembler.AddSection(drv_section);
+  assembler.AddSection(section);
+
+  AssemblerResult result = assembler.Assemble();
+  ASSERT_TRUE(result.success) << "Assembly must succeed";
+
+  // Find the lda /DRV.END instruction atom in the main section
+  bool found = false;
+  for (const auto &atom : section.atoms) {
+    if (atom && atom->type == AtomType::Instruction) {
+      auto instr = std::dynamic_pointer_cast<InstructionAtom>(atom);
+      if (instr && instr->encoded_bytes.size() == 2) {
+        EXPECT_EQ(instr->encoded_bytes[0], 0xA9)
+            << "Opcode must be LDA Immediate ($A9)";
+        EXPECT_EQ(instr->encoded_bytes[1], 0x20)
+            << "Operand must be high byte of DRV.END=$2002 → $20";
+        found = true;
+      }
+    }
+  }
+  EXPECT_TRUE(found) << "Expected to find the lda /DRV.END InstructionAtom";
+}
+

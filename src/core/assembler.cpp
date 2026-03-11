@@ -622,6 +622,23 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
                   throw;
                 }
               }
+            } else if (value_str[0] == '/') {
+              // SCMASM high byte immediate: /expr (equivalent to #>expr)
+              // Evaluates expression and takes bits 8-15 as the immediate byte
+              std::string expr_str = value_str.substr(1);
+              try {
+                auto expr = ParseExpression(expr_str, symbols);
+                int64_t expr_value = expr->Evaluate(symbols);
+                value = static_cast<uint16_t>(
+                    (static_cast<uint32_t>(expr_value) >> 8) & 0xFF);
+              } catch (const std::exception &e) {
+                std::string msg(e.what());
+                if (msg.find("Undefined symbol") != std::string::npos) {
+                  value = 0;
+                } else {
+                  throw;
+                }
+              }
             } else if (value_str != "A") {
               // Label reference or expression - use ParseExpression to handle
               // both simple symbols and expressions like ZPPTR+1

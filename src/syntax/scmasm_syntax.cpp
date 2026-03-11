@@ -427,6 +427,35 @@ void ScmasmSyntaxParser::Parse(const std::string &source, Section &section,
     line_idx++;
   }
 
+  // Flush any pending label that was left over at end-of-file.
+  // This happens when the last substantive line is a label-only line (e.g.
+  // "DRV.END") followed only by editor commands (MAN, SAVE, ASM) that get
+  // stripped by StripEditorCommands.  Without this flush, the label is never
+  // added to the symbol table and resolves as 0.
+  if (!pending_label_.empty()) {
+    std::string pl = pending_label_;
+    pending_label_ = "";
+    if (IsLocalLabel(pl)) {
+      local_labels_[pl] = current_address_;
+      std::string scoped = LocalLabelScope(pl) + pl;
+      auto expr = std::make_shared<LiteralExpr>(current_address_);
+      symbols.Define(scoped, SymbolType::Label, expr);
+      if (!in_dummy_section_) {
+        auto atom = std::make_shared<LabelAtom>(scoped, current_address_);
+        section.atoms.push_back(atom);
+      }
+    } else {
+      std::string norm = util::ToUpper(pl);
+      auto expr = std::make_shared<LiteralExpr>(current_address_);
+      symbols.Define(norm, SymbolType::Label, expr);
+      if (!in_dummy_section_) {
+        auto atom = std::make_shared<LabelAtom>(norm, current_address_);
+        section.atoms.push_back(atom);
+      }
+      last_global_label_ = norm;
+    }
+  }
+
   // Check for unclosed macro definition
   if (in_macro_definition_) {
     throw std::runtime_error("Unclosed macro definition: " +

@@ -330,6 +330,18 @@ public:
    */
   uint32_t GetCurrentRealAddress(uint32_t current_virtual) const;
 
+  /**
+   * @brief Returns the scope prefix for a local label definition or reference.
+   *
+   * For ':N' labels inside macro invocations, returns the per-invocation macro
+   * scope so that multiple expansions of the same macro don't share label names.
+   * For '.N' labels (or ':N' outside macros), returns last_global_label_.
+   *
+   * Exposed publicly so directive handlers (e.g. HandleEq) can use it when
+   * processing ':N .EQ *' patterns inside macros.
+   */
+  const std::string &LocalLabelScope(const std::string &label) const;
+
 private:
   // Directive handler function signature (DirectiveContext pattern)
   using DirectiveHandler =
@@ -707,11 +719,6 @@ private:
    * @return true if local label, false otherwise
    */
   bool IsLocalLabel(const std::string &label);
-  /// Returns the scope prefix for a local label definition or reference.
-  /// For ':N' labels inside macros, returns the per-invocation macro scope
-  /// so that multiple expansions of the same macro don't share label names.
-  /// For '.N' labels (or ':N' outside macros), returns last_global_label_.
-  const std::string &LocalLabelScope(const std::string &label) const;
 
   /**
    * @brief Trim whitespace from both ends
