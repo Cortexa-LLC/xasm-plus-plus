@@ -379,7 +379,13 @@ private:
   std::string current_macro_name_; ///< Name of macro being defined
   std::vector<std::string>
       current_macro_body_;     ///< Lines of macro being defined
-  int macro_invocation_depth_; ///< Nesting depth for macro invocations
+  int macro_invocation_depth_;   ///< Nesting depth for macro invocations
+  int macro_invocation_counter_; ///< Monotonic counter, unique per invocation
+  /// Per-invocation scope prefix for ':N' macro-local labels.
+  /// Empty when not inside any macro.  Set to a unique string each time a
+  /// macro is invoked so that :1 labels in different expansions of the same
+  /// macro (under the same global label) don't collide in the symbol table.
+  std::string current_macro_label_scope_;
 
   // Pending label: a label-only line may be associated with the next .EQ/.SE
   std::string pending_label_; ///< Label deferred from previous label-only line
@@ -701,6 +707,11 @@ private:
    * @return true if local label, false otherwise
    */
   bool IsLocalLabel(const std::string &label);
+  /// Returns the scope prefix for a local label definition or reference.
+  /// For ':N' labels inside macros, returns the per-invocation macro scope
+  /// so that multiple expansions of the same macro don't share label names.
+  /// For '.N' labels (or ':N' outside macros), returns last_global_label_.
+  const std::string &LocalLabelScope(const std::string &label) const;
 
   /**
    * @brief Trim whitespace from both ends

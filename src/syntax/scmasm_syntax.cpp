@@ -218,6 +218,7 @@ bool SCMASMNumberParser::TryParse(const std::string &token,
 ScmasmSyntaxParser::ScmasmSyntaxParser()
     : current_address_(0), current_file_("<source>"), current_line_(0),
       cpu_(nullptr), in_macro_definition_(false), macro_invocation_depth_(0),
+      macro_invocation_counter_(0), current_macro_label_scope_(""),
       pending_label_(""), last_global_label_(""), in_dummy_section_(false),
       dummy_saved_address_(0), in_phase_(false), phase_virtual_addr_(0),
       phase_real_addr_(0) {
@@ -354,6 +355,11 @@ void ScmasmSyntaxParser::Parse(const std::string &source, Section &section,
   while (std::getline(stream, line)) {
     lines.push_back(line);
   }
+
+  // Reset per-pass state.  The macro invocation counter must restart at 0
+  // each pass so that ':N' macro-local labels get the same scoped names in
+  // every pass (stable symbol identity is required for multi-pass convergence).
+  macro_invocation_counter_ = 0;
 
   // Process lines
   current_line_ = 0;
@@ -732,7 +738,7 @@ void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
         std::string pl = pending_label_;
         if (IsLocalLabel(pl)) {
           local_labels_[pl] = current_address_;
-          std::string scoped = last_global_label_ + pl;
+          std::string scoped = LocalLabelScope(pl) + pl;
           auto expr = std::make_shared<LiteralExpr>(current_address_);
           symbols.Define(scoped, SymbolType::Label, expr);
           if (!in_dummy_section_) {
@@ -809,7 +815,7 @@ void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
       if (IsLocalLabel(pl)) {
         local_labels_[pl] = current_address_;
         // Also add scoped version to global symbol table for branch resolution
-        std::string scoped = last_global_label_ + pl;
+        std::string scoped = LocalLabelScope(pl) + pl;
         auto expr = std::make_shared<LiteralExpr>(current_address_);
         symbols.Define(scoped, SymbolType::Label, expr);
         if (!in_dummy_section_) {
@@ -840,7 +846,7 @@ void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
         if (IsLocalLabel(label)) {
           local_labels_[label] = current_address_;
           // Also add scoped version to global symbol table for branch resolution
-          std::string scoped = last_global_label_ + label;
+          std::string scoped = LocalLabelScope(label) + label;
           auto expr = std::make_shared<LiteralExpr>(current_address_);
           symbols.Define(scoped, SymbolType::Label, expr);
           auto label_atom =
@@ -878,7 +884,7 @@ void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
         if (IsLocalLabel(label)) {
           local_labels_[label] = current_address_;
           // Also add scoped version to global symbol table for branch resolution
-          std::string scoped = last_global_label_ + label;
+          std::string scoped = LocalLabelScope(label) + label;
           auto expr = std::make_shared<LiteralExpr>(current_address_);
           symbols.Define(scoped, SymbolType::Label, expr);
           if (emit_label_atom) {
@@ -954,7 +960,7 @@ void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
       if (IsLocalLabel(label)) {
         local_labels_[label] = current_address_;
         // Also add scoped version to global symbol table for branch resolution
-        std::string scoped = last_global_label_ + label;
+        std::string scoped = LocalLabelScope(label) + label;
         auto expr = std::make_shared<LiteralExpr>(current_address_);
         symbols.Define(scoped, SymbolType::Label, expr);
         auto label_atom = std::make_shared<LabelAtom>(scoped, current_address_);
@@ -1077,8 +1083,17 @@ void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
           if ((c == '.' || c == ':') && at_word_start &&
               k + 1 < instr_operand.size() &&
               std::isdigit((unsigned char)instr_operand[k + 1])) {
-            // Local label reference — prepend current scope
-            expanded += last_global_label_;
+            // Local label reference — prepend current scope.
+            // For ':N' inside macros, use the per-invocation scope so that
+            // the branch resolves to the label defined in THIS expansion.
+            std::string ref_label(1, c);
+            // Peek ahead to build the full label string (e.g., ":1")
+            size_t kk = k + 1;
+            while (kk < instr_operand.size() &&
+                   std::isdigit((unsigned char)instr_operand[kk])) {
+              ref_label += instr_operand[kk++];
+            }
+            expanded += LocalLabelScope(ref_label);
             expanded += c; // '.' or ':'
             k++;
             while (k < instr_operand.size() &&
@@ -1093,9 +1108,14 @@ void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
         instr_operand = expanded;
       }
 
-      auto instr_atom =
-          std::make_shared<InstructionAtom>(opcode_upper, instr_operand);
-      section.atoms.push_back(instr_atom);
+      // Instructions inside a .DUMMY section advance the virtual address (for
+      // symbol placement) but do NOT emit code bytes.  Only add the atom when
+      // we are in the real (non-dummy) section.
+      if (!in_dummy_section_) {
+        auto instr_atom =
+            std::make_shared<InstructionAtom>(opcode_upper, instr_operand);
+        section.atoms.push_back(instr_atom);
+      }
 
       // Advance address by the instruction's estimated byte count.
       // Using the CPU plugin's heuristic (operand-string analysis) so that
@@ -1364,6 +1384,16 @@ uint32_t ScmasmSyntaxParser::ParseNumber(const std::string &str) {
     throw std::runtime_error("Failed to parse decimal number '" + trimmed +
                              "': " + e.what());
   }
+}
+
+const std::string &ScmasmSyntaxParser::LocalLabelScope(
+    const std::string &label) const {
+  // ':N' labels inside macros use the per-invocation scope so that multiple
+  // expansions of the same macro under the same global label get unique names.
+  if (!label.empty() && label[0] == ':' && macro_invocation_depth_ > 0) {
+    return current_macro_label_scope_;
+  }
+  return last_global_label_;
 }
 
 bool ScmasmSyntaxParser::IsLocalLabel(const std::string &label) {
@@ -1831,6 +1861,13 @@ void ScmasmSyntaxParser::InvokeMacro(const std::string &name,
   }
 
   // Parse expanded lines
+  // Each invocation gets a unique scope for ':N' macro-local labels so that
+  // multiple expansions of the same macro under the same global label do not
+  // share/overwrite each other's :1, :2, etc. definitions.
+  std::string saved_macro_scope = current_macro_label_scope_;
+  current_macro_label_scope_ =
+      last_global_label_ + ":@" + std::to_string(++macro_invocation_counter_);
+
   macro_invocation_depth_++;
 
   size_t line_idx = 0;
@@ -1840,6 +1877,7 @@ void ScmasmSyntaxParser::InvokeMacro(const std::string &name,
                 line_idx);
     } catch (const std::exception &e) {
       macro_invocation_depth_--;
+      current_macro_label_scope_ = saved_macro_scope;
       throw std::runtime_error(std::string("In macro ") + name + ": " +
                                e.what());
     }
@@ -1847,6 +1885,7 @@ void ScmasmSyntaxParser::InvokeMacro(const std::string &name,
   }
 
   macro_invocation_depth_--;
+  current_macro_label_scope_ = saved_macro_scope;
 }
 
 std::string ScmasmSyntaxParser::SubstituteParameters(
@@ -2030,7 +2069,7 @@ void ScmasmSyntaxParser::HandleDo(const std::string &operand, Section &section,
     // Define the label at the current address
     if (IsLocalLabel(blabel)) {
       local_labels_[blabel] = current_address_;
-      std::string scoped = last_global_label_ + blabel;
+      std::string scoped = LocalLabelScope(blabel) + blabel;
       auto expr = std::make_shared<LiteralExpr>(current_address_);
       symbols.Define(scoped, SymbolType::Label, expr);
       auto atom = std::make_shared<LabelAtom>(scoped, current_address_);
