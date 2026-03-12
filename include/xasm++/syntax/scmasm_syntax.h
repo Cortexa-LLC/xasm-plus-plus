@@ -359,6 +359,25 @@ public:
    */
   std::string ScopedLocalLabelName(const std::string &label) const;
 
+  /**
+   * @brief Expand character literals in an expression string to hex values.
+   *
+   * Converts SCMASM character literal syntax to numeric hex equivalents
+   * before the expression is passed to the generic ParseExpression engine,
+   * which has no knowledge of SCMASM quoting conventions.
+   *
+   * Rules (SCMASM high-bit convention):
+   *   "X" or "X  (double-quote, ASCII $22 < $27) → high bit SET  (e.g. "0" → $B0)
+   *   'X' or 'X  (apostrophe,   ASCII $27 NOT < $27) → high bit CLEAR (e.g. 'A' → $41)
+   *
+   * Exposed publicly so directive handlers can expand character literals
+   * before expression evaluation (e.g., HandleDa for .DA #'N').
+   *
+   * @param s Expression string that may contain character literals
+   * @return Expression string with character literals replaced by $XX hex tokens
+   */
+  std::string ExpandCharLiteralsInExpr(const std::string &s) const;
+
 private:
   // Directive handler function signature (DirectiveContext pattern)
   using DirectiveHandler =
@@ -634,8 +653,8 @@ private:
    * @param source Remaining source lines
    * @param line_idx Current line index (updated)
    */
-  void HandleDo(const std::string &operand, Section &section,
-                ConcreteSymbolTable &symbols,
+  void HandleDo(const std::string &label, const std::string &operand, 
+                Section &section, ConcreteSymbolTable &symbols,
                 const std::vector<std::string> &source, size_t &line_idx);
 
   /**
@@ -649,8 +668,8 @@ private:
    * @param source Remaining source lines
    * @param line_idx Current line index (updated)
    */
-  void HandleLu(const std::string &operand, Section &section,
-                ConcreteSymbolTable &symbols,
+  void HandleLu(const std::string &label, const std::string &operand, 
+                Section &section, ConcreteSymbolTable &symbols,
                 const std::vector<std::string> &source, size_t &line_idx);
 
   /**
@@ -701,22 +720,6 @@ private:
    * @return Transformed character
    */
   uint8_t ApplyHighBitRule(char c, char delimiter) const;
-
-  /**
-   * @brief Expand character literals in an expression string to hex values.
-   *
-   * Converts SCMASM character literal syntax to numeric hex equivalents
-   * before the expression is passed to the generic ParseExpression engine,
-   * which has no knowledge of SCMASM quoting conventions.
-   *
-   * Rules (SCMASM high-bit convention):
-   *   "X" or "X  (double-quote, ASCII $22 < $27) → high bit SET  (e.g. "0" → $B0)
-   *   'X' or 'X  (apostrophe,   ASCII $27 NOT < $27) → high bit CLEAR (e.g. 'A' → $41)
-   *
-   * @param s Expression string that may contain character literals
-   * @return Expression string with character literals replaced by $XX hex tokens
-   */
-  std::string ExpandCharLiteralsInExpr(const std::string &s) const;
 
   /**
    * @brief Parse string with delimiter semantics

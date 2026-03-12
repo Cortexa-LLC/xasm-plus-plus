@@ -301,3 +301,42 @@ TEST_F(DirectiveRegistryTest, AzDirectiveHighBitPrefixNoDashTruncation) {
   EXPECT_EQ(data_atom->data[3], 0x53 | 0x80); // 'S' | 0x80
   EXPECT_EQ(data_atom->data[7], 0x00);         // null terminator (no high bit)
 }
+
+/**
+ * @brief Test that .DA #'char' emits ASCII value, not 0x00
+ *
+ * Bug C: .DA #'N' should emit 0x4E (ASCII 'N'), but was emitting 0x00.
+ * The '#' prefix requests 1-byte immediate form, and the character literal
+ * 'N' should be expanded to its ASCII value before evaluation.
+ */
+TEST_F(DirectiveRegistryTest, DaDirectiveCharLiteralImmediate) {
+  // Test #'N' character literal with immediate prefix
+  std::string source = "        .DA #'N'\n";
+  parser->Parse(source, section, symbols);
+
+  ASSERT_EQ(section.atoms.size(), 1u);
+  auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
+  ASSERT_NE(data_atom, nullptr);
+  // Should emit 1 byte: 0x4E (ASCII 'N')
+  ASSERT_EQ(data_atom->data.size(), 1u);
+  EXPECT_EQ(data_atom->data[0], 0x4E); // 'N' = ASCII 78 = $4E
+}
+
+/**
+ * @brief Test that .DA #'X',#'Y' emits correct ASCII values
+ *
+ * Multiple character literals should each be expanded correctly.
+ */
+TEST_F(DirectiveRegistryTest, DaDirectiveMultipleCharLiterals) {
+  std::string source = "        .DA #'A',#'B',#'C'\n";
+  parser->Parse(source, section, symbols);
+
+  ASSERT_EQ(section.atoms.size(), 1u);
+  auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
+  ASSERT_NE(data_atom, nullptr);
+  // Should emit 3 bytes
+  ASSERT_EQ(data_atom->data.size(), 3u);
+  EXPECT_EQ(data_atom->data[0], 0x41); // 'A' = $41
+  EXPECT_EQ(data_atom->data[1], 0x42); // 'B' = $42
+  EXPECT_EQ(data_atom->data[2], 0x43); // 'C' = $43
+}

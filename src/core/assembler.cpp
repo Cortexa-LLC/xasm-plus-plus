@@ -137,6 +137,44 @@ ParseExpression(const std::string &str, ConcreteSymbolTable &symbols) {
     }
   }
 
+  // Check for multiplication (* as binary infix operator).
+  // '*' alone at position 0 is the "current PC" symbol (already replaced
+  // by the assembler loop before ParseExpression is called). Here we look
+  // for '*' at position > 0 where the preceding character is an identifier
+  // character (alnum, '.', '_', '?') or a closing parenthesis ')' —
+  // indicating an infix multiplication rather than a unary current-PC.
+  // Scan right-to-left so that A*B*C is parsed as (A*B)*C (left-associative).
+  {
+    size_t mul_pos = std::string::npos;
+    int paren_depth = 0;
+    for (size_t i = trimmed.size(); i > 1; --i) {
+      char c = trimmed[i - 1];
+      if (c == ')') {
+        paren_depth++;
+      } else if (c == '(') {
+        paren_depth--;
+      } else if (paren_depth == 0 && c == '*') {
+        // Check the preceding character to confirm this is infix multiplication
+        char prev = trimmed[i - 2];
+        bool preceded_by_ident =
+            std::isalnum(static_cast<unsigned char>(prev)) || prev == '.' ||
+            prev == '_' || prev == '?' || prev == ')';
+        if (preceded_by_ident) {
+          mul_pos = i - 1;
+          break;
+        }
+      }
+    }
+    if (mul_pos != std::string::npos) {
+      std::string left = Trim(trimmed.substr(0, mul_pos));
+      std::string right = Trim(trimmed.substr(mul_pos + 1));
+      auto left_expr = ParseExpression(left, symbols);
+      auto right_expr = ParseExpression(right, symbols);
+      return std::make_shared<BinaryOpExpr>(BinaryOp::Multiply, left_expr,
+                                            right_expr);
+    }
+  }
+
   // Check for bitwise XOR (^) operator — e.g. $FF^SYM.Q.AAARRAY
   size_t xor_pos = trimmed.find('^');
   if (xor_pos != std::string::npos && xor_pos > 0) {

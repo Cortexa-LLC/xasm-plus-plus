@@ -869,7 +869,11 @@ void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
   if (!opcode.empty() && opcode[0] == '.') {
     // For directives, define the label but DON'T create a label atom
     // Exception: .OR creates a label atom before changing address
-    if (!label.empty()) {
+    // Exception: .DO/.LU defer label definition until after block processing
+    using namespace scmasm::directives;
+    bool is_control_flow = (opcode_upper == DO || opcode_upper == LU);
+    
+    if (!label.empty() && !is_control_flow) {
       if (opcode_upper == ".OR") {
         // Label before .OR - define it and create label atom at current address
         if (IsLocalLabel(label)) {
@@ -953,9 +957,9 @@ void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
           do_operand = do_operand.substr(0, ws);
         }
       }
-      HandleDo(do_operand, section, symbols, source, line_idx);
+      HandleDo(label, do_operand, section, symbols, source, line_idx);
     } else if (opcode_upper == LU) {
-      HandleLu(operand, section, symbols, source, line_idx);
+      HandleLu(label, operand, section, symbols, source, line_idx);
     } else if (opcode_upper == ELSE || opcode_upper == FIN ||
                opcode_upper == ENDU) {
       // These are handled by their opening directives (.DO, .LU)
@@ -1130,13 +1134,19 @@ void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
           char c = instr_operand[k];
           bool at_word_start =
               (k == 0) || (!std::isalnum((unsigned char)instr_operand[k - 1]) &&
-                           instr_operand[k - 1] != '_');
+                           instr_operand[k - 1] != '_' &&
+                           instr_operand[k - 1] != '.');
           if ((c == '.' || c == ':') && at_word_start &&
               k + 1 < instr_operand.size() &&
               std::isdigit((unsigned char)instr_operand[k + 1])) {
             // Local label reference — prepend current scope.
             // For ':N' inside macros, use the per-invocation scope so that
             // the branch resolves to the label defined in THIS expansion.
+            // NOTE: 'at_word_start' excludes the case where the preceding
+            // character is '.' to avoid mis-parsing SCMASM global labels that
+            // contain '..' (double-dot) in their name, e.g. 'X.BasePath..1'.
+            // In 'jsr X.BasePath..1', the second '.' is part of the global
+            // label, NOT the start of a local '.1' reference.
             std::string ref_label(1, c);
             // Peek ahead to build the full label string (e.g., ":1")
             size_t kk = k + 1;
@@ -2061,10 +2071,24 @@ std::string ScmasmSyntaxParser::SubstituteParameters(
   return result;
 }
 
-void ScmasmSyntaxParser::HandleDo(const std::string &operand, Section &section,
+void ScmasmSyntaxParser::HandleDo(const std::string &label, 
+                                  const std::string &operand, Section &section,
                                   ConcreteSymbolTable &symbols,
                                   const std::vector<std::string> &source,
                                   size_t &line_idx) {
+  // .DO requires an expression
+  if (operand.empty()) {
+    throw std::runtime_error(".DO requires an expression");
+  }
+  
+  // Bug B fix (off-by-1): Capture address at START of .DO line (before processing block)
+  // The label on .DO should point to the first instruction after the .DO directive,
+  // which is at the current PC before entering the block.
+  uint32_t start_address = current_address_;
+  // Also capture the current position in the atoms list, so we can insert the
+  // LabelAtom at the correct position (before the block content, not after)
+  size_t label_atom_position = section.atoms.size();
+  
   // Evaluate condition
   uint32_t condition = EvaluateExpression(operand, symbols);
   // Find matching .ELSE or .FIN
@@ -2142,6 +2166,24 @@ void ScmasmSyntaxParser::HandleDo(const std::string &operand, Section &section,
       end_line = fin_line;
     } else {
       // No .ELSE, skip entire block
+      // But still need to define label if present
+      if (!label.empty()) {
+        if (IsLocalLabel(label)) {
+          local_labels_[label] = current_address_;
+          std::string scoped = ScopedLocalLabelName(label);
+          auto expr = std::make_shared<LiteralExpr>(current_address_);
+          symbols.Define(scoped, SymbolType::Label, expr);
+          auto atom = std::make_shared<LabelAtom>(scoped, current_address_);
+          section.atoms.push_back(atom);
+        } else {
+          std::string norm = util::ToUpper(label);
+          auto expr = std::make_shared<LiteralExpr>(current_address_);
+          symbols.Define(norm, SymbolType::Label, expr);
+          auto atom = std::make_shared<LabelAtom>(norm, current_address_);
+          section.atoms.push_back(atom);
+          last_global_label_ = norm;
+        }
+      }
       line_idx = fin_line;
       return;
     }
@@ -2215,14 +2257,55 @@ void ScmasmSyntaxParser::HandleDo(const std::string &operand, Section &section,
     define_boundary_label(fin_line);
   }
 
+  // Define the label from the .DO line itself (if present)
+  // Bug B off-by-1 fix: The label on a .DO directive line should get the address
+  // at the START of the .DO line (before entering the block), which is the address
+  // of the first instruction following the .DO directive.
+  // 
+  // CRITICAL: Insert the LabelAtom at the position BEFORE the block content,
+  // not at the end. Otherwise ResolveSymbols will compute the wrong address.
+  if (!label.empty()) {
+    if (IsLocalLabel(label)) {
+      local_labels_[label] = start_address;
+      std::string scoped = ScopedLocalLabelName(label);
+      auto expr = std::make_shared<LiteralExpr>(start_address);
+      symbols.Define(scoped, SymbolType::Label, expr);
+      auto atom = std::make_shared<LabelAtom>(scoped, start_address);
+      // Insert at the saved position (before block content), not at the end
+      section.atoms.insert(section.atoms.begin() + label_atom_position, atom);
+    } else {
+      std::string norm = util::ToUpper(label);
+      auto expr = std::make_shared<LiteralExpr>(start_address);
+      symbols.Define(norm, SymbolType::Label, expr);
+      auto atom = std::make_shared<LabelAtom>(norm, start_address);
+      // Insert at the saved position (before block content), not at the end
+      section.atoms.insert(section.atoms.begin() + label_atom_position, atom);
+      last_global_label_ = norm;
+    }
+  }
+
   // Skip to after .FIN
   line_idx = fin_line;
 }
 
-void ScmasmSyntaxParser::HandleLu(const std::string &operand, Section &section,
+void ScmasmSyntaxParser::HandleLu(const std::string &label, 
+                                  const std::string &operand, Section &section,
                                   ConcreteSymbolTable &symbols,
                                   const std::vector<std::string> &source,
                                   size_t &line_idx) {
+  // .LU requires an expression
+  if (operand.empty()) {
+    throw std::runtime_error(".LU requires an expression");
+  }
+  
+  // Bug B fix (off-by-1): Capture address at START of .LU line (before processing loop)
+  // The label on .LU should point to the first instruction after the .LU directive,
+  // which is at the current PC before entering the loop.
+  uint32_t start_address = current_address_;
+  // Also capture the current position in the atoms list, so we can insert the
+  // LabelAtom at the correct position (before the loop content, not after)
+  size_t label_atom_position = section.atoms.size();
+  
   // Evaluate loop count
   uint32_t count = EvaluateExpression(operand, symbols);
 
@@ -2275,6 +2358,33 @@ void ScmasmSyntaxParser::HandleLu(const std::string &operand, Section &section,
       } else {
         i++;
       }
+    }
+  }
+
+  // Define the label from the .LU line itself (if present)
+  // Bug B off-by-1 fix: The label on a .LU directive line should get the address
+  // at the START of the .LU line (before entering the loop), which is the address
+  // of the first instruction following the .LU directive.
+  // 
+  // CRITICAL: Insert the LabelAtom at the position BEFORE the loop content,
+  // not at the end. Otherwise ResolveSymbols will compute the wrong address.
+  if (!label.empty()) {
+    if (IsLocalLabel(label)) {
+      local_labels_[label] = start_address;
+      std::string scoped = ScopedLocalLabelName(label);
+      auto expr = std::make_shared<LiteralExpr>(start_address);
+      symbols.Define(scoped, SymbolType::Label, expr);
+      auto atom = std::make_shared<LabelAtom>(scoped, start_address);
+      // Insert at the saved position (before loop content), not at the end
+      section.atoms.insert(section.atoms.begin() + label_atom_position, atom);
+    } else {
+      std::string norm = util::ToUpper(label);
+      auto expr = std::make_shared<LiteralExpr>(start_address);
+      symbols.Define(norm, SymbolType::Label, expr);
+      auto atom = std::make_shared<LabelAtom>(norm, start_address);
+      // Insert at the saved position (before loop content), not at the end
+      section.atoms.insert(section.atoms.begin() + label_atom_position, atom);
+      last_global_label_ = norm;
     }
   }
 

@@ -220,6 +220,20 @@ target_link_libraries(test_scmasm_directive_registry
 
 gtest_discover_tests(test_scmasm_directive_registry)
 
+# SCMASM Conditional Assembly tests
+add_executable(test_scmasm_conditionals
+    test_scmasm_conditionals.cpp
+)
+
+target_link_libraries(test_scmasm_conditionals
+    xasm_syntax
+    xasm_core
+    gtest_main
+    gtest
+)
+
+gtest_discover_tests(test_scmasm_conditionals)
+
 # EdtasmSyntax tests
 add_executable(test_edtasm_syntax
     test_edtasm_syntax.cpp

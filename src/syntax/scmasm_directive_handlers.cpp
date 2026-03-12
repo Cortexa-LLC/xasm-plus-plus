@@ -446,6 +446,12 @@ void HandleDa(const std::string &label, const std::string &operand,
       continue;
     }
 
+    // Expand character literals BEFORE checking prefix
+    // This allows #'N' to be expanded to #$4E before we strip the #
+    ValidateParser(context.parser_state);
+    auto *parser = static_cast<ScmasmSyntaxParser *>(context.parser_state);
+    trimmed_expr = parser->ExpandCharLiteralsInExpr(trimmed_expr);
+
     char prefix = trimmed_expr[0];
     std::string base_expr;
 
@@ -481,10 +487,9 @@ void HandleDa(const std::string &label, const std::string &operand,
     } else if (prefix == '<') {
       // SCMASM < (24-bit) → expand to 3 bytes
       base_expr = Trim(trimmed_expr.substr(1));
-      byte_expressions.push_back("<" + base_expr); // Byte 0
-      byte_expressions.push_back(">" + base_expr); // Byte 1
-      byte_expressions.push_back("<(" + base_expr +
-                                 ")"); // Byte 2 - placeholder
+      byte_expressions.push_back("<" + base_expr); // Byte 0 (bits 0-7)
+      byte_expressions.push_back(">" + base_expr); // Byte 1 (bits 8-15)
+      byte_expressions.push_back("<((" + base_expr + ")/65536)"); // Byte 2 (bits 16-23)
 
       // Try immediate evaluation
       try {
@@ -504,12 +509,10 @@ void HandleDa(const std::string &label, const std::string &operand,
     } else if (prefix == '>') {
       // SCMASM > (32-bit) → expand to 4 bytes
       base_expr = Trim(trimmed_expr.substr(1));
-      byte_expressions.push_back("<" + base_expr); // Byte 0
-      byte_expressions.push_back(">" + base_expr); // Byte 1
-      byte_expressions.push_back("<(" + base_expr +
-                                 ")"); // Byte 2 - placeholder
-      byte_expressions.push_back(">(" + base_expr +
-                                 ")"); // Byte 3 - placeholder
+      byte_expressions.push_back("<" + base_expr); // Byte 0 (bits 0-7)
+      byte_expressions.push_back(">" + base_expr); // Byte 1 (bits 8-15)
+      byte_expressions.push_back("<((" + base_expr + ")/65536)"); // Byte 2 (bits 16-23)
+      byte_expressions.push_back("<((" + base_expr + ")/16777216)"); // Byte 3 (bits 24-31)
 
       // Try immediate evaluation
       try {

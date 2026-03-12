@@ -357,6 +357,109 @@ TEST_F(ScmasmConditionalTest, ConditionalExcludesOrgDirective) {
 }
 
 // ============================================================================
+// Label Handling on .DO Directive Line (Bug B)
+// ============================================================================
+
+/**
+ * @brief Test that a label on a .DO directive line gets the address at the start of the .DO line
+ *
+ * Bug B off-by-1 fix: The label on a .DO directive line should get the address
+ * at the START of the .DO line (before entering the block), which is the address
+ * of the first instruction following the .DO directive.
+ *
+ * Example: DIB .DO SSCIRQ=1
+ *          DIB should get the address of the first instruction after the .DO line,
+ *          which is the current PC at the point the .DO is encountered.
+ */
+TEST_F(ScmasmConditionalTest, LabelOnDoLineGetsAddressAtStart) {
+  // Set up: condition is true, so block content will be assembled
+  std::string source = "    .OR $2000\n"
+                       "START .DO 1\n"
+                       "    .DA $1234,$5678,$ABCD,$EF00\n" // 8 bytes
+                       ".FIN\n"
+                       "NEXT .DA $FF\n";  // Use .DA instead of lda for clearer test
+
+  EXPECT_TRUE(ParseSucceeds(source));
+
+  // Bug B off-by-1 fix: START should be at $2000 (the address at the START of .DO, before entering the block)
+  // NOT at $2008 (the address after the block)
+  int64_t start_value;
+  EXPECT_TRUE(symbols.Lookup("START", start_value));
+  EXPECT_EQ(start_value, 0x2000) << "START label should be at address at START of .DO line";
+
+  // NEXT should be at $2008 (the address after .FIN, where the next directive begins)
+  int64_t next_value;
+  EXPECT_TRUE(symbols.Lookup("NEXT", next_value));
+  EXPECT_EQ(next_value, 0x2008) << "NEXT should be at address after .FIN (after 8-byte block)";
+}
+
+/**
+ * @brief Test that a label on a .DO directive line with false condition gets current address
+ *
+ * When the .DO condition is false, no content is assembled, so the label
+ * should get the current address (no change).
+ */
+TEST_F(ScmasmConditionalTest, LabelOnDoLineWithFalseCondition) {
+  std::string source = "    .OR $2000\n"
+                       "START .DO 0\n"
+                       "    .DA $1234,$5678,$ABCD,$EF00\n" // 8 bytes (not assembled)
+                       ".FIN\n"
+                       "NEXT .DA $AA\n";  // Use .DA for clarity
+
+  EXPECT_TRUE(ParseSucceeds(source));
+
+  // START should be at $2000 (current address, nothing assembled in block)
+  int64_t start_value;
+  EXPECT_TRUE(symbols.Lookup("START", start_value));
+  EXPECT_EQ(start_value, 0x2000) << "START label should be at current address when block skipped";
+
+  // NEXT should also be at $2000 (address after .FIN when block was skipped)
+  int64_t next_value;
+  EXPECT_TRUE(symbols.Lookup("NEXT", next_value));
+  EXPECT_EQ(next_value, 0x2000) << "NEXT should be at same address as START when block skipped";
+}
+
+/**
+ * @brief Test label on .DO line with .ELSE clause (true branch)
+ */
+TEST_F(ScmasmConditionalTest, LabelOnDoLineWithElseTrue) {
+  std::string source = "    .OR $3000\n"
+                       "DIB .DO 1\n"
+                       "    .DA $11,$22\n"  // 4 bytes in true branch
+                       ".ELSE\n"
+                       "    .DA $33\n"      // 2 bytes in false branch (skipped)
+                       ".FIN\n"
+                       "AFTER lda #1\n";
+
+  EXPECT_TRUE(ParseSucceeds(source));
+
+  // Bug B off-by-1 fix: DIB should be at $3000 (address at START of .DO, before entering block)
+  int64_t dib_value;
+  EXPECT_TRUE(symbols.Lookup("DIB", dib_value));
+  EXPECT_EQ(dib_value, 0x3000);
+}
+
+/**
+ * @brief Test label on .DO line with .ELSE clause (false branch)
+ */
+TEST_F(ScmasmConditionalTest, LabelOnDoLineWithElseFalse) {
+  std::string source = "    .OR $3000\n"
+                       "DIB .DO 0\n"
+                       "    .DA $11,$22\n"  // 4 bytes in true branch (skipped)
+                       ".ELSE\n"
+                       "    .DA $33\n"      // 2 bytes in false branch
+                       ".FIN\n"
+                       "AFTER lda #1\n";
+
+  EXPECT_TRUE(ParseSucceeds(source));
+
+  // Bug B off-by-1 fix: DIB should be at $3000 (address at START of .DO, before entering block)
+  int64_t dib_value;
+  EXPECT_TRUE(symbols.Lookup("DIB", dib_value));
+  EXPECT_EQ(dib_value, 0x3000);
+}
+
+// ============================================================================
 // Main
 // ============================================================================
 

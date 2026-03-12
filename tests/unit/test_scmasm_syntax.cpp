@@ -1376,6 +1376,55 @@ TEST_F(ScmasmSyntaxTest, MixedDotAndColonLocalLabels) {
   EXPECT_GT(section.atoms.size(), 0u);
 }
 
+// Regression: 'jsr X.BasePath..1' was mis-parsed as 'X.BasePath.' + local '.1'.
+// The second '.' in 'X.BasePath..1' (double-dot pattern used in SCMASM global labels)
+// was triggering the local label expander (prev char '.' is non-alnum = at_word_start).
+// This generated the mangled reference 'X.BASEPATH.X.BASEPATH..@.1' which did not
+// match the definition 'X.BASEPATH..1', leaving the JSR address as $0000.
+// Fix: at_word_start is false when the character before '.' is also '.'.
+TEST_F(ScmasmSyntaxTest, GlobalLabelWithDoubleDotForwardReference) {
+  // Reproduce the bin/mv pattern: a function label with '..' followed by a digit.
+  // 'X.BasePath..1' must be treated as a single global label, NOT as 'X.BasePath.'
+  // with a local '.1' suffix.
+  std::string source = R"(
+         .OR $2000
+X.BasePath..    jsr X.BasePath..1
+                rts
+X.BasePath..1   lda #$42
+                rts
+)";
+
+  parser->Parse(source, section, symbols);
+
+  Assembler assembler;
+  assembler.SetCpuPlugin(cpu.get());
+  assembler.SetSymbolTable(&symbols);
+  assembler.AddSection(section);
+  AssemblerResult result = assembler.Assemble();
+  ASSERT_TRUE(result.success) << "Assembly must succeed";
+
+  // Find the JSR instruction and verify it resolved to the correct address.
+  // X.BasePath..1 starts at $2000+3 (3 bytes for the JSR instruction) +1 (RTS) = $2004.
+  std::vector<uint8_t> jsr_bytes;
+  for (const auto& atom : section.atoms) {
+    if (atom->type == AtomType::Instruction) {
+      auto inst = std::dynamic_pointer_cast<InstructionAtom>(atom);
+      if (inst && inst->mnemonic == "JSR") {
+        jsr_bytes = inst->encoded_bytes;
+      }
+    }
+  }
+
+  ASSERT_EQ(jsr_bytes.size(), 3u)
+      << "JSR must be 3 bytes (absolute); 0 bytes indicates mis-parse or encoding failure";
+  EXPECT_EQ(jsr_bytes[0], 0x20u) << "JSR opcode is $20";
+  // X.BasePath..1 is at $2004: $2000 + 3 (JSR) + 1 (RTS) = $2004
+  EXPECT_EQ(jsr_bytes[1], 0x04u)
+      << "JSR address low byte must be $04 (X.BasePath..1 at $2004); "
+         "$00 means forward reference was not resolved (double-dot label bug)";
+  EXPECT_EQ(jsr_bytes[2], 0x20u) << "JSR address high byte must be $20";
+}
+
 // ============================================================================
 // .LU/.ENDU Loop Tests
 // ============================================================================
@@ -1534,8 +1583,8 @@ TABLES  .LU 16
 )";
 
   parser->Parse(source, section, symbols);
-  // ORG + 16 data entries
-  EXPECT_EQ(section.atoms.size(), 17u);
+  // ORG + 16 data entries + TABLES label = 18 atoms
+  EXPECT_EQ(section.atoms.size(), 18u);
 }
 
 TEST_F(ScmasmSyntaxTest, Phase3CombinedFeatures) {
