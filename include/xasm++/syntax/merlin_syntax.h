@@ -417,6 +417,38 @@ private:
   // Parsing helpers
   std::string StripComments(const std::string &line);
 
+  /**
+   * @brief Scope a Merlin local label to the current global label
+   *
+   * A local label (starts with ':') is scoped to the most recent global label.
+   * For example, ":rts" in ADDSOUND scope becomes "ADDSOUND:rts".
+   * Non-local labels (and labels with no current scope) are returned unchanged.
+   */
+  std::string ScopeLocalLabel(const std::string &label) const;
+
+  /**
+   * @brief Translate any ':word' local label references in an operand string
+   *
+   * Scans the operand and replaces ':name' tokens (preceded by a non-identifier
+   * character or at string start) with the current-scope-qualified name.
+   * For example, ":rts" in ADDSOUND scope becomes "ADDSOUND:rts".
+   */
+  std::string ScopeLocalLabelsInOperand(const std::string &operand) const;
+
+  /**
+   * @brief Substitute ]variable references in a line with their current values
+   *
+   * In LUP loops, ]variables are assembly-time mutable values.  Each LUP
+   * iteration must capture the variable's current value rather than creating a
+   * symbolic reference that would be resolved after all iterations complete
+   * (by which time the variable has its final post-loop value).
+   *
+   * Scans the line for ]identifier tokens and replaces each with the decimal
+   * representation of its current value from the symbol table.
+   */
+  std::string SubstituteMerlinVars(const std::string &line,
+                                   const ConcreteSymbolTable &symbols) const;
+
   void ParseLine(const std::string &line, Section &section,
                  ConcreteSymbolTable &symbols);
 

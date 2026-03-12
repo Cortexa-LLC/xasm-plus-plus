@@ -322,6 +322,142 @@ MerlinSyntaxParser::ParseExpression(const std::string &str,
 }
 
 // ============================================================================
+// Local Label Scoping Helpers
+// ============================================================================
+
+std::string
+MerlinSyntaxParser::ScopeLocalLabel(const std::string &label) const {
+  if (!label.empty() && label[0] == ':' &&
+      !current_scope_.global_label.empty()) {
+    return current_scope_.global_label + label;
+  }
+  return label;
+}
+
+std::string
+MerlinSyntaxParser::SubstituteMerlinVars(const std::string &line,
+                                         const ConcreteSymbolTable &symbols) const {
+  // Fast path: no ] in line
+  if (line.find(']') == std::string::npos) {
+    return line;
+  }
+
+  // In Merlin, labels (including ]variables) occupy the FIRST column (no
+  // leading whitespace).  A line like "]byte = ]byte+1" has "]byte" as a
+  // label/LHS — HandleEqu already evaluates the RHS eagerly, so we must NOT
+  // substitute the leading ]var or we would turn the line into "0 = 0+1".
+  // Strategy: if the line starts with ']', copy through the label token and
+  // the '=' sign unchanged, then substitute only the RHS.
+  size_t start_substitute = 0;
+  if (!line.empty() && line[0] == ']') {
+    // Find end of label token
+    size_t label_end = 1;
+    while (label_end < line.size() &&
+           (std::isalnum(static_cast<unsigned char>(line[label_end])) ||
+            line[label_end] == '_')) {
+      ++label_end;
+    }
+    // Skip optional whitespace and '=' so we only substitute the RHS
+    size_t pos = label_end;
+    while (pos < line.size() && std::isspace(static_cast<unsigned char>(line[pos]))) {
+      ++pos;
+    }
+    if (pos < line.size() && line[pos] == '=') {
+      ++pos; // skip '='
+      // start_substitute points to the RHS; copy prefix unchanged
+      start_substitute = pos;
+    }
+    // If it's not an assignment (e.g., "]var DS 1"), substitute everything
+    // after the label token so we don't rename the variable being declared.
+    // Actually for DS and similar directives on a ]var label, the label is
+    // resolved by HandleEqu/ParseLine separately — just skip the label token.
+    if (start_substitute == 0) {
+      start_substitute = label_end;
+    }
+  }
+
+  std::string result = line.substr(0, start_substitute);
+  result.reserve(line.size());
+
+  for (size_t i = start_substitute; i < line.size();) {
+    // Skip quoted strings without substitution
+    if (line[i] == '"' || line[i] == '\'') {
+      char quote = line[i];
+      result += line[i++];
+      while (i < line.size() && line[i] != quote) {
+        result += line[i++];
+      }
+      if (i < line.size()) {
+        result += line[i++]; // closing quote
+      }
+      continue;
+    }
+
+    if (line[i] == ']') {
+      // Collect ]identifier
+      size_t tok_start = i++;
+      while (i < line.size() &&
+             (std::isalnum(static_cast<unsigned char>(line[i])) ||
+              line[i] == '_')) {
+        ++i;
+      }
+      std::string var_name = line.substr(tok_start, i - tok_start);
+      // Look up current value
+      int64_t sym_val = 0;
+      if (symbols.Lookup(var_name, sym_val)) {
+        result += std::to_string(sym_val);
+        continue;
+      }
+      // Not found — output original token
+      result += var_name;
+      continue;
+    }
+
+    result += line[i++];
+  }
+
+  return result;
+}
+
+std::string
+MerlinSyntaxParser::ScopeLocalLabelsInOperand(const std::string &operand) const {
+  if (current_scope_.global_label.empty() || operand.empty()) {
+    return operand;
+  }
+
+  std::string result;
+  result.reserve(operand.size() + current_scope_.global_label.size() * 2);
+
+  for (size_t i = 0; i < operand.size();) {
+    char c = operand[i];
+    // A ':word' token starts at position 0 or after a non-identifier char
+    bool at_word_start =
+        (i == 0) ||
+        (!std::isalnum(static_cast<unsigned char>(operand[i - 1])) &&
+         operand[i - 1] != '_');
+
+    if (c == ':' && at_word_start && i + 1 < operand.size() &&
+        (std::isalpha(static_cast<unsigned char>(operand[i + 1])) ||
+         operand[i + 1] == '_')) {
+      // Local label reference — prepend global scope: ADDSOUND:rts
+      result += current_scope_.global_label;
+      result += ':';
+      i++; // skip the ':'
+      while (i < operand.size() &&
+             (std::isalnum(static_cast<unsigned char>(operand[i])) ||
+              operand[i] == '_')) {
+        result += operand[i++];
+      }
+    } else {
+      result += c;
+      i++;
+    }
+  }
+
+  return result;
+}
+
+// ============================================================================
 // Label Parsing
 // ============================================================================
 
@@ -361,7 +497,17 @@ void MerlinSyntaxParser::HandleEqu(const std::string &label,
                                    ConcreteSymbolTable &symbols) {
   // EQU directive - define symbolic constant (no code generated)
   auto expr = ParseExpression(operand, symbols);
-  symbols.Define(label, SymbolType::Label, expr);
+  // Eagerly evaluate to a literal when possible to prevent circular
+  // self-references (e.g., ]var = ]var+1 in LUP loops).  Deferred evaluation
+  // is still used when the expression references undefined forward symbols.
+  try {
+    int64_t val = expr->Evaluate(symbols);
+    symbols.Define(label, SymbolType::Label,
+                   std::make_shared<LiteralExpr>(val));
+  } catch (const std::exception &) {
+    // Cannot evaluate yet (forward reference) — store deferred expression
+    symbols.Define(label, SymbolType::Label, expr);
+  }
 }
 
 void MerlinSyntaxParser::HandleDS(const std::string &operand, Section &section,
@@ -923,10 +1069,13 @@ void MerlinSyntaxParser::ParseLine(const std::string &line, Section &section,
       lup_count_ = 0;
       lup_nesting_depth_ = 0;
 
-      // Repeat the body count times
+      // Repeat the body count times.
+      // Substitute ]variable values before each line so that each iteration
+      // captures the variable's current value (mutable assembly-time counter).
       for (int i = 0; i < count; ++i) {
         for (const auto &lup_line : body_copy) {
-          ParseLine(lup_line, section, symbols);
+          std::string expanded = SubstituteMerlinVars(lup_line, symbols);
+          ParseLine(expanded, section, symbols);
         }
       }
       return;
@@ -983,16 +1132,19 @@ void MerlinSyntaxParser::ParseLine(const std::string &line, Section &section,
       // In DUM blocks, labels get the DUM address; no LabelAtom emitted
       // (LabelAtoms are overwritten by current_address in ResolveSymbols)
       uint32_t label_addr = in_dum_block_ ? dum_address_ : current_address_;
-      symbols.Define(label, SymbolType::Label,
+      std::string scoped_label = ScopeLocalLabel(label);
+      symbols.Define(scoped_label, SymbolType::Label,
                      std::make_shared<LiteralExpr>(label_addr));
       if (!in_dum_block_) {
         section.atoms.push_back(
-            std::make_shared<LabelAtom>(label, label_addr));
+            std::make_shared<LabelAtom>(scoped_label, label_addr));
       }
 
-      // Update current scope for local labels
-      current_scope_.global_label = label;
-      current_scope_.local_labels.clear();
+      // Only global (non-':') labels update the current scope
+      if (label[0] != ':') {
+        current_scope_.global_label = label;
+        current_scope_.local_labels.clear();
+      }
     }
     return;
   }
@@ -1030,8 +1182,22 @@ void MerlinSyntaxParser::ParseLine(const std::string &line, Section &section,
   ctx.current_file = current_file_;
   ctx.current_line = current_line_;
 
-  if (DispatchDirective(directive, label, operands, ctx)) {
-    // Directive was handled by registry
+  // Scope the label and operands before dispatching so directive handlers
+  // define label atoms under the correct scoped name (e.g. "tone:pitch" not
+  // just ":pitch"), and operand references like ":loop" are expanded to their
+  // scoped names (e.g. "alertstand:loop").
+  std::string scoped_label_for_directive = ScopeLocalLabel(label);
+  std::string scoped_operands_for_directive = ScopeLocalLabelsInOperand(operands);
+  if (DispatchDirective(directive, scoped_label_for_directive,
+                        scoped_operands_for_directive, ctx)) {
+    // Directive was handled by registry.
+    // Update global label scope from the RAW (un-scoped) label so that
+    // subsequent ':local' labels are correctly qualified.  Only non-local
+    // labels (those that don't start with ':') update the scope.
+    if (!label.empty() && label[0] != ':') {
+      current_scope_.global_label = label;
+      current_scope_.local_labels.clear();
+    }
     return;
   }
 
@@ -1041,14 +1207,17 @@ void MerlinSyntaxParser::ParseLine(const std::string &line, Section &section,
     // Create label atom first if label present
     if (!label.empty()) {
       uint32_t label_addr = in_dum_block_ ? dum_address_ : current_address_;
-      symbols.Define(label, SymbolType::Label,
+      std::string scoped_label = ScopeLocalLabel(label);
+      symbols.Define(scoped_label, SymbolType::Label,
                      std::make_shared<LiteralExpr>(label_addr));
       if (!in_dum_block_) {
         section.atoms.push_back(
-            std::make_shared<LabelAtom>(label, label_addr));
+            std::make_shared<LabelAtom>(scoped_label, label_addr));
       }
-      current_scope_.global_label = label;
-      current_scope_.local_labels.clear();
+      if (label[0] != ':') {
+        current_scope_.global_label = label;
+        current_scope_.local_labels.clear();
+      }
     }
     // Expand macro
     ExpandMacro(directive, operands, section, symbols);
@@ -1059,15 +1228,20 @@ void MerlinSyntaxParser::ParseLine(const std::string &line, Section &section,
   // Create label atom first if label present
   if (!label.empty()) {
     uint32_t label_addr = in_dum_block_ ? dum_address_ : current_address_;
-    symbols.Define(label, SymbolType::Label,
+    std::string scoped_label = ScopeLocalLabel(label);
+    symbols.Define(scoped_label, SymbolType::Label,
                    std::make_shared<LiteralExpr>(label_addr));
     if (!in_dum_block_) {
       section.atoms.push_back(
-          std::make_shared<LabelAtom>(label, label_addr));
+          std::make_shared<LabelAtom>(scoped_label, label_addr));
     }
-    current_scope_.global_label = label;
-    current_scope_.local_labels.clear();
+    if (label[0] != ':') {
+      current_scope_.global_label = label;
+      current_scope_.local_labels.clear();
+    }
   }
+  // Translate any ':word' local-label references in the operand to the scoped name
+  operands = ScopeLocalLabelsInOperand(operands);
   section.atoms.push_back(
       std::make_shared<InstructionAtom>(directive, operands));
   current_address_ += 1; // Placeholder size

@@ -762,6 +762,16 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
           // Advance both address counters past this instruction
           current_address += inst->encoded_bytes.size();
           virtual_address += inst->encoded_bytes.size();
+        } else if (atom->type == AtomType::Space) {
+          // SpaceAtom (DS/BS directives) — advance addresses past the reserved
+          // bytes so that subsequent instruction virtual_addresses are correct
+          // for branch offset calculations.
+          auto space = std::dynamic_pointer_cast<SpaceAtom>(atom);
+          if (space) {
+            current_address += space->size;
+            virtual_address += space->size;
+            current_sizes.push_back(space->size);
+          }
         }
       }
     }
