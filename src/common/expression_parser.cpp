@@ -429,8 +429,9 @@ std::shared_ptr<Expression> ExpressionParser::ParsePrimary() {
   }
 
   // Identifier (symbol or function)
+  // ']' prefix is valid for Merlin ]variable labels (DUM-block variables).
   if (std::isalpha(Peek()) || Peek() == '_' || Peek() == '.' || Peek() == '$' ||
-      Peek() == '?') {
+      Peek() == '?' || Peek() == ']') {
     std::string ident = ParseIdentifier();
 
     // Try parsing as number first (for RADIX mode where "FF" is a hex number)
@@ -619,9 +620,9 @@ std::string ExpressionParser::ParseIdentifier() {
   SkipWhitespace();
   size_t start = pos_;
 
-  // Identifier starts with letter, underscore, period, $, or ?
+  // Identifier starts with letter, underscore, period, $, ?, or ] (Merlin vars)
   if (!std::isalpha(Peek()) && Peek() != '_' && Peek() != '.' &&
-      Peek() != '$' && Peek() != '?') {
+      Peek() != '$' && Peek() != '?' && Peek() != ']') {
     throw std::runtime_error("Expected identifier");
   }
 

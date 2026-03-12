@@ -2209,3 +2209,82 @@ TEST(MerlinSyntaxTest, IncDecSuffixInExpression) {
   EXPECT_EQ(bytes[0], 0x85u) << "RdGrp.Inc = $85";
   EXPECT_EQ(bytes[1], 0x83u) << "RdGrp.Dec = $83";
 }
+
+// Multi-pass: mixed resolved and forward-referenced values in the same DB
+// db $01,Target,$02 — middle byte is a forward ref; all three must resolve.
+TEST(MerlinSyntaxTest, DbMixedForwardAndResolved) {
+  auto cpu = std::make_unique<Cpu6502>();
+  cpu->SetCpuMode(CpuMode::Cpu6502);
+  MerlinSyntaxParser parser;
+  parser.SetCpu(cpu.get());
+  ConcreteSymbolTable symbols;
+  Section section("test", 0);
+
+  // Target is defined after the DB — forward reference.
+  // $01 and $02 are immediate; Target is the low byte of its own address.
+  // Layout: org $1000, then 3 DB bytes, then Target at $1003.
+  std::string source = " org $1000\n"
+                       " db $01,#Target,$02\n"
+                       "Target nop\n";
+  parser.Parse(source, section, symbols);
+
+  Assembler assembler;
+  assembler.SetCpuPlugin(cpu.get());
+  assembler.SetSymbolTable(&symbols);
+  assembler.AddSection(section);
+  AssemblerResult result = assembler.Assemble();
+  ASSERT_TRUE(result.success) << "Mixed forward ref must resolve";
+
+  std::vector<uint8_t> bytes;
+  for (const auto &atom : section.atoms) {
+    if (atom->type == AtomType::Data) {
+      auto data = std::dynamic_pointer_cast<DataAtom>(atom);
+      if (data)
+        bytes.insert(bytes.end(), data->data.begin(), data->data.end());
+    }
+  }
+  ASSERT_EQ(bytes.size(), 3u) << "Three DB bytes";
+  EXPECT_EQ(bytes[0], 0x01u) << "First byte $01";
+  EXPECT_EQ(bytes[1], 0x03u) << "Low byte of Target ($1003)";
+  EXPECT_EQ(bytes[2], 0x02u) << "Third byte $02";
+}
+
+// Multi-pass: syntax error comes first in a DB list — must throw at parse time,
+// not silently defer. The '$' token is invalid and must not be swallowed.
+TEST(MerlinSyntaxTest, DbSyntaxErrorBeforeForwardRef) {
+  auto cpu = std::make_unique<Cpu6502>();
+  cpu->SetCpuMode(CpuMode::Cpu6502);
+  MerlinSyntaxParser parser;
+  parser.SetCpu(cpu.get());
+  ConcreteSymbolTable symbols;
+  Section section("test", 0);
+
+  // '$' alone is invalid hex — this is a syntax error, not a forward ref.
+  // Even though '$01' is valid, the bad token '$' must throw before deferral.
+  EXPECT_THROW(parser.Parse(" org $1000\n db $,$01\n", section, symbols),
+               std::runtime_error)
+      << "Invalid hex '$' must throw at parse time";
+}
+
+// Multi-pass: forward-referenced symbol that is NEVER defined.
+// The assembler must fail (not silently emit zeros).
+TEST(MerlinSyntaxTest, DbForwardRefNeverResolved) {
+  auto cpu = std::make_unique<Cpu6502>();
+  cpu->SetCpuMode(CpuMode::Cpu6502);
+  MerlinSyntaxParser parser;
+  parser.SetCpu(cpu.get());
+  ConcreteSymbolTable symbols;
+  Section section("test", 0);
+
+  // GHOST is never defined — assembly must not succeed silently.
+  std::string source = " org $1000\n"
+                       " db #GHOST\n";
+  parser.Parse(source, section, symbols);
+
+  Assembler assembler;
+  assembler.SetCpuPlugin(cpu.get());
+  assembler.SetSymbolTable(&symbols);
+  assembler.AddSection(section);
+  AssemblerResult result = assembler.Assemble();
+  EXPECT_FALSE(result.success) << "Unresolved forward reference must fail";
+}

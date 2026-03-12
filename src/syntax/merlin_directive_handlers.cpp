@@ -153,7 +153,7 @@ void HandleDb(const std::string &label, const std::string &operand,
         try {
           bytes.push_back(
               ParseAndEvaluateAsByte(value, *parser, *context.symbols, "DB"));
-        } catch (const std::exception &) {
+        } catch (const UndefinedSymbolError &) {
           has_forward_ref = true;
           bytes.clear();
         }

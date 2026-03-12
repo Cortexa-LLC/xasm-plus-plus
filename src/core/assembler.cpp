@@ -492,23 +492,13 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
                   data->data.push_back(
                       static_cast<uint8_t>((word >> 8) & 0xFF));
                 }
-              } catch (const std::exception &e) {
-                // Check if this is a parse error or an undefined symbol
-                std::string msg(e.what());
-                if (msg.find("Undefined symbol") != std::string::npos) {
-                  // Symbol undefined (forward reference) - use placeholder
-                  // Multi-pass assembly will resolve on subsequent passes
-                  // If still undefined after convergence, will be caught
-                  // elsewhere
-                  if (data->data_size == DataSize::Byte) {
-                    data->data.push_back(0);
-                  } else {
-                    data->data.push_back(0);
-                    data->data.push_back(0);
-                  }
+              } catch (const UndefinedSymbolError &) {
+                // Forward reference — use placeholder 0, resolve next pass
+                if (data->data_size == DataSize::Byte) {
+                  data->data.push_back(0);
                 } else {
-                  // Parse error - propagate the exception
-                  throw;
+                  data->data.push_back(0);
+                  data->data.push_back(0);
                 }
               }
             }
@@ -686,17 +676,8 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
                 auto expr = ParseExpression(expr_str, symbols);
                 int64_t expr_value = expr->Evaluate(symbols);
                 value = static_cast<uint16_t>(expr_value);
-              } catch (const std::exception &e) {
-                // Check if this is a parse error or an undefined symbol
-                std::string msg(e.what());
-                if (msg.find("Undefined symbol") != std::string::npos) {
-                  // Symbol undefined (forward reference) - use placeholder 0
-                  // Multi-pass assembly will resolve on subsequent passes
-                  value = 0;
-                } else {
-                  // Parse error - propagate the exception
-                  throw;
-                }
+              } catch (const UndefinedSymbolError &) {
+                value = 0; // Forward reference — resolve next pass
               }
             } else if (value_str[0] == '$') {
               // Absolute/Zero Page: $1234 (or $1234,X after stripping)
@@ -706,16 +687,8 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
                 auto expr = ParseExpression(value_str, symbols);
                 int64_t expr_value = expr->Evaluate(symbols);
                 value = static_cast<uint16_t>(expr_value);
-              } catch (const std::exception &e) {
-                // Check if this is a parse error or an undefined symbol
-                std::string msg(e.what());
-                if (msg.find("Undefined symbol") != std::string::npos) {
-                  // Symbol undefined (forward reference) - use placeholder 0
-                  value = 0;
-                } else {
-                  // Parse error - propagate the exception
-                  throw;
-                }
+              } catch (const UndefinedSymbolError &) {
+                value = 0; // Forward reference — resolve next pass
               }
             } else if (value_str[0] == '/') {
               // SCMASM high byte immediate: /expr (equivalent to #>expr)
@@ -726,13 +699,8 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
                 int64_t expr_value = expr->Evaluate(symbols);
                 value = static_cast<uint16_t>(
                     (static_cast<uint32_t>(expr_value) >> 8) & 0xFF);
-              } catch (const std::exception &e) {
-                std::string msg(e.what());
-                if (msg.find("Undefined symbol") != std::string::npos) {
-                  value = 0;
-                } else {
-                  throw;
-                }
+              } catch (const UndefinedSymbolError &) {
+                value = 0; // Forward reference — resolve next pass
               }
             } else if (value_str != "A") {
               // Label reference or expression - use ParseExpression to handle
@@ -742,17 +710,8 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
                 auto expr = ParseExpression(value_str, symbols);
                 int64_t expr_value = expr->Evaluate(symbols);
                 value = static_cast<uint16_t>(expr_value);
-              } catch (const std::exception &e) {
-                // Check if this is a parse error or an undefined symbol
-                std::string msg(e.what());
-                if (msg.find("Undefined symbol") != std::string::npos) {
-                  // Symbol undefined (forward reference) - use placeholder 0
-                  // Multi-pass assembly will resolve on subsequent passes
-                  value = 0;
-                } else {
-                  // Parse error - propagate the exception
-                  throw;
-                }
+              } catch (const UndefinedSymbolError &) {
+                value = 0; // Forward reference — resolve next pass
               }
             }
           }
@@ -811,7 +770,7 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
 }
 
 void Assembler::RefixupDataAtoms(ConcreteSymbolTable &symbols,
-                                 AssemblerResult & /*result*/) {
+                                 AssemblerResult &result) {
   // Re-evaluate DataAtom and EquateAtom content with the final converged symbol
   // values.  InstructionAtoms are intentionally skipped (their encoded_bytes
   // are left unchanged) to prevent branch-size changes from cascading into
@@ -924,17 +883,17 @@ void Assembler::RefixupDataAtoms(ConcreteSymbolTable &symbols,
                 data->data.push_back(
                     static_cast<uint8_t>((word >> 8) & 0xFF));
               }
-            } catch (const std::exception &e) {
-              std::string msg(e.what());
-              if (msg.find("Undefined symbol") != std::string::npos) {
-                if (data->data_size == DataSize::Byte) {
-                  data->data.push_back(0);
-                } else {
-                  data->data.push_back(0);
-                  data->data.push_back(0);
-                }
+            } catch (const UndefinedSymbolError &e) {
+              // Still undefined after convergence — hard error.
+              AssemblerError err;
+              err.message = e.what();
+              result.errors.push_back(err);
+              result.success = false;
+              if (data->data_size == DataSize::Byte) {
+                data->data.push_back(0);
               } else {
-                throw;
+                data->data.push_back(0);
+                data->data.push_back(0);
               }
             }
           }

@@ -23,6 +23,18 @@ namespace xasm {
 class SymbolTable;
 
 /**
+ * @brief Exception thrown when a symbol lookup fails during expression
+ * evaluation. Distinct from std::runtime_error so callers can catch forward
+ * references without accidentally swallowing syntax errors.
+ */
+class UndefinedSymbolError : public std::runtime_error {
+public:
+  explicit UndefinedSymbolError(const std::string &sym)
+      : std::runtime_error("Undefined symbol: " + sym), symbol(sym) {}
+  std::string symbol;
+};
+
+/**
  * @brief Binary operators supported in expressions
  *
  * These operators combine two sub-expressions to produce a result.
@@ -241,7 +253,7 @@ public:
   int64_t Evaluate(const SymbolTable &symbols) const override {
     int64_t value = 0;
     if (!symbols.Lookup(symbol, value)) {
-      throw std::runtime_error("Undefined symbol: " + symbol);
+      throw UndefinedSymbolError(symbol);
     }
     return value;
   }
