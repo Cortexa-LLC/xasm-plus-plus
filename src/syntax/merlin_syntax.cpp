@@ -277,6 +277,33 @@ MerlinSyntaxParser::ParseExpression(const std::string &str,
     }
   }
 
+  // Substitute * (program counter) with current address before delegating.
+  // Handles forms like: *-CHECKER, maxgatevel=*-gatevel-1, CHECKEND=*-START.
+  // A standalone '*' or '*' at start/after operator = program counter.
+  // '*' with operands on BOTH sides = multiplication — leave alone.
+  if (expr.find('*') != std::string::npos) {
+    std::ostringstream hex_stream;
+    hex_stream << "$" << std::hex
+               << (in_dum_block_ ? dum_address_ : current_address_);
+    std::string pc_hex = hex_stream.str();
+    size_t p = 0;
+    while ((p = expr.find('*', p)) != std::string::npos) {
+      bool before_ident =
+          p > 0 && (std::isalnum(static_cast<unsigned char>(expr[p - 1])) ||
+                    expr[p - 1] == ')');
+      bool after_ident =
+          p + 1 < expr.length() &&
+          (std::isalnum(static_cast<unsigned char>(expr[p + 1])) ||
+           expr[p + 1] == '(' || expr[p + 1] == '$' || expr[p + 1] == '%');
+      if (before_ident && after_ident) {
+        p++; // multiplication — skip
+      } else {
+        expr.replace(p, 1, pc_hex);
+        p += pc_hex.length();
+      }
+    }
+  }
+
   // All other expressions (arithmetic, symbols, literals) handled by shared
   // parser
   ExpressionParser parser(&symbols);
@@ -577,6 +604,10 @@ void MerlinSyntaxParser::HandleElse() {
 
 void MerlinSyntaxParser::HandleFin() {
   // FIN directive - end conditional assembly block
+  // Merlin ignores extra FIN directives (no matching DO) — treat as no-op.
+  if (conditional_.IsBalanced()) {
+    return;
+  }
   try {
     conditional_.EndIf();
   } catch (const std::runtime_error &e) {

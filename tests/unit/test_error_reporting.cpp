@@ -199,18 +199,12 @@ TEST(ErrorReportingTest, ElseWithoutDoIncludesLocation) {
 }
 
 TEST(ErrorReportingTest, FinWithoutDoIncludesLocation) {
+  // Merlin silently ignores FIN with no matching DO (compatible with original
+  // Merlin assembler behavior — the PoP source has unmatched FINs).
   MerlinSyntaxParser parser;
   ConcreteSymbolTable symbols;
   Section section("test", 0);
-
-  try {
-    parser.Parse("         FIN", section, symbols);
-    FAIL() << "Expected runtime_error to be thrown";
-  } catch (const std::runtime_error &e) {
-    std::string error_msg = e.what();
-    EXPECT_TRUE(HasFileLineFormat(error_msg))
-        << "Error message should include file:line: '" << error_msg << "'";
-  }
+  EXPECT_NO_THROW(parser.Parse("         FIN", section, symbols));
 }
 
 // ============================================================================

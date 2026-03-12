@@ -28,6 +28,21 @@ static std::shared_ptr<Expression>
 ParseExpression(const std::string &str, ConcreteSymbolTable &symbols) {
   std::string trimmed = Trim(str);
 
+  // Handle Merlin .Inc/.Dec suffixes: symbol.Inc → symbol+1, symbol.Dec → symbol-1
+  // Case-insensitive check for the suffix
+  auto ends_with_ci = [](const std::string &s, const char *suffix, size_t slen) {
+    if (s.size() < slen) return false;
+    for (size_t i = 0; i < slen; ++i) {
+      if (std::tolower(static_cast<unsigned char>(s[s.size() - slen + i])) !=
+          std::tolower(static_cast<unsigned char>(suffix[i]))) return false;
+    }
+    return true;
+  };
+  if (ends_with_ci(trimmed, ".inc", 4))
+    trimmed = trimmed.substr(0, trimmed.size() - 4) + "+1";
+  else if (ends_with_ci(trimmed, ".dec", 4))
+    trimmed = trimmed.substr(0, trimmed.size() - 4) + "-1";
+
   // Strip outer parentheses for grouping: (EXPR)
   // BUG-003 FIX: Support parentheses in complex expressions like <(MESSAGE+$10)
   if (!trimmed.empty() && trimmed[0] == '(' &&
@@ -561,8 +576,11 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
               std::string trimmed = Trim(operand);
 
               // Check if operand is a label reference (not starting with $ or
-              // #)
-              if (trimmed == "*") {
+              // #). Skip resolution for multi-operand forms like MVN/MVP
+              // (e.g. "0,1" or "$E1,1") — these are bank pairs, not labels.
+              if (trimmed.find(',') != std::string::npos) {
+                // Multi-operand instruction (MVN/MVP block move): pass as-is
+              } else if (trimmed == "*") {
                 // * means current PC address (branch to self)
                 // Use virtual_address so phased code uses the virtual PC
                 std::ostringstream oss;

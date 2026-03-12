@@ -138,22 +138,36 @@ void HandleDb(const std::string &label, const std::string &operand,
   }
 
   // DB directive - define byte(s)
-  // Parse comma-separated expressions and evaluate immediately
+  // Try immediate evaluation; fall back to deferred if any forward references.
+  std::vector<std::string> expressions;
   std::vector<uint8_t> bytes;
+  bool has_forward_ref = false;
   std::istringstream iss(operand);
   std::string value;
 
   while (std::getline(iss, value, ',')) {
     value = Trim(value);
     if (!value.empty()) {
-      uint8_t byte_value =
-          ParseAndEvaluateAsByte(value, *parser, *context.symbols, "DB");
-      bytes.push_back(byte_value);
+      expressions.push_back(value);
+      if (!has_forward_ref) {
+        try {
+          bytes.push_back(
+              ParseAndEvaluateAsByte(value, *parser, *context.symbols, "DB"));
+        } catch (const std::exception &) {
+          has_forward_ref = true;
+          bytes.clear();
+        }
+      }
     }
   }
 
-  context.section->atoms.push_back(std::make_shared<DataAtom>(bytes));
-  *context.current_address += bytes.size();
+  if (has_forward_ref) {
+    context.section->atoms.push_back(
+        std::make_shared<DataAtom>(expressions, DataSize::Byte));
+  } else {
+    context.section->atoms.push_back(std::make_shared<DataAtom>(bytes));
+  }
+  *context.current_address += expressions.size();
 }
 
 void HandleDw(const std::string &label, const std::string &operand,

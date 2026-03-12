@@ -2,6 +2,7 @@
 // Phases 1-3: Foundation, Local Labels, DUM Blocks
 // Phases 4-6: PUT, DFB, DO/FIN
 
+#include "xasm++/assembler.h"
 #include "xasm++/cpu/cpu_6502.h"
 #include "xasm++/symbol.h"
 #include "xasm++/syntax/merlin_syntax.h"
@@ -2107,4 +2108,104 @@ TEST(MerlinSyntaxTest, MacroLabelBasedWithNoParams) {
   ASSERT_EQ(section.atoms.size(), 2UL);
   EXPECT_EQ(section.atoms[0]->type, AtomType::Instruction);
   EXPECT_EQ(section.atoms[1]->type, AtomType::Instruction);
+}
+
+// ============================================================================
+// Bug fix tests: FIN without DO, DB forward refs, .Inc/.Dec
+// ============================================================================
+
+// Merlin silently ignores FIN with no matching DO (original assembler behavior)
+TEST(MerlinSyntaxTest, FinWithoutDoIsIgnored) {
+  MerlinSyntaxParser parser;
+  ConcreteSymbolTable symbols;
+  Section section("test", 0);
+
+  // One balanced DO/FIN, then an extra FIN — should not throw
+  std::string source = " org $1000\n"
+                       " do 1\n"
+                       " nop\n"
+                       " fin\n"
+                       " fin\n"  // extra FIN — Merlin ignores it
+                       " rts\n";
+  EXPECT_NO_THROW(parser.Parse(source, section, symbols));
+}
+
+// DB forward reference: label defined AFTER the DB that references it
+TEST(MerlinSyntaxTest, DbForwardReference) {
+  auto cpu = std::make_unique<Cpu6502>();
+  cpu->SetCpuMode(CpuMode::Cpu6502);
+
+  MerlinSyntaxParser parser;
+  parser.SetCpu(cpu.get());
+
+  ConcreteSymbolTable symbols;
+  Section section("test", 0);
+
+  // AddrL is a DB before PlayCut0 is defined
+  std::string source = " org $1000\n"
+                       "AddrL db #PlayCut0\n"
+                       "AddrH db #>PlayCut0\n"
+                       "PlayCut0 lda #1\n"
+                       " rts\n";
+  parser.Parse(source, section, symbols);
+
+  Assembler assembler;
+  assembler.SetCpuPlugin(cpu.get());
+  assembler.SetSymbolTable(&symbols);
+  assembler.AddSection(section);
+  AssemblerResult result = assembler.Assemble();
+  ASSERT_TRUE(result.success) << "DB forward reference must resolve";
+
+  // PlayCut0 is at $1004 (2 DB bytes + 2 instruction bytes = $1000+4)
+  // Low byte = $04, high byte = $10
+  std::vector<uint8_t> output;
+  for (const auto &atom : section.atoms) {
+    if (atom->type == AtomType::Data) {
+      auto data = std::dynamic_pointer_cast<DataAtom>(atom);
+      if (data)
+        output.insert(output.end(), data->data.begin(), data->data.end());
+    }
+  }
+  // PlayCut0 is at $1002: 1 byte AddrL + 1 byte AddrH = offset 2
+  ASSERT_EQ(output.size(), 2u) << "Two DB bytes";
+  EXPECT_EQ(output[0], 0x02u) << "Low byte of PlayCut0 ($1002)";
+  EXPECT_EQ(output[1], 0x10u) << "High byte of PlayCut0 ($1002)";
+}
+
+// .Inc suffix: symbol.Inc evaluates to symbol+1
+TEST(MerlinSyntaxTest, IncDecSuffixInExpression) {
+  auto cpu = std::make_unique<Cpu6502>();
+  cpu->SetCpuMode(CpuMode::Cpu6502);
+
+  MerlinSyntaxParser parser;
+  parser.SetCpu(cpu.get());
+
+  ConcreteSymbolTable symbols;
+  Section section("test", 0);
+
+  // RdGrp = $84; db RdGrp.Inc should emit $85
+  std::string source = "RdGrp = $84\n"
+                       " org $1000\n"
+                       " db RdGrp.Inc\n"
+                       " db RdGrp.Dec\n";
+  parser.Parse(source, section, symbols);
+
+  Assembler assembler;
+  assembler.SetCpuPlugin(cpu.get());
+  assembler.SetSymbolTable(&symbols);
+  assembler.AddSection(section);
+  AssemblerResult result = assembler.Assemble();
+  ASSERT_TRUE(result.success) << ".Inc/.Dec must assemble";
+
+  std::vector<uint8_t> bytes;
+  for (const auto &atom : section.atoms) {
+    if (atom->type == AtomType::Data) {
+      auto data = std::dynamic_pointer_cast<DataAtom>(atom);
+      if (data)
+        bytes.insert(bytes.end(), data->data.begin(), data->data.end());
+    }
+  }
+  ASSERT_EQ(bytes.size(), 2u);
+  EXPECT_EQ(bytes[0], 0x85u) << "RdGrp.Inc = $85";
+  EXPECT_EQ(bytes[1], 0x83u) << "RdGrp.Dec = $83";
 }
