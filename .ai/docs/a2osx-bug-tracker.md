@@ -28,6 +28,7 @@ to the original SCMASM assembler using A2osX 335cd122 as the reference test case
 | 13 (xasm-g8i) | c5f54b0 | 71 | 53 | 89 | Verification run: no new fixes; classified 15 same-size + 13 positive-delta as confirmed source diffs |
 | 14 (xasm-zp1/oa9/h5k/m7q/52r/94e) | ce94435 | 74 | 42 | 20 | **+3 identical!** Bugs 16-20 fixed. ssc.drv + ssc.i.drv now byte-identical (39→0 diffs each). 1864 tests. |
 | 15 (xasm-89o) | ce94435 | 74 | 42 | 20 | Clean rebuild confirms Run 14 numbers. No new identicals. |
+| 16 (current) | 1ad6941 | TBD | TBD | TBD | Bugs 24-27 fixed (Merlin PoP); all 29 PoP source files assemble. |
 
 ¹ Scope/script changed; not directly comparable to runs 1-4
 ⁴ Run 14 numbers from clean rebuild post-commit; ssc.drv/ssc.i.drv confirmed identical after xasm-94e (.DO label off-by-1) fix
@@ -216,7 +217,7 @@ Absolute regardless of operand value.
 **Files:** `src/cpu/cpu_6502.cpp`
 **Impact:** `bin/memdump` now byte-identical to stable.
 
-### Bug 16: Double-dot label mis-parse (`X.BasePath..1`) (pending)
+### Bug 16: Double-dot label mis-parse (`X.BasePath..1`) (ce94435)
 **Symptom:** Labels containing `..N` (two consecutive dots before a digit) were mis-parsed:
 `jsr X.BasePath..1` split at the second `.`, treating `.1` as a local label reference and
 generating the mangled name `X.BASEPATH.X.BASEPATH..@.1` which never resolved, leaving
@@ -227,7 +228,7 @@ expansion.
 **Fix:** `at_word_start` is now false when the preceding character is also `.`.
 **Files:** `src/syntax/scmasm_syntax.cpp`, `tests/unit/test_scmasm_syntax.cpp`
 
-### Bug 17: Infix `*` multiplication not parsed in expressions (pending)
+### Bug 17: Infix `*` multiplication not parsed in expressions (ce94435)
 **Symptom:** Expressions like `VALUE*SIZE` in `.DA` operands evaluated to 0 instead of
 the product.
 **Root cause:** `ParseExpression()` only handled `*` as the current-PC symbol, not as a
@@ -236,7 +237,7 @@ binary multiplication operator.
 `BinaryOpExpr(Multiply, left, right)`.
 **Files:** `src/core/assembler.cpp`
 
-### Bug 18: `.DA >expr` emits wrong 32-bit value (pending)
+### Bug 18: `.DA >expr` emits wrong 32-bit value (ce94435)
 **Symptom:** `.DA >110` emitted the high-byte of 110 as a 16-bit word instead of the
 full 32-bit little-endian value. Baud rate table in SSC.DRV was wrong (28 bytes affected).
 **Root cause:** `HandleDa()` treated `>` as "high byte" (1 byte) rather than "DWORD" (4 bytes).
@@ -244,7 +245,7 @@ full 32-bit little-endian value. Baud rate table in SSC.DRV was wrong (28 bytes 
 **Files:** `src/syntax/scmasm_directive_handlers.cpp`, `tests/unit/test_scmasm_directive_registry.cpp`
 **Impact:** ssc.drv baud table diffs reduced from 28 to 0.
 
-### Bug 19: Label on `.DO` directive line gets wrong address (pending)
+### Bug 19: Label on `.DO` directive line gets wrong address (ce94435)
 **Symptom:** `DIB .DO SSCIRQ=1` assigned DIB to $2478 instead of $2480 — 8 bytes too low.
 The label definition occurred before `.DO` block processing, capturing PC before conditional
 code was skipped.
@@ -253,7 +254,7 @@ code was skipped.
 `include/xasm++/syntax/scmasm_syntax.h`, `tests/unit/test_scmasm_conditionals.cpp`
 **Impact:** ssc.drv DIB diffs reduced from 6 to 6 (off by 1 still — see remaining 7 diffs).
 
-### Bug 20: `.DA #'char'` emits 0x00 instead of ASCII value (pending)
+### Bug 20: `.DA #'char'` emits 0x00 instead of ASCII value (ce94435)
 **Symptom:** `.DA #'N'` emitted 0x00 instead of 0x4E. DCB.PARITY and DCB.FLOW wrong.
 **Root cause:** `HandleDa()` stripped the `#` prefix before calling `ExpandCharLiteralsInExpr()`,
 which requires `#` to detect the valid char-literal context. Expression `'N'` (without `#`)
@@ -287,18 +288,58 @@ and `"X"` patterns before treating whitespace as a comment delimiter.
 **Files:** `src/syntax/scmasm_directive_handlers.cpp`, `tests/unit/test_scmasm_syntax.cpp`
 **Impact:** Combined with Bug 21 fix; xmastree/mac2unix equates now correct.
 
-### Bug 23: `.DA $$"ADC"` — SCMASM inline string literal not recognized (de99d2d)
+### Bug 23: `.DA` double-dollar string literal not recognized (de99d2d)
 **Symptom:** `bin/asm`, `bin/asm.6502`, `bin/asm.65C02`, `bin/asm.65R02`, `bin/asm.SW16`,
-`bin/asm.Z80`, `bin/asm.65816` failed to assemble with "Invalid hex digit '$' in hex string:
-'$$\"ADC\"'". The A2osX ASM tool stores opcode mnemonic tables using `.DA $$"mnemonic"` syntax.
+`bin/asm.Z80`, `bin/asm.65816` failed to assemble with "Invalid hex digit in hex string".
+The A2osX ASM tool stores opcode mnemonic tables using `.DA $$"mnemonic"` syntax
+(double-dollar prefix followed by a quoted string).
 **Root cause:** `HandleDa()` evaluated `$$"ADC"` as an expression, which reached the hex
 number parser as `$` + `$"ADC"`. The second `$` is not a valid hex digit.
 **SCMASM semantics:** `$$"text"` in a `.DA` operand = emit the raw ASCII bytes of `text`.
-**Fix:** Added early check in `HandleDa()` for `$$"..."` / `$$'...'` prefix: extracts the
+**Fix:** Added early check in `HandleDa()` for the `$$"..."` / `$$'...'` prefix: extracts the
 string content and emits each byte (low 7 bits) directly, bypassing expression evaluation.
 **Files:** `src/syntax/scmasm_directive_handlers.cpp`, `tests/unit/test_scmasm_syntax.cpp`
 **Impact:** `bin/asm` and `bin/asm.SW16` now byte-identical. `bin/asm.*` CPU tables now
 assemble (output differs due to pre-existing address table issues, not this bug).
+
+### Bug 24: `FIN` without matching `DO` throws error (1ad6941)
+**Symptom:** SPECIALK.S:248 failed with "FIN without matching DO" — the original
+Merlin assembler silently ignores unmatched FIN directives.
+**Root cause:** `HandleFin()` always delegated to `conditional_.EndIf()` which throws
+when the stack is empty.
+**Fix:** `HandleFin()` now checks `conditional_.IsBalanced()` and returns early (no-op)
+when there is no open conditional block to close.
+**Files:** `src/syntax/merlin_syntax.cpp`, `tests/unit/test_merlin_syntax.cpp`,
+`tests/unit/test_error_reporting.cpp`
+
+### Bug 25: `DB` forward references not resolved (1ad6941)
+**Symptom:** SUBS.S failed with "Undefined symbol: PlayCut0" — labels defined later
+in the same file could not be used in `DB` operands.
+**Root cause:** `HandleDb()` evaluated all expressions immediately at parse time
+using `ParseAndEvaluateAsByte()`. Forward references fail at parse time.
+**Fix:** Hybrid approach — try immediate evaluation; if any expression throws
+"Undefined symbol", store all expressions as `DataAtom(expressions, DataSize::Byte)`
+for deferred multi-pass evaluation by the assembler.
+**Files:** `src/syntax/merlin_directive_handlers.cpp`, `tests/unit/test_merlin_syntax.cpp`
+
+### Bug 26: Merlin `.Inc`/`.Dec` expression suffixes not handled (1ad6941)
+**Symptom:** MASTER.S and UNPACK.S failed with "Undefined symbol: RdGrp.Inc" —
+Merlin's `symbol.Inc` (symbol+1) and `symbol.Dec` (symbol-1) suffixes were treated
+as compound symbol names.
+**Root cause:** The expression parser had no knowledge of these Merlin-specific suffixes.
+**Fix:** Added preprocessing in `assembler.cpp::ParseExpression()` to rewrite
+`X.inc` → `X+1` and `X.dec` → `X-1` (case-insensitive) before expression evaluation.
+**Files:** `src/core/assembler.cpp`, `tests/unit/test_merlin_syntax.cpp`
+
+### Bug 27: MVN/MVP multi-operand symbol resolution overwrites bank pair (1ad6941)
+**Symptom:** UNPACK.S `mvn 0,1` failed with "Special encoding failed for MVN: MVN
+requires two operands" — the decimal `0` was treated as a symbol lookup, and when not
+found, the entire operand was replaced with the current PC (losing the comma).
+**Root cause:** The special-encoding operand resolver tried to look up `0,1` as a symbol
+name. Not found → operand replaced with hex PC address (e.g. `$ea27`), losing the comma.
+**Fix:** Added a comma-presence check in the operand resolver: if operand contains `,`,
+skip symbol resolution and pass it unchanged (it's a multi-operand form like MVN srcbank,destbank).
+**Files:** `src/core/assembler.cpp`
 
 ---
 
@@ -491,7 +532,7 @@ cmake --build /tmp/A2osX-335cd122-build
 
 **Failed Targets (11):**
 - 6 assembler variants: asm.6502, asm.65816, asm.65C02, asm.65R02, asm.SW16, asm.Z80
-  - All fail on HX directive: `Logic error: Invalid hex digit '$' in hex string: '$$"ADC"'`
+  - All fail on double-dollar string literal: `Logic error: Invalid hex digit in hex string` (fixed in Bug 23)
 - 1 driver: pppssc.drv
   - Fails on: `error: Invalid argument for CLD!: Unsupported instruction: CLD!`
 - 3 utilities: nfsmount, tuitest, xmastree
@@ -573,4 +614,4 @@ suggesting specific areas for targeted investigation rather than fundamental iss
 - Validation report: .ai/tasks/xasm-89o-20260312063117-run15-full-comparison/30-validation-report.md
 - Detailed file list: /tmp/run15_detailed_file_list.txt
 
-| 16 | de99d2d | 78 | 47 | 78 | **+4 identical!** Char literals in .EQ + .DA $$"string" |
+| 16 | de99d2d | 78 | 47 | 78 | **+4 identical!** Char literals in .EQ + `.DA` double-dollar strings |
