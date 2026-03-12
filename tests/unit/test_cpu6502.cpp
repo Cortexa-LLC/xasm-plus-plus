@@ -923,6 +923,16 @@ TEST(Cpu6502Test, CLD_Implied) {
   EXPECT_EQ(result[0], 0xD8); // CLD opcode
 }
 
+// Test 94b: CLD with trailing '!' suffix (regression test for pppssc.drv)
+// The '!' suffix should be stripped before mnemonic lookup
+TEST(Cpu6502Test, CLD_WithBangSuffix) {
+  Cpu6502 cpu;
+  // Test that "CLD!" encodes the same as "CLD"
+  auto result = cpu.EncodeInstruction("CLD!", 0, "");
+  EXPECT_EQ(result.size(), 1UL) << "CLD! should encode as 1 byte";
+  EXPECT_EQ(result[0], 0xD8) << "CLD! should encode as opcode 0xD8";
+}
+
 // Test 95: SED implied
 TEST(Cpu6502Test, SED_Implied) {
   Cpu6502 cpu;

@@ -524,6 +524,14 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
           std::string mnemonic = inst->mnemonic;
           std::string operand = inst->operand;
 
+          // Strip trailing '!' from mnemonic before table lookup
+          // The '!' suffix is used in some assembly dialects to force
+          // a specific instruction encoding but should not affect the
+          // mnemonic lookup in the opcode table.
+          if (!mnemonic.empty() && mnemonic.back() == '!') {
+            mnemonic.pop_back();
+          }
+
           // Check if instruction requires special encoding (e.g., branch
           // relaxation, multi-byte instructions)
           //

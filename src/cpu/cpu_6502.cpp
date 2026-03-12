@@ -1200,6 +1200,12 @@ size_t Cpu6502::CalculateInstructionSize(AddressingMode mode) const {
  */
 size_t Cpu6502::GetInstructionSize(const std::string &mnemonic,
                                    const std::string &operand_str) const {
+  // Strip trailing '!' from mnemonic before processing
+  std::string clean_mnemonic = mnemonic;
+  if (!clean_mnemonic.empty() && clean_mnemonic.back() == '!') {
+    clean_mnemonic.pop_back();
+  }
+
   // Local trim helper (avoids dependency on util header here)
   auto ltrim = [](const std::string &s) -> std::string {
     size_t start = s.find_first_not_of(" \t");
@@ -1215,7 +1221,7 @@ size_t Cpu6502::GetInstructionSize(const std::string &mnemonic,
   };
 
   const std::string op = ltrim(operand_str);
-  const std::string mn = to_upper(mnemonic);
+  const std::string mn = to_upper(clean_mnemonic);
 
   // --- Implied / Accumulator: no operand or bare "A" ---
   if (op.empty() || op == "A") {
@@ -2101,6 +2107,15 @@ bool Cpu6502::IsIndex8Bit() const { return x_flag_; }
 std::vector<uint8_t>
 Cpu6502::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
                            const std::string &operand_str) const {
+  // Strip trailing '!' from mnemonic before processing
+  // The '!' suffix is used in some assembly dialects to force
+  // a specific instruction encoding but should not affect the
+  // mnemonic lookup in the opcode table.
+  std::string clean_mnemonic = mnemonic;
+  if (!clean_mnemonic.empty() && clean_mnemonic.back() == '!') {
+    clean_mnemonic.pop_back();
+  }
+
   // Helper to trim whitespace
   auto trim = [](const std::string &s) {
     size_t start = s.find_first_not_of(" \t\n\r");
@@ -2132,8 +2147,8 @@ Cpu6502::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
   // Shift/rotate/inc/dec instructions with no operand mean accumulator mode.
   // SCMASM uses "asl" / "inc" (no operand) instead of the explicit "asl A" form.
   if (trimmed.empty() &&
-      (mnemonic == ASL || mnemonic == LSR || mnemonic == ROL ||
-       mnemonic == ROR || mnemonic == INC || mnemonic == DEC)) {
+      (clean_mnemonic == ASL || clean_mnemonic == LSR || clean_mnemonic == ROL ||
+       clean_mnemonic == ROR || clean_mnemonic == INC || clean_mnemonic == DEC)) {
     mode = AddressingMode::Accumulator;
   }
 
@@ -2174,7 +2189,7 @@ Cpu6502::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
         }
         // JMP (abs): absolute indirect = Indirect
         // All other instructions (LDA, STA, ADC, etc.): (zp) = IndirectZeroPage (65C02+)
-        else if (mnemonic == M6502Mnemonics::JMP) {
+        else if (clean_mnemonic == M6502Mnemonics::JMP) {
           mode = AddressingMode::Indirect;
         } else {
           mode = AddressingMode::IndirectZeroPage;
@@ -2232,7 +2247,7 @@ Cpu6502::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
         // Symbol reference - use resolved operand value to determine mode.
         // ZeroPage is used for values 0–$FF, EXCEPT for JMP and JSR which have
         // no ZeroPage variant and must always use Absolute addressing.
-        const bool no_zp_form = (mnemonic == JMP || mnemonic == JSR);
+        const bool no_zp_form = (clean_mnemonic == JMP || clean_mnemonic == JSR);
         mode = (!no_zp_form && operand <= 0xFF)
                    ? AddressingMode::ZeroPage
                    : AddressingMode::Absolute;
@@ -2242,215 +2257,215 @@ Cpu6502::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
 
   // Dispatch to appropriate Encode* method based on mnemonic
   // Load instructions
-  if (mnemonic == LDA)
+  if (clean_mnemonic == LDA)
     return EncodeLDA(operand, mode);
-  if (mnemonic == LDX)
+  if (clean_mnemonic == LDX)
     return EncodeLDX(operand, mode);
-  if (mnemonic == LDY)
+  if (clean_mnemonic == LDY)
     return EncodeLDY(operand, mode);
 
   // Store instructions
-  if (mnemonic == STA)
+  if (clean_mnemonic == STA)
     return EncodeSTA(operand, mode);
-  if (mnemonic == STX)
+  if (clean_mnemonic == STX)
     return EncodeSTX(operand, mode);
-  if (mnemonic == STY)
+  if (clean_mnemonic == STY)
     return EncodeSTY(operand, mode);
-  if (mnemonic == STZ)
+  if (clean_mnemonic == STZ)
     return EncodeSTZ(operand, mode);
 
   // Arithmetic
-  if (mnemonic == ADC)
+  if (clean_mnemonic == ADC)
     return EncodeADC(operand, mode);
-  if (mnemonic == SBC)
+  if (clean_mnemonic == SBC)
     return EncodeSBC(operand, mode);
-  if (mnemonic == INC)
+  if (clean_mnemonic == INC)
     return EncodeINC(operand, mode);
-  if (mnemonic == DEC)
+  if (clean_mnemonic == DEC)
     return EncodeDEC(operand, mode);
-  if (mnemonic == INX)
+  if (clean_mnemonic == INX)
     return EncodeINX();
-  if (mnemonic == INY)
+  if (clean_mnemonic == INY)
     return EncodeINY();
-  if (mnemonic == DEX)
+  if (clean_mnemonic == DEX)
     return EncodeDEX();
-  if (mnemonic == DEY)
+  if (clean_mnemonic == DEY)
     return EncodeDEY();
 
   // Logical
-  if (mnemonic == AND)
+  if (clean_mnemonic == AND)
     return EncodeAND(operand, mode);
-  if (mnemonic == ORA)
+  if (clean_mnemonic == ORA)
     return EncodeORA(operand, mode);
-  if (mnemonic == EOR)
+  if (clean_mnemonic == EOR)
     return EncodeEOR(operand, mode);
-  if (mnemonic == BIT)
+  if (clean_mnemonic == BIT)
     return EncodeBIT(operand, mode);
 
   // Compare
-  if (mnemonic == CMP)
+  if (clean_mnemonic == CMP)
     return EncodeCMP(operand, mode);
-  if (mnemonic == CPX)
+  if (clean_mnemonic == CPX)
     return EncodeCPX(operand, mode);
-  if (mnemonic == CPY)
+  if (clean_mnemonic == CPY)
     return EncodeCPY(operand, mode);
 
   // Branches
-  if (mnemonic == BEQ)
+  if (clean_mnemonic == BEQ)
     return EncodeBEQ(operand, mode);
-  if (mnemonic == BNE)
+  if (clean_mnemonic == BNE)
     return EncodeBNE(operand, mode);
-  if (mnemonic == BCC)
+  if (clean_mnemonic == BCC)
     return EncodeBCC(operand, mode);
-  if (mnemonic == BCS)
+  if (clean_mnemonic == BCS)
     return EncodeBCS(operand, mode);
-  if (mnemonic == BMI)
+  if (clean_mnemonic == BMI)
     return EncodeBMI(operand, mode);
-  if (mnemonic == BPL)
+  if (clean_mnemonic == BPL)
     return EncodeBPL(operand, mode);
-  if (mnemonic == BVC)
+  if (clean_mnemonic == BVC)
     return EncodeBVC(operand, mode);
-  if (mnemonic == BVS)
+  if (clean_mnemonic == BVS)
     return EncodeBVS(operand, mode);
-  if (mnemonic == BRA)
+  if (clean_mnemonic == BRA)
     return EncodeBRA(operand, mode);
 
   // Jumps/Subroutines
-  if (mnemonic == JMP)
+  if (clean_mnemonic == JMP)
     return EncodeJMP(operand, mode);
-  if (mnemonic == JSR)
+  if (clean_mnemonic == JSR)
     return EncodeJSR(operand, mode);
-  if (mnemonic == RTS)
+  if (clean_mnemonic == RTS)
     return EncodeRTS();
-  if (mnemonic == RTI)
+  if (clean_mnemonic == RTI)
     return EncodeRTI();
 
   // Stack
-  if (mnemonic == PHA)
+  if (clean_mnemonic == PHA)
     return EncodePHA();
-  if (mnemonic == PLA)
+  if (clean_mnemonic == PLA)
     return EncodePLA();
-  if (mnemonic == PHP)
+  if (clean_mnemonic == PHP)
     return EncodePHP();
-  if (mnemonic == PLP)
+  if (clean_mnemonic == PLP)
     return EncodePLP();
-  if (mnemonic == PHX)
+  if (clean_mnemonic == PHX)
     return EncodePHX();
-  if (mnemonic == PLX)
+  if (clean_mnemonic == PLX)
     return EncodePLX();
-  if (mnemonic == PHY)
+  if (clean_mnemonic == PHY)
     return EncodePHY();
-  if (mnemonic == PLY)
+  if (clean_mnemonic == PLY)
     return EncodePLY();
 
   // Shifts/Rotates
-  if (mnemonic == ASL)
+  if (clean_mnemonic == ASL)
     return EncodeASL(operand, mode);
-  if (mnemonic == LSR)
+  if (clean_mnemonic == LSR)
     return EncodeLSR(operand, mode);
-  if (mnemonic == ROL)
+  if (clean_mnemonic == ROL)
     return EncodeROL(operand, mode);
-  if (mnemonic == ROR)
+  if (clean_mnemonic == ROR)
     return EncodeROR(operand, mode);
 
   // Flags
-  if (mnemonic == CLC)
+  if (clean_mnemonic == CLC)
     return EncodeCLC();
-  if (mnemonic == SEC)
+  if (clean_mnemonic == SEC)
     return EncodeSEC();
-  if (mnemonic == CLD)
+  if (clean_mnemonic == CLD)
     return EncodeCLD();
-  if (mnemonic == SED)
+  if (clean_mnemonic == SED)
     return EncodeSED();
-  if (mnemonic == CLI)
+  if (clean_mnemonic == CLI)
     return EncodeCLI();
-  if (mnemonic == SEI)
+  if (clean_mnemonic == SEI)
     return EncodeSEI();
-  if (mnemonic == CLV)
+  if (clean_mnemonic == CLV)
     return EncodeCLV();
 
   // Transfers
-  if (mnemonic == TAX)
+  if (clean_mnemonic == TAX)
     return EncodeTAX();
-  if (mnemonic == TAY)
+  if (clean_mnemonic == TAY)
     return EncodeTAY();
-  if (mnemonic == TXA)
+  if (clean_mnemonic == TXA)
     return EncodeTXA();
-  if (mnemonic == TYA)
+  if (clean_mnemonic == TYA)
     return EncodeTYA();
-  if (mnemonic == TSX)
+  if (clean_mnemonic == TSX)
     return EncodeTSX();
-  if (mnemonic == TXS)
+  if (clean_mnemonic == TXS)
     return EncodeTXS();
 
   // Misc
-  if (mnemonic == NOP)
+  if (clean_mnemonic == NOP)
     return EncodeNOP();
-  if (mnemonic == BRK)
+  if (clean_mnemonic == BRK)
     return EncodeBRK();
 
   // 65C02 Bit test
-  if (mnemonic == TRB)
+  if (clean_mnemonic == TRB)
     return EncodeTRB(operand, mode);
-  if (mnemonic == TSB)
+  if (clean_mnemonic == TSB)
     return EncodeTSB(operand, mode);
 
   // 65816 instructions
-  if (mnemonic == PHB)
+  if (clean_mnemonic == PHB)
     return EncodePHB();
-  if (mnemonic == PLB)
+  if (clean_mnemonic == PLB)
     return EncodePLB();
-  if (mnemonic == PHK)
+  if (clean_mnemonic == PHK)
     return EncodePHK();
-  if (mnemonic == PHD)
+  if (clean_mnemonic == PHD)
     return EncodePHD();
-  if (mnemonic == PLD)
+  if (clean_mnemonic == PLD)
     return EncodePLD();
-  if (mnemonic == TCD)
+  if (clean_mnemonic == TCD)
     return EncodeTCD();
-  if (mnemonic == TDC)
+  if (clean_mnemonic == TDC)
     return EncodeTDC();
-  if (mnemonic == TCS)
+  if (clean_mnemonic == TCS)
     return EncodeTCS();
-  if (mnemonic == TSC)
+  if (clean_mnemonic == TSC)
     return EncodeTSC();
-  if (mnemonic == TXY)
+  if (clean_mnemonic == TXY)
     return EncodeTXY();
-  if (mnemonic == TYX)
+  if (clean_mnemonic == TYX)
     return EncodeTYX();
-  if (mnemonic == JML)
+  if (clean_mnemonic == JML)
     return EncodeJML(operand, mode);
-  if (mnemonic == JSL)
+  if (clean_mnemonic == JSL)
     return EncodeJSL(operand, mode);
-  if (mnemonic == RTL)
+  if (clean_mnemonic == RTL)
     return EncodeRTL();
-  if (mnemonic == PEA)
+  if (clean_mnemonic == PEA)
     return EncodePEA(operand, mode);
-  if (mnemonic == PEI)
+  if (clean_mnemonic == PEI)
     return EncodePEI(operand, mode);
-  if (mnemonic == PER)
+  if (clean_mnemonic == PER)
     return EncodePER(operand, mode);
-  if (mnemonic == XBA)
+  if (clean_mnemonic == XBA)
     return EncodeXBA();
-  if (mnemonic == XCE)
+  if (clean_mnemonic == XCE)
     return EncodeXCE();
-  if (mnemonic == SEP)
+  if (clean_mnemonic == SEP)
     return EncodeSEP(operand, mode);
-  if (mnemonic == REP)
+  if (clean_mnemonic == REP)
     return EncodeREP(operand, mode);
-  if (mnemonic == COP)
+  if (clean_mnemonic == COP)
     return EncodeCOP(operand, mode);
-  if (mnemonic == WDM)
+  if (clean_mnemonic == WDM)
     return EncodeWDM(operand, mode);
 
   // Rockwell 65C02 extensions
-  if (mnemonic == WAI)
+  if (clean_mnemonic == WAI)
     return EncodeWAI();
-  if (mnemonic == STP)
+  if (clean_mnemonic == STP)
     return EncodeSTP();
 
   // Unsupported instruction
-  cpu::ThrowUnsupportedInstruction(mnemonic);
+  cpu::ThrowUnsupportedInstruction(clean_mnemonic);
 }
 
 // ============================================================================
@@ -2467,19 +2482,25 @@ Cpu6502::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
  * @return true if the instruction requires special encoding
  */
 bool Cpu6502::RequiresSpecialEncoding(const std::string &mnemonic) const {
+  // Strip trailing '!' from mnemonic before checking
+  std::string clean_mnemonic = mnemonic;
+  if (!clean_mnemonic.empty() && clean_mnemonic.back() == '!') {
+    clean_mnemonic.pop_back();
+  }
+
   // Branch instructions require special encoding (branch relaxation)
   // Use mnemonic constants to avoid magic strings
-  if (mnemonic == M6502Mnemonics::BEQ || mnemonic == M6502Mnemonics::BNE ||
-      mnemonic == M6502Mnemonics::BCC || mnemonic == M6502Mnemonics::BCS ||
-      mnemonic == M6502Mnemonics::BMI || mnemonic == M6502Mnemonics::BPL ||
-      mnemonic == M6502Mnemonics::BVC || mnemonic == M6502Mnemonics::BVS ||
-      mnemonic == M6502Mnemonics::BLT || // BLT is an alias for BCC
-      mnemonic == M6502Mnemonics::BRA) { // BRA (65C02+)
+  if (clean_mnemonic == M6502Mnemonics::BEQ || clean_mnemonic == M6502Mnemonics::BNE ||
+      clean_mnemonic == M6502Mnemonics::BCC || clean_mnemonic == M6502Mnemonics::BCS ||
+      clean_mnemonic == M6502Mnemonics::BMI || clean_mnemonic == M6502Mnemonics::BPL ||
+      clean_mnemonic == M6502Mnemonics::BVC || clean_mnemonic == M6502Mnemonics::BVS ||
+      clean_mnemonic == M6502Mnemonics::BLT || // BLT is an alias for BCC
+      clean_mnemonic == M6502Mnemonics::BRA) { // BRA (65C02+)
     return true;
   }
 
   // MVN/MVP (65816 block move instructions) require special encoding
-  if (mnemonic == M6502Mnemonics::MVN || mnemonic == M6502Mnemonics::MVP) {
+  if (clean_mnemonic == M6502Mnemonics::MVN || clean_mnemonic == M6502Mnemonics::MVP) {
     return true;
   }
 
@@ -2506,6 +2527,12 @@ std::vector<uint8_t>
 Cpu6502::EncodeInstructionSpecial(const std::string &mnemonic,
                                   const std::string &operand,
                                   uint16_t current_address) const {
+  // Strip trailing '!' from mnemonic before processing
+  std::string clean_mnemonic = mnemonic;
+  if (!clean_mnemonic.empty() && clean_mnemonic.back() == '!') {
+    clean_mnemonic.pop_back();
+  }
+
   // Helper to trim whitespace
   auto trim = [](const std::string &s) {
     size_t start = s.find_first_not_of(" \t\n\r");
@@ -2523,11 +2550,11 @@ Cpu6502::EncodeInstructionSpecial(const std::string &mnemonic,
   };
 
   // Branch instructions with relaxation
-  if (mnemonic == M6502Mnemonics::BEQ || mnemonic == M6502Mnemonics::BNE ||
-      mnemonic == M6502Mnemonics::BCC || mnemonic == M6502Mnemonics::BCS ||
-      mnemonic == M6502Mnemonics::BMI || mnemonic == M6502Mnemonics::BPL ||
-      mnemonic == M6502Mnemonics::BVC || mnemonic == M6502Mnemonics::BVS ||
-      mnemonic == M6502Mnemonics::BLT || mnemonic == M6502Mnemonics::BRA) {
+  if (clean_mnemonic == M6502Mnemonics::BEQ || clean_mnemonic == M6502Mnemonics::BNE ||
+      clean_mnemonic == M6502Mnemonics::BCC || clean_mnemonic == M6502Mnemonics::BCS ||
+      clean_mnemonic == M6502Mnemonics::BMI || clean_mnemonic == M6502Mnemonics::BPL ||
+      clean_mnemonic == M6502Mnemonics::BVC || clean_mnemonic == M6502Mnemonics::BVS ||
+      clean_mnemonic == M6502Mnemonics::BLT || clean_mnemonic == M6502Mnemonics::BRA) {
 
     // Parse target address from operand string
     std::string trimmed = trim(operand);
@@ -2542,23 +2569,23 @@ Cpu6502::EncodeInstructionSpecial(const std::string &mnemonic,
 
     // Get branch opcode for this mnemonic
     uint8_t branch_opcode = 0;
-    if (mnemonic == M6502Mnemonics::BEQ)
+    if (clean_mnemonic == M6502Mnemonics::BEQ)
       branch_opcode = Opcodes::BEQ;
-    else if (mnemonic == M6502Mnemonics::BNE)
+    else if (clean_mnemonic == M6502Mnemonics::BNE)
       branch_opcode = Opcodes::BNE;
-    else if (mnemonic == M6502Mnemonics::BCC || mnemonic == M6502Mnemonics::BLT)
+    else if (clean_mnemonic == M6502Mnemonics::BCC || mnemonic == M6502Mnemonics::BLT)
       branch_opcode = Opcodes::BCC;
-    else if (mnemonic == M6502Mnemonics::BCS)
+    else if (clean_mnemonic == M6502Mnemonics::BCS)
       branch_opcode = Opcodes::BCS;
-    else if (mnemonic == M6502Mnemonics::BMI)
+    else if (clean_mnemonic == M6502Mnemonics::BMI)
       branch_opcode = Opcodes::BMI;
-    else if (mnemonic == M6502Mnemonics::BPL)
+    else if (clean_mnemonic == M6502Mnemonics::BPL)
       branch_opcode = Opcodes::BPL;
-    else if (mnemonic == M6502Mnemonics::BVC)
+    else if (clean_mnemonic == M6502Mnemonics::BVC)
       branch_opcode = Opcodes::BVC;
-    else if (mnemonic == M6502Mnemonics::BVS)
+    else if (clean_mnemonic == M6502Mnemonics::BVS)
       branch_opcode = Opcodes::BVS;
-    else if (mnemonic == M6502Mnemonics::BRA)
+    else if (clean_mnemonic == M6502Mnemonics::BRA)
       branch_opcode = Opcodes::BRA;
 
     // Use branch relaxation (handles both short and long branches)
@@ -2567,13 +2594,13 @@ Cpu6502::EncodeInstructionSpecial(const std::string &mnemonic,
   }
 
   // MVN/MVP (Block Move with two operands)
-  if (mnemonic == M6502Mnemonics::MVN || mnemonic == M6502Mnemonics::MVP) {
+  if (clean_mnemonic == M6502Mnemonics::MVN || mnemonic == M6502Mnemonics::MVP) {
     // Parse operands: "srcbank,destbank" or "$E1,$01"
     std::string trimmed_operand = trim(operand);
     size_t comma_pos = trimmed_operand.find(',');
 
     if (comma_pos == std::string::npos) {
-      cpu::ThrowRequiresTwoOperands(mnemonic, "srcbank,destbank");
+      cpu::ThrowRequiresTwoOperands(clean_mnemonic, "srcbank,destbank");
     }
 
     // Extract source and dest banks
@@ -2594,16 +2621,16 @@ Cpu6502::EncodeInstructionSpecial(const std::string &mnemonic,
       uint8_t destbank = parse_bank(dst_str);
 
       // Encode the instruction (MVN/MVP are 65816-specific)
-      return (mnemonic == M6502Mnemonics::MVN) ? EncodeMVN(srcbank, destbank)
+      return (clean_mnemonic == M6502Mnemonics::MVN) ? EncodeMVN(srcbank, destbank)
                                                : EncodeMVP(srcbank, destbank);
 
     } catch (const std::exception &e) {
-      cpu::ThrowInvalidValues(mnemonic, e.what());
+      cpu::ThrowInvalidValues(clean_mnemonic, e.what());
     }
   }
 
   // If we get here, instruction doesn't support special encoding
-  cpu::ThrowSpecialEncodingNotSupported(mnemonic);
+  cpu::ThrowSpecialEncodingNotSupported(clean_mnemonic);
 }
 
 // ============================================================================
@@ -2631,8 +2658,14 @@ Cpu6502::EncodeInstructionSpecial(const std::string &mnemonic,
  * @note Includes all 6502/65C02/65816 opcodes regardless of current cpu_mode_
  */
 bool Cpu6502::HasOpcode(const std::string &mnemonic) const {
+  // Strip trailing '!' from mnemonic before checking
+  std::string clean_mnemonic = mnemonic;
+  if (!clean_mnemonic.empty() && clean_mnemonic.back() == '!') {
+    clean_mnemonic.pop_back();
+  }
+
   // Convert to uppercase for case-insensitive comparison
-  std::string upper = mnemonic;
+  std::string upper = clean_mnemonic;
   std::transform(upper.begin(), upper.end(), upper.begin(), ::toupper);
 
   // Base 6502 opcodes — valid in all modes
