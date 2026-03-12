@@ -397,6 +397,50 @@ CHAR_LO .EQ 'A
   EXPECT_EQ(value, 0x41); // High bit clear
 }
 
+TEST_F(ScmasmSyntaxTest, StarCharLiteral_InEq_ProducesAsteriskByte) {
+  // STAR .EQ '*' — star char literal in .EQ must produce ASCII 42 ($2A).
+  // Regression: the '*' substitution loop in EvaluateExpression replaced the
+  // '*' inside the char literal with the current address, corrupting the value.
+  std::string source =
+      "\t.OR\t$2000\n"
+      "STAR\t.EQ\t'*'\n";
+  ASSERT_NO_THROW(parser->Parse(source, section, symbols));
+  int64_t val = 0;
+  ASSERT_TRUE(symbols.Lookup("STAR", val));
+  EXPECT_EQ(val, 0x2A) << "STAR .EQ '*' must equal ASCII 42 ($2A)";
+}
+
+TEST_F(ScmasmSyntaxTest, SpaceCharLiteral_InEq_ProducesSpaceByte) {
+  // BLANK .EQ ' ' — space char literal in .EQ must produce ASCII 32 ($20).
+  // Regression: find_first_of(" \t") in HandleEq truncated "' '" to "'" before
+  // the expression could be evaluated.
+  std::string source =
+      "\t.OR\t$2000\n"
+      "BLANK\t.EQ\t' '\n";
+  ASSERT_NO_THROW(parser->Parse(source, section, symbols));
+  int64_t val = 0;
+  ASSERT_TRUE(symbols.Lookup("BLANK", val));
+  EXPECT_EQ(val, 0x20) << "BLANK .EQ ' ' must equal ASCII 32 ($20)";
+}
+
+TEST_F(ScmasmSyntaxTest, DaInlineStringLiteral_EmitsRawBytes) {
+  // .DA $$"ADC" — SCMASM inline string literal emits raw ASCII bytes.
+  // Regression: '$$"ADC"' was passed to the hex number parser which rejected
+  // it because '$' is not a valid hex digit after the initial '$'.
+  std::string source =
+      "\t.OR\t$0000\n"
+      "\t.DA\t$$\"ADC\"\n";
+  ASSERT_NO_THROW(parser->Parse(source, section, symbols));
+  // Should emit 3 bytes: 0x41 ('A'), 0x44 ('D'), 0x43 ('C')
+  size_t total = 0;
+  for (auto &atom : section.atoms) {
+    if (auto da = std::dynamic_pointer_cast<DataAtom>(atom)) {
+      total += da->data.size();
+    }
+  }
+  EXPECT_EQ(total, 3u) << ".DA $$\"ADC\" must emit 3 bytes";
+}
+
 TEST_F(ScmasmSyntaxTest, SpaceCharLiteral_InInstruction_ProducesSpaceByte) {
   // lda #' ' — space character literal in immediate operand must produce $20.
   // Regression: inline-comment stripping used find_first_of(" \t") which found

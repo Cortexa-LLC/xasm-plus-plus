@@ -212,12 +212,28 @@ void HandleEq(const std::string &label, const std::string &operand,
   // Trim operand to remove CRLF line endings and whitespace
   std::string value_expr = Trim(operand);
 
-  // Simple comment handling: everything after first whitespace is a comment
-  // This handles all cases: "180 float", "XX+00  5/6 for 50/60Hz", "$Cn
-  // comment"
-  size_t ws = value_expr.find_first_of(" \t");
-  if (ws != std::string::npos) {
-    value_expr = value_expr.substr(0, ws);
+  // Comment stripping: everything after the first whitespace NOT inside a
+  // quoted char literal is a comment.  Walk char-by-char so that operands
+  // like ' ' (space char literal) and '*' are not truncated prematurely.
+  {
+    size_t j = 0;
+    while (j < value_expr.size()) {
+      char ch = value_expr[j];
+      // Skip over 'X', 'X', "X", "X" quoted char literals
+      if ((ch == '\'' || ch == '"') && j + 1 < value_expr.size()) {
+        j += 2; // delimiter + char
+        // Consume optional matching closing delimiter
+        if (j < value_expr.size() && value_expr[j] == ch) {
+          j++;
+        }
+        continue;
+      }
+      if (ch == ' ' || ch == '\t') {
+        value_expr = value_expr.substr(0, j);
+        break;
+      }
+      j++;
+    }
   }
 
   // Evaluate value expression
@@ -443,6 +459,25 @@ void HandleDa(const std::string &label, const std::string &operand,
     }
 
     if (trimmed_expr.empty()) {
+      continue;
+    }
+
+    // SCMASM inline string literal: $$"text" or $$'text'
+    // Emits the raw ASCII bytes of the quoted string.  Used in A2osX opcode
+    // tables (e.g. .DA #3,$$"ADC").
+    if (trimmed_expr.size() >= 4 && trimmed_expr[0] == '$' &&
+        trimmed_expr[1] == '$' &&
+        (trimmed_expr[2] == '"' || trimmed_expr[2] == '\'')) {
+      char delim = trimmed_expr[2];
+      size_t end = trimmed_expr.find(delim, 3);
+      if (end == std::string::npos) {
+        end = trimmed_expr.size();
+      }
+      for (size_t k = 3; k < end; k++) {
+        uint8_t byte = static_cast<uint8_t>(trimmed_expr[k]) & 0x7F;
+        byte_expressions.push_back(std::to_string(byte));
+        data.push_back(byte);
+      }
       continue;
     }
 
@@ -937,6 +972,19 @@ void HandleInb(const std::string &label, const std::string &operand,
         found = true;
       }
     }
+
+    // Case 5: Relative to parent directory (A2osX compatibility)
+    // Some A2osX source files in subdirectories (BIN/) include files from
+    // sibling directories (INC/), so we need to search the parent directory
+    if (!found) {
+      std::filesystem::path parent_relative_path =
+          std::filesystem::path("..") / include_filename;
+      tried_paths.push_back(parent_relative_path.string());
+      if (std::filesystem::exists(parent_relative_path)) {
+        resolved_path = parent_relative_path;
+        found = true;
+      }
+    }
   }
 
   // If not found, try adding .txt extension (A2osX compatibility)
@@ -946,6 +994,7 @@ void HandleInb(const std::string &label, const std::string &operand,
     std::filesystem::path txt_include_path(txt_filename);
 
     if (txt_include_path.is_absolute()) {
+      tried_paths.push_back(txt_filename);
       if (std::filesystem::exists(txt_include_path)) {
         resolved_path = txt_include_path;
         found = true;
@@ -957,6 +1006,7 @@ void HandleInb(const std::string &label, const std::string &operand,
         std::filesystem::path source_dir = source_path.parent_path();
         std::filesystem::path relative_path = source_dir / txt_filename;
 
+        tried_paths.push_back(relative_path.string());
         if (std::filesystem::exists(relative_path)) {
           resolved_path = relative_path;
           found = true;
@@ -969,6 +1019,7 @@ void HandleInb(const std::string &label, const std::string &operand,
           std::filesystem::path search_path =
               std::filesystem::path(include_dir) / txt_filename;
 
+          tried_paths.push_back(search_path.string());
           if (std::filesystem::exists(search_path)) {
             resolved_path = search_path;
             found = true;
@@ -979,8 +1030,22 @@ void HandleInb(const std::string &label, const std::string &operand,
 
       // Try current working directory
       if (!found) {
+        tried_paths.push_back(txt_filename);
         if (std::filesystem::exists(txt_filename)) {
           resolved_path = txt_filename;
+          found = true;
+        }
+      }
+
+      // Try parent directory (A2osX compatibility)
+      // Some A2osX source files in subdirectories (BIN/) include files from
+      // sibling directories (INC/), so we need to search the parent directory
+      if (!found) {
+        std::filesystem::path parent_relative_path =
+            std::filesystem::path("..") / txt_filename;
+        tried_paths.push_back(parent_relative_path.string());
+        if (std::filesystem::exists(parent_relative_path)) {
+          resolved_path = parent_relative_path;
           found = true;
         }
       }

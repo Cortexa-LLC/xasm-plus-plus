@@ -1529,6 +1529,11 @@ uint32_t ScmasmSyntaxParser::EvaluateExpression(const std::string &str,
                                                 ConcreteSymbolTable &symbols) {
   std::string trimmed = Trim(str);
 
+  // Pre-expand char literals (e.g. '*' → $2A, ' ' → $20) before the '*'
+  // substitution loop so that '*' inside a quoted char literal is not
+  // mistakenly treated as the current-address operator.
+  trimmed = ExpandCharLiteralsInExpr(trimmed);
+
   // Handle * (current address) - replace with current address value
   // Handles all cases: "*", "*+4", "$1300-*", etc.
   // BUT NOT multiplication: "K.FD.MAX*2" — here * is a binary operator.
@@ -1656,6 +1661,11 @@ std::string ScmasmSyntaxParser::ExpandCharLiteralsInExpr(
         valid_context = (prev == '#' || prev == '+' || prev == '-' ||
                          prev == '*' || prev == '/' || prev == '^' ||
                          prev == '(' || prev == '<' || prev == '>');
+      } else {
+        // Position 0: expand only when both opening AND closing delimiter are
+        // present (e.g., '*' or ' '), making it an unambiguous standalone
+        // char literal operand (not a partial inline comment fragment).
+        valid_context = (i + 2 < s.size() && s[i + 2] == c);
       }
       if (valid_context) {
         char delim = c;
