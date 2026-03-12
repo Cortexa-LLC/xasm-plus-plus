@@ -1394,10 +1394,10 @@ void HandleHx(const std::string &label, const std::string &operand,
               DirectiveContext &context) {
   (void)label; // Label handled separately
 
-  std::vector<uint8_t> data;
+  std::vector<uint8_t> nibbles;
   std::string trimmed = Trim(operand);
 
-  // Parse hex nibbles (single hex digits)
+  // Parse hex nibbles - collect all nibbles first
   // Whitespace, dots, and commas are allowed as separators
   for (char c : trimmed) {
     if (std::isspace(c) || c == '.' || c == ',') {
@@ -1410,7 +1410,25 @@ void HandleHx(const std::string &label, const std::string &operand,
       throw std::runtime_error("Invalid hex digit in .HX: " +
                                std::string(1, c));
     }
-    data.push_back(static_cast<uint8_t>(val));
+    nibbles.push_back(static_cast<uint8_t>(val));
+  }
+
+  // Pack nibble pairs into bytes.
+  // SCMASM .HX uses nibble-swapped encoding: the first nibble of each pair
+  // is the LOW nibble of the byte, and the second is the HIGH nibble.
+  // e.g. .HX 02 -> byte 0x20  (not 0x02 as in standard hex)
+  // e.g. .HX 00022000 -> bytes 00 20 02 00  (not 00 02 20 00)
+  // This reflects the Apple II 4bpp color format where pixel nibbles are
+  // stored low-nibble-first within each byte.
+  std::vector<uint8_t> data;
+  for (size_t i = 0; i + 1 < nibbles.size(); i += 2) {
+    uint8_t low_nibble = nibbles[i];
+    uint8_t high_nibble = nibbles[i + 1];
+    data.push_back(static_cast<uint8_t>((high_nibble << 4) | low_nibble));
+  }
+  // Handle trailing odd nibble (low nibble, high nibble = 0)
+  if (nibbles.size() % 2 != 0) {
+    data.push_back(nibbles.back());
   }
 
   auto atom = std::make_shared<DataAtom>(data);

@@ -224,9 +224,9 @@ a417f7ab and 335cd122, AND our assembler produces correct output for them.
 |------|-------|----------|-------|
 | bin/sh | -3 | High | Branch relaxation from .CZ fix shifting code; $2FA3 JMP vs BRA in stable |
 | bin/asm.65816 | -9 | Low | 65816 mode differences |
-| bin/fnt2fon | -13 | Low | Font tool |
-| bin/httpget | -14 | Medium | Network utility |
-| sbin/bbsd | -16 | Medium | Unresolved |
+| bin/fnt2fon | -13 | Low | **SOURCE CODE CHANGE**: `.AZ -" : "` (4B) replaced by `.CZ -N : No shrink\r\n"` (17B, +13B). The current source has a likely typo — missing opening `"` before `-N`. The original stable had high-bit encoded ` : ` (Apple II text). Not an xasm++ bug. |
+| bin/httpget | -14 | Medium | **SOURCE CODE CHANGE**: New progress display feature added (`L.MSG.Progress` new reloc entry +2B, new progress display code +12B, code simplification -4B, other code change +4B). Not an xasm++ bug. |
+| sbin/bbsd | -16 | Medium | **SOURCE CODE CHANGE**: Multiple changes between stable build and 335cd122: direct FDs table lookup replaces SYSCALL (+2B), different push logic (-2B), `_DEBUG` dead code subroutine added (+15B), extra instruction added (+1B). Not an xasm++ bug. |
 | bin/useradd | -48 | Low | Significant; unresolved |
 | lib/libgui | -132 | High | GUI library; large delta — likely branch relaxation accumulation |
 | lib/libtui | -286 | Low | Source changed significantly (known source version diff) |

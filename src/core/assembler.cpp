@@ -402,7 +402,29 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
           if (!data->expressions.empty()) {
             data->data.clear();
 
-            for (const auto &expr_str : data->expressions) {
+            for (const auto &expr_str_raw : data->expressions) {
+              // Replace * with current virtual address, same as EquateAtom
+              std::string expr_str = expr_str_raw;
+              {
+                std::string addr_str = std::to_string(virtual_address);
+                size_t star_pos = 0;
+                while ((star_pos = expr_str.find('*', star_pos)) !=
+                       std::string::npos) {
+                  bool preceded_by_ident = false;
+                  if (star_pos > 0) {
+                    char prev = expr_str[star_pos - 1];
+                    preceded_by_ident =
+                        std::isalnum(static_cast<unsigned char>(prev)) ||
+                        prev == '.' || prev == '_' || prev == '?';
+                  }
+                  if (preceded_by_ident) {
+                    star_pos++;
+                    continue;
+                  }
+                  expr_str.replace(star_pos, 1, addr_str);
+                  star_pos += addr_str.length();
+                }
+              }
               try {
                 auto expr = ParseExpression(expr_str, symbols);
                 int64_t value = expr->Evaluate(symbols);
@@ -804,7 +826,29 @@ void Assembler::RefixupDataAtoms(ConcreteSymbolTable &symbols,
         auto data = std::dynamic_pointer_cast<DataAtom>(atom);
         if (data && !data->expressions.empty()) {
           data->data.clear();
-          for (const auto &expr_str : data->expressions) {
+          for (const auto &expr_str_raw : data->expressions) {
+            // Replace * with current virtual address (same as EquateAtom handling)
+            std::string expr_str = expr_str_raw;
+            {
+              std::string addr_str = std::to_string(virtual_address);
+              size_t star_pos = 0;
+              while ((star_pos = expr_str.find('*', star_pos)) !=
+                     std::string::npos) {
+                bool preceded_by_ident = false;
+                if (star_pos > 0) {
+                  char prev = expr_str[star_pos - 1];
+                  preceded_by_ident =
+                      std::isalnum(static_cast<unsigned char>(prev)) ||
+                      prev == '.' || prev == '_' || prev == '?';
+                }
+                if (preceded_by_ident) {
+                  star_pos++;
+                  continue;
+                }
+                expr_str.replace(star_pos, 1, addr_str);
+                star_pos += addr_str.length();
+              }
+            }
             try {
               auto expr = ParseExpression(expr_str, symbols);
               int64_t value = expr->Evaluate(symbols);

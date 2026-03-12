@@ -3079,6 +3079,103 @@ TEST_F(ScmasmSyntaxTest, HS_MultiByteRun_NoSpaces) {
 }
 
 // ============================================================================
+// .HX Directive Tests (Hex with nibble-swap)
+// ============================================================================
+// SCMASM .HX uses nibble-swapped encoding: the first nibble of each pair is
+// stored as the LOW nibble of the byte, and the second nibble as the HIGH nibble.
+// e.g. .HX 0F -> byte 0xF0  (not 0x0F as standard hex)
+// e.g. .HX 02 -> byte 0x20  (not 0x02 as standard hex)
+// e.g. .HX 00022000 -> bytes 00 20 02 00  (not 00 02 20 00)
+// This reflects the Apple II 4bpp color format pixel storage convention.
+// ============================================================================
+
+TEST_F(ScmasmSyntaxTest, HxDirectiveAllZeros) {
+  // .HX 00000000 -> 4 bytes all zero
+  parser->Parse("        .HX 00000000\n", section, symbols);
+
+  ASSERT_EQ(section.atoms.size(), 1u);
+  auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
+  ASSERT_NE(data_atom, nullptr);
+  ASSERT_EQ(data_atom->data.size(), 4u);
+  EXPECT_EQ(data_atom->data[0], 0x00);
+  EXPECT_EQ(data_atom->data[1], 0x00);
+  EXPECT_EQ(data_atom->data[2], 0x00);
+  EXPECT_EQ(data_atom->data[3], 0x00);
+}
+
+TEST_F(ScmasmSyntaxTest, HxDirectiveNibbleSwap) {
+  // .HX 02 -> byte 0x20 (nibble-swapped: first char '0' is LOW, '2' is HIGH)
+  // .HX 20 -> byte 0x02 (nibble-swapped: first char '2' is LOW, '0' is HIGH)
+  parser->Parse("        .HX 0220\n", section, symbols);
+
+  ASSERT_EQ(section.atoms.size(), 1u);
+  auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
+  ASSERT_NE(data_atom, nullptr);
+  ASSERT_EQ(data_atom->data.size(), 2u);
+  EXPECT_EQ(data_atom->data[0], 0x20) << ".HX 02 should give 0x20 (nibble-swapped)";
+  EXPECT_EQ(data_atom->data[1], 0x02) << ".HX 20 should give 0x02 (nibble-swapped)";
+}
+
+TEST_F(ScmasmSyntaxTest, HxDirectiveBmInfoRow) {
+  // Test BM.Info row encoding: .HX 00022000 -> bytes 00 20 02 00
+  // (As used in LIBGUI.G.BM.txt for 4bpp bitmap data)
+  parser->Parse("        .HX 00022000\n", section, symbols);
+
+  ASSERT_EQ(section.atoms.size(), 1u);
+  auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
+  ASSERT_NE(data_atom, nullptr);
+  ASSERT_EQ(data_atom->data.size(), 4u)
+      << ".HX 00022000 should produce 4 bytes (nibble pairs), not 8 bytes (one per nibble)";
+  EXPECT_EQ(data_atom->data[0], 0x00);
+  EXPECT_EQ(data_atom->data[1], 0x20) << "nibble pair '02' -> low=0, high=2 -> 0x20";
+  EXPECT_EQ(data_atom->data[2], 0x02) << "nibble pair '20' -> low=2, high=0 -> 0x02";
+  EXPECT_EQ(data_atom->data[3], 0x00);
+}
+
+TEST_F(ScmasmSyntaxTest, HxDirectiveFFF00FFF) {
+  // .HX FFF00FFF -> bytes FF 0F F0 FF
+  // Pair by pair:
+  //   "FF" -> low='F'=15, high='F'=15 -> (15<<4)|15 = 0xFF
+  //   "F0" -> low='F'=15, high='0'=0  -> (0<<4)|15  = 0x0F
+  //   "0F" -> low='0'=0,  high='F'=15 -> (15<<4)|0  = 0xF0
+  //   "FF" -> low='F'=15, high='F'=15 -> (15<<4)|15 = 0xFF
+  parser->Parse("        .HX FFF00FFF\n", section, symbols);
+
+  ASSERT_EQ(section.atoms.size(), 1u);
+  auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
+  ASSERT_NE(data_atom, nullptr);
+  ASSERT_EQ(data_atom->data.size(), 4u);
+  EXPECT_EQ(data_atom->data[0], 0xFF) << "'FF' -> 0xFF";
+  EXPECT_EQ(data_atom->data[1], 0x0F) << "'F0' -> low=F high=0 -> 0x0F";
+  EXPECT_EQ(data_atom->data[2], 0xF0) << "'0F' -> low=0 high=F -> 0xF0";
+  EXPECT_EQ(data_atom->data[3], 0xFF) << "'FF' -> 0xFF";
+}
+
+TEST_F(ScmasmSyntaxTest, HxDirectiveProducesPackedBytes) {
+  // Verify that .HX produces PACKED bytes (one byte per two hex digits),
+  // NOT single-nibble bytes (one byte per hex digit).
+  // .HX AABB -> 2 bytes, not 4 bytes
+  parser->Parse("        .HX AABB\n", section, symbols);
+
+  ASSERT_EQ(section.atoms.size(), 1u);
+  auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
+  ASSERT_NE(data_atom, nullptr);
+  ASSERT_EQ(data_atom->data.size(), 2u) << ".HX AABB must produce 2 bytes (packed), not 4";
+}
+
+TEST_F(ScmasmSyntaxTest, HxDirectiveLowercaseHex) {
+  // .HX accepts lowercase hex digits
+  // "ab" -> low='a'=10, high='b'=11 -> (11<<4)|10 = 0xBA
+  parser->Parse("        .HX ab\n", section, symbols);
+
+  ASSERT_EQ(section.atoms.size(), 1u);
+  auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[0]);
+  ASSERT_NE(data_atom, nullptr);
+  ASSERT_EQ(data_atom->data.size(), 1u);
+  EXPECT_EQ(data_atom->data[0], 0xBA) << "'ab' -> low=a=10, high=b=11 -> 0xBA";
+}
+
+// ============================================================================
 // Instruction Size Estimation — current_address_ accuracy for .BS TARGET-*
 // ============================================================================
 
