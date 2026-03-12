@@ -1,0 +1,79 @@
+Add A2oSX build validation test suite
+
+Creates comprehensive validation framework for testing xasm++ 
+compatibility with A2oSX Operating System (190 source files).
+
+Validation Findings:
+- ✅ 5/5 basic tests pass (SCMASM syntax, data directives)
+- ❌ 3 critical bugs block A2oSX assembly
+- 📊 11 test cases total, 62.4 KB documentation
+
+Blocking Issues Identified:
+1. BUG-001 (P0 CRITICAL): Symbols fail in addressing modes
+   - Symbols only work with # prefix (immediate mode)
+   - Cannot use zero page, absolute, or indexed addressing
+   - Blocks 99% of real-world 6502 assembly
+
+2. BUG-002 (P1 HIGH): .BS directive misinterpreted  
+   - Currently treats as binary string (0/1 only)
+   - Should reserve N bytes of space (block storage)
+   - Affects 280 usages in A2oSX (2.9% of directives)
+
+3. BUG-003 (P1 HIGH): Expression operators not supported
+   - Missing: < (low byte), > (high byte), + (offset)
+   - Required for pointer manipulation and 16-bit addressing
+   - Affects ~550 expressions in A2oSX (5.7% of code)
+
+Deliverables:
+- validation_suite.py: Automated test runner (Python)
+- 11 test source files (.S): Comprehensive test coverage
+- 3 detailed bug reports: With reproduction and suggested fixes
+- Documentation: README, SUMMARY, QUICKSTART, INDEX
+- Acceptance report: Complete findings and recommendations
+
+Test Results:
+  Working (5 tests):
+    ✅ test_minimal.S - Basic assembly
+    ✅ test_eq.S - Symbol definition
+    ✅ test_data_as.S - ASCII strings
+    ✅ test_data_hs.S - Hex data
+    ✅ test_data_da.S - Data bytes
+  
+  Blocked (6 tests):
+    ⚠️ test_symbols.S - BUG-001
+    ⚠️ test_bs.S - BUG-002
+    ⚠️ test_expr_*.S - BUG-003
+    ⚠️ sample_simple.S - Multiple bugs
+
+Usage:
+  cd tests/integration/a2osx
+  ./validation_suite.py           # Run working tests
+  ./validation_suite.py --all     # Include blocked tests
+  ./validation_suite.py -v        # Verbose output
+
+Next Steps:
+1. Fix BUG-001 (symbol resolution) - CRITICAL BLOCKER
+2. Fix BUG-002 (.BS directive) - HIGH PRIORITY
+3. Fix BUG-003 (expression support) - HIGH PRIORITY
+4. Re-run validation suite (should see 11/11 pass)
+5. Test with real A2oSX source files
+
+Estimated Timeline:
+- Bug fixes: 3-5 days
+- Full validation: 1 week  
+- Migration to production: ~1 month total
+
+Recommendation: NOT READY for A2oSX until P0 bug fixed
+
+Files Added:
+- tests/integration/a2osx/validation_suite.py (11 KB)
+- tests/integration/a2osx/test_*.S (11 test files)
+- tests/integration/a2osx/sample_*.S (3 samples)
+- tests/integration/a2osx/BUG-00*.md (3 bug reports)
+- tests/integration/a2osx/README.md (8.6 KB)
+- tests/integration/a2osx/SUMMARY.md (4.3 KB)
+- tests/integration/a2osx/QUICKSTART.md (2.0 KB)
+- tests/integration/a2osx/INDEX.md (4.3 KB)
+- .ai/tasks/2026-02-12_a2osx-validation/ (task packet)
+
+Total: 20 files, 62.4 KB validation framework

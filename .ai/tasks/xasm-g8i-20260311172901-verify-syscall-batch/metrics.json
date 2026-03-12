@@ -1,0 +1,13 @@
+{
+  "task_id": "xasm-g8i-20260311-173046",
+  "role": "engineer",
+  "start_time": "2026-03-11T17:30:46.481782-07:00",
+  "end_time": "2026-03-11T17:55:04.211585-07:00",
+  "duration_ms": 1457719,
+  "turns": 0,
+  "total_tokens": 0,
+  "tool_calls_total": 0,
+  "kg_preflight_bytes": 547,
+  "exploration_ratio": 0,
+  "has_errors": false
+}

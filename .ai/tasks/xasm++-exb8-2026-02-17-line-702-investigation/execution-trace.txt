@@ -1,0 +1,140 @@
+EXECUTION TRACE: Line 702 Error
+=================================
+
+Input Line 702:
+  A2osX.QC.B.BOOT	.EQ *+4					CLD JMP $FFFF
+  └─ label      └─directive └─operand  └─TAB-separated comment
+
+
+STEP 1: ParseLine() extracts components
+  label = "A2osX.QC.B.BOOT"
+  opcode = ".EQ"
+  operand = "*+4"  (comment stripped by StripInlineComment)
+
+
+STEP 2: Directive dispatch
+  opcode_upper = ".EQ"
+  ✓ Matches directive registry
+  ✓ Calls: scmasm::HandleEq(label, operand, context)
+
+
+STEP 3: HandleEq calls EvaluateExpression
+  File: src/syntax/scmasm_syntax.cpp:682
+  Calls: EvaluateExpression("*+4", symbols)
+
+
+STEP 4: EvaluateExpression processes input
+  File: src/syntax/scmasm_syntax.cpp:821-880
+  
+  Input: str = "*+4"
+  After trim: trimmed = "*+4"
+  
+  CHECK 1: Is it exactly "*"?
+    Line 826: if (trimmed == "*")
+    Result: FALSE (it's "*+4", not "*")
+    ❌ Special case handler SKIPPED
+  
+  CHECK 2: Is it a local label?
+    Line 831: if (IsLocalLabel(trimmed))
+    Result: FALSE
+    
+  CHECK 3: Binary with dots?
+    Line 845: if (trimmed[0] == '%' ...)
+    Result: FALSE
+    
+  CHECK 4: Character constant?
+    Line 854: if (trimmed.length() == 2 ...)
+    Result: FALSE (length is 3)
+  
+  FALLTHROUGH: Call ParseExpression()
+    Line 872: auto expr = ParseExpression(trimmed, symbols);
+    ↓
+
+
+STEP 5: ParseExpression delegates to ExpressionParser
+  File: src/syntax/scmasm_syntax.cpp:885-889
+  
+  Creates: ExpressionParser parser(&symbols, &scmasm_number_parser_)
+  Calls: parser.Parse("*+4")
+  ↓
+
+
+STEP 6: ExpressionParser::Parse processes "*+4"
+  File: src/common/expression_parser.cpp
+  
+  Calls: ParseLogicalOr()
+    → ParseLogicalAnd()
+    → ParseComparison()
+    → ParseBitwiseOr()
+    → ParseBitwiseXor()
+    → ParseBitwiseAnd()
+    → ParseShift()
+    → ParseAddSub()
+    → ParseMulDiv()
+    → ParseUnary()
+    → ParsePrimary()
+
+
+STEP 7: ParsePrimary encounters "*"
+  File: src/common/expression_parser.cpp:286-420
+  
+  Input char: '*'
+  
+  CHECK: Is it '$'?
+    Line 389: if (Peek() == '$')
+    Result: FALSE ('*' != '$')
+    ❌ Current location check SKIPPED
+  
+  CHECK: Is it a digit or number prefix?
+    Line 401: if (std::isdigit(Peek()) || Peek() == '$' || Peek() == '%')
+    Result: FALSE ('*' is not digit, '$', or '%')
+  
+  CHECK: Is it an identifier?
+    Line 416: if (std::isalpha(Peek()) || Peek() == '_' || ...)
+    Result: FALSE ('*' is not alphanumeric)
+  
+  No matching pattern!
+  Parser assumes '*' might be an operator
+  
+  Returns: some partial parse result
+  ↓
+
+
+STEP 8: Parser continues with rest of expression
+  Remaining input: "+4"
+  
+  But "*" was not parsed as a valid primary expression
+  The "+" is interpreted as binary operator
+  But there's no left operand!
+  
+  Parser gets confused...
+  ↓
+
+
+STEP 9: Parse() finalization check
+  File: src/common/expression_parser.cpp:32-34
+  
+  After parsing, checks: !AtEnd()
+  Finds: position is at '4', not at end
+  ✖ ERROR THROWN: "Unexpected character after expression: 4"
+
+
+ERROR PATH:
+  .EQ handler → EvaluateExpression → ParseExpression 
+  → ExpressionParser → ParsePrimary 
+  ❌ '*' not recognized → Parse fails at '4'
+
+
+ROOT CAUSE:
+  ┌─────────────────────────────────────────────────────┐
+  │ EvaluateExpression only handles "*" exactly,        │
+  │ not "*+4", "*-2", etc.                              │
+  │                                                      │
+  │ ExpressionParser expects "$" for current address,   │
+  │ not "*"                                             │
+  └─────────────────────────────────────────────────────┘
+
+
+FIX LOCATION:
+  src/syntax/scmasm_syntax.cpp:828
+  Add check for "*+", "*-", etc. BEFORE calling ParseExpression()

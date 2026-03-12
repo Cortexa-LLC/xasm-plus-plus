@@ -1,0 +1,13 @@
+{
+  "task_id": "xasm-siu-20260311-173046",
+  "role": "engineer",
+  "start_time": "2026-03-11T17:30:46.478229-07:00",
+  "end_time": "2026-03-11T18:00:19.05463-07:00",
+  "duration_ms": 1772562,
+  "turns": 0,
+  "total_tokens": 0,
+  "tool_calls_total": 0,
+  "kg_preflight_bytes": 435,
+  "exploration_ratio": 0,
+  "has_errors": false
+}

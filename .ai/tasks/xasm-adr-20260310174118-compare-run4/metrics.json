@@ -1,0 +1,57 @@
+{
+  "run": 4,
+  "xasm_commit": "7531e43",
+  "xasm_description": "HasOpcode() excludes 65816-only opcodes in 65c02/6502 mode",
+  "prior_commits": [
+    "53f1fa5: fix accept unterminated strings in SCMASM .CS/.CZ/.AS/.AT directives",
+    "0d281fd: fix pending_label_ in .DUMMY blocks must not emit LabelAtom"
+  ],
+  "a2osx_commit": "335cd122",
+  "a2osx_branch": "xasm++_stable (0fa0ed4b)",
+  "reference": "/tmp/stable_extracted (STABLE.800.po)",
+  "date": "2026-03-10",
+  "scope": "BIN, DRV, LIB, SBIN, SYS, root-level files (excluding INC, ROOT, ETC, PRODOS)",
+  "results": {
+    "identical": 3,
+    "different": 119,
+    "not_built": 10,
+    "total_in_scope": 132
+  },
+  "identical_files": [
+    "A2OSX.LOGO (1608 bytes)",
+    "LIB/LIBBLKDEV.O (229 bytes)",
+    "LIB/LIBGUI.O (135 bytes)"
+  ],
+  "not_built_files": [
+    "BIN/ADM", "BIN/BASIC", "BIN/BEEP", "BIN/FIND", "BIN/HELP",
+    "BIN/MKTEMP", "BIN/WHICH", "BIN/XMASTREE", "SYS/PM.RAMWORKS", "SYS/VEDRIVE.CONF"
+  ],
+  "vs_run3": {
+    "run3_commit": "d05fd40",
+    "run3_identical": 2,
+    "run3_different": 113,
+    "run3_not_built": 17,
+    "newly_identical": ["A2OSX.LOGO"],
+    "newly_building": ["BIN/ASM.65816", "BIN/ASM.65R02", "BIN/FNT2FON", "LIB/LIBBLKDEV", "LIB/LIBTUI.O", "SYS/KERNEL"],
+    "regressions": []
+  },
+  "first_diff_distribution": {
+    "0x0000": {"count": 6, "category": "ASM sub-assembler table files - address pointers differ"},
+    "0x0001": {"count": 1, "files": ["SYS/PM.VEDRIVE"]},
+    "0x0005": {"count": 44, "category": "BIN Layout Version 2 files - version byte 0x02 vs stable 0x01"},
+    "0x0006": {"count": 20, "category": "Missing S.PS.F.EVENT symbol - produces 0x00 vs stable 0x02"},
+    "0x0008": {"count": 45, "category": "Code address table differs - code size differences"},
+    "0x000d": {"count": 1, "files": ["SYS/KERNEL"]},
+    "0x0028": {"count": 1, "files": ["A2OSX.SYSTEM"]},
+    "0x0088": {"count": 1, "files": ["LIB/LIBTUI.O"]}
+  },
+  "key_findings": [
+    "A2OSX.LOGO is first file to be byte-for-byte identical to stable",
+    "SYS/KERNEL now assembles (was failing due to pending_label_ .DUMMY bug)",
+    "BIN/FNT2FON now assembles (fixed by unterminated string handling)",
+    "BIN/ASM.65816 and BIN/ASM.65R02 now assemble (fixed by HasOpcode() mode-awareness)",
+    "39 files moved from first_diff=0x0001 to later offsets (pending_label_ fix corrects header layout)",
+    "No regressions - all previously working files still work",
+    "S.PS.F.EVENT symbol missing from INC/a2osx.i - 20 files affected, pre-existing issue"
+  ]
+}

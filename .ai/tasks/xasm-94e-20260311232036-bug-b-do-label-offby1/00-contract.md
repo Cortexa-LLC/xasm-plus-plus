@@ -1,0 +1,434 @@
+# Contract: Bug B off-by-1 — label on `.DO` line still 1 byte too high
+
+**Task ID:** xasm-94e
+**Created:** 2026-03-11
+**Workflow:** Bugfix
+**Requires Review:** false
+
+## Problem
+
+The Bug B fix (xasm-m7q) moved `DIB` from $2478 → $2481, but stable expects $2480. Still off by 1.
+
+### Evidence (Run 14 diff output)
+```
+ssc.drv:   6 diffs, all stable=$80 built=$81  (DIB high byte: $2480 vs $2481)
+ssc.i.drv: 6 diffs, all stable=$8e built=$8f  (DIB high byte: $248E vs $248F)
+```
+
+The instructions referencing DIB (`LDA DIB,Y`, `TSB DIB`, `TRB DIB`) all have their
+address high byte 1 too high — meaning DIB is being assigned PC+1 instead of PC.
+
+### Source context
+```
+DIB  .DO SSCIRQ=1    ; DIB should = address of first instruction AFTER this line
+     ...             ; conditional block (8 bytes when SSCIRQ=1)
+     .FIN
+```
+
+DIB should equal the address of the instruction immediately following the `.DO` line
+(i.e., the current PC at the point the `.DO` is encountered, before the block is entered).
+The fix assigned it after the block — now it's landing 1 byte past where it should.
+
+## Investigation
+
+Read the current `.DO` label handling in:
+- `src/syntax/scmasm_directive_handlers.cpp` — `HandleDo()`
+- `src/syntax/scmasm_syntax.cpp` — where label is passed to `HandleDo`
+
+The label should be assigned the PC value at the START of the `.DO` line (before any
+conditional code is processed), not after. Trace exactly where the assignment happens now
+and why it's +1.
+
+## Files
+- `src/syntax/scmasm_directive_handlers.cpp`
+- `src/syntax/scmasm_syntax.cpp`
+- `tests/unit/test_scmasm_conditionals.cpp` — update/add regression test
+- Stable: `/tmp/stable_60b98d24/ssc.drv#062000`
+- Built:  `/tmp/A2osX-335cd122-build/stage/drv/ssc.drv` (rebuild after fix)
+- Source: `/tmp/A2osX-335cd122/DRV/SSC.DRV.S.txt`
+
+## Acceptance Criteria
+```
+✓ DIB in ssc.drv resolves to $2480 (stable=$80 built=$80, 0 diffs for DIB bytes)
+✓ DIB in ssc.i.drv resolves to $248E (stable=$8e built=$8e, 0 diffs for DIB bytes)
+✓ cmake --build build exits 0
+✓ ctest exits 0 (1864 tests pass)
+```
+
+## Related Projects
+Related Projects: /Users/bryanw/Projects/Vintage/Apple/A2osX
+**Created:** [Date]
+**Requestor:** [User/Team]
+**Assigned Role:** [Orchestrator/Worker/Reviewer]
+**Workflow:** [Standard/Feature/Bugfix/Refactor/Research]
+**Requires Review:** true
+**Model:** [optional — overrides role default, e.g. Qwen3.5-35B-A3B-Q6_K.gguf or claude-opus-4-6]
+
+---
+
+## KG Orientation (MANDATORY FIRST STEP)
+
+**Before filling out this contract, query the Knowledge Graph to understand existing context.**
+
+```
+kg.search_knowledge("<task keywords>")
+kg.search_knowledge("<affected component or file area>")
+```
+
+**Fill in findings below — this prevents rediscovering what's already indexed:**
+
+### Existing KG Context
+```
+Entities found:    [list relevant entities from search_knowledge results]
+Key observations:  [any past decisions, bugs, or design notes found]
+Related files:     [file paths from get_file_context results]
+Gaps / unknowns:   [what the KG didn't know — needs investigation]
+```
+
+> Skip this section only for trivial 1-step tasks. For all code changes: KG first, then grep.
+
+---
+
+## Task Description
+
+[Clear, concise description of what needs to be done]
+
+### Background and Context
+
+[Why is this task needed? What problem does it solve? What is the larger context?]
+
+### Current State
+
+[What is the current situation? What exists today?]
+
+### Desired State
+
+[What should exist after this task is complete?]
+
+---
+
+## Success Criteria
+
+Define objective, measurable criteria for completion:
+
+```
+✓ [Criterion 1: Specific, measurable outcome]
+✓ [Criterion 2: Specific, measurable outcome]
+✓ [Criterion 3: Specific, measurable outcome]
+```
+
+**Examples:**
+- ✓ All tests passing (142/142)
+- ✓ Code coverage ≥ 85%
+- ✓ API endpoint returns expected response format
+- ✓ User can complete workflow without errors
+- ✓ Performance < 200ms response time
+
+---
+
+## Acceptance Criteria
+
+Detailed checklist of requirements that must be met:
+
+### Functional Requirements
+```
+□ [Requirement 1]
+□ [Requirement 2]
+□ [Requirement 3]
+```
+
+### Quality Requirements
+```
+□ All tests passing
+□ Code coverage 80-90%
+□ No linting errors
+□ Code review approved
+□ Documentation complete
+```
+
+### Non-Functional Requirements
+```
+□ Performance acceptable
+□ Security validated
+□ Accessibility considered
+□ Error handling robust
+```
+
+---
+
+## Constraints and Dependencies
+
+### Constraints
+```
+□ [Technical constraint]
+□ [Business constraint]
+□ [Time constraint]
+□ [Resource constraint]
+```
+
+### Dependencies
+```
+□ [Dependency on other task/feature]
+□ [Dependency on external service]
+□ [Dependency on team member]
+□ [Dependency on tool/library]
+```
+
+### Out of Scope
+```
+✗ [Explicitly not included 1]
+✗ [Explicitly not included 2]
+✗ [Explicitly not included 3]
+```
+
+---
+
+## Estimated Complexity
+
+**Complexity:** [Trivial | Small | Medium | Large | Very Large]
+
+**Rationale:**
+- Number of files affected: [X]
+- Lines of code estimate: [~X]
+- New concepts/patterns: [Yes/No]
+- Integration complexity: [Low/Medium/High]
+- Risk level: [Low/Medium/High]
+
+---
+
+## Lean Flow Analysis (MANDATORY)
+
+**Purpose:** Prevent token limit failures and verification chaos (see `principles/LEAN-FLOW.md`)
+
+### Batch Size Assessment
+
+**Estimated Files:** [X files]
+
+**Batch Size Evaluation:**
+```
+File Count Assessment:
+├─ 1-5 files   → ✅ IDEAL: Small batch, proceed
+├─ 6-14 files  → ⚠️ ACCEPTABLE: Document decomposition consideration
+├─ 15-26 files → ❌ TOO LARGE: MUST decompose into 2-3 task packets
+└─ 27+ files   → ❌ CRITICAL: MUST decompose into 3+ task packets
+
+Your Task: [X files] → [Status]
+```
+
+**If 15+ files, MANDATORY decomposition:**
+```markdown
+### Decomposition Plan
+
+This task is too large (X files) and MUST be decomposed:
+
+**Subtask 1:** [Name] ([Y] files)
+- Files: [list]
+- Estimated tokens: ~[Y × 3000] tokens
+- Dependencies: [None | Depends on X]
+
+**Subtask 2:** [Name] ([Y] files)
+- Files: [list]
+- Estimated tokens: ~[Y × 3000] tokens
+- Dependencies: [Depends on Subtask 1]
+
+[Add more subtasks as needed]
+
+**Execution Strategy:**
+- Sequential (dependencies) OR Parallel (independent)
+- WIP Limit: Max 3 spawned agents simultaneously
+```
+
+**If 6-14 files, document reasoning:**
+```markdown
+### Batch Size Justification
+
+Files: [X] (within acceptable range but requires justification)
+
+**Why not decomposed further:**
+- [Reason: High cohesion - all files tightly coupled]
+- [Reason: Single concern - one logical unit]
+- [Reason: Already minimal viable batch]
+
+**Contingency for token limits:**
+- [If token limit hit, will decompose into: X + Y]
+
+**Estimated tokens:** ~[X × 3000] = [total] tokens
+**Status:** Within 25K-32K limit? [Yes/No]
+```
+
+### Token Budget Estimation
+
+**Conservative Estimate:**
+```
+Files × Average Tokens Per File = Estimated Total
+[X] × 3,000 tokens = [total] tokens
+
+Agent Output Limit: 25K-32K tokens
+
+Status:
+├─ <20K tokens → ✅ SAFE
+├─ 20-25K tokens → ⚠️ APPROACHING LIMIT
+├─ 25-42K tokens → ❌ HIGH RISK (40% failure probability)
+└─ >42K tokens → ❌ GUARANTEED FAILURE
+
+Your Task: [total] tokens → [Status]
+```
+
+**If >42K tokens:**
+```
+⚠️ WARNING: Token budget risk
+
+REQUIRED ACTION: Decompose task into smaller batches
+
+Target: Each batch ≤42K tokens (≤14 files)
+```
+
+### Work In Progress (WIP) Planning
+
+**Concurrent Execution Assessment:**
+```
+How many spawned agents will run simultaneously?
+
+├─ 1 agent → ✅ IDEAL (complete before next)
+├─ 2-3 agents → ⚠️ ACCEPTABLE (within limits)
+└─ 4+ agents → ❌ EXCEEDS LIMIT (verification chaos)
+
+Planned WIP: [X agents]
+```
+
+**If planning parallel execution:**
+```markdown
+### Parallel Execution Plan
+
+**Agents to spawn:** [X]
+**WIP limit:** Maximum 3 concurrent spawned agents
+
+**Agent 1:** [Task description]
+- Files: [list]
+- Estimated tokens: [X]
+- Dependencies: [None]
+
+**Agent 2:** [Task description]
+- Files: [list]
+- Estimated tokens: [X]
+- Dependencies: [None | Depends on Agent 1]
+
+[If >3 agents, MUST decompose or run sequentially]
+
+**Coordination Strategy:**
+- [How will shared resources be managed?]
+- [Execution order if sequential?]
+- [Verification approach?]
+```
+
+### Decomposition Decision
+
+**Final Assessment:**
+
+**Proceed as single task packet?**
+- [ ] YES - Batch size ≤14 files AND token budget ≤42K AND WIP ≤3
+- [ ] NO - MUST decompose (batch >14 files OR tokens >42K OR WIP >3)
+
+**If NO, decomposition is MANDATORY:**
+```markdown
+See Decomposition Plan above.
+Each subtask created as separate task packet.
+Cannot proceed until decomposed.
+```
+
+**Reference:** `gates/05-lean-flow.md` for enforcement details
+
+---
+
+## Resources and References
+
+### Relevant Files
+```
+- path/to/file1.ext - [Description]
+- path/to/file2.ext - [Description]
+```
+
+### Documentation
+```
+- [Link to design doc]
+- [Link to API spec]
+- [Link to related issue]
+```
+
+### Examples
+```
+- path/to/example.ext - [Similar implementation]
+- [External reference/tutorial]
+```
+
+---
+
+## Assumptions
+
+```
+1. [Assumption 1]
+2. [Assumption 2]
+3. [Assumption 3]
+```
+
+*Note: If any assumption proves invalid, revisit this contract.*
+
+---
+
+## Risk Assessment
+
+### Identified Risks
+```
+1. [Risk 1]
+   - Probability: [Low/Medium/High]
+   - Impact: [Low/Medium/High]
+   - Mitigation: [Strategy]
+
+2. [Risk 2]
+   - Probability: [Low/Medium/High]
+   - Impact: [Low/Medium/High]
+   - Mitigation: [Strategy]
+```
+
+---
+
+## Approvals and Sign-Off
+
+**Contract Approved By:**
+- [ ] Requestor: [Name] [Date]
+- [ ] Agent: [Role] [Date]
+
+**Changes to Contract:**
+[Document any contract changes here with date and rationale]
+
+---
+
+## Notes
+
+[Any additional notes, clarifications, or context]
+
+---
+
+**Contract Version:** 1.0
+**Last Updated:** [Date]
+
+---
+
+## Usage Instructions
+
+This template should be instantiated at: `.ai/tasks/<beads-id>-<YYYYMMDDHHMMSS>-<short-desc>/00-contract.md`
+
+**When to create:**
+- At the start of any new task
+- Before planning or implementation begins
+
+**Who creates it:**
+- Orchestrator (for complex tasks)
+- Worker (for assigned tasks)
+- User (can provide initial version)
+
+**Key principles:**
+- Be specific and measurable
+- Clarify ambiguities upfront
+- Document assumptions
+- Get agreement before proceeding

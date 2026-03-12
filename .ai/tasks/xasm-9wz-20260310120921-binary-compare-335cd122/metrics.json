@@ -1,0 +1,13 @@
+{
+  "task_id": "xasm-9wz-20260310-122514",
+  "role": "engineer",
+  "start_time": "2026-03-10T12:25:14.546446-07:00",
+  "end_time": "2026-03-10T13:02:33.822073-07:00",
+  "duration_ms": 2239259,
+  "turns": 0,
+  "total_tokens": 0,
+  "tool_calls_total": 0,
+  "kg_preflight_bytes": 694,
+  "exploration_ratio": 0,
+  "has_errors": false
+}

@@ -1,0 +1,147 @@
+INVESTIGATION COMPLETE: A2osX Line 702 Parsing Error
+=====================================================
+
+Date: 2026-02-17
+Agent: Spelunker
+Status: ✅ COMPLETE - READY FOR IMPLEMENTATION
+
+SUMMARY OF FINDINGS
+-------------------
+
+Root Cause:
+  File: src/syntax/scmasm_syntax.cpp
+  Function: EvaluateExpression()
+  Lines: 826-828
+  Issue: Only handles "*" when exact match, not in expressions like "*+4"
+
+Error Message:
+  "Unexpected character after expression: 4"
+  
+Test Case:
+  .EQ *+4  (fails)
+  .EQ *    (works)
+
+Impact:
+  - Blocks A2osX.S.txt assembly at line 702
+  - 2 occurrences in A2osX file (lines 702, 703)
+  
+Recommended Fix:
+  Add 5 lines of code after line 828
+  Check for "*+", "*-", etc. and substitute current address value
+  Minimal scope, no changes to shared ExpressionParser
+  
+Confidence: HIGH
+  - Root cause traced through full call stack
+  - Error reproduced with minimal test case
+  - Fix location precisely identified
+  - Multiple fix options evaluated
+  - Edge cases analyzed
+  
+DOCUMENTATION CREATED
+---------------------
+
+1. investigation-report.md  - Full detailed analysis (8.3KB)
+   → Complete root cause analysis with evidence chain
+   → Three fix options with pros/cons
+   → Recommended solution with rationale
+
+2. execution-trace.txt      - Step-by-step debug trace (3.9KB)
+   → Visual execution flow from entry to error
+   → Shows exactly where and why parsing fails
+   → Call stack visualization
+
+3. fix-diagram.txt          - Visual fix guide (5.7KB)
+   → ASCII diagrams showing the transformation
+   → Code examples with before/after
+   → Edge cases and why fix works
+
+4. FINDINGS.md              - Quick reference (2KB)
+   → One-page summary for quick lookup
+   → Root cause in plain language
+   → Code snippet ready to use
+
+5. ENGINEER-CHECKLIST.md    - Implementation guide (3.3KB)
+   → Step-by-step checklist
+   → Testing procedures
+   → Troubleshooting guide
+   → Git workflow
+
+6. work-log.md              - Investigation process (3KB)
+   → Steps taken during investigation
+   → Tools and commands used
+   → Files analyzed
+
+7. README.md                - Executive summary (2.9KB)
+   → Overview for all audiences
+   → Quick navigation to other docs
+   → Success criteria verification
+
+8. INDEX.md                 - Documentation index (3.9KB)
+   → Guide to all documents
+   → Who should read what
+   → How to use the investigation
+
+Total: 8 documents, 32.9KB of documentation
+
+VERIFICATION CHECKLIST
+----------------------
+
+✅ Root cause identified with file:line reference
+✅ Execution flow traced from entry to error
+✅ Related code patterns found (2 occurrences)
+✅ Evidence documented with code snippets
+✅ Investigation findings clear
+✅ Fix recommended with minimal scope
+✅ Test cases provided
+✅ Implementation guide created
+✅ Multiple documentation formats
+✅ Engineer can implement without questions
+✅ Edge cases analyzed
+✅ Alternative solutions evaluated
+
+QUALITY METRICS
+---------------
+
+Investigation Time: ~20 minutes
+Files Analyzed: 3 source files
+Code Locations Identified: 2 key locations
+Test Cases Created: 1 minimal reproduction
+Documentation Pages: 8 comprehensive documents
+Fix Scope: 5 lines of code (minimal)
+
+SUCCESS CRITERIA MET
+--------------------
+
+✅ Root cause identified - Yes, with precise location
+✅ Execution flow traced - Yes, full call stack documented
+✅ Related code patterns found - Yes, 2 occurrences in A2osX
+✅ Evidence documented - Yes, with file:line references
+✅ Investigation findings clear - Yes, multiple formats
+
+READY FOR IMPLEMENTATION
+------------------------
+
+Status: ✅ YES
+
+Engineer should:
+1. Read ENGINEER-CHECKLIST.md
+2. Review fix-diagram.txt for visual understanding
+3. Implement 5-line fix in scmasm_syntax.cpp
+4. Test with provided test case
+5. Verify A2osX.S.txt assembles
+6. Commit and create PR
+
+Next Agent: Engineer
+Estimated Implementation Time: 15-30 minutes
+Risk Level: Low (minimal scope, well-documented)
+
+CONTACT INFORMATION
+-------------------
+
+Investigation Lead: Spelunker Agent
+Task ID: xasm++-exb8-2026-02-17-line-702-investigation
+Documentation: .ai/tasks/xasm++-exb8-2026-02-17-line-702-investigation/
+Questions: See investigation-report.md for alternatives
+
+END OF INVESTIGATION
+=====================

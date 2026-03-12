@@ -1,0 +1,44 @@
+A2oSX SCMASM Directive Usage Report
+====================================
+Generated: Fri Feb 13 06:43:20 EST 2026
+Source: ~/Projects/Vintage/Apple/A2osX/
+
+This report lists all SCMASM directives found in A2oSX source files,
+sorted by usage frequency (most common first).
+
+Format: <count> <directive>
+
+Directives:
+-----------
+
+4616 .DA
+1131 .INB
+ 909 .HS
+ 529 .PS
+ 389 .OR
+ 280 .BS
+ 258 .AT
+ 231 .DUMMY
+ 192 .LIST
+ 180 .CS
+ 161 .TF
+ 148 .OP
+ 129 .FIN
+ 118 .DO
+  94 .CZ
+  89 .AZ
+  49 .AS
+  38 .EP
+  28 .MA
+  28 .EM
+  23 .ED
+  15 .ELSE
+  10 .PH
+   1 .FI
+   1 .EL
+
+Summary Statistics:
+-------------------
+Total directive occurrences: 9647
+Unique directives: 25
+Source files scanned: 190

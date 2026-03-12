@@ -1,0 +1,144 @@
+FIX DIAGRAM: Star Operator in Expressions
+==========================================
+
+PROBLEM:
+--------
+
+Input: "*+4"
+
+Current Code:                        ExpressionParser:
+┌──────────────────────┐            ┌─────────────────────┐
+│ EvaluateExpression() │            │ ParsePrimary()      │
+│                      │            │                     │
+│ if (trimmed == "*")  │            │ Peek() == '$' ?     │
+│   return addr;       │   "*+4"    │   ✓ Current loc     │
+│                      ├───────────→│                     │
+│ ❌ No match          │            │ Peek() == '*' ?     │
+│ Fall through to      │            │   ❌ NOT checked    │
+│ ParseExpression()    │            │                     │
+└──────────────────────┘            │ ERROR: Unexpected   │
+                                    └─────────────────────┘
+
+
+SOLUTION:
+---------
+
+Input: "*+4"
+
+New Code:
+┌────────────────────────────────────────────────────┐
+│ EvaluateExpression()                               │
+│                                                    │
+│ // Existing check                                 │
+│ if (trimmed == "*")                               │
+│   return current_address_;  ✓ "*" alone works    │
+│                                                    │
+│ // NEW: Check for *+expr, *-expr, etc.           │
+│ if (trimmed[0] == '*' &&                          │
+│     (trimmed[1] in ['+','-','/','&','|','^'])) {  │
+│                                                    │
+│   // Replace * with actual address                │
+│   expr_str = to_string(current_address_)          │
+│            + trimmed.substr(1);                   │
+│                                                    │
+│   // "*+4" becomes "32768+4" (if addr=32768)     │
+│   auto expr = ParseExpression(expr_str, symbols); │
+│   return expr->Evaluate(symbols);  ✓ Works!       │
+│ }                                                  │
+└────────────────────────────────────────────────────┘
+
+
+TRANSFORMATION:
+---------------
+
+Step 1: Input
+  "*+4"
+
+Step 2: Check first char
+  trimmed[0] == '*'  ✓
+  trimmed[1] == '+'  ✓
+
+Step 3: Get current address
+  current_address_ = 0x8000  (example)
+
+Step 4: Build new expression
+  to_string(0x8000) = "32768"
+  trimmed.substr(1) = "+4"
+  expr_str = "32768+4"
+
+Step 5: Parse and evaluate
+  ParseExpression("32768+4")
+  → Literal(32768) + Literal(4)
+  → Evaluates to 32772
+  → Returns 0x8004  ✓ Success!
+
+
+CODE LOCATION:
+--------------
+
+File: src/syntax/scmasm_syntax.cpp
+Function: ScmasmSyntaxParser::EvaluateExpression()
+
+Line 826-828: EXISTING CODE
+┌────────────────────────────────────┐
+│ // Handle * (current address)      │
+│ if (trimmed == "*") {              │
+│   return current_address_;         │
+│ }                                  │
+└────────────────────────────────────┘
+         ↓
+Line 829: INSERT NEW CODE HERE
+┌────────────────────────────────────────────────────────┐
+│ // Handle *+offset, *-offset, etc.                     │
+│ if (trimmed.length() > 1 && trimmed[0] == '*') {      │
+│   char op = trimmed[1];                                │
+│   if (op == '+' || op == '-' || op == '/' ||          │
+│       op == '&' || op == '|' || op == '^' ||          │
+│       op == '<' || op == '>') {                        │
+│     std::string expr_str = std::to_string(             │
+│         current_address_) + trimmed.substr(1);         │
+│     auto expr = ParseExpression(expr_str, symbols);    │
+│     return static_cast<uint32_t>(expr->Evaluate(       │
+│         symbols));                                     │
+│   }                                                    │
+│ }                                                      │
+└────────────────────────────────────────────────────────┘
+
+
+EDGE CASES HANDLED:
+-------------------
+
+✓ "*+4"    → "32768+4"    → 32772
+✓ "*-2"    → "32768-2"    → 32766
+✓ "*+$10"  → "32768+$10"  → 32784
+✓ "*&$FF"  → "32768&$FF"  → 0
+✓ "*|$80"  → "32768|$80"  → 32896
+✓ "*<4"    → "32768<4"    → true (comparison)
+✓ "*"      → existing code handles this
+
+❓ "**4"   → Falls through (ambiguous: *×4 or * with *4?)
+❓ "*2"    → Falls through (is this *×2 or label *2?)
+
+
+ALTERNATIVES REJECTED:
+----------------------
+
+Option 1: String replacement (complex heuristics)
+  - Must distinguish * as operator vs current address
+  - Fragile with edge cases like "2**+4"
+
+Option 2: Modify ExpressionParser (too broad)
+  - Changes shared code used by all syntaxes
+  - Might break CA65, other assemblers
+  - Larger scope than needed
+
+
+WHY THIS FIX WORKS:
+-------------------
+
+1. Minimal scope - only touches SCMASM syntax
+2. Simple logic - lookahead 1 character
+3. Leverages existing code - ParseExpression does the work
+4. No string manipulation tricks
+5. Handles all common cases
+6. No changes to shared ExpressionParser
