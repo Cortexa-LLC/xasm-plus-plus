@@ -260,8 +260,69 @@ TEST(MerlinSyntaxTest, DumWithSymbol) {
 
   // Should define master
   EXPECT_TRUE(symbols.IsDefined("master"));
-  // Should define _firstboot in DUM block
+  int64_t master_value;
+  EXPECT_TRUE(symbols.Lookup("master", master_value));
+  EXPECT_EQ(master_value, 0xf880);
+  
+  // Should define _firstboot in DUM block at address $f880
   EXPECT_TRUE(symbols.IsDefined("_firstboot"));
+  int64_t firstboot_value;
+  EXPECT_TRUE(symbols.Lookup("_firstboot", firstboot_value));
+  EXPECT_EQ(firstboot_value, 0xf880); // Should be at DUM start address
+}
+
+TEST(MerlinSyntaxTest, DumMultipleLabelsLikePoP) {
+  // Regression test for Prince of Persia soundtable bug
+  // DUM section should correctly allocate addresses from base address
+  MerlinSyntaxParser parser;
+  ConcreteSymbolTable symbols;
+  Section section("test", 0);
+
+  std::string source = "mobtables = $b600\n"
+                       "maxsfx = $20\n"
+                       " dum mobtables\n"
+                       "trloc ds $20\n"       // $b600
+                       "trscrn ds $20\n"      // $b620
+                       "trdirec ds $20\n"     // $b640
+                       "mobx ds $10\n"        // $b660
+                       "moby ds $10\n"        // $b670
+                       "mobscrn ds $10\n"     // $b680
+                       "mobvel ds $10\n"      // $b690
+                       "mobtype ds $10\n"     // $b6a0
+                       "moblevel ds $10\n"    // $b6b0
+                       "soundtable ds maxsfx\n" // $b6c0
+                       "trobcount ds 1\n"     // $b6e0
+                       " dend\n";
+
+  parser.Parse(source, section, symbols);
+
+  // Verify all labels have correct DUM addresses
+  int64_t value;
+  EXPECT_TRUE(symbols.Lookup("trloc", value));
+  EXPECT_EQ(value, 0xb600);
+  EXPECT_TRUE(symbols.Lookup("trscrn", value));
+  EXPECT_EQ(value, 0xb620);
+  EXPECT_TRUE(symbols.Lookup("trdirec", value));
+  EXPECT_EQ(value, 0xb640);
+  EXPECT_TRUE(symbols.Lookup("mobx", value));
+  EXPECT_EQ(value, 0xb660);
+  EXPECT_TRUE(symbols.Lookup("moby", value));
+  EXPECT_EQ(value, 0xb670);
+  EXPECT_TRUE(symbols.Lookup("mobscrn", value));
+  EXPECT_EQ(value, 0xb680);
+  EXPECT_TRUE(symbols.Lookup("mobvel", value));
+  EXPECT_EQ(value, 0xb690);
+  EXPECT_TRUE(symbols.Lookup("mobtype", value));
+  EXPECT_EQ(value, 0xb6a0);
+  EXPECT_TRUE(symbols.Lookup("moblevel", value));
+  EXPECT_EQ(value, 0xb6b0);
+  
+  // The critical one: soundtable should be at $b6c0, not $0000
+  EXPECT_TRUE(symbols.Lookup("soundtable", value));
+  EXPECT_EQ(value, 0xb6c0);
+  
+  EXPECT_TRUE(symbols.Lookup("trobcount", value));
+  EXPECT_EQ(value, 0xb6e0);
 }
 
 TEST(MerlinSyntaxTest, OrgWithSymbol) {

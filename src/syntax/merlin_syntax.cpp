@@ -465,8 +465,9 @@ void MerlinSyntaxParser::HandleDum(const std::string &operand,
     if (symbols.Lookup(op, value)) {
       dum_address_ = static_cast<uint32_t>(value);
     } else {
-      // Symbol not found - use 0 for now (forward reference issue)
-      dum_address_ = 0;
+      // Symbol not found - ERROR instead of silently using 0
+      throw std::runtime_error(
+          FormatError("DUM directive: symbol '" + op + "' not defined"));
     }
   }
 }
@@ -942,11 +943,15 @@ void MerlinSyntaxParser::ParseLine(const std::string &line, Section &section,
   // If only label on line (no directive/instruction)
   if (pos >= code_line.length()) {
     if (!label.empty()) {
-      // Create label atom and define symbol
+      // In DUM blocks, labels get the DUM address; no LabelAtom emitted
+      // (LabelAtoms are overwritten by current_address in ResolveSymbols)
+      uint32_t label_addr = in_dum_block_ ? dum_address_ : current_address_;
       symbols.Define(label, SymbolType::Label,
-                     std::make_shared<LiteralExpr>(current_address_));
-      section.atoms.push_back(
-          std::make_shared<LabelAtom>(label, current_address_));
+                     std::make_shared<LiteralExpr>(label_addr));
+      if (!in_dum_block_) {
+        section.atoms.push_back(
+            std::make_shared<LabelAtom>(label, label_addr));
+      }
 
       // Update current scope for local labels
       current_scope_.global_label = label;
@@ -998,10 +1003,13 @@ void MerlinSyntaxParser::ParseLine(const std::string &line, Section &section,
   if (macros_.find(upper_directive) != macros_.end()) {
     // Create label atom first if label present
     if (!label.empty()) {
+      uint32_t label_addr = in_dum_block_ ? dum_address_ : current_address_;
       symbols.Define(label, SymbolType::Label,
-                     std::make_shared<LiteralExpr>(current_address_));
-      section.atoms.push_back(
-          std::make_shared<LabelAtom>(label, current_address_));
+                     std::make_shared<LiteralExpr>(label_addr));
+      if (!in_dum_block_) {
+        section.atoms.push_back(
+            std::make_shared<LabelAtom>(label, label_addr));
+      }
       current_scope_.global_label = label;
       current_scope_.local_labels.clear();
     }
@@ -1013,10 +1021,13 @@ void MerlinSyntaxParser::ParseLine(const std::string &line, Section &section,
   // Assume it's an instruction
   // Create label atom first if label present
   if (!label.empty()) {
+    uint32_t label_addr = in_dum_block_ ? dum_address_ : current_address_;
     symbols.Define(label, SymbolType::Label,
-                   std::make_shared<LiteralExpr>(current_address_));
-    section.atoms.push_back(
-        std::make_shared<LabelAtom>(label, current_address_));
+                   std::make_shared<LiteralExpr>(label_addr));
+    if (!in_dum_block_) {
+      section.atoms.push_back(
+          std::make_shared<LabelAtom>(label, label_addr));
+    }
     current_scope_.global_label = label;
     current_scope_.local_labels.clear();
   }

@@ -287,8 +287,16 @@ void HandleDs(const std::string &label, const std::string &operand,
                                  : parser->GetCurrentAddress();
     context.symbols->Define(label, SymbolType::Label,
                             std::make_shared<LiteralExpr>(label_address));
-    context.section->atoms.push_back(
-        std::make_shared<LabelAtom>(label, label_address));
+    // In DUM mode, do NOT push a LabelAtom into the atom stream.
+    // ResolveSymbols processes LabelAtoms by overwriting the address with
+    // current_address (the real program counter), which would replace the
+    // correct dum_address_ we just stored in the symbol table.
+    // DUM-section symbols are fully defined at parse time (symbol table only);
+    // they do not need a LabelAtom for the assembler to process.
+    if (!parser->IsInDumBlock()) {
+      context.section->atoms.push_back(
+          std::make_shared<LabelAtom>(label, label_address));
+    }
     parser->SetGlobalLabel(label);
   }
 
