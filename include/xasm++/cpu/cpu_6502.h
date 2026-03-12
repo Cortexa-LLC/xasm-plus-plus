@@ -169,6 +169,17 @@ public:
   CpuMode GetCpuMode() const;
 
   /**
+   * @brief Enable or disable branch relaxation
+   *
+   * When disabled (default), out-of-range branches produce an error,
+   * matching original assembler behavior (Merlin 8, etc.). When enabled,
+   * out-of-range branches are silently expanded to B!cc +3 / JMP sequences.
+   *
+   * @param relax true = expand out-of-range branches, false = error (default)
+   */
+  void SetRelaxBranches(bool relax);
+
+  /**
    * @brief Set the M and X flags for 65816 register width control
    *
    * On the 65816, the M flag controls accumulator width and the X flag
@@ -643,6 +654,10 @@ private:
   // x flag: false = 16-bit index registers, true = 8-bit index registers
   bool m_flag_ = true; // Default: 8-bit accumulator (emulation mode)
   bool x_flag_ = true; // Default: 8-bit index registers (emulation mode)
+
+  // Branch relaxation: false = error on out-of-range (default, matches original
+  // assembler behavior). true = expand to B!cc+3/JMP sequence.
+  bool relax_branches_ = false;
 
   // Branch relaxation handler (Large class refactoring - improving SRP
   // compliance M6.1)

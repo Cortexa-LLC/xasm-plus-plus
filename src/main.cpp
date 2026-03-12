@@ -121,6 +121,10 @@ int main(int argc, char **argv) {
       return 1;
     }
 
+    // Branch relaxation defaults to off — original assemblers error on
+    // out-of-range branches. Use --relax-branches to enable expansion.
+    cpu6502.SetRelaxBranches(opts.relax_branches);
+
     // Step 3: Parse source code
     // Change to source file's directory so PUT directives can find included
     // files

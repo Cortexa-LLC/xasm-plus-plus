@@ -2085,6 +2085,8 @@ bool Cpu6502::IsAccumulator8Bit() const { return m_flag_; }
 
 bool Cpu6502::IsIndex8Bit() const { return x_flag_; }
 
+void Cpu6502::SetRelaxBranches(bool relax) { relax_branches_ = relax; }
+
 // ============================================================================
 // CpuPlugin Interface Implementation - EncodeInstruction()
 // ============================================================================
@@ -2588,6 +2590,18 @@ Cpu6502::EncodeInstructionSpecial(const std::string &mnemonic,
     else if (clean_mnemonic == M6502Mnemonics::BRA)
       branch_opcode = Opcodes::BRA;
 
+    // Check if branch is out of range
+    if (branch_handler_.NeedsBranchRelaxation(current_address, target_addr)) {
+      if (!relax_branches_) {
+        // Error by default — matches original assembler behavior (Merlin 8, etc.)
+        // Programmer is responsible for keeping branches in range.
+        int16_t offset = static_cast<int16_t>(target_addr) -
+                         static_cast<int16_t>(current_address + 2);
+        throw std::runtime_error(
+            "Branch out of range: offset " + std::to_string(offset) +
+            " (must be -128 to +127); use --relax-branches to expand");
+      }
+    }
     // Use branch relaxation (handles both short and long branches)
     return EncodeBranchWithRelaxation(branch_opcode, current_address,
                                       target_addr);

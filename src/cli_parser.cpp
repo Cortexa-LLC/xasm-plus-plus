@@ -93,6 +93,10 @@ CommandLineOptions ParseCommandLine(int argc, char **argv) {
   app.add_flag("--werror", opts.werror,
                "Treat warnings as errors");
 
+  // Branch relaxation (off by default - original assemblers error on out-of-range)
+  app.add_flag("--relax-branches", opts.relax_branches,
+               "Expand out-of-range branches to B!cc+3/JMP sequences (default: error)");
+
   // Quiet mode
   app.add_flag("-q,--quiet", opts.quiet,
                "Suppress non-essential output");

@@ -1049,12 +1049,13 @@ TEST(AssemblerTest, IntegrationMixedAddressingModes) {
 TEST(AssemblerTest, LongBranchNeedsRelaxation) {
   Assembler assembler;
   Cpu6502 cpu;
+  cpu.SetRelaxBranches(true); // Explicitly enable — not the default
   assembler.SetCpuPlugin(&cpu);
 
   Section section(".text", static_cast<uint32_t>(SectionAttributes::Code),
                   0x1000);
 
-  // Create a branch with target out of range (+512 bytes, max is +127)
+  // Create a branch with target out of range (+255 bytes, max is +127)
   auto beq = std::make_shared<InstructionAtom>("BEQ", "far_target");
 
   // Add padding (255 NOPs = 255 bytes, makes target > 127 bytes away)
@@ -1069,12 +1070,6 @@ TEST(AssemblerTest, LongBranchNeedsRelaxation) {
   assembler.AddSection(section);
   AssemblerResult result = assembler.Assemble();
 
-  // Currently this throws an error - should succeed with relaxation
-  if (!result.success) {
-    for (const auto &err : result.errors) {
-      std::cerr << "Error: " << err.message << std::endl;
-    }
-  }
   ASSERT_TRUE(result.success)
       << "Assembly failed with " << result.errors.size() << " errors";
 
@@ -1084,6 +1079,33 @@ TEST(AssemblerTest, LongBranchNeedsRelaxation) {
   EXPECT_EQ(beq->encoded_bytes[0], 0xD0); // BNE (complement of BEQ)
   EXPECT_EQ(beq->encoded_bytes[1], 0x03); // Skip 3 bytes (JMP instruction)
   EXPECT_EQ(beq->encoded_bytes[2], 0x4C); // JMP opcode
+}
+
+// Test: out-of-range branch errors by default (no --relax-branches)
+TEST(AssemblerTest, LongBranchErrorsByDefault) {
+  Assembler assembler;
+  Cpu6502 cpu;
+  // relax_branches defaults to false — out-of-range branch should error
+  assembler.SetCpuPlugin(&cpu);
+
+  Section section(".text", static_cast<uint32_t>(SectionAttributes::Code),
+                  0x1000);
+
+  auto beq = std::make_shared<InstructionAtom>("BEQ", "far_target");
+  section.atoms.push_back(beq);
+  for (int i = 0; i < 255; i++) {
+    section.atoms.push_back(std::make_shared<InstructionAtom>("NOP", ""));
+  }
+  auto far_label = std::make_shared<LabelAtom>("far_target", 0);
+  section.atoms.push_back(far_label);
+
+  assembler.AddSection(section);
+  AssemblerResult result = assembler.Assemble();
+
+  EXPECT_FALSE(result.success);
+  ASSERT_FALSE(result.errors.empty());
+  EXPECT_NE(result.errors[0].message.find("Branch out of range"),
+            std::string::npos);
 }
 
 // Test 44: Short branch that doesn't need relaxation
