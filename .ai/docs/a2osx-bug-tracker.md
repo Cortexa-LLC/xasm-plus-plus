@@ -262,6 +262,44 @@ was not expanded.
 **Files:** `src/syntax/scmasm_directive_handlers.cpp`, `tests/unit/test_scmasm_directive_registry.cpp`
 **Impact:** ssc.drv DCB.PARITY/FLOW now correct (2 fewer diffs).
 
+### Bug 21: `STAR .EQ '*'` — `*` inside char literal treated as current-PC (de99d2d)
+**Symptom:** `STAR .EQ '*'` and `BLANK .EQ ' '` failed with "Unexpected character after
+expression: 1" — the char literal `'*'` was being processed with `*` replaced by the current
+address (e.g. `'8192'`), which then caused the expression `'8` to parse as ASCII char value 56,
+leaving `192'` as unexpected trailing text.
+**Root cause:** `EvaluateExpression()` runs a `*`→current_address substitution loop BEFORE
+expanding char literals. The `*` at position 1 in `'*'` was preceded by `'` (not an identifier
+char), so it was replaced. `ExpandCharLiteralsInExpr` was not called first.
+**Fix:**
+1. Extended `ExpandCharLiteralsInExpr` to expand standalone char literals at position 0
+   when a closing delimiter is present (e.g. `'*'` → `$2A`, `' '` → `$20`).
+2. Call `ExpandCharLiteralsInExpr(trimmed)` at the top of `EvaluateExpression` before the
+   `*` substitution loop.
+**Files:** `src/syntax/scmasm_syntax.cpp`, `tests/unit/test_scmasm_syntax.cpp`
+**Impact:** `bin/xmastree` now byte-identical.
+
+### Bug 22: `BLANK .EQ ' '` — whitespace inside char literal truncates operand (de99d2d)
+**Symptom:** `BLANK .EQ ' '` assembled as `.EQ ''` (empty) — value was 0 instead of 32.
+**Root cause:** `HandleEq()` stripped inline comments using `find_first_of(" \t")` which
+found the space *inside* `' '` and truncated the operand to just `'`.
+**Fix:** Replaced `find_first_of` with a char-literal-aware scan that skips over `'X'`
+and `"X"` patterns before treating whitespace as a comment delimiter.
+**Files:** `src/syntax/scmasm_directive_handlers.cpp`, `tests/unit/test_scmasm_syntax.cpp`
+**Impact:** Combined with Bug 21 fix; xmastree/mac2unix equates now correct.
+
+### Bug 23: `.DA $$"ADC"` — SCMASM inline string literal not recognized (de99d2d)
+**Symptom:** `bin/asm`, `bin/asm.6502`, `bin/asm.65C02`, `bin/asm.65R02`, `bin/asm.SW16`,
+`bin/asm.Z80`, `bin/asm.65816` failed to assemble with "Invalid hex digit '$' in hex string:
+'$$\"ADC\"'". The A2osX ASM tool stores opcode mnemonic tables using `.DA $$"mnemonic"` syntax.
+**Root cause:** `HandleDa()` evaluated `$$"ADC"` as an expression, which reached the hex
+number parser as `$` + `$"ADC"`. The second `$` is not a valid hex digit.
+**SCMASM semantics:** `$$"text"` in a `.DA` operand = emit the raw ASCII bytes of `text`.
+**Fix:** Added early check in `HandleDa()` for `$$"..."` / `$$'...'` prefix: extracts the
+string content and emits each byte (low 7 bits) directly, bypassing expression evaluation.
+**Files:** `src/syntax/scmasm_directive_handlers.cpp`, `tests/unit/test_scmasm_syntax.cpp`
+**Impact:** `bin/asm` and `bin/asm.SW16` now byte-identical. `bin/asm.*` CPU tables now
+assemble (output differs due to pre-existing address table issues, not this bug).
+
 ---
 
 ## Known Source Version Differences (Not Assembler Bugs)
@@ -535,3 +573,4 @@ suggesting specific areas for targeted investigation rather than fundamental iss
 - Validation report: .ai/tasks/xasm-89o-20260312063117-run15-full-comparison/30-validation-report.md
 - Detailed file list: /tmp/run15_detailed_file_list.txt
 
+| 16 | de99d2d | 78 | 47 | 78 | **+4 identical!** Char literals in .EQ + .DA $$"string" |
