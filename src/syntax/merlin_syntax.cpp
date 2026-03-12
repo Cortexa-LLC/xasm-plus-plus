@@ -133,10 +133,16 @@ std::string MerlinSyntaxParser::StripComments(const std::string &line) {
     return "";
   }
 
-  // ; anywhere marks start of inline comment
-  size_t comment_pos = line.find(';');
-  if (comment_pos != std::string::npos) {
-    return line.substr(0, comment_pos);
+  // ; marks start of inline comment ONLY when preceded by whitespace.
+  // A ';' immediately after a non-space character is a Merlin macro argument
+  // separator (e.g. "stlx $E1;$9D00" passes two args to the stlx macro).
+  for (size_t i = 0; i < line.size(); ++i) {
+    if (line[i] == ';') {
+      if (i == 0 || std::isspace(static_cast<unsigned char>(line[i - 1]))) {
+        return line.substr(0, i);
+      }
+      // Non-whitespace before ';' — argument separator, keep scanning
+    }
   }
 
   return line;
