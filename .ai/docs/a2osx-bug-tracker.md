@@ -24,6 +24,7 @@ to the original SCMASM assembler using A2osX 335cd122 as the reference test case
 | 9 | 3191947 | 65 | 56 | 11 | .CS mixed-delimiter fix; no count change (differences are source changes) |
 | 10 | b19928d | 66 | 58 | 89 | **+1 identical (CSH)!** EquateAtom in .DUMMY + macro arg parsing |
 | 11 | 3a14d43 | 66 | 58 | 89 | .CS-only mixed-delim refinement; SH shifts +3→-3 but count unchanged |
+| 12 | c5f54b0 | 71 | 53 | 89 | **+5 identical!** .HX nibble-swap fix + .DA * substitution |
 
 ¹ Scope/script changed; not directly comparable to runs 1-4
 ² Includes ~25 same-size-different-content files (source version differences)
@@ -168,6 +169,35 @@ after that whitespace (to end of line) is an inline comment, not more arguments.
 **Files:** `src/syntax/scmasm_syntax.cpp`
 **Impact:** BIN/CSH is now **byte-identical** to stable.
 
+### Bug 14: .HX directive emitted one byte per nibble instead of packing nibble pairs (c5f54b0)
+**Symptom:** `lib/libgui` was 132 bytes larger than stable. Bitmap data in `LIBGUI.G.BM.txt`
+was double the expected size.
+**Root cause:** `HandleHx()` pushed each hex digit as its own byte (`data.push_back(val)`)
+rather than packing pairs into bytes. A `.HX 00022000` (8 nibbles) emitted 8 bytes instead
+of 4 bytes.
+**SCMASM .HX semantics:** nibble pairs are packed low-nibble-first: pair `XY` → byte `(Y<<4)|X`.
+This is Apple II 4bpp color pixel storage convention (low nibble = left pixel).
+**Fix:** Collect all nibbles first, then pack pairs: `data.push_back((nibbles[i+1]<<4) | nibbles[i])`.
+**Files:** `src/syntax/scmasm_directive_handlers.cpp`, `tests/unit/test_scmasm_syntax.cpp` (+6 tests)
+**Impact:** `lib/libgui` reduced from -132B to -20B. Remaining 20B is a source change
+(BM.Checked new bitmap +22B, KBD/KBDSTROBE undefined symbol -2B).
+
+### Bug 15: `*` (current PC) not substituted in `.DA` expressions (c5f54b0)
+**Symptom:** `.DA BLOCK.E+1-*` style expressions in `bin/asm.6502`, `bin/asm.65816`, and
+all `asm.*` CPU module files produced `0` instead of the correct block-size offset.
+Block navigation pointers were all zero, which would cause the A2osX ASM tool to
+malfunction at runtime when navigating CPU instruction tables.
+**Root cause:** `EncodeInstructions()` and `RefixupDataAtoms()` in `assembler.cpp` evaluated
+DataAtom expression strings via `ParseExpression(expr_str)` without first substituting
+`*` with the current `virtual_address`. `EquateAtom` handling (same file) correctly did
+this substitution, but `DataAtom` did not.
+**Fix:** Added the same star-replacement loop used in `EquateAtom` to both DataAtom
+evaluation paths. Skips `*` preceded by alphanumeric/`.`/`_` chars to avoid `foo*bar`.
+**Files:** `src/core/assembler.cpp`
+**Impact:** `asm.6502`, `asm.65C02`, `asm.65R02`, `asm.SW16`, `asm.Z80` now
+**byte-identical** to stable. `asm.65816` still -9B (source version diff: JSL/JML entries
+added in commit c11287b3 after stable was built).
+
 ### Bug 10: JSR/JMP to ZP-range address used ZeroPage mode instead of Absolute (75a1f64)
 **Symptom:** All 9 `jsr ZPReadAux` instructions in MEMDUMP were silently dropped
 (0 bytes emitted), causing MEMDUMP to be 27 bytes too small. Bug was latent —
@@ -197,13 +227,22 @@ between commit a417f7ab (stable reference era) and 335cd122 (current source):
 
 ### File-specific Source Changes
 - **BIN/CUT** (-2B): commit `16e3760c` added `lda ArgLine` before `>SYSCALL ArgV`
+- **BIN/SH** (-3B): `.CZ '%s = "%s"\r\n'` string now correct (12B); branch relaxation at $2FA3 adds 3B
+- **SBIN/BBSD** (-16B): 4 source changes: FDs table lookup (+2B), push simplification (-2B), `_DEBUG` subroutine (+15B), extra instruction (+1B)
+- **BIN/HTTPGET** (-14B): New progress display feature added after stable was built
+- **BIN/FNT2FON** (-13B): `.AZ -" : "` (4B) replaced by `.CZ -N : No shrink\r\n"` (17B, typo in source — missing opening `"`)
+- **BIN/USERADD** (-48B): commit `3d0a9afe` (Dec 2023) added `CS.RUN.IsValidChar` validation (+48B) after stable was built
+- **BIN/ASM.65816** (-9B): commit `c11287b3` (Jan 2025) added JSL (+14B) and JML (+13B) entries, removed DCaa from JMP (-6B). Net +9B after stable.
+- **LIB/LIBGUI** (-20B): BM.Checked new bitmap (+22B), KBD/KBDSTROBE undefined symbol (-2B). Source diff.
 - **DRV/PPPSSC.DRV** (0B, 1 diff byte): `lda A2osX.S,y` → `lda A2osX.S-1,y` (off by 1)
 - **DRV/DHGR.DRV** (0B, 7×SYSCALL2 diffs): `A2osX.HWType` → `A2osX.HWT`; IO.* prefix changes
 - **LIB/LIBTCPIP** (0B, many diffs): `.INB inc/kernel.i` added; `SETREADAUX` → `IO.SETREADAUX`
 - **LIB/LIBCRYPT** (0B, 9×SYSCALL2 diffs): Only A2osX.SYSCALL2 address change (no source change)
 - **sys/kernel**: Code completely different from byte 0
-- **lib/libtui** (+286 bytes): Source changed significantly
-- **lib/libblkdev** (+1B), **bin/csh** (-1B): Likely SYSCALL address changes + minor source diffs
+- **lib/libtui** (-286B): Source changed significantly
+- **lib/libblkdev** (+1B): Likely SYSCALL address changes + minor source diffs
+- **BIN/BMP2PIX** (+7B): Uses bare `SETMIXED`/`CLRTEXT` etc. instead of `IO.SETMIXED`/`IO.CLRTEXT` — A2osX source regression (symbols renamed after stable, callers not updated)
+- **SYS/PM.NSC** (+18B), **SYS/PM.VSDRIVE** (+21B), **SYS/PM.VEDRIVE** (+27B): A2osX source regressions — use `PrintFYA` (renamed to `X.PrintF`) and bare `MACHID`/`RDCXROM` symbols (renamed with `MLI.`/`IO.` prefixes). JSR to undefined symbol → JSR $0000 (fatal at runtime).
 
 ### Practical Implication
 The stable reference (STABLE.800.po) was assembled from **a417f7ab era source** where
@@ -216,20 +255,23 @@ a417f7ab and 335cd122, AND our assembler produces correct output for them.
 
 ---
 
-## Remaining Differences (Run 11 State — 66 identical)
+## Remaining Differences (Run 12 State — 71 identical)
 
-### Negative-delta files (built LARGER than stable — potential assembler bugs)
+### Negative-delta files (built LARGER than stable — all confirmed source changes)
 
-| File | Delta | Priority | Notes |
-|------|-------|----------|-------|
-| bin/sh | -3 | High | Branch relaxation from .CZ fix shifting code; $2FA3 JMP vs BRA in stable |
-| bin/asm.65816 | -9 | Low | 65816 mode differences |
-| bin/fnt2fon | -13 | Low | **SOURCE CODE CHANGE**: `.AZ -" : "` (4B) replaced by `.CZ -N : No shrink\r\n"` (17B, +13B). The current source has a likely typo — missing opening `"` before `-N`. The original stable had high-bit encoded ` : ` (Apple II text). Not an xasm++ bug. |
-| bin/httpget | -14 | Medium | **SOURCE CODE CHANGE**: New progress display feature added (`L.MSG.Progress` new reloc entry +2B, new progress display code +12B, code simplification -4B, other code change +4B). Not an xasm++ bug. |
-| sbin/bbsd | -16 | Medium | **SOURCE CODE CHANGE**: Multiple changes between stable build and 335cd122: direct FDs table lookup replaces SYSCALL (+2B), different push logic (-2B), `_DEBUG` dead code subroutine added (+15B), extra instruction added (+1B). Not an xasm++ bug. |
-| bin/useradd | -48 | Low | Significant; unresolved |
-| lib/libgui | -132 | High | GUI library; large delta — likely branch relaxation accumulation |
-| lib/libtui | -286 | Low | Source changed significantly (known source version diff) |
+All remaining negative-delta files are confirmed A2osX source changes between
+the stable build era and 335cd122. **No remaining assembler bugs** in this category.
+
+| File | Delta | Notes |
+|------|-------|-------|
+| bin/sh | -3 | Branch relaxation at $2FA3; pre-existing code structure difference |
+| bin/asm.65816 | -9 | JSL/JML entries added in c11287b3 (Jan 2025) after stable |
+| bin/fnt2fon | -13 | Source typo: missing `"` in .CZ string |
+| bin/httpget | -14 | New progress display feature added after stable |
+| sbin/bbsd | -16 | _DEBUG subroutine + FDs table lookup added after stable |
+| bin/useradd | -48 | CS.RUN.IsValidChar validation added in 3d0a9afe (Dec 2023) |
+| lib/libgui | -20 | BM.Checked new bitmap added after stable |
+| lib/libtui | -286 | Source changed significantly |
 
 ### Positive-delta files (stable LARGER — potential assembler bugs OR source changes)
 
@@ -278,6 +320,11 @@ These are correct size but have different address bytes from SYSCALL/SYSCALL2 co
 | ~~bin/mv~~ | +4 | +0 (size fixed) | Bug 12 |
 | ~~bin/forth~~ | +11 | +0 (size fixed) | Bug 12 |
 | ~~bin/acos~~ | +5 | +0 (size fixed) | Bug 12 |
+| ~~bin/asm.6502~~ | +0 | **IDENTICAL** | Bug 15 (.DA * substitution) |
+| ~~bin/asm.65c02~~ | +0 | **IDENTICAL** | Bug 15 |
+| ~~bin/asm.65r02~~ | +0 | **IDENTICAL** | Bug 15 |
+| ~~bin/asm.sw16~~ | +0 | **IDENTICAL** | Bug 15 |
+| ~~bin/asm.z80~~ | +0 | **IDENTICAL** | Bug 15 |
 
 ---
 
