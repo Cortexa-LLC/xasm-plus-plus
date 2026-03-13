@@ -139,22 +139,22 @@ ParseExpression(const std::string &str, ConcreteSymbolTable &symbols) {
     return std::make_shared<LiteralExpr>((value >> 8) & 0xFF); // High byte
   }
 
-  // Handle Merlin character literals: "x" or 'x'
+  // Handle character literals: "x" or 'x'
   // Supports standalone form ("A") and compound form ("A"+N, "A"-N, etc.)
-  // Apple II Merlin convention: character literals add $80 to ASCII value
-  // (e.g. #" " = $A0, #"A" = $C1, #"0" = $B0) to produce Apple II text codes.
+  // Returns plain ASCII value — syntax-specific high-bit conventions (e.g.
+  // Apple II Merlin |0x80) are applied by the syntax parser, not here.
   if (!trimmed.empty() && (trimmed[0] == '"' || trimmed[0] == '\'')) {
     char quote = trimmed[0];
     // Find the closing quote
     size_t close = trimmed.find(quote, 1);
     if (close == std::string::npos) {
-      // Unclosed quote - return 0 gracefully (matches Merlin behaviour)
+      // Unclosed quote - return 0 gracefully
       return std::make_shared<LiteralExpr>(0);
     }
-    // Extract the character between the quotes; add $80 for Apple II encoding
+    // Extract the character between the quotes; return plain ASCII value.
     std::string chars = trimmed.substr(1, close - 1);
-    int64_t char_val = chars.empty() ? 0
-                                     : (static_cast<uint8_t>(chars[0]) | 0x80);
+    int64_t char_val =
+        chars.empty() ? 0 : static_cast<uint8_t>(chars[0]);
     // Check for compound expression after the closing quote (e.g. "9"+1)
     std::string rest = Trim(trimmed.substr(close + 1));
     if (rest.empty()) {

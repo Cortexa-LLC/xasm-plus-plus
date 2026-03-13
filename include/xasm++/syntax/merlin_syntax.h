@@ -505,6 +505,21 @@ private:
   std::string ExpandVarLabelsInOperand(const std::string &operand) const;
 
   /**
+   * @brief Expand Merlin character literals in an instruction operand
+   *
+   * Replaces all Merlin char-literal tokens ("X" or 'X') with their
+   * Apple II high-bit hex equivalents ($XX where XX = ASCII | 0x80).
+   * This keeps Merlin-specific encoding out of the shared
+   * assembler.cpp::ParseExpression path.
+   *
+   * Examples:
+   *   "#\"A\""     → "#$C1"
+   *   "#\"A\"+1"   → "#$C1+1"
+   *   "'r'-CTRL"   → "$F2-CTRL"
+   */
+  std::string ExpandMerlinCharLiterals(const std::string &operand) const;
+
+  /**
    * @brief Substitute ]variable references in a line with their current values
    *
    * In LUP loops, ]variables are assembly-time mutable values.  Each LUP

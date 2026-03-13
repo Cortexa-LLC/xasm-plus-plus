@@ -9,6 +9,7 @@
 #include "xasm++/util/string_utils.h"
 #include <algorithm>
 #include <cctype>
+#include <cstdio>
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
@@ -493,6 +494,54 @@ MerlinSyntaxParser::ScopeLocalLabelsInOperand(const std::string &operand) const 
     }
   }
 
+  return result;
+}
+
+// Expand Merlin character literals ("X" or 'X') in an instruction operand
+// to their Apple II high-bit hex equivalents ($XX where XX = ASCII | 0x80).
+// This is the Merlin-specific equivalent of SCMASM's ExpandCharLiteralsInExpr:
+// it pre-processes the operand string at Parse() time so that the shared
+// assembler.cpp::ParseExpression never has to handle Merlin char literals
+// (ADR-005 compliance: no Merlin-specific behaviour in shared core).
+//
+// Only single-character literals are handled here ("X" or 'X' where X is
+// one printable character).  Compound forms like "A"+1 work correctly
+// because only the "A" token is replaced; the +1 is left for the generic
+// expression evaluator.
+std::string
+MerlinSyntaxParser::ExpandMerlinCharLiterals(const std::string &operand) const {
+  // Fast path: no quote character → nothing to expand
+  if (operand.find('"') == std::string::npos &&
+      operand.find('\'') == std::string::npos) {
+    return operand;
+  }
+
+  std::string result;
+  result.reserve(operand.size() + 16);
+
+  size_t i = 0;
+  while (i < operand.size()) {
+    char c = operand[i];
+    if (c == '"' || c == '\'') {
+      // Potential char literal: quote followed by exactly one printable char
+      // followed by the same closing quote.
+      if (i + 2 < operand.size() &&
+          std::isprint(static_cast<unsigned char>(operand[i + 1])) &&
+          operand[i + 2] == c) {
+        // Replace "X" or 'X' with $XX (Apple II high-bit value)
+        uint8_t val = static_cast<uint8_t>(operand[i + 1]) | 0x80;
+        // Format as $XX
+        char hex_buf[8];
+        std::snprintf(hex_buf, sizeof(hex_buf), "$%02X",
+                      static_cast<unsigned>(val));
+        result += hex_buf;
+        i += 3; // skip quote, char, closing quote
+        continue;
+      }
+    }
+    result += c;
+    ++i;
+  }
   return result;
 }
 
@@ -1391,9 +1440,12 @@ void MerlinSyntaxParser::ParseLine(const std::string &line, Section &section,
     }
   }
   // Translate any ':word' local-label references to the scoped name, then
-  // expand ]variable references to their current unique-instance names.
+  // expand ]variable references to their current unique-instance names, then
+  // expand Merlin char literals ("X"/'X') to their Apple II high-bit hex
+  // values so the shared ParseExpression never sees Merlin char-literal syntax.
   operands = ScopeLocalLabelsInOperand(operands);
   operands = ExpandVarLabelsInOperand(operands);
+  operands = ExpandMerlinCharLiterals(operands);
   section.atoms.push_back(
       std::make_shared<InstructionAtom>(directive, operands));
   current_address_ += 1; // Placeholder size
