@@ -1123,6 +1123,23 @@ TEST_F(ScmasmSyntaxTest, MacroRedefinition) {
   EXPECT_GT(section.atoms.size(), 0u);
 }
 
+TEST_F(ScmasmSyntaxTest, UndefinedMacroInvocationThrows) {
+  // Invoking undefined macro should throw with clear error message
+  std::string source = R"(
+        >PULLW
+)";
+
+  try {
+    parser->Parse(source, section, symbols);
+    FAIL() << "Expected exception for undefined macro invocation";
+  } catch (const std::runtime_error &e) {
+    std::string error_msg = e.what();
+    // Error message should mention "Undefined macro" and the macro name (without >)
+    EXPECT_TRUE(error_msg.find("Undefined macro") != std::string::npos);
+    EXPECT_TRUE(error_msg.find("PULLW") != std::string::npos);
+  }
+}
+
 // ============================================================================
 // .DO/.ELSE/.FIN Conditional Assembly Tests
 // ============================================================================

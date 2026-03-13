@@ -1075,6 +1075,10 @@ void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
       // Invoke the macro (use stripped name without > prefix)
       InvokeMacro(macro_lookup_name, params, section, symbols);
     } else {
+      // If opcode starts with '>' but macro not found, emit clear error
+      if (!opcode_upper.empty() && opcode_upper[0] == '>') {
+        throw std::runtime_error("Undefined macro: " + macro_lookup_name);
+      }
       // Assume it's an assembly instruction (6502, 65C02, etc.)
       // Phase 3: We don't parse instructions yet, just store them as
       // InstructionAtom.
