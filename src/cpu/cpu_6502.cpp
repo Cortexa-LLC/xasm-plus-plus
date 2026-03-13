@@ -135,6 +135,23 @@ std::vector<uint8_t> Cpu6502::EncodeWithTable(const OpcodeTable &table,
     break;
   }
 
+  // ZeroPage → Absolute fallback: some instructions (JSR, JMP) have no ZP
+  // mode.  When an address fits in ZP range ($00-$FF) but the instruction only
+  // supports Absolute, fall back so that e.g. `jsr $005c` emits $20 $5c $00
+  // rather than being silently dropped.
+  if (!opcode.has_value() && mode == AddressingMode::ZeroPage &&
+      table.absolute.has_value()) {
+    opcode = table.absolute;
+    mode = AddressingMode::Absolute;
+  }
+
+  // ZeroPageX → AbsoluteX fallback: same reasoning for indexed X mode.
+  if (!opcode.has_value() && mode == AddressingMode::ZeroPageX &&
+      table.absolute_x.has_value()) {
+    opcode = table.absolute_x;
+    mode = AddressingMode::AbsoluteX;
+  }
+
   // ZeroPageY → AbsoluteY fallback: some instructions (STA, LDA) have no ZP,Y
   // mode on the 6502/65C02 but do have ABS,Y.  When the caller requested ZP,Y
   // but the table has no opcode for it, try AbsoluteY instead so that e.g.

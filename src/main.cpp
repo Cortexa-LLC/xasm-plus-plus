@@ -76,10 +76,6 @@ int main(int argc, char **argv) {
     Section section;
     ConcreteSymbolTable symbols;
 
-    // RW18 header for Merlin/Prince of Persia compatibility
-    std::array<uint16_t, 4> rw18_header_data{};
-    const std::array<uint16_t, 4> *rw18_header_ptr = nullptr;
-
     // Apply --org override if specified (-1 means not set)
     if (opts.org != -1) {
       section.org = static_cast<uint64_t>(opts.org);
@@ -164,11 +160,9 @@ int main(int argc, char **argv) {
         
         parser.Parse(source, section, symbols);
         
-        // Capture RW18 header if present
-        if (opts.rw18 && parser.HasUsrArgs()) {
-          rw18_header_data = parser.GetUsrArgs();
-          rw18_header_ptr = &rw18_header_data;
-        }
+        // Note: --rw18 flag means output RAW binary with NO header
+        // (matching vasm -rw18 behavior). The USR directive arguments
+        // are parsed but not used for output when --rw18 is set.
       } else if (opts.syntax == "edtasm_m80_plusplus") {
         // EDTASM-M80++ is Z80-specific
         if (opts.cpu != cpu::CPU_Z80) {
@@ -290,7 +284,7 @@ int main(int argc, char **argv) {
       } else {
         // Default: binary format
         BinaryOutput output;
-        output.WriteOutputWithRw18(opts.output, sections, symbols, rw18_header_ptr);
+        output.WriteOutputWithRw18(opts.output, sections, symbols, nullptr);
       }
     } catch (const std::filesystem::filesystem_error &e) {
       std::cerr << "File I/O error: " << e.what() << "\n";

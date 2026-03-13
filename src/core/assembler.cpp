@@ -806,6 +806,39 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
           // for branch offset calculations.
           auto space = std::dynamic_pointer_cast<SpaceAtom>(atom);
           if (space) {
+            // If this SpaceAtom has a PC-relative expression (e.g. "DS $900-*"),
+            // re-evaluate it each pass so the count stays correct as branch
+            // relaxations shift code sizes between passes.
+            if (!space->expression_str.empty()) {
+              std::string expr_str = space->expression_str;
+              std::string addr_str = std::to_string(virtual_address);
+              size_t star_pos = 0;
+              while ((star_pos = expr_str.find('*', star_pos)) != std::string::npos) {
+                bool before = (star_pos > 0 &&
+                    (std::isalnum(static_cast<unsigned char>(expr_str[star_pos - 1])) ||
+                     expr_str[star_pos - 1] == ')'));
+                bool after = (star_pos + 1 < expr_str.size() &&
+                    (std::isalnum(static_cast<unsigned char>(expr_str[star_pos + 1])) ||
+                     expr_str[star_pos + 1] == '(' || expr_str[star_pos + 1] == '$' ||
+                     expr_str[star_pos + 1] == '%'));
+                if (before && after) {
+                  star_pos++;
+                } else {
+                  expr_str.replace(star_pos, 1, addr_str);
+                  star_pos += addr_str.length();
+                }
+              }
+              try {
+                auto expr = ParseExpression(expr_str, symbols);
+                int64_t value = expr->Evaluate(symbols);
+                if (value >= 0) {
+                  space->count = static_cast<size_t>(value);
+                  space->size = space->count;
+                }
+              } catch (const std::exception &) {
+                // Forward reference or error - keep previous count
+              }
+            }
             current_address += space->size;
             virtual_address += space->size;
             current_sizes.push_back(space->size);

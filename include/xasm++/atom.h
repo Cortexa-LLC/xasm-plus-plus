@@ -234,12 +234,23 @@ public:
 class SpaceAtom : public Atom {
 public:
   size_t count; ///< Number of bytes to reserve
+  std::string expression_str; ///< Raw expression (contains '*') for re-evaluation each pass
 
   /**
-   * @brief Construct a space atom
+   * @brief Construct a space atom with a fixed count
    * @param c Number of bytes to reserve
    */
   explicit SpaceAtom(size_t c) : Atom(AtomType::Space), count(c) {
+    size = count;
+  }
+
+  /**
+   * @brief Construct a space atom with a PC-relative expression
+   * @param c Initial count (from pass 1)
+   * @param expr Raw expression string containing '*' (e.g. "$900-*")
+   */
+  SpaceAtom(size_t c, std::string expr)
+      : Atom(AtomType::Space), count(c), expression_str(std::move(expr)) {
     size = count;
   }
 };

@@ -110,8 +110,6 @@ void HandleOrg(const std::string &label, const std::string &operand,
 
 void HandleEqu(const std::string &label, const std::string &operand,
                DirectiveContext &context) {
-  (void)context.section;
-
   // Get parser instance for expression parsing
   ValidateParser(context.parser_state);
   auto *parser = static_cast<MerlinSyntaxParser *>(context.parser_state);
@@ -119,6 +117,35 @@ void HandleEqu(const std::string &label, const std::string &operand,
   // EQU directive - define symbolic constant (no code generated)
   auto expr = parser->ParseExpression(operand, *context.symbols);
   context.symbols->Define(label, SymbolType::Label, expr);
+
+  // If the expression contains '*' as a PC reference (not multiplication),
+  // push an EquateAtom so the assembler re-evaluates it each pass with the
+  // correct virtual address.  At parse time, instruction sizes are placeholder
+  // (1 byte each), so expressions like "SIZE EQU *-START" compute the wrong
+  // value if evaluated only once at parse time.
+  if (!parser->IsInDumBlock() && context.section != nullptr) {
+    std::string raw = Trim(operand);
+    bool has_star = false;
+    for (size_t i = 0; i < raw.size(); ++i) {
+      if (raw[i] == '*') {
+        bool before =
+            (i > 0 && (std::isalnum(static_cast<unsigned char>(raw[i - 1]))
+                       || raw[i - 1] == ')'));
+        bool after =
+            (i + 1 < raw.size() &&
+             (std::isalnum(static_cast<unsigned char>(raw[i + 1]))
+              || raw[i + 1] == '(' || raw[i + 1] == '$' || raw[i + 1] == '%'));
+        if (!(before && after)) {
+          has_star = true;
+          break;
+        }
+      }
+    }
+    if (has_star) {
+      context.section->atoms.push_back(
+          std::make_shared<EquateAtom>(label, raw));
+    }
+  }
 }
 
 void HandleDb(const std::string &label, const std::string &operand,

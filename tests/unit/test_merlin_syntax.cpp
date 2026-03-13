@@ -247,6 +247,60 @@ TEST(MerlinSyntaxTest, EqualsWithHex) {
   EXPECT_EQ(value, 0xd000);
 }
 
+// Regression test: "CHECKEND = *-CHECKER" style PC-relative equates
+// must be re-evaluated in each assembler pass, NOT computed once at parse
+// time with placeholder instruction sizes (1 byte each).
+// Bug was: 15 instructions in CHECKER → CHECKEND=$0F (placeholder), not $25 (real).
+TEST(MerlinSyntaxTest, PcRelativeEquateViaEqualsRecomputesEachPass) {
+  auto cpu = std::make_unique<Cpu6502>();
+  cpu->SetCpuMode(CpuMode::Cpu6502);
+
+  MerlinSyntaxParser parser;
+  parser.SetCpu(cpu.get());
+  ConcreteSymbolTable symbols;
+  Section section("test", 0x800);
+
+  // Minimal CHECKER-like block: multi-byte instructions so placeholder sizes differ
+  // from actual sizes.  BLOCKEND = * - BLOCK should give the real byte count.
+  std::string source =
+      " org $800\n"
+      "BLOCK lda #$EE\n"    // 2 bytes
+      " sta $C005\n"         // 3 bytes
+      " sta $C003\n"         // 3 bytes
+      " rts\n"               // 1 byte  => block = 9 bytes
+      "BLOCKEND = *-BLOCK\n"
+      " ldx #BLOCKEND\n";    // should encode LDX #9
+
+  parser.Parse(source, section, symbols);
+
+  Assembler assembler;
+  assembler.SetCpuPlugin(cpu.get());
+  assembler.SetSymbolTable(&symbols);
+  assembler.AddSection(section);
+  AssemblerResult result = assembler.Assemble();
+  ASSERT_TRUE(result.success);
+
+  // Find the LDX #BLOCKEND instruction bytes
+  // Expected binary: A9 EE, 8D 05 C0, 8D 03 C0, 60, A2 09
+  // LDX #BLOCKEND is at offset 9: A2 09
+  bool found_ldx = false;
+  for (auto &s : assembler.GetSections()) {
+    for (auto &atom : s.atoms) {
+      if (atom->type == AtomType::Instruction) {
+        auto inst = std::dynamic_pointer_cast<InstructionAtom>(atom);
+        if (inst && inst->encoded_bytes.size() == 2 &&
+            inst->encoded_bytes[0] == 0xA2) {
+          // Found LDX #imm — verify immediate value is 9 (real block size)
+          EXPECT_EQ(inst->encoded_bytes[1], 9)
+              << "BLOCKEND should be 9 (actual byte count), not placeholder count";
+          found_ldx = true;
+        }
+      }
+    }
+  }
+  EXPECT_TRUE(found_ldx) << "LDX #BLOCKEND instruction not found";
+}
+
 TEST(MerlinSyntaxTest, DumWithSymbol) {
   MerlinSyntaxParser parser;
   ConcreteSymbolTable symbols;

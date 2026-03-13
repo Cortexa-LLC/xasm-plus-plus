@@ -264,3 +264,35 @@ TEST(BinaryOutputTest, CompleteProgram) {
 
   std::remove("test.bin");
 }
+
+// Test: --rw18 output is raw binary with NO USR header
+// When nullptr is passed to WriteOutputWithRw18, no 12-byte USR\x1a prefix
+// should be written. This matches vasm -rw18 behavior where output is raw code.
+TEST(BinaryOutputTest, Rw18NullptrProducesRawBinaryNoHeader) {
+  BinaryOutput output;
+  Section section("test", 0x1000);
+  // Simulate a JMP instruction (4C A8 F8) like MASTER.S
+  auto jmp = std::make_shared<InstructionAtom>("JMP", "$F8A8");
+  jmp->encoded_bytes = {0x4C, 0xA8, 0xF8};
+  jmp->size = 3;
+  section.atoms.push_back(jmp);
+
+  ConcreteSymbolTable symbols;
+  // Pass nullptr: no RW18 header should be written
+  output.WriteOutputWithRw18("test_rw18.bin", {&section}, symbols, nullptr);
+
+  std::ifstream file("test_rw18.bin", std::ios::binary);
+  ASSERT_TRUE(file.is_open());
+  std::vector<uint8_t> result((std::istreambuf_iterator<char>(file)),
+                              std::istreambuf_iterator<char>());
+  file.close();
+
+  // Should be 3 bytes of raw code, not 3+12 bytes with USR header
+  ASSERT_EQ(result.size(), 3UL);
+  // First byte must be 0x4C (JMP opcode), not 0x55 ('U' from "USR\x1a")
+  EXPECT_EQ(result[0], 0x4C);
+  EXPECT_EQ(result[1], 0xA8);
+  EXPECT_EQ(result[2], 0xF8);
+
+  std::remove("test_rw18.bin");
+}

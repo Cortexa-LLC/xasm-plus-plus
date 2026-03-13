@@ -651,7 +651,24 @@ void MerlinSyntaxParser::HandleDS(const std::string &operand, Section &section,
 
   // DUM blocks: advance address without emitting bytes
   if (!in_dum_block_) {
-    section.atoms.push_back(std::make_shared<SpaceAtom>(count));
+    // If the original operand contains '*' (PC-relative), store the raw
+    // expression so the assembler can re-evaluate it each pass (as the PC
+    // shifts when branch relaxations change code sizes between passes).
+    std::string raw = Trim(operand);
+    bool has_star = false;
+    for (size_t i = 0; i < raw.size(); ++i) {
+      if (raw[i] == '*') {
+        // Check it's not a multiplication operator (operands on both sides)
+        bool before = (i > 0 && (std::isalnum(static_cast<unsigned char>(raw[i-1])) || raw[i-1] == ')'));
+        bool after  = (i+1 < raw.size() && (std::isalnum(static_cast<unsigned char>(raw[i+1])) || raw[i+1] == '(' || raw[i+1] == '$' || raw[i+1] == '%'));
+        if (!(before && after)) { has_star = true; break; }
+      }
+    }
+    if (has_star) {
+      section.atoms.push_back(std::make_shared<SpaceAtom>(count, raw));
+    } else {
+      section.atoms.push_back(std::make_shared<SpaceAtom>(count));
+    }
     current_address_ += count;
   } else {
     dum_address_ += count;
@@ -1204,6 +1221,33 @@ void MerlinSyntaxParser::ParseLine(const std::string &line, Section &section,
     // This is an = equate
     std::string value = Trim(code_line.substr(equals_pos + 1));
     HandleEqu(label, value, symbols);
+    // If the expression contains '*' as a PC reference (not multiplication),
+    // push an EquateAtom so the assembler re-evaluates it each pass with the
+    // correct virtual address.  At parse time, instruction sizes are placeholder
+    // (1 byte each), so expressions like "CHECKEND = *-CHECKER" compute the
+    // wrong value if evaluated only once at parse time.
+    if (!in_dum_block_) {
+      bool has_star = false;
+      for (size_t i = 0; i < value.size(); ++i) {
+        if (value[i] == '*') {
+          bool before =
+              (i > 0 && (std::isalnum(static_cast<unsigned char>(value[i - 1]))
+                         || value[i - 1] == ')'));
+          bool after =
+              (i + 1 < value.size() &&
+               (std::isalnum(static_cast<unsigned char>(value[i + 1]))
+                || value[i + 1] == '(' || value[i + 1] == '$'
+                || value[i + 1] == '%'));
+          if (!(before && after)) {
+            has_star = true;
+            break;
+          }
+        }
+      }
+      if (has_star) {
+        section.atoms.push_back(std::make_shared<EquateAtom>(label, value));
+      }
+    }
     return;
   }
 
