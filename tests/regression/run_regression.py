@@ -31,7 +31,47 @@ def find_test_files(test_dir: Path) -> List[Path]:
     """Find all .asm files in test directory."""
     return sorted(test_dir.glob('**/*.asm'))
 
-def run_xasm(asm_file: Path, output_dir: Path, cpu: str, syntax: str) -> Tuple[bool, str]:
+def parse_test_metadata(asm_file: Path) -> dict:
+    """
+    Parse test metadata from comment headers in assembly files.
+    
+    Looks for lines like:
+      * CPU: 6502
+      * Flags: --relax-branches
+      * Syntax: merlin
+    
+    Returns dict with metadata, or empty dict if none found.
+    """
+    metadata = {}
+    try:
+        with open(asm_file, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                # Stop at first non-comment line
+                if not line.startswith('*') and line:
+                    break
+                # Parse metadata
+                if line.startswith('* CPU:'):
+                    metadata['cpu'] = line.split(':', 1)[1].strip().lower()
+                elif line.startswith('* Flags:'):
+                    metadata['flags'] = line.split(':', 1)[1].strip()
+                elif line.startswith('* Syntax:'):
+                    metadata['syntax'] = line.split(':', 1)[1].strip().lower()
+    except Exception:
+        pass
+    return metadata
+
+def find_xasm_binary() -> str:
+    """Find xasm++ binary, preferring local build over system PATH."""
+    # Search relative to this script's location (project root)
+    script_dir = Path(__file__).parent
+    project_root = script_dir.parent.parent
+    local_build = project_root / "build" / "bin" / "xasm++"
+    if local_build.exists():
+        return str(local_build)
+    return "xasm++"
+
+def run_xasm(asm_file: Path, output_dir: Path, cpu: str, syntax: str, extra_flags: str = "") -> Tuple[bool, str]:
     """
     Run xasm++ on assembly file.
 
@@ -40,12 +80,17 @@ def run_xasm(asm_file: Path, output_dir: Path, cpu: str, syntax: str) -> Tuple[b
     bin_file = output_dir / f"{asm_file.stem}.bin"
 
     cmd = [
-        "xasm++",
+        find_xasm_binary(),
         "--cpu", cpu,
         "--syntax", syntax,
         "--output", str(bin_file),
-        str(asm_file)
     ]
+    
+    # Add extra flags if specified
+    if extra_flags:
+        cmd.extend(extra_flags.split())
+    
+    cmd.append(str(asm_file))
 
     try:
         result = subprocess.run(
@@ -115,10 +160,13 @@ def run_test(test_file: Path, test_root: Path, output_dir: Path, verbose: bool =
 
     Returns True if test passed.
     """
-    # Determine CPU and syntax from directory structure
+    # Parse test metadata from file
+    metadata = parse_test_metadata(test_file)
+    
+    # Determine CPU and syntax from directory structure or metadata
     # e.g., regression/scmasm/test.asm -> cpu=6502, syntax=scmasm
     relative_path = test_file.relative_to(test_root)
-    syntax = relative_path.parts[0]
+    syntax = metadata.get('syntax', relative_path.parts[0])
 
     # Map syntax to CPU (default mappings)
     syntax_to_cpu = {
@@ -132,12 +180,14 @@ def run_test(test_file: Path, test_root: Path, output_dir: Path, verbose: bool =
         'm6800': '6800',
     }
 
-    cpu = syntax_to_cpu.get(syntax, '6502')
+    cpu = metadata.get('cpu', syntax_to_cpu.get(syntax, '6502'))
+    flags = metadata.get('flags', '')
 
-    print(f"{Color.BLUE}Testing:{Color.END} {relative_path} (cpu={cpu}, syntax={syntax})")
+    flag_str = f" flags={flags}" if flags else ""
+    print(f"{Color.BLUE}Testing:{Color.END} {relative_path} (cpu={cpu}, syntax={syntax}{flag_str})")
 
     # Run xasm++
-    success, error = run_xasm(test_file, output_dir, cpu, syntax)
+    success, error = run_xasm(test_file, output_dir, cpu, syntax, flags)
 
     if not success:
         print(f"  {Color.RED}✗ FAIL:{Color.END} {error}")
