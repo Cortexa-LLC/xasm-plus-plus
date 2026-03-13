@@ -30,6 +30,8 @@ to the original SCMASM assembler using A2osX 335cd122 as the reference test case
 | 15 (xasm-89o) | ce94435 | 74 | 42 | 20 | Clean rebuild confirms Run 14 numbers. No new identicals. |
 | 16 (xasm-inb) | de99d2d | 78 | TBD | TBD | **+4 identical!** Bugs 21-23 fixed (.INB case-insensitive path, etc.) |
 | 17 (xasm-80i) | de8ac14 | 82 | 73 | TBD | **+4 identical!** Bug 24 fixed: commas in \$"..." strings in .DA directive. Target 80+ achieved. |
+| 18 | 50361cc | 81 | 39 | 16 | Macros fixed (PULLW/PULLA/SYSCALL2/ENTER/LEAVE/POP/RET/PULLYA/PULLB). Script counts stable→build. |
+| 19 (current) | f2e3f67 | 83 | 37 | 16 | **+2 identical!** Bug 29: SYMBOL+N branch operands fixed. bin/acos + bin/forth now identical. |
 
 ¹ Scope/script changed; not directly comparable to runs 1-4
 ⁴ Run 14 numbers from clean rebuild post-commit; ssc.drv/ssc.i.drv confirmed identical after xasm-94e (.DO label off-by-1) fix
@@ -351,6 +353,17 @@ comma, treating `Y"` as a second operand.
 string content before resuming comma search.
 **Files:** `src/syntax/scmasm_directive_handlers.cpp`
 **Impact:** Run 17: +4 identical (82 total). `BIN/ASM.6502.S.txt` and related files now assemble correctly.
+
+### Bug 29: Branch target `SYMBOL+N` ignores arithmetic offset (f2e3f67)
+**Symptom:** `D0 FE` (BNE -2, branch-to-self) in bin/acos and bin/forth where stable has `D0 03`
+(branch forward past a PULLA macro expansion). Pattern: `BNE LABEL+5` encodes as if `BNE LABEL`.
+**Root cause:** Branch resolution in `assembler.cpp` looked up the full operand string
+`"LABEL+5"` as a symbol name, which fails. Fell through to "unresolved" mode encoding current PC.
+The `+5` offset was completely ignored.
+**Fix:** When symbol lookup fails for a branch operand, scan for a `+`/`-` arithmetic operator,
+look up just the symbol prefix, then apply the numeric offset to get the final target address.
+**Files:** `src/core/assembler.cpp`
+**Impact:** Run 19: +2 identical (bin/acos, bin/forth). Any `SYMBOL+N` branch operand now correct.
 
 ---
 
