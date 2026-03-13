@@ -1888,13 +1888,13 @@ TEST(MerlinSyntaxTest, RevDirective) {
   ASSERT_EQ(section.atoms.size(), 2UL);
   EXPECT_EQ(section.atoms[0]->type, AtomType::Label);
 
-  // Data should be "CBA" (reversed)
+  // Data should be "CBA" (reversed) with high bit set (Apple II text encoding)
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[1]);
   ASSERT_NE(data_atom, nullptr);
   ASSERT_EQ(data_atom->data.size(), 3UL);
-  EXPECT_EQ(data_atom->data[0], 'C'); // 0x43
-  EXPECT_EQ(data_atom->data[1], 'B'); // 0x42
-  EXPECT_EQ(data_atom->data[2], 'A'); // 0x41
+  EXPECT_EQ(data_atom->data[0], 0xC3); // 'C' | 0x80
+  EXPECT_EQ(data_atom->data[1], 0xC2); // 'B' | 0x80
+  EXPECT_EQ(data_atom->data[2], 0xC1); // 'A' | 0x80
 }
 
 TEST(MerlinSyntaxTest, RevDirectiveWithSingleChar) {
@@ -1917,11 +1917,11 @@ TEST(MerlinSyntaxTest, RevDirectiveWithSingleChar) {
   ASSERT_EQ(section.atoms.size(), 2UL);
   EXPECT_EQ(section.atoms[0]->type, AtomType::Label);
 
-  // Data should be "X"
+  // Data should be "X" with high bit set (Apple II text encoding)
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section.atoms[1]);
   ASSERT_NE(data_atom, nullptr);
   ASSERT_EQ(data_atom->data.size(), 1UL);
-  EXPECT_EQ(data_atom->data[0], 'X'); // 0x58
+  EXPECT_EQ(data_atom->data[0], 0xD8); // 'X' | 0x80
 }
 
 // ============================================================================
@@ -2519,4 +2519,76 @@ TEST(MerlinSyntaxTest, ImmediateWithInlineStringComment) {
   }
   EXPECT_TRUE(found_lda)
       << "lda #99 \"stabbed\" must produce an LDA immediate atom";
+}
+
+// ============================================================================
+// Bug xasm-4pl: Char literals in EQU / ParseExpression
+// ============================================================================
+
+// EQU "A"  →  $C1  (ASCII 'A'=0x41 | 0x80 = 0xC1, Apple II convention)
+TEST(MerlinSyntaxTest, CharLiteralEquateDoubleQuote) {
+  MerlinSyntaxParser parser;
+  ConcreteSymbolTable symbols;
+  Section section("test", 0);
+
+  parser.Parse("AVAL EQU \"A\"", section, symbols);
+
+  EXPECT_TRUE(symbols.IsDefined("AVAL"))
+      << "AVAL must be defined by EQU \"A\"";
+  int64_t val = 0;
+  ASSERT_TRUE(symbols.Lookup("AVAL", val));
+  EXPECT_EQ(val, 0xC1)
+      << "EQU \"A\" must yield 0xC1 (ASCII 0x41 | 0x80 Apple II convention)";
+}
+
+// EQU 'A'  →  $C1
+TEST(MerlinSyntaxTest, CharLiteralEquateSingleQuoteValue) {
+  MerlinSyntaxParser parser;
+  ConcreteSymbolTable symbols;
+  Section section("test", 0);
+
+  parser.Parse("AVAL EQU 'A'", section, symbols);
+
+  EXPECT_TRUE(symbols.IsDefined("AVAL"))
+      << "AVAL must be defined by EQU 'A'";
+  int64_t val = 0;
+  ASSERT_TRUE(symbols.Lookup("AVAL", val));
+  EXPECT_EQ(val, 0xC1)
+      << "EQU 'A' must yield 0xC1 (ASCII 0x41 | 0x80 Apple II convention)";
+}
+
+// EQU "A"+1  →  $C2  (compound expression)
+TEST(MerlinSyntaxTest, CharLiteralEquateCompoundPlus) {
+  MerlinSyntaxParser parser;
+  ConcreteSymbolTable symbols;
+  Section section("test", 0);
+
+  parser.Parse("BVAL EQU \"A\"+1", section, symbols);
+
+  EXPECT_TRUE(symbols.IsDefined("BVAL"))
+      << "BVAL must be defined by EQU \"A\"+1";
+  int64_t val = 0;
+  ASSERT_TRUE(symbols.Lookup("BVAL", val));
+  EXPECT_EQ(val, 0xC2)
+      << "EQU \"A\"+1 must yield 0xC2 (0xC1 + 1)";
+}
+
+// krestart EQU "r"-CTRL  where CTRL=$60  →  $92
+// ASCII 'r' = $72, | $80 = $F2, $F2 - $60 = $92
+TEST(MerlinSyntaxTest, CharLiteralEquateCompoundMinusSymbol) {
+  MerlinSyntaxParser parser;
+  ConcreteSymbolTable symbols;
+  Section section("test", 0);
+
+  // Define CTRL = $60 first
+  parser.Parse("CTRL EQU $60", section, symbols);
+  // Now define krestart using char literal minus symbol
+  parser.Parse("krestart EQU \"r\"-CTRL", section, symbols);
+
+  EXPECT_TRUE(symbols.IsDefined("krestart"))
+      << "krestart must be defined by EQU \"r\"-CTRL";
+  int64_t val = 0;
+  ASSERT_TRUE(symbols.Lookup("krestart", val));
+  EXPECT_EQ(val, 0x92)
+      << "EQU \"r\"-CTRL must yield 0x92 ($F2 - $60)";
 }

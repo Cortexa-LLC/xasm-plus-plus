@@ -372,8 +372,16 @@ void HandlePut(const std::string &label, const std::string &operand,
 
 void HandleDo(const std::string &label, const std::string &operand,
               DirectiveContext &context) {
-  (void)label;
-  (void)context.section;
+  // Define label at current address before processing the conditional.
+  // e.g. ":1b do EditorDisk" — :1b must be defined here so forward BNE :1b
+  // references resolve correctly even when EditorDisk=0 skips the block.
+  if (!label.empty()) {
+    uint32_t current_address = *context.current_address;
+    context.symbols->Define(label, SymbolType::Label,
+                            std::make_shared<LiteralExpr>(current_address));
+    context.section->atoms.push_back(
+        std::make_shared<LabelAtom>(label, current_address));
+  }
 
   // Get parser instance from context
   ValidateParser(context.parser_state);
@@ -927,10 +935,10 @@ void HandleRev(const std::string &label, const std::string &operand,
   // Reverse the string
   std::string reversed(text.rbegin(), text.rend());
 
-  // Emit reversed bytes as data
+  // Emit reversed bytes as data with high bit set (Apple II text encoding)
   std::vector<uint8_t> bytes;
   for (char ch : reversed) {
-    bytes.push_back(static_cast<uint8_t>(ch));
+    bytes.push_back(static_cast<uint8_t>(ch) | 0x80);
   }
 
   context.section->atoms.push_back(std::make_shared<DataAtom>(bytes));

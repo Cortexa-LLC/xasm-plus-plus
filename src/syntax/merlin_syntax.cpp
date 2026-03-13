@@ -200,20 +200,59 @@ MerlinSyntaxParser::ParseExpression(const std::string &str,
   // ========================================================================
 
   // Check for character literal: "x" or 'x'
+  // Supports standalone form ("A") and compound form ("A"-CTRL, "A"+1, etc.)
+  // Apple II Merlin convention: character literals set the high bit ($80).
+  // e.g. EQU "A" → $C1,  EQU "r"-CTRL → $F2-CTRL
   if (!expr.empty() && (expr[0] == '"' || expr[0] == '\'')) {
-    // Character literal - extract the character
-    if (expr.length() >= 3 && expr[expr.length() - 1] == expr[0]) {
-      // Proper quote-enclosed character: "j" or 'j'
-      char ch = expr[1];
-      return std::make_shared<LiteralExpr>(static_cast<uint8_t>(ch));
-    } else if (expr.length() == 1) {
-      // Just a quote character (like in SPECIALK.S weird case)
-      // Treat as the ASCII value of the quote itself
-      return std::make_shared<LiteralExpr>(static_cast<uint8_t>(expr[0]));
-    } else {
-      // Malformed character literal - treat as 0
+    char quote = expr[0];
+    if (expr.length() == 1) {
+      // Just a lone quote (e.g. SPECIALK.S edge case) – treat as 0
       return std::make_shared<LiteralExpr>(0);
     }
+    // Find the closing quote
+    size_t close = expr.find(quote, 1);
+    if (close == std::string::npos) {
+      // Unclosed quote – return 0 gracefully (matches Merlin behaviour)
+      return std::make_shared<LiteralExpr>(0);
+    }
+    // Extract character between quotes and apply Apple II high-bit convention
+    std::string chars = expr.substr(1, close - 1);
+    int64_t char_val =
+        chars.empty() ? 0 : (static_cast<uint8_t>(chars[0]) | 0x80);
+    // Check for compound expression after the closing quote (e.g. "A"-CTRL)
+    std::string rest = Trim(expr.substr(close + 1));
+    if (rest.empty()) {
+      return std::make_shared<LiteralExpr>(char_val);
+    }
+    // Combine char literal value with the remaining expression via the
+    // operator that leads the rest string (e.g. "+1", "-CTRL").
+    if (!rest.empty() && (rest[0] == '+' || rest[0] == '-' ||
+                          rest[0] == '*' || rest[0] == '/')) {
+      char op = rest[0];
+      std::string rhs = Trim(rest.substr(1));
+      if (!rhs.empty()) {
+        auto left_expr  = std::make_shared<LiteralExpr>(char_val);
+        auto right_expr = ParseExpression(rhs, symbols);
+        switch (op) {
+          case '+':
+            return std::make_shared<BinaryOpExpr>(BinaryOp::Add, left_expr,
+                                                  right_expr);
+          case '-':
+            return std::make_shared<BinaryOpExpr>(BinaryOp::Subtract, left_expr,
+                                                  right_expr);
+          case '*':
+            return std::make_shared<BinaryOpExpr>(BinaryOp::Multiply, left_expr,
+                                                  right_expr);
+          case '/':
+            return std::make_shared<BinaryOpExpr>(BinaryOp::Divide, left_expr,
+                                                  right_expr);
+          default:
+            break;
+        }
+      }
+    }
+    // No recognised compound form – return the character value alone
+    return std::make_shared<LiteralExpr>(char_val);
   }
 
   // Check for low byte operator (< or #)
