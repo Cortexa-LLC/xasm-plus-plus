@@ -28,43 +28,6 @@ static std::shared_ptr<Expression>
 ParseExpression(const std::string &str, ConcreteSymbolTable &symbols) {
   std::string trimmed = Trim(str);
 
-  // Strip Merlin inline string comment from expression, e.g. "99 "stabbed""
-  // A Merlin comment is a whitespace-separated string literal suffix:
-  //   lda #99 "stabbed"  → expr is  99 "stabbed"  → strip to  99
-  // Only strip when the expression does NOT start with a quote (otherwise
-  // the whole expression is a character literal, e.g. #"A").
-  if (!trimmed.empty() && trimmed[0] != '"' && trimmed[0] != '\'') {
-    // Find the first space (or tab) followed by a quote
-    for (size_t i = 0; i < trimmed.size(); ++i) {
-      if (trimmed[i] == ' ' || trimmed[i] == '\t') {
-        // Peek ahead past whitespace
-        size_t j = i;
-        while (j < trimmed.size() && (trimmed[j] == ' ' || trimmed[j] == '\t'))
-          ++j;
-        if (j < trimmed.size() && (trimmed[j] == '"' || trimmed[j] == '\'')) {
-          // Everything from position i onward is an inline string comment
-          trimmed = Trim(trimmed.substr(0, i));
-          break;
-        }
-      }
-    }
-  }
-
-  // Handle Merlin .Inc/.Dec suffixes: symbol.Inc → symbol+1, symbol.Dec → symbol-1
-  // Case-insensitive check for the suffix
-  auto ends_with_ci = [](const std::string &s, const char *suffix, size_t slen) {
-    if (s.size() < slen) return false;
-    for (size_t i = 0; i < slen; ++i) {
-      if (std::tolower(static_cast<unsigned char>(s[s.size() - slen + i])) !=
-          std::tolower(static_cast<unsigned char>(suffix[i]))) return false;
-    }
-    return true;
-  };
-  if (ends_with_ci(trimmed, ".inc", 4))
-    trimmed = trimmed.substr(0, trimmed.size() - 4) + "+1";
-  else if (ends_with_ci(trimmed, ".dec", 4))
-    trimmed = trimmed.substr(0, trimmed.size() - 4) + "-1";
-
   // Strip outer parentheses for grouping: (EXPR)
   // BUG-003 FIX: Support parentheses in complex expressions like <(MESSAGE+$10)
   if (!trimmed.empty() && trimmed[0] == '(' &&

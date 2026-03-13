@@ -197,6 +197,47 @@ MerlinSyntaxParser::ParseExpression(const std::string &str,
   std::string expr = Trim(str);
 
   // ========================================================================
+  // Merlin-Specific Pre-Processing (V1 and V2 — moved from assembler.cpp)
+  // ========================================================================
+
+  // V1: Strip Merlin inline string comment from expression, e.g. "99 "stabbed""
+  // A Merlin comment is a whitespace-separated string literal suffix:
+  //   lda #99 "stabbed"  → expr is  99 "stabbed"  → strip to  99
+  // Only strip when the expression does NOT start with a quote (otherwise
+  // the whole expression is a character literal, e.g. #"A").
+  if (!expr.empty() && expr[0] != '"' && expr[0] != '\'') {
+    for (size_t i = 0; i < expr.size(); ++i) {
+      if (expr[i] == ' ' || expr[i] == '\t') {
+        size_t j = i;
+        while (j < expr.size() && (expr[j] == ' ' || expr[j] == '\t'))
+          ++j;
+        if (j < expr.size() && (expr[j] == '"' || expr[j] == '\'')) {
+          expr = Trim(expr.substr(0, i));
+          break;
+        }
+      }
+    }
+  }
+
+  // V2: Handle Merlin .Inc/.Dec suffixes: symbol.Inc → symbol+1, symbol.Dec → symbol-1
+  // Case-insensitive check for the suffix
+  auto ends_with_ci = [](const std::string &s, const char *suffix,
+                          size_t slen) {
+    if (s.size() < slen)
+      return false;
+    for (size_t i = 0; i < slen; ++i) {
+      if (std::tolower(static_cast<unsigned char>(s[s.size() - slen + i])) !=
+          std::tolower(static_cast<unsigned char>(suffix[i])))
+        return false;
+    }
+    return true;
+  };
+  if (ends_with_ci(expr, ".inc", 4))
+    expr = expr.substr(0, expr.size() - 4) + "+1";
+  else if (ends_with_ci(expr, ".dec", 4))
+    expr = expr.substr(0, expr.size() - 4) + "-1";
+
+  // ========================================================================
   // Merlin-Specific Features (handle before delegating to ExpressionParser)
   // ========================================================================
 
@@ -1441,10 +1482,42 @@ void MerlinSyntaxParser::ParseLine(const std::string &line, Section &section,
   }
   // Translate any ':word' local-label references to the scoped name, then
   // expand ]variable references to their current unique-instance names, then
-  // expand Merlin char literals ("X"/'X') to their Apple II high-bit hex
+  // strip Merlin inline string comments (e.g. "#99 \"stabbed\"" → "#99"),
+  // then expand Merlin char literals ("X"/'X') to their Apple II high-bit hex
   // values so the shared ParseExpression never sees Merlin char-literal syntax.
   operands = ScopeLocalLabelsInOperand(operands);
   operands = ExpandVarLabelsInOperand(operands);
+  // V1: Strip Merlin inline string comment from instruction operand.
+  // A Merlin inline string comment is a whitespace-separated quoted-string
+  // suffix that is not itself a char literal, e.g. "#99 \"stabbed\"".
+  // Only strip when the operand (after skipping a leading '#') does NOT start
+  // with a quote (which would be a char literal like "#\"A\"").
+  {
+    std::string stripped = operands;
+    // Skip leading '#' or '<' prefix (immediate / low-byte operators)
+    size_t offset = 0;
+    if (!stripped.empty() && (stripped[0] == '#' || stripped[0] == '<'))
+      offset = 1;
+    // If the expression itself starts with a quote, leave it alone (char literal)
+    if (offset < stripped.size() && stripped[offset] != '"' &&
+        stripped[offset] != '\'') {
+      for (size_t i = offset; i < stripped.size(); ++i) {
+        if (stripped[i] == ' ' || stripped[i] == '\t') {
+          size_t j = i;
+          while (j < stripped.size() &&
+                 (stripped[j] == ' ' || stripped[j] == '\t'))
+            ++j;
+          if (j < stripped.size() &&
+              (stripped[j] == '"' || stripped[j] == '\'')) {
+            stripped = stripped.substr(0, offset) +
+                       Trim(stripped.substr(offset, i - offset));
+            break;
+          }
+        }
+      }
+    }
+    operands = stripped;
+  }
   operands = ExpandMerlinCharLiterals(operands);
   section.atoms.push_back(
       std::make_shared<InstructionAtom>(directive, operands));
