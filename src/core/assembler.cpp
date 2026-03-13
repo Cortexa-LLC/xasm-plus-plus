@@ -582,6 +582,7 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
                 // case first, then uppercase fallback since SCMASM normalizes
                 // all symbols to UPPERCASE at definition time)
                 int64_t symbol_value;
+                int64_t expr_offset = 0;
                 std::string lookup_name = trimmed;
                 if (!symbols.Lookup(lookup_name, symbol_value)) {
                   std::string upper = trimmed;
@@ -592,11 +593,46 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
                   if (symbols.Lookup(upper, symbol_value)) {
                     lookup_name = upper;
                   } else {
-                    lookup_name = ""; // not found
+                    // Try SYMBOL+N or SYMBOL-N form (e.g. "LABEL+5")
+                    // Symbol chars are alphanumeric, '.', '_', '@', ':'
+                    // Scan for a '+' or '-' that follows at least one symbol char
+                    lookup_name = "";
+                    for (size_t i = 1; i < trimmed.size(); ++i) {
+                      char c = trimmed[i];
+                      if (c == '+' || c == '-') {
+                        std::string sym_part = trimmed.substr(0, i);
+                        std::string off_str  = trimmed.substr(i);
+                        int64_t sym_val = 0;
+                        // Try original case, then uppercase
+                        bool found = symbols.Lookup(sym_part, sym_val);
+                        if (!found) {
+                          std::string sym_up = sym_part;
+                          std::transform(sym_up.begin(), sym_up.end(),
+                                         sym_up.begin(),
+                                         [](unsigned char cc) {
+                                           return std::toupper(cc);
+                                         });
+                          found = symbols.Lookup(sym_up, sym_val);
+                          if (found) sym_part = sym_up;
+                        }
+                        if (found) {
+                          // Parse the numeric offset (decimal or hex)
+                          try {
+                            expr_offset = std::stoll(off_str, nullptr, 0);
+                          } catch (...) {
+                            expr_offset = 0;
+                          }
+                          symbol_value = sym_val;
+                          lookup_name  = sym_part;
+                          break;
+                        }
+                      }
+                    }
                   }
                 }
                 if (!lookup_name.empty()) {
-                  // Symbol resolved — use actual address.
+                  // Symbol resolved — use actual address (plus any expression
+                  // offset, e.g. LABEL+5).
                   // "Start short, expand only when necessary": the CPU plugin
                   // (EncodeInstructionSpecial) checks the resolved distance and
                   // emits SHORT (2 bytes) if in range, LONG (3 or 5 bytes) only
@@ -606,7 +642,7 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
                   // is rechecked in the next pass.  No branch is ever made LONG
                   // unless it truly cannot reach its target.
                   std::ostringstream oss;
-                  oss << "$" << std::hex << symbol_value;
+                  oss << "$" << std::hex << ((symbol_value + expr_offset) & 0xFFFF);
                   resolved_operand = oss.str();
                 } else {
                   // Symbol still unresolved (forward ref in pass 1).
