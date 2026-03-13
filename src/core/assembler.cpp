@@ -28,6 +28,28 @@ static std::shared_ptr<Expression>
 ParseExpression(const std::string &str, ConcreteSymbolTable &symbols) {
   std::string trimmed = Trim(str);
 
+  // Strip Merlin inline string comment from expression, e.g. "99 "stabbed""
+  // A Merlin comment is a whitespace-separated string literal suffix:
+  //   lda #99 "stabbed"  → expr is  99 "stabbed"  → strip to  99
+  // Only strip when the expression does NOT start with a quote (otherwise
+  // the whole expression is a character literal, e.g. #"A").
+  if (!trimmed.empty() && trimmed[0] != '"' && trimmed[0] != '\'') {
+    // Find the first space (or tab) followed by a quote
+    for (size_t i = 0; i < trimmed.size(); ++i) {
+      if (trimmed[i] == ' ' || trimmed[i] == '\t') {
+        // Peek ahead past whitespace
+        size_t j = i;
+        while (j < trimmed.size() && (trimmed[j] == ' ' || trimmed[j] == '\t'))
+          ++j;
+        if (j < trimmed.size() && (trimmed[j] == '"' || trimmed[j] == '\'')) {
+          // Everything from position i onward is an inline string comment
+          trimmed = Trim(trimmed.substr(0, i));
+          break;
+        }
+      }
+    }
+  }
+
   // Handle Merlin .Inc/.Dec suffixes: symbol.Inc → symbol+1, symbol.Dec → symbol-1
   // Case-insensitive check for the suffix
   auto ends_with_ci = [](const std::string &s, const char *suffix, size_t slen) {
@@ -115,6 +137,53 @@ ParseExpression(const std::string &str, ConcreteSymbolTable &symbols) {
     auto operand_expr = ParseExpression(operand, symbols);
     int64_t value = operand_expr->Evaluate(symbols);
     return std::make_shared<LiteralExpr>((value >> 8) & 0xFF); // High byte
+  }
+
+  // Handle Merlin character literals: "x" or 'x'
+  // Supports standalone form ("A") and compound form ("A"+N, "A"-N, etc.)
+  // Apple II Merlin convention: character literals add $80 to ASCII value
+  // (e.g. #" " = $A0, #"A" = $C1, #"0" = $B0) to produce Apple II text codes.
+  if (!trimmed.empty() && (trimmed[0] == '"' || trimmed[0] == '\'')) {
+    char quote = trimmed[0];
+    // Find the closing quote
+    size_t close = trimmed.find(quote, 1);
+    if (close == std::string::npos) {
+      // Unclosed quote - return 0 gracefully (matches Merlin behaviour)
+      return std::make_shared<LiteralExpr>(0);
+    }
+    // Extract the character between the quotes; add $80 for Apple II encoding
+    std::string chars = trimmed.substr(1, close - 1);
+    int64_t char_val = chars.empty() ? 0
+                                     : (static_cast<uint8_t>(chars[0]) | 0x80);
+    // Check for compound expression after the closing quote (e.g. "9"+1)
+    std::string rest = Trim(trimmed.substr(close + 1));
+    if (rest.empty()) {
+      return std::make_shared<LiteralExpr>(char_val);
+    }
+    // Combine char literal value with the remaining expression via the
+    // operator that leads the rest string (e.g. "+1", "-3", "*2").
+    if (!rest.empty() && (rest[0] == '+' || rest[0] == '-' ||
+                          rest[0] == '*' || rest[0] == '/')) {
+      char op = rest[0];
+      std::string rhs = Trim(rest.substr(1));
+      if (!rhs.empty()) {
+        auto left_expr  = std::make_shared<LiteralExpr>(char_val);
+        auto right_expr = ParseExpression(rhs, symbols);
+        switch (op) {
+          case '+': return std::make_shared<BinaryOpExpr>(
+              BinaryOp::Add,           left_expr, right_expr);
+          case '-': return std::make_shared<BinaryOpExpr>(
+              BinaryOp::Subtract,      left_expr, right_expr);
+          case '*': return std::make_shared<BinaryOpExpr>(
+              BinaryOp::Multiply,      left_expr, right_expr);
+          case '/': return std::make_shared<BinaryOpExpr>(
+              BinaryOp::Divide,        left_expr, right_expr);
+          default: break;
+        }
+      }
+    }
+    // No recognised compound form — return the character value
+    return std::make_shared<LiteralExpr>(char_val);
   }
 
   // Find the rightmost top-level + or - for left-associative evaluation.
@@ -279,7 +348,15 @@ ParseExpression(const std::string &str, ConcreteSymbolTable &symbols) {
       int64_t value = std::stoll(trimmed);
       return std::make_shared<LiteralExpr>(value);
     }
-    // Otherwise fall through - might be subtraction or symbol starting with '-'
+    // Unary minus applied to symbol or expression: -SYMBOL, -$FF, etc.
+    if (trimmed.length() > 1) {
+      std::string operand = Trim(trimmed.substr(1));
+      auto operand_expr = ParseExpression(operand, symbols);
+      auto zero = std::make_shared<LiteralExpr>(0);
+      return std::make_shared<BinaryOpExpr>(BinaryOp::Subtract, zero,
+                                            operand_expr);
+    }
+    // Otherwise fall through
   }
 
   // Decimal literal: 42

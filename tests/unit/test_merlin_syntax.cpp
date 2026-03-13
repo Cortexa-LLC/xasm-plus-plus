@@ -2342,3 +2342,181 @@ TEST(MerlinSyntaxTest, DbForwardRefNeverResolved) {
   AssemblerResult result = assembler.Assemble();
   EXPECT_FALSE(result.success) << "Unresolved forward reference must fail";
 }
+
+// ============================================================================
+// Bug xasm-811: Merlin char literals and inline comments in immediate operands
+// ============================================================================
+
+// lda #"A"  →  emits A9 41  (LDA immediate $41 = ASCII 'A')
+TEST(MerlinSyntaxTest, ImmediateDoubleQuoteCharLiteralA) {
+  auto cpu = std::make_unique<Cpu6502>();
+  cpu->SetCpuMode(CpuMode::Cpu6502);
+  MerlinSyntaxParser parser;
+  parser.SetCpu(cpu.get());
+  ConcreteSymbolTable symbols;
+  Section section("test", 0);
+
+  std::string source = " org $1000\n"
+                       " lda #\"A\"\n"
+                       "HERE equ *\n";
+  parser.Parse(source, section, symbols);
+
+  Assembler assembler;
+  assembler.SetCpuPlugin(cpu.get());
+  assembler.SetSymbolTable(&symbols);
+  assembler.AddSection(section);
+  AssemblerResult result = assembler.Assemble();
+  ASSERT_TRUE(result.success) << "lda #\"A\" must assemble without error";
+
+  // LDA immediate is 2 bytes: opcode $A9 + value $41
+  int64_t here = 0;
+  ASSERT_TRUE(symbols.Lookup("HERE", here));
+  EXPECT_EQ(here, 0x1002) << "lda #\"A\" must emit exactly 2 bytes";
+
+  // Verify the immediate byte is ASCII 'A' = $41 (no high-bit modification)
+  bool found_lda = false;
+  for (auto &s : assembler.GetSections()) {
+    for (auto &atom : s.atoms) {
+      if (atom->type == AtomType::Instruction) {
+        auto instr = std::dynamic_pointer_cast<InstructionAtom>(atom);
+        if (instr && instr->encoded_bytes.size() == 2 &&
+            instr->encoded_bytes[0] == 0xA9) {
+          EXPECT_EQ(instr->encoded_bytes[1], 0xC1u)
+              << "lda #\"A\" operand must be $C1 (Apple II: 'A'=0x41+0x80)";
+          found_lda = true;
+        }
+      }
+    }
+  }
+  EXPECT_TRUE(found_lda) << "lda #\"A\" must produce an LDA immediate atom";
+}
+
+// lda #" "  →  emits A9 A0  (LDA immediate $A0 = Apple II space: ' '=0x20+0x80)
+TEST(MerlinSyntaxTest, ImmediateDoubleQuoteCharLiteralSpace) {
+  auto cpu = std::make_unique<Cpu6502>();
+  cpu->SetCpuMode(CpuMode::Cpu6502);
+  MerlinSyntaxParser parser;
+  parser.SetCpu(cpu.get());
+  ConcreteSymbolTable symbols;
+  Section section("test", 0);
+
+  std::string source = " org $1000\n"
+                       " lda #\" \"\n"
+                       "HERE equ *\n";
+  parser.Parse(source, section, symbols);
+
+  Assembler assembler;
+  assembler.SetCpuPlugin(cpu.get());
+  assembler.SetSymbolTable(&symbols);
+  assembler.AddSection(section);
+  AssemblerResult result = assembler.Assemble();
+  ASSERT_TRUE(result.success) << "lda #\" \" must assemble without error";
+
+  int64_t here = 0;
+  ASSERT_TRUE(symbols.Lookup("HERE", here));
+  EXPECT_EQ(here, 0x1002) << "lda #\" \" must emit exactly 2 bytes";
+
+  bool found_lda = false;
+  for (auto &s : assembler.GetSections()) {
+    for (auto &atom : s.atoms) {
+      if (atom->type == AtomType::Instruction) {
+        auto instr = std::dynamic_pointer_cast<InstructionAtom>(atom);
+        if (instr && instr->encoded_bytes.size() == 2 &&
+            instr->encoded_bytes[0] == 0xA9) {
+          EXPECT_EQ(instr->encoded_bytes[1], 0xA0u)
+              << "lda #\" \" operand must be $A0 (Apple II: ' '=0x20+0x80)";
+          found_lda = true;
+        }
+      }
+    }
+  }
+  EXPECT_TRUE(found_lda) << "lda #\" \" must produce an LDA immediate atom";
+}
+
+// cmp #"@"  →  emits C9 C0  (CMP immediate $C0 = Apple II '@': '@'=0x40+0x80)
+TEST(MerlinSyntaxTest, ImmediateDoubleQuoteCharLiteralAt) {
+  auto cpu = std::make_unique<Cpu6502>();
+  cpu->SetCpuMode(CpuMode::Cpu6502);
+  MerlinSyntaxParser parser;
+  parser.SetCpu(cpu.get());
+  ConcreteSymbolTable symbols;
+  Section section("test", 0);
+
+  std::string source = " org $1000\n"
+                       " cmp #\"@\"\n"
+                       "HERE equ *\n";
+  parser.Parse(source, section, symbols);
+
+  Assembler assembler;
+  assembler.SetCpuPlugin(cpu.get());
+  assembler.SetSymbolTable(&symbols);
+  assembler.AddSection(section);
+  AssemblerResult result = assembler.Assemble();
+  ASSERT_TRUE(result.success) << "cmp #\"@\" must assemble without error";
+
+  int64_t here = 0;
+  ASSERT_TRUE(symbols.Lookup("HERE", here));
+  EXPECT_EQ(here, 0x1002) << "cmp #\"@\" must emit exactly 2 bytes";
+
+  bool found_cmp = false;
+  for (auto &s : assembler.GetSections()) {
+    for (auto &atom : s.atoms) {
+      if (atom->type == AtomType::Instruction) {
+        auto instr = std::dynamic_pointer_cast<InstructionAtom>(atom);
+        if (instr && instr->encoded_bytes.size() == 2 &&
+            instr->encoded_bytes[0] == 0xC9) {
+          EXPECT_EQ(instr->encoded_bytes[1], 0xC0u)
+              << "cmp #\"@\" operand must be $C0 (Apple II: '@'=0x40+0x80)";
+          found_cmp = true;
+        }
+      }
+    }
+  }
+  EXPECT_TRUE(found_cmp) << "cmp #\"@\" must produce a CMP immediate atom";
+}
+
+// lda #99 "stabbed"  →  emits A9 63  (LDA immediate $63 = decimal 99)
+// The trailing " "stabbed"" is an inline Merlin string comment and must be
+// stripped before the numeric expression is evaluated.
+TEST(MerlinSyntaxTest, ImmediateWithInlineStringComment) {
+  auto cpu = std::make_unique<Cpu6502>();
+  cpu->SetCpuMode(CpuMode::Cpu6502);
+  MerlinSyntaxParser parser;
+  parser.SetCpu(cpu.get());
+  ConcreteSymbolTable symbols;
+  Section section("test", 0);
+
+  std::string source = " org $1000\n"
+                       " lda #99 \"stabbed\"\n"
+                       "HERE equ *\n";
+  parser.Parse(source, section, symbols);
+
+  Assembler assembler;
+  assembler.SetCpuPlugin(cpu.get());
+  assembler.SetSymbolTable(&symbols);
+  assembler.AddSection(section);
+  AssemblerResult result = assembler.Assemble();
+  ASSERT_TRUE(result.success)
+      << "lda #99 \"stabbed\" must assemble (comment stripped)";
+
+  int64_t here = 0;
+  ASSERT_TRUE(symbols.Lookup("HERE", here));
+  EXPECT_EQ(here, 0x1002) << "lda #99 \"stabbed\" must emit exactly 2 bytes";
+
+  bool found_lda = false;
+  for (auto &s : assembler.GetSections()) {
+    for (auto &atom : s.atoms) {
+      if (atom->type == AtomType::Instruction) {
+        auto instr = std::dynamic_pointer_cast<InstructionAtom>(atom);
+        if (instr && instr->encoded_bytes.size() == 2 &&
+            instr->encoded_bytes[0] == 0xA9) {
+          EXPECT_EQ(instr->encoded_bytes[1], 0x63u)
+              << "lda #99 \"stabbed\" operand must be $63 (decimal 99)";
+          found_lda = true;
+        }
+      }
+    }
+  }
+  EXPECT_TRUE(found_lda)
+      << "lda #99 \"stabbed\" must produce an LDA immediate atom";
+}
