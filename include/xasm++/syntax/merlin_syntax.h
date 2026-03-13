@@ -312,6 +312,47 @@ public:
    */
   uint32_t ParseNumber(const std::string &str);
 
+  /**
+   * @brief Enable/disable RW18 output mode
+   *
+   * When enabled, USR directive arguments are captured and prepended as a
+   * 12-byte header to binary output (Merlin/Prince of Persia compatibility).
+   *
+   * @param enabled True to enable RW18 mode
+   */
+  void SetRw18Mode(bool enabled) { rw18_mode_ = enabled; }
+
+  /**
+   * @brief Check if RW18 mode is enabled
+   *
+   * @return True if RW18 mode is enabled
+   */
+  bool IsRw18Mode() const { return rw18_mode_; }
+
+  /**
+   * @brief Check if USR directive arguments were captured
+   *
+   * @return True if USR directive with arguments was encountered
+   */
+  bool HasUsrArgs() const { return has_usr_args_; }
+
+  /**
+   * @brief Get captured USR directive arguments
+   *
+   * @return Array of 4 uint16_t values from USR directive
+   */
+  const std::array<uint16_t, 4>& GetUsrArgs() const { return usr_args_; }
+
+  /**
+   * @brief Set USR directive arguments (called by HandleUsr)
+   *
+   * @param args Array of 4 uint16_t values
+   */
+  void SetUsrArgs(const std::array<uint16_t, 4>& args) {
+    usr_args_ = args;
+    has_usr_args_ = true;
+  }
+
 private:
   /**
    * @brief Label scope for managing :LOCAL labels
@@ -355,6 +396,14 @@ private:
   std::unordered_map<std::string, uint32_t>
       variable_labels_; ///< ]variable -> offset
 
+  /// Tracks the current instance number for each ]variable code label.
+  /// Each time "]var INSTR" (label on instruction) is defined, its counter
+  /// increments so subsequent references get a unique symbol name
+  /// (e.g., ]rts_1, ]rts_2, ...) rather than all resolving to the last global
+  /// definition of ]rts. This fixes multi-pass assembly of Merlin ]variables
+  /// that are redefined across subroutines (like "]rts  rts").
+  std::unordered_map<std::string, int> var_label_seq_; ///< ]varname -> seq#
+
   uint32_t current_address_; ///< Current address (for tracking label addresses)
   bool end_directive_seen_;  ///< True if END directive has been processed
 
@@ -366,6 +415,11 @@ private:
   int current_line_;         ///< Current line number
 
   Cpu6502 *cpu_ = nullptr; ///< CPU plugin for mode switching (XC directive)
+
+  // RW18 output format state (Merlin/Prince of Persia compatibility)
+  bool rw18_mode_ = false;                ///< True if --rw18 flag enabled
+  bool has_usr_args_ = false;             ///< True if USR directive captured
+  std::array<uint16_t, 4> usr_args_{};    ///< USR directive arguments
 
   /**
    * @brief Conditional assembly manager (Phase 4: shared component)
@@ -434,6 +488,21 @@ private:
    * For example, ":rts" in ADDSOUND scope becomes "ADDSOUND:rts".
    */
   std::string ScopeLocalLabelsInOperand(const std::string &operand) const;
+
+  /**
+   * @brief Expand ]variable references in an operand to their current
+   * unique-instance names.
+   *
+   * ]variable code labels are redefined across subroutines. Each definition
+   * creates a unique symbol "]varname_N". This method replaces ]varname in
+   * branch/instruction operands with the current instance name so that
+   * multi-pass assembly resolves to the correct (nearby) definition rather
+   * than the last global one.
+   *
+   * Example: "]rts" → "]rts_3" when var_label_seq_["]rts"] == 3
+   * Also handles "]rts:local" → "]rts_3:local" for scoped locals.
+   */
+  std::string ExpandVarLabelsInOperand(const std::string &operand) const;
 
   /**
    * @brief Substitute ]variable references in a line with their current values

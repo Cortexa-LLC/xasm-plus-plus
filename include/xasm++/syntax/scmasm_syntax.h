@@ -378,6 +378,14 @@ public:
    */
   std::string ExpandCharLiteralsInExpr(const std::string &s) const;
 
+  /**
+   * @brief Expand local label references (.N / :N) in an operand string to
+   * their scoped forms (e.g., ".10" → "TERM.SGR@.10").  Used for both
+   * instruction operands and directive operands so that forward/backward local
+   * label references resolve correctly in multi-pass assembly.
+   */
+  std::string ExpandLocalLabelsInOperand(const std::string &operand) const;
+
 private:
   // Directive handler function signature (DirectiveContext pattern)
   using DirectiveHandler =

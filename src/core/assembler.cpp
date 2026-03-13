@@ -338,7 +338,8 @@ const std::vector<Section> &Assembler::GetSections() const { return sections_; }
 void Assembler::Reset() { sections_.clear(); }
 
 std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
-                                                  AssemblerResult &result) {
+                                                  AssemblerResult &result,
+                                                  int pass) {
   // Encode instructions using CPU plugin
   std::vector<size_t> current_sizes;
   if (cpu_ != nullptr) {
@@ -595,22 +596,40 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
                     lookup_name = ""; // not found
                   }
                 }
-                if (!lookup_name.empty()) {
-                  // Convert resolved address to hex string format expected by
-                  // CPU plugin
+                if (pass == 1 && cpu_->IsRelaxBranchesEnabled()) {
+                  // START-LONG: force all branches to LONG in pass 1.
+                  //
+                  // This implements the optimal "start pessimistic, shrink to
+                  // minimum" branch relaxation algorithm:
+                  //
+                  //   Pass 1: all branches emit as LONG (5 or 3 bytes).
+                  //           Labels are computed from this worst-case layout.
+                  //   Pass 2+: each branch checks its actual target. If in
+                  //            range, it shrinks to SHORT (2 bytes).
+                  //            Shrinking only decreases offsets for other
+                  //            branches — it never cascades INTO more
+                  //            relaxation. Result: minimum set of LONG branches.
+                  //
+                  // Contrast with "start short, expand" (the naive algorithm):
+                  //   Expanding branch A increases offsets for all subsequent
+                  //   branches that span A, causing cascading relaxation that
+                  //   can produce far more LONG branches than necessary.
+                  //
+                  // Use VA+200 as the dummy target: always out of range for
+                  // NeedsBranchRelaxation regardless of current VA.
+                  std::ostringstream oss;
+                  oss << "$" << std::hex
+                      << static_cast<uint16_t>((virtual_address + 200) & 0xFFFF);
+                  resolved_operand = oss.str();
+                } else if (!lookup_name.empty()) {
+                  // Pass 2+: symbol is resolved — use actual address.
                   std::ostringstream oss;
                   oss << "$" << std::hex << symbol_value;
                   resolved_operand = oss.str();
                 } else {
-                  // Label not yet defined - use current PC as placeholder so
-                  // branch offset = 0 (always in range). Using $0000 would
-                  // make the branch appear out of range for any VA > $82,
-                  // triggering false relaxation in pass 1. Once relaxed, the
-                  // +3 bytes push the true target further away, permanently
-                  // locking in unnecessary relaxation for branches near the
-                  // 127-byte limit. Using VA keeps all forward-ref branches
-                  // short in pass 1; multi-pass will extend only those that
-                  // truly need it in later passes.
+                  // Pass 2+: symbol still unresolved (extreme forward ref).
+                  // Use current VA (offset = -2, always in range) — keep
+                  // short until the target is known.
                   std::ostringstream oss;
                   oss << "$" << std::hex << virtual_address;
                   resolved_operand = oss.str();
@@ -1016,7 +1035,7 @@ AssemblerResult Assembler::Assemble() {
 
     // Pass 1: Encode instructions using CPU plugin
     std::vector<size_t> current_sizes =
-        EncodeInstructions(*label_table_ptr, result);
+        EncodeInstructions(*label_table_ptr, result, pass);
 
     // Pass 2: Extract labels from LabelAtoms
     // (Must happen AFTER encoding so encoded_bytes.size() is correct)
@@ -1088,7 +1107,8 @@ AssemblerResult Assembler::Assemble() {
   // this), so re-encoding cannot change any instruction size.  Immediate-
   // value instructions like "LDY #imm" are always 2 bytes regardless of the
   // immediate value; the extra pass only updates the operand bytes.
-  EncodeInstructions(*label_table_ptr, result);
+  // Pass a pass number > 1 so branches encode normally (not forced-long).
+  EncodeInstructions(*label_table_ptr, result, pass + 1);
 
   // Final data fixup: re-evaluate DataAtoms and EquateAtoms with the converged
   // symbol values, WITHOUT re-encoding instructions.

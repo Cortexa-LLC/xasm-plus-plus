@@ -76,6 +76,10 @@ int main(int argc, char **argv) {
     Section section;
     ConcreteSymbolTable symbols;
 
+    // RW18 header for Merlin/Prince of Persia compatibility
+    std::array<uint16_t, 4> rw18_header_data{};
+    const std::array<uint16_t, 4> *rw18_header_ptr = nullptr;
+
     // Apply --org override if specified (-1 means not set)
     if (opts.org != -1) {
       section.org = static_cast<uint64_t>(opts.org);
@@ -152,7 +156,19 @@ int main(int argc, char **argv) {
         }
         MerlinSyntaxParser parser;
         parser.SetCpu(&cpu6502); // Merlin uses 6502-specific features
+        
+        // Enable RW18 mode if flag is set
+        if (opts.rw18) {
+          parser.SetRw18Mode(true);
+        }
+        
         parser.Parse(source, section, symbols);
+        
+        // Capture RW18 header if present
+        if (opts.rw18 && parser.HasUsrArgs()) {
+          rw18_header_data = parser.GetUsrArgs();
+          rw18_header_ptr = &rw18_header_data;
+        }
       } else if (opts.syntax == "edtasm_m80_plusplus") {
         // EDTASM-M80++ is Z80-specific
         if (opts.cpu != cpu::CPU_Z80) {
@@ -274,7 +290,7 @@ int main(int argc, char **argv) {
       } else {
         // Default: binary format
         BinaryOutput output;
-        output.WriteOutput(opts.output, sections, symbols);
+        output.WriteOutputWithRw18(opts.output, sections, symbols, rw18_header_ptr);
       }
     } catch (const std::filesystem::filesystem_error &e) {
       std::cerr << "File I/O error: " << e.what() << "\n";

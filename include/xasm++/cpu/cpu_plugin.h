@@ -144,6 +144,19 @@ public:
   }
 
   /**
+   * @brief Returns whether branch relaxation (long-branch expansion) is
+   * enabled.
+   *
+   * Used by the assembler to decide whether to apply the "start-long, shrink"
+   * optimal relaxation algorithm in pass 1.  When relaxation is disabled the
+   * assembler must use actual target addresses in every pass so that
+   * out-of-range branches produce errors rather than silent expansion.
+   *
+   * @return true if branch relaxation is enabled, false otherwise
+   */
+  virtual bool IsRelaxBranchesEnabled() const { return false; }
+
+  /**
    * @brief Encode an instruction with special handling
    *
    * Handles instructions that require context beyond standard operand values,

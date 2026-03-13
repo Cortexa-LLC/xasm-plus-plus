@@ -11,6 +11,7 @@
 #pragma once
 
 #include "xasm++/output/output_plugin.h"
+#include <array>
 #include <string>
 #include <vector>
 
@@ -63,10 +64,7 @@ public:
   std::string GetFileExtension() const override;
 
   /**
-   * @brief Write output to a binary file
-   *
-   * Writes all sections to a raw binary file. Sections are written in
-   * address order, with gaps filled by zeros.
+   * @brief Write output to a binary file (implements OutputPlugin interface)
    *
    * @param filename Output filename
    * @param sections List of assembled sections
@@ -77,6 +75,27 @@ public:
   void WriteOutput(const std::string &filename,
                    const std::vector<Section *> &sections,
                    const SymbolTable &symbols) override;
+
+  /**
+   * @brief Write output with optional RW18 header (Merlin compatibility)
+   *
+   * Writes all sections to a raw binary file. Sections are written in
+   * address order, with gaps filled by zeros.
+   *
+   * If rw18_header is provided, prepends a 12-byte RW18 header
+   * with the format: "USR\x1a" + 4 uint16_t LE values.
+   *
+   * @param filename Output filename
+   * @param sections List of assembled sections
+   * @param symbols Symbol table (not used in binary output)
+   * @param rw18_header Optional RW18 header (4 uint16_t values), null if not used
+   *
+   * @throws std::runtime_error if file cannot be written
+   */
+  void WriteOutputWithRw18(const std::string &filename,
+                           const std::vector<Section *> &sections,
+                           const SymbolTable &symbols,
+                           const std::array<uint16_t, 4> *rw18_header);
 };
 
 } // namespace xasm

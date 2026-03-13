@@ -62,6 +62,7 @@ struct CommandLineOptions {
   std::vector<std::string> path_mappings; ///< Path mappings for .INB directive
                                           ///< (format: "virtual=actual")
   bool relax_branches = false;            ///< Expand out-of-range branches (default: error)
+  bool rw18 = false;                      ///< Emit RW18 module header (USR directive args prepended)
   bool show_help = false;                 ///< True if --help was specified
   bool show_version = false;              ///< True if --version was specified
   std::string help_message; ///< Help message text (populated when --help used)

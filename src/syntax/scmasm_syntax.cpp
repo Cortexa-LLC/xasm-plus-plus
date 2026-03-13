@@ -970,6 +970,9 @@ void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
       auto it = directive_registry_.find(opcode_upper);
       if (it != directive_registry_.end()) {
         // Found in registry - dispatch with DirectiveContext
+        // Expand local label references in operand before dispatch so that
+        // e.g. ".DA .10" correctly references "GLOBAL@.10" in the symbol table.
+        std::string directive_operand = ExpandLocalLabelsInOperand(operand);
         DirectiveContext context;
         context.section = &section;
         context.symbols = &symbols;
@@ -980,7 +983,7 @@ void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
         context.current_line = current_line_;
         context.include_paths = &include_paths_;
         context.path_mappings = &path_mappings_;
-        it->second(label, operand, context);
+        it->second(label, directive_operand, context);
       } else {
         // Not in registry and not a control flow directive
         throw std::runtime_error("Unknown directive: " + opcode);
@@ -1127,52 +1130,7 @@ void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
       // A local label reference is '.' or ':' followed by one or more digits,
       // appearing at the START of the operand string or immediately after a
       // non-identifier character (operator, paren, '#', etc.).
-      if (!instr_operand.empty() && !last_global_label_.empty()) {
-        std::string expanded;
-        expanded.reserve(instr_operand.size() + last_global_label_.size() * 2);
-        for (size_t k = 0; k < instr_operand.size();) {
-          char c = instr_operand[k];
-          bool at_word_start =
-              (k == 0) || (!std::isalnum((unsigned char)instr_operand[k - 1]) &&
-                           instr_operand[k - 1] != '_' &&
-                           instr_operand[k - 1] != '.');
-          if ((c == '.' || c == ':') && at_word_start &&
-              k + 1 < instr_operand.size() &&
-              std::isdigit((unsigned char)instr_operand[k + 1])) {
-            // Local label reference — prepend current scope.
-            // For ':N' inside macros, use the per-invocation scope so that
-            // the branch resolves to the label defined in THIS expansion.
-            // NOTE: 'at_word_start' excludes the case where the preceding
-            // character is '.' to avoid mis-parsing SCMASM global labels that
-            // contain '..' (double-dot) in their name, e.g. 'X.BasePath..1'.
-            // In 'jsr X.BasePath..1', the second '.' is part of the global
-            // label, NOT the start of a local '.1' reference.
-            std::string ref_label(1, c);
-            // Peek ahead to build the full label string (e.g., ":1")
-            size_t kk = k + 1;
-            while (kk < instr_operand.size() &&
-                   std::isdigit((unsigned char)instr_operand[kk])) {
-              ref_label += instr_operand[kk++];
-            }
-            expanded += LocalLabelScope(ref_label);
-            // For '.N' dot-prefix labels, insert '@' before the '.' to prevent
-            // collision with global sub-labels that share the expanded name.
-            // E.g. local '.1' in BITBLT scope becomes 'BITBLT@.1', not
-            // 'BITBLT.1' which is also a distinct global sub-label.
-            if (c == '.') expanded += '@';
-            expanded += c; // '.' or ':'
-            k++;
-            while (k < instr_operand.size() &&
-                   std::isdigit((unsigned char)instr_operand[k])) {
-              expanded += instr_operand[k++];
-            }
-          } else {
-            expanded += c;
-            k++;
-          }
-        }
-        instr_operand = expanded;
-      }
+      instr_operand = ExpandLocalLabelsInOperand(instr_operand);
 
       // Instructions inside a .DUMMY section advance the virtual address (for
       // symbol placement) but do NOT emit code bytes.  Only add the atom when
@@ -1637,6 +1595,40 @@ uint8_t ScmasmSyntaxParser::ApplyHighBitRule(char c, char delimiter) const {
   }
 
   return result;
+}
+
+std::string ScmasmSyntaxParser::ExpandLocalLabelsInOperand(
+    const std::string &operand) const {
+  if (operand.empty() || last_global_label_.empty())
+    return operand;
+
+  std::string expanded;
+  expanded.reserve(operand.size() + last_global_label_.size() * 2);
+  for (size_t k = 0; k < operand.size();) {
+    char c = operand[k];
+    bool at_word_start =
+        (k == 0) || (!std::isalnum((unsigned char)operand[k - 1]) &&
+                     operand[k - 1] != '_' && operand[k - 1] != '.');
+    if ((c == '.' || c == ':') && at_word_start &&
+        k + 1 < operand.size() &&
+        std::isdigit((unsigned char)operand[k + 1])) {
+      // Build the full label (e.g., ".10")
+      std::string ref_label(1, c);
+      size_t kk = k + 1;
+      while (kk < operand.size() && std::isdigit((unsigned char)operand[kk]))
+        ref_label += operand[kk++];
+      expanded += LocalLabelScope(ref_label);
+      if (c == '.') expanded += '@';
+      expanded += c;
+      k++;
+      while (k < operand.size() && std::isdigit((unsigned char)operand[k]))
+        expanded += operand[k++];
+    } else {
+      expanded += c;
+      k++;
+    }
+  }
+  return expanded;
 }
 
 std::string ScmasmSyntaxParser::ExpandCharLiteralsInExpr(

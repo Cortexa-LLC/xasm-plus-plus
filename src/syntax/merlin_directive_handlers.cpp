@@ -735,9 +735,7 @@ void HandleMac(const std::string &label, const std::string &operand,
 
 void HandleUsr(const std::string &label, const std::string &operand,
                DirectiveContext &context) {
-  (void)operand;
-
-  // USR directive - Direct implementation from merlin_directives.cpp
+  // USR directive - captures arguments for RW18 output format
   // Create label if present
   if (!label.empty()) {
     uint32_t current_address = *context.current_address;
@@ -746,6 +744,53 @@ void HandleUsr(const std::string &label, const std::string &operand,
     context.section->atoms.push_back(
         std::make_shared<LabelAtom>(label, current_address));
   }
+
+  // Parse USR directive arguments for RW18 mode
+  // Format: usr $a9,16,$b00,*-org
+  // Arguments are comma-separated expressions
+  auto *parser = static_cast<MerlinSyntaxParser *>(context.parser_state);
+  if (parser && parser->IsRw18Mode() && !operand.empty()) {
+    std::array<uint16_t, 4> args{};
+    std::vector<std::string> arg_strings;
+
+    // Split operand by commas
+    size_t start = 0;
+    size_t pos = 0;
+    while (pos < operand.size()) {
+      if (operand[pos] == ',') {
+        if (pos > start) {
+          arg_strings.push_back(operand.substr(start, pos - start));
+        }
+        start = pos + 1;
+      }
+      pos++;
+    }
+    if (start < operand.size()) {
+      arg_strings.push_back(operand.substr(start));
+    }
+
+    // Evaluate each argument (up to 4)
+    for (size_t i = 0; i < std::min(size_t(4), arg_strings.size()); ++i) {
+      try {
+        // Trim whitespace
+        std::string arg = arg_strings[i];
+        arg.erase(0, arg.find_first_not_of(" \t"));
+        arg.erase(arg.find_last_not_of(" \t") + 1);
+
+        // Parse and evaluate expression
+        auto expr = parser->ParseExpression(arg, *context.symbols);
+        int64_t value = expr->Evaluate(*context.symbols);
+        args[i] = static_cast<uint16_t>(value & 0xFFFF);
+      } catch (const std::exception &e) {
+        // On error, use 0 for this argument
+        args[i] = 0;
+      }
+    }
+
+    // Store arguments in parser
+    parser->SetUsrArgs(args);
+  }
+
   // USR is a no-op - user-defined subroutine (no atoms generated)
 }
 

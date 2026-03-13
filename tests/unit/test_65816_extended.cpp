@@ -34,22 +34,26 @@ TEST(Cpu65816ExtendedTest, REP_65816) {
   EXPECT_EQ(bytes[1], 0x30); // Status bits to reset
 }
 
-// Test 3: SEP not available in 6502 mode
-TEST(Cpu65816ExtendedTest, SEP_NotAvailableIn6502Mode) {
+// Test 3: SEP works in 6502 mode (vasm-compatible: no mode restrictions)
+TEST(Cpu65816ExtendedTest, SEP_AvailableInAllModes) {
   Cpu6502 cpu;
-  // Default mode is 6502
+  // Default mode is 6502 — SEP should still encode correctly
 
   auto bytes = cpu.EncodeSEP(0x30, AddressingMode::Immediate);
-  EXPECT_EQ(bytes.size(), 0UL); // Empty = not supported
+  ASSERT_EQ(bytes.size(), 2UL);
+  EXPECT_EQ(bytes[0], 0xE2); // SEP opcode
+  EXPECT_EQ(bytes[1], 0x30);
 }
 
-// Test 4: REP not available in 65C02 mode
-TEST(Cpu65816ExtendedTest, REP_NotAvailableIn65C02Mode) {
+// Test 4: REP works in 65C02 mode (vasm-compatible: no mode restrictions)
+TEST(Cpu65816ExtendedTest, REP_AvailableInAllModes) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65C02);
 
   auto bytes = cpu.EncodeREP(0x30, AddressingMode::Immediate);
-  EXPECT_EQ(bytes.size(), 0UL); // Empty = not supported
+  ASSERT_EQ(bytes.size(), 2UL);
+  EXPECT_EQ(bytes[0], 0xC2); // REP opcode
+  EXPECT_EQ(bytes[1], 0x30);
 }
 
 // Test 5: XCE (Exchange Carry and Emulation) already implemented

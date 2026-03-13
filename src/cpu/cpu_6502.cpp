@@ -1851,77 +1851,53 @@ std::vector<uint8_t> Cpu6502::EncodeBRA(uint16_t operand,
 // ============================================================================
 
 std::vector<uint8_t> Cpu6502::EncodePHB() const {
-  if (cpu_mode_ != CpuMode::Cpu65816)
-    return {};
   return {Opcodes::PHB};
 }
 
 std::vector<uint8_t> Cpu6502::EncodePLB() const {
-  if (cpu_mode_ != CpuMode::Cpu65816)
-    return {};
   return {Opcodes::PLB};
 }
 
 std::vector<uint8_t> Cpu6502::EncodePHK() const {
-  if (cpu_mode_ != CpuMode::Cpu65816)
-    return {};
   return {Opcodes::PHK};
 }
 
 std::vector<uint8_t> Cpu6502::EncodePHD() const {
-  if (cpu_mode_ != CpuMode::Cpu65816)
-    return {};
   return {Opcodes::PHD};
 }
 
 std::vector<uint8_t> Cpu6502::EncodePLD() const {
-  if (cpu_mode_ != CpuMode::Cpu65816)
-    return {};
   return {Opcodes::PLD};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeTCD() const {
-  if (cpu_mode_ != CpuMode::Cpu65816)
-    return {};
   return {Opcodes::TCD};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeTDC() const {
-  if (cpu_mode_ != CpuMode::Cpu65816)
-    return {};
   return {Opcodes::TDC};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeTCS() const {
-  if (cpu_mode_ != CpuMode::Cpu65816)
-    return {};
   return {Opcodes::TCS};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeTSC() const {
-  if (cpu_mode_ != CpuMode::Cpu65816)
-    return {};
   return {Opcodes::TSC};
 }
 
 // TXY - Transfer X to Y (65816 implied, opcode $9B)
 std::vector<uint8_t> Cpu6502::EncodeTXY() const {
-  if (cpu_mode_ != CpuMode::Cpu65816)
-    return {};
   return {Opcodes::TXY};
 }
 
 // TYX - Transfer Y to X (65816 implied, opcode $BB)
 std::vector<uint8_t> Cpu6502::EncodeTYX() const {
-  if (cpu_mode_ != CpuMode::Cpu65816)
-    return {};
   return {Opcodes::TYX};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeJML(uint32_t operand,
                                         AddressingMode mode) const {
-  if (cpu_mode_ != CpuMode::Cpu65816)
-    return {};
 
   if (mode == AddressingMode::AbsoluteLong) {
     std::vector<uint8_t> bytes = {Opcodes::JML_ALG};
@@ -1940,8 +1916,6 @@ std::vector<uint8_t> Cpu6502::EncodeJML(uint32_t operand,
 
 std::vector<uint8_t> Cpu6502::EncodeJSL(uint32_t operand,
                                         AddressingMode mode) const {
-  if (cpu_mode_ != CpuMode::Cpu65816)
-    return {};
 
   if (mode == AddressingMode::AbsoluteLong) {
     std::vector<uint8_t> bytes = {Opcodes::JSL_ALG};
@@ -1954,15 +1928,11 @@ std::vector<uint8_t> Cpu6502::EncodeJSL(uint32_t operand,
 }
 
 std::vector<uint8_t> Cpu6502::EncodeRTL() const {
-  if (cpu_mode_ != CpuMode::Cpu65816)
-    return {};
   return {Opcodes::RTL};
 }
 
 std::vector<uint8_t> Cpu6502::EncodePEA(uint16_t operand,
                                         AddressingMode mode) const {
-  if (cpu_mode_ != CpuMode::Cpu65816)
-    return {};
 
   if (mode == AddressingMode::Absolute) {
     std::vector<uint8_t> bytes = {Opcodes::PEA};
@@ -1975,8 +1945,6 @@ std::vector<uint8_t> Cpu6502::EncodePEA(uint16_t operand,
 
 std::vector<uint8_t> Cpu6502::EncodePEI(uint8_t operand,
                                         AddressingMode mode) const {
-  if (cpu_mode_ != CpuMode::Cpu65816)
-    return {};
 
   if (mode == AddressingMode::ZeroPage) {
     return {Opcodes::PEI, operand};
@@ -1986,8 +1954,6 @@ std::vector<uint8_t> Cpu6502::EncodePEI(uint8_t operand,
 
 std::vector<uint8_t> Cpu6502::EncodePER(uint16_t operand,
                                         AddressingMode mode) const {
-  if (cpu_mode_ != CpuMode::Cpu65816)
-    return {};
 
   if (mode == AddressingMode::Relative) {
     std::vector<uint8_t> bytes = {Opcodes::PER};
@@ -2000,22 +1966,16 @@ std::vector<uint8_t> Cpu6502::EncodePER(uint16_t operand,
 
 std::vector<uint8_t> Cpu6502::EncodeMVN(uint8_t srcbank,
                                         uint8_t destbank) const {
-  if (cpu_mode_ != CpuMode::Cpu65816)
-    return {};
   return {Opcodes::MVN, srcbank, destbank};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeMVP(uint8_t srcbank,
                                         uint8_t destbank) const {
-  if (cpu_mode_ != CpuMode::Cpu65816)
-    return {};
   return {Opcodes::MVP, srcbank, destbank};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeCOP(uint8_t operand,
                                         AddressingMode mode) const {
-  if (cpu_mode_ != CpuMode::Cpu65816)
-    return {};
 
   if (mode == AddressingMode::Immediate) {
     return {Opcodes::COP, operand};
@@ -2025,8 +1985,6 @@ std::vector<uint8_t> Cpu6502::EncodeCOP(uint8_t operand,
 
 std::vector<uint8_t> Cpu6502::EncodeWDM(uint8_t operand,
                                         AddressingMode mode) const {
-  if (cpu_mode_ != CpuMode::Cpu65816)
-    return {};
 
   if (mode == AddressingMode::Immediate) {
     return {Opcodes::WDM, operand};
@@ -2035,37 +1993,27 @@ std::vector<uint8_t> Cpu6502::EncodeWDM(uint8_t operand,
 }
 
 std::vector<uint8_t> Cpu6502::EncodeXBA() const {
-  if (cpu_mode_ != CpuMode::Cpu65816)
-    return {};
   return {Opcodes::XBA};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeXCE() const {
-  if (cpu_mode_ != CpuMode::Cpu65816)
-    return {};
   return {Opcodes::XCE};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeSEP(uint16_t value,
                                         AddressingMode mode) const {
-  if (cpu_mode_ != CpuMode::Cpu65816)
-    return {};
-
-  if (mode == AddressingMode::Immediate) {
-    return {Opcodes::SEP, static_cast<uint8_t>(value & 0xFF)};
-  }
-  return {};
+  // SEP only has Immediate mode; accept any mode for vasm compatibility
+  // (source may use 'sep $30' without '#' prefix)
+  (void)mode;
+  return {Opcodes::SEP, static_cast<uint8_t>(value & 0xFF)};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeREP(uint16_t value,
                                         AddressingMode mode) const {
-  if (cpu_mode_ != CpuMode::Cpu65816)
-    return {};
-
-  if (mode == AddressingMode::Immediate) {
-    return {Opcodes::REP, static_cast<uint8_t>(value & 0xFF)};
-  }
-  return {};
+  // REP only has Immediate mode; accept any mode for vasm compatibility
+  // (source may use 'rep $30' without '#' prefix)
+  (void)mode;
+  return {Opcodes::REP, static_cast<uint8_t>(value & 0xFF)};
 }
 
 // ============================================================================

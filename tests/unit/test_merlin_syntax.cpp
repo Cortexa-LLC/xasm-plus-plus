@@ -427,9 +427,9 @@ TEST(MerlinSyntaxTest, DwWithSymbolReference) {
 
   parser.Parse(source, section, symbols);
 
-  // Should define both startrun and :1 labels
+  // Should define both startrun and :1 (scoped to "startrun:1")
   EXPECT_TRUE(symbols.IsDefined("startrun"));
-  EXPECT_TRUE(symbols.IsDefined(":1"));
+  EXPECT_TRUE(symbols.IsDefined("startrun:1"));
 
   // Should have atoms: label, NOP, label, DW
   ASSERT_GE(section.atoms.size(), 3UL);

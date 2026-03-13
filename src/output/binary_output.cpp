@@ -19,12 +19,36 @@ std::string BinaryOutput::GetFileExtension() const { return ".bin"; }
 void BinaryOutput::WriteOutput(const std::string &filename,
                                const std::vector<Section *> &sections,
                                const SymbolTable &symbols) {
+  // Call WriteOutputWithRw18 with no RW18 header
+  WriteOutputWithRw18(filename, sections, symbols, nullptr);
+}
+
+void BinaryOutput::WriteOutputWithRw18(const std::string &filename,
+                                       const std::vector<Section *> &sections,
+                                       const SymbolTable &symbols,
+                                       const std::array<uint16_t, 4> *rw18_header) {
   (void)symbols; // Unused for now
 
   // Create output file
   std::ofstream out(filename, std::ios::binary);
   if (!out.is_open()) {
     throw std::runtime_error("Failed to open output file: " + filename);
+  }
+
+  // Write RW18 header if provided (Merlin/Prince of Persia compatibility)
+  if (rw18_header) {
+    // Magic: "USR\x1a" (4 bytes)
+    const uint8_t magic[4] = {'U', 'S', 'R', 0x1a};
+    out.write(reinterpret_cast<const char *>(magic), 4);
+
+    // Write 4 uint16_t arguments in little-endian format
+    for (int i = 0; i < 4; ++i) {
+      uint16_t arg = (*rw18_header)[i];
+      uint8_t lo = arg & 0xFF;
+      uint8_t hi = (arg >> 8) & 0xFF;
+      out.write(reinterpret_cast<const char *>(&lo), 1);
+      out.write(reinterpret_cast<const char *>(&hi), 1);
+    }
   }
 
   // Process each section

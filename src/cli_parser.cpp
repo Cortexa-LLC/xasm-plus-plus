@@ -97,6 +97,10 @@ CommandLineOptions ParseCommandLine(int argc, char **argv) {
   app.add_flag("--relax-branches", opts.relax_branches,
                "Expand out-of-range branches to B!cc+3/JMP sequences (default: error)");
 
+  app.add_flag("--rw18", opts.rw18,
+               "Prepend 12-byte RW18 header with USR directive arguments "
+               "(Merlin/Prince of Persia compatibility)");
+
   // Quiet mode
   app.add_flag("-q,--quiet", opts.quiet,
                "Suppress non-essential output");

@@ -179,6 +179,8 @@ public:
    */
   void SetRelaxBranches(bool relax);
 
+  bool IsRelaxBranchesEnabled() const override { return relax_branches_; }
+
   /**
    * @brief Set the M and X flags for 65816 register width control
    *

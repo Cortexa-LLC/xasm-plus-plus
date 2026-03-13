@@ -2115,16 +2115,18 @@ TEST(Cpu6502Test, PLD_65816) {
 }
 
 // Test 203: Bank operations not available in 6502/65C02
-TEST(Cpu6502Test, BankOps_NotAvailableIn6502Mode) {
+TEST(Cpu6502Test, BankOps_AvailableInAllModes) {
   Cpu6502 cpu;
   // Default mode is 6502
 
   auto bytes1 = cpu.EncodePHB();
-  EXPECT_EQ(bytes1.size(), 0UL);
+  ASSERT_EQ(bytes1.size(), 1UL);
+  EXPECT_EQ(bytes1[0], 0x8B); // PHB opcode
 
   cpu.SetCpuMode(CpuMode::Cpu65C02);
   auto bytes2 = cpu.EncodePHB();
-  EXPECT_EQ(bytes2.size(), 0UL);
+  ASSERT_EQ(bytes2.size(), 1UL);
+  EXPECT_EQ(bytes2[0], 0x8B); // PHB opcode
 }
 
 // ============================================================================
@@ -2175,16 +2177,18 @@ TEST(Cpu6502Test, TSC_65816) {
   EXPECT_EQ(bytes[0], 0x3B); // TSC opcode
 }
 
-// Test 208: Transfer operations not available in 6502/65C02
-TEST(Cpu6502Test, Transfers_NotAvailableIn6502Mode) {
+// Test 208: Transfer operations available in all modes (vasm-compatible)
+TEST(Cpu6502Test, Transfers_AvailableInAllModes) {
   Cpu6502 cpu;
 
   auto bytes1 = cpu.EncodeTCD();
-  EXPECT_EQ(bytes1.size(), 0UL);
+  ASSERT_EQ(bytes1.size(), 1UL);
+  EXPECT_EQ(bytes1[0], 0x5B); // TCD opcode
 
   cpu.SetCpuMode(CpuMode::Cpu65C02);
   auto bytes2 = cpu.EncodeTCS();
-  EXPECT_EQ(bytes2.size(), 0UL);
+  ASSERT_EQ(bytes2.size(), 1UL);
+  EXPECT_EQ(bytes2[0], 0x1B); // TCS opcode
 }
 
 // ============================================================================
@@ -2227,19 +2231,22 @@ TEST(Cpu6502Test, RTL_65816) {
   EXPECT_EQ(bytes[0], 0x6B); // RTL opcode
 }
 
-// Test 212: Long jumps not available in 6502/65C02
-TEST(Cpu6502Test, LongJumps_NotAvailableIn6502Mode) {
+// Test 212: Long jumps available in all modes (vasm-compatible)
+TEST(Cpu6502Test, LongJumps_AvailableInAllModes) {
   Cpu6502 cpu;
 
   auto bytes1 = cpu.EncodeJML(0x123456, AddressingMode::AbsoluteLong);
-  EXPECT_EQ(bytes1.size(), 0UL);
+  ASSERT_EQ(bytes1.size(), 4UL);
+  EXPECT_EQ(bytes1[0], 0x5C); // JML opcode
 
   cpu.SetCpuMode(CpuMode::Cpu65C02);
   auto bytes2 = cpu.EncodeJSL(0x123456, AddressingMode::AbsoluteLong);
-  EXPECT_EQ(bytes2.size(), 0UL);
+  ASSERT_EQ(bytes2.size(), 4UL);
+  EXPECT_EQ(bytes2[0], 0x22); // JSL opcode
 
   auto bytes3 = cpu.EncodeRTL();
-  EXPECT_EQ(bytes3.size(), 0UL);
+  ASSERT_EQ(bytes3.size(), 1UL);
+  EXPECT_EQ(bytes3[0], 0x6B); // RTL opcode
 }
 
 // ============================================================================
@@ -2350,22 +2357,29 @@ TEST(Cpu6502Test, XCE_65816) {
   EXPECT_EQ(bytes[0], 0xFB); // XCE opcode
 }
 
-// Test 222: Miscellaneous opcodes not available in 6502/65C02
-TEST(Cpu6502Test, MiscOpcodes_NotAvailableIn6502Mode) {
+// Test 222: 65816 opcodes available in all modes (vasm-compatible behavior)
+TEST(Cpu6502Test, Misc65816Opcodes_AvailableInAllModes) {
   Cpu6502 cpu;
 
+  // PEA with Immediate mode returns empty (wrong mode), Absolute returns bytes
   auto bytes1 = cpu.EncodePEA(0x1234, AddressingMode::Immediate);
-  EXPECT_EQ(bytes1.size(), 0UL);
+  EXPECT_EQ(bytes1.size(), 0UL); // Immediate not valid for PEA
 
+  // XBA works in 6502 mode
   auto bytes2 = cpu.EncodeXBA();
-  EXPECT_EQ(bytes2.size(), 0UL);
+  ASSERT_EQ(bytes2.size(), 1UL);
+  EXPECT_EQ(bytes2[0], 0xEB); // XBA opcode
 
+  // XCE works in 65C02 mode
   cpu.SetCpuMode(CpuMode::Cpu65C02);
   auto bytes3 = cpu.EncodeXCE();
-  EXPECT_EQ(bytes3.size(), 0UL);
+  ASSERT_EQ(bytes3.size(), 1UL);
+  EXPECT_EQ(bytes3[0], 0xFB); // XCE opcode
 
+  // MVN works in 65C02 mode
   auto bytes4 = cpu.EncodeMVN(0x12, 0x34);
-  EXPECT_EQ(bytes4.size(), 0UL);
+  ASSERT_EQ(bytes4.size(), 3UL);
+  EXPECT_EQ(bytes4[0], 0x54); // MVN opcode
 }
 
 // ============================================================================
@@ -3085,13 +3099,14 @@ TEST(Cpu6502Test, TXY_65816) {
   EXPECT_EQ(bytes[0], 0x9B); // TXY opcode
 }
 
-// Test 280: TXY not available outside 65816 mode
-TEST(Cpu6502Test, TXY_NotAvailableIn65C02) {
+// Test 280: TXY available in all modes (vasm-compatible)
+TEST(Cpu6502Test, TXY_AvailableInAllModes) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65C02);
 
   auto bytes = cpu.EncodeTXY();
-  EXPECT_EQ(bytes.size(), 0UL);
+  ASSERT_EQ(bytes.size(), 1UL);
+  EXPECT_EQ(bytes[0], 0x9B); // TXY opcode
 }
 
 // Test 281: TYX - Transfer Y to X (65816)
@@ -3104,13 +3119,14 @@ TEST(Cpu6502Test, TYX_65816) {
   EXPECT_EQ(bytes[0], 0xBB); // TYX opcode
 }
 
-// Test 282: TYX not available outside 65816 mode
-TEST(Cpu6502Test, TYX_NotAvailableIn65C02) {
+// Test 282: TYX available in all modes (vasm-compatible)
+TEST(Cpu6502Test, TYX_AvailableInAllModes) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65C02);
 
   auto bytes = cpu.EncodeTYX();
-  EXPECT_EQ(bytes.size(), 0UL);
+  ASSERT_EQ(bytes.size(), 1UL);
+  EXPECT_EQ(bytes[0], 0xBB); // TYX opcode
 }
 
 // Test 278: BBS not available in standard 65C02 mode

@@ -437,7 +437,7 @@ MerlinSyntaxParser::ScopeLocalLabelsInOperand(const std::string &operand) const 
          operand[i - 1] != '_');
 
     if (c == ':' && at_word_start && i + 1 < operand.size() &&
-        (std::isalpha(static_cast<unsigned char>(operand[i + 1])) ||
+        (std::isalnum(static_cast<unsigned char>(operand[i + 1])) ||
          operand[i + 1] == '_')) {
       // Local label reference — prepend global scope: ADDSOUND:rts
       result += current_scope_.global_label;
@@ -451,6 +451,49 @@ MerlinSyntaxParser::ScopeLocalLabelsInOperand(const std::string &operand) const 
     } else {
       result += c;
       i++;
+    }
+  }
+
+  return result;
+}
+
+std::string
+MerlinSyntaxParser::ExpandVarLabelsInOperand(const std::string &operand) const {
+  // Fast path: no ] in operand
+  if (operand.find(']') == std::string::npos) {
+    return operand;
+  }
+
+  std::string result;
+  result.reserve(operand.size() + 16);
+
+  for (size_t i = 0; i < operand.size();) {
+    if (operand[i] == ']') {
+      // Collect ]identifier
+      size_t tok_start = i++;
+      while (i < operand.size() &&
+             (std::isalnum(static_cast<unsigned char>(operand[i])) ||
+              operand[i] == '_')) {
+        ++i;
+      }
+      std::string var_name = operand.substr(tok_start, i - tok_start);
+
+      // Check if this ]varname is immediately followed by ':'.
+      // If so, it's acting as a scope qualifier ("]rts:local" form) and must
+      // NOT be expanded — the :local label was defined under the original
+      // (non-unique) scope name "]rts", so the reference must stay as "]rts".
+      bool followed_by_colon = (i < operand.size() && operand[i] == ':');
+
+      auto it = var_label_seq_.find(var_name);
+      if (!followed_by_colon && it != var_label_seq_.end() && it->second > 0) {
+        // Direct reference: replace ]varname with ]varname_N
+        result += var_name + "_" + std::to_string(it->second);
+      } else {
+        // Scope qualifier or no instance tracked — keep as-is
+        result += var_name;
+      }
+    } else {
+      result += operand[i++];
     }
   }
 
@@ -1140,8 +1183,13 @@ void MerlinSyntaxParser::ParseLine(const std::string &line, Section &section,
             std::make_shared<LabelAtom>(scoped_label, label_addr));
       }
 
-      // Only global (non-':') labels update the current scope
-      if (label[0] != ':') {
+      // Only true global labels (no ':' or ']' prefix) update the scope.
+      // ]variable labels are mutable variables, not scope anchors — EXCEPT
+      // when there is no current scope yet (start of file before any true
+      // global label), in which case they must anchor scope so that :local
+      // labels defined after them can be resolved.
+      if (label[0] != ':' &&
+          (label[0] != ']' || current_scope_.global_label.empty())) {
         current_scope_.global_label = label;
         current_scope_.local_labels.clear();
       }
@@ -1194,7 +1242,8 @@ void MerlinSyntaxParser::ParseLine(const std::string &line, Section &section,
     // Update global label scope from the RAW (un-scoped) label so that
     // subsequent ':local' labels are correctly qualified.  Only non-local
     // labels (those that don't start with ':') update the scope.
-    if (!label.empty() && label[0] != ':') {
+    if (!label.empty() && label[0] != ':' &&
+        (label[0] != ']' || current_scope_.global_label.empty())) {
       current_scope_.global_label = label;
       current_scope_.local_labels.clear();
     }
@@ -1214,7 +1263,8 @@ void MerlinSyntaxParser::ParseLine(const std::string &line, Section &section,
         section.atoms.push_back(
             std::make_shared<LabelAtom>(scoped_label, label_addr));
       }
-      if (label[0] != ':') {
+      if (label[0] != ':' &&
+          (label[0] != ']' || current_scope_.global_label.empty())) {
         current_scope_.global_label = label;
         current_scope_.local_labels.clear();
       }
@@ -1229,19 +1279,38 @@ void MerlinSyntaxParser::ParseLine(const std::string &line, Section &section,
   if (!label.empty()) {
     uint32_t label_addr = in_dum_block_ ? dum_address_ : current_address_;
     std::string scoped_label = ScopeLocalLabel(label);
+
+    // ]variable code labels (e.g. "]rts  rts") are redefined across
+    // subroutines.  Give each definition a unique name (]rts_1, ]rts_2, …) so
+    // that multi-pass assembly resolves references to the *nearby* definition
+    // rather than always using the last global one.  Only label-on-instruction
+    // definitions get unique names; EQU-style ]var = VALUE assignments keep
+    // their original name because they act as mutable numeric variables.
+    if (!label.empty() && label[0] == ']' && label.find(':') == std::string::npos) {
+      int seq = ++var_label_seq_[label]; // increment and capture new seq#
+      scoped_label = label + "_" + std::to_string(seq);
+    }
+
     symbols.Define(scoped_label, SymbolType::Label,
                    std::make_shared<LiteralExpr>(label_addr));
     if (!in_dum_block_) {
       section.atoms.push_back(
           std::make_shared<LabelAtom>(scoped_label, label_addr));
     }
-    if (label[0] != ':') {
+    if (label[0] != ':' &&
+        (label[0] != ']' || current_scope_.global_label.empty())) {
+      // True global labels (no ':' or ']' prefix) always update scope.
+      // ]variable labels are mutable variables, NOT scope anchors — EXCEPT at
+      // the start of the file before any true global label exists.  In that
+      // case they must anchor scope so :local labels around them can resolve.
       current_scope_.global_label = label;
       current_scope_.local_labels.clear();
     }
   }
-  // Translate any ':word' local-label references in the operand to the scoped name
+  // Translate any ':word' local-label references to the scoped name, then
+  // expand ]variable references to their current unique-instance names.
   operands = ScopeLocalLabelsInOperand(operands);
+  operands = ExpandVarLabelsInOperand(operands);
   section.atoms.push_back(
       std::make_shared<InstructionAtom>(directive, operands));
   current_address_ += 1; // Placeholder size
