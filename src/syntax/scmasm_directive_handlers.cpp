@@ -406,6 +406,23 @@ void HandleDa(const std::string &label, const std::string &operand,
   bool found_inline_comment = false;
 
   while (pos <= trimmed.length() && !found_inline_comment) {
+    // Skip over string literals ($$"..." or $$'...') when scanning for commas
+    // Bug fix: commas inside string literals should not split operands
+    if (pos + 2 < trimmed.length() && trimmed[pos] == '$' &&
+        trimmed[pos + 1] == '$' &&
+        (trimmed[pos + 2] == '"' || trimmed[pos + 2] == '\'')) {
+      char delim = trimmed[pos + 2];
+      pos += 3; // Skip $$"
+      // Find closing delimiter
+      while (pos < trimmed.length() && trimmed[pos] != delim) {
+        ++pos;
+      }
+      if (pos < trimmed.length()) {
+        ++pos; // Skip closing delimiter
+      }
+      continue;
+    }
+
     if (pos == trimmed.length() || trimmed[pos] == ',') {
       std::string value = trimmed.substr(start, pos - start);
       // Check for internal whitespace → inline comment in this token
