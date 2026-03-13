@@ -28,7 +28,8 @@ to the original SCMASM assembler using A2osX 335cd122 as the reference test case
 | 13 (xasm-g8i) | c5f54b0 | 71 | 53 | 89 | Verification run: no new fixes; classified 15 same-size + 13 positive-delta as confirmed source diffs |
 | 14 (xasm-zp1/oa9/h5k/m7q/52r/94e) | ce94435 | 74 | 42 | 20 | **+3 identical!** Bugs 16-20 fixed. ssc.drv + ssc.i.drv now byte-identical (39→0 diffs each). 1864 tests. |
 | 15 (xasm-89o) | ce94435 | 74 | 42 | 20 | Clean rebuild confirms Run 14 numbers. No new identicals. |
-| 16 (current) | 1ad6941 | TBD | TBD | TBD | Bugs 24-27 fixed (Merlin PoP); all 29 PoP source files assemble. |
+| 16 (xasm-inb) | de99d2d | 78 | TBD | TBD | **+4 identical!** Bugs 21-23 fixed (.INB case-insensitive path, etc.) |
+| 17 (xasm-80i) | de8ac14 | 82 | 73 | TBD | **+4 identical!** Bug 24 fixed: commas in \$"..." strings in .DA directive. Target 80+ achieved. |
 
 ¹ Scope/script changed; not directly comparable to runs 1-4
 ⁴ Run 14 numbers from clean rebuild post-commit; ssc.drv/ssc.i.drv confirmed identical after xasm-94e (.DO label off-by-1) fix
@@ -340,6 +341,16 @@ name. Not found → operand replaced with hex PC address (e.g. `$ea27`), losing 
 **Fix:** Added a comma-presence check in the operand resolver: if operand contains `,`,
 skip symbol resolution and pass it unchanged (it's a multi-operand form like MVN srcbank,destbank).
 **Files:** `src/core/assembler.cpp`
+
+### Bug 28: `.DA` operand comma inside `$"..."` string literal splits incorrectly (de8ac14)
+**Symptom:** `BIN/ASM.6502.S.txt` failed: `error: Undefined symbol: Y"` and `error: Undefined symbol: X)"`
+**Root cause:** `HandleDa()` scanned for comma separators without detecting that commas inside
+`$$"..."` or `$$'...'` string literals are not separators. `.DA $$"(a),Y"` was split at the
+comma, treating `Y"` as a second operand.
+**Fix:** Character-by-character scan in `HandleDa()` now skips over `$$"..."` and `$$'...'`
+string content before resuming comma search.
+**Files:** `src/syntax/scmasm_directive_handlers.cpp`
+**Impact:** Run 17: +4 identical (82 total). `BIN/ASM.6502.S.txt` and related files now assemble correctly.
 
 ---
 
