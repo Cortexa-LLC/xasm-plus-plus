@@ -299,6 +299,8 @@ std::shared_ptr<Expression> ExpressionParser::ParsePrimary() {
   }
 
   // Bracketed expression (Z80 alternative to parentheses)
+  // ADR-005: V7 pending — gating behind ParserFeatures.allow_bracket_grouping
+  // is deferred (low priority). Currently active for all syntax modes.
   if (Peek() == '[') {
     Consume();
     auto expr = ParseLogicalOr();
@@ -414,6 +416,8 @@ std::shared_ptr<Expression> ExpressionParser::ParsePrimary() {
 
   // Identifier (symbol or function)
   // ']' prefix is valid for Merlin ]variable labels (DUM-block variables).
+  // ADR-005: V8 pending — gating behind ParserFeatures.allow_merlin_var_prefix
+  // is deferred (low priority). Currently active for all syntax modes.
   if (std::isalpha(Peek()) || Peek() == '_' || Peek() == '.' || Peek() == '$' ||
       Peek() == '?' || Peek() == ']') {
     std::string ident = ParseIdentifier();
@@ -605,6 +609,7 @@ std::string ExpressionParser::ParseIdentifier() {
   size_t start = pos_;
 
   // Identifier starts with letter, underscore, period, $, ?, or ] (Merlin vars)
+  // ADR-005: V8 pending — ']' as identifier-start is Merlin-specific
   if (!std::isalpha(Peek()) && Peek() != '_' && Peek() != '.' &&
       Peek() != '$' && Peek() != '?' && Peek() != ']') {
     throw std::runtime_error("Expected identifier");

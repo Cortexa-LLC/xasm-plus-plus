@@ -318,6 +318,8 @@ ParseExpression(const std::string &str, ConcreteSymbolTable &symbols) {
   // Symbol reference - try original case first, then uppercase fallback.
   // SCMASM normalizes all symbols to UPPERCASE at definition time, so a
   // mixed-case reference like "TmpPtr2" must resolve to "TMPPTR2".
+  // ADR-005: pending V1 migration — case-fold belongs in ConcreteSymbolTable,
+  // not here. See docs/adr/review-assembler-syntax-quality-2026.md Finding 3.
   {
     std::string sym_name = trimmed;
     int64_t probe = 0;
@@ -601,6 +603,8 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
                 // Try to resolve as symbol (case-insensitive: try original
                 // case first, then uppercase fallback since SCMASM normalizes
                 // all symbols to UPPERCASE at definition time)
+                // ADR-005: pending V1 migration — same issue as ParseExpression
+                // line ~320; case-fold belongs in ConcreteSymbolTable::Lookup.
                 int64_t symbol_value;
                 int64_t expr_offset = 0;
                 std::string lookup_name = trimmed;
