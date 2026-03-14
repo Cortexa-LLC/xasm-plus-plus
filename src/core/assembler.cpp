@@ -1,6 +1,7 @@
 // Assembler implementation
 
 #include "xasm++/assembler.h"
+#include "xasm++/common/expression_parser.h"
 #include "xasm++/expression.h"
 #include "xasm++/parse_utils.h"
 #include "xasm++/symbol.h"
@@ -18,310 +19,7 @@ using xasm::util::Trim;
 
 // Note: ParseHex() consolidated to xasm::ParseHex (from parse_utils.h)
 
-// Helper: Simple expression parser for data directives
-// This is a simplified version that handles:
-// - Hex literals: $1234
-// - Decimal literals: 42
-// - Symbol references: label_name
-// - Simple expressions: $528+2, label-$80
-static std::shared_ptr<Expression>
-ParseExpression(const std::string &str, ConcreteSymbolTable &symbols) {
-  std::string trimmed = Trim(str);
 
-  // Strip outer parentheses for grouping: (EXPR)
-  // BUG-003 FIX: Support parentheses in complex expressions like <(MESSAGE+$10)
-  if (!trimmed.empty() && trimmed[0] == '(' &&
-      trimmed[trimmed.length() - 1] == ')') {
-    // Check if these are matching outer parentheses
-    int depth = 0;
-    bool is_outer = true;
-    for (size_t i = 0; i < trimmed.length(); ++i) {
-      if (trimmed[i] == '(')
-        depth++;
-      if (trimmed[i] == ')')
-        depth--;
-      // If depth hits 0 before the end, these aren't outer parens
-      if (depth == 0 && i < trimmed.length() - 1) {
-        is_outer = false;
-        break;
-      }
-    }
-    if (is_outer && depth == 0) {
-      // Strip outer parentheses and recurse
-      trimmed = Trim(trimmed.substr(1, trimmed.length() - 2));
-    }
-  }
-
-  // Check for low byte operator (# or <) BEFORE checking for operators
-  if (!trimmed.empty() && (trimmed[0] == '#' || trimmed[0] == '<')) {
-    if (trimmed.length() < 2) {
-      throw std::runtime_error("Low byte operator (#/<) requires an operand");
-    }
-    std::string operand = Trim(trimmed.substr(1));
-    if (operand.empty()) {
-      throw std::runtime_error("Low byte operator (#/<) has empty operand");
-    }
-    // Recursively parse the operand (might be expression like SHIFT0-$80)
-    auto operand_expr = ParseExpression(operand, symbols);
-    int64_t value = operand_expr->Evaluate(symbols);
-    return std::make_shared<LiteralExpr>(value & 0xFF); // Low byte
-  }
-
-  // Check for high byte operator (>)
-  if (!trimmed.empty() && trimmed[0] == '>') {
-    if (trimmed.length() < 2) {
-      throw std::runtime_error("High byte operator (>) requires an operand");
-    }
-    std::string operand = Trim(trimmed.substr(1));
-    if (operand.empty()) {
-      throw std::runtime_error("High byte operator (>) has empty operand");
-    }
-    // Recursively parse the operand (might be expression like SHIFT0-$80)
-    auto operand_expr = ParseExpression(operand, symbols);
-    int64_t value = operand_expr->Evaluate(symbols);
-    return std::make_shared<LiteralExpr>((value >> 8) & 0xFF); // High byte
-  }
-
-  // Handle character literals: "x" or 'x'
-  // Supports standalone form ("A") and compound form ("A"+N, "A"-N, etc.)
-  // Returns plain ASCII value — syntax-specific high-bit conventions (e.g.
-  // Apple II Merlin |0x80) are applied by the syntax parser, not here.
-  if (!trimmed.empty() && (trimmed[0] == '"' || trimmed[0] == '\'')) {
-    char quote = trimmed[0];
-    // Find the closing quote
-    size_t close = trimmed.find(quote, 1);
-    if (close == std::string::npos) {
-      // Unclosed quote - return 0 gracefully
-      return std::make_shared<LiteralExpr>(0);
-    }
-    // Extract the character between the quotes; return plain ASCII value.
-    std::string chars = trimmed.substr(1, close - 1);
-    int64_t char_val =
-        chars.empty() ? 0 : static_cast<uint8_t>(chars[0]);
-    // Check for compound expression after the closing quote (e.g. "9"+1)
-    std::string rest = Trim(trimmed.substr(close + 1));
-    if (rest.empty()) {
-      return std::make_shared<LiteralExpr>(char_val);
-    }
-    // Combine char literal value with the remaining expression via the
-    // operator that leads the rest string (e.g. "+1", "-3", "*2").
-    if (!rest.empty() && (rest[0] == '+' || rest[0] == '-' ||
-                          rest[0] == '*' || rest[0] == '/')) {
-      char op = rest[0];
-      std::string rhs = Trim(rest.substr(1));
-      if (!rhs.empty()) {
-        auto left_expr  = std::make_shared<LiteralExpr>(char_val);
-        auto right_expr = ParseExpression(rhs, symbols);
-        switch (op) {
-          case '+': return std::make_shared<BinaryOpExpr>(
-              BinaryOp::Add,           left_expr, right_expr);
-          case '-': return std::make_shared<BinaryOpExpr>(
-              BinaryOp::Subtract,      left_expr, right_expr);
-          case '*': return std::make_shared<BinaryOpExpr>(
-              BinaryOp::Multiply,      left_expr, right_expr);
-          case '/': return std::make_shared<BinaryOpExpr>(
-              BinaryOp::Divide,        left_expr, right_expr);
-          default: break;
-        }
-      }
-    }
-    // No recognised compound form — return the character value
-    return std::make_shared<LiteralExpr>(char_val);
-  }
-
-  // Find the rightmost top-level + or - for left-associative evaluation.
-  // Scanning right-to-left ensures A-B-C is parsed as (A-B)-C, not A-(B-C).
-  // We skip position 0 because a leading '-' is a unary minus, not subtraction.
-  // Operators inside parentheses are skipped by tracking paren depth.
-  {
-    size_t add_sub_pos = std::string::npos;
-    char add_sub_op = 0;
-    int paren_depth = 0;
-    for (size_t i = trimmed.size(); i > 1; --i) {
-      char c = trimmed[i - 1];
-      if (c == ')') {
-        paren_depth++;
-      } else if (c == '(') {
-        paren_depth--;
-      } else if (paren_depth == 0 && (c == '+' || c == '-')) {
-        add_sub_pos = i - 1;
-        add_sub_op = c;
-        break;
-      }
-    }
-
-    if (add_sub_pos != std::string::npos) {
-      std::string left = Trim(trimmed.substr(0, add_sub_pos));
-      std::string right = Trim(trimmed.substr(add_sub_pos + 1));
-
-      // Recursively parse both sides
-      auto left_expr = ParseExpression(left, symbols);
-      auto right_expr = ParseExpression(right, symbols);
-
-      BinaryOp op =
-          (add_sub_op == '+') ? BinaryOp::Add : BinaryOp::Subtract;
-      return std::make_shared<BinaryOpExpr>(op, left_expr, right_expr);
-    }
-  }
-
-  // Check for multiplication (* as binary infix operator).
-  // '*' alone at position 0 is the "current PC" symbol (already replaced
-  // by the assembler loop before ParseExpression is called). Here we look
-  // for '*' at position > 0 where the preceding character is an identifier
-  // character (alnum, '.', '_', '?') or a closing parenthesis ')' —
-  // indicating an infix multiplication rather than a unary current-PC.
-  // Scan right-to-left so that A*B*C is parsed as (A*B)*C (left-associative).
-  {
-    size_t mul_pos = std::string::npos;
-    int paren_depth = 0;
-    for (size_t i = trimmed.size(); i > 1; --i) {
-      char c = trimmed[i - 1];
-      if (c == ')') {
-        paren_depth++;
-      } else if (c == '(') {
-        paren_depth--;
-      } else if (paren_depth == 0 && c == '*') {
-        // Check the preceding character to confirm this is infix multiplication
-        char prev = trimmed[i - 2];
-        bool preceded_by_ident =
-            std::isalnum(static_cast<unsigned char>(prev)) || prev == '.' ||
-            prev == '_' || prev == '?' || prev == ')';
-        if (preceded_by_ident) {
-          mul_pos = i - 1;
-          break;
-        }
-      }
-    }
-    if (mul_pos != std::string::npos) {
-      std::string left = Trim(trimmed.substr(0, mul_pos));
-      std::string right = Trim(trimmed.substr(mul_pos + 1));
-      auto left_expr = ParseExpression(left, symbols);
-      auto right_expr = ParseExpression(right, symbols);
-      return std::make_shared<BinaryOpExpr>(BinaryOp::Multiply, left_expr,
-                                            right_expr);
-    }
-  }
-
-  // Check for bitwise XOR (^) operator — e.g. $FF^SYM.Q.AAARRAY
-  size_t xor_pos = trimmed.find('^');
-  if (xor_pos != std::string::npos && xor_pos > 0) {
-    std::string left = Trim(trimmed.substr(0, xor_pos));
-    std::string right = Trim(trimmed.substr(xor_pos + 1));
-    auto left_expr = ParseExpression(left, symbols);
-    auto right_expr = ParseExpression(right, symbols);
-    return std::make_shared<BinaryOpExpr>(BinaryOp::BitwiseXor, left_expr,
-                                          right_expr);
-  }
-
-  // Check for division (/ as binary infix operator at position > 0).
-  // Note: '/' at position 0 is the SCMASM unary high-byte operator (already
-  // handled above).  e.g. "$30/2" → $30 / 2 = $18  (from source: #'0'/2)
-  size_t div_pos = trimmed.find('/');
-  if (div_pos != std::string::npos && div_pos > 0) {
-    std::string left = Trim(trimmed.substr(0, div_pos));
-    std::string right = Trim(trimmed.substr(div_pos + 1));
-    auto left_expr = ParseExpression(left, symbols);
-    auto right_expr = ParseExpression(right, symbols);
-    return std::make_shared<BinaryOpExpr>(BinaryOp::Divide, left_expr,
-                                          right_expr);
-  }
-
-  // Hex literal: $1234 (may have addressing mode suffix like $200,x)
-  if (!trimmed.empty() && trimmed[0] == '$') {
-    // Strip addressing mode suffix (,X ,Y ,S) before parsing
-    std::string hex_str = trimmed;
-    size_t comma_pos = hex_str.find(',');
-    if (comma_pos != std::string::npos) {
-      hex_str = hex_str.substr(0, comma_pos);
-    }
-    uint32_t value = ParseHex(hex_str);
-    return std::make_shared<LiteralExpr>(value);
-  }
-
-  // Binary literal: %10101010 (dots are visual separators: %0000.0000)
-  if (!trimmed.empty() && trimmed[0] == '%') {
-    std::string bin_part = trimmed.substr(1);
-    if (bin_part.empty()) {
-      throw std::runtime_error("Invalid binary number: '" + trimmed +
-                               "' (no digits after %)");
-    }
-
-    // Validate binary digits BEFORE removing separators
-    for (char c : bin_part) {
-      if (c != '0' && c != '1' && c != '.') {
-        throw std::runtime_error("Invalid binary digit '" + std::string(1, c) +
-                                 "' in binary number: '" + trimmed + "'");
-      }
-    }
-
-    // Remove . separators (visual aid: %0000.0000 = %00000000)
-    bin_part.erase(std::remove(bin_part.begin(), bin_part.end(), '.'),
-                   bin_part.end());
-
-    if (bin_part.empty()) {
-      throw std::runtime_error("Binary number has no digits: '" + trimmed +
-                               "'");
-    }
-
-    try {
-      uint32_t value = std::stoul(bin_part, nullptr, 2);
-      return std::make_shared<LiteralExpr>(value);
-    } catch (const std::invalid_argument &e) {
-      throw std::runtime_error("Invalid binary number: '" + trimmed + "' - " +
-                               e.what());
-    } catch (const std::out_of_range &e) {
-      throw std::runtime_error("Binary number out of range: '" + trimmed +
-                               "' - " + e.what());
-    }
-  }
-
-  // Negative number: -1, -128 (check BEFORE general decimal to avoid symbol
-  // lookup)
-  if (!trimmed.empty() && trimmed[0] == '-') {
-    // Check if rest is all digits (valid negative number)
-    bool is_neg_number = true;
-    for (size_t i = 1; i < trimmed.length(); ++i) {
-      if (!std::isdigit(static_cast<unsigned char>(trimmed[i]))) {
-        is_neg_number = false;
-        break;
-      }
-    }
-    if (is_neg_number && trimmed.length() > 1) {
-      // Valid negative number
-      int64_t value = std::stoll(trimmed);
-      return std::make_shared<LiteralExpr>(value);
-    }
-    // Unary minus applied to symbol or expression: -SYMBOL, -$FF, etc.
-    if (trimmed.length() > 1) {
-      std::string operand = Trim(trimmed.substr(1));
-      auto operand_expr = ParseExpression(operand, symbols);
-      auto zero = std::make_shared<LiteralExpr>(0);
-      return std::make_shared<BinaryOpExpr>(BinaryOp::Subtract, zero,
-                                            operand_expr);
-    }
-    // Otherwise fall through
-  }
-
-  // Decimal literal: 42
-  bool is_number = true;
-  for (char c : trimmed) {
-    if (!std::isdigit(static_cast<unsigned char>(c))) {
-      is_number = false;
-      break;
-    }
-  }
-  if (is_number && !trimmed.empty()) {
-    int64_t value = std::stoll(trimmed);
-    return std::make_shared<LiteralExpr>(value);
-  }
-
-  // Symbol reference. ConcreteSymbolTable::Lookup handles the SCMASM
-  // uppercase fallback internally (ADR-005 V1: migration complete).
-  {
-    std::string sym_name = trimmed;
-    return std::make_shared<SymbolExpr>(sym_name);
-  }
-}
 
 Assembler::Assembler() {
   // CPU plugin handles instruction encoding - no handlers needed
@@ -439,7 +137,7 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
               star_pos += addr_str.length();
             }
             try {
-              auto expr = ParseExpression(expr_str, symbols);
+              auto expr = ExpressionParser(&symbols).Parse(expr_str);
               int64_t value = expr->Evaluate(symbols);
               symbols.Define(eq->label_name, SymbolType::Equate,
                              std::make_shared<LiteralExpr>(
@@ -489,7 +187,7 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
                 }
               }
               try {
-                auto expr = ParseExpression(expr_str, symbols);
+                auto expr = ExpressionParser(&symbols).Parse(expr_str);
                 int64_t value = expr->Evaluate(symbols);
 
                 if (data->data_size == DataSize::Byte) {
@@ -696,11 +394,11 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
 
             if (value_str[0] == '#') {
               // Immediate: #$42 or #SYMBOL
-              // Use ParseExpression to handle both hex literals and symbol
+              // Use shared ExpressionParser to handle both hex literals and symbol
               // references
               std::string expr_str = value_str.substr(1);
               try {
-                auto expr = ParseExpression(expr_str, symbols);
+                auto expr = ExpressionParser(&symbols).Parse(expr_str);
                 int64_t expr_value = expr->Evaluate(symbols);
                 value = static_cast<uint16_t>(expr_value);
               } catch (const UndefinedSymbolError &) {
@@ -708,10 +406,10 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
               }
             } else if (value_str[0] == '$') {
               // Absolute/Zero Page: $1234 (or $1234,X after stripping)
-              // Use ParseExpression to handle both simple hex and expressions
+              // Use shared ExpressionParser to handle both simple hex and expressions
               // like $528+2
               try {
-                auto expr = ParseExpression(value_str, symbols);
+                auto expr = ExpressionParser(&symbols).Parse(value_str);
                 int64_t expr_value = expr->Evaluate(symbols);
                 value = static_cast<uint16_t>(expr_value);
               } catch (const UndefinedSymbolError &) {
@@ -722,7 +420,7 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
               // Evaluates expression and takes bits 8-15 as the immediate byte
               std::string expr_str = value_str.substr(1);
               try {
-                auto expr = ParseExpression(expr_str, symbols);
+                auto expr = ExpressionParser(&symbols).Parse(expr_str);
                 int64_t expr_value = expr->Evaluate(symbols);
                 value = static_cast<uint16_t>(
                     (static_cast<uint32_t>(expr_value) >> 8) & 0xFF);
@@ -730,11 +428,11 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
                 value = 0; // Forward reference — resolve next pass
               }
             } else if (value_str != "A") {
-              // Label reference or expression - use ParseExpression to handle
+              // Label reference or expression - use shared ExpressionParser to handle
               // both simple symbols and expressions like ZPPTR+1
               // BUG-003 FIX: Support expressions with +, -, <, > operators
               try {
-                auto expr = ParseExpression(value_str, symbols);
+                auto expr = ExpressionParser(&symbols).Parse(value_str);
                 int64_t expr_value = expr->Evaluate(symbols);
                 value = static_cast<uint16_t>(expr_value);
               } catch (const UndefinedSymbolError &) {
@@ -818,7 +516,7 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
                 }
               }
               try {
-                auto expr = ParseExpression(expr_str, symbols);
+                auto expr = ExpressionParser(&symbols).Parse(expr_str);
                 int64_t value = expr->Evaluate(symbols);
                 if (value >= 0) {
                   space->count = static_cast<size_t>(value);
@@ -906,7 +604,7 @@ void Assembler::RefixupDataAtoms(ConcreteSymbolTable &symbols,
             star_pos += addr_str.length();
           }
           try {
-            auto expr = ParseExpression(expr_str, symbols);
+            auto expr = ExpressionParser(&symbols).Parse(expr_str);
             int64_t value = expr->Evaluate(symbols);
             symbols.Define(eq->label_name, SymbolType::Equate,
                            std::make_shared<LiteralExpr>(
@@ -943,7 +641,7 @@ void Assembler::RefixupDataAtoms(ConcreteSymbolTable &symbols,
               }
             }
             try {
-              auto expr = ParseExpression(expr_str, symbols);
+              auto expr = ExpressionParser(&symbols).Parse(expr_str);
               int64_t value = expr->Evaluate(symbols);
               if (data->data_size == DataSize::Byte) {
                 data->data.push_back(static_cast<uint8_t>(value & 0xFF));

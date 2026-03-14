@@ -35,11 +35,14 @@ TEST equ $G0
       std::runtime_error);
 }
 
-// Test that parser handles empty hex expression
+// Test that bare $ assembles as current-location operator
+// After migrating to shared ExpressionParser, $ alone is a valid
+// "current location" (PC) expression — identical to *.  lda #$ is
+// syntactically well-formed and assembles successfully.
 TEST(ExpressionErrorHandlingTest, EmptyHexAfterDollarSign) {
   std::string source = R"(
          org $0800
-         lda #$      ; $ with no digits
+         lda #$      ; $ = current PC (current-location operator)
     )";
 
   // Create assembler with CPU
@@ -53,25 +56,9 @@ TEST(ExpressionErrorHandlingTest, EmptyHexAfterDollarSign) {
   parser.Parse(source, section, symbols);
   assembler.AddSection(section);
 
-  // Should throw during assembly when encoding instructions
-  // ParseHex throws invalid_argument, which is caught and becomes runtime_error
-  // or stays as-is
-  bool threw_proper_error = false;
-  try {
-    AssemblerResult result = assembler.Assemble();
-  } catch (const std::invalid_argument &e) {
-    std::string msg(e.what());
-    threw_proper_error =
-        (msg.find("no digits") != std::string::npos ||
-         msg.find("empty") != std::string::npos ||
-         msg.find("Hex string contains only") != std::string::npos);
-  } catch (const std::runtime_error &e) {
-    std::string msg(e.what());
-    threw_proper_error = (msg.find("no digits") != std::string::npos ||
-                          msg.find("empty") != std::string::npos);
-  }
-
-  EXPECT_TRUE(threw_proper_error);
+  // Assembly should succeed — $ is current-location, not a malformed hex literal.
+  AssemblerResult result = assembler.Assemble();
+  EXPECT_TRUE(result.success);
 }
 
 // Test that parser handles malformed binary expression

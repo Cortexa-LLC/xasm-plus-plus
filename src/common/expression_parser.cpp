@@ -263,9 +263,11 @@ std::shared_ptr<Expression> ExpressionParser::ParseUnary() {
     return std::make_shared<UnaryOpExpr>(UnaryOp::LogicalNot, operand);
   }
 
-  // Low byte operator (<)
-  // Note: This is prefix unary, distinct from infix comparison <
-  if (c == '<') {
+  // Low byte operator (< or #)
+  // Note: '<' is prefix unary, distinct from infix comparison <
+  // '#' is used by Merlin / assembler data directives (DB/DFB) to mean
+  // "low byte of address", identical semantics to '<'.
+  if (c == '<' || c == '#') {
     Consume();
     auto operand = ParseUnary();
     return std::make_shared<UnaryOpExpr>(UnaryOp::LowByte, operand);
@@ -549,6 +551,12 @@ int64_t ExpressionParser::ParseNumber() {
     while (Peek() == '0' || Peek() == '1') {
       value = value * 2 + (Consume() - '0');
     }
+    // After valid 0/1 digits, reject stray decimal digits (e.g. %1012)
+    if (std::isdigit(Peek())) {
+      throw std::runtime_error(
+          "Invalid binary digit '" + std::string(1, Peek()) +
+          "' in binary literal");
+    }
     return value;
   }
 
@@ -620,9 +628,10 @@ std::string ExpressionParser::ParseIdentifier() {
 
   Consume();
 
-  // Continue with alphanumeric, underscore, period, $, ?
+  // Continue with alphanumeric, underscore, period, $, ?, @
+  // '@' is used in SCMASM scoped local label names (e.g. GLOBAL@.1)
   while (std::isalnum(Peek()) || Peek() == '_' || Peek() == '.' ||
-         Peek() == '$' || Peek() == '?') {
+         Peek() == '$' || Peek() == '?' || Peek() == '@') {
     Consume();
   }
 
