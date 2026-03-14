@@ -245,7 +245,8 @@ private:
    * @return Vector of instruction sizes (one per instruction atom)
    */
   std::vector<size_t> EncodeInstructions(ConcreteSymbolTable &symbols,
-                                         AssemblerResult &result);
+                                         AssemblerResult &result,
+                                         int pass_number = 2);
 
   /**
    * @brief Check if instruction sizes have converged

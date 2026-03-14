@@ -20,9 +20,11 @@
 #include "xasm++/syntax/scmasm_syntax.h"
 #include "xasm++/syntax/simple_syntax.h"
 #include "xasm++/version.h"
+#include <array>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <optional>
 #include <sstream>
 
 // Forward declaration (implemented in cli_parser.cpp)
@@ -133,6 +135,9 @@ int main(int argc, char **argv) {
     std::filesystem::path source_dir = input_path.parent_path();
     std::filesystem::path original_dir = std::filesystem::current_path();
 
+    // RW18 header captured from USR directive (Merlin/Prince of Persia)
+    std::optional<std::array<uint16_t, 4>> rw18_header_args;
+
     try {
       // Change to source directory for PUT directive resolution
       if (!source_dir.empty()) {
@@ -159,10 +164,11 @@ int main(int argc, char **argv) {
         }
         
         parser.Parse(source, section, symbols);
-        
-        // Note: --rw18 flag means output RAW binary with NO header
-        // (matching vasm -rw18 behavior). The USR directive arguments
-        // are parsed but not used for output when --rw18 is set.
+
+        // Capture USR args for RW18 header output
+        if (opts.rw18 && parser.HasUsrArgs()) {
+          rw18_header_args = parser.GetUsrArgs();
+        }
       } else if (opts.syntax == "edtasm_m80_plusplus") {
         // EDTASM-M80++ is Z80-specific
         if (opts.cpu != cpu::CPU_Z80) {
@@ -289,7 +295,9 @@ int main(int argc, char **argv) {
       } else {
         // Default: binary format
         BinaryOutput output;
-        output.WriteOutputWithRw18(opts.output, sections, symbols, nullptr);
+        const std::array<uint16_t, 4> *rw18_ptr =
+            rw18_header_args.has_value() ? &rw18_header_args.value() : nullptr;
+        output.WriteOutputWithRw18(opts.output, sections, symbols, rw18_ptr);
       }
     } catch (const std::filesystem::filesystem_error &e) {
       std::cerr << "File I/O error: " << e.what() << "\n";

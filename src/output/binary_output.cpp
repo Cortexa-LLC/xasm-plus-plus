@@ -36,19 +36,43 @@ void BinaryOutput::WriteOutputWithRw18(const std::string &filename,
   }
 
   // Write RW18 header if provided (Merlin/Prince of Persia compatibility)
+  // Header format (snapNcrackle RW18SavFileHeader):
+  //   signature[4]: "USR\x1a"
+  //   length:  actual binary code size (uint16_t LE)
+  //   side:    USR arg 0 — bundle ID byte written into each RW18 sector
+  //   track:   USR arg 1 — physical disk track
+  //   offset:  USR arg 2 — intra-track byte offset
+  // USR arg 3 (parse-time length) is discarded; actual size used instead.
   if (rw18_header) {
-    // Magic: "USR\x1a" (4 bytes)
+    // Compute actual binary code size first
+    uint32_t code_size = 0;
+    for (const auto *section : sections) {
+      for (const auto &atom : section->atoms) {
+        if (atom->type == AtomType::Data) {
+          auto d = std::dynamic_pointer_cast<DataAtom>(atom);
+          if (d) code_size += d->data.size();
+        } else if (atom->type == AtomType::Instruction) {
+          auto inst = std::dynamic_pointer_cast<InstructionAtom>(atom);
+          if (inst) code_size += inst->encoded_bytes.size();
+        } else if (atom->type == AtomType::Space) {
+          auto sp = std::dynamic_pointer_cast<SpaceAtom>(atom);
+          if (sp) code_size += sp->count;
+        }
+      }
+    }
+
+    auto write_u16le = [&](uint16_t v) {
+      uint8_t buf[2] = {static_cast<uint8_t>(v & 0xFF),
+                        static_cast<uint8_t>((v >> 8) & 0xFF)};
+      out.write(reinterpret_cast<const char *>(buf), 2);
+    };
+
     const uint8_t magic[4] = {'U', 'S', 'R', 0x1a};
     out.write(reinterpret_cast<const char *>(magic), 4);
-
-    // Write 4 uint16_t arguments in little-endian format
-    for (int i = 0; i < 4; ++i) {
-      uint16_t arg = (*rw18_header)[i];
-      uint8_t lo = arg & 0xFF;
-      uint8_t hi = (arg >> 8) & 0xFF;
-      out.write(reinterpret_cast<const char *>(&lo), 1);
-      out.write(reinterpret_cast<const char *>(&hi), 1);
-    }
+    write_u16le((*rw18_header)[0]);                // side   = bundle ID
+    write_u16le((*rw18_header)[1]);                // track  = disk track
+    write_u16le((*rw18_header)[2]);                // offset = intra-track offset
+    write_u16le(static_cast<uint16_t>(code_size)); // length = actual code size (LAST)
   }
 
   // Process each section

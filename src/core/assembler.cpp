@@ -50,7 +50,8 @@ const std::vector<Section> &Assembler::GetSections() const { return sections_; }
 void Assembler::Reset() { sections_.clear(); }
 
 std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
-                                                  AssemblerResult &result) {
+                                                  AssemblerResult &result,
+                                                  int pass_number) {
   // Encode instructions using CPU plugin
   std::vector<size_t> current_sizes;
   if (cpu_ != nullptr) {
@@ -354,7 +355,7 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
                     }
                   }
                 }
-                if (!lookup_name.empty()) {
+                if (!lookup_name.empty() && pass_number > 1) {
                   // Symbol resolved — use actual address (plus any expression
                   // offset, e.g. LABEL+5).
                   // "Start short, expand only when necessary": the CPU plugin
@@ -369,10 +370,14 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
                   oss << "$" << std::hex << ((symbol_value + expr_offset) & 0xFFFF);
                   resolved_operand = oss.str();
                 } else {
-                  // Symbol still unresolved (forward ref in pass 1).
-                  // Assume SHORT (use current VA as target → offset = -2,
-                  // always in range).  Once the symbol is defined in a later
-                  // pass, the branch will be re-evaluated and expanded if needed.
+                  // Pass 1: always assume SHORT (use current VA as target →
+                  // offset = -2, always in range).  Parse-time addresses can
+                  // be stale (computed with all branches at 2 bytes), so using
+                  // them in pass 1 causes spurious long-branch expansions that
+                  // then cascade into later passes, locking in unnecessary 5-byte
+                  // branches.  By starting all branches short in pass 1, we let
+                  // passes 2+ converge to the minimum expansion set.
+                  // Same path is used when symbol is still unresolved.
                   std::ostringstream oss;
                   oss << "$" << std::hex << virtual_address;
                   resolved_operand = oss.str();
@@ -837,7 +842,7 @@ AssemblerResult Assembler::Assemble() {
 
     // Pass 1: Encode instructions using CPU plugin
     std::vector<size_t> current_sizes =
-        EncodeInstructions(*label_table_ptr, result);
+        EncodeInstructions(*label_table_ptr, result, pass);
 
     // Pass 2: Extract labels from LabelAtoms
     // (Must happen AFTER encoding so encoded_bytes.size() is correct)
