@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "xasm++/atom.h"
+#include "xasm++/common/expression_parser.h"
 #include "xasm++/cpu/cpu_plugin.h"
 #include "xasm++/section.h"
 
@@ -179,6 +180,21 @@ public:
   void SetMaxPasses(int max_passes);
 
   /**
+   * @brief Set expression parser features for dialect-specific operators
+   *
+   * Controls which expression parser features are active when evaluating
+   * instruction operands.  For example, Merlin syntax uses `.` as bitwise OR
+   * and `!` as bitwise XOR (ADR-005 V9).  Call this before Assemble() after
+   * the syntax dialect is known.
+   *
+   * Default: ParserFeatures::Default() — no dialect extensions.
+   *
+   * @param features Feature flags to use when creating ExpressionParser
+   *                 instances during instruction encoding.
+   */
+  void SetExpressionFeatures(ParserFeatures features);
+
+  /**
    * @brief Assemble all sections with multi-pass resolution
    *
    * Performs multi-pass assembly to resolve forward references and handle
@@ -264,6 +280,8 @@ private:
   CpuPlugin *cpu_ = nullptr;       ///< CPU plugin for instruction encoding
   SymbolTable *symbols_ = nullptr; ///< Symbol table for symbol resolution
   int max_passes_ = MAX_PASSES;    ///< Maximum assembly passes (default: MAX_PASSES)
+  /// Expression parser features for instruction operand evaluation (ADR-005 V9)
+  ParserFeatures expression_features_;
 };
 
 } // namespace xasm

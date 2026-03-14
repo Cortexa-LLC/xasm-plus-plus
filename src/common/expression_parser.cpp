@@ -125,6 +125,11 @@ std::shared_ptr<Expression> ExpressionParser::ParseBitwiseOr() {
       Consume();
       auto right = ParseBitwiseXor();
       left = std::make_shared<BinaryOpExpr>(BinaryOp::BitwiseOr, left, right);
+    } else if (features_.allow_merlin_bitwise_ops && c == '.') {
+      // ADR-005 V9: Merlin `.` is binary bitwise OR operator (e.g. SYM.$80)
+      Consume();
+      auto right = ParseBitwiseXor();
+      left = std::make_shared<BinaryOpExpr>(BinaryOp::BitwiseOr, left, right);
     } else {
       break;
     }
@@ -139,6 +144,12 @@ std::shared_ptr<Expression> ExpressionParser::ParseBitwiseXor() {
   while (true) {
     SkipWhitespace();
     if (Peek() == '^') {
+      Consume();
+      auto right = ParseBitwiseAnd();
+      left = std::make_shared<BinaryOpExpr>(BinaryOp::BitwiseXor, left, right);
+    } else if (features_.allow_merlin_bitwise_ops && Peek() == '!') {
+      // ADR-005 V9: Merlin `!` is binary bitwise XOR operator (e.g. SYM!1)
+      // This is infix XOR; unary `!` (logical NOT) only appears at expression start.
       Consume();
       auto right = ParseBitwiseAnd();
       left = std::make_shared<BinaryOpExpr>(BinaryOp::BitwiseXor, left, right);
@@ -420,7 +431,12 @@ std::shared_ptr<Expression> ExpressionParser::ParsePrimary() {
   // Identifier (symbol or function)
   // ADR-005 V8: ']' prefix for Merlin ]variable labels is gated behind
   // ParserFeatures.allow_merlin_var_prefix.
-  if (std::isalpha(Peek()) || Peek() == '_' || Peek() == '.' || Peek() == '$' ||
+  // ADR-005 V9: In Merlin mode, '.' is a binary OR operator, not an identifier
+  // start character.  Suppress it here so '.' after a primary is handled by
+  // ParseBitwiseOr() rather than greedily consumed into an identifier.
+  bool allow_dot_ident_start = !features_.allow_merlin_bitwise_ops;
+  if (std::isalpha(Peek()) || Peek() == '_' ||
+      (allow_dot_ident_start && Peek() == '.') || Peek() == '$' ||
       Peek() == '?' ||
       (features_.allow_merlin_var_prefix && Peek() == ']')) {
     std::string ident = ParseIdentifier();
@@ -620,18 +636,23 @@ std::string ExpressionParser::ParseIdentifier() {
   // Identifier starts with letter, underscore, period, $, or ?.
   // ADR-005 V8: ']' as identifier-start is Merlin-specific, gated behind
   // ParserFeatures.allow_merlin_var_prefix.
+  // ADR-005 V9: In Merlin mode, '.' is an operator, not an identifier character.
   bool is_merlin_var = (features_.allow_merlin_var_prefix && Peek() == ']');
-  if (!std::isalpha(Peek()) && Peek() != '_' && Peek() != '.' &&
-      Peek() != '$' && Peek() != '?' && !is_merlin_var) {
+  bool allow_dot_in_ident = !features_.allow_merlin_bitwise_ops;
+  if (!std::isalpha(Peek()) && Peek() != '_' &&
+      !(allow_dot_in_ident && Peek() == '.') && Peek() != '$' &&
+      Peek() != '?' && !is_merlin_var) {
     throw std::runtime_error("Expected identifier");
   }
 
   Consume();
 
-  // Continue with alphanumeric, underscore, period, $, ?, @
+  // Continue with alphanumeric, underscore, period (unless Merlin mode), $, ?, @
   // '@' is used in SCMASM scoped local label names (e.g. GLOBAL@.1)
-  while (std::isalnum(Peek()) || Peek() == '_' || Peek() == '.' ||
-         Peek() == '$' || Peek() == '?' || Peek() == '@') {
+  // ADR-005 V9: In Merlin mode, '.' is a binary OR operator, not part of names.
+  while (std::isalnum(Peek()) || Peek() == '_' ||
+         (allow_dot_in_ident && Peek() == '.') || Peek() == '$' ||
+         Peek() == '?' || Peek() == '@') {
     Consume();
   }
 

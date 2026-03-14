@@ -242,6 +242,11 @@ int main(int argc, char **argv) {
 
     assembler.SetMaxPasses(opts.max_passes);
 
+    // Configure expression parser features for dialect-specific operators
+    if (opts.syntax == "merlin") {
+      assembler.SetExpressionFeatures(ParserFeatures::ForMerlin());
+    }
+
     // Step 5: Assemble (encode instructions, resolve symbols)
     AssemblerResult result = assembler.Assemble();
     if (!result.success) {

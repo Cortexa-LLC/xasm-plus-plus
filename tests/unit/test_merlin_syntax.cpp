@@ -2592,3 +2592,124 @@ TEST(MerlinSyntaxTest, CharLiteralEquateCompoundMinusSymbol) {
   EXPECT_EQ(val, 0x92)
       << "EQU \"r\"-CTRL must yield 0x92 ($F2 - $60)";
 }
+
+// ============================================================================
+// ADR-005 V9: Merlin bitwise operators — `.` (OR) and `!` (XOR)
+// ============================================================================
+
+// `!` is bitwise XOR: FinalDisk EQU 1  /  lda #FinalDisk!$FE → lda #$FF
+TEST(MerlinSyntaxTest, V9_BitwiseXor_ImmediateOperand) {
+  auto cpu = std::make_unique<Cpu6502>();
+  cpu->SetCpuMode(CpuMode::Cpu6502);
+
+  MerlinSyntaxParser parser;
+  parser.SetCpu(cpu.get());
+
+  ConcreteSymbolTable symbols;
+  Section section("test", 0);
+
+  std::string source = " org $1000\n"
+                       "FinalDisk EQU 1\n"
+                       " lda #FinalDisk!$FE\n"; // 1 XOR $FE = $FF
+  parser.Parse(source, section, symbols);
+
+  Assembler assembler;
+  assembler.SetCpuPlugin(cpu.get());
+  assembler.SetSymbolTable(&symbols);
+  assembler.AddSection(section);
+  assembler.SetExpressionFeatures(ParserFeatures::ForMerlin());
+  AssemblerResult result = assembler.Assemble();
+  ASSERT_TRUE(result.success) << "XOR immediate must assemble";
+
+  std::vector<uint8_t> output;
+  for (const auto &atom : section.atoms) {
+    if (atom->type == AtomType::Instruction) {
+      auto inst = std::dynamic_pointer_cast<InstructionAtom>(atom);
+      if (inst)
+        output.insert(output.end(), inst->encoded_bytes.begin(),
+                      inst->encoded_bytes.end());
+    }
+  }
+  ASSERT_EQ(output.size(), 2u) << "lda immediate = 2 bytes";
+  EXPECT_EQ(output[0], 0xA9u) << "lda immediate opcode";
+  EXPECT_EQ(output[1], 0xFFu) << "1 XOR $FE = $FF";
+}
+
+// `.` is bitwise OR: sta EQU 2  /  lda #sta.$40 → lda #$42
+TEST(MerlinSyntaxTest, V9_BitwiseOr_ImmediateOperand) {
+  auto cpu = std::make_unique<Cpu6502>();
+  cpu->SetCpuMode(CpuMode::Cpu6502);
+
+  MerlinSyntaxParser parser;
+  parser.SetCpu(cpu.get());
+
+  ConcreteSymbolTable symbols;
+  Section section("test", 0);
+
+  std::string source = " org $1000\n"
+                       "sta EQU 2\n"
+                       " lda #sta.$40\n"; // 2 OR $40 = $42
+  parser.Parse(source, section, symbols);
+
+  Assembler assembler;
+  assembler.SetCpuPlugin(cpu.get());
+  assembler.SetSymbolTable(&symbols);
+  assembler.AddSection(section);
+  assembler.SetExpressionFeatures(ParserFeatures::ForMerlin());
+  AssemblerResult result = assembler.Assemble();
+  ASSERT_TRUE(result.success) << "OR immediate must assemble";
+
+  std::vector<uint8_t> output;
+  for (const auto &atom : section.atoms) {
+    if (atom->type == AtomType::Instruction) {
+      auto inst = std::dynamic_pointer_cast<InstructionAtom>(atom);
+      if (inst)
+        output.insert(output.end(), inst->encoded_bytes.begin(),
+                      inst->encoded_bytes.end());
+    }
+  }
+  ASSERT_EQ(output.size(), 2u) << "lda immediate = 2 bytes";
+  EXPECT_EQ(output[0], 0xA9u) << "lda immediate opcode";
+  EXPECT_EQ(output[1], 0x42u) << "2 OR $40 = $42";
+}
+
+// Equate using `.` OR operator: FLAGS EQU $01.$80 → $81
+TEST(MerlinSyntaxTest, V9_BitwiseOr_Equate) {
+  MerlinSyntaxParser parser;
+  ConcreteSymbolTable symbols;
+  Section section("test", 0);
+
+  parser.Parse("FLAGS EQU $01.$80", section, symbols);
+
+  int64_t val = 0;
+  ASSERT_TRUE(symbols.Lookup("FLAGS", val));
+  EXPECT_EQ(val, 0x81) << "EQU $01.$80 must yield $81";
+}
+
+// Equate using `!` XOR operator: MASK EQU $FF!$0F → $F0
+TEST(MerlinSyntaxTest, V9_BitwiseXor_Equate) {
+  MerlinSyntaxParser parser;
+  ConcreteSymbolTable symbols;
+  Section section("test", 0);
+
+  parser.Parse("MASK EQU $FF!$0F", section, symbols);
+
+  int64_t val = 0;
+  ASSERT_TRUE(symbols.Lookup("MASK", val));
+  EXPECT_EQ(val, 0xF0) << "EQU $FF!$0F must yield $F0";
+}
+
+// `.` between two alpha symbols is NOT OR — it looks up SYM.FIELD
+TEST(MerlinSyntaxTest, V9_DotBetweenSymbolsNotOr) {
+  MerlinSyntaxParser parser;
+  ConcreteSymbolTable symbols;
+  Section section("test", 0);
+
+  // SYM.FIELD should be treated as a single symbol name, not SYM OR FIELD
+  parser.Parse("SYM.FIELD EQU $55", section, symbols);
+
+  int64_t val = 0;
+  ASSERT_TRUE(symbols.Lookup("SYM.FIELD", val))
+      << "SYM.FIELD must be a valid symbol name (dot is NOT OR when right side is alpha)";
+  EXPECT_EQ(val, 0x55);
+}

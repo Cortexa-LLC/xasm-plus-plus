@@ -724,3 +724,48 @@ TEST(ParserFeaturesTest, V8_MerlinVarPrefix_DisabledForZ80) {
   ExpressionParser parser(&sym, nullptr, ParserFeatures::ForZ80());
   EXPECT_THROW(parser.Parse("]count"), std::runtime_error);
 }
+
+// ADR-005 V9: Merlin bitwise operators via ParserFeatures::ForMerlin()
+
+TEST(ParserFeaturesTest, V9_MerlinBitwiseOr_Dot) {
+  // `.` is bitwise OR in Merlin mode
+  MockSymbolTable sym;
+  ExpressionParser parser(&sym, nullptr, ParserFeatures::ForMerlin());
+  auto expr = parser.Parse("$01.$80");
+  EXPECT_EQ(expr->Evaluate(sym), 0x81);
+}
+
+TEST(ParserFeaturesTest, V9_MerlinBitwiseXor_Bang) {
+  // `!` is bitwise XOR in Merlin mode
+  MockSymbolTable sym;
+  ExpressionParser parser(&sym, nullptr, ParserFeatures::ForMerlin());
+  auto expr = parser.Parse("$F0!$FF");
+  EXPECT_EQ(expr->Evaluate(sym), 0x0F);
+}
+
+TEST(ParserFeaturesTest, V9_MerlinBitwiseOr_DotHex) {
+  // Merlin `.` OR with hex literal on right side
+  MockSymbolTable sym;
+  ExpressionParser parser(&sym, nullptr, ParserFeatures::ForMerlin());
+  auto expr = parser.Parse("$40.$02");
+  EXPECT_EQ(expr->Evaluate(sym), 0x42);
+}
+
+TEST(ParserFeaturesTest, V9_MerlinBitwise_NotActiveInDefault) {
+  // `.` must NOT be an OR operator in default (non-Merlin) mode;
+  // instead `.` is part of the identifier so "A.$80" is a single symbol lookup.
+  MockSymbolTable sym;
+  sym.Define("A.$80", SymbolType::Label, std::make_shared<LiteralExpr>(0x99));
+  ExpressionParser parser(&sym, nullptr, ParserFeatures::Default());
+  auto expr = parser.Parse("A.$80");
+  // Lookup succeeds as a single identifier, NOT as 1 OR $80
+  EXPECT_EQ(expr->Evaluate(sym), 0x99);
+}
+
+TEST(ParserFeaturesTest, V9_MerlinBitwise_BangNotActiveInDefault) {
+  // In default mode `!` is unary logical NOT (returns 1 for !0, 0 for !nonzero)
+  MockSymbolTable sym;
+  ExpressionParser parser(&sym, nullptr, ParserFeatures::Default());
+  auto expr = parser.Parse("!0");
+  EXPECT_EQ(expr->Evaluate(sym), 1); // logical NOT of 0 = 1 (not binary XOR)
+}

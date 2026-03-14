@@ -53,6 +53,28 @@ struct ParserFeatures {
    */
   bool allow_merlin_var_prefix = false;
 
+  /**
+   * @brief Enable Merlin-specific bitwise operators: `.` (OR) and `!` (XOR)
+   *
+   * When true, the period character `.` is recognised as a binary bitwise OR
+   * operator, and the exclamation mark `!` is recognised as a binary bitwise
+   * XOR operator, matching Merlin 8/16 assembler conventions:
+   *
+   *   SYM & $F0   → bitwise AND  (& is always available)
+   *   SYM . $0F   → bitwise OR   (. only active when this flag is set)
+   *   SYM ! $01   → bitwise XOR  (! only active as binary op when this flag is set)
+   *
+   * This flag also prevents `.` from being consumed as part of an identifier
+   * body so that `SYMBOL.$FF` is parsed as `SYMBOL OR $FF` rather than the
+   * single undefined symbol `SYMBOL.$FF`.
+   *
+   * Must NOT be active for SCMASM, Z80, or plain 6502 modes where `.` is
+   * part of local label names (e.g., `X.BasePath..1`).
+   *
+   * ADR-005 V9.
+   */
+  bool allow_merlin_bitwise_ops = false;
+
   /** @brief Convenience factory: features for Z80/EDTASM syntax */
   static ParserFeatures ForZ80() {
     ParserFeatures f;
@@ -64,6 +86,7 @@ struct ParserFeatures {
   static ParserFeatures ForMerlin() {
     ParserFeatures f;
     f.allow_merlin_var_prefix = true;
+    f.allow_merlin_bitwise_ops = true;
     return f;
   }
 
@@ -113,6 +136,7 @@ public:
  * with operator precedence. Supports:
  * - Literals: decimal, hexadecimal ($FF, 0xFF), binary (%10101010, 0b10101010)
  * - Operators: +, -, *, /, %, &, |, ^, <<, >>, &&, ||
+ * - Merlin dialect operators: `.` (bitwise OR), `!` (bitwise XOR)
  * - Unary operators: -, ~, !, <, >
  * - Parentheses for grouping
  * - Function calls: LOW(), HIGH()
