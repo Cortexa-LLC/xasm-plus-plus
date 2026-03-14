@@ -12,8 +12,10 @@
 namespace xasm {
 
 ExpressionParser::ExpressionParser(const SymbolTable *symbols,
-                                   const INumberParser *number_parser)
-    : symbols_(symbols), number_parser_(number_parser), pos_(0) {}
+                                   const INumberParser *number_parser,
+                                   ParserFeatures features)
+    : symbols_(symbols), number_parser_(number_parser),
+      features_(features), pos_(0) {}
 
 std::shared_ptr<Expression> ExpressionParser::Parse(const std::string &str) {
   expr_ = str;
@@ -298,10 +300,9 @@ std::shared_ptr<Expression> ExpressionParser::ParsePrimary() {
     return expr;
   }
 
-  // Bracketed expression (Z80 alternative to parentheses)
-  // ADR-005: V7 pending — gating behind ParserFeatures.allow_bracket_grouping
-  // is deferred (low priority). Currently active for all syntax modes.
-  if (Peek() == '[') {
+  // Bracketed expression (Z80/EDTASM alternative to parentheses)
+  // ADR-005 V7: gated behind ParserFeatures.allow_bracket_grouping
+  if (features_.allow_bracket_grouping && Peek() == '[') {
     Consume();
     auto expr = ParseLogicalOr();
     SkipWhitespace();
@@ -415,11 +416,11 @@ std::shared_ptr<Expression> ExpressionParser::ParsePrimary() {
   }
 
   // Identifier (symbol or function)
-  // ']' prefix is valid for Merlin ]variable labels (DUM-block variables).
-  // ADR-005: V8 pending — gating behind ParserFeatures.allow_merlin_var_prefix
-  // is deferred (low priority). Currently active for all syntax modes.
+  // ADR-005 V8: ']' prefix for Merlin ]variable labels is gated behind
+  // ParserFeatures.allow_merlin_var_prefix.
   if (std::isalpha(Peek()) || Peek() == '_' || Peek() == '.' || Peek() == '$' ||
-      Peek() == '?' || Peek() == ']') {
+      Peek() == '?' ||
+      (features_.allow_merlin_var_prefix && Peek() == ']')) {
     std::string ident = ParseIdentifier();
 
     // Try parsing as number first (for RADIX mode where "FF" is a hex number)
@@ -608,10 +609,12 @@ std::string ExpressionParser::ParseIdentifier() {
   SkipWhitespace();
   size_t start = pos_;
 
-  // Identifier starts with letter, underscore, period, $, ?, or ] (Merlin vars)
-  // ADR-005: V8 pending — ']' as identifier-start is Merlin-specific
+  // Identifier starts with letter, underscore, period, $, or ?.
+  // ADR-005 V8: ']' as identifier-start is Merlin-specific, gated behind
+  // ParserFeatures.allow_merlin_var_prefix.
+  bool is_merlin_var = (features_.allow_merlin_var_prefix && Peek() == ']');
   if (!std::isalpha(Peek()) && Peek() != '_' && Peek() != '.' &&
-      Peek() != '$' && Peek() != '?' && Peek() != ']') {
+      Peek() != '$' && Peek() != '?' && !is_merlin_var) {
     throw std::runtime_error("Expected identifier");
   }
 

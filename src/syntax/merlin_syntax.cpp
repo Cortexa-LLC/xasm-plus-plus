@@ -177,8 +177,9 @@ uint32_t MerlinSyntaxParser::ParseNumber(const std::string &str) {
   }
 
   // Delegate to ExpressionParser for actual parsing
+  // Use Merlin features so ]var identifiers are recognised (ADR-005 V8).
   ConcreteSymbolTable empty_symbols;
-  ExpressionParser parser(&empty_symbols);
+  ExpressionParser parser(&empty_symbols, nullptr, ParserFeatures::ForMerlin());
   try {
     auto expr = parser.Parse(clean_str);
     return static_cast<uint32_t>(expr->Evaluate(empty_symbols));
@@ -392,8 +393,8 @@ MerlinSyntaxParser::ParseExpression(const std::string &str,
   }
 
   // All other expressions (arithmetic, symbols, literals) handled by shared
-  // parser
-  ExpressionParser parser(&symbols);
+  // parser, with Merlin features enabled so ]var identifiers work (ADR-005 V8).
+  ExpressionParser parser(&symbols, nullptr, ParserFeatures::ForMerlin());
   try {
     return parser.Parse(expr);
   } catch (const std::runtime_error &e) {

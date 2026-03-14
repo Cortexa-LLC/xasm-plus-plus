@@ -651,3 +651,76 @@ TEST(ExpressionParserTest, DollarWithoutHexDigitIsCurrentLocation) {
   expr = parser.Parse("($ )");
   EXPECT_EQ(expr->Evaluate(symbols), 0x1000);
 }
+
+// ============================================================================
+// ParserFeatures — V7 bracket grouping and V8 Merlin ]var gating (ADR-005)
+// ============================================================================
+
+// Helper: parse an expression with default (no dialect) features —
+// currently only used indirectly through EXPECT_THROW tests; suppress warning.
+[[maybe_unused]] static int64_t EvalDefault(const std::string &input) {
+  MockSymbolTable sym;
+  ExpressionParser parser(&sym, nullptr, ParserFeatures::Default());
+  return parser.Parse(input)->Evaluate(sym);
+}
+
+// Helper: parse an expression with Z80 features
+static int64_t EvalZ80(const std::string &input) {
+  MockSymbolTable sym;
+  ExpressionParser parser(&sym, nullptr, ParserFeatures::ForZ80());
+  return parser.Parse(input)->Evaluate(sym);
+}
+
+// Helper: parse an expression with Merlin features
+static int64_t EvalMerlin(const std::string &input, MockSymbolTable &sym) {
+  ExpressionParser parser(&sym, nullptr, ParserFeatures::ForMerlin());
+  return parser.Parse(input)->Evaluate(sym);
+}
+
+// ---------------------------------------------------------------------------
+// V7: [expr] bracket grouping only active with ForZ80()
+// ---------------------------------------------------------------------------
+
+TEST(ParserFeaturesTest, V7_BracketGrouping_EnabledForZ80) {
+  EXPECT_EQ(EvalZ80("[5 + 3] * 2"), 16);
+  EXPECT_EQ(EvalZ80("10 / [2 + 3]"), 2);
+  EXPECT_EQ(EvalZ80("[[5 + 3] * 2] - 1"), 15);
+}
+
+TEST(ParserFeaturesTest, V7_BracketGrouping_DisabledByDefault) {
+  MockSymbolTable sym;
+  ExpressionParser parser(&sym, nullptr, ParserFeatures::Default());
+  // '[' is not a valid expression start without allow_bracket_grouping,
+  // so Parse should throw.
+  EXPECT_THROW(parser.Parse("[5 + 3]"), std::runtime_error);
+}
+
+TEST(ParserFeaturesTest, V7_BracketGrouping_DisabledForMerlin) {
+  MockSymbolTable sym;
+  ExpressionParser parser(&sym, nullptr, ParserFeatures::ForMerlin());
+  // Merlin does not use [expr] grouping.
+  EXPECT_THROW(parser.Parse("[5 + 3]"), std::runtime_error);
+}
+
+// ---------------------------------------------------------------------------
+// V8: ]var identifier prefix only active with ForMerlin()
+// ---------------------------------------------------------------------------
+
+TEST(ParserFeaturesTest, V8_MerlinVarPrefix_EnabledForMerlin) {
+  MockSymbolTable sym;
+  sym.Define("]count", SymbolType::Label,
+             std::make_shared<LiteralExpr>(42));
+  EXPECT_EQ(EvalMerlin("]count + 1", sym), 43);
+}
+
+TEST(ParserFeaturesTest, V8_MerlinVarPrefix_DisabledByDefault) {
+  MockSymbolTable sym;
+  ExpressionParser parser(&sym, nullptr, ParserFeatures::Default());
+  EXPECT_THROW(parser.Parse("]count"), std::runtime_error);
+}
+
+TEST(ParserFeaturesTest, V8_MerlinVarPrefix_DisabledForZ80) {
+  MockSymbolTable sym;
+  ExpressionParser parser(&sym, nullptr, ParserFeatures::ForZ80());
+  EXPECT_THROW(parser.Parse("]count"), std::runtime_error);
+}

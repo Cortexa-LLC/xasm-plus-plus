@@ -914,8 +914,10 @@ uint32_t EdtasmM80PlusPlusSyntaxParser::ParseNumber(const std::string &str) {
 std::shared_ptr<Expression>
 EdtasmM80PlusPlusSyntaxParser::ParseExpression(const std::string &str,
                                                ConcreteSymbolTable &symbols) {
-  // Create ExpressionParser with symbol table and Z80 number parser
-  ExpressionParser parser(&symbols, &z80_number_parser_);
+  // Create ExpressionParser with symbol table, Z80 number parser, and Z80
+  // dialect features (allow_bracket_grouping for [expr] syntax — ADR-005 V7)
+  ExpressionParser parser(&symbols, &z80_number_parser_,
+                          ParserFeatures::ForZ80());
   return parser.Parse(str);
 }
 

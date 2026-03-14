@@ -20,6 +20,58 @@
 namespace xasm {
 
 /**
+ * @brief Feature flags for syntax-specific expression parsing
+ *
+ * Controls which dialect-specific features are active in ExpressionParser.
+ * This enables the shared parser to be used across all syntax modes while
+ * keeping syntax-specific behaviour isolated.
+ *
+ * @note ADR-005: Each flag corresponds to a specific syntax dialect feature
+ *       that must not leak into modes that don't own it.
+ */
+struct ParserFeatures {
+  /**
+   * @brief Allow `[expr]` as an alternative grouping operator (Z80/EDTASM)
+   *
+   * When true, square brackets may be used in place of parentheses for
+   * expression grouping, e.g. `[5 + 3] * 2`.  This is a Z80/EDTASM
+   * convention; it must NOT be active for Merlin, SCMASM, or 6502 modes
+   * where `[` has a different meaning or is simply invalid.
+   *
+   * ADR-005 V7.
+   */
+  bool allow_bracket_grouping = false;
+
+  /**
+   * @brief Allow `]var` as an identifier prefix (Merlin DUM-block variables)
+   *
+   * When true, a `]` character is recognised as a valid identifier start,
+   * matching Merlin's `]variable` label convention.  This must NOT be active
+   * for Z80, SCMASM, or plain 6502 modes.
+   *
+   * ADR-005 V8.
+   */
+  bool allow_merlin_var_prefix = false;
+
+  /** @brief Convenience factory: features for Z80/EDTASM syntax */
+  static ParserFeatures ForZ80() {
+    ParserFeatures f;
+    f.allow_bracket_grouping = true;
+    return f;
+  }
+
+  /** @brief Convenience factory: features for Merlin syntax */
+  static ParserFeatures ForMerlin() {
+    ParserFeatures f;
+    f.allow_merlin_var_prefix = true;
+    return f;
+  }
+
+  /** @brief Convenience factory: default (no dialect extensions) */
+  static ParserFeatures Default() { return {}; }
+};
+
+/**
  * @brief Interface for custom number format parsing
  *
  * Allows syntax-specific parsers to extend ExpressionParser with custom
@@ -103,9 +155,11 @@ public:
    * @param number_parser Optional custom number parser for syntax-specific
    *                      number formats. If null, only standard formats are
    *                      supported. Must remain valid for lifetime of parser.
+   * @param features Optional dialect feature flags (defaults to no extensions).
    */
   explicit ExpressionParser(const SymbolTable *symbols,
-                            const INumberParser *number_parser = nullptr);
+                            const INumberParser *number_parser = nullptr,
+                            ParserFeatures features = {});
 
   /**
    * @brief Parse an expression string into an Expression AST
@@ -119,6 +173,7 @@ public:
 private:
   const SymbolTable *symbols_;         ///< Symbol table for symbol resolution
   const INumberParser *number_parser_; ///< Optional custom number parser
+  ParserFeatures features_;            ///< Dialect feature flags
   std::string expr_;                   ///< Current expression being parsed
   size_t pos_;                         ///< Current position in expression
 
