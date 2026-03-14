@@ -81,7 +81,8 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
           continue;
         }
 
-        if (atom->type == AtomType::Phase) {
+        switch (atom->type) {
+        case AtomType::Phase: {
           auto phase = std::dynamic_pointer_cast<PhaseAtom>(atom);
           if (!phase) {
             AssemblerError error;
@@ -101,7 +102,8 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
             current_address = phase_real_start + bytes_emitted;
             virtual_address = current_address;
           }
-        } else if (atom->type == AtomType::Org) {
+        } break;
+        case AtomType::Org: {
           // Handle .org directive
           auto org = std::dynamic_pointer_cast<OrgAtom>(atom);
           if (!org) {
@@ -116,28 +118,33 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
           }
           current_address = org->address;
           virtual_address = org->address;
-        } else if (atom->type == AtomType::DummyOrg) {
+        } break;
+        case AtomType::DummyOrg: {
           // .OR inside .DUMMY/.ED: do NOT change the real program counter.
           // Symbol addresses are fixed up in ResolveSymbols; the emitter just
           // skips this atom so no bytes are written and the PC is unaffected.
-        } else if (atom->type == AtomType::Label) {
+        } break;
+        case AtomType::Label: {
           // Labels don't advance address yet, but we track them
           // (address will be finalized in Pass 2)
-        } else if (atom->type == AtomType::CpuMode) {
+        } break;
+        case AtomType::CpuMode: {
           // XC / XC OFF — replay CPU mode change so subsequent instructions
           // are encoded with the correct feature set.
           auto cm = std::dynamic_pointer_cast<CpuModeAtom>(atom);
           if (cm && cpu_) {
             cpu_->SetCpuModeFromAtom(cm->mode);
           }
-        } else if (atom->type == AtomType::MxState) {
+        } break;
+        case AtomType::MxState: {
           // MX directive — replay M/X flag state so subsequent instructions
           // use the correct accumulator/index register widths.
           auto mx = std::dynamic_pointer_cast<MxAtom>(atom);
           if (mx && cpu_) {
             cpu_->SetMX(mx->m_flag, mx->x_flag);
           }
-        } else if (atom->type == AtomType::Equate) {
+        } break;
+        case AtomType::Equate: {
           // Re-evaluate position-dependent equates (.EQ *) on each pass so
           // they track the correct address after branch relaxation changes
           // code sizes between passes.
@@ -172,7 +179,8 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
               // Forward reference - ignore this pass, will resolve later
             }
           }
-        } else if (atom->type == AtomType::Data) {
+        } break;
+        case AtomType::Data: {
           auto data = std::dynamic_pointer_cast<DataAtom>(atom);
           if (!data) {
             // Cast failed - this indicates a corrupted atom
@@ -256,7 +264,8 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
           current_address += data->size;
           virtual_address += data->size;
           current_sizes.push_back(data->size);
-        } else if (atom->type == AtomType::Instruction) {
+        } break;
+        case AtomType::Instruction: {
           auto inst = std::dynamic_pointer_cast<InstructionAtom>(atom);
           if (!inst) {
             // Cast failed - this indicates a corrupted atom
@@ -532,7 +541,8 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
           // Advance both address counters past this instruction
           current_address += inst->encoded_bytes.size();
           virtual_address += inst->encoded_bytes.size();
-        } else if (atom->type == AtomType::Space) {
+        } break;
+        case AtomType::Space: {
           // SpaceAtom (DS/BS directives) — advance addresses past the reserved
           // bytes so that subsequent instruction virtual_addresses are correct
           // for branch offset calculations.
@@ -576,6 +586,8 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
             current_sizes.push_back(space->size);
           }
         }
+        default: break;
+        } // switch (atom->type)
       }
     }
   }
@@ -601,7 +613,8 @@ void Assembler::RefixupDataAtoms(ConcreteSymbolTable &symbols,
       if (!atom)
         continue;
 
-      if (atom->type == AtomType::Phase) {
+      switch (atom->type) {
+      case AtomType::Phase: {
         auto phase = std::dynamic_pointer_cast<PhaseAtom>(atom);
         if (phase) {
           if (phase->is_start) {
@@ -614,29 +627,34 @@ void Assembler::RefixupDataAtoms(ConcreteSymbolTable &symbols,
             virtual_address = current_address;
           }
         }
-      } else if (atom->type == AtomType::Org) {
+      } break;
+      case AtomType::Org: {
         auto org = std::dynamic_pointer_cast<OrgAtom>(atom);
         if (org) {
           current_address = org->address;
           virtual_address = org->address;
         }
-      } else if (atom->type == AtomType::DummyOrg) {
+      } break;
+      case AtomType::DummyOrg: {
         // .OR inside .DUMMY/.ED: skip — do not move the real PC during
         // instruction encoding.  Addresses were already resolved by
         // ResolveSymbols().
-      } else if (atom->type == AtomType::CpuMode) {
+      } break;
+      case AtomType::CpuMode: {
         // XC / XC OFF — replay CPU mode change.
         auto cm = std::dynamic_pointer_cast<CpuModeAtom>(atom);
         if (cm && cpu_) {
           cpu_->SetCpuModeFromAtom(cm->mode);
         }
-      } else if (atom->type == AtomType::MxState) {
+      } break;
+      case AtomType::MxState: {
         // MX directive — replay M/X flag state.
         auto mx = std::dynamic_pointer_cast<MxAtom>(atom);
         if (mx && cpu_) {
           cpu_->SetMX(mx->m_flag, mx->x_flag);
         }
-      } else if (atom->type == AtomType::Equate) {
+      } break;
+      case AtomType::Equate: {
         // Re-evaluate position-dependent equates (.EQ *) with the current
         // virtual address so they track the correct value.
         auto eq = std::dynamic_pointer_cast<EquateAtom>(atom);
@@ -670,7 +688,8 @@ void Assembler::RefixupDataAtoms(ConcreteSymbolTable &symbols,
             // Should be resolved by now; ignore.
           }
         }
-      } else if (atom->type == AtomType::Data) {
+      } break;
+      case AtomType::Data: {
         auto data = std::dynamic_pointer_cast<DataAtom>(atom);
         if (data && !data->expressions.empty()) {
           data->data.clear();
@@ -737,20 +756,23 @@ void Assembler::RefixupDataAtoms(ConcreteSymbolTable &symbols,
         }
         current_address += data->size;
         virtual_address += data->size;
-      } else if (atom->type == AtomType::Instruction) {
+      } break;
+      case AtomType::Instruction: {
         // Do NOT re-encode.  Just advance address past the existing bytes.
         auto inst = std::dynamic_pointer_cast<InstructionAtom>(atom);
         if (inst) {
           current_address += inst->encoded_bytes.size();
           virtual_address += inst->encoded_bytes.size();
         }
-      } else if (atom->type == AtomType::Space) {
+      } break;
+      case AtomType::Space: {
         auto space = std::dynamic_pointer_cast<SpaceAtom>(atom);
         if (space) {
           current_address += space->size;
           virtual_address += space->size;
         }
-      } else if (atom->type == AtomType::Align) {
+      } break;
+      case AtomType::Align: {
         auto align = std::dynamic_pointer_cast<AlignAtom>(atom);
         if (align) {
           uint32_t remainder = current_address % align->alignment;
@@ -760,10 +782,12 @@ void Assembler::RefixupDataAtoms(ConcreteSymbolTable &symbols,
             virtual_address += padding;
           }
         }
-      }
+      } break;
       // Label, ListingControl: no bytes, no address change.
-    }
-  }
+      default: break;
+    } // switch (atom->type)
+    } // for (auto &atom : section.atoms)
+  } // for (auto &section : sections_)
 }
 
 AssemblerResult Assembler::Assemble() {
@@ -961,7 +985,8 @@ void Assembler::ResolveSymbols(std::vector<std::shared_ptr<Atom>> &atoms,
       continue;
     }
 
-    if (atom->type == AtomType::Phase) {
+    switch (atom->type) {
+    case AtomType::Phase: {
       auto phase = std::dynamic_pointer_cast<PhaseAtom>(atom);
       if (!phase) {
         AssemblerError error;
@@ -985,7 +1010,8 @@ void Assembler::ResolveSymbols(std::vector<std::shared_ptr<Atom>> &atoms,
         in_phase = false;
       }
       (void)in_phase; // suppress unused warning if no further use
-    } else if (atom->type == AtomType::Org) {
+    } break;
+    case AtomType::Org: {
       // Handle .org directive - updates current address
       auto org = std::dynamic_pointer_cast<OrgAtom>(atom);
       if (!org) {
@@ -998,7 +1024,8 @@ void Assembler::ResolveSymbols(std::vector<std::shared_ptr<Atom>> &atoms,
         continue;
       }
       current_address = org->address;
-    } else if (atom->type == AtomType::DummyOrg) {
+    } break;
+    case AtomType::DummyOrg: {
       // .OR inside .DUMMY/.ED: skip in ResolveSymbols — do not move the real
       // PC.  Dummy-section symbols (e.g. ZPTR from "ZPTR .BS 2" inside
       // .DUMMY/.ED) are placed in the symbol table at their correct zero-page
@@ -1024,7 +1051,8 @@ void Assembler::ResolveSymbols(std::vector<std::shared_ptr<Atom>> &atoms,
       // Fix: treat DummyOrgAtom as a no-op in ResolveSymbols.  The dummy
       // symbols are already correct from parse time; the main PC must remain
       // unaffected so that subsequent LabelAtoms get the right addresses.
-    } else if (atom->type == AtomType::Label) {
+    } break;
+    case AtomType::Label: {
       auto label = std::dynamic_pointer_cast<LabelAtom>(atom);
       if (!label) {
         // Cast failed - this indicates a corrupted atom
@@ -1041,7 +1069,8 @@ void Assembler::ResolveSymbols(std::vector<std::shared_ptr<Atom>> &atoms,
       // Define or redefine label in symbol table
       symbols.Define(label->name, SymbolType::Label,
                      std::make_shared<LiteralExpr>(current_address));
-    } else if (atom->type == AtomType::Instruction) {
+    } break;
+    case AtomType::Instruction: {
       // Instructions consume bytes
       auto inst = std::dynamic_pointer_cast<InstructionAtom>(atom);
       if (!inst) {
@@ -1055,7 +1084,8 @@ void Assembler::ResolveSymbols(std::vector<std::shared_ptr<Atom>> &atoms,
         continue;
       }
       current_address += inst->encoded_bytes.size();
-    } else if (atom->type == AtomType::Data) {
+    } break;
+    case AtomType::Data: {
       // Data directives consume bytes
       auto data = std::dynamic_pointer_cast<DataAtom>(atom);
       if (!data) {
@@ -1068,7 +1098,8 @@ void Assembler::ResolveSymbols(std::vector<std::shared_ptr<Atom>> &atoms,
         continue;
       }
       current_address += data->size;
-    } else if (atom->type == AtomType::Space) {
+    } break;
+    case AtomType::Space: {
       // Space directives consume bytes
       auto space = std::dynamic_pointer_cast<SpaceAtom>(atom);
       if (!space) {
@@ -1082,7 +1113,8 @@ void Assembler::ResolveSymbols(std::vector<std::shared_ptr<Atom>> &atoms,
         continue;
       }
       current_address += space->size;
-    } else if (atom->type == AtomType::Align) {
+    } break;
+    case AtomType::Align: {
       // Align directives may add padding
       auto align = std::dynamic_pointer_cast<AlignAtom>(atom);
       if (!align) {
@@ -1101,6 +1133,9 @@ void Assembler::ResolveSymbols(std::vector<std::shared_ptr<Atom>> &atoms,
         current_address += align->alignment - remainder;
       }
     }
+    // CpuMode, MxState, Equate, ListingControl: no address change in this pass.
+    default: break;
+    } // switch (atom->type)
   }
 }
 

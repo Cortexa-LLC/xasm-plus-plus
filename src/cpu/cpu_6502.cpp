@@ -4,6 +4,7 @@
 #include "xasm++/cpu/cpu_error_utils.h"
 #include "xasm++/cpu/opcodes_6502.h"
 #include <algorithm>
+#include <unordered_map>
 #include <unordered_set>
 
 namespace xasm {
@@ -2571,26 +2572,25 @@ Cpu6502::EncodeInstructionSpecial(const std::string &mnemonic,
       cpu::ThrowBranchTargetMustBeResolved();
     }
 
-    // Get branch opcode for this mnemonic
-    uint8_t branch_opcode = 0;
-    if (clean_mnemonic == M6502Mnemonics::BEQ)
-      branch_opcode = Opcodes::BEQ;
-    else if (clean_mnemonic == M6502Mnemonics::BNE)
-      branch_opcode = Opcodes::BNE;
-    else if (clean_mnemonic == M6502Mnemonics::BCC || mnemonic == M6502Mnemonics::BLT)
-      branch_opcode = Opcodes::BCC;
-    else if (clean_mnemonic == M6502Mnemonics::BCS)
-      branch_opcode = Opcodes::BCS;
-    else if (clean_mnemonic == M6502Mnemonics::BMI)
-      branch_opcode = Opcodes::BMI;
-    else if (clean_mnemonic == M6502Mnemonics::BPL)
-      branch_opcode = Opcodes::BPL;
-    else if (clean_mnemonic == M6502Mnemonics::BVC)
-      branch_opcode = Opcodes::BVC;
-    else if (clean_mnemonic == M6502Mnemonics::BVS)
-      branch_opcode = Opcodes::BVS;
-    else if (clean_mnemonic == M6502Mnemonics::BRA)
-      branch_opcode = Opcodes::BRA;
+    // Get branch opcode for this mnemonic.
+    // BLT is an alias for BCC (Branch if Less Than).
+    static const std::unordered_map<std::string, uint8_t> kBranchOpcodes = {
+        {M6502Mnemonics::BEQ, Opcodes::BEQ},
+        {M6502Mnemonics::BNE, Opcodes::BNE},
+        {M6502Mnemonics::BCC, Opcodes::BCC},
+        {M6502Mnemonics::BLT, Opcodes::BCC}, // alias for BCC
+        {M6502Mnemonics::BCS, Opcodes::BCS},
+        {M6502Mnemonics::BMI, Opcodes::BMI},
+        {M6502Mnemonics::BPL, Opcodes::BPL},
+        {M6502Mnemonics::BVC, Opcodes::BVC},
+        {M6502Mnemonics::BVS, Opcodes::BVS},
+        {M6502Mnemonics::BRA, Opcodes::BRA},
+    };
+    auto it = kBranchOpcodes.find(clean_mnemonic);
+    if (it == kBranchOpcodes.end()) {
+      cpu::ThrowSpecialEncodingNotSupported(clean_mnemonic);
+    }
+    uint8_t branch_opcode = it->second;
 
     // Check if branch is out of range
     if (branch_handler_.NeedsBranchRelaxation(current_address, target_addr)) {

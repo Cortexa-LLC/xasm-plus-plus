@@ -29,6 +29,28 @@ constexpr int RADIX_BINARY = 2;
 constexpr int RADIX_DECIMAL = 10;
 constexpr int RADIX_HEXADECIMAL = 16;
 
+// Parse a numeric literal (hex with '$' prefix, binary with '%' prefix,
+// or plain decimal digits).  Returns true if the string was a numeric literal
+// and sets *out_value; returns false if the string looks like a symbol name.
+// Throws std::runtime_error on malformed input (e.g. "$" with no hex digits).
+static bool ParseNumericLiteral(const std::string &op, uint32_t &out_value) {
+  if (op.empty())
+    return false;
+  if (op[0] == '$') {
+    out_value = static_cast<uint32_t>(std::stoul(op.substr(1), nullptr, RADIX_HEXADECIMAL));
+    return true;
+  }
+  if (op[0] == '%') {
+    out_value = static_cast<uint32_t>(std::stoul(op.substr(1), nullptr, RADIX_BINARY));
+    return true;
+  }
+  if (std::isdigit(static_cast<unsigned char>(op[0]))) {
+    out_value = static_cast<uint32_t>(std::stoul(op, nullptr, RADIX_DECIMAL));
+    return true;
+  }
+  return false;
+}
+
 // Platform-aware temp directory helper
 static std::string get_temp_dir() {
 #ifdef _WIN32
@@ -827,16 +849,10 @@ void MerlinSyntaxParser::HandleDum(const std::string &operand,
         FormatError("DUM directive requires an address operand"));
   }
 
-  // Parse number (decimal, hex, or binary)
-  if (op[0] == '$') {
-    // Hex
-    dum_address_ = std::stoul(op.substr(1), nullptr, RADIX_HEXADECIMAL);
-  } else if (op[0] == '%') {
-    // Binary
-    dum_address_ = std::stoul(op.substr(1), nullptr, RADIX_BINARY);
-  } else if (std::isdigit(op[0])) {
-    // Decimal
-    dum_address_ = std::stoul(op, nullptr, RADIX_DECIMAL);
+  // Parse number (decimal, hex, or binary) or symbol reference
+  uint32_t parsed_addr = 0;
+  if (ParseNumericLiteral(op, parsed_addr)) {
+    dum_address_ = parsed_addr;
   } else {
     // Symbol - look it up
     int64_t value = 0;
@@ -913,24 +929,13 @@ void MerlinSyntaxParser::HandleDo(const std::string &operand,
 
   // Evaluate the expression to determine condition
   uint32_t value = 0;
-  if (op[0] == '$') {
-    // Hex literal
-    value = std::stoul(op.substr(1), nullptr, RADIX_HEXADECIMAL);
-  } else if (op[0] == '%') {
-    // Binary literal
-    value = std::stoul(op.substr(1), nullptr, RADIX_BINARY);
-  } else if (std::isdigit(op[0])) {
-    // Decimal literal
-    value = std::stoul(op, nullptr, RADIX_DECIMAL);
-  } else {
-    // Symbol - look it up
+  if (!ParseNumericLiteral(op, value)) {
+    // Symbol - look it up (undefined symbol evaluates to 0 = false)
     int64_t sym_value = 0;
     if (symbols.Lookup(op, sym_value)) {
       value = static_cast<uint32_t>(sym_value);
-    } else {
-      // Undefined symbol evaluates to 0 (false)
-      value = 0;
     }
+    // else: value stays 0
   }
 
   // Begin conditional block (non-zero = true)
@@ -1156,18 +1161,14 @@ void MerlinSyntaxParser::HandleMx(const std::string &operand) {
 
   int mode = -1;
 
-  // Check for binary format %00-%11
+  // Check for binary format %00-%11 (bit pattern: M-bit, X-bit)
   if (op[0] == '%') {
     std::string binary = op.substr(1);
-    if (binary == "00")
-      mode = 0;
-    else if (binary == "01")
-      mode = 1;
-    else if (binary == "10")
-      mode = 2;
-    else if (binary == "11")
-      mode = 3;
-    else {
+    if (binary.length() == 2 &&
+        (binary[0] == '0' || binary[0] == '1') &&
+        (binary[1] == '0' || binary[1] == '1')) {
+      mode = (binary[0] - '0') * 2 + (binary[1] - '0');
+    } else {
       throw std::runtime_error(
           FormatError("MX directive expects binary %00-%11 or decimal 0-3"));
     }
