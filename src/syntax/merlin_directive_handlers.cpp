@@ -699,9 +699,44 @@ void HandleFls(const std::string &label, const std::string &operand,
 
 void HandleDa(const std::string &label, const std::string &operand,
               DirectiveContext &context) {
-  // DA (Define Address) - same as DW, word definitions in little-endian
-  // Delegate to HandleDw which has the full implementation
-  HandleDw(label, operand, context);
+  // DA (Define Address) - In 65816 mode (Merlin 16/32), DA emits 3 bytes
+  // (24-bit little-endian address).  In 6502/65C02 mode it emits 2 bytes.
+  bool is_65816 = false;
+  if (context.parser_state) {
+    auto *parser = static_cast<MerlinSyntaxParser *>(context.parser_state);
+    if (parser && parser->GetCpu() &&
+        parser->GetCpu()->GetCpuMode() == CpuMode::Cpu65816) {
+      is_65816 = true;
+    }
+  }
+
+  if (!is_65816) {
+    HandleDw(label, operand, context);
+    return;
+  }
+
+  // 65816 mode: emit as 24-bit long address (DataSize::Long)
+  if (!label.empty()) {
+    uint32_t current_address = *context.current_address;
+    context.symbols->Define(label, SymbolType::Label,
+                            std::make_shared<LiteralExpr>(current_address));
+    context.section->atoms.push_back(
+        std::make_shared<LabelAtom>(label, current_address));
+  }
+
+  std::vector<std::string> expressions;
+  std::istringstream iss(operand);
+  std::string value;
+  while (std::getline(iss, value, ',')) {
+    value = Trim(value);
+    if (!value.empty()) {
+      expressions.push_back(value);
+    }
+  }
+
+  auto data_atom = std::make_shared<DataAtom>(expressions, DataSize::Long);
+  context.section->atoms.push_back(data_atom);
+  *context.current_address += expressions.size() * 3;
 }
 
 void HandlePmc(const std::string &label, const std::string &operand,

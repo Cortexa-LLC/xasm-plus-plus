@@ -218,6 +218,14 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
                 if (data->data_size == DataSize::Byte) {
                   // Byte data (DB/DFB)
                   data->data.push_back(static_cast<uint8_t>(value & 0xFF));
+                } else if (data->data_size == DataSize::Long) {
+                  // Long data (DA in 65816 mode) - 24-bit little-endian
+                  uint32_t word = static_cast<uint32_t>(value);
+                  data->data.push_back(static_cast<uint8_t>(word & 0xFF));
+                  data->data.push_back(
+                      static_cast<uint8_t>((word >> 8) & 0xFF));
+                  data->data.push_back(
+                      static_cast<uint8_t>((word >> 16) & 0xFF));
                 } else {
                   // Word data (DW/DA) - little-endian
                   uint32_t word = static_cast<uint32_t>(value);
@@ -228,6 +236,10 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
               } catch (const UndefinedSymbolError &) {
                 // Forward reference — use placeholder 0, resolve next pass
                 if (data->data_size == DataSize::Byte) {
+                  data->data.push_back(0);
+                } else if (data->data_size == DataSize::Long) {
+                  data->data.push_back(0);
+                  data->data.push_back(0);
                   data->data.push_back(0);
                 } else {
                   data->data.push_back(0);
@@ -685,6 +697,13 @@ void Assembler::RefixupDataAtoms(ConcreteSymbolTable &symbols,
               int64_t value = expr->Evaluate(symbols);
               if (data->data_size == DataSize::Byte) {
                 data->data.push_back(static_cast<uint8_t>(value & 0xFF));
+              } else if (data->data_size == DataSize::Long) {
+                uint32_t word = static_cast<uint32_t>(value);
+                data->data.push_back(static_cast<uint8_t>(word & 0xFF));
+                data->data.push_back(
+                    static_cast<uint8_t>((word >> 8) & 0xFF));
+                data->data.push_back(
+                    static_cast<uint8_t>((word >> 16) & 0xFF));
               } else {
                 uint32_t word = static_cast<uint32_t>(value);
                 data->data.push_back(static_cast<uint8_t>(word & 0xFF));
@@ -698,6 +717,10 @@ void Assembler::RefixupDataAtoms(ConcreteSymbolTable &symbols,
               result.errors.push_back(err);
               result.success = false;
               if (data->data_size == DataSize::Byte) {
+                data->data.push_back(0);
+              } else if (data->data_size == DataSize::Long) {
+                data->data.push_back(0);
+                data->data.push_back(0);
                 data->data.push_back(0);
               } else {
                 data->data.push_back(0);

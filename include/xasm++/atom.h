@@ -203,7 +203,8 @@ public:
  */
 enum class DataSize {
   Byte, ///< 8-bit data (db, dfb directives)
-  Word  ///< 16-bit data (dw, da directives)
+  Word, ///< 16-bit data (dw, da directives)
+  Long  ///< 24-bit data (da in 65816 mode — Merlin 16/32 compatible)
 };
 
 /**
