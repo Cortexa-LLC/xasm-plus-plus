@@ -15,6 +15,7 @@
 #include "xasm++/directives/scmasm_constants.h"
 #include "xasm++/directives/scmasm_directive_constants.h"
 #include "xasm++/directives/scmasm_directive_handlers.h"
+#include "xasm++/syntax/scmasm_expression_utils.h"
 #include "xasm++/util/string_utils.h" // For ToUpper
 #include <algorithm>
 #include <cctype>
@@ -1690,6 +1691,18 @@ ScmasmSyntaxParser::ParseExpression(const std::string &str,
   // Phase 2: Use shared ExpressionParser with SCMASM number parser
   // Normalize expression to uppercase for case-insensitive symbol lookup
   std::string normalized_expr = util::ToUpper(str);
+
+  // ADR-005: Canonicalise SCMASM-specific syntax before the shared parser
+  // sees it, so the shared ExpressionParser stays syntax-agnostic.
+  //
+  // V3/V6 — Replace prefix '/' (SCMASM high-byte operator) with '>':
+  //   "/ADDR" -> ">ADDR"
+  normalized_expr = scmasm::CanonicalizeSlashHighByte(normalized_expr);
+  //
+  // V5 — Replace standalone '=' (SCMASM equality) with '==':
+  //   "X=1"  -> "X==1"
+  normalized_expr = scmasm::CanonicalizeEqualityOperator(normalized_expr);
+
   ExpressionParser parser(&symbols, &scmasm_number_parser_);
   return parser.Parse(normalized_expr);
 }

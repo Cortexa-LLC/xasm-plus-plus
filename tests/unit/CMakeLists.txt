@@ -726,3 +726,17 @@ target_link_libraries(test_inb_path_mapping
 
 gtest_discover_tests(test_inb_path_mapping)
 
+# SCMASM expression utils tests (ADR-005 V3/V5/V6 canonicalization)
+add_executable(test_scmasm_expression_utils
+    test_scmasm_expression_utils.cpp
+)
+
+target_link_libraries(test_scmasm_expression_utils
+    xasm_syntax
+    xasm_core
+    gtest_main
+    gtest
+)
+
+gtest_discover_tests(test_scmasm_expression_utils)
+

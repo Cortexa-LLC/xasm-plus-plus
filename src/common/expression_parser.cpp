@@ -104,12 +104,6 @@ std::shared_ptr<Expression> ExpressionParser::ParseComparison() {
       Consume();
       auto right = ParseBitwiseOr();
       left = std::make_shared<BinaryOpExpr>(BinaryOp::GreaterThan, left, right);
-    } else if (Peek() == '=' && pos_ + 1 < expr_.length() &&
-               expr_[pos_ + 1] != '=') {
-      // Single '=' for SCMASM equality (not '==' or assignment)
-      Consume();
-      auto right = ParseBitwiseOr();
-      left = std::make_shared<BinaryOpExpr>(BinaryOp::Equal, left, right);
     } else {
       break;
     }
@@ -278,16 +272,6 @@ std::shared_ptr<Expression> ExpressionParser::ParseUnary() {
   // High byte operator (>)
   // Note: This is prefix unary, distinct from infix comparison >
   if (c == '>') {
-    Consume();
-    auto operand = ParseUnary();
-    return std::make_shared<UnaryOpExpr>(UnaryOp::HighByte, operand);
-  }
-
-  // SCMASM high byte operator (/)
-  // In SCMASM syntax /expr means the high byte of expr, same as >expr.
-  // Must be handled here as unary so that ParseMulDiv does not consume it
-  // as binary division (0 / expr = 0) when it appears at expression start.
-  if (c == '/') {
     Consume();
     auto operand = ParseUnary();
     return std::make_shared<UnaryOpExpr>(UnaryOp::HighByte, operand);

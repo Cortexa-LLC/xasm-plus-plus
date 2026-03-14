@@ -82,26 +82,6 @@ ParseExpression(const std::string &str, ConcreteSymbolTable &symbols) {
     return std::make_shared<LiteralExpr>((value >> 8) & 0xFF); // High byte
   }
 
-  // Check for SCMASM high byte operator (/)
-  // In SCMASM syntax, /expr means the high byte of expr (same as >expr).
-  // When used as an instruction operand (e.g. "lda /ADDR"), it implies
-  // immediate mode and extracts bits 8-15 of the expression value.
-  if (!trimmed.empty() && trimmed[0] == '/') {
-    if (trimmed.length() < 2) {
-      throw std::runtime_error(
-          "SCMASM high byte operator (/) requires an operand");
-    }
-    std::string operand = Trim(trimmed.substr(1));
-    if (operand.empty()) {
-      throw std::runtime_error(
-          "SCMASM high byte operator (/) has empty operand");
-    }
-    // Recursively parse the operand
-    auto operand_expr = ParseExpression(operand, symbols);
-    int64_t value = operand_expr->Evaluate(symbols);
-    return std::make_shared<LiteralExpr>((value >> 8) & 0xFF); // High byte
-  }
-
   // Handle character literals: "x" or 'x'
   // Supports standalone form ("A") and compound form ("A"+N, "A"-N, etc.)
   // Returns plain ASCII value — syntax-specific high-bit conventions (e.g.
