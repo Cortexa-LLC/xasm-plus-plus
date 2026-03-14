@@ -106,3 +106,15 @@ build-test/
 # MAME runtime files (if ever used)
 cfg/
 nvram/
+
+# CMake test runner output
+Testing/
+
+# Scratch test files
+test_*.asm
+test_*.bin
+test_*.S
+test_*.sym
+test_*.lst
+test_*.log
+a.out
