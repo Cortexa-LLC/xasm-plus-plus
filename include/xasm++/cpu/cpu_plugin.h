@@ -157,6 +157,30 @@ public:
   virtual bool IsRelaxBranchesEnabled() const { return false; }
 
   /**
+   * @brief Apply a CPU mode change from a CpuModeAtom during encoding.
+   *
+   * Called by the assembler when it encounters a CpuModeAtom in the atom
+   * stream.  The mode integer uses the same encoding as CpuModeAtom::mode:
+   *   0 = base 6502, 1 = 65C02, 2 = 65816.
+   *
+   * Default implementation is a no-op (CPUs that have no mode concept ignore
+   * this call).  Cpu6502 overrides it to call SetCpuMode().
+   */
+  virtual void SetCpuModeFromAtom(int /*mode*/) {}
+
+  /**
+   * @brief Set M and X register-width flags (65816 only, no-op on others)
+   *
+   * Called at the start of each encoding pass to reset accumulator and index
+   * register widths to their default (8-bit / emulation mode) values.
+   * CPUs that don't have this concept simply ignore the call.
+   *
+   * @param m_flag true = 8-bit accumulator, false = 16-bit
+   * @param x_flag true = 8-bit index registers, false = 16-bit
+   */
+  virtual void SetMX(bool /*m_flag*/, bool /*x_flag*/) {}
+
+  /**
    * @brief Encode an instruction with special handling
    *
    * Handles instructions that require context beyond standard operand values,

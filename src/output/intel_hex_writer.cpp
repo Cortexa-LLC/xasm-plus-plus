@@ -245,6 +245,12 @@ IntelHexWriter::ExtractBytes(const Section &section) {
     case AtomType::Equate:
       // Equate atom - no bytes generated (symbol value only)
       break;
+    case AtomType::CpuMode:
+      // CpuModeAtom - no bytes generated (mode change only)
+      break;
+    case AtomType::MxState:
+      // MxAtom - no bytes generated (M/X state change only)
+      break;
     }
   }
 

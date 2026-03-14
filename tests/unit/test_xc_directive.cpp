@@ -6,6 +6,7 @@
  * 65C02/65816 CPU modes in Merlin syntax.
  */
 
+#include "xasm++/atom.h"
 #include "xasm++/cpu/cpu_6502.h"
 #include "xasm++/symbol.h"
 #include "xasm++/syntax/merlin_syntax.h"
@@ -86,20 +87,26 @@ TEST(XcDirectiveTest, XcCaseInsensitive) {
   EXPECT_EQ(cpu.GetCpuMode(), CpuMode::Cpu65C02);
 }
 
-TEST(XcDirectiveTest, XcDoesNotGenerateAtoms) {
+TEST(XcDirectiveTest, XcGeneratesCpuModeAtom) {
   Cpu6502 cpu;
   MerlinSyntaxParser parser;
   parser.SetCpu(&cpu);
   ConcreteSymbolTable symbols;
   Section section("test", 0);
 
-  // XC directive should not generate any atoms
+  // XC directive generates a CpuModeAtom so encoding replays the mode change.
   parser.Parse(" xc", section, symbols);
-  EXPECT_EQ(section.atoms.size(), 0UL);
+  ASSERT_EQ(section.atoms.size(), 1UL);
+  auto mode_atom = std::dynamic_pointer_cast<CpuModeAtom>(section.atoms[0]);
+  ASSERT_NE(mode_atom, nullptr);
+  EXPECT_EQ(mode_atom->mode, 1); // 1 = 65C02
 
   Section section2("test", 0);
   parser.Parse(" xc off", section2, symbols);
-  EXPECT_EQ(section2.atoms.size(), 0UL);
+  ASSERT_EQ(section2.atoms.size(), 1UL);
+  auto mode_atom2 = std::dynamic_pointer_cast<CpuModeAtom>(section2.atoms[0]);
+  ASSERT_NE(mode_atom2, nullptr);
+  EXPECT_EQ(mode_atom2->mode, 0); // 0 = 6502
 }
 
 TEST(XcDirectiveTest, XcMultipleToggles) {
@@ -144,9 +151,9 @@ TEST(XcDirectiveTest, Enable65C02InstructionsTSB) {
   // TSB should now be available (65C02 instruction)
   parser.Parse(" TSB $80", section, symbols);
 
-  // Should create instruction atom (not throw error)
-  ASSERT_EQ(section.atoms.size(), 1UL);
-  auto inst = std::dynamic_pointer_cast<InstructionAtom>(section.atoms[0]);
+  // Should have CpuModeAtom (xc) + InstructionAtom (TSB)
+  ASSERT_EQ(section.atoms.size(), 2UL);
+  auto inst = std::dynamic_pointer_cast<InstructionAtom>(section.atoms[1]);
   ASSERT_NE(inst, nullptr);
   EXPECT_EQ(inst->mnemonic, "TSB");
 }
@@ -165,9 +172,9 @@ TEST(XcDirectiveTest, Enable65C02InstructionsTRB) {
   // TRB should now be available (65C02 instruction)
   parser.Parse(" TRB $80", section, symbols);
 
-  // Should create instruction atom (not throw error)
-  ASSERT_EQ(section.atoms.size(), 1UL);
-  auto inst = std::dynamic_pointer_cast<InstructionAtom>(section.atoms[0]);
+  // Should have CpuModeAtom (xc) + InstructionAtom (TRB)
+  ASSERT_EQ(section.atoms.size(), 2UL);
+  auto inst = std::dynamic_pointer_cast<InstructionAtom>(section.atoms[1]);
   ASSERT_NE(inst, nullptr);
   EXPECT_EQ(inst->mnemonic, "TRB");
 }
@@ -186,9 +193,9 @@ TEST(XcDirectiveTest, Enable65C02InstructionsPHY) {
   // PHY should now be available (65C02 instruction)
   parser.Parse(" PHY", section, symbols);
 
-  // Should create instruction atom (not throw error)
-  ASSERT_EQ(section.atoms.size(), 1UL);
-  auto inst = std::dynamic_pointer_cast<InstructionAtom>(section.atoms[0]);
+  // Should have CpuModeAtom (xc) + InstructionAtom (PHY)
+  ASSERT_EQ(section.atoms.size(), 2UL);
+  auto inst = std::dynamic_pointer_cast<InstructionAtom>(section.atoms[1]);
   ASSERT_NE(inst, nullptr);
   EXPECT_EQ(inst->mnemonic, "PHY");
 }
@@ -213,8 +220,8 @@ TEST(XcDirectiveTest, GrafixSUsagePattern) {
 
   parser.Parse(source, section, symbols);
 
-  // Should have 4 instruction atoms (TSB, TRB, PHY, LDA)
-  EXPECT_EQ(section.atoms.size(), 4UL);
+  // Should have 2 CpuModeAtoms (xc, xc off) + 4 InstructionAtoms (TSB, TRB, PHY, LDA)
+  EXPECT_EQ(section.atoms.size(), 6UL);
 }
 
 TEST(XcDirectiveTest, Cpu65C02InstructionWithoutXcReturnsEmptyVector) {

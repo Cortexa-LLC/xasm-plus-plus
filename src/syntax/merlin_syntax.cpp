@@ -201,42 +201,30 @@ MerlinSyntaxParser::ParseExpression(const std::string &str,
   // Merlin-Specific Pre-Processing (V1 and V2 — moved from assembler.cpp)
   // ========================================================================
 
-  // V1: Strip Merlin inline string comment from expression, e.g. "99 "stabbed""
-  // A Merlin comment is a whitespace-separated string literal suffix:
-  //   lda #99 "stabbed"  → expr is  99 "stabbed"  → strip to  99
+  // V1: Strip Merlin inline comment from expression.
+  // In Merlin, any whitespace-separated trailing text after the operand is a
+  // comment — it need not start with ';'. Two forms:
+  //   lda #99 "stabbed"  → quoted string comment   → strip to 99
+  //   lda #-5 impaled    → bare word/number comment → strip to -5
   // Only strip when the expression does NOT start with a quote (otherwise
   // the whole expression is a character literal, e.g. #"A").
   if (!expr.empty() && expr[0] != '"' && expr[0] != '\'') {
+    size_t first_space = std::string::npos;
     for (size_t i = 0; i < expr.size(); ++i) {
       if (expr[i] == ' ' || expr[i] == '\t') {
-        size_t j = i;
-        while (j < expr.size() && (expr[j] == ' ' || expr[j] == '\t'))
-          ++j;
-        if (j < expr.size() && (expr[j] == '"' || expr[j] == '\'')) {
-          expr = Trim(expr.substr(0, i));
-          break;
-        }
+        first_space = i;
+        break;
       }
+    }
+    if (first_space != std::string::npos) {
+      expr = Trim(expr.substr(0, first_space));
     }
   }
 
-  // V2: Handle Merlin .Inc/.Dec suffixes: symbol.Inc → symbol+1, symbol.Dec → symbol-1
-  // Case-insensitive check for the suffix
-  auto ends_with_ci = [](const std::string &s, const char *suffix,
-                          size_t slen) {
-    if (s.size() < slen)
-      return false;
-    for (size_t i = 0; i < slen; ++i) {
-      if (std::tolower(static_cast<unsigned char>(s[s.size() - slen + i])) !=
-          std::tolower(static_cast<unsigned char>(suffix[i])))
-        return false;
-    }
-    return true;
-  };
-  if (ends_with_ci(expr, ".inc", 4))
-    expr = expr.substr(0, expr.size() - 4) + "+1";
-  else if (ends_with_ci(expr, ".dec", 4))
-    expr = expr.substr(0, expr.size() - 4) + "-1";
+  // V2: (removed) `.Inc`/`.Dec` are NOT magic +1/-1 suffixes.
+  // In Merlin, `.` is the bitwise OR operator. `RdGrp.Inc` means `RdGrp | Inc`
+  // where `Inc` is a symbol (e.g. `Inc = $40`).  The OR is handled by the
+  // ExpressionParser when `allow_merlin_bitwise_ops` is set.
 
   // ========================================================================
   // Merlin-Specific Features (handle before delegating to ExpressionParser)
@@ -616,10 +604,22 @@ MerlinSyntaxParser::ExpandVarLabelsInOperand(const std::string &operand) const {
 
       auto it = var_label_seq_.find(var_name);
       if (!followed_by_colon && it != var_label_seq_.end() && it->second > 0) {
-        // Direct reference: replace ]varname with ]varname_N
+        // Direct reference: replace ]varname with ]varname_N (most recent
+        // definition, which may be a backward or forward reference resolved
+        // in multi-pass assembly).
         result += var_name + "_" + std::to_string(it->second);
+      } else if (!followed_by_colon && it != var_label_seq_.end() &&
+                 it->second == 0) {
+        // EQU-style ]var = VALUE assignment: symbol stored under plain name.
+        // Use plain name so the lookup in the symbol table succeeds.
+        result += var_name;
+      } else if (!followed_by_colon && !var_name.empty()) {
+        // No definition seen yet: this is a forward reference to the first
+        // occurrence of a code-label ]var.  Expand to ]var_1 so that once
+        // the definition is parsed it resolves in multi-pass.
+        result += var_name + "_1";
       } else {
-        // Scope qualifier or no instance tracked — keep as-is
+        // Scope qualifier — keep as-is
         result += var_name;
       }
     } else {
@@ -680,6 +680,15 @@ void MerlinSyntaxParser::HandleEqu(const std::string &label,
   } catch (const std::exception &) {
     // Cannot evaluate yet (forward reference) — store deferred expression
     symbols.Define(label, SymbolType::Label, expr);
+  }
+
+  // Mark ]var EQU-style assignments in var_label_seq_ with sentinel 0 so
+  // ExpandVarLabelsInOperand uses the plain name (e.g. ]XH) instead of the
+  // uniqued code-label form (]XH_1).  Only insert if not already tracked as
+  // a code label (seq > 0).
+  if (!label.empty() && label[0] == ']' &&
+      var_label_seq_.find(label) == var_label_seq_.end()) {
+    var_label_seq_[label] = 0;
   }
 }
 
@@ -1105,7 +1114,12 @@ std::string MerlinSyntaxParser::SubstituteParameters(
 }
 
 void MerlinSyntaxParser::HandleXc(const std::string &operand) {
-  // XC [ON|OFF] - Toggle 65C02 CPU instruction set
+  // XC [ON|OFF] - Toggle 65C02/65816 CPU instruction set
+  //
+  // Merlin XC semantics:
+  //   XC (first)  → 65C02 mode
+  //   XC (second) → 65816 mode (when already in 65C02)
+  //   XC OFF      → back to base 6502
 
   if (!cpu_) {
     // No CPU set - silently ignore (for tests that don't need CPU)
@@ -1115,10 +1129,15 @@ void MerlinSyntaxParser::HandleXc(const std::string &operand) {
   std::string op = ToUpper(Trim(operand));
 
   if (op.empty() || op == directives::ON) {
-    // Enable 65C02 mode
-    cpu_->SetCpuMode(CpuMode::Cpu65C02);
+    if (cpu_->GetCpuMode() == CpuMode::Cpu65C02) {
+      // Second XC: upgrade to 65816
+      cpu_->SetCpuMode(CpuMode::Cpu65816);
+    } else {
+      // First XC (or XC from 65816 back to 65C02 not typical, treat as 65C02)
+      cpu_->SetCpuMode(CpuMode::Cpu65C02);
+    }
   } else if (op == directives::OFF) {
-    // Disable 65C02 mode (back to 6502)
+    // Disable extended mode (back to 6502)
     cpu_->SetCpuMode(CpuMode::Cpu6502);
   } else {
     throw std::runtime_error(
@@ -1323,6 +1342,17 @@ void MerlinSyntaxParser::ParseLine(const std::string &line, Section &section,
       // (LabelAtoms are overwritten by current_address in ResolveSymbols)
       uint32_t label_addr = in_dum_block_ ? dum_address_ : current_address_;
       std::string scoped_label = ScopeLocalLabel(label);
+      // ]variable labels on their own line must be uniqued the same way
+      // as instruction-carrying ]var labels so that ExpandVarLabelsInOperand
+      // resolves nearby references (forward or backward) to the correct
+      // definition instance.  Without this, a label-only "]rts" line does not
+      // increment var_label_seq_, causing subsequent "bne ]rts" to expand to
+      // the wrong (earlier) definition.
+      if (!label.empty() && label[0] == ']' &&
+          label.find(':') == std::string::npos) {
+        int seq = ++var_label_seq_[label];
+        scoped_label = label + "_" + std::to_string(seq);
+      }
       symbols.Define(scoped_label, SymbolType::Label,
                      std::make_shared<LiteralExpr>(label_addr));
       if (!in_dum_block_) {
@@ -1351,15 +1381,17 @@ void MerlinSyntaxParser::ParseLine(const std::string &line, Section &section,
     // This is an = equate
     std::string value = Trim(code_line.substr(equals_pos + 1));
     HandleEqu(label, value, symbols);
-    // If the expression contains '*' as a PC reference (not multiplication),
-    // push an EquateAtom so the assembler re-evaluates it each pass with the
-    // correct virtual address.  At parse time, instruction sizes are placeholder
-    // (1 byte each), so expressions like "CHECKEND = *-CHECKER" compute the
-    // wrong value if evaluated only once at parse time.
+    // If the expression contains '*' (PC reference) or a code-label reference
+    // (alpha identifier not inside a hex literal), push an EquateAtom so the
+    // assembler re-evaluates it each pass with the correct virtual address.
+    // At parse time, instruction sizes are placeholder (1 byte each), so
+    // expressions like "CHECKEND = *-CHECKER" or "Tmovemem = MOVEMEM-$B000"
+    // compute wrong values if evaluated only once at parse time.
     if (!in_dum_block_) {
-      bool has_star = false;
+      bool needs_reeval = false;
       for (size_t i = 0; i < value.size(); ++i) {
-        if (value[i] == '*') {
+        char c = value[i];
+        if (c == '*') {
           bool before =
               (i > 0 && (std::isalnum(static_cast<unsigned char>(value[i - 1]))
                          || value[i - 1] == ')'));
@@ -1369,12 +1401,23 @@ void MerlinSyntaxParser::ParseLine(const std::string &line, Section &section,
                 || value[i + 1] == '(' || value[i + 1] == '$'
                 || value[i + 1] == '%'));
           if (!(before && after)) {
-            has_star = true;
+            needs_reeval = true;
             break;
           }
+        } else if (c == '$') {
+          // Skip the whole hex literal ($ followed by hex digits)
+          while (i + 1 < value.size() &&
+                 std::isxdigit(static_cast<unsigned char>(value[i + 1]))) {
+            ++i;
+          }
+        } else if (std::isalpha(static_cast<unsigned char>(c))) {
+          // Alpha char starting an identifier (not inside a hex literal)
+          // → likely a code-label reference
+          needs_reeval = true;
+          break;
         }
       }
-      if (has_star) {
+      if (needs_reeval) {
         section.atoms.push_back(std::make_shared<EquateAtom>(label, value));
       }
     }
@@ -1488,9 +1531,11 @@ void MerlinSyntaxParser::ParseLine(const std::string &line, Section &section,
   // values so the shared ParseExpression never sees Merlin char-literal syntax.
   operands = ScopeLocalLabelsInOperand(operands);
   operands = ExpandVarLabelsInOperand(operands);
-  // V1: Strip Merlin inline string comment from instruction operand.
-  // A Merlin inline string comment is a whitespace-separated quoted-string
-  // suffix that is not itself a char literal, e.g. "#99 \"stabbed\"".
+  // V1: Strip Merlin inline comment from instruction operand.
+  // In Merlin, any whitespace-separated trailing text is a comment — it need
+  // not start with ';' or a quote.  e.g.:
+  //   "#99 \"stabbed\""  → "#99"   (quoted string comment)
+  //   "#-5 impaled"      → "#-5"   (bare word comment)
   // Only strip when the operand (after skipping a leading '#') does NOT start
   // with a quote (which would be a char literal like "#\"A\"").
   {
@@ -1504,16 +1549,10 @@ void MerlinSyntaxParser::ParseLine(const std::string &line, Section &section,
         stripped[offset] != '\'') {
       for (size_t i = offset; i < stripped.size(); ++i) {
         if (stripped[i] == ' ' || stripped[i] == '\t') {
-          size_t j = i;
-          while (j < stripped.size() &&
-                 (stripped[j] == ' ' || stripped[j] == '\t'))
-            ++j;
-          if (j < stripped.size() &&
-              (stripped[j] == '"' || stripped[j] == '\'')) {
-            stripped = stripped.substr(0, offset) +
-                       Trim(stripped.substr(offset, i - offset));
-            break;
-          }
+          // Any space/tab after the expression = start of comment field
+          stripped = stripped.substr(0, offset) +
+                     Trim(stripped.substr(offset, i - offset));
+          break;
         }
       }
     }

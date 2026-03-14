@@ -75,6 +75,18 @@ struct ParserFeatures {
    */
   bool allow_merlin_bitwise_ops = false;
 
+  /**
+   * @brief Make `>` and `<` (high/low byte) capture the full additive expression
+   *
+   * In Merlin syntax, `>base+offset` means `>(base+offset)` — the `>`
+   * operator applies to the entire following additive expression, not just the
+   * next primary.  So `>$b700+$900 = >$C000 = $C0`, NOT `$B7 + $900`.
+   *
+   * When false (default), `>` and `<` have standard unary precedence (higher
+   * than `+`/`-`).
+   */
+  bool merlin_byte_ops_greedy = false;
+
   /** @brief Convenience factory: features for Z80/EDTASM syntax */
   static ParserFeatures ForZ80() {
     ParserFeatures f;
@@ -87,6 +99,7 @@ struct ParserFeatures {
     ParserFeatures f;
     f.allow_merlin_var_prefix = true;
     f.allow_merlin_bitwise_ops = true;
+    f.merlin_byte_ops_greedy = true;
     return f;
   }
 

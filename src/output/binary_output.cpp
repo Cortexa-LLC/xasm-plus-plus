@@ -128,6 +128,12 @@ void BinaryOutput::WriteOutputWithRw18(const std::string &filename,
       case AtomType::Equate:
         // EquateAtom: No bytes generated (symbol value only)
         break;
+      case AtomType::CpuMode:
+        // CpuModeAtom: No bytes generated (mode change only)
+        break;
+      case AtomType::MxState:
+        // MxAtom: No bytes generated (M/X state change only)
+        break;
       }
     }
   }

@@ -8,6 +8,7 @@
 
 #include "xasm++/directives/merlin_directive_handlers.h"
 #include "xasm++/atom.h"
+#include "xasm++/cpu/cpu_6502.h"
 #include "xasm++/common/expression_parser.h"
 #include "xasm++/directives/directive_error_utils.h"
 #include "xasm++/expression.h"
@@ -317,7 +318,11 @@ void HandleDs(const std::string &label, const std::string &operand,
     uint32_t label_address = parser->IsInDumBlock()
                                  ? parser->GetDumAddress()
                                  : parser->GetCurrentAddress();
-    context.symbols->Define(label, SymbolType::Label,
+    // ]variable labels in DS directives (e.g. "]dest DS 2" in DUM blocks)
+    // must be uniqued the same way as instruction-defined ]var labels so
+    // that ExpandVarLabelsInOperand resolves backward references correctly.
+    std::string effective_label = parser->UniqueVarLabel(label);
+    context.symbols->Define(effective_label, SymbolType::Label,
                             std::make_shared<LiteralExpr>(label_address));
     // In DUM mode, do NOT push a LabelAtom into the atom stream.
     // ResolveSymbols processes LabelAtoms by overwriting the address with
@@ -327,7 +332,7 @@ void HandleDs(const std::string &label, const std::string &operand,
     // they do not need a LabelAtom for the assembler to process.
     if (!parser->IsInDumBlock()) {
       context.section->atoms.push_back(
-          std::make_shared<LabelAtom>(label, label_address));
+          std::make_shared<LabelAtom>(effective_label, label_address));
     }
   }
 
@@ -866,27 +871,64 @@ void HandleSav(const std::string &label, const std::string &operand,
 void HandleXc(const std::string &label, const std::string &operand,
               DirectiveContext &context) {
   (void)label;
-  (void)context.section;
   (void)context.symbols;
 
   // Get parser instance from context
   ValidateParser(context.parser_state);
   auto *parser = static_cast<MerlinSyntaxParser *>(context.parser_state);
 
+  // Update CPU mode on the parser's CPU object
   parser->HandleXc(operand);
+
+  // Emit a CpuModeAtom so the assembler replays the mode change during encoding.
+  // Without this, all instructions are encoded with the FINAL cpu mode from
+  // parsing, which breaks XC-gated instructions (e.g. TSB, XCE, PHY, REP).
+  if (context.section && parser->GetCpu()) {
+    int mode_int = 0;
+    switch (parser->GetCpu()->GetCpuMode()) {
+      case CpuMode::Cpu6502:   mode_int = 0; break;
+      case CpuMode::Cpu65C02:  mode_int = 1; break;
+      case CpuMode::Cpu65816:  mode_int = 2; break;
+      default:                 mode_int = 0; break;
+    }
+    context.section->atoms.push_back(std::make_shared<CpuModeAtom>(mode_int));
+  }
 }
 
 void HandleMx(const std::string &label, const std::string &operand,
               DirectiveContext &context) {
   (void)label;
-  (void)context.section;
   (void)context.symbols;
 
   // Get parser instance from context
   ValidateParser(context.parser_state);
   auto *parser = static_cast<MerlinSyntaxParser *>(context.parser_state);
 
+  // Delegate to parser for validation
   parser->HandleMx(operand);
+
+  // Parse mode value: %00-%11 or decimal 0-3
+  // bit1 = M flag (accumulator), bit0 = X flag (index registers)
+  // 1 = 8-bit, 0 = 16-bit
+  std::string op = Trim(operand);
+  int mode = 3; // default: 8-bit both
+  if (!op.empty()) {
+    if (op[0] == '%') {
+      std::string bin = op.substr(1);
+      if (bin == "00") mode = 0;
+      else if (bin == "01") mode = 1;
+      else if (bin == "10") mode = 2;
+      else if (bin == "11") mode = 3;
+    } else if (op.length() == 1 && op[0] >= '0' && op[0] <= '3') {
+      mode = op[0] - '0';
+    }
+  }
+
+  // Emit MxAtom so the assembler replays the MX state during encoding.
+  // bit1=M flag, bit0=X flag (1=8-bit, 0=16-bit)
+  bool m_flag = (mode & 2) != 0;
+  bool x_flag = (mode & 1) != 0;
+  context.section->atoms.push_back(std::make_shared<MxAtom>(m_flag, x_flag));
 }
 
 void HandleRev(const std::string &label, const std::string &operand,

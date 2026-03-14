@@ -168,6 +168,9 @@ public:
    */
   CpuMode GetCpuMode() const;
 
+  /// Override to apply mode from CpuModeAtom during encoding (0=6502,1=65C02,2=65816)
+  void SetCpuModeFromAtom(int mode) override;
+
   /**
    * @brief Enable or disable branch relaxation
    *
@@ -192,7 +195,7 @@ public:
    *
    * @note Only relevant for CpuMode::Cpu65816
    */
-  void SetMX(bool m_flag, bool x_flag);
+  void SetMX(bool m_flag, bool x_flag) override;
 
   /**
    * @brief Check if accumulator is 8-bit
@@ -641,11 +644,19 @@ private:
     std::optional<uint8_t> stack_relative_indirect_indexed_y; // 65816
   };
 
+  /// @brief Controls immediate operand width for 65816 MX-flag-sensitive instructions
+  enum class ImmWidth {
+    Byte,  ///< Always 8-bit immediate (default / non-65816)
+    UseM,  ///< 16-bit when M=0 (accumulator instructions: LDA, ADC, AND, …)
+    UseX,  ///< 16-bit when X=0 (index instructions: LDX, LDY, CPX, CPY)
+  };
+
   // Generic encoding function using opcode table
   // Eliminates duplication across 50+ Encode methods
   std::vector<uint8_t> EncodeWithTable(const OpcodeTable &table,
                                        uint32_t operand,
-                                       AddressingMode mode) const;
+                                       AddressingMode mode,
+                                       ImmWidth imm_width = ImmWidth::Byte) const;
 
 private:
   // Phase 2.5: CPU mode state
@@ -654,8 +665,8 @@ private:
   // Phase 2.5 - Group 8: 65816 MX state (register width control)
   // m flag: false = 16-bit accumulator, true = 8-bit accumulator
   // x flag: false = 16-bit index registers, true = 8-bit index registers
-  bool m_flag_ = true; // Default: 8-bit accumulator (emulation mode)
-  bool x_flag_ = true; // Default: 8-bit index registers (emulation mode)
+  mutable bool m_flag_ = true; // Default: 8-bit accumulator (emulation mode)
+  mutable bool x_flag_ = true; // Default: 8-bit index registers (emulation mode)
 
   // Branch relaxation: false = error on out-of-range (default, matches original
   // assembler behavior). true = expand to B!cc+3/JMP sequence.

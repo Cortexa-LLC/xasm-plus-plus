@@ -130,6 +130,13 @@ std::shared_ptr<Expression> ExpressionParser::ParseBitwiseOr() {
       Consume();
       auto right = ParseBitwiseXor();
       left = std::make_shared<BinaryOpExpr>(BinaryOp::BitwiseOr, left, right);
+    } else if (features_.allow_merlin_bitwise_ops && Peek() == '!') {
+      // ADR-005 V9: Merlin `!` is binary bitwise OR operator (e.g. SYM!1)
+      // Empirically verified against vasm reference: FinalDisk!1 = 1 (OR, not XOR).
+      // Unary `!` (logical NOT) only appears at expression start.
+      Consume();
+      auto right = ParseBitwiseXor();
+      left = std::make_shared<BinaryOpExpr>(BinaryOp::BitwiseOr, left, right);
     } else {
       break;
     }
@@ -144,12 +151,6 @@ std::shared_ptr<Expression> ExpressionParser::ParseBitwiseXor() {
   while (true) {
     SkipWhitespace();
     if (Peek() == '^') {
-      Consume();
-      auto right = ParseBitwiseAnd();
-      left = std::make_shared<BinaryOpExpr>(BinaryOp::BitwiseXor, left, right);
-    } else if (features_.allow_merlin_bitwise_ops && Peek() == '!') {
-      // ADR-005 V9: Merlin `!` is binary bitwise XOR operator (e.g. SYM!1)
-      // This is infix XOR; unary `!` (logical NOT) only appears at expression start.
       Consume();
       auto right = ParseBitwiseAnd();
       left = std::make_shared<BinaryOpExpr>(BinaryOp::BitwiseXor, left, right);
@@ -280,7 +281,9 @@ std::shared_ptr<Expression> ExpressionParser::ParseUnary() {
   // "low byte of address", identical semantics to '<'.
   if (c == '<' || c == '#') {
     Consume();
-    auto operand = ParseUnary();
+    // In Merlin, `<base+offset` means `<(base+offset)` — the operator
+    // applies to the entire following additive expression.
+    auto operand = features_.merlin_byte_ops_greedy ? ParseAddSub() : ParseUnary();
     return std::make_shared<UnaryOpExpr>(UnaryOp::LowByte, operand);
   }
 
@@ -288,7 +291,9 @@ std::shared_ptr<Expression> ExpressionParser::ParseUnary() {
   // Note: This is prefix unary, distinct from infix comparison >
   if (c == '>') {
     Consume();
-    auto operand = ParseUnary();
+    // In Merlin, `>base+offset` means `>(base+offset)` — the operator
+    // applies to the entire following additive expression.
+    auto operand = features_.merlin_byte_ops_greedy ? ParseAddSub() : ParseUnary();
     return std::make_shared<UnaryOpExpr>(UnaryOp::HighByte, operand);
   }
 
@@ -481,6 +486,14 @@ std::shared_ptr<Expression> ExpressionParser::ParsePrimary() {
     return std::make_shared<SymbolExpr>(ident);
   }
 
+  // `*` as current address (Merlin, SCMASM, and many other assemblers)
+  // In expression context (ParsePrimary), `*` is always current location.
+  // Binary multiply is handled in ParseMulDiv between two primaries.
+  if (Peek() == '*') {
+    Consume();
+    return std::make_shared<CurrentLocationExpr>();
+  }
+
   // Unexpected character
   if (pos_ < expr_.length()) {
     throw std::runtime_error("Unexpected character: " + std::string(1, Peek()));
@@ -647,12 +660,13 @@ std::string ExpressionParser::ParseIdentifier() {
 
   Consume();
 
-  // Continue with alphanumeric, underscore, period (unless Merlin mode), $, ?, @
+  // Continue with alphanumeric, underscore, period (unless Merlin mode), $, ?, @, :
   // '@' is used in SCMASM scoped local label names (e.g. GLOBAL@.1)
+  // ':' is used in Merlin scoped local label names (e.g. MAIN:loop)
   // ADR-005 V9: In Merlin mode, '.' is a binary OR operator, not part of names.
   while (std::isalnum(Peek()) || Peek() == '_' ||
          (allow_dot_in_ident && Peek() == '.') || Peek() == '$' ||
-         Peek() == '?' || Peek() == '@') {
+         Peek() == '?' || Peek() == '@' || Peek() == ':') {
     Consume();
   }
 

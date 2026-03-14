@@ -735,12 +735,12 @@ TEST(ParserFeaturesTest, V9_MerlinBitwiseOr_Dot) {
   EXPECT_EQ(expr->Evaluate(sym), 0x81);
 }
 
-TEST(ParserFeaturesTest, V9_MerlinBitwiseXor_Bang) {
-  // `!` is bitwise XOR in Merlin mode
+TEST(ParserFeaturesTest, V9_MerlinBitwiseOr_Bang) {
+  // `!` is bitwise OR in Merlin mode (empirically: FinalDisk!1 = 1 OR 1 = 1)
   MockSymbolTable sym;
   ExpressionParser parser(&sym, nullptr, ParserFeatures::ForMerlin());
   auto expr = parser.Parse("$F0!$FF");
-  EXPECT_EQ(expr->Evaluate(sym), 0x0F);
+  EXPECT_EQ(expr->Evaluate(sym), 0xFF); // $F0 OR $FF = $FF
 }
 
 TEST(ParserFeaturesTest, V9_MerlinBitwiseOr_DotHex) {

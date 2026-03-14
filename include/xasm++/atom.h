@@ -37,6 +37,8 @@ enum class AtomType {
   ListingControl, ///< Listing control directive (e.g., "TITLE", "PAGE", "LIST")
   Phase,          ///< Phase directive (.PH start / .EP end)
   Equate,         ///< Equate with position-dependent expression (.EQ *-LABEL)
+  CpuMode,        ///< CPU mode change (XC / XC OFF in Merlin)
+  MxState,        ///< 65816 M/X flag state change (MX directive in Merlin)
 };
 
 /**
@@ -165,6 +167,35 @@ public:
       : Atom(AtomType::Instruction), mnemonic(mnem), operand(oper) {
     // Size determined during encoding phase
   }
+};
+
+/**
+ * @brief CPU mode change atom — records XC / XC OFF in Merlin source.
+ *
+ * Emitted by the XC directive handler and replayed during encoding so that
+ * instructions after `xc` are encoded with the correct CPU feature set.
+ * The mode is stored as an int:  0=6502, 1=65C02, 2=65816.
+ */
+class CpuModeAtom : public Atom {
+public:
+  int mode; ///< 0=6502, 1=65C02, 2=65816
+
+  explicit CpuModeAtom(int m) : Atom(AtomType::CpuMode), mode(m) {}
+};
+
+/**
+ * @brief MX state atom — records MX directive in Merlin 65816 source.
+ *
+ * Emitted by the MX directive handler and replayed during encoding so that
+ * subsequent instructions use the correct M/X flag widths.
+ * m_flag=true means 8-bit accumulator; x_flag=true means 8-bit index registers.
+ */
+class MxAtom : public Atom {
+public:
+  bool m_flag; ///< true = 8-bit accumulator (M=1), false = 16-bit (M=0)
+  bool x_flag; ///< true = 8-bit index (X=1), false = 16-bit (X=0)
+
+  MxAtom(bool m, bool x) : Atom(AtomType::MxState), m_flag(m), x_flag(x) {}
 };
 
 /**

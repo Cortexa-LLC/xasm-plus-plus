@@ -63,6 +63,13 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
       uint32_t phase_real_start = 0;
       uint32_t phase_virtual_start = 0;
 
+      // Reset 65816 register-width state (M/X flags) to 8-bit defaults at
+      // the start of each section so REP/SEP instructions re-establish the
+      // correct widths from scratch each encoding pass.
+      if (cpu_) {
+        cpu_->SetMX(true, true);
+      }
+
       for (auto &atom : section.atoms) {
         // Skip null atoms gracefully
         if (!atom) {
@@ -115,6 +122,20 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
         } else if (atom->type == AtomType::Label) {
           // Labels don't advance address yet, but we track them
           // (address will be finalized in Pass 2)
+        } else if (atom->type == AtomType::CpuMode) {
+          // XC / XC OFF — replay CPU mode change so subsequent instructions
+          // are encoded with the correct feature set.
+          auto cm = std::dynamic_pointer_cast<CpuModeAtom>(atom);
+          if (cm && cpu_) {
+            cpu_->SetCpuModeFromAtom(cm->mode);
+          }
+        } else if (atom->type == AtomType::MxState) {
+          // MX directive — replay M/X flag state so subsequent instructions
+          // use the correct accumulator/index register widths.
+          auto mx = std::dynamic_pointer_cast<MxAtom>(atom);
+          if (mx && cpu_) {
+            cpu_->SetMX(mx->m_flag, mx->x_flag);
+          }
         } else if (atom->type == AtomType::Equate) {
           // Re-evaluate position-dependent equates (.EQ *) on each pass so
           // they track the correct address after branch relaxation changes
@@ -375,6 +396,9 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
           // Note: CPU plugin determines addressing mode from operand string
           uint16_t value = 0;
 
+          // Make current PC available to expressions (e.g. `jmp *`)
+          symbols.SetCurrentLocation(static_cast<int64_t>(virtual_address));
+
           // Extract operand value
           if (!operand.empty()) {
             std::string trimmed = Trim(operand);
@@ -583,6 +607,18 @@ void Assembler::RefixupDataAtoms(ConcreteSymbolTable &symbols,
         // .OR inside .DUMMY/.ED: skip — do not move the real PC during
         // instruction encoding.  Addresses were already resolved by
         // ResolveSymbols().
+      } else if (atom->type == AtomType::CpuMode) {
+        // XC / XC OFF — replay CPU mode change.
+        auto cm = std::dynamic_pointer_cast<CpuModeAtom>(atom);
+        if (cm && cpu_) {
+          cpu_->SetCpuModeFromAtom(cm->mode);
+        }
+      } else if (atom->type == AtomType::MxState) {
+        // MX directive — replay M/X flag state.
+        auto mx = std::dynamic_pointer_cast<MxAtom>(atom);
+        if (mx && cpu_) {
+          cpu_->SetMX(mx->m_flag, mx->x_flag);
+        }
       } else if (atom->type == AtomType::Equate) {
         // Re-evaluate position-dependent equates (.EQ *) with the current
         // virtual address so they track the correct value.

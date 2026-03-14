@@ -258,6 +258,7 @@ public:
    * @param cpu Pointer to CPU plugin (must remain valid during parsing)
    */
   void SetCpu(Cpu6502 *cpu);
+  Cpu6502 *GetCpu() const { return cpu_; }
 
   /**
    * @brief Parse Merlin assembly source into atoms and symbols
@@ -280,6 +281,23 @@ public:
   uint32_t GetDumAddress() const { return dum_address_; }
   bool IsInDumBlock() const { return in_dum_block_; }
   bool IsInMacroDefinition() const { return in_macro_definition_; }
+
+  /**
+   * @brief Increment seq# for a ]var label and return its uniqued name.
+   *
+   * For use by directive handlers (e.g. DS in DUM blocks) to match the
+   * uniquing done for instruction-label and label-only ]var definitions.
+   * Only applies to labels starting with ']' and containing no ':'.
+   * Returns the unchanged label for non-]var names.
+   */
+  std::string UniqueVarLabel(const std::string &label) {
+    if (!label.empty() && label[0] == ']' &&
+        label.find(':') == std::string::npos) {
+      int seq = ++var_label_seq_[label];
+      return label + "_" + std::to_string(seq);
+    }
+    return label;
+  }
   bool MacroExists(const std::string &name) const {
     return macros_.find(name) != macros_.end();
   }

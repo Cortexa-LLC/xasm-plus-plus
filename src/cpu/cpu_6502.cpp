@@ -28,7 +28,8 @@ using namespace M6502Mnemonics;
  */
 std::vector<uint8_t> Cpu6502::EncodeWithTable(const OpcodeTable &table,
                                               uint32_t operand,
-                                              AddressingMode mode) const {
+                                              AddressingMode mode,
+                                              ImmWidth imm_width) const {
   std::vector<uint8_t> bytes;
   std::optional<uint8_t> opcode;
 
@@ -168,7 +169,21 @@ std::vector<uint8_t> Cpu6502::EncodeWithTable(const OpcodeTable &table,
 
     // Add operand bytes based on addressing mode
     switch (mode) {
-    case AddressingMode::Immediate:
+    case AddressingMode::Immediate: {
+      // In 65816 native mode, accumulator/index instructions may use
+      // 16-bit immediates depending on the M and X status flags.
+      bool use_16bit = false;
+      if (cpu_mode_ == CpuMode::Cpu65816) {
+        if (imm_width == ImmWidth::UseM && !m_flag_)
+          use_16bit = true;
+        if (imm_width == ImmWidth::UseX && !x_flag_)
+          use_16bit = true;
+      }
+      bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
+      if (use_16bit)
+        bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF));
+      break;
+    }
     case AddressingMode::ZeroPage:
     case AddressingMode::ZeroPageX:
     case AddressingMode::ZeroPageY:
@@ -244,7 +259,7 @@ std::vector<uint8_t> Cpu6502::EncodeLDA(uint32_t operand,
       .stack_relative_indirect_indexed_y = Opcodes::LDA_SRY // 65816
   };
 
-  return EncodeWithTable(LDA_TABLE, operand, mode);
+  return EncodeWithTable(LDA_TABLE, operand, mode, ImmWidth::UseM);
 }
 
 // STA - Store Accumulator
@@ -332,7 +347,7 @@ std::vector<uint8_t> Cpu6502::EncodeADC(uint16_t operand,
       .stack_relative = std::nullopt,
       .stack_relative_indirect_indexed_y = std::nullopt};
 
-  return EncodeWithTable(ADC_TABLE, operand, mode);
+  return EncodeWithTable(ADC_TABLE, operand, mode, ImmWidth::UseM);
 }
 
 // SBC - Subtract with Carry
@@ -359,7 +374,7 @@ std::vector<uint8_t> Cpu6502::EncodeSBC(uint16_t operand,
       .stack_relative = std::nullopt,
       .stack_relative_indirect_indexed_y = std::nullopt};
 
-  return EncodeWithTable(SBC_TABLE, operand, mode);
+  return EncodeWithTable(SBC_TABLE, operand, mode, ImmWidth::UseM);
 }
 
 // Phase 2.2: Logic Instructions
@@ -388,7 +403,7 @@ std::vector<uint8_t> Cpu6502::EncodeAND(uint16_t operand,
       .stack_relative = std::nullopt,
       .stack_relative_indirect_indexed_y = std::nullopt};
 
-  return EncodeWithTable(AND_TABLE, operand, mode);
+  return EncodeWithTable(AND_TABLE, operand, mode, ImmWidth::UseM);
 }
 
 // ORA - Logical OR
@@ -415,7 +430,7 @@ std::vector<uint8_t> Cpu6502::EncodeORA(uint16_t operand,
       .stack_relative = std::nullopt,
       .stack_relative_indirect_indexed_y = std::nullopt};
 
-  return EncodeWithTable(ORA_TABLE, operand, mode);
+  return EncodeWithTable(ORA_TABLE, operand, mode, ImmWidth::UseM);
 }
 
 // EOR - Exclusive OR
@@ -442,7 +457,7 @@ std::vector<uint8_t> Cpu6502::EncodeEOR(uint16_t operand,
       .stack_relative = std::nullopt,
       .stack_relative_indirect_indexed_y = std::nullopt};
 
-  return EncodeWithTable(EOR_TABLE, operand, mode);
+  return EncodeWithTable(EOR_TABLE, operand, mode, ImmWidth::UseM);
 }
 
 // Phase 2.2: Additional Loads/Stores
@@ -470,7 +485,7 @@ std::vector<uint8_t> Cpu6502::EncodeLDX(uint16_t operand,
       .indirect_long_indexed_y = std::nullopt,
       .stack_relative = std::nullopt,
       .stack_relative_indirect_indexed_y = std::nullopt};
-  return EncodeWithTable(LDX_TABLE, operand, mode);
+  return EncodeWithTable(LDX_TABLE, operand, mode, ImmWidth::UseX);
 }
 
 // LDY - Load Y Register
@@ -496,7 +511,7 @@ std::vector<uint8_t> Cpu6502::EncodeLDY(uint16_t operand,
       .indirect_long_indexed_y = std::nullopt,
       .stack_relative = std::nullopt,
       .stack_relative_indirect_indexed_y = std::nullopt};
-  return EncodeWithTable(LDY_TABLE, operand, mode);
+  return EncodeWithTable(LDY_TABLE, operand, mode, ImmWidth::UseX);
 }
 
 // STX - Store X Register
@@ -576,7 +591,7 @@ std::vector<uint8_t> Cpu6502::EncodeCMP(uint16_t operand,
       .indirect_long_indexed_y = std::nullopt,
       .stack_relative = std::nullopt,
       .stack_relative_indirect_indexed_y = std::nullopt};
-  return EncodeWithTable(CMP_TABLE, operand, mode);
+  return EncodeWithTable(CMP_TABLE, operand, mode, ImmWidth::UseM);
 }
 
 // CPX - Compare X Register
@@ -602,7 +617,7 @@ std::vector<uint8_t> Cpu6502::EncodeCPX(uint16_t operand,
       .indirect_long_indexed_y = std::nullopt,
       .stack_relative = std::nullopt,
       .stack_relative_indirect_indexed_y = std::nullopt};
-  return EncodeWithTable(CPX_TABLE, operand, mode);
+  return EncodeWithTable(CPX_TABLE, operand, mode, ImmWidth::UseX);
 }
 
 // CPY - Compare Y Register
@@ -628,7 +643,7 @@ std::vector<uint8_t> Cpu6502::EncodeCPY(uint16_t operand,
       .indirect_long_indexed_y = std::nullopt,
       .stack_relative = std::nullopt,
       .stack_relative_indirect_indexed_y = std::nullopt};
-  return EncodeWithTable(CPY_TABLE, operand, mode);
+  return EncodeWithTable(CPY_TABLE, operand, mode, ImmWidth::UseX);
 }
 
 // Phase 2.2: Branch Instructions
@@ -2022,6 +2037,10 @@ std::vector<uint8_t> Cpu6502::EncodeSEP(uint16_t value,
   // SEP only has Immediate mode; accept any mode for vasm compatibility
   // (source may use 'sep $30' without '#' prefix)
   (void)mode;
+  // Update M/X flags: SEP sets bits (1 = 8-bit)
+  // Bit 5 (0x20) = M flag, Bit 4 (0x10) = X flag
+  if (value & 0x20) m_flag_ = true;  // set M → 8-bit accumulator
+  if (value & 0x10) x_flag_ = true;  // set X → 8-bit index
   return {Opcodes::SEP, static_cast<uint8_t>(value & 0xFF)};
 }
 
@@ -2030,6 +2049,10 @@ std::vector<uint8_t> Cpu6502::EncodeREP(uint16_t value,
   // REP only has Immediate mode; accept any mode for vasm compatibility
   // (source may use 'rep $30' without '#' prefix)
   (void)mode;
+  // Update M/X flags: REP clears bits (0 = 16-bit)
+  // Bit 5 (0x20) = M flag, Bit 4 (0x10) = X flag
+  if (value & 0x20) m_flag_ = false;  // clear M → 16-bit accumulator
+  if (value & 0x10) x_flag_ = false;  // clear X → 16-bit index
   return {Opcodes::REP, static_cast<uint8_t>(value & 0xFF)};
 }
 
@@ -2040,6 +2063,20 @@ std::vector<uint8_t> Cpu6502::EncodeREP(uint16_t value,
 void Cpu6502::SetCpuMode(CpuMode mode) { cpu_mode_ = mode; }
 
 CpuMode Cpu6502::GetCpuMode() const { return cpu_mode_; }
+
+void Cpu6502::SetCpuModeFromAtom(int mode) {
+  switch (mode) {
+    case 0: SetCpuMode(CpuMode::Cpu6502);  break;
+    case 1: SetCpuMode(CpuMode::Cpu65C02); break;
+    case 2: SetCpuMode(CpuMode::Cpu65816); break;
+    default: break;
+  }
+  // Reset MX flags to 8-bit default whenever the CPU mode changes.
+  // REP/SEP instructions in the atom stream will update them as they
+  // are encoded in-order, so each pass sees consistent state.
+  m_flag_ = true;
+  x_flag_ = true;
+}
 
 void Cpu6502::SetMX(bool m_flag, bool x_flag) {
   m_flag_ = m_flag;

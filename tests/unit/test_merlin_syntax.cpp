@@ -3,6 +3,7 @@
 // Phases 4-6: PUT, DFB, DO/FIN
 
 #include "xasm++/assembler.h"
+#include "xasm++/atom.h"
 #include "xasm++/cpu/cpu_6502.h"
 #include "xasm++/symbol.h"
 #include "xasm++/syntax/merlin_syntax.h"
@@ -1818,8 +1819,16 @@ TEST(MerlinSyntaxTest, MxDirectiveBinary) {
   parser.Parse(" mx %10", section, symbols); // 8-bit A, 16-bit X/Y
   parser.Parse(" mx %11", section, symbols); // 8-bit A, 8-bit X/Y
 
-  // MX is a state-tracking directive - should produce no atoms
-  EXPECT_EQ(section.atoms.size(), 0UL);
+  // MX emits one MxAtom per call so the encoder can replay the M/X state.
+  ASSERT_EQ(section.atoms.size(), 4UL);
+  auto *mx0 = dynamic_cast<MxAtom *>(section.atoms[0].get());
+  ASSERT_NE(mx0, nullptr);
+  EXPECT_FALSE(mx0->m_flag); // %00 = M=0, X=0
+  EXPECT_FALSE(mx0->x_flag);
+  auto *mx3 = dynamic_cast<MxAtom *>(section.atoms[3].get());
+  ASSERT_NE(mx3, nullptr);
+  EXPECT_TRUE(mx3->m_flag);  // %11 = M=1, X=1
+  EXPECT_TRUE(mx3->x_flag);
 }
 
 TEST(MerlinSyntaxTest, MxDirectiveDecimal) {
@@ -1834,8 +1843,16 @@ TEST(MerlinSyntaxTest, MxDirectiveDecimal) {
   parser.Parse(" mx 2", section, symbols); // Same as %10
   parser.Parse(" mx 3", section, symbols); // Same as %11
 
-  // MX is a state-tracking directive - should produce no atoms
-  EXPECT_EQ(section.atoms.size(), 0UL);
+  // MX emits one MxAtom per call so the encoder can replay the M/X state.
+  ASSERT_EQ(section.atoms.size(), 4UL);
+  auto *mx1 = dynamic_cast<MxAtom *>(section.atoms[1].get());
+  ASSERT_NE(mx1, nullptr);
+  EXPECT_FALSE(mx1->m_flag); // 1 = M=0, X=1
+  EXPECT_TRUE(mx1->x_flag);
+  auto *mx3 = dynamic_cast<MxAtom *>(section.atoms[3].get());
+  ASSERT_NE(mx3, nullptr);
+  EXPECT_TRUE(mx3->m_flag);  // 3 = M=1, X=1
+  EXPECT_TRUE(mx3->x_flag);
 }
 
 TEST(MerlinSyntaxTest, MxDirectiveInvalidBinary) {
@@ -2226,8 +2243,9 @@ TEST(MerlinSyntaxTest, DbForwardReference) {
   EXPECT_EQ(output[1], 0x10u) << "High byte of PlayCut0 ($1002)";
 }
 
-// .Inc suffix: symbol.Inc evaluates to symbol+1
-TEST(MerlinSyntaxTest, IncDecSuffixInExpression) {
+// `.` is Merlin OR operator: symbol.OtherSymbol = symbol | OtherSymbol
+// Verified against PoP MASTER.S: RdGrp=$84, Inc=$40 → RdGrp.Inc = $84|$40 = $C4
+TEST(MerlinSyntaxTest, DotIsOrOperatorNotIncrement) {
   auto cpu = std::make_unique<Cpu6502>();
   cpu->SetCpuMode(CpuMode::Cpu6502);
 
@@ -2237,11 +2255,11 @@ TEST(MerlinSyntaxTest, IncDecSuffixInExpression) {
   ConcreteSymbolTable symbols;
   Section section("test", 0);
 
-  // RdGrp = $84; db RdGrp.Inc should emit $85
+  // RdGrp=$84, Inc=$40: RdGrp.Inc = $84 | $40 = $C4 (OR, not +1)
   std::string source = "RdGrp = $84\n"
+                       "Inc = $40\n"
                        " org $1000\n"
-                       " db RdGrp.Inc\n"
-                       " db RdGrp.Dec\n";
+                       " db RdGrp.Inc\n";
   parser.Parse(source, section, symbols);
 
   Assembler assembler;
@@ -2249,7 +2267,7 @@ TEST(MerlinSyntaxTest, IncDecSuffixInExpression) {
   assembler.SetSymbolTable(&symbols);
   assembler.AddSection(section);
   AssemblerResult result = assembler.Assemble();
-  ASSERT_TRUE(result.success) << ".Inc/.Dec must assemble";
+  ASSERT_TRUE(result.success) << "RdGrp.Inc must assemble";
 
   std::vector<uint8_t> bytes;
   for (const auto &atom : section.atoms) {
@@ -2259,9 +2277,8 @@ TEST(MerlinSyntaxTest, IncDecSuffixInExpression) {
         bytes.insert(bytes.end(), data->data.begin(), data->data.end());
     }
   }
-  ASSERT_EQ(bytes.size(), 2u);
-  EXPECT_EQ(bytes[0], 0x85u) << "RdGrp.Inc = $85";
-  EXPECT_EQ(bytes[1], 0x83u) << "RdGrp.Dec = $83";
+  ASSERT_EQ(bytes.size(), 1u);
+  EXPECT_EQ(bytes[0], 0xC4u) << "RdGrp.Inc = $84|$40 = $C4";
 }
 
 // Multi-pass: mixed resolved and forward-referenced values in the same DB
@@ -2594,11 +2611,12 @@ TEST(MerlinSyntaxTest, CharLiteralEquateCompoundMinusSymbol) {
 }
 
 // ============================================================================
-// ADR-005 V9: Merlin bitwise operators — `.` (OR) and `!` (XOR)
+// ADR-005 V9: Merlin bitwise operators — `.` (OR) and `!` (OR)
 // ============================================================================
 
-// `!` is bitwise XOR: FinalDisk EQU 1  /  lda #FinalDisk!$FE → lda #$FF
-TEST(MerlinSyntaxTest, V9_BitwiseXor_ImmediateOperand) {
+// `!` is bitwise OR in Merlin (same as `.`): FinalDisk EQU 1 / lda #FinalDisk!1 → lda #1
+// Empirically verified against vasm reference: FinalDisk=1, FinalDisk!1 = 1 (OR, not XOR)
+TEST(MerlinSyntaxTest, V9_BitwiseOr_Bang_ImmediateOperand) {
   auto cpu = std::make_unique<Cpu6502>();
   cpu->SetCpuMode(CpuMode::Cpu6502);
 
@@ -2610,7 +2628,7 @@ TEST(MerlinSyntaxTest, V9_BitwiseXor_ImmediateOperand) {
 
   std::string source = " org $1000\n"
                        "FinalDisk EQU 1\n"
-                       " lda #FinalDisk!$FE\n"; // 1 XOR $FE = $FF
+                       " lda #FinalDisk!1\n"; // 1 OR 1 = 1 (vasm-verified)
   parser.Parse(source, section, symbols);
 
   Assembler assembler;
@@ -2619,7 +2637,7 @@ TEST(MerlinSyntaxTest, V9_BitwiseXor_ImmediateOperand) {
   assembler.AddSection(section);
   assembler.SetExpressionFeatures(ParserFeatures::ForMerlin());
   AssemblerResult result = assembler.Assemble();
-  ASSERT_TRUE(result.success) << "XOR immediate must assemble";
+  ASSERT_TRUE(result.success) << "OR immediate must assemble";
 
   std::vector<uint8_t> output;
   for (const auto &atom : section.atoms) {
@@ -2632,7 +2650,7 @@ TEST(MerlinSyntaxTest, V9_BitwiseXor_ImmediateOperand) {
   }
   ASSERT_EQ(output.size(), 2u) << "lda immediate = 2 bytes";
   EXPECT_EQ(output[0], 0xA9u) << "lda immediate opcode";
-  EXPECT_EQ(output[1], 0xFFu) << "1 XOR $FE = $FF";
+  EXPECT_EQ(output[1], 0x01u) << "1 OR 1 = 1 (matches vasm reference)";
 }
 
 // `.` is bitwise OR: sta EQU 2  /  lda #sta.$40 → lda #$42
@@ -2686,8 +2704,8 @@ TEST(MerlinSyntaxTest, V9_BitwiseOr_Equate) {
   EXPECT_EQ(val, 0x81) << "EQU $01.$80 must yield $81";
 }
 
-// Equate using `!` XOR operator: MASK EQU $FF!$0F → $F0
-TEST(MerlinSyntaxTest, V9_BitwiseXor_Equate) {
+// Equate using `!` OR operator: MASK EQU $FF!$0F → $FF (OR, not XOR)
+TEST(MerlinSyntaxTest, V9_BitwiseOr_Bang_Equate) {
   MerlinSyntaxParser parser;
   ConcreteSymbolTable symbols;
   Section section("test", 0);
@@ -2696,7 +2714,7 @@ TEST(MerlinSyntaxTest, V9_BitwiseXor_Equate) {
 
   int64_t val = 0;
   ASSERT_TRUE(symbols.Lookup("MASK", val));
-  EXPECT_EQ(val, 0xF0) << "EQU $FF!$0F must yield $F0";
+  EXPECT_EQ(val, 0xFF) << "EQU $FF!$0F must yield $FF (OR, not XOR)";
 }
 
 // `.` between two alpha symbols is NOT OR — it looks up SYM.FIELD
