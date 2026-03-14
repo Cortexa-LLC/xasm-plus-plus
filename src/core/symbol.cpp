@@ -1,6 +1,8 @@
 // Symbol implementation
 
 #include "xasm++/symbol.h"
+#include <algorithm>
+#include <cctype>
 
 namespace xasm {
 
@@ -34,6 +36,21 @@ bool ConcreteSymbolTable::Lookup(const std::string &name,
   if (it != symbols_.end()) {
     value = it->second.value->Evaluate(*this);
     return true;
+  }
+  // ADR-005 V1: SCMASM uppercase fallback — when enabled, retry lookup with
+  // the fully-uppercased name.  SCMASM normalises symbols to UPPERCASE at
+  // definition time, so "TmpPtr2" must resolve to "TMPPTR2".
+  if (uppercase_fallback_) {
+    std::string upper = name;
+    std::transform(upper.begin(), upper.end(), upper.begin(),
+                   [](unsigned char c) { return std::toupper(c); });
+    if (upper != name) {
+      auto it2 = symbols_.find(upper);
+      if (it2 != symbols_.end()) {
+        value = it2->second.value->Evaluate(*this);
+        return true;
+      }
+    }
   }
   return false;
 }

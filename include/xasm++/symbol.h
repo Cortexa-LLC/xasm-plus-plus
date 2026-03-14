@@ -117,6 +117,22 @@ public:
   ConcreteSymbolTable() = default;
 
   /**
+   * @brief Enable uppercase fallback for symbol lookup.
+   *
+   * When enabled, Lookup() will retry with the fully-uppercased name if the
+   * original name is not found.  This implements SCMASM semantics: SCMASM
+   * normalises all symbols to UPPERCASE at definition time, so a mixed-case
+   * reference like "TmpPtr2" must resolve to "TMPPTR2".
+   *
+   * @param enabled true to enable the fallback (SCMASM mode), false to disable
+   *
+   * @note ADR-005 V1 migration: the fallback was previously duplicated in
+   *       assembler.cpp ParseExpression and the branch-resolution loop.  It
+   *       now lives here, its logical home.
+   */
+  void SetUppercaseFallback(bool enabled) { uppercase_fallback_ = enabled; }
+
+  /**
    * @brief Define a new symbol
    *
    * Adds or updates a symbol in the table. For Label and Equate symbols,
@@ -232,6 +248,7 @@ public:
 private:
   std::unordered_map<std::string, Symbol> symbols_; ///< Internal symbol storage
   int64_t current_location_ = 0; ///< Current assembly address for $ operator
+  bool uppercase_fallback_ = false; ///< SCMASM: retry lookup with UPPERCASE name
 };
 
 } // namespace xasm

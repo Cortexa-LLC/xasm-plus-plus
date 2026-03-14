@@ -348,6 +348,13 @@ void ScmasmSyntaxParser::SetPathMappings(
 
 void ScmasmSyntaxParser::Parse(const std::string &source, Section &section,
                                ConcreteSymbolTable &symbols) {
+  // SCMASM normalises all symbols to UPPERCASE at definition time.  Enable the
+  // uppercase-fallback mode in the symbol table so that mixed-case references
+  // (e.g. "TmpPtr2") resolve to their normalised UPPERCASE counterparts.
+  // ADR-005 V1: this is the canonical place for the fallback; it is no longer
+  // duplicated in assembler.cpp ParseExpression or the branch-resolution loop.
+  symbols.SetUppercaseFallback(true);
+
   // Split source into lines
   std::vector<std::string> lines;
   std::istringstream stream(source);

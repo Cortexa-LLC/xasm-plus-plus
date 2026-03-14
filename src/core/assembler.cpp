@@ -315,22 +315,10 @@ ParseExpression(const std::string &str, ConcreteSymbolTable &symbols) {
     return std::make_shared<LiteralExpr>(value);
   }
 
-  // Symbol reference - try original case first, then uppercase fallback.
-  // SCMASM normalizes all symbols to UPPERCASE at definition time, so a
-  // mixed-case reference like "TmpPtr2" must resolve to "TMPPTR2".
-  // ADR-005: pending V1 migration — case-fold belongs in ConcreteSymbolTable,
-  // not here. See docs/adr/review-assembler-syntax-quality-2026.md Finding 3.
+  // Symbol reference. ConcreteSymbolTable::Lookup handles the SCMASM
+  // uppercase fallback internally (ADR-005 V1: migration complete).
   {
     std::string sym_name = trimmed;
-    int64_t probe = 0;
-    if (!symbols.Lookup(sym_name, probe)) {
-      std::string upper = sym_name;
-      std::transform(upper.begin(), upper.end(), upper.begin(),
-                     [](unsigned char c) { return std::toupper(c); });
-      if (symbols.Lookup(upper, probe)) {
-        sym_name = upper;
-      }
-    }
     return std::make_shared<SymbolExpr>(sym_name);
   }
 }
@@ -600,56 +588,33 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
                 resolved_operand = oss.str();
               } else if (!trimmed.empty() && trimmed[0] != '$' &&
                          trimmed[0] != '#' && trimmed[0] != '(') {
-                // Try to resolve as symbol (case-insensitive: try original
-                // case first, then uppercase fallback since SCMASM normalizes
-                // all symbols to UPPERCASE at definition time)
-                // ADR-005: pending V1 migration — same issue as ParseExpression
-                // line ~320; case-fold belongs in ConcreteSymbolTable::Lookup.
+                // Try to resolve as symbol.  ConcreteSymbolTable::Lookup
+                // handles SCMASM uppercase fallback internally
+                // (ADR-005 V1: migration complete — no manual toupper here).
                 int64_t symbol_value;
                 int64_t expr_offset = 0;
                 std::string lookup_name = trimmed;
                 if (!symbols.Lookup(lookup_name, symbol_value)) {
-                  std::string upper = trimmed;
-                  std::transform(upper.begin(), upper.end(), upper.begin(),
-                                 [](unsigned char c) {
-                                   return std::toupper(c);
-                                 });
-                  if (symbols.Lookup(upper, symbol_value)) {
-                    lookup_name = upper;
-                  } else {
-                    // Try SYMBOL+N or SYMBOL-N form (e.g. "LABEL+5")
-                    // Symbol chars are alphanumeric, '.', '_', '@', ':'
-                    // Scan for a '+' or '-' that follows at least one symbol char
-                    lookup_name = "";
-                    for (size_t i = 1; i < trimmed.size(); ++i) {
-                      char c = trimmed[i];
-                      if (c == '+' || c == '-') {
-                        std::string sym_part = trimmed.substr(0, i);
-                        std::string off_str  = trimmed.substr(i);
-                        int64_t sym_val = 0;
-                        // Try original case, then uppercase
-                        bool found = symbols.Lookup(sym_part, sym_val);
-                        if (!found) {
-                          std::string sym_up = sym_part;
-                          std::transform(sym_up.begin(), sym_up.end(),
-                                         sym_up.begin(),
-                                         [](unsigned char cc) {
-                                           return std::toupper(cc);
-                                         });
-                          found = symbols.Lookup(sym_up, sym_val);
-                          if (found) sym_part = sym_up;
+                  // Try SYMBOL+N or SYMBOL-N form (e.g. "LABEL+5")
+                  // Symbol chars are alphanumeric, '.', '_', '@', ':'
+                  // Scan for a '+' or '-' that follows at least one symbol char
+                  lookup_name = "";
+                  for (size_t i = 1; i < trimmed.size(); ++i) {
+                    char c = trimmed[i];
+                    if (c == '+' || c == '-') {
+                      std::string sym_part = trimmed.substr(0, i);
+                      std::string off_str  = trimmed.substr(i);
+                      int64_t sym_val = 0;
+                      if (symbols.Lookup(sym_part, sym_val)) {
+                        // Parse the numeric offset (decimal or hex)
+                        try {
+                          expr_offset = std::stoll(off_str, nullptr, 0);
+                        } catch (...) {
+                          expr_offset = 0;
                         }
-                        if (found) {
-                          // Parse the numeric offset (decimal or hex)
-                          try {
-                            expr_offset = std::stoll(off_str, nullptr, 0);
-                          } catch (...) {
-                            expr_offset = 0;
-                          }
-                          symbol_value = sym_val;
-                          lookup_name  = sym_part;
-                          break;
-                        }
+                        symbol_value = sym_val;
+                        lookup_name  = sym_part;
+                        break;
                       }
                     }
                   }
