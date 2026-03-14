@@ -99,3 +99,10 @@ build/include/
 # Dolt database files (added by bd init)
 .dolt/
 *.db
+
+# Stale build test artifacts
+build-test/
+
+# MAME runtime files (if ever used)
+cfg/
+nvram/
