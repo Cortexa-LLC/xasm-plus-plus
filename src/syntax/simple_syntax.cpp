@@ -5,22 +5,13 @@
 #include "xasm++/directives/directive_constants.h"
 #include "xasm++/directives/simple_directive_handlers.h"
 #include "xasm++/parse_utils.h"
+#include "xasm++/util/string_utils.h"
 #include <algorithm>
 #include <cctype>
 #include <sstream>
 #include <vector>
 
 namespace xasm {
-
-// Helper: Trim whitespace
-static std::string Trim(const std::string &str) {
-  size_t start = str.find_first_not_of(" \t");
-  if (start == std::string::npos) {
-    return "";
-  }
-  size_t end = str.find_last_not_of(" \t");
-  return str.substr(start, end - start + 1);
-}
 
 // Helper: Convert to uppercase
 static std::string ToUpper(const std::string &str) {
@@ -73,7 +64,7 @@ void SimpleSyntaxParser::Parse(const std::string &source, Section &section,
   while (std::getline(iss, line)) {
     // Strip comments first
     line = StripComments(line);
-    line = Trim(line);
+    line = util::Trim(line);
 
     if (line.empty()) {
       continue;
@@ -83,7 +74,7 @@ void SimpleSyntaxParser::Parse(const std::string &source, Section &section,
     size_t colon_pos = line.find(':');
     if (colon_pos != std::string::npos) {
       // Extract label name
-      std::string label_name = Trim(line.substr(0, colon_pos));
+      std::string label_name = util::Trim(line.substr(0, colon_pos));
 
       if (!label_name.empty() && IsIdentifierStart(label_name[0])) {
         // Define symbol
@@ -96,7 +87,7 @@ void SimpleSyntaxParser::Parse(const std::string &source, Section &section,
 
         // Continue parsing rest of line (if any)
         if (colon_pos + 1 < line.length()) {
-          line = Trim(line.substr(colon_pos + 1));
+          line = util::Trim(line.substr(colon_pos + 1));
         } else {
           continue; // Label only, no instruction
         }
@@ -114,7 +105,7 @@ void SimpleSyntaxParser::Parse(const std::string &source, Section &section,
       std::string directive = ToUpper(line.substr(1, space_pos - 1));
       std::string operands;
       if (space_pos != std::string::npos) {
-        operands = Trim(line.substr(space_pos + 1));
+        operands = util::Trim(line.substr(space_pos + 1));
       }
 
       // Setup context for directive execution
@@ -131,10 +122,10 @@ void SimpleSyntaxParser::Parse(const std::string &source, Section &section,
       std::string mnemonic, operands;
 
       if (space_pos != std::string::npos) {
-        mnemonic = ToUpper(Trim(line.substr(0, space_pos)));
-        operands = Trim(line.substr(space_pos + 1));
+        mnemonic = ToUpper(util::Trim(line.substr(0, space_pos)));
+        operands = util::Trim(line.substr(space_pos + 1));
       } else {
-        mnemonic = ToUpper(Trim(line));
+        mnemonic = ToUpper(util::Trim(line));
         operands = "";
       }
 

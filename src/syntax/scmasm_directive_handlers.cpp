@@ -70,9 +70,6 @@ char ParseString(const std::string &operand, std::vector<uint8_t> &result) {
   result.clear();
 
   std::string trimmed = Trim(operand);
-  if (trimmed.empty()) {
-    throw std::runtime_error("String directive requires operand");
-  }
 
   // Find delimiter (first character)
   char delimiter = trimmed[0];
@@ -115,9 +112,6 @@ char ParseStringInverted(const std::string &operand,
   result.clear();
 
   std::string trimmed = Trim(operand);
-  if (trimmed.empty()) {
-    throw std::runtime_error("String directive requires operand");
-  }
 
   // Find delimiter (first character)
   char delimiter = trimmed[0];
@@ -301,6 +295,8 @@ void HandleAs(const std::string &label, const std::string &operand,
               DirectiveContext &context) {
   (void)label; // Label handled separately
 
+  RequireOperand(operand, ".AS", context);
+
   // SCMASM prefix modifiers before the opening delimiter:
   //   -"text"  set high bit on the LAST byte (same as .AT)
   // Strip the prefix and delegate appropriately.
@@ -329,6 +325,8 @@ void HandleAt(const std::string &label, const std::string &operand,
               DirectiveContext &context) {
   (void)label; // Label handled separately
 
+  RequireOperand(operand, ".AT", context);
+
   std::vector<uint8_t> data;
   ParseString(operand, data);
 
@@ -347,6 +345,8 @@ void HandleAt(const std::string &label, const std::string &operand,
 void HandleAz(const std::string &label, const std::string &operand,
               DirectiveContext &context) {
   (void)label; // Label handled separately
+
+  RequireOperand(operand, ".AZ", context);
 
   // SCMASM prefix modifiers before the opening delimiter:
   //   -"text"  set high bit on ALL bytes (Apple II normal-video encoding)
@@ -714,12 +714,12 @@ void HandleHs(const std::string &label, const std::string &operand,
 
   // Error if odd hex digits appeared before any valid data (e.g. ".HS 012")
   if (odd_hex_before_data) {
-    throw std::runtime_error(".HS requires even number of hex digits");
+    ThrowFormattedError(".HS requires even number of hex digits", context);
   }
 
   // Must have even number of digits (catches concatenation edge cases)
   if (hex_digits.length() % constants::HEX_DIGITS_PER_BYTE != 0) {
-    throw std::runtime_error(".HS requires even number of hex digits");
+    ThrowFormattedError(".HS requires even number of hex digits", context);
   }
 
   // Convert pairs to bytes using ParseHex utility
@@ -771,7 +771,7 @@ void HandleBs(const std::string &label, const std::string &operand,
 
   // Validate byte count (reasonable limit: 64KB)
   if (byte_count > 65536) {
-    throw std::runtime_error(".BS byte count too large (max 65536)");
+    ThrowFormattedError(".BS byte count too large (max 65536)", context);
   }
 
   // Check if in dummy mode (structure definition)
@@ -802,7 +802,7 @@ void HandleMa(const std::string &label, const std::string &operand,
   } else if (!operand.empty()) {
     macro_name = Trim(operand);
   } else {
-    throw std::runtime_error(".MA requires a macro name");
+    ThrowFormattedError(".MA requires a macro name", context);
   }
 
   // Access parser state to set macro definition mode
@@ -836,13 +836,15 @@ void HandlePs(const std::string &label, const std::string &operand,
               DirectiveContext &context) {
   (void)label; // Label handled separately
 
+  RequireOperand(operand, ".PS", context);
+
   // Parse string with INVERTED high-bit rule (.PS is opposite of .AS)
   std::vector<uint8_t> data;
   ParseStringInverted(operand, data);
 
   // Validate length (Pascal strings are max 255 bytes)
   if (data.size() > constants::PASCAL_STRING_MAX_LENGTH) {
-    throw std::runtime_error(".PS string too long (max 255 bytes)");
+    ThrowFormattedError(".PS string too long (max 255 bytes)", context);
   }
 
   // Create result with length prefix
@@ -1080,14 +1082,14 @@ void HandleInb(const std::string &label, const std::string &operand,
       }
       error_msg += ")";
     }
-    throw std::runtime_error(error_msg);
+    ThrowFormattedError(error_msg, context);
   }
 
   // Read included file as text
   std::ifstream file(resolved_path);
   if (!file.is_open()) {
-    throw std::runtime_error(".INB cannot open file: " +
-                             resolved_path.string());
+    ThrowFormattedError(".INB cannot open file: " + resolved_path.string(),
+                        context);
   }
 
   // Read entire file content
@@ -1096,10 +1098,8 @@ void HandleInb(const std::string &label, const std::string &operand,
   std::string source_content = buffer.str();
 
   // Get parser from context
+  ValidateParser(context.parser_state);
   auto *parser = static_cast<ScmasmSyntaxParser *>(context.parser_state);
-  if (!parser) {
-    throw std::runtime_error(".INB: parser_state is null");
-  }
 
   // Save current file for restoration
   std::string previous_file = parser->GetCurrentFile();
@@ -1174,7 +1174,7 @@ void HandleOp(const std::string &label, const std::string &operand,
 
   // Validate CPU name (6502, 65C02, 65816)
   if (trimmed != "6502" && trimmed != "65C02" && trimmed != "65816") {
-    throw std::runtime_error(".OP requires valid CPU (6502, 65C02, 65816)");
+    ThrowFormattedError(".OP requires valid CPU (6502, 65C02, 65816)", context);
   }
 
   // Switch CPU plugin based on operand
@@ -1279,9 +1279,6 @@ void ParseCString(const std::string &operand, std::vector<uint8_t> &result,
   result.clear();
 
   std::string trimmed = Trim(operand);
-  if (trimmed.empty()) {
-    throw std::runtime_error("String directive requires operand");
-  }
 
   // Find delimiter (first character)
   char delimiter = trimmed[0];
@@ -1327,6 +1324,8 @@ void HandleCs(const std::string &label, const std::string &operand,
               DirectiveContext &context) {
   (void)label; // Label handled separately
 
+  RequireOperand(operand, ".CS", context);
+
   std::vector<uint8_t> data;
   ParseCString(operand, data, /*mixed_delim=*/true);
 
@@ -1340,6 +1339,8 @@ void HandleCs(const std::string &label, const std::string &operand,
 void HandleCz(const std::string &label, const std::string &operand,
               DirectiveContext &context) {
   (void)label; // Label handled separately
+
+  RequireOperand(operand, ".CZ", context);
 
   std::vector<uint8_t> data;
   ParseCString(operand, data);
@@ -1368,7 +1369,7 @@ void HandleTf(const std::string &label, const std::string &operand,
   }
 
   if (path.empty()) {
-    throw std::runtime_error(".TF requires an output file path");
+    ThrowFormattedError(".TF requires an output file path", context);
   }
 
   // Create parent directories so the assembler never fails to open the file.
@@ -1408,8 +1409,8 @@ void HandleEp(const std::string &label, const std::string &operand,
       return;
     }
     // .EP with operand in phase context is an error
-    throw std::runtime_error(
-        ".EP with operand not allowed within .PH/.EP block");
+    ThrowFormattedError(".EP with operand not allowed within .PH/.EP block",
+                        context);
   }
 
   // Not in phase - treat as entry point directive
@@ -1441,10 +1442,8 @@ void HandlePh(const std::string &label, const std::string &operand,
   RequireOperand(operand, ".PH", context);
 
   // Cast parser state to access phase tracking
+  ValidateParser(context.parser_state);
   auto *parser = static_cast<ScmasmSyntaxParser *>(context.parser_state);
-  if (!parser) {
-    throw std::runtime_error("Parser state not available for .PH directive");
-  }
 
   // Strip inline comment then evaluate virtual address
   std::string ph_expr = Trim(operand);
@@ -1492,8 +1491,8 @@ void HandleHx(const std::string &label, const std::string &operand,
     // Convert single hex digit to nibble value (0-15)
     int val;
     if (!ParseHexDigit(c, val)) {
-      throw std::runtime_error("Invalid hex digit in .HX: " +
-                               std::string(1, c));
+      ThrowFormattedError("Invalid hex digit in .HX: " + std::string(1, c),
+                         context);
     }
     nibbles.push_back(static_cast<uint8_t>(val));
   }
@@ -1543,7 +1542,7 @@ void HandleDo(const std::string &label, const std::string &operand,
   // TODO: Implement conditional assembly
   // .DO/.FIN require special handling in ParseLine (not registry dispatch)
   // For now, stub implementation
-  throw std::runtime_error(".DO conditional assembly not yet implemented");
+  ThrowFormattedError(".DO conditional assembly not yet implemented", context);
 }
 
 void HandleFin(const std::string &label, const std::string &operand,
@@ -1554,7 +1553,7 @@ void HandleFin(const std::string &label, const std::string &operand,
 
   // TODO: Implement conditional assembly
   // For now, stub implementation
-  throw std::runtime_error(".FIN conditional assembly not yet implemented");
+  ThrowFormattedError(".FIN conditional assembly not yet implemented", context);
 }
 
 void HandleAc(const std::string &label, const std::string &operand,
@@ -1565,7 +1564,7 @@ void HandleAc(const std::string &label, const std::string &operand,
 
   // TODO: Implement .AC directive (ASCII string with optional numeric prefix)
   // For now, stub implementation
-  throw std::runtime_error(".AC directive not yet implemented");
+  ThrowFormattedError(".AC directive not yet implemented", context);
 }
 
 } // namespace scmasm

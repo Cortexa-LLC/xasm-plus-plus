@@ -9,6 +9,7 @@
 
 #include "xasm++/cpu/cpu_z80.h"
 #include "xasm++/cpu/opcodes_z80.h"
+#include "xasm++/util/string_utils.h"
 #include <algorithm>
 #include <unordered_set>
 
@@ -25,15 +26,7 @@ std::vector<uint8_t>
 CpuZ80::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
                           const std::string &operand_str) const {
   // Helper to trim whitespace
-  auto trim = [](const std::string &s) {
-    size_t start = s.find_first_not_of(" \t\n\r");
-    if (start == std::string::npos)
-      return std::string("");
-    size_t end = s.find_last_not_of(" \t\n\r");
-    return s.substr(start, end - start + 1);
-  };
-
-  std::string trimmed = trim(operand_str);
+  std::string trimmed = util::Trim(operand_str);
 
   // NOP instruction
   if (mnemonic == NOP) {
@@ -51,7 +44,7 @@ CpuZ80::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
     if (trimmed.find("BC,") == 0 || trimmed.find("BC ,") == 0) {
       size_t comma_pos = trimmed.find(',');
       if (comma_pos != std::string::npos) {
-        std::string value_part = trim(trimmed.substr(comma_pos + 1));
+        std::string value_part = util::Trim(trimmed.substr(comma_pos + 1));
         if (!value_part.empty() && value_part[0] == '#') {
           return EncodeLD_BC_nn(static_cast<uint16_t>(operand));
         }
@@ -61,7 +54,7 @@ CpuZ80::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
     if (trimmed.find("A,") == 0 || trimmed.find("A ,") == 0) {
       size_t comma_pos = trimmed.find(',');
       if (comma_pos != std::string::npos) {
-        std::string value_part = trim(trimmed.substr(comma_pos + 1));
+        std::string value_part = util::Trim(trimmed.substr(comma_pos + 1));
         // Check for immediate mode indicator (#)
         if (!value_part.empty() && value_part[0] == '#') {
           return EncodeLD_A_n(static_cast<uint8_t>(operand));

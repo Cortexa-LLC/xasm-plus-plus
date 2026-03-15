@@ -658,6 +658,10 @@ private:
                                        AddressingMode mode,
                                        ImmWidth imm_width = ImmWidth::Byte) const;
 
+  // Returns true when the CPU is in 65816 mode.
+  // Used as a guard at the top of every 65816-only Encode* method.
+  bool IsCpu65816() const { return cpu_mode_ == CpuMode::Cpu65816; }
+
 private:
   // Phase 2.5: CPU mode state
   CpuMode cpu_mode_ = CpuMode::Cpu6502; // Default to 6502

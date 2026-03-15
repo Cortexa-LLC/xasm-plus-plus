@@ -17,46 +17,31 @@ CpuMode Cpu6502::GetCpuMode() const { return cpu_mode_; }
 
 // PHB - Push Data Bank Register (65816)
 std::vector<uint8_t> Cpu6502::EncodePHB() const {
-  // Only available in 65816
-  if (cpu_mode_ != CpuMode::Cpu65816) {
-    return {}; // Not supported in 6502/65C02 mode
-  }
+  if (!IsCpu65816()) return {};
   return {0x8B};
 }
 
 // PLB - Pull Data Bank Register (65816)
 std::vector<uint8_t> Cpu6502::EncodePLB() const {
-  // Only available in 65816
-  if (cpu_mode_ != CpuMode::Cpu65816) {
-    return {}; // Not supported in 6502/65C02 mode
-  }
+  if (!IsCpu65816()) return {};
   return {0xAB};
 }
 
 // PHK - Push Program Bank Register (65816)
 std::vector<uint8_t> Cpu6502::EncodePHK() const {
-  // Only available in 65816
-  if (cpu_mode_ != CpuMode::Cpu65816) {
-    return {}; // Not supported in 6502/65C02 mode
-  }
+  if (!IsCpu65816()) return {};
   return {0x4B};
 }
 
 // PHD - Push Direct Page Register (65816)
 std::vector<uint8_t> Cpu6502::EncodePHD() const {
-  // Only available in 65816
-  if (cpu_mode_ != CpuMode::Cpu65816) {
-    return {}; // Not supported in 6502/65C02 mode
-  }
+  if (!IsCpu65816()) return {};
   return {0x0B};
 }
 
 // PLD - Pull Direct Page Register (65816)
 std::vector<uint8_t> Cpu6502::EncodePLD() const {
-  // Only available in 65816
-  if (cpu_mode_ != CpuMode::Cpu65816) {
-    return {}; // Not supported in 6502/65C02 mode
-  }
+  if (!IsCpu65816()) return {};
   return {0x2B};
 }
 
@@ -66,37 +51,25 @@ std::vector<uint8_t> Cpu6502::EncodePLD() const {
 
 // TCD - Transfer C to Direct Page (65816)
 std::vector<uint8_t> Cpu6502::EncodeTCD() const {
-  // Only available in 65816
-  if (cpu_mode_ != CpuMode::Cpu65816) {
-    return {}; // Not supported in 6502/65C02 mode
-  }
+  if (!IsCpu65816()) return {};
   return {0x5B};
 }
 
 // TDC - Transfer Direct Page to C (65816)
 std::vector<uint8_t> Cpu6502::EncodeTDC() const {
-  // Only available in 65816
-  if (cpu_mode_ != CpuMode::Cpu65816) {
-    return {}; // Not supported in 6502/65C02 mode
-  }
+  if (!IsCpu65816()) return {};
   return {0x7B};
 }
 
 // TCS - Transfer C to Stack Pointer (65816)
 std::vector<uint8_t> Cpu6502::EncodeTCS() const {
-  // Only available in 65816
-  if (cpu_mode_ != CpuMode::Cpu65816) {
-    return {}; // Not supported in 6502/65C02 mode
-  }
+  if (!IsCpu65816()) return {};
   return {0x1B};
 }
 
 // TSC - Transfer Stack Pointer to C (65816)
 std::vector<uint8_t> Cpu6502::EncodeTSC() const {
-  // Only available in 65816
-  if (cpu_mode_ != CpuMode::Cpu65816) {
-    return {}; // Not supported in 6502/65C02 mode
-  }
+  if (!IsCpu65816()) return {};
   return {0x3B};
 }
 
@@ -107,10 +80,7 @@ std::vector<uint8_t> Cpu6502::EncodeTSC() const {
 // JML - Jump Long (65816)
 std::vector<uint8_t> Cpu6502::EncodeJML(uint32_t operand,
                                         AddressingMode mode) const {
-  // Only available in 65816
-  if (cpu_mode_ != CpuMode::Cpu65816) {
-    return {}; // Not supported in 6502/65C02 mode
-  }
+  if (!IsCpu65816()) return {};
 
   std::vector<uint8_t> bytes;
 
@@ -127,10 +97,7 @@ std::vector<uint8_t> Cpu6502::EncodeJML(uint32_t operand,
 // JSL - Jump Subroutine Long (65816)
 std::vector<uint8_t> Cpu6502::EncodeJSL(uint32_t operand,
                                         AddressingMode mode) const {
-  // Only available in 65816
-  if (cpu_mode_ != CpuMode::Cpu65816) {
-    return {}; // Not supported in 6502/65C02 mode
-  }
+  if (!IsCpu65816()) return {};
 
   std::vector<uint8_t> bytes;
 
@@ -146,10 +113,7 @@ std::vector<uint8_t> Cpu6502::EncodeJSL(uint32_t operand,
 
 // RTL - Return from Subroutine Long (65816)
 std::vector<uint8_t> Cpu6502::EncodeRTL() const {
-  // Only available in 65816
-  if (cpu_mode_ != CpuMode::Cpu65816) {
-    return {}; // Not supported in 6502/65C02 mode
-  }
+  if (!IsCpu65816()) return {};
   return {0x6B};
 }
 
@@ -160,10 +124,7 @@ std::vector<uint8_t> Cpu6502::EncodeRTL() const {
 // PEA - Push Effective Address (65816)
 std::vector<uint8_t> Cpu6502::EncodePEA(uint16_t operand,
                                         AddressingMode mode) const {
-  // Only available in 65816
-  if (cpu_mode_ != CpuMode::Cpu65816) {
-    return {}; // Not supported in 6502/65C02 mode
-  }
+  if (!IsCpu65816()) return {};
 
   std::vector<uint8_t> bytes;
 
@@ -179,10 +140,7 @@ std::vector<uint8_t> Cpu6502::EncodePEA(uint16_t operand,
 // PEI - Push Effective Indirect Address (65816)
 std::vector<uint8_t> Cpu6502::EncodePEI(uint8_t operand,
                                         AddressingMode mode) const {
-  // Only available in 65816
-  if (cpu_mode_ != CpuMode::Cpu65816) {
-    return {}; // Not supported in 6502/65C02 mode
-  }
+  if (!IsCpu65816()) return {};
 
   std::vector<uint8_t> bytes;
 
@@ -197,10 +155,7 @@ std::vector<uint8_t> Cpu6502::EncodePEI(uint8_t operand,
 // PER - Push Effective PC Relative Address (65816)
 std::vector<uint8_t> Cpu6502::EncodePER(uint16_t operand,
                                         AddressingMode mode) const {
-  // Only available in 65816
-  if (cpu_mode_ != CpuMode::Cpu65816) {
-    return {}; // Not supported in 6502/65C02 mode
-  }
+  if (!IsCpu65816()) return {};
 
   std::vector<uint8_t> bytes;
 
@@ -216,30 +171,21 @@ std::vector<uint8_t> Cpu6502::EncodePER(uint16_t operand,
 // MVN - Block Move Negative (65816)
 std::vector<uint8_t> Cpu6502::EncodeMVN(uint8_t srcbank,
                                         uint8_t destbank) const {
-  // Only available in 65816
-  if (cpu_mode_ != CpuMode::Cpu65816) {
-    return {}; // Not supported in 6502/65C02 mode
-  }
+  if (!IsCpu65816()) return {};
   return {0x54, srcbank, destbank};
 }
 
 // MVP - Block Move Positive (65816)
 std::vector<uint8_t> Cpu6502::EncodeMVP(uint8_t srcbank,
                                         uint8_t destbank) const {
-  // Only available in 65816
-  if (cpu_mode_ != CpuMode::Cpu65816) {
-    return {}; // Not supported in 6502/65C02 mode
-  }
+  if (!IsCpu65816()) return {};
   return {0x44, srcbank, destbank};
 }
 
 // COP - Coprocessor (65816)
 std::vector<uint8_t> Cpu6502::EncodeCOP(uint8_t operand,
                                         AddressingMode mode) const {
-  // Only available in 65816
-  if (cpu_mode_ != CpuMode::Cpu65816) {
-    return {}; // Not supported in 6502/65C02 mode
-  }
+  if (!IsCpu65816()) return {};
 
   std::vector<uint8_t> bytes;
 
@@ -254,10 +200,7 @@ std::vector<uint8_t> Cpu6502::EncodeCOP(uint8_t operand,
 // WDM - Reserved (65816)
 std::vector<uint8_t> Cpu6502::EncodeWDM(uint8_t operand,
                                         AddressingMode mode) const {
-  // Only available in 65816
-  if (cpu_mode_ != CpuMode::Cpu65816) {
-    return {}; // Not supported in 6502/65C02 mode
-  }
+  if (!IsCpu65816()) return {};
 
   std::vector<uint8_t> bytes;
 
@@ -271,19 +214,13 @@ std::vector<uint8_t> Cpu6502::EncodeWDM(uint8_t operand,
 
 // XBA - Exchange B and A (65816)
 std::vector<uint8_t> Cpu6502::EncodeXBA() const {
-  // Only available in 65816
-  if (cpu_mode_ != CpuMode::Cpu65816) {
-    return {}; // Not supported in 6502/65C02 mode
-  }
+  if (!IsCpu65816()) return {};
   return {0xEB};
 }
 
 // XCE - Exchange Carry and Emulation (65816)
 std::vector<uint8_t> Cpu6502::EncodeXCE() const {
-  // Only available in 65816
-  if (cpu_mode_ != CpuMode::Cpu65816) {
-    return {}; // Not supported in 6502/65C02 mode
-  }
+  if (!IsCpu65816()) return {};
   return {0xFB};
 }
 
@@ -313,9 +250,7 @@ bool Cpu6502::IsIndex8Bit() const {
 // Sets bits in the processor status register based on immediate value
 std::vector<uint8_t> Cpu6502::EncodeSEP(uint16_t value,
                                         AddressingMode mode) const {
-  if (cpu_mode_ != CpuMode::Cpu65816) {
-    return {}; // Not available in 6502/65C02
-  }
+  if (!IsCpu65816()) return {};
   if (mode != AddressingMode::Immediate) {
     return {}; // SEP only supports immediate addressing
   }
@@ -326,9 +261,7 @@ std::vector<uint8_t> Cpu6502::EncodeSEP(uint16_t value,
 // Clears bits in the processor status register based on immediate value
 std::vector<uint8_t> Cpu6502::EncodeREP(uint16_t value,
                                         AddressingMode mode) const {
-  if (cpu_mode_ != CpuMode::Cpu65816) {
-    return {}; // Not available in 6502/65C02
-  }
+  if (!IsCpu65816()) return {};
   if (mode != AddressingMode::Immediate) {
     return {}; // REP only supports immediate addressing
   }

@@ -471,6 +471,26 @@ public:
   std::vector<uint8_t> EncodeLEAY(uint32_t operand,
                                   AddressingMode6809 mode) const;
 
+  /**
+   * @brief Encode LEAS (Load Effective Address into S) instruction
+   *
+   * @param operand Address or offset
+   * @param mode Addressing mode
+   * @return Vector of encoded bytes
+   */
+  std::vector<uint8_t> EncodeLEAS(uint32_t operand,
+                                  AddressingMode6809 mode) const;
+
+  /**
+   * @brief Encode LEAU (Load Effective Address into U) instruction
+   *
+   * @param operand Address or offset
+   * @param mode Addressing mode
+   * @return Vector of encoded bytes
+   */
+  std::vector<uint8_t> EncodeLEAU(uint32_t operand,
+                                  AddressingMode6809 mode) const;
+
   /** @} */ // End of Control Flow Instructions
 
   /**
@@ -953,22 +973,6 @@ public:
   size_t CalculateInstructionSize(AddressingMode6809 mode) const;
 
 private:
-  /**
-   * @brief Encode 16-bit value in big-endian byte order
-   *
-   * The 6809 uses big-endian byte order (MSB first), unlike the 6502
-   * which uses little-endian (LSB first).
-   *
-   * @param value 16-bit value to encode
-   * @return Vector containing {high_byte, low_byte}
-   *
-   * @par Example
-   * @code
-   * ToBigEndian(0x1234) -> {0x12, 0x34}  // MSB first
-   * @endcode
-   */
-  std::vector<uint8_t> ToBigEndian(uint16_t value) const;
-
   /**
    * @brief Encode indexed addressing post-byte
    *

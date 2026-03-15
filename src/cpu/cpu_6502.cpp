@@ -3,6 +3,7 @@
 #include "xasm++/cpu/cpu_6502.h"
 #include "xasm++/cpu/cpu_error_utils.h"
 #include "xasm++/cpu/opcodes_6502.h"
+#include "xasm++/util/string_utils.h"
 #include <algorithm>
 #include <unordered_map>
 #include <unordered_set>
@@ -1240,20 +1241,13 @@ size_t Cpu6502::GetInstructionSize(const std::string &mnemonic,
   }
 
   // Local trim helper (avoids dependency on util header here)
-  auto ltrim = [](const std::string &s) -> std::string {
-    size_t start = s.find_first_not_of(" \t");
-    if (start == std::string::npos)
-      return {};
-    size_t end = s.find_last_not_of(" \t");
-    return s.substr(start, end - start + 1);
-  };
   auto to_upper = [](std::string s) -> std::string {
     for (char &c : s)
       c = static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
     return s;
   };
 
-  const std::string op = ltrim(operand_str);
+  const std::string op = util::Trim(operand_str);
   const std::string mn = to_upper(clean_mnemonic);
 
   // --- Implied / Accumulator: no operand or bare "A" ---
@@ -1295,7 +1289,7 @@ size_t Cpu6502::GetInstructionSize(const std::string &mnemonic,
       // (zp),Y → IndirectY = 2 bytes
       if (close + 1 < op.length()) {
         const std::string after_upper =
-            to_upper(ltrim(op.substr(close + 1)));
+            to_upper(util::Trim(op.substr(close + 1)));
         if (after_upper == ",Y") {
           return 2;
         }
@@ -1329,7 +1323,7 @@ size_t Cpu6502::GetInstructionSize(const std::string &mnemonic,
   const size_t comma_pos =
       (comma_x != std::string::npos) ? comma_x : comma_y;
   if (comma_pos != std::string::npos) {
-    const std::string addr_part = ltrim(op.substr(0, comma_pos));
+    const std::string addr_part = util::Trim(op.substr(0, comma_pos));
     if (!addr_part.empty() && addr_part[0] == '$') {
       // $xx (≤2 hex digits) → ZP indexed = 2 bytes
       const size_t hex_digits = addr_part.length() - 1;
@@ -2121,15 +2115,6 @@ Cpu6502::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
     clean_mnemonic.pop_back();
   }
 
-  // Helper to trim whitespace
-  auto trim = [](const std::string &s) {
-    size_t start = s.find_first_not_of(" \t\n\r");
-    if (start == std::string::npos)
-      return std::string("");
-    size_t end = s.find_last_not_of(" \t\n\r");
-    return s.substr(start, end - start + 1);
-  };
-
   // Helper to parse hex value
   auto parse_hex = [](const std::string &s) -> uint32_t {
     if (s.empty() || s[0] != '$')
@@ -2138,7 +2123,7 @@ Cpu6502::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
   };
 
   // Determine addressing mode from operand_str
-  std::string trimmed = trim(operand_str);
+  std::string trimmed = util::Trim(operand_str);
   // Normalize to uppercase for addressing mode detection.
   // SCMASM source may use lowercase register suffixes (,x / ,y) while
   // Merlin uses uppercase.  Symbol values are resolved into the numeric
@@ -2175,7 +2160,7 @@ Cpu6502::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
       size_t close_paren = trimmed.find(')');
       if (close_paren != std::string::npos) {
         std::string inside = trimmed.substr(1, close_paren - 1);
-        inside = trim(inside);
+        inside = util::Trim(inside);
 
         // Check for indexed indirect: ($80,X) or absolute indexed indirect: ($1234,X)
         // 65C02 JMP (abs,X) uses AbsoluteIndexedIndirect ($7C); zero-page ($80,X)
@@ -2187,7 +2172,7 @@ Cpu6502::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
         }
         // Check for indirect indexed: ($80),Y
         else if (close_paren < trimmed.length() - 1) {
-          std::string after = trim(trimmed.substr(close_paren + 1));
+          std::string after = util::Trim(trimmed.substr(close_paren + 1));
           if (after == ",Y" || after == ", Y") {
             mode = AddressingMode::IndirectY;
           }
@@ -2207,7 +2192,7 @@ Cpu6502::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
       size_t comma_pos = trimmed.find(",X");
       if (comma_pos == std::string::npos)
         comma_pos = trimmed.find(", X");
-      std::string addr_part = trim(trimmed.substr(0, comma_pos));
+      std::string addr_part = util::Trim(trimmed.substr(0, comma_pos));
 
       if (!addr_part.empty() && addr_part[0] == '$') {
         // Explicit hex value - use value to determine mode
@@ -2226,7 +2211,7 @@ Cpu6502::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
       size_t comma_pos = trimmed.find(",Y");
       if (comma_pos == std::string::npos)
         comma_pos = trimmed.find(", Y");
-      std::string addr_part = trim(trimmed.substr(0, comma_pos));
+      std::string addr_part = util::Trim(trimmed.substr(0, comma_pos));
 
       if (!addr_part.empty() && addr_part[0] == '$') {
         // Explicit hex value - use value to determine mode
@@ -2538,15 +2523,6 @@ Cpu6502::EncodeInstructionSpecial(const std::string &mnemonic,
     clean_mnemonic.pop_back();
   }
 
-  // Helper to trim whitespace
-  auto trim = [](const std::string &s) {
-    size_t start = s.find_first_not_of(" \t\n\r");
-    if (start == std::string::npos)
-      return std::string("");
-    size_t end = s.find_last_not_of(" \t\n\r");
-    return s.substr(start, end - start + 1);
-  };
-
   // Helper to parse hex value
   auto parse_hex = [](const std::string &s) -> uint32_t {
     if (s.empty() || s[0] != '$')
@@ -2562,7 +2538,7 @@ Cpu6502::EncodeInstructionSpecial(const std::string &mnemonic,
       clean_mnemonic == M6502Mnemonics::BLT || clean_mnemonic == M6502Mnemonics::BRA) {
 
     // Parse target address from operand string
-    std::string trimmed = trim(operand);
+    std::string trimmed = util::Trim(operand);
     uint16_t target_addr = 0;
 
     if (!trimmed.empty() && trimmed[0] == '$') {
@@ -2612,7 +2588,7 @@ Cpu6502::EncodeInstructionSpecial(const std::string &mnemonic,
   // MVN/MVP (Block Move with two operands)
   if (clean_mnemonic == M6502Mnemonics::MVN || mnemonic == M6502Mnemonics::MVP) {
     // Parse operands: "srcbank,destbank" or "$E1,$01"
-    std::string trimmed_operand = trim(operand);
+    std::string trimmed_operand = util::Trim(operand);
     size_t comma_pos = trimmed_operand.find(',');
 
     if (comma_pos == std::string::npos) {
@@ -2620,8 +2596,8 @@ Cpu6502::EncodeInstructionSpecial(const std::string &mnemonic,
     }
 
     // Extract source and dest banks
-    std::string src_str = trim(trimmed_operand.substr(0, comma_pos));
-    std::string dst_str = trim(trimmed_operand.substr(comma_pos + 1));
+    std::string src_str = util::Trim(trimmed_operand.substr(0, comma_pos));
+    std::string dst_str = util::Trim(trimmed_operand.substr(comma_pos + 1));
 
     // Helper lambda to parse bank value
     auto parse_bank = [&parse_hex](const std::string &str) -> uint8_t {

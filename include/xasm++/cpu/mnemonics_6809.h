@@ -64,6 +64,12 @@ constexpr const char *STX = "STX";
 /// STY - Store Index Register Y
 constexpr const char *STY = "STY";
 
+/// STU - Store User Stack Pointer
+constexpr const char *STU = "STU";
+
+/// STS - Store System Stack Pointer
+constexpr const char *STS = "STS";
+
 // ============================================================================
 // Arithmetic Instructions
 // ============================================================================
@@ -74,11 +80,80 @@ constexpr const char *ADDA = "ADDA";
 /// ADDB - Add to Accumulator B
 constexpr const char *ADDB = "ADDB";
 
+/// ADDD - Add 16-bit value to Accumulator D
+constexpr const char *ADDD = "ADDD";
+
+/// ADCA - Add with Carry to Accumulator A
+constexpr const char *ADCA = "ADCA";
+
+/// ADCB - Add with Carry to Accumulator B
+constexpr const char *ADCB = "ADCB";
+
+/// ADCA - Add with Carry to Accumulator A
+constexpr const char *ADCA = "ADCA";
+
+/// ADCB - Add with Carry to Accumulator B
+constexpr const char *ADCB = "ADCB";
+
 /// SUBA - Subtract from Accumulator A
 constexpr const char *SUBA = "SUBA";
 
 /// SUBB - Subtract from Accumulator B
 constexpr const char *SUBB = "SUBB";
+
+/// SUBD - Subtract 16-bit value from Accumulator D
+constexpr const char *SUBD = "SUBD";
+
+/// SBCA - Subtract with Carry from Accumulator A
+constexpr const char *SBCA = "SBCA";
+
+/// SBCB - Subtract with Carry from Accumulator B
+constexpr const char *SBCB = "SBCB";
+
+/// SBCA - Subtract with Carry from Accumulator A
+constexpr const char *SBCA = "SBCA";
+
+/// SBCB - Subtract with Carry from Accumulator B
+constexpr const char *SBCB = "SBCB";
+
+/// MUL - Unsigned Multiply (A × B → D)
+constexpr const char *MUL = "MUL";
+
+/// DAA - Decimal Adjust Accumulator A
+constexpr const char *DAA = "DAA";
+
+/// SEX - Sign Extend B into D
+constexpr const char *SEX = "SEX";
+
+/// ANDCC - AND Condition Code Register with immediate
+constexpr const char *ANDCC = "ANDCC";
+
+/// ORCC - OR Condition Code Register with immediate
+constexpr const char *ORCC = "ORCC";
+
+// ============================================================================
+// Compare Instructions (additional)
+// ============================================================================
+
+/// CMPD - Compare Accumulator D (16-bit) with memory
+constexpr const char *CMPD = "CMPD";
+
+// ============================================================================
+// Load Effective Address (additional)
+// ============================================================================
+
+/// LEAS - Load Effective Address into S Stack Pointer
+constexpr const char *LEAS = "LEAS";
+
+/// LEAU - Load Effective Address into U Stack Pointer
+constexpr const char *LEAU = "LEAU";
+
+// ============================================================================
+// Branch Instructions (additional)
+// ============================================================================
+
+/// BRN - Branch Never (tests branch logic, never taken)
+constexpr const char *BRN = "BRN";
 
 /// INCA - Increment Accumulator A
 constexpr const char *INCA = "INCA";
@@ -336,8 +411,26 @@ constexpr const char *JSR = "JSR";
 /// RTS - Return from Subroutine
 constexpr const char *RTS = "RTS";
 
+/// RTI - Return from Interrupt
+constexpr const char *RTI = "RTI";
+
 /// NOP - No Operation
 constexpr const char *NOP = "NOP";
+
+/// SYNC - Synchronize to Interrupt
+constexpr const char *SYNC = "SYNC";
+
+/// SWI - Software Interrupt 1
+constexpr const char *SWI = "SWI";
+
+/// SWI2 - Software Interrupt 2 (page 2)
+constexpr const char *SWI2 = "SWI2";
+
+/// SWI3 - Software Interrupt 3 (page 3)
+constexpr const char *SWI3 = "SWI3";
+
+/// CWAI - Clear CCs and Wait for Interrupt
+constexpr const char *CWAI = "CWAI";
 
 // ============================================================================
 // Load Effective Address Instructions

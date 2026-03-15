@@ -10,6 +10,7 @@
 #include "xasm++/atom.h"
 #include "xasm++/parse_utils.h"
 #include "xasm++/section.h"
+#include "xasm++/util/string_utils.h"
 #include <algorithm>
 #include <cctype>
 #include <sstream>
@@ -22,20 +23,6 @@ namespace simple {
 // ============================================================================
 // Helper Functions
 // ============================================================================
-
-/**
- * @brief Trim whitespace from string
- * @param str Input string
- * @return Trimmed string
- */
-static std::string Trim(const std::string &str) {
-  size_t start = str.find_first_not_of(" \t");
-  if (start == std::string::npos) {
-    return "";
-  }
-  size_t end = str.find_last_not_of(" \t");
-  return str.substr(start, end - start + 1);
-}
 
 // ============================================================================
 // Directive Handlers
@@ -57,7 +44,7 @@ void HandleDb(const std::string & /*label*/, const std::string &operand,
   std::string value;
 
   while (std::getline(ops, value, ',')) {
-    value = Trim(value);
+    value = util::Trim(value);
     if (!value.empty()) {
       bytes.push_back(static_cast<uint8_t>(ParseHex(value)));
     }
@@ -75,7 +62,7 @@ void HandleDw(const std::string & /*label*/, const std::string &operand,
   std::string value;
 
   while (std::getline(ops, value, ',')) {
-    value = Trim(value);
+    value = util::Trim(value);
     if (!value.empty()) {
       uint32_t word = ParseHex(value);
       bytes.push_back(static_cast<uint8_t>(word & 0xFF));        // Low byte

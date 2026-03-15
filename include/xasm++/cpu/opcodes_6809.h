@@ -335,6 +335,18 @@ constexpr uint8_t ADDB_DIR = 0xDB; // ADDB <dp     - Direct Page
 constexpr uint8_t ADDB_EXT = 0xFB; // ADDB addr    - Extended (absolute)
 constexpr uint8_t ADDB_IDX = 0xEB; // ADDB ,X      - Indexed
 
+// ADCA - Add with Carry to Accumulator A
+constexpr uint8_t ADCA_IMM = 0x89; // ADCA #imm    - Immediate
+constexpr uint8_t ADCA_DIR = 0x99; // ADCA <dp     - Direct Page
+constexpr uint8_t ADCA_EXT = 0xB9; // ADCA addr    - Extended (absolute)
+constexpr uint8_t ADCA_IDX = 0xA9; // ADCA ,X      - Indexed
+
+// ADCB - Add with Carry to Accumulator B
+constexpr uint8_t ADCB_IMM = 0xC9; // ADCB #imm    - Immediate
+constexpr uint8_t ADCB_DIR = 0xD9; // ADCB <dp     - Direct Page
+constexpr uint8_t ADCB_EXT = 0xF9; // ADCB addr    - Extended (absolute)
+constexpr uint8_t ADCB_IDX = 0xE9; // ADCB ,X      - Indexed
+
 // SUBA - Subtract from Accumulator A
 constexpr uint8_t SUBA_IMM = 0x80; // SUBA #imm    - Immediate
 constexpr uint8_t SUBA_DIR = 0x90; // SUBA <dp     - Direct Page
@@ -346,6 +358,36 @@ constexpr uint8_t SUBB_IMM = 0xC0; // SUBB #imm    - Immediate
 constexpr uint8_t SUBB_DIR = 0xD0; // SUBB <dp     - Direct Page
 constexpr uint8_t SUBB_EXT = 0xF0; // SUBB addr    - Extended (absolute)
 constexpr uint8_t SUBB_IDX = 0xE0; // SUBB ,X      - Indexed
+
+// SBCA - Subtract with Carry from Accumulator A
+constexpr uint8_t SBCA_IMM = 0x82; // SBCA #imm    - Immediate
+constexpr uint8_t SBCA_DIR = 0x92; // SBCA <dp     - Direct Page
+constexpr uint8_t SBCA_EXT = 0xB2; // SBCA addr    - Extended (absolute)
+constexpr uint8_t SBCA_IDX = 0xA2; // SBCA ,X      - Indexed
+
+// SBCB - Subtract with Carry from Accumulator B
+constexpr uint8_t SBCB_IMM = 0xC2; // SBCB #imm    - Immediate
+constexpr uint8_t SBCB_DIR = 0xD2; // SBCB <dp     - Direct Page
+constexpr uint8_t SBCB_EXT = 0xF2; // SBCB addr    - Extended (absolute)
+constexpr uint8_t SBCB_IDX = 0xE2; // SBCB ,X      - Indexed
+
+// ADDD - Add 16-bit immediate to D register
+constexpr uint8_t ADDD_IMM = 0xC3; // ADDD #imm16  - Immediate
+constexpr uint8_t ADDD_DIR = 0xD3; // ADDD <dp     - Direct Page
+constexpr uint8_t ADDD_EXT = 0xF3; // ADDD addr    - Extended (absolute)
+constexpr uint8_t ADDD_IDX = 0xE3; // ADDD ,X      - Indexed
+
+// SUBD - Subtract 16-bit from D register
+constexpr uint8_t SUBD_IMM = 0x83; // SUBD #imm16  - Immediate
+constexpr uint8_t SUBD_DIR = 0x93; // SUBD <dp     - Direct Page
+constexpr uint8_t SUBD_EXT = 0xB3; // SUBD addr    - Extended (absolute)
+constexpr uint8_t SUBD_IDX = 0xA3; // SUBD ,X      - Indexed
+
+// CMPD - Compare D with memory (16-bit) (page 1: prefix $10)
+constexpr uint8_t CMPD_IMM = 0x83; // CMPD #imm16  - Immediate  (with 0x10 prefix)
+constexpr uint8_t CMPD_DIR = 0x93; // CMPD <dp     - Direct Page (with 0x10 prefix)
+constexpr uint8_t CMPD_EXT = 0xB3; // CMPD addr    - Extended   (with 0x10 prefix)
+constexpr uint8_t CMPD_IDX = 0xA3; // CMPD ,X      - Indexed    (with 0x10 prefix)
 
 // ----------------------------------------------------------------------------
 // Compare Instructions
@@ -489,6 +531,25 @@ constexpr uint8_t PULU = 0x37; // PULU reglist - Pull from User stack
 constexpr uint8_t EXG = 0x1E; // EXG r1,r2    - Exchange Registers
 constexpr uint8_t TFR = 0x1F; // TFR r1,r2    - Transfer Register
 
+// ----------------------------------------------------------------------------
+// Condition Code Register Operations
+// ----------------------------------------------------------------------------
+
+constexpr uint8_t ANDCC = 0x1C; // ANDCC #imm   - AND Condition Code Register
+constexpr uint8_t ORCC  = 0x1A; // ORCC #imm    - OR Condition Code Register
+
+// ----------------------------------------------------------------------------
+// Inherent (no-operand) Instructions
+// ----------------------------------------------------------------------------
+
+constexpr uint8_t MUL  = 0x3D; // MUL          - Unsigned Multiply (A x B → D)
+constexpr uint8_t SEX  = 0x1D; // SEX          - Sign Extend (B → A:B)
+constexpr uint8_t DAA  = 0x19; // DAA          - Decimal Adjust A
+constexpr uint8_t RTI  = 0x3B; // RTI          - Return from Interrupt
+constexpr uint8_t SYNC = 0x13; // SYNC         - Synchronize to Interrupt
+constexpr uint8_t SWI  = 0x3F; // SWI          - Software Interrupt 1
+constexpr uint8_t CWAI = 0x3C; // CWAI #mask   - Clear CCs and Wait for Interrupt
+
 // ============================================================================
 // Page 2: Extended Opcodes (prefix $10)
 // ============================================================================
@@ -547,8 +608,20 @@ constexpr uint8_t STS_IDX = 0xEF; // STS ,X       - Indexed
 
 namespace Page3 {
 
-// Additional U Stack Pointer Operations
-// (Currently reserved/unused in standard 6809)
+// Compare U Stack Pointer with memory (16-bit)
+constexpr uint8_t CMPU_IMM = 0x83; // CMPU #imm16  - Immediate
+constexpr uint8_t CMPU_DIR = 0x93; // CMPU <dp     - Direct Page
+constexpr uint8_t CMPU_EXT = 0xB3; // CMPU addr    - Extended (absolute)
+constexpr uint8_t CMPU_IDX = 0xA3; // CMPU ,X      - Indexed
+
+// Compare S Stack Pointer with memory (16-bit)
+constexpr uint8_t CMPS_IMM = 0x8C; // CMPS #imm16  - Immediate
+constexpr uint8_t CMPS_DIR = 0x9C; // CMPS <dp     - Direct Page
+constexpr uint8_t CMPS_EXT = 0xBC; // CMPS addr    - Extended (absolute)
+constexpr uint8_t CMPS_IDX = 0xAC; // CMPS ,X      - Indexed
+
+// SWI3 - Software Interrupt 3
+constexpr uint8_t SWI3 = 0x3F; // SWI3         - Software Interrupt 3 (with 0x11 prefix)
 
 } // namespace Page3
 

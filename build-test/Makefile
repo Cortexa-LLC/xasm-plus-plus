@@ -523,6 +523,19 @@ test_scmasm_directive_registry/fast:
 .PHONY : test_scmasm_directive_registry/fast
 
 #=============================================================================
+# Target rules for targets named test_scmasm_conditionals
+
+# Build rule for target.
+test_scmasm_conditionals: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 test_scmasm_conditionals
+.PHONY : test_scmasm_conditionals
+
+# fast build rule for target.
+test_scmasm_conditionals/fast:
+	$(MAKE) $(MAKESILENT) -f tests/unit/CMakeFiles/test_scmasm_conditionals.dir/build.make tests/unit/CMakeFiles/test_scmasm_conditionals.dir/build
+.PHONY : test_scmasm_conditionals/fast
+
+#=============================================================================
 # Target rules for targets named test_edtasm_syntax
 
 # Build rule for target.
@@ -601,6 +614,19 @@ test_symbol_output/fast:
 .PHONY : test_symbol_output/fast
 
 #=============================================================================
+# Target rules for targets named test_cli
+
+# Build rule for target.
+test_cli: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 test_cli
+.PHONY : test_cli
+
+# fast build rule for target.
+test_cli/fast:
+	$(MAKE) $(MAKESILENT) -f tests/unit/CMakeFiles/test_cli.dir/build.make tests/unit/CMakeFiles/test_cli.dir/build
+.PHONY : test_cli/fast
+
+#=============================================================================
 # Target rules for targets named test_exception_safety
 
 # Build rule for target.
@@ -666,17 +692,17 @@ test_error_formatter/fast:
 .PHONY : test_error_formatter/fast
 
 #=============================================================================
-# Target rules for targets named test_stoul_fix
+# Target rules for targets named test_expression_error_handling
 
 # Build rule for target.
-test_stoul_fix: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 test_stoul_fix
-.PHONY : test_stoul_fix
+test_expression_error_handling: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 test_expression_error_handling
+.PHONY : test_expression_error_handling
 
 # fast build rule for target.
-test_stoul_fix/fast:
-	$(MAKE) $(MAKESILENT) -f tests/unit/CMakeFiles/test_stoul_fix.dir/build.make tests/unit/CMakeFiles/test_stoul_fix.dir/build
-.PHONY : test_stoul_fix/fast
+test_expression_error_handling/fast:
+	$(MAKE) $(MAKESILENT) -f tests/unit/CMakeFiles/test_expression_error_handling.dir/build.make tests/unit/CMakeFiles/test_expression_error_handling.dir/build
+.PHONY : test_expression_error_handling/fast
 
 #=============================================================================
 # Target rules for targets named test_flex_syntax
@@ -952,6 +978,19 @@ test_inb_path_mapping/fast:
 .PHONY : test_inb_path_mapping/fast
 
 #=============================================================================
+# Target rules for targets named test_scmasm_expression_utils
+
+# Build rule for target.
+test_scmasm_expression_utils: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 test_scmasm_expression_utils
+.PHONY : test_scmasm_expression_utils
+
+# fast build rule for target.
+test_scmasm_expression_utils/fast:
+	$(MAKE) $(MAKESILENT) -f tests/unit/CMakeFiles/test_scmasm_expression_utils.dir/build.make tests/unit/CMakeFiles/test_scmasm_expression_utils.dir/build
+.PHONY : test_scmasm_expression_utils/fast
+
+#=============================================================================
 # Target rules for targets named test_z80_real_code_samples
 
 # Build rule for target.
@@ -988,6 +1027,7 @@ help:
 	@echo "... test_atom"
 	@echo "... test_binary_compat"
 	@echo "... test_binary_output"
+	@echo "... test_cli"
 	@echo "... test_conditional_assembler"
 	@echo "... test_const_correctness"
 	@echo "... test_core_directive_handlers"
@@ -1005,6 +1045,7 @@ help:
 	@echo "... test_error_reporting"
 	@echo "... test_exception_safety"
 	@echo "... test_expression"
+	@echo "... test_expression_error_handling"
 	@echo "... test_expression_parser"
 	@echo "... test_expression_utils"
 	@echo "... test_flex_conditionals"
@@ -1019,12 +1060,13 @@ help:
 	@echo "... test_parser_error_utils"
 	@echo "... test_phase_directives"
 	@echo "... test_radix_parsing"
+	@echo "... test_scmasm_conditionals"
 	@echo "... test_scmasm_directive_registry"
+	@echo "... test_scmasm_expression_utils"
 	@echo "... test_scmasm_syntax"
 	@echo "... test_section"
 	@echo "... test_segment_directives"
 	@echo "... test_simple_syntax"
-	@echo "... test_stoul_fix"
 	@echo "... test_symbol"
 	@echo "... test_symbol_output"
 	@echo "... test_xc_directive"
