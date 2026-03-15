@@ -3555,6 +3555,76 @@ TEST_F(ScmasmSyntaxTest, DA_InlineComment_MultipleElements) {
   EXPECT_NO_THROW(parser->Parse(source, section, symbols));
 }
 
+TEST_F(ScmasmSyntaxTest, DA_CharLiteral_SpaceDoesNotTriggerComment) {
+  // Regression test: .DA #" " (space character literal) must not cause
+  // "Unexpected character: "" error.
+  //
+  // Bug: HandleDa's comma scanner used find_first_of(" \t") on each token to
+  // detect inline comments. When the token was #" " (a double-quoted space), the
+  // space at position 2 was misidentified as an inline-comment start, leaving
+  // "#"" (unclosed quote) as the expression, which then threw "Unexpected
+  // character: "".
+  //
+  // Fix: the comma-scanner now skips over single-char quoted literals ("X" / 'X')
+  // before applying the whitespace-as-comment heuristic.
+  //
+  // Note: SCMASM double-quoted char literals have the high bit set (Apple II
+  // convention), so #" " emits 0xA0 not 0x20.
+  std::string source =
+      "\t\t.OR\t$1000\n"
+      "TERM.Curs\t.DA #\" \"\n";
+  ASSERT_NO_THROW(parser->Parse(source, section, symbols));
+  // #" " = ASCII 0x20 with high bit set = 0xA0
+  size_t total_bytes = 0;
+  uint8_t first_byte = 0;
+  for (auto &atom : section.atoms) {
+    if (auto da = std::dynamic_pointer_cast<DataAtom>(atom)) {
+      total_bytes += da->data.size();
+      if (!da->data.empty() && total_bytes == 1) {
+        first_byte = static_cast<uint8_t>(da->data[0]);
+      }
+    }
+  }
+  EXPECT_EQ(total_bytes, 1u) << ".DA #\" \" must emit exactly 1 byte";
+  EXPECT_EQ(first_byte, 0xA0u) << "double-quoted space char literal must be 0xA0 (Apple II)";
+}
+
+TEST_F(ScmasmSyntaxTest, DA_CharLiteral_MixedQuoteTypes) {
+  // Regression: mixed single- and double-quote char literals in one .DA
+  //   .DA #" ",#" ",#' ',#"_",#'_',#"|",#'|'
+  // Previously failed with "Unexpected character: "" because the space inside
+  // #" " was mistaken for an inline-comment start.
+  //
+  // SCMASM convention: double-quoted char literals have high bit set (Apple II).
+  // Single-quoted char literals are plain ASCII.
+  // So: #" "=0xA0, #' '=0x20, #"_"=0xDF, #'_'=0x5F, #"|"=0xFC, #'|'=0x7C
+  std::string source =
+      "\t\t.OR\t$1000\n"
+      "TERM.Curs\t.DA #\" \",#\" \",#' ',#\"_\",#'_',#\"|\",#'|'\n";
+  ASSERT_NO_THROW(parser->Parse(source, section, symbols));
+  // 7 single-byte char literals
+  size_t total_bytes = 0;
+  std::vector<uint8_t> emitted;
+  for (auto &atom : section.atoms) {
+    if (auto da = std::dynamic_pointer_cast<DataAtom>(atom)) {
+      for (char b : da->data) {
+        emitted.push_back(static_cast<uint8_t>(b));
+      }
+      total_bytes += da->data.size();
+    }
+  }
+  EXPECT_EQ(total_bytes, 7u) << ".DA with 7 char literals must emit 7 bytes";
+  if (emitted.size() >= 7) {
+    EXPECT_EQ(emitted[0], 0xA0u) << "#\" \" (double-quoted) must be 0xA0";
+    EXPECT_EQ(emitted[1], 0xA0u) << "#\" \" (double-quoted) must be 0xA0";
+    EXPECT_EQ(emitted[2], 0x20u) << "#' ' (single-quoted) must be 0x20";
+    EXPECT_EQ(emitted[3], 0xDFu) << "#\"_\" (double-quoted) must be 0xDF";
+    EXPECT_EQ(emitted[4], 0x5Fu) << "#'_' (single-quoted) must be 0x5F";
+    EXPECT_EQ(emitted[5], 0xFCu) << "#\"|\" (double-quoted) must be 0xFC";
+    EXPECT_EQ(emitted[6], 0x7Cu) << "#'|' (single-quoted) must be 0x7C";
+  }
+}
+
 TEST_F(ScmasmSyntaxTest, TYX_65816_RecognizedAsInstruction) {
   // TYX is a 65816 instruction (opcode $BB). In SCMASM, a source line like:
   //   tyx  TYX: if 65C816, x becomes non-zero

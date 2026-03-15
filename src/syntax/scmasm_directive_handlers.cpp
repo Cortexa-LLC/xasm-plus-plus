@@ -423,10 +423,40 @@ void HandleDa(const std::string &label, const std::string &operand,
       continue;
     }
 
+    // Skip over single-character quoted literals ("X" or 'X'), including
+    // the case where the character content is whitespace (e.g. #" " or #' ').
+    // Without this, the comma-scanner would misidentify the space inside
+    // #" " as an inline-comment start and truncate the token prematurely.
+    if (pos + 2 < trimmed.length() &&
+        (trimmed[pos] == '"' || trimmed[pos] == '\'') &&
+        trimmed[pos + 2] == trimmed[pos]) {
+      pos += 3; // Skip: opening-delim + char-content + closing-delim
+      continue;
+    }
+
     if (pos == trimmed.length() || trimmed[pos] == ',') {
       std::string value = trimmed.substr(start, pos - start);
-      // Check for internal whitespace → inline comment in this token
-      size_t ws = value.find_first_of(" \t");
+      // Check for internal whitespace → inline comment in this token.
+      // Scan char-by-char so that whitespace inside single-char literals
+      // (e.g. #" " or #' ') does not falsely trigger the comment heuristic.
+      size_t ws = std::string::npos;
+      {
+        size_t j = 0;
+        while (j < value.size()) {
+          char ch = value[j];
+          // Skip single-char quoted literals ("X" or 'X')
+          if ((ch == '"' || ch == '\'') && j + 2 < value.size() &&
+              value[j + 2] == ch) {
+            j += 3;
+            continue;
+          }
+          if (ch == ' ' || ch == '\t') {
+            ws = j;
+            break;
+          }
+          ++j;
+        }
+      }
       if (ws != std::string::npos) {
         // Strip the comment portion; remaining commas belong to the comment
         std::string stripped = Trim(value.substr(0, ws));
@@ -468,10 +498,23 @@ void HandleDa(const std::string &label, const std::string &operand,
 
     // Strip SCMASM inline comment: each element may be followed by
     // whitespace-separated comment text (e.g. ".DA #%100   L").
+    // Scan char-by-char so that whitespace inside single-char literals
+    // (e.g. #" " or #' ') does not trigger the comment heuristic.
     {
-      size_t ws = trimmed_expr.find_first_of(" \t");
-      if (ws != std::string::npos) {
-        trimmed_expr = trimmed_expr.substr(0, ws);
+      size_t j = 0;
+      while (j < trimmed_expr.size()) {
+        char ch = trimmed_expr[j];
+        // Skip single-char quoted literals ("X" or 'X')
+        if ((ch == '"' || ch == '\'') && j + 2 < trimmed_expr.size() &&
+            trimmed_expr[j + 2] == ch) {
+          j += 3;
+          continue;
+        }
+        if (ch == ' ' || ch == '\t') {
+          trimmed_expr = trimmed_expr.substr(0, j);
+          break;
+        }
+        ++j;
       }
     }
 
