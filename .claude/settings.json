@@ -81,6 +81,15 @@
     ],
     "UserPromptSubmit": [
       {
+        "description": "Inject orchestrator role reminder on every prompt (survives compaction)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 /Users/bryanw/Projects/Vintage/tools/xasm++/.claude/hooks/orchestrator-anchor.py"
+          }
+        ]
+      },
+      {
         "description": "Enforce task packet gate before implementation work",
         "matcher": "",
         "hooks": [

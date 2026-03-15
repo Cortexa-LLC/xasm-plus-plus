@@ -21,7 +21,7 @@ As Orchestrator:
 
 ### 2. Agent CLI (PRIMARY INTERFACE - MANDATORY)
 
-**Quick Start:**
+**Quick Start (sequential):**
 ```bash
 # 1. Create Beads task with working directory and task packet
 task_id=$(bd create "Task description
@@ -29,19 +29,34 @@ task_id=$(bd create "Task description
 Working directory: /Users/bryanw/Projects/Vintage/tools/xasm++
 Task packet: .ai/tasks/<beads-id>-<YYYYMMDDHHMMSS>-<short-desc>/
 
-Details..." --priority high --json | jq -r '.id')
+Details..." --priority P1 --json | jq -r '.id')
 
-# 2. Spawn agent with --stream (MANDATORY - blocks until complete)
+# 2. Spawn agent — blocks until complete, streams live output
 agent engineer $task_id --stream
 
 # 3. Close task
 bd close $task_id -r "Complete"
 ```
 
+**Parallel execution (multiple workstreams):**
+```bash
+# Spawn all agents in background (no --stream = non-blocking)
+agent engineer xasm++-task1
+agent engineer xasm++-task2
+agent engineer xasm++-task3
+
+# Attach to each one to get live output and block until done
+agent wait xasm++-task1 --stream
+agent wait xasm++-task2 --stream
+agent wait xasm++-task3 --stream
+```
+
 **CRITICAL Rules:**
-- ✅ ALWAYS use `--stream` flag (blocks until agent completes)
+- ✅ Sequential task: use `agent <role> <id> --stream` (blocks until complete)
+- ✅ Parallel tasks: spawn without `--stream`, then `agent wait <id> --stream`
 - ✅ Use `agent` CLI exclusively (NO HTTP calls, NO Skill tool)
 - ✅ Create standalone Beads tasks (NO hierarchical IDs like `xasm++-684.1`)
+- ✅ Beads priority format: P0–P4 (NOT high/medium/low)
 - ❌ NEVER poll manually for completion (use `--stream` or `agent wait`)
 - ❌ NEVER use Task tool with run_in_background (broken)
 
@@ -273,7 +288,7 @@ task_id=$(bd create "Task title
 Working directory: /Users/bryanw/Projects/Vintage/tools/xasm++
 Task packet: .ai/tasks/${task_id}-$(date +%Y%m%d%H%M%S)-<short-desc>/
 
-Detailed description..." --priority high --json | jq -r '.id')
+Detailed description..." --priority P1 --json | jq -r '.id')
 
 # 2. Create task packet directory using Beads ID
 TASK_DIR=".ai/tasks/${task_id}-$(date +%Y%m%d%H%M%S)-<short-desc>"
@@ -377,12 +392,12 @@ agent engineer xasm++-m94 --stream  # Spawn next immediately
 # Check current WIP
 bd list --status in_progress
 
-# Spawn agents across workstreams
+# Spawn agents across workstreams (no --stream = non-blocking background)
 agent engineer xasm++-task1  # Workstream 1
 agent engineer xasm++-task2  # Workstream 2
 agent engineer xasm++-task3  # Workstream 3
 
-# Wait for completion with --stream
+# Attach to each when ready — blocks until done, streams live output
 agent wait xasm++-task1 --stream
 agent wait xasm++-task2 --stream
 agent wait xasm++-task3 --stream
@@ -398,8 +413,8 @@ agent wait xasm++-task3 --stream
 - ✅ Delegate to specialized agents
 
 **DON'T:**
-- ❌ Spawn agents without `--stream` flag
-- ❌ Poll manually for completion
+- ❌ Spawn sequential agents without `--stream` (you won't know when they finish)
+- ❌ Poll manually for completion (use `agent wait <id> --stream` instead)
 - ❌ Use bash `wait` for agent completion
 - ❌ Create tasks with 15+ files
 - ❌ Exceed WIP limits
