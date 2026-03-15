@@ -297,6 +297,16 @@ std::shared_ptr<Expression> ExpressionParser::ParseUnary() {
     return std::make_shared<UnaryOpExpr>(UnaryOp::HighByte, operand);
   }
 
+  // Bank byte operator (^) — extracts bits 16-23 of a 24-bit address.
+  // Used in SCMASM/Merlin 65816 code: `lda ^symbol` loads the bank byte.
+  // Note: `^` as binary XOR is handled in ParseBitwiseXor; here it is only
+  // reached when `^` appears in a unary/primary context.
+  if (c == '^') {
+    Consume();
+    auto operand = ParseUnary();
+    return std::make_shared<UnaryOpExpr>(UnaryOp::BankByte, operand);
+  }
+
   // Note: HIGH() and LOW() are also handled as function calls in ParsePrimary
   // (e.g., "HIGH(0x1234)" for Z80 syntax)
 
@@ -577,8 +587,12 @@ int64_t ExpressionParser::ParseNumber() {
       throw std::runtime_error(
           "Invalid binary number: expected 0 or 1 after %");
     }
-    while (Peek() == '0' || Peek() == '1') {
-      value = value * 2 + (Consume() - '0');
+    while (Peek() == '0' || Peek() == '1' || Peek() == '.') {
+      char ch = Consume();
+      if (ch != '.') {
+        value = value * 2 + (ch - '0');
+      }
+      // '.' is silently skipped as a visual digit separator (e.g. %0000.0000)
     }
     // After valid 0/1 digits, reject stray decimal digits (e.g. %1012)
     if (std::isdigit(Peek())) {

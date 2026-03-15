@@ -73,6 +73,7 @@ enum class UnaryOp {
   LogicalNot, ///< Logical NOT: !a
   LowByte,    ///< Low byte extraction: <a
   HighByte,   ///< High byte extraction: >a
+  BankByte,   ///< Bank byte extraction: ^a (bits 16-23, Merlin/SCMASM)
 };
 
 /**
@@ -505,6 +506,8 @@ public:
       return val & 0xFF;
     case UnaryOp::HighByte:
       return (val >> 8) & 0xFF;
+    case UnaryOp::BankByte:
+      return (val >> 16) & 0xFF;
     default:
       throw std::runtime_error("Unknown unary operator");
     }
