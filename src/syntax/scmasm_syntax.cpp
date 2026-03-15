@@ -1248,19 +1248,21 @@ std::string ScmasmSyntaxParser::ParseLabel(const std::string &line, size_t &pos,
     }
   }
 
-  // Check if this is a macro name (not a label)
-  // If the token matches a defined macro, it's a macro invocation
-  if (macros_.find(label_upper) != macros_.end()) {
-    pos = label_start;
-    return "";
-  }
-
   // In SCMASM/Merlin format, column 0 (no leading whitespace) is the LABEL
   // field.  A token at column 0 is ALWAYS a label, even when it matches an
-  // opcode name (e.g. BCC, BEQ defined as data-table entry labels in ASM.O
-  // files).  Only apply the opcode/pseudo-op rejection when the token appeared
+  // opcode name or macro name (e.g. BCC, BEQ defined as data-table entry
+  // labels; or a label that happens to share a name with a user-defined macro).
+  // Only apply the opcode/pseudo-op/macro rejection when the token appeared
   // after leading whitespace (i.e. in the mnemonic column).
   if (label_start > 0) {
+    // Check if this is a macro name (not a label)
+    // Macros are invoked from the mnemonic field; a macro name in the label
+    // field (column 0) is a label definition, not a macro call.
+    if (macros_.find(label_upper) != macros_.end()) {
+      pos = label_start;
+      return "";
+    }
+
     // Check if this is a known opcode (not a label)
     // Query CPU plugin for real opcodes, or check pseudo-ops
     if (cpu_ != nullptr && cpu_->HasOpcode(label_upper)) {

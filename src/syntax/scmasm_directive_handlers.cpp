@@ -509,8 +509,10 @@ void HandleDa(const std::string &label, const std::string &operand,
 
     if (prefix == '#') {
       // SCMASM # (low byte) → generic < (low byte)
+      // Parenthesise base_expr so that compound expressions like
+      // #CS.END-CS.START evaluate as <(CS.END-CS.START), not (<CS.END)-CS.START
       base_expr = Trim(trimmed_expr.substr(1));
-      byte_expressions.push_back("<" + base_expr);
+      byte_expressions.push_back("<(" + base_expr + ")");
 
       // Try immediate evaluation
       try {
@@ -524,7 +526,7 @@ void HandleDa(const std::string &label, const std::string &operand,
     } else if (prefix == '/') {
       // SCMASM / (high byte) → generic > (high byte)
       base_expr = Trim(trimmed_expr.substr(1));
-      byte_expressions.push_back(">" + base_expr);
+      byte_expressions.push_back(">(" + base_expr + ")");
 
       // Try immediate evaluation
       try {
@@ -539,8 +541,8 @@ void HandleDa(const std::string &label, const std::string &operand,
     } else if (prefix == '<') {
       // SCMASM < (24-bit) → expand to 3 bytes
       base_expr = Trim(trimmed_expr.substr(1));
-      byte_expressions.push_back("<" + base_expr); // Byte 0 (bits 0-7)
-      byte_expressions.push_back(">" + base_expr); // Byte 1 (bits 8-15)
+      byte_expressions.push_back("<(" + base_expr + ")"); // Byte 0 (bits 0-7)
+      byte_expressions.push_back(">(" + base_expr + ")"); // Byte 1 (bits 8-15)
       byte_expressions.push_back("<((" + base_expr + ")/65536)"); // Byte 2 (bits 16-23)
 
       // Try immediate evaluation
@@ -561,8 +563,8 @@ void HandleDa(const std::string &label, const std::string &operand,
     } else if (prefix == '>') {
       // SCMASM > (32-bit) → expand to 4 bytes
       base_expr = Trim(trimmed_expr.substr(1));
-      byte_expressions.push_back("<" + base_expr); // Byte 0 (bits 0-7)
-      byte_expressions.push_back(">" + base_expr); // Byte 1 (bits 8-15)
+      byte_expressions.push_back("<(" + base_expr + ")"); // Byte 0 (bits 0-7)
+      byte_expressions.push_back(">(" + base_expr + ")"); // Byte 1 (bits 8-15)
       byte_expressions.push_back("<((" + base_expr + ")/65536)"); // Byte 2 (bits 16-23)
       byte_expressions.push_back("<((" + base_expr + ")/16777216)"); // Byte 3 (bits 24-31)
 
@@ -586,9 +588,11 @@ void HandleDa(const std::string &label, const std::string &operand,
       }
     } else {
       // Default: 16-bit word (no prefix) - expand to 2 bytes (little-endian)
+      // Parenthesise so that compound expressions like CS.END-CS.START evaluate
+      // as <(CS.END-CS.START) and >(CS.END-CS.START), not (<CS.END)-CS.START
       base_expr = trimmed_expr;
-      byte_expressions.push_back("<" + base_expr); // Low byte
-      byte_expressions.push_back(">" + base_expr); // High byte
+      byte_expressions.push_back("<(" + base_expr + ")"); // Low byte
+      byte_expressions.push_back(">(" + base_expr + ")"); // High byte
 
       // Try immediate evaluation
       try {

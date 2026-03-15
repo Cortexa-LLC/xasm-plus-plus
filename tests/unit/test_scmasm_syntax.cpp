@@ -2570,6 +2570,75 @@ ZS.END   .ED
   }
 }
 
+// ============================================================================
+// .DA 16-bit Word: low/high byte operator precedence with compound expressions
+//
+// Regression: .DA CS.END-CS.START emitted the wrong high byte.
+//
+// The .DA directive expands a bare 16-bit expression X into two byte-level
+// strings: "<X" (low byte) and ">X" (high byte).  Without explicit
+// parentheses these became "<CS.END-CS.START" and ">CS.END-CS.START", which
+// with merlin_byte_ops_greedy=false parse as:
+//
+//   "<CS.END-CS.START"  → (<CS.END) - CS.START  (accidentally correct lo byte)
+//   ">CS.END-CS.START"  → (>CS.END) - CS.START  (WRONG hi byte: $3C not $1C)
+//
+// Fix: wrap the base expression in parentheses in all < / > expansions so
+// that the byte operator applies to the complete sub-expression value.
+// ============================================================================
+
+// .DA with a compound (subtraction) expression must emit the correct 16-bit
+// value as two bytes (little-endian).  This is the A2osX BIN header pattern:
+//   CS.START  cld              ; at $2000
+//             .DA CS.END-CS.START   ; code size = $1C74
+//   ...
+//   CS.END                    ; at $3C74
+TEST_F(ScmasmSyntaxTest, DA_16bit_CompoundExpressionHighByteCorrect) {
+  // CS.START is at $2000 (the .OR target).
+  // CS.END is placed $1C74 bytes later.
+  // .DA CS.END-CS.START must emit [$74, $1C] (little-endian $1C74).
+  // Bug: without parens the high byte was $3C (= >CS.END - CS.START).
+  const int kCodeSize = 0x1C74;
+  std::string source = "        .OR $2000\n";
+  source += "CS.START nop\n"; // label at $2000
+  // Emit (kCodeSize-1) filler bytes to place CS.END at $2000 + kCodeSize
+  source += "        .BS " + std::to_string(kCodeSize - 1) + "\n";
+  source += "CS.END  nop\n"; // label at $3C74
+  // Now go back and emit the .DA (order doesn't matter — DataAtom is
+  // re-evaluated during assembly fixup using the expression strings)
+  source += "        .OR $2010\n"; // arbitrary location for the .DA
+  source += "        .DA CS.END-CS.START\n";
+
+  parser->Parse(source, section, symbols);
+
+  Assembler assembler;
+  assembler.SetCpuPlugin(cpu.get());
+  assembler.SetSymbolTable(&symbols);
+  assembler.AddSection(section);
+  AssemblerResult result = assembler.Assemble();
+  ASSERT_TRUE(result.success) << "Assembly must succeed";
+
+  // Find the DataAtom produced by .DA CS.END-CS.START (2 bytes, at $2010)
+  std::vector<uint8_t> da_bytes;
+  for (const auto &atom : section.atoms) {
+    if (atom->type == AtomType::Data) {
+      auto da = std::dynamic_pointer_cast<DataAtom>(atom);
+      if (da && da->data.size() == 2) {
+        da_bytes = da->data;
+        break;
+      }
+    }
+  }
+
+  ASSERT_EQ(da_bytes.size(), 2u)
+      << ".DA CS.END-CS.START must produce exactly 2 bytes";
+  EXPECT_EQ(da_bytes[0], 0x74u)
+      << "Low byte must be $74 (low byte of $1C74)";
+  EXPECT_EQ(da_bytes[1], 0x1Cu)
+      << "High byte must be $1C (high byte of $1C74); "
+         "$3C means byte-op applied before subtraction (bug)";
+}
+
 // Regression: JSR/JMP to a ZP-range address (0x01–0xFF) was incorrectly
 // selecting ZeroPage addressing mode.  JSR and JMP have no ZP variant, so
 // EncodeWithTable returned an empty vector, silently dropping the instruction.
@@ -4318,4 +4387,140 @@ TEST(ScmasmBranchRelaxation, ForwardBranch_ZPInGap_NoFalseRelax_At127) {
   ASSERT_GE(code.size(), 2u);
   EXPECT_EQ(code[0], 0xF0u) << "First byte must be BEQ opcode";
   EXPECT_EQ(code[1], 0x7Fu) << "BEQ offset must be +127 (0x7F)";
+}
+
+// ============================================================================
+// Macro-Shadowing-Label Regression Tests
+//
+// Regression for the bug where ParseLabel() rejected column-0 tokens that
+// matched a defined macro name.  In SCMASM/Merlin format, column 0 is ALWAYS
+// the label field; a token there must always be treated as a label definition,
+// even if its name (case-insensitively) matches a user-defined macro.
+//
+// Real-world case: A2osX SH.S defines a macro named SLEEP (`.MA SLEEP`) and
+// then, inside a `.DUMMY .OR 0` block, defines `Sleep .BS 4`.  Before the fix,
+// `Sleep` was silently dropped from the symbol table because ParseLabel()
+// saw that "SLEEP" matched a macro and returned "" — so `ldy #Sleep+3`
+// assembled with Sleep=0 instead of the correct struct offset.
+// ============================================================================
+
+// Column-0 label whose name matches a macro is correctly registered.
+TEST_F(ScmasmSyntaxTest, MacroNamedLabelAtColumn0IsRegistered) {
+  // Define a macro named SLEEP, then define a label also named Sleep.
+  // The label must win because it is at column 0.
+  std::string source = R"(
+        .MA SLEEP
+        nop
+        .EM
+        .OR $2000
+Sleep   nop
+)";
+
+  parser->Parse(source, section, symbols);
+
+  Assembler assembler;
+  assembler.SetCpuPlugin(cpu.get());
+  assembler.SetSymbolTable(&symbols);
+  assembler.AddSection(section);
+  AssemblerResult result = assembler.Assemble();
+  ASSERT_TRUE(result.success) << "Assembly must succeed";
+
+  int64_t sleep_addr = -1;
+  ASSERT_TRUE(symbols.Lookup("SLEEP", sleep_addr))
+      << "Sleep label must be registered even though SLEEP is also a macro";
+  EXPECT_EQ(sleep_addr, 0x2000)
+      << "Sleep label should be at $2000 (the .OR origin)";
+}
+
+// Macro invocation still works when the macro name appears in the mnemonic
+// column (indented), even though the same name can be a label at column 0.
+TEST_F(ScmasmSyntaxTest, MacroInvocationStillWorksWhenNamedSameAsLabel) {
+  // Define SLEEP macro, define Sleep label, then invoke SLEEP from mnemonic
+  // column.  The invocation (indented >SLEEP) must expand to the macro body.
+  std::string source = R"(
+        .MA SLEEP
+        nop
+        .EM
+        .OR $2000
+Sleep   nop
+        >SLEEP
+)";
+
+  parser->Parse(source, section, symbols);
+
+  Assembler assembler;
+  assembler.SetCpuPlugin(cpu.get());
+  assembler.SetSymbolTable(&symbols);
+  assembler.AddSection(section);
+  AssemblerResult result = assembler.Assemble();
+  ASSERT_TRUE(result.success) << "Assembly must succeed";
+
+  // Expect 2 NOP instructions: one from `Sleep nop` and one from `>SLEEP` body
+  size_t nop_count = 0;
+  for (const auto &atom : section.atoms) {
+    if (atom->type == AtomType::Instruction) {
+      auto inst = std::dynamic_pointer_cast<InstructionAtom>(atom);
+      if (inst && inst->mnemonic == "NOP") {
+        nop_count++;
+      }
+    }
+  }
+  EXPECT_EQ(nop_count, 2u)
+      << "Expected 2 NOPs: one from the label line, one from macro expansion";
+}
+
+// Reproduce the exact A2osX SH.S SLEEP/Sleep pattern:
+//   .MA SLEEP / jsr SLEEP.ENTRY / .EM
+//   .DUMMY / .OR 0 / Sleep .BS 4 / .ED
+//   ldy #Sleep+3   → must emit LDY #3, not LDY #0
+TEST_F(ScmasmSyntaxTest, MacroShadowLabelBug_SHSleepPattern) {
+  // Simplified reproduction of A2osX SH.S:
+  //   - SLEEP macro defined (uses any body)
+  //   - .DUMMY .OR 0 block with Sleep .BS 4  (struct offset field)
+  //   - ldy #Sleep+3 must produce LDY immediate = 3
+  std::string source = R"(
+        .MA SLEEP
+        nop
+        .EM
+        .OR $2000
+        .DUMMY
+        .OR 0
+Sleep   .BS 4
+        .ED
+        ldy #Sleep+3
+)";
+
+  parser->Parse(source, section, symbols);
+
+  Assembler assembler;
+  assembler.SetCpuPlugin(cpu.get());
+  assembler.SetSymbolTable(&symbols);
+  assembler.AddSection(section);
+  AssemblerResult result = assembler.Assemble();
+  ASSERT_TRUE(result.success) << "Assembly must succeed";
+
+  // Sleep must be 0 (base of dummy block), so #Sleep+3 = 3
+  int64_t sleep_val = -1;
+  ASSERT_TRUE(symbols.Lookup("SLEEP", sleep_val))
+      << "Sleep symbol must exist";
+  EXPECT_EQ(sleep_val, 0)
+      << "Sleep is at offset 0 in the dummy block (first field)";
+
+  // Find the LDY instruction and verify its immediate operand
+  std::vector<uint8_t> ldy_bytes;
+  for (const auto &atom : section.atoms) {
+    if (atom->type == AtomType::Instruction) {
+      auto inst = std::dynamic_pointer_cast<InstructionAtom>(atom);
+      if (inst && inst->mnemonic == "LDY") {
+        ldy_bytes = inst->encoded_bytes;
+      }
+    }
+  }
+
+  ASSERT_EQ(ldy_bytes.size(), 2u)
+      << "LDY #imm must be 2 bytes; 0 bytes = instruction dropped";
+  EXPECT_EQ(ldy_bytes[0], 0xA0u) << "LDY immediate opcode is $A0";
+  EXPECT_EQ(ldy_bytes[1], 0x03u)
+      << "LDY operand must be 3 (Sleep=0, 0+3=3); "
+         "0 indicates macro-shadowing bug (Sleep resolved to 0 before fix)";
 }
