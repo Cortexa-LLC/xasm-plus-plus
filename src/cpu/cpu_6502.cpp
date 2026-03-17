@@ -2155,6 +2155,14 @@ Cpu6502::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
     else if (trimmed[0] == '/') {
       mode = AddressingMode::Immediate;
     }
+    // 65816 indirect long: [$zp] or [$zp],Y
+    else if (trimmed[0] == '[') {
+      if (trimmed.find(",Y") != std::string::npos) {
+        mode = AddressingMode::IndirectLongIndexedY;
+      } else {
+        mode = AddressingMode::IndirectLong;
+      }
+    }
     // Indirect modes
     else if (trimmed[0] == '(') {
       size_t close_paren = trimmed.find(')');

@@ -38,7 +38,8 @@ CommandLineOptions ParseCommandLine(int argc, char **argv) {
 
   // Output file option
   app.add_option("--output,-o", opts.output, "Output file (default: a.out)")
-      ->default_val("a.out");
+      ->default_val("a.out")
+      ->each([&opts](const std::string &) { opts.output_explicit = true; });
 
   // Listing file option (optional)
   app.add_option("--list", opts.listing_file, "Generate listing file (.lst)");

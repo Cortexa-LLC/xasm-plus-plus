@@ -206,8 +206,9 @@ int main(int argc, char **argv) {
 
         parser.Parse(source, section, symbols);
 
-        // .TF directive overrides -o when present
-        if (!parser.GetTfOutput().empty()) {
+        // .TF directive sets output when -o was not explicitly provided.
+        // Explicit -o always takes precedence over .TF.
+        if (!parser.GetTfOutput().empty() && !opts.output_explicit) {
           opts.output = parser.GetTfOutput();
         }
       } else if (opts.syntax == "edtasm") {

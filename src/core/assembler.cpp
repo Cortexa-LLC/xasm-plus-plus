@@ -446,6 +446,14 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
               value_str = Trim(value_str.substr(0, comma_pos));
             }
 
+            // Strip brackets for 65816 indirect long: [$zp] or [$zp],Y
+            if (!value_str.empty() && value_str[0] == '[') {
+              size_t close_bracket = value_str.find(']');
+              if (close_bracket != std::string::npos) {
+                value_str = Trim(value_str.substr(1, close_bracket - 1));
+              }
+            }
+
             if (value_str[0] == '#') {
               // Immediate: #$42 or #SYMBOL
               // Use shared ExpressionParser to handle both hex literals and symbol

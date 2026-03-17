@@ -46,6 +46,7 @@ struct CommandLineOptions {
   std::string cpu = "6502";        ///< Target CPU (6502, 65c02, 65816, etc.)
   std::string syntax = "simple";   ///< Syntax style (simple, merlin)
   std::string output = "a.out";    ///< Output filename
+  bool output_explicit = false;    ///< True when -o was provided on the command line
   std::string listing_file;        ///< Listing file (.lst) - optional
   std::string symbol_file;         ///< Symbol table file (.sym) - optional
   std::string color_mode = "auto"; ///< Color output mode (auto, always, never)

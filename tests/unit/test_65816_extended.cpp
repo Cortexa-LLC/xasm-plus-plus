@@ -1,8 +1,11 @@
 // 65816 Extended Instructions tests
 // Tests for SEP, REP, and other missing 65816 instructions
 
+#include "xasm++/assembler.h"
 #include "xasm++/cpu/cpu_6502.h"
+#include "xasm++/section.h"
 #include <gtest/gtest.h>
+#include <memory>
 
 using namespace xasm;
 
@@ -100,4 +103,68 @@ TEST(Cpu65816ExtendedTest, MVN_65816) {
   EXPECT_EQ(bytes[0], 0x54); // MVN opcode
   EXPECT_EQ(bytes[1], 0x12); // Source bank
   EXPECT_EQ(bytes[2], 0x34); // Dest bank
+}
+
+// ============================================================================
+// Group 9: 65816 Indirect Long Addressing — assembler bracket-stripping
+// ============================================================================
+
+// Test 9: LDA [$01] — indirect long (opcode $A7, 2 bytes total)
+TEST(Cpu65816ExtendedTest, LDA_IndirectLong_65816) {
+  Assembler assembler;
+  Cpu6502 cpu;
+  cpu.SetCpuMode(CpuMode::Cpu65816);
+  assembler.SetCpuPlugin(&cpu);
+
+  Section section(".text", static_cast<uint32_t>(SectionAttributes::Code),
+                  0x2000);
+  auto instr = std::make_shared<InstructionAtom>("LDA", "[$01]");
+  section.atoms.push_back(instr);
+  assembler.AddSection(section);
+  AssemblerResult result = assembler.Assemble();
+
+  EXPECT_TRUE(result.success);
+  ASSERT_EQ(instr->encoded_bytes.size(), 2UL);
+  EXPECT_EQ(instr->encoded_bytes[0], 0xA7); // LDA [dp]
+  EXPECT_EQ(instr->encoded_bytes[1], 0x01); // dp = $01
+}
+
+// Test 10: LDA [$01],Y — indirect long indexed Y (opcode $B7, 2 bytes total)
+TEST(Cpu65816ExtendedTest, LDA_IndirectLongIndexedY_65816) {
+  Assembler assembler;
+  Cpu6502 cpu;
+  cpu.SetCpuMode(CpuMode::Cpu65816);
+  assembler.SetCpuPlugin(&cpu);
+
+  Section section(".text", static_cast<uint32_t>(SectionAttributes::Code),
+                  0x2000);
+  auto instr = std::make_shared<InstructionAtom>("LDA", "[$01],Y");
+  section.atoms.push_back(instr);
+  assembler.AddSection(section);
+  AssemblerResult result = assembler.Assemble();
+
+  EXPECT_TRUE(result.success);
+  ASSERT_EQ(instr->encoded_bytes.size(), 2UL);
+  EXPECT_EQ(instr->encoded_bytes[0], 0xB7); // LDA [dp],Y
+  EXPECT_EQ(instr->encoded_bytes[1], 0x01); // dp = $01
+}
+
+// Test 11: LDA [$04],Y — indirect long indexed Y with different ZP address
+TEST(Cpu65816ExtendedTest, LDA_IndirectLongIndexedY_Addr04_65816) {
+  Assembler assembler;
+  Cpu6502 cpu;
+  cpu.SetCpuMode(CpuMode::Cpu65816);
+  assembler.SetCpuPlugin(&cpu);
+
+  Section section(".text", static_cast<uint32_t>(SectionAttributes::Code),
+                  0x2000);
+  auto instr = std::make_shared<InstructionAtom>("LDA", "[$04],Y");
+  section.atoms.push_back(instr);
+  assembler.AddSection(section);
+  AssemblerResult result = assembler.Assemble();
+
+  EXPECT_TRUE(result.success);
+  ASSERT_EQ(instr->encoded_bytes.size(), 2UL);
+  EXPECT_EQ(instr->encoded_bytes[0], 0xB7); // LDA [dp],Y
+  EXPECT_EQ(instr->encoded_bytes[1], 0x04); // dp = $04
 }
