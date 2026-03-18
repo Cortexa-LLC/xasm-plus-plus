@@ -4654,3 +4654,130 @@ Sleep   .BS 4
       << "LDY operand must be 3 (Sleep=0, 0+3=3); "
          "0 indicates macro-shadowing bug (Sleep resolved to 0 before fix)";
 }
+
+// ============================================================================
+// Regression test: ':N' colon-local-label forward reference inside a macro
+// with no preceding global label.
+//
+// Bug: ExpandLocalLabelsInOperand() returned the operand unchanged when
+// last_global_label_ was empty, so ":2" stayed as ":2" instead of being
+// promoted to the scoped name ":@1:2".  The symbol lookup in EncodeInstructions
+// then failed and the branch was encoded with offset = -2 (branch-to-self),
+// creating an infinite loop at runtime.
+//
+// This is triggered by the A2osX INCW macro pattern:
+//   .MA INCW
+//   .DO ]#=2
+//   inc ]1,]2
+//   bne :1        <- ':1' on the .ELSE boundary
+//   inc ]1+1,]2
+//:1 .ELSE
+//   inc ]1
+//   bne :2        <- ':2' forward ref to .FIN label
+//   inc ]1+1
+//:2 .FIN
+//   .EM
+//
+// When called with 1 argument and no prior global label, bne :2 must branch
+// *forward* to skip inc ]1+1 — not backward to itself (= infinite loop).
+// ============================================================================
+TEST_F(ScmasmSyntaxTest, ColonLabelForwardRefInMacroNoGlobalLabel) {
+  // Minimal reproduction: ':N' forward reference inside a macro when there is
+  // no global label set at the call site.
+  std::string source = R"(
+        .OP 65C02
+        .OR $2000
+        .MA TEST
+        INC $10
+        BNE :2
+        INC $11
+:2      RTS
+        .EM
+        >TEST
+)";
+
+  parser->Parse(source, section, symbols);
+
+  Assembler assembler;
+  assembler.SetCpuPlugin(cpu.get());
+  assembler.SetSymbolTable(&symbols);
+  assembler.AddSection(section);
+  AssemblerResult result = assembler.Assemble();
+  ASSERT_TRUE(result.success) << "Assembly must succeed";
+
+  // Find the BNE instruction and verify it encodes a FORWARD branch (+2),
+  // NOT a backward branch (-2 = branch-to-self = infinite loop).
+  std::vector<uint8_t> bne_bytes;
+  for (const auto &atom : section.atoms) {
+    if (atom->type == AtomType::Instruction) {
+      auto inst = std::dynamic_pointer_cast<InstructionAtom>(atom);
+      if (inst && inst->mnemonic == "BNE") {
+        bne_bytes = inst->encoded_bytes;
+      }
+    }
+  }
+
+  ASSERT_EQ(bne_bytes.size(), 2u)
+      << "BNE must be 2 bytes; 0 means instruction was dropped";
+  EXPECT_EQ(bne_bytes[0], 0xD0u) << "BNE opcode must be $D0";
+  EXPECT_EQ(bne_bytes[1], 0x02u)
+      << "BNE offset must be +2 (skip INC $11); "
+         "$FE (-2) means ':2' was not expanded and branch loops to itself "
+         "(ExpandLocalLabelsInOperand early-return bug when last_global_label_ is empty)";
+}
+
+TEST_F(ScmasmSyntaxTest, ColonLabelInMacroDoElseFin_INCW_Pattern) {
+  // Full INCW-style macro: .DO/.ELSE/.FIN with ':N' labels on boundary lines,
+  // invoked with 1 argument so the ELSE block is taken.
+  // BNE :2 inside the ELSE block must jump FORWARD over INC ]1+1.
+  std::string source = R"(
+        .OP 65C02
+        .OR $2000
+        .MA INCW
+        .DO ]#=2
+        INC ]1,]2
+        BNE :1
+        INC ]1+1,]2
+:1      .ELSE
+        INC ]1
+        BNE :2
+        INC ]1+1
+:2      .FIN
+        .EM
+COUNTER .EQ $10
+        >INCW COUNTER
+        RTS
+)";
+
+  parser->Parse(source, section, symbols);
+
+  Assembler assembler;
+  assembler.SetCpuPlugin(cpu.get());
+  assembler.SetSymbolTable(&symbols);
+  assembler.AddSection(section);
+  AssemblerResult result = assembler.Assemble();
+  ASSERT_TRUE(result.success) << "Assembly must succeed";
+
+  // Expected layout (1-arg INCW, ELSE branch taken):
+  //   $2000: INC COUNTER    (2 bytes, E6 10)
+  //   $2002: BNE :@1:2      (2 bytes, D0 02) <- must be +2, NOT $FE/-2
+  //   $2004: INC COUNTER+1  (2 bytes, E6 11)
+  //   $2006: :@1:2 label    (0 bytes, address marker)
+  //   $2006: RTS            (1 byte,  60)
+  std::vector<uint8_t> bne_bytes;
+  for (const auto &atom : section.atoms) {
+    if (atom->type == AtomType::Instruction) {
+      auto inst = std::dynamic_pointer_cast<InstructionAtom>(atom);
+      if (inst && inst->mnemonic == "BNE") {
+        bne_bytes = inst->encoded_bytes;
+      }
+    }
+  }
+
+  ASSERT_EQ(bne_bytes.size(), 2u)
+      << "BNE must be 2 bytes";
+  EXPECT_EQ(bne_bytes[0], 0xD0u) << "BNE opcode is $D0";
+  EXPECT_EQ(bne_bytes[1], 0x02u)
+      << "BNE offset must be +2 (forward, skip INC ]1+1); "
+         "$FE = -2 = branch-to-self infinite loop (colon-label expansion bug)";
+}

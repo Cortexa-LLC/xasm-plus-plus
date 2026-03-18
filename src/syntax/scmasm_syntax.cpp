@@ -1624,7 +1624,17 @@ uint8_t ScmasmSyntaxParser::ApplyHighBitRule(char c, char delimiter) const {
 
 std::string ScmasmSyntaxParser::ExpandLocalLabelsInOperand(
     const std::string &operand) const {
-  if (operand.empty() || last_global_label_.empty())
+  if (operand.empty())
+    return operand;
+  // Skip expansion only when BOTH the global label scope AND the macro scope
+  // are empty.  When inside a macro invocation, ':N' local labels are scoped
+  // via current_macro_label_scope_ even if no global label has been set yet —
+  // the old check `last_global_label_.empty()` caused ':N' macro-local forward
+  // references to be silently left unexpanded (kept as ":2" instead of being
+  // promoted to ":@1:2"), making the symbol lookup fail in EncodeInstructions
+  // and the branch encode with offset = -2 (branch-to-self), producing an
+  // infinite loop at runtime.
+  if (last_global_label_.empty() && current_macro_label_scope_.empty())
     return operand;
 
   std::string expanded;
