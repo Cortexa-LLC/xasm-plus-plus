@@ -173,7 +173,10 @@ bool SCMASMNumberParser::TryParse(const std::string &token,
   // ASCII character constant: delimiter followed by character
   // Delimiter determines high bit rule
   // Must be exactly 2 characters (delimiter + char)
-  if (!std::isdigit(token[0]) && token.length() == 2) {
+  // The delimiter must be a special (non-alphanumeric) character such as
+  // ', ", #, / etc.  Alphanumeric first characters (e.g. "AB", "GP") are
+  // symbol names, NOT character constants.
+  if (!std::isalnum(static_cast<unsigned char>(token[0])) && token.length() == 2) {
     char delimiter = token[0];
     char c = token[1];
 
@@ -881,7 +884,15 @@ void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
     using namespace scmasm::directives;
     bool is_control_flow = (opcode_upper == DO || opcode_upper == LU);
     
-    if (!label.empty() && !is_control_flow) {
+    // .EQ and .SE define symbols via their directive handlers (HandleEq/HandleSe),
+    // which evaluate the expression and store the result. Pre-defining the label
+    // as Label(current_address_) here would corrupt their expression evaluation:
+    // e.g. "PAKME.ID .SE PAKME.ID+2" would evaluate PAKME.ID as the current PC
+    // (from the pre-definition) instead of the previous Set value, producing
+    // wrong accumulated counters like PAKME.ID.
+    bool is_value_directive = (opcode_upper == ".EQ" || opcode_upper == ".SE");
+
+    if (!label.empty() && !is_control_flow && !is_value_directive) {
       if (opcode_upper == ".OR") {
         // Label before .OR - define it and create label atom at current address
         if (IsLocalLabel(label)) {
@@ -2254,8 +2265,11 @@ void ScmasmSyntaxParser::HandleDo(const std::string &label,
     while (lend < bline.length() && !std::isspace(bline[lend]))
       lend++;
     std::string blabel = bline.substr(0, lend);
-    // If the first token starts with '.' it's the directive itself, not a label
-    if (blabel.empty() || blabel[0] == '.')
+    // If the first token starts with '.' and is NOT a local label (.N where N
+    // is one-or-more digits), then it's the directive itself (.FIN, .ELSE) —
+    // skip it.  Local labels like '.28' or '.8' on a .FIN/.ELSE line must be
+    // defined at the current boundary address.
+    if (blabel.empty() || (blabel[0] == '.' && !IsLocalLabel(blabel)))
       return;
     // Define the label at the current address
     if (IsLocalLabel(blabel)) {

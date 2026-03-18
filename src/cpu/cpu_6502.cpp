@@ -2024,6 +2024,19 @@ std::vector<uint8_t> Cpu6502::EncodeXBA() const {
 }
 
 std::vector<uint8_t> Cpu6502::EncodeXCE() const {
+  // XCE exchanges the carry flag with the 65816 emulation bit (e).
+  // The assembler cannot know the carry value at assembly time, so we apply a
+  // conservative rule: always reset M and X to 8-bit (true) after XCE.
+  //
+  // This is correct for BOTH transition directions:
+  //   clc / xce  → switch to native mode: M=1,X=1 reset here is immediately
+  //                 overridden by the rep #$30 / rep #$20 that convention
+  //                 requires after entering native mode.
+  //   sec / xce  → switch to emulation mode: M=1,X=1 is exactly the CPU's
+  //                 state in emulation mode, so subsequent immediates are
+  //                 assembled as 8-bit (2-byte) as required.
+  m_flag_ = true;
+  x_flag_ = true;
   return {Opcodes::XCE};
 }
 

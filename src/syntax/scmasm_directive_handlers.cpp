@@ -230,11 +230,6 @@ void HandleEq(const std::string &label, const std::string &operand,
     }
   }
 
-  // Evaluate value expression
-  uint32_t value =
-      EvaluateExpression(value_expr, *context.symbols, context.parser_state);
-
-  // Define symbol (immutable) - .EQ creates Equate type
   // Normalize label to uppercase for case-insensitive SCMASM compatibility
   std::string norm_label = util::ToUpper(label);
 
@@ -249,22 +244,37 @@ void HandleEq(const std::string &label, const std::string &operand,
     norm_label = eq_parser->ScopedLocalLabelName(norm_label);
   }
 
+  // Evaluate value expression.  If a symbol referenced in the expression is
+  // not yet defined (forward reference, or defined only in another translation
+  // unit that is not included by this source file), use 0 as a placeholder and
+  // push an EquateAtom so the symbol is re-evaluated on every assembly pass.
+  // This matches original SCMASM/vasm behaviour where undefined symbols in
+  // .EQ expressions default to 0 rather than aborting the parse.
+  uint32_t value = 0;
+  bool needs_reassembly_eval = false;
+  try {
+    value = EvaluateExpression(value_expr, *context.symbols, context.parser_state);
+  } catch (const std::exception &) {
+    // Undefined symbol or other evaluation error — use 0 and defer to assembly
+    value = 0;
+    needs_reassembly_eval = true;
+  }
+
   auto expr = std::make_shared<LiteralExpr>(value);
   context.symbols->Define(norm_label, SymbolType::Equate, expr);
 
-  // If the expression contains '*' (current address), push an EquateAtom so
-  // the symbol is re-evaluated each EncodeInstructions pass. This ensures
-  // positional equates like "PAKME.T .EQ *" or "CORE.S .EQ *-CORE.B" track
-  // the correct physical address after branch relaxation changes code sizes.
+  // Push an EquateAtom when:
+  // 1. The expression contains '*' (current address) — must track PC changes
+  //    across branch-relaxation passes; OR
+  // 2. Evaluation failed above (forward/undefined reference) — must retry
+  //    during assembly passes once all symbols are defined.
   //
-  // EXCEPTION: inside a .DUMMY section, '*' refers to the dummy-section's ZP
-  // address counter (e.g. $EE), which is fixed — it does NOT change with branch
-  // relaxation. Pushing an EquateAtom here would cause re-evaluation against the
-  // main section's PC ($2000+) on subsequent passes, corrupting ZP addresses
-  // (e.g. "PageCount .EQ *" → $EE correct, but EquateAtom re-sets it to $2000).
+  // EXCEPTION for case 1: inside a .DUMMY section, '*' refers to the
+  // dummy-section's ZP address counter which is fixed, so no EquateAtom needed.
   bool in_dummy = context.parser_state &&
       static_cast<ScmasmSyntaxParser *>(context.parser_state)->InDummySection();
-  if (value_expr.find('*') != std::string::npos && !in_dummy) {
+  bool has_star = value_expr.find('*') != std::string::npos;
+  if ((has_star && !in_dummy) || needs_reassembly_eval) {
     auto eq_atom = std::make_shared<EquateAtom>(norm_label, value_expr);
     context.section->atoms.push_back(eq_atom);
   }
@@ -652,6 +662,14 @@ void HandleDa(const std::string &label, const std::string &operand,
     }
   }
 
+  // In dummy sections (.DUMMY/.ED), advance address only — no bytes emitted
+  ValidateParser(context.parser_state);
+  auto *da_parser = static_cast<ScmasmSyntaxParser *>(context.parser_state);
+  if (da_parser->InDummySection()) {
+    *context.current_address += data.size();
+    return;
+  }
+
   // Create DataAtom with expressions AND initial data
   // - expressions: for multi-pass forward reference resolution
   // - data: for immediate cases (tests, simple expressions)
@@ -781,6 +799,14 @@ void HandleHs(const std::string &label, const std::string &operand,
       ThrowFormattedError(error_msg, context);
     }
     data.push_back(static_cast<uint8_t>(byte_val));
+  }
+
+  // In dummy sections (.DUMMY/.ED), advance address only — no bytes emitted
+  ValidateParser(context.parser_state);
+  auto *hs_parser = static_cast<ScmasmSyntaxParser *>(context.parser_state);
+  if (hs_parser->InDummySection()) {
+    *context.current_address += data.size();
+    return;
   }
 
   auto atom = std::make_shared<DataAtom>(data);

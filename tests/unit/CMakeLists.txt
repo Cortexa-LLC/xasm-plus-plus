@@ -228,6 +228,7 @@ add_executable(test_scmasm_conditionals
 target_link_libraries(test_scmasm_conditionals
     xasm_syntax
     xasm_core
+    xasm_cpu
     gtest_main
     gtest
 )

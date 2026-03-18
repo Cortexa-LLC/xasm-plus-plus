@@ -4117,6 +4117,66 @@ AFTER   .EQ *
       << "AFTER (after .EP with 1 byte emitted) must be $1001";
 }
 
+TEST_F(ScmasmSyntaxTest, PhaseWithTwoCharSymbolArgument) {
+  // Regression test: using a 2-character symbol (e.g. "GP") as the .PH
+  // argument must evaluate the symbol from the symbol table, NOT treat it as
+  // an ASCII character constant (delimiter='G', char='P' → 80).
+  //
+  // Before fix: SCMASMNumberParser::TryParse matched any 2-char token starting
+  // with a non-digit as a character constant.  So "GP" was parsed as
+  // delimiter='G'(65), char='P'(80) → 80 ($50) instead of GP=$BF00.
+  // The fix changes the check from !isdigit to !isalnum.
+  std::string source = R"(
+        .OR $2000
+GP      .EQ $BF00
+        .PH GP
+        nop
+        nop
+        nop
+FREELEN .EQ $BF05-*
+        .BS FREELEN
+        .EP
+AFTER   .EQ *
+)";
+
+  Assembler assembler;
+  assembler.SetCpuPlugin(cpu.get());
+  assembler.SetSymbolTable(&symbols);
+
+  ASSERT_NO_THROW(parser->Parse(source, section, symbols));
+  assembler.AddSection(section);
+
+  AssemblerResult result = assembler.Assemble();
+  ASSERT_TRUE(result.success) << "Assembly must succeed";
+
+  // FREELEN = $BF05 - $BF03 (after 3 nops) = 2
+  int64_t freelen_val = 0;
+  ASSERT_TRUE(symbols.Lookup("FREELEN", freelen_val));
+  EXPECT_EQ(freelen_val, 2)
+      << "FREELEN ($BF05-*) inside .PH GP must be 2, not ASCII('P')=80";
+
+  // AFTER = $2000 + 3 nops + 2 .BS bytes = $2005
+  int64_t after_val = 0;
+  ASSERT_TRUE(symbols.Lookup("AFTER", after_val));
+  EXPECT_EQ(after_val, 0x2005)
+      << "AFTER (after .EP with 5 bytes emitted) must be $2005";
+
+  // Binary: 3 nops + 2 zero bytes = 5 bytes total.
+  // InstructionAtom::size is not updated by EncodeInstructions; use
+  // encoded_bytes.size() for instruction atoms and atom->size for space atoms.
+  size_t total = 0;
+  for (const auto &a : section.atoms) {
+    if (!a) continue;
+    if (a->type == AtomType::Instruction) {
+      auto inst = std::dynamic_pointer_cast<InstructionAtom>(a);
+      if (inst) total += inst->encoded_bytes.size();
+    } else {
+      total += a->size;
+    }
+  }
+  EXPECT_EQ(total, 5u) << "Phase block should emit 5 bytes (3 nops + 2 .BS)";
+}
+
 // ─── SCMASM private-label marker (*LABEL .EQ value) ──────────────────────────
 //
 // In SCMASM, a line starting with *<labelchar> at column 0 is NOT a full-line

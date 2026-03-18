@@ -3,6 +3,8 @@
  * @brief Unit tests for SCMASM conditional assembly directives (.DO/.ELSE/.FIN)
  */
 
+#include "xasm++/assembler.h"
+#include "xasm++/atom.h"
 #include "xasm++/cpu/cpu_6502.h"
 #include "xasm++/section.h"
 #include "xasm++/symbol.h"
@@ -457,6 +459,148 @@ TEST_F(ScmasmConditionalTest, LabelOnDoLineWithElseFalse) {
   int64_t dib_value;
   EXPECT_TRUE(symbols.Lookup("DIB", dib_value));
   EXPECT_EQ(dib_value, 0x3000);
+}
+
+// ============================================================================
+// Regression Tests
+// ============================================================================
+
+/**
+ * @brief Regression test: local label on .FIN line must be defined
+ *
+ * Bug: In define_boundary_label(), the check `blabel[0] == '.'` incorrectly
+ * skipped defining local labels (like `.28` or `.8`) on .FIN lines,
+ * treating them as directives. This caused branches targeting those labels
+ * to encode as `$FE` (branch-to-self), producing an infinite loop at runtime.
+ *
+ * The fix: only skip if the token starts with '.' AND is NOT a local label
+ * (i.e., IsLocalLabel returns false — not `.N` where N is all digits).
+ *
+ * This test verifies that a branch to a local label defined on a .FIN line
+ * resolves to the correct address, not $FE (branch to self).
+ */
+TEST_F(ScmasmConditionalTest, LocalLabelOnFinLineResolvesCorrectly) {
+  // Source: branch `beq .28` inside a .DO block where `.28` is the label on
+  // the .FIN line. The assembled BEQ must NOT produce $FE (branch to self).
+  std::string source =
+      "    .OR $0800\n"
+      "COND    .EQ 1\n"
+      "OUTER   lda #0\n"
+      "        .DO COND=1\n"
+      "        lda #1\n"  // 2 bytes
+      "        beq .28\n" // 2 bytes — must branch to .28 (NOT $FE)
+      "        lda #2\n"  // 2 bytes (target of successful beq .28 skip)
+      "        lda #3\n"  // 2 bytes
+      "        lda #4\n"  // 2 bytes
+      "        lda #5\n"  // 2 bytes
+      "        lda #6\n"  // 2 bytes
+      "        lda #7\n"  // 2 bytes
+      ".28     .FIN\n"    // .28 defined HERE — at end of block
+      "AFTER   nop\n";
+
+  parser->Parse(source, section, symbols);
+
+  Assembler assembler;
+  assembler.SetCpuPlugin(cpu.get());
+  assembler.SetSymbolTable(&symbols);
+  assembler.AddSection(section);
+  AssemblerResult result = assembler.Assemble();
+  ASSERT_TRUE(result.success) << "Assembly must succeed";
+
+  // Collect all bytes from instruction atoms
+  std::vector<uint8_t> bytes;
+  for (const auto &atom : section.atoms) {
+    if (atom && atom->type == AtomType::Instruction) {
+      auto inst = std::dynamic_pointer_cast<InstructionAtom>(atom);
+      if (inst) {
+        bytes.insert(bytes.end(), inst->encoded_bytes.begin(),
+                     inst->encoded_bytes.end());
+      }
+    } else if (atom && atom->type == AtomType::Data) {
+      auto data_atom = std::dynamic_pointer_cast<DataAtom>(atom);
+      if (data_atom) {
+        bytes.insert(bytes.end(), data_atom->data.begin(),
+                     data_atom->data.end());
+      }
+    }
+  }
+
+  // Locate the BEQ instruction (F0) in the assembled output
+  // Sequence: LDA #0 (2), LDA #1 (2), BEQ .28 (2), LDA #2..#7 (12), NOP (1)
+  // BEQ at offset 4 (after 2 LDAs)
+  ASSERT_GE(bytes.size(), 7u) << "Must have at least 7 bytes";
+  EXPECT_EQ(bytes[4], 0xF0) << "BEQ opcode expected at offset 4";
+
+  // The BEQ offset must NOT be $FE (branch to self bug)
+  EXPECT_NE(bytes[5], 0xFE)
+      << "BEQ offset $FE means branch-to-self bug: .28 label on .FIN line was "
+         "not defined";
+
+  // The BEQ should branch forward past the remaining LDAs to .28 = 12 bytes
+  // BEQ opcode is at address $0804, after 2-byte instruction PC = $0806
+  // .28 is at $0804 + 2 + 12 = $0812 (after all the LDA #2..#7 instructions)
+  // offset = $0812 - $0806 = 0x0C = 12
+  EXPECT_EQ(bytes[5], 0x0C)
+      << "BEQ should branch 12 bytes forward to .28 label on .FIN line";
+}
+
+/**
+ * @brief Regression test: local label `.8` on .FIN line inside .DO block
+ *
+ * Same bug as above but with single-digit `.8` label (ProDOS FX ILDR pattern:
+ *   .8   .FIN  -- end of .DO M.PM=1 block)
+ */
+TEST_F(ScmasmConditionalTest, SingleDigitLocalLabelOnFinLineResolvesCorrectly) {
+  std::string source =
+      "    .OR $0800\n"
+      "COND    .EQ 1\n"
+      "OUTER   lda #0\n"
+      "        .DO COND=1\n"
+      "        bcs .8\n"  // should branch to .8 at .FIN, NOT $FE
+      "        lda #1\n"
+      "        lda #2\n"
+      "        lda #3\n"
+      "        lda #4\n"
+      "        lda #5\n"
+      ".8      .FIN\n"  // .8 defined on .FIN line
+      "AFTER   nop\n";
+
+  parser->Parse(source, section, symbols);
+
+  Assembler assembler;
+  assembler.SetCpuPlugin(cpu.get());
+  assembler.SetSymbolTable(&symbols);
+  assembler.AddSection(section);
+  AssemblerResult result = assembler.Assemble();
+  ASSERT_TRUE(result.success) << "Assembly must succeed";
+
+  std::vector<uint8_t> bytes;
+  for (const auto &atom : section.atoms) {
+    if (atom && atom->type == AtomType::Instruction) {
+      auto inst = std::dynamic_pointer_cast<InstructionAtom>(atom);
+      if (inst) {
+        bytes.insert(bytes.end(), inst->encoded_bytes.begin(),
+                     inst->encoded_bytes.end());
+      }
+    } else if (atom && atom->type == AtomType::Data) {
+      auto data_atom = std::dynamic_pointer_cast<DataAtom>(atom);
+      if (data_atom) {
+        bytes.insert(bytes.end(), data_atom->data.begin(),
+                     data_atom->data.end());
+      }
+    }
+  }
+
+  ASSERT_GE(bytes.size(), 4u);
+
+  // BCS at offset 2 (after LDA #0 = 2 bytes)
+  EXPECT_EQ(bytes[2], 0xB0) << "BCS opcode at offset 2";
+  EXPECT_NE(bytes[3], 0xFE)
+      << "BCS offset $FE means branch-to-self bug: .8 label on .FIN was not "
+         "defined";
+  // 5 LDA instructions = 10 bytes after BCS; BCS offset = 10
+  EXPECT_EQ(bytes[3], 0x0A)
+      << "BCS should branch 10 bytes forward to .8 label on .FIN line";
 }
 
 // ============================================================================
