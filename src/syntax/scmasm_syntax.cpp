@@ -2238,6 +2238,18 @@ void ScmasmSyntaxParser::HandleDo(const std::string &label,
     }
   }
 
+  // If the .DO line has a global label, update the global label scope BEFORE
+  // processing the block content.  This ensures that local labels inside the
+  // .DO block (e.g. "bmi .1") are scoped to the .DO line's label, so they
+  // match labels defined AFTER the .FIN (which see the same scope after HandleDo
+  // sets last_global_label_ at the end).
+  // Without this, "bmi .1" inside a labeled ".DO" block uses the *previous* global
+  // scope, while ".1" after ".FIN" gets scoped to the .DO label — a mismatch that
+  // causes the branch to be encoded with offset -2 (branch-to-self = FE).
+  if (!label.empty() && !IsLocalLabel(label)) {
+    last_global_label_ = util::ToUpper(label);
+  }
+
   // Process lines in selected block
   for (size_t i = start_line; i < end_line;) {
     current_line_ = i + 1;
