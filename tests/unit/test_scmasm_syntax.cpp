@@ -93,6 +93,30 @@ TEST_F(ScmasmSyntaxTest, RecognizesLineNumberRange) {
   EXPECT_GT(section.atoms.size(), 0u);
 }
 
+TEST_F(ScmasmSyntaxTest, LineNumberPreservesIndentation) {
+  // Regression test: StripLineNumber must NOT strip all whitespace after the
+  // line number — only the one separator.  When all whitespace was stripped,
+  // an indented mnemonic like JMP ended up at column 0 and ParseLabel treated
+  // it as a label, making $A132 the "mnemonic" and producing an error.
+  // Format: "NNNN          JMP   $A132"  (line-num + spaces + mnemonic + operand)
+  std::string source =
+      "1000          .OR   $0800\n"
+      "1010          JMP   $0900\n";
+  parser->Parse(source, section, symbols);
+
+  // Should have OrgAtom + InstructionAtom (JMP $0900), not an error
+  ASSERT_GE(section.atoms.size(), 2u);
+  bool found_jmp = false;
+  for (const auto& atom : section.atoms) {
+    if (auto inst = std::dynamic_pointer_cast<InstructionAtom>(atom)) {
+      if (inst->mnemonic == "JMP") {
+        found_jmp = true;
+      }
+    }
+  }
+  EXPECT_TRUE(found_jmp) << "JMP should be parsed as instruction, not as label";
+}
+
 TEST_F(ScmasmSyntaxTest, ParsesDirectiveWithoutLineNumber) {
   // Line numbers are optional
   parser->Parse("    .OR $0800\n", section, symbols);
