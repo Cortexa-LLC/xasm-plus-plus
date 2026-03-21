@@ -502,9 +502,13 @@ std::string ScmasmSyntaxParser::StripLineNumber(const std::string &line) {
       return line;
     }
 
-    // Valid line number - skip it and following whitespace
-    while (pos < line.length() && std::isspace(line[pos])) {
-      pos++;
+    // Valid line number — skip exactly ONE separator character.
+    // Do NOT strip all following whitespace: the indentation after the
+    // separator distinguishes column-0 labels from indented mnemonics.
+    // e.g. "1010 LABEL    .EQ $00"  → strip "1010 " → "LABEL    .EQ $00"  (col 0 = label)
+    //      "1010           JMP $A132" → strip "1010 " → "          JMP $A132" (indented = mnemonic)
+    if (pos < line.length() && std::isspace(line[pos])) {
+      pos++;  // Skip exactly one separator space/tab
     }
 
     return line.substr(pos);
