@@ -133,6 +133,25 @@ public:
   void SetUppercaseFallback(bool enabled) { uppercase_fallback_ = enabled; }
 
   /**
+   * @brief Enable dotted-namespace fallback for symbol lookup.
+   *
+   * When enabled, Lookup() will strip the leading component of a dotted name
+   * and retry if the full name is not found.  This implements SCMASM semantics
+   * for the >LIBCALL macro pattern:
+   *
+   *   ldx #]1.]2  ->  ldx #hLIBETALK.LIBETALK.GETCFG
+   *
+   * "hLIBETALK.LIBETALK.GETCFG" is not a defined symbol, but
+   * "LIBETALK.GETCFG" is (= 6).  Stripping "hLIBETALK." exposes the
+   * defined suffix and produces the correct immediate value.
+   *
+   * @param enabled true to enable the fallback (SCMASM mode), false to disable
+   */
+  void SetDottedNamespaceFallback(bool enabled) {
+    dotted_namespace_fallback_ = enabled;
+  }
+
+  /**
    * @brief Define a new symbol
    *
    * Adds or updates a symbol in the table. For Label and Equate symbols,
@@ -249,6 +268,7 @@ private:
   std::unordered_map<std::string, Symbol> symbols_; ///< Internal symbol storage
   int64_t current_location_ = 0; ///< Current assembly address for $ operator
   bool uppercase_fallback_ = false; ///< SCMASM: retry lookup with UPPERCASE name
+  bool dotted_namespace_fallback_ = false; ///< SCMASM: strip leading X. and retry
 };
 
 } // namespace xasm

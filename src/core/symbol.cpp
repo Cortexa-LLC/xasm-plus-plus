@@ -52,6 +52,17 @@ bool ConcreteSymbolTable::Lookup(const std::string &name,
       }
     }
   }
+  // SCMASM dotted-namespace fallback: strip the leading "handle." component
+  // and retry.  The >LIBCALL macro expands  ldx #]1.]2  to
+  // ldx #hLIBETALK.LIBETALK.GETCFG — a compound that is never explicitly
+  // defined.  Stripping "hLIBETALK." exposes "LIBETALK.GETCFG" (= 6), which
+  // IS defined, producing the correct immediate operand.
+  if (dotted_namespace_fallback_) {
+    auto dot = name.find('.');
+    if (dot != std::string::npos) {
+      return Lookup(name.substr(dot + 1), value);
+    }
+  }
   return false;
 }
 

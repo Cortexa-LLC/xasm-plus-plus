@@ -1164,6 +1164,50 @@ TEST_F(ScmasmSyntaxTest, UndefinedMacroInvocationThrows) {
   }
 }
 
+TEST_F(ScmasmSyntaxTest, LibcallMacroDottedNamespaceFallback) {
+  // Regression test for AARP crash: >LIBCALL macro expands
+  //   ldx #]1.]2  ->  ldx #hLIBETALK.LIBETALK.GETCFG
+  // "hLIBETALK.LIBETALK.GETCFG" is not defined, but "LIBETALK.GETCFG" is (=6).
+  // The dotted-namespace fallback must strip "hLIBETALK." and resolve to 6.
+  // Without the fix, LDX encodes as A2 00 (0) and LIBCALL dispatches to the
+  // wrong function, crashing the Apple II.
+  std::string source = R"(
+        .OR $2000
+LIBETALK.GETCFG .EQ 6
+        .MA LIBCALL
+        ldx #]1.]2
+        .EM
+hLIBETALK       .BS 2
+START           >LIBCALL hLIBETALK,LIBETALK.GETCFG
+)";
+
+  parser->Parse(source, section, symbols);
+
+  Assembler assembler;
+  assembler.SetCpuPlugin(cpu.get());
+  assembler.SetSymbolTable(&symbols);
+  assembler.AddSection(section);
+  AssemblerResult result = assembler.Assemble();
+  ASSERT_TRUE(result.success) << "Assembly must succeed";
+
+  // Find the LDX instruction and verify immediate = 6 (not 0)
+  std::vector<uint8_t> ldx_bytes;
+  for (const auto &atom : section.atoms) {
+    if (atom->type == AtomType::Instruction) {
+      auto inst = std::dynamic_pointer_cast<InstructionAtom>(atom);
+      if (inst && inst->mnemonic == "LDX") {
+        ldx_bytes = inst->encoded_bytes;
+      }
+    }
+  }
+
+  ASSERT_EQ(ldx_bytes.size(), 2u) << "LDX #imm must be 2 bytes";
+  EXPECT_EQ(ldx_bytes[0], 0xA2u) << "LDX immediate opcode is $A2";
+  EXPECT_EQ(ldx_bytes[1], 0x06u)
+      << "LDX operand must be 6 (LIBETALK.GETCFG); "
+         "0 means dotted-namespace fallback is broken";
+}
+
 // ============================================================================
 // .DO/.ELSE/.FIN Conditional Assembly Tests
 // ============================================================================

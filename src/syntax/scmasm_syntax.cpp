@@ -357,6 +357,7 @@ void ScmasmSyntaxParser::Parse(const std::string &source, Section &section,
   // ADR-005 V1: this is the canonical place for the fallback; it is no longer
   // duplicated in assembler.cpp ParseExpression or the branch-resolution loop.
   symbols.SetUppercaseFallback(true);
+  symbols.SetDottedNamespaceFallback(true);
 
   // Split source into lines
   std::vector<std::string> lines;
