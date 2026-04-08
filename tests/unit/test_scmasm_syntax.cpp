@@ -1208,6 +1208,33 @@ START           >LIBCALL hLIBETALK,LIBETALK.GETCFG
          "0 means dotted-namespace fallback is broken";
 }
 
+TEST_F(ScmasmSyntaxTest, AmpersandLabelPrefixStripped) {
+  // In SCMASM, a column-0 label may begin with '&'. The '&' is stripped and
+  // the remainder is the symbol name. e.g. &CheckSMBStatus defines label
+  // CHECKSMBSTATUS (uppercased). Callers use jsr CORE.CHECKSMBSTATUS via the
+  // existing dotted-namespace fallback.
+  std::string source = R"(
+        .OR $2000
+&CheckSMBStatus ldy #0
+                rts
+        jsr CHECKSMBSTATUS
+)";
+
+  parser->Parse(source, section, symbols);
+
+  Assembler assembler;
+  assembler.SetCpuPlugin(cpu.get());
+  assembler.SetSymbolTable(&symbols);
+  assembler.AddSection(section);
+  AssemblerResult result = assembler.Assemble();
+  ASSERT_TRUE(result.success) << "Assembly must succeed; & label prefix must be accepted";
+
+  // &CheckSMBStatus should define CHECKSMBSTATUS at $2000
+  auto val = symbols.Lookup("CHECKSMBSTATUS");
+  ASSERT_TRUE(val.has_value()) << "CHECKSMBSTATUS must be defined";
+  EXPECT_EQ(val.value(), 0x2000u) << "label must resolve to $2000";
+}
+
 // ============================================================================
 // .DO/.ELSE/.FIN Conditional Assembly Tests
 // ============================================================================

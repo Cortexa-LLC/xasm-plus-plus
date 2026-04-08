@@ -1224,13 +1224,25 @@ std::string ScmasmSyntaxParser::ParseLabel(const std::string &line, size_t &pos,
     pos++;
   }
 
-  // Labels must start with letter, ., :, or _
+  // Labels must start with letter, ., :, _, or & (SCMASM & macro-label prefix)
   if (pos >= line.length() || (!std::isalpha(line[pos]) && line[pos] != '.' &&
-                               line[pos] != ':' && line[pos] != '_')) {
+                               line[pos] != ':' && line[pos] != '_' &&
+                               line[pos] != '&')) {
     return "";
   }
 
   size_t label_start = pos;
+
+  // Strip leading '&' (SCMASM macro-label prefix; column-0 only)
+  bool had_ampersand = (line[pos] == '&');
+  if (had_ampersand) {
+    ++pos;
+    // After '&', must have a normal label-start character
+    if (pos >= line.length() || !std::isalpha(line[pos])) {
+      pos = label_start;
+      return "";
+    }
+  }
 
   // Parse label characters (letter, digit, underscore, ., or :)
   while (pos < line.length() && (std::isalnum(line[pos]) || line[pos] == '_' ||
@@ -1238,7 +1250,9 @@ std::string ScmasmSyntaxParser::ParseLabel(const std::string &line, size_t &pos,
     pos++;
   }
 
-  std::string label = line.substr(label_start, pos - label_start);
+  // If the label started with '&', exclude it from the symbol name
+  size_t name_start = had_ampersand ? label_start + 1 : label_start;
+  std::string label = line.substr(name_start, pos - name_start);
 
   // Convert to uppercase for checking
   std::string label_upper = label;
