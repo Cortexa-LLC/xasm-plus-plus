@@ -1,0 +1,14 @@
+# SonarQube Community Edition Override
+# Use with project name 'sonarqube-ce' to keep volumes separate from Developer Edition:
+#   docker-compose -p sonarqube-ce -f .ai-pack/docker-compose.sonarqube.yml -f docker-compose.sonarqube-ce.yml up -d
+#
+# Developer Edition volumes: ai-pack_*
+# Community Edition volumes: sonarqube-ce_*
+# They never conflict — both sets can coexist on disk.
+
+version: '3.8'
+
+services:
+  sonarqube:
+    image: sonarqube:community
+    # All other settings inherited from base compose file

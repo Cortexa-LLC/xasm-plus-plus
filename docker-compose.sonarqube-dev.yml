@@ -7,5 +7,5 @@ version: '3.8'
 services:
   sonarqube:
     # Override image to use Developer Edition
-    image: sonarqube:10-developer
+    image: sonarqube:developer
     # All other settings inherited from base compose file
