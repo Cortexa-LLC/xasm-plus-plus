@@ -293,7 +293,8 @@ public:
   std::string UniqueVarLabel(const std::string &label) {
     if (!label.empty() && label[0] == ']' &&
         label.find(':') == std::string::npos) {
-      int seq = ++var_label_seq_[label];
+      int seq = 0;
+      seq = ++var_label_seq_[label];
       return label + "_" + std::to_string(seq);
     }
     return label;
@@ -397,20 +398,20 @@ private:
   };
 
   // Macro state
-  bool in_macro_definition_;      ///< True if defining a macro
+  bool in_macro_definition_ = false;      ///< True if defining a macro
   MacroDefinition current_macro_; ///< Current macro being defined
   std::unordered_map<std::string, MacroDefinition> macros_; ///< Defined macros
-  int macro_expansion_depth_; ///< Prevent infinite recursion
+  int macro_expansion_depth_ = 0; ///< Prevent infinite recursion
 
   // LUP (loop/repeat) block state
-  bool in_lup_block_;                 ///< True if currently inside a LUP block
-  int lup_count_;                     ///< Number of times to repeat LUP block
+  bool in_lup_block_ = false;                 ///< True if currently inside a LUP block
+  int lup_count_ = 0;                     ///< Number of times to repeat LUP block
   std::vector<std::string> lup_body_; ///< Lines captured in LUP block
-  int lup_nesting_depth_;             ///< Track nested LUP blocks
+  int lup_nesting_depth_ = 0;             ///< Track nested LUP blocks
 
   // DUM block state
-  bool in_dum_block_;    ///< True if currently inside a DUM block
-  uint32_t dum_address_; ///< Current address within DUM block
+  bool in_dum_block_ = false;    ///< True if currently inside a DUM block
+  uint32_t dum_address_ = 0; ///< Current address within DUM block
   std::unordered_map<std::string, uint32_t>
       variable_labels_; ///< ]variable -> offset
 
@@ -422,15 +423,15 @@ private:
   /// that are redefined across subroutines (like "]rts  rts").
   std::unordered_map<std::string, int> var_label_seq_; ///< ]varname -> seq#
 
-  uint32_t current_address_; ///< Current address (for tracking label addresses)
-  bool end_directive_seen_;  ///< True if END directive has been processed
+  uint32_t current_address_ = 0; ///< Current address (for tracking label addresses)
+  bool end_directive_seen_ = false;  ///< True if END directive has been processed
 
   std::vector<std::string>
       include_stack_; ///< Include file tracking (for circular detection)
 
   // Source location tracking (for error reporting)
-  std::string current_file_; ///< Current source filename
-  int current_line_;         ///< Current line number
+  std::string current_file_ = "<stdin>"; ///< Current source filename
+  int current_line_ = 0;         ///< Current line number
 
   Cpu6502 *cpu_ = nullptr; ///< CPU plugin for mode switching (XC directive)
 

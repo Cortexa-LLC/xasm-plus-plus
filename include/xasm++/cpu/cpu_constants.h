@@ -10,8 +10,7 @@
 
 #include <string>
 
-namespace xasm {
-namespace cpu {
+namespace xasm::cpu {
 
 // CPU Family Names
 inline constexpr const char *CPU_6502 = "6502";
@@ -26,5 +25,4 @@ inline constexpr const char *FAMILY_6502 = "6502";
 inline constexpr const char *FAMILY_6809 = "6809";
 inline constexpr const char *FAMILY_Z80 = "z80";
 
-} // namespace cpu
-} // namespace xasm
+} // namespace xasm::cpu

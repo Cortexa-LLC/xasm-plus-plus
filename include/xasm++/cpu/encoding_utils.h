@@ -21,8 +21,7 @@
 #include <initializer_list>
 #include <vector>
 
-namespace xasm {
-namespace encoding {
+namespace xasm::encoding {
 
 // ============================================================================
 // Endianness Conversion
@@ -220,5 +219,4 @@ WithPrefixes(std::initializer_list<uint8_t> prefixes,
   return result;
 }
 
-} // namespace encoding
-} // namespace xasm
+} // namespace xasm::encoding

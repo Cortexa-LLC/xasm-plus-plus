@@ -402,12 +402,12 @@ private:
   static constexpr int MAX_MACRO_NESTING_DEPTH = 63;
 
   // Current state
-  uint32_t current_address_; ///< Current assembly address
-  std::string current_file_; ///< Current source filename
-  int current_line_;         ///< Current line number (for errors)
+  uint32_t current_address_ = 0; ///< Current assembly address
+  std::string current_file_ = "<source>"; ///< Current source filename
+  int current_line_ = 0;         ///< Current line number (for errors)
 
   // CPU plugin for opcode validation
-  CpuPlugin *cpu_; ///< CPU plugin for opcode validation (nullable)
+  CpuPlugin *cpu_ = nullptr; ///< CPU plugin for opcode validation (nullable)
   // Owned CPU object when .OP directive overrides the external CPU plugin.
   // Must outlive cpu_ — SetCpu(string) stores the address of this member.
   std::unique_ptr<Cpu6502> owned_cpu_; ///< CPU owned by parser (via .OP directive)
@@ -431,12 +431,12 @@ private:
   std::unordered_map<std::string, MacroDef> macros_; ///< Defined macros
   std::unordered_map<std::string, uint32_t>
       local_labels_;               ///< Local labels (.0-.9)
-  bool in_macro_definition_;       ///< Currently defining a macro
+  bool in_macro_definition_ = false;       ///< Currently defining a macro
   std::string current_macro_name_; ///< Name of macro being defined
   std::vector<std::string>
       current_macro_body_;     ///< Lines of macro being defined
-  int macro_invocation_depth_;   ///< Nesting depth for macro invocations
-  int macro_invocation_counter_; ///< Monotonic counter, unique per invocation
+  int macro_invocation_depth_ = 0;   ///< Nesting depth for macro invocations
+  int macro_invocation_counter_ = 0; ///< Monotonic counter, unique per invocation
   /// Per-invocation scope prefix for ':N' macro-local labels.
   /// Empty when not inside any macro.  Set to a unique string each time a
   /// macro is invoked so that :1 labels in different expansions of the same
@@ -452,13 +452,13 @@ private:
   std::string last_global_label_; ///< Most recent global label (scope for local labels)
 
   // Dummy section support (structure definitions)
-  bool in_dummy_section_;          ///< Currently in dummy section (.DUMMY active)
-  uint32_t dummy_saved_address_;   ///< Main PC saved at .DUMMY entry, restored at .ED
+  bool in_dummy_section_ = false;          ///< Currently in dummy section (.DUMMY active)
+  uint32_t dummy_saved_address_ = 0;   ///< Main PC saved at .DUMMY entry, restored at .ED
 
   // Phase assembly support (.PH/.EP)
-  bool in_phase_;               ///< Currently in phase assembly
-  uint32_t phase_virtual_addr_; ///< Virtual address for phase
-  uint32_t phase_real_addr_;    ///< Real address where code is stored
+  bool in_phase_ = false;               ///< Currently in phase assembly
+  uint32_t phase_virtual_addr_ = 0; ///< Virtual address for phase
+  uint32_t phase_real_addr_ = 0;    ///< Real address where code is stored
 
   // Directive registry
   std::unordered_map<std::string, DirectiveHandler> directive_registry_;

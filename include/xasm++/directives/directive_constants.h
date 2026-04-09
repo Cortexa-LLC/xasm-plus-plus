@@ -17,8 +17,7 @@
 
 #pragma once
 
-namespace xasm {
-namespace directives {
+namespace xasm::directives {
 
 // ============================================================================
 // Origin and Address Directives
@@ -397,5 +396,4 @@ constexpr const char *NEGATIVE_ADDRESS = "Negative address not allowed";
 
 } // namespace errors
 
-} // namespace directives
-} // namespace xasm
+} // namespace xasm::directives

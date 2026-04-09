@@ -24,7 +24,7 @@ namespace xasm {
  *
  * Each atom type represents a different assembly language construct.
  */
-enum class AtomType {
+enum class AtomType : std::uint8_t {
   Label,          ///< Symbol definition (e.g., "start:" or "loop:")
   Instruction,    ///< CPU instruction (e.g., "LDA #$42")
   Data,           ///< Raw data bytes (e.g., ".byte $01, $02, $03")
@@ -48,12 +48,12 @@ enum class AtomType {
  * source code. Used for generating helpful error messages.
  */
 struct SourceLocation {
-  std::string filename; ///< Source filename
-  int line;             ///< Line number (1-based)
-  int column;           ///< Column number (1-based)
+  std::string filename{}; ///< Source filename
+  int line = 0;             ///< Line number (1-based)
+  int column = 0;           ///< Column number (1-based)
 
   /** @brief Default constructor - creates invalid location */
-  SourceLocation() : line(0), column(0) {}
+  SourceLocation() = default;
 
   /**
    * @brief Construct with file, line, and column
@@ -88,18 +88,18 @@ class Atom {
 public:
   AtomType type;              ///< Type of this atom
   SourceLocation location;    ///< Source location for error reporting
-  size_t size;                ///< Size in bytes (current pass)
-  size_t last_size;           ///< Size in bytes (previous pass)
-  uint32_t changes;           ///< Number of times size has changed
+  size_t size = 0;                ///< Size in bytes (current pass)
+  size_t last_size = 0;           ///< Size in bytes (previous pass)
+  uint32_t changes = 0;           ///< Number of times size has changed
   std::shared_ptr<Atom> next; ///< Next atom in linked list (nullptr if last)
-  std::string source_line; ///< Original source line text (for listing output)
+  std::string source_line{}; ///< Original source line text (for listing output)
 
   /**
    * @brief Construct an atom of the given type
    * @param t Atom type
    */
   explicit Atom(AtomType t)
-      : type(t), size(0), last_size(0), changes(0), next(nullptr) {}
+      : type(t) {}
 
   /**
    * @brief Virtual destructor for polymorphic deletion
@@ -122,7 +122,7 @@ public:
  */
 class LabelAtom : public Atom {
 public:
-  std::string name; ///< Symbol name
+  std::string name{}; ///< Symbol name
   uint32_t address; ///< Resolved address of this label
 
   /**
@@ -153,8 +153,8 @@ public:
  */
 class InstructionAtom : public Atom {
 public:
-  std::string mnemonic; ///< Instruction mnemonic (e.g., "LDA", "STA")
-  std::string operand;  ///< Operand string (e.g., "#$42", "$1234,X")
+  std::string mnemonic{}; ///< Instruction mnemonic (e.g., "LDA", "STA")
+  std::string operand{};  ///< Operand string (e.g., "#$42", "$1234,X")
   std::vector<uint8_t>
       encoded_bytes; ///< Encoded machine code (set by CPU plugin)
 
@@ -201,7 +201,7 @@ public:
 /**
  * @brief Data size for data atoms (byte vs word)
  */
-enum class DataSize {
+enum class DataSize : std::uint8_t {
   Byte, ///< 8-bit data (db, dfb directives)
   Word, ///< 16-bit data (dw, da directives)
   Long  ///< 24-bit data (da in 65816 mode — Merlin 16/32 compatible)
@@ -227,8 +227,8 @@ enum class DataSize {
  */
 class DataAtom : public Atom {
 public:
-  std::vector<std::string> expressions; ///< Original expression strings
-  std::vector<uint8_t> data;            ///< Evaluated data bytes
+  std::vector<std::string> expressions{}; ///< Original expression strings
+  std::vector<uint8_t> data{};            ///< Evaluated data bytes
   DataSize data_size;                   ///< Size of each data element
 
   /**
@@ -266,7 +266,7 @@ public:
 class SpaceAtom : public Atom {
 public:
   size_t count; ///< Number of bytes to reserve
-  std::string expression_str; ///< Raw expression (contains '*') for re-evaluation each pass
+  std::string expression_str{}; ///< Raw expression (contains '*') for re-evaluation each pass
 
   /**
    * @brief Construct a space atom with a fixed count
@@ -301,7 +301,7 @@ public:
  */
 class AlignAtom : public Atom {
 public:
-  size_t alignment; ///< Alignment boundary (must be power of 2)
+  size_t alignment = 0; ///< Alignment boundary (must be power of 2)
 
   /**
    * @brief Construct an align atom
@@ -400,7 +400,7 @@ public:
 /**
  * @brief Listing control type for directives
  */
-enum class ListingControlType {
+enum class ListingControlType : std::uint8_t {
   Title,    ///< TITLE directive - sets page title
   Subtitle, ///< SUBTTL directive - sets page subtitle
   Page,     ///< PAGE/EJECT directive - forces page break
@@ -430,7 +430,7 @@ enum class ListingControlType {
 class ListingControlAtom : public Atom {
 public:
   ListingControlType control_type; ///< Type of listing control
-  std::string value;               ///< String value (for TITLE)
+  std::string value{};               ///< String value (for TITLE)
   int count;                       ///< Numeric value (for SPACE)
 
   /**
@@ -480,8 +480,8 @@ public:
  */
 class EquateAtom : public Atom {
 public:
-  std::string label_name;    ///< Symbol name (normalized/uppercase)
-  std::string expression_str; ///< Raw expression string (contains '*')
+  std::string label_name{};    ///< Symbol name (normalized/uppercase)
+  std::string expression_str{}; ///< Raw expression string (contains '*')
 
   /**
    * @brief Construct an equate atom

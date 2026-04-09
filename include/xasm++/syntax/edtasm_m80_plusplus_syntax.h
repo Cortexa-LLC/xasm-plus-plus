@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include "xasm++/common/expression_parser.h"
 #include "xasm++/expression.h"
 #include "xasm++/section.h"
@@ -60,7 +62,7 @@ public:
   /**
    * @brief Construct with default radix 10
    */
-  Z80NumberParser() : radix_(10) {}
+  Z80NumberParser() = default;
 
   /**
    * @brief Attempt to parse a Z80-specific number format
@@ -86,7 +88,7 @@ public:
   int GetRadix() const { return radix_; }
 
 private:
-  int radix_; ///< Default number base (2-16, default 10)
+  int radix_ = 10; ///< Default number base (2-16, default 10)
 };
 
 /**
@@ -379,7 +381,7 @@ public:
    *
    * Used to track whether we're capturing REPT, IRP, or IRPC blocks.
    */
-  enum class RepeatType { NONE, REPT, IRP, IRPC };
+  enum class RepeatType : std::uint8_t { NONE, REPT, IRP, IRPC };
 
   // Macro state (accessible to directive handlers)
   bool in_macro_definition_ = false; ///< True if defining a macro
@@ -441,21 +443,21 @@ private:
 
   LabelScope current_scope_; ///< Current label scope (for local labels)
 
-  uint32_t current_address_; ///< Current address (for tracking label addresses)
-  bool end_directive_seen_;  ///< True if END directive has been processed
+  uint32_t current_address_ = 0; ///< Current address (for tracking label addresses)
+  bool end_directive_seen_ = false;  ///< True if END directive has been processed
 
   // Source location tracking (for error reporting)
   std::string current_file_; ///< Current source filename
-  int current_line_;         ///< Current line number
+  int current_line_ = 0;         ///< Current line number
 
   // Listing control state
-  bool listing_enabled_;         ///< True if listing output enabled
+  bool listing_enabled_ = true;         ///< True if listing output enabled
   std::string listing_title_;    ///< Listing title (TITLE directive)
   std::string listing_subtitle_; ///< Listing subtitle (SUBTTL directive)
   std::string module_name_;      ///< Module name (NAME directive)
 
   // Special features state
-  int current_radix_; ///< Current number base (2-16, default 10)
+  int current_radix_ = 10; ///< Current number base (2-16, default 10)
 
   CpuZ80 *cpu_ = nullptr; ///< CPU plugin for undocumented instructions
 

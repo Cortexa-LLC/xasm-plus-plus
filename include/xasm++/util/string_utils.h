@@ -4,8 +4,7 @@
 #include <cstdint>
 #include <string>
 
-namespace xasm {
-namespace util {
+namespace xasm::util {
 
 /**
  * @brief Trim leading and trailing whitespace from a string
@@ -24,7 +23,6 @@ std::string ToUpper(const std::string &str);
 // ParseHex moved to xasm++/parse_utils.h for consolidation
 // See: .ai/tasks/2026-01-31_refactor-number-parsing/
 
-} // namespace util
-} // namespace xasm
+} // namespace xasm::util
 
 #endif // XASM_UTIL_STRING_UTILS_H

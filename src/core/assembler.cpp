@@ -21,9 +21,7 @@ using xasm::util::Trim;
 
 
 
-Assembler::Assembler() {
-  // CPU plugin handles instruction encoding - no handlers needed
-}
+Assembler::Assembler() = default;
 
 void Assembler::SetCpuPlugin(CpuPlugin *cpu) { cpu_ = cpu; }
 
@@ -170,7 +168,7 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
               star_pos += addr_str.length();
             }
             try {
-              auto expr = ExpressionParser(&symbols, nullptr, expression_features_).Parse(expr_str);
+              std::shared_ptr<Expression> expr = ExpressionParser(&symbols, nullptr, expression_features_).Parse(expr_str);
               int64_t value = expr->Evaluate(symbols);
               symbols.Define(eq->label_name, SymbolType::Equate,
                              std::make_shared<LiteralExpr>(
@@ -221,7 +219,7 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
                 }
               }
               try {
-                auto expr = ExpressionParser(&symbols, nullptr, expression_features_).Parse(expr_str);
+                std::shared_ptr<Expression> expr = ExpressionParser(&symbols, nullptr, expression_features_).Parse(expr_str);
                 int64_t value = expr->Evaluate(symbols);
 
                 if (data->data_size == DataSize::Byte) {
@@ -460,7 +458,7 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
               // references
               std::string expr_str = value_str.substr(1);
               try {
-                auto expr = ExpressionParser(&symbols, nullptr, expression_features_).Parse(expr_str);
+                std::shared_ptr<Expression> expr = ExpressionParser(&symbols, nullptr, expression_features_).Parse(expr_str);
                 int64_t expr_value = expr->Evaluate(symbols);
                 value = static_cast<uint16_t>(expr_value);
               } catch (const UndefinedSymbolError &) {
@@ -471,7 +469,7 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
               // Use shared ExpressionParser to handle both simple hex and expressions
               // like $528+2
               try {
-                auto expr = ExpressionParser(&symbols, nullptr, expression_features_).Parse(value_str);
+                std::shared_ptr<Expression> expr = ExpressionParser(&symbols, nullptr, expression_features_).Parse(value_str);
                 int64_t expr_value = expr->Evaluate(symbols);
                 value = static_cast<uint16_t>(expr_value);
               } catch (const UndefinedSymbolError &) {
@@ -482,7 +480,7 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
               // Evaluates expression and takes bits 8-15 as the immediate byte
               std::string expr_str = value_str.substr(1);
               try {
-                auto expr = ExpressionParser(&symbols, nullptr, expression_features_).Parse(expr_str);
+                std::shared_ptr<Expression> expr = ExpressionParser(&symbols, nullptr, expression_features_).Parse(expr_str);
                 int64_t expr_value = expr->Evaluate(symbols);
                 value = static_cast<uint16_t>(
                     (static_cast<uint32_t>(expr_value) >> 8) & 0xFF);
@@ -494,7 +492,7 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
               // both simple symbols and expressions like ZPPTR+1
               // BUG-003 FIX: Support expressions with +, -, <, > operators
               try {
-                auto expr = ExpressionParser(&symbols, nullptr, expression_features_).Parse(value_str);
+                std::shared_ptr<Expression> expr = ExpressionParser(&symbols, nullptr, expression_features_).Parse(value_str);
                 int64_t expr_value = expr->Evaluate(symbols);
                 value = static_cast<uint16_t>(expr_value);
               } catch (const UndefinedSymbolError &) {
@@ -579,7 +577,7 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
                 }
               }
               try {
-                auto expr = ExpressionParser(&symbols, nullptr, expression_features_).Parse(expr_str);
+                std::shared_ptr<Expression> expr = ExpressionParser(&symbols, nullptr, expression_features_).Parse(expr_str);
                 int64_t value = expr->Evaluate(symbols);
                 if (value >= 0) {
                   space->count = static_cast<size_t>(value);
@@ -687,7 +685,7 @@ void Assembler::RefixupDataAtoms(ConcreteSymbolTable &symbols,
             star_pos += addr_str.length();
           }
           try {
-            auto expr = ExpressionParser(&symbols, nullptr, expression_features_).Parse(expr_str);
+            std::shared_ptr<Expression> expr = ExpressionParser(&symbols, nullptr, expression_features_).Parse(expr_str);
             int64_t value = expr->Evaluate(symbols);
             symbols.Define(eq->label_name, SymbolType::Equate,
                            std::make_shared<LiteralExpr>(
@@ -725,7 +723,7 @@ void Assembler::RefixupDataAtoms(ConcreteSymbolTable &symbols,
               }
             }
             try {
-              auto expr = ExpressionParser(&symbols, nullptr, expression_features_).Parse(expr_str);
+              std::shared_ptr<Expression> expr = ExpressionParser(&symbols, nullptr, expression_features_).Parse(expr_str);
               int64_t value = expr->Evaluate(symbols);
               if (data->data_size == DataSize::Byte) {
                 data->data.push_back(static_cast<uint8_t>(value & 0xFF));

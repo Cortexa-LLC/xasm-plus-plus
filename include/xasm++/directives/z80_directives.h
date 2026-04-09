@@ -24,8 +24,7 @@
 
 #pragma once
 
-namespace xasm {
-namespace Z80Directives {
+namespace xasm::Z80Directives {
 
 // ============================================================================
 // Segment Control (Z80 Linker Model)
@@ -213,5 +212,4 @@ constexpr const char *DATE = "DATE";
 /// Get current time as integer (HHMMSS)
 constexpr const char *TIME = "TIME";
 
-} // namespace Z80Directives
-} // namespace xasm
+} // namespace xasm::Z80Directives

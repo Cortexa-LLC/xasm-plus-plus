@@ -210,6 +210,12 @@ public:
         "Special encoding not supported for instruction: " + mnemonic);
   }
 
+  // Disable copying and moving (plugins are typically unique)
+  CpuPlugin(const CpuPlugin &) = delete;
+  CpuPlugin &operator=(const CpuPlugin &) = delete;
+  CpuPlugin(CpuPlugin &&) = delete;
+  CpuPlugin &operator=(CpuPlugin &&) = delete;
+
 protected:
   /**
    * @brief Protected constructor (interface class)
@@ -217,12 +223,6 @@ protected:
    * Prevents direct instantiation of the interface.
    */
   CpuPlugin() = default;
-
-  // Disable copying and moving (plugins are typically unique)
-  CpuPlugin(const CpuPlugin &) = delete;
-  CpuPlugin &operator=(const CpuPlugin &) = delete;
-  CpuPlugin(CpuPlugin &&) = delete;
-  CpuPlugin &operator=(CpuPlugin &&) = delete;
 };
 
 } // namespace xasm

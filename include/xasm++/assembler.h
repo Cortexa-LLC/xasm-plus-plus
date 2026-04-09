@@ -27,7 +27,7 @@ namespace xasm {
 class SymbolTable;
 class ConcreteSymbolTable;
 class Cpu6502;
-enum class AddressingMode;
+enum class AddressingMode : std::uint8_t;
 
 /**
  * @brief Represents an error that occurred during assembly
@@ -36,7 +36,7 @@ enum class AddressingMode;
  * occurred for better debugging and user feedback.
  */
 struct AssemblerError {
-  std::string message;     ///< Human-readable error description
+  std::string message{};     ///< Human-readable error description
   SourceLocation location; ///< Source file location of the error
 };
 
@@ -49,7 +49,7 @@ struct AssemblerError {
 struct AssemblerResult {
   bool success = true;                ///< True if assembly succeeded
   unsigned int pass_count = 0;        ///< Number of passes performed
-  std::vector<AssemblerError> errors; ///< List of errors (if any)
+  std::vector<AssemblerError> errors{}; ///< List of errors (if any)
 };
 
 /**

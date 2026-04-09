@@ -17,7 +17,7 @@
 
 namespace xasm {
 
-enum class OutputFormat {
+enum class OutputFormat : std::uint8_t {
   Binary = 0,
   IntelHex,
   SRecord

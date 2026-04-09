@@ -12,9 +12,7 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace xasm {
-namespace scmasm {
-namespace constants {
+namespace xasm::scmasm::constants {
 
 // High-bit rule constants (for ApplyHighBitRule)
 // SCMASM rule: If delimiter ASCII < 0x27 (apostrophe '), high bit is SET
@@ -61,8 +59,6 @@ constexpr uint8_t CR = 0x0D;        // \r
 constexpr uint8_t ESCAPE = 0x1B;    // \e (non-standard)
 } // namespace ascii
 
-} // namespace constants
-} // namespace scmasm
-} // namespace xasm
+} // namespace xasm::scmasm::constants
 
 #endif // XASMPP_DIRECTIVES_SCMASM_CONSTANTS_H

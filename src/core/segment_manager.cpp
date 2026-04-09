@@ -7,12 +7,7 @@
 
 namespace xasm {
 
-SegmentManager::SegmentManager() : current_segment_(SegmentType::Code) {
-  // Initialize all standard segments with address 0
-  segments_[SegmentType::Code] = SegmentState{};
-  segments_[SegmentType::Data] = SegmentState{};
-  segments_[SegmentType::Absolute] = SegmentState{};
-}
+SegmentManager::SegmentManager() = default;
 
 void SegmentManager::SwitchToSegment(SegmentType type) {
   current_segment_ = type;
@@ -36,11 +31,11 @@ void SegmentManager::SwitchToCommon(const std::string &name) {
 
 void SegmentManager::SetOrigin(uint64_t address) {
   if (current_segment_ == SegmentType::Common) {
-    auto &state = common_blocks_[current_common_name_];
+    SegmentState &state = common_blocks_[current_common_name_];
     state.address = address;
     state.has_origin = true;
   } else {
-    auto &state = segments_[current_segment_];
+    SegmentState &state = segments_[current_segment_];
     state.address = address;
     state.has_origin = true;
   }
@@ -48,13 +43,13 @@ void SegmentManager::SetOrigin(uint64_t address) {
 
 uint64_t SegmentManager::GetCurrentAddress() const {
   if (current_segment_ == SegmentType::Common) {
-    auto it = common_blocks_.find(current_common_name_);
+    std::map<std::string, SegmentState>::const_iterator it = common_blocks_.find(current_common_name_);
     if (it != common_blocks_.end()) {
       return it->second.address;
     }
     return 0;
   } else {
-    auto it = segments_.find(current_segment_);
+    std::map<SegmentType, SegmentState>::const_iterator it = segments_.find(current_segment_);
     if (it != segments_.end()) {
       return it->second.address;
     }

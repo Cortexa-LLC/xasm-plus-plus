@@ -16,8 +16,7 @@
 #include <stdexcept>
 #include <string>
 
-namespace xasm {
-namespace cpu {
+namespace xasm::cpu {
 
 /**
  * @brief Throw error for unsupported instruction mnemonic
@@ -136,7 +135,6 @@ ThrowRequiresTwoOperands(const std::string &mnemonic,
                            reason);
 }
 
-} // namespace cpu
-} // namespace xasm
+} // namespace xasm::cpu
 
 #endif // XASM_CPU_ERROR_UTILS_H

@@ -27,7 +27,7 @@ std::shared_ptr<Expression> ExpressionParser::Parse(const std::string &str) {
     return std::make_shared<LiteralExpr>(0);
   }
 
-  auto result = ParseLogicalOr();
+  std::shared_ptr<Expression> result = ParseLogicalOr();
 
   // Check for unexpected trailing characters
   SkipWhitespace();
@@ -44,12 +44,12 @@ std::shared_ptr<Expression> ExpressionParser::Parse(const std::string &str) {
 // ============================================================================
 
 std::shared_ptr<Expression> ExpressionParser::ParseLogicalOr() {
-  auto left = ParseLogicalAnd();
+  std::shared_ptr<Expression> left = ParseLogicalAnd();
 
   while (true) {
     SkipWhitespace();
     if (Match("||")) {
-      auto right = ParseLogicalAnd();
+      std::shared_ptr<Expression> right = ParseLogicalAnd();
       left = std::make_shared<BinaryOpExpr>(BinaryOp::LogicalOr, left, right);
     } else {
       break;
@@ -60,12 +60,12 @@ std::shared_ptr<Expression> ExpressionParser::ParseLogicalOr() {
 }
 
 std::shared_ptr<Expression> ExpressionParser::ParseLogicalAnd() {
-  auto left = ParseComparison();
+  std::shared_ptr<Expression> left = ParseComparison();
 
   while (true) {
     SkipWhitespace();
     if (Match("&&")) {
-      auto right = ParseComparison();
+      std::shared_ptr<Expression> right = ParseComparison();
       left = std::make_shared<BinaryOpExpr>(BinaryOp::LogicalAnd, left, right);
     } else {
       break;
@@ -76,35 +76,35 @@ std::shared_ptr<Expression> ExpressionParser::ParseLogicalAnd() {
 }
 
 std::shared_ptr<Expression> ExpressionParser::ParseComparison() {
-  auto left = ParseBitwiseOr();
+  std::shared_ptr<Expression> left = ParseBitwiseOr();
 
   while (true) {
     SkipWhitespace();
     // Check for two-character operators first
     if (Match("==")) {
-      auto right = ParseBitwiseOr();
+      std::shared_ptr<Expression> right = ParseBitwiseOr();
       left = std::make_shared<BinaryOpExpr>(BinaryOp::Equal, left, right);
     } else if (Match("!=")) {
-      auto right = ParseBitwiseOr();
+      std::shared_ptr<Expression> right = ParseBitwiseOr();
       left = std::make_shared<BinaryOpExpr>(BinaryOp::NotEqual, left, right);
     } else if (Match("<=")) {
-      auto right = ParseBitwiseOr();
+      std::shared_ptr<Expression> right = ParseBitwiseOr();
       left = std::make_shared<BinaryOpExpr>(BinaryOp::LessOrEqual, left, right);
     } else if (Match(">=")) {
-      auto right = ParseBitwiseOr();
+      std::shared_ptr<Expression> right = ParseBitwiseOr();
       left =
           std::make_shared<BinaryOpExpr>(BinaryOp::GreaterOrEqual, left, right);
     } else if (Peek() == '<' && pos_ + 1 < expr_.length() &&
                expr_[pos_ + 1] != '<') {
       // Single '<' (not '<<' shift operator)
       Consume();
-      auto right = ParseBitwiseOr();
+      std::shared_ptr<Expression> right = ParseBitwiseOr();
       left = std::make_shared<BinaryOpExpr>(BinaryOp::LessThan, left, right);
     } else if (Peek() == '>' && pos_ + 1 < expr_.length() &&
                expr_[pos_ + 1] != '>') {
       // Single '>' (not '>>' shift operator)
       Consume();
-      auto right = ParseBitwiseOr();
+      std::shared_ptr<Expression> right = ParseBitwiseOr();
       left = std::make_shared<BinaryOpExpr>(BinaryOp::GreaterThan, left, right);
     } else {
       break;
@@ -115,7 +115,7 @@ std::shared_ptr<Expression> ExpressionParser::ParseComparison() {
 }
 
 std::shared_ptr<Expression> ExpressionParser::ParseBitwiseOr() {
-  auto left = ParseBitwiseXor();
+  std::shared_ptr<Expression> left = ParseBitwiseXor();
 
   while (true) {
     SkipWhitespace();
@@ -123,19 +123,19 @@ std::shared_ptr<Expression> ExpressionParser::ParseBitwiseOr() {
     // Check for single '|' (not '||')
     if (c == '|' && pos_ + 1 < expr_.length() && expr_[pos_ + 1] != '|') {
       Consume();
-      auto right = ParseBitwiseXor();
+      std::shared_ptr<Expression> right = ParseBitwiseXor();
       left = std::make_shared<BinaryOpExpr>(BinaryOp::BitwiseOr, left, right);
     } else if (features_.allow_merlin_bitwise_ops && c == '.') {
       // ADR-005 V9: Merlin `.` is binary bitwise OR operator (e.g. SYM.$80)
       Consume();
-      auto right = ParseBitwiseXor();
+      std::shared_ptr<Expression> right = ParseBitwiseXor();
       left = std::make_shared<BinaryOpExpr>(BinaryOp::BitwiseOr, left, right);
     } else if (features_.allow_merlin_bitwise_ops && Peek() == '!') {
       // ADR-005 V9: Merlin `!` is binary bitwise OR operator (e.g. SYM!1)
       // Empirically verified against vasm reference: FinalDisk!1 = 1 (OR, not XOR).
       // Unary `!` (logical NOT) only appears at expression start.
       Consume();
-      auto right = ParseBitwiseXor();
+      std::shared_ptr<Expression> right = ParseBitwiseXor();
       left = std::make_shared<BinaryOpExpr>(BinaryOp::BitwiseOr, left, right);
     } else {
       break;
@@ -146,13 +146,13 @@ std::shared_ptr<Expression> ExpressionParser::ParseBitwiseOr() {
 }
 
 std::shared_ptr<Expression> ExpressionParser::ParseBitwiseXor() {
-  auto left = ParseBitwiseAnd();
+  std::shared_ptr<Expression> left = ParseBitwiseAnd();
 
   while (true) {
     SkipWhitespace();
     if (Peek() == '^') {
       Consume();
-      auto right = ParseBitwiseAnd();
+      std::shared_ptr<Expression> right = ParseBitwiseAnd();
       left = std::make_shared<BinaryOpExpr>(BinaryOp::BitwiseXor, left, right);
     } else {
       break;
@@ -163,7 +163,7 @@ std::shared_ptr<Expression> ExpressionParser::ParseBitwiseXor() {
 }
 
 std::shared_ptr<Expression> ExpressionParser::ParseBitwiseAnd() {
-  auto left = ParseShift();
+  std::shared_ptr<Expression> left = ParseShift();
 
   while (true) {
     SkipWhitespace();
@@ -171,7 +171,7 @@ std::shared_ptr<Expression> ExpressionParser::ParseBitwiseAnd() {
     // Check for single '&' (not '&&')
     if (c == '&' && pos_ + 1 < expr_.length() && expr_[pos_ + 1] != '&') {
       Consume();
-      auto right = ParseShift();
+      std::shared_ptr<Expression> right = ParseShift();
       left = std::make_shared<BinaryOpExpr>(BinaryOp::BitwiseAnd, left, right);
     } else {
       break;
@@ -182,15 +182,15 @@ std::shared_ptr<Expression> ExpressionParser::ParseBitwiseAnd() {
 }
 
 std::shared_ptr<Expression> ExpressionParser::ParseShift() {
-  auto left = ParseAddSub();
+  std::shared_ptr<Expression> left = ParseAddSub();
 
   while (true) {
     SkipWhitespace();
     if (Match("<<")) {
-      auto right = ParseAddSub();
+      std::shared_ptr<Expression> right = ParseAddSub();
       left = std::make_shared<BinaryOpExpr>(BinaryOp::ShiftLeft, left, right);
     } else if (Match(">>")) {
-      auto right = ParseAddSub();
+      std::shared_ptr<Expression> right = ParseAddSub();
       left = std::make_shared<BinaryOpExpr>(BinaryOp::ShiftRight, left, right);
     } else {
       break;
@@ -201,20 +201,20 @@ std::shared_ptr<Expression> ExpressionParser::ParseShift() {
 }
 
 std::shared_ptr<Expression> ExpressionParser::ParseAddSub() {
-  auto left = ParseMulDiv();
+  std::shared_ptr<Expression> left = ParseMulDiv();
 
   while (true) {
     SkipWhitespace();
     char c = Peek();
     if (c == '+') {
       Consume();
-      auto right = ParseMulDiv();
+      std::shared_ptr<Expression> right = ParseMulDiv();
       left = std::make_shared<BinaryOpExpr>(BinaryOp::Add, left, right);
     } else if (c == '-') {
       // Consume '-' as binary subtraction operator
       // ParseMulDiv -> ParseUnary will handle negative literals correctly
       Consume();
-      auto right = ParseMulDiv();
+      std::shared_ptr<Expression> right = ParseMulDiv();
       left = std::make_shared<BinaryOpExpr>(BinaryOp::Subtract, left, right);
     } else {
       break;
@@ -225,22 +225,22 @@ std::shared_ptr<Expression> ExpressionParser::ParseAddSub() {
 }
 
 std::shared_ptr<Expression> ExpressionParser::ParseMulDiv() {
-  auto left = ParseUnary();
+  std::shared_ptr<Expression> left = ParseUnary();
 
   while (true) {
     SkipWhitespace();
     char c = Peek();
     if (c == '*') {
       Consume();
-      auto right = ParseUnary();
+      std::shared_ptr<Expression> right = ParseUnary();
       left = std::make_shared<BinaryOpExpr>(BinaryOp::Multiply, left, right);
     } else if (c == '/') {
       Consume();
-      auto right = ParseUnary();
+      std::shared_ptr<Expression> right = ParseUnary();
       left = std::make_shared<BinaryOpExpr>(BinaryOp::Divide, left, right);
     } else if (c == '%') {
       Consume();
-      auto right = ParseUnary();
+      std::shared_ptr<Expression> right = ParseUnary();
       left = std::make_shared<BinaryOpExpr>(BinaryOp::Modulo, left, right);
     } else {
       break;
@@ -257,21 +257,21 @@ std::shared_ptr<Expression> ExpressionParser::ParseUnary() {
   // Unary minus
   if (c == '-') {
     Consume();
-    auto operand = ParseUnary();
+    std::shared_ptr<Expression> operand = ParseUnary();
     return std::make_shared<UnaryOpExpr>(UnaryOp::Negate, operand);
   }
 
   // Bitwise NOT
   if (c == '~') {
     Consume();
-    auto operand = ParseUnary();
+    std::shared_ptr<Expression> operand = ParseUnary();
     return std::make_shared<UnaryOpExpr>(UnaryOp::BitwiseNot, operand);
   }
 
   // Logical NOT
   if (c == '!') {
     Consume();
-    auto operand = ParseUnary();
+    std::shared_ptr<Expression> operand = ParseUnary();
     return std::make_shared<UnaryOpExpr>(UnaryOp::LogicalNot, operand);
   }
 
@@ -283,7 +283,7 @@ std::shared_ptr<Expression> ExpressionParser::ParseUnary() {
     Consume();
     // In Merlin, `<base+offset` means `<(base+offset)` — the operator
     // applies to the entire following additive expression.
-    auto operand = features_.merlin_byte_ops_greedy ? ParseAddSub() : ParseUnary();
+    std::shared_ptr<Expression> operand = features_.merlin_byte_ops_greedy ? ParseAddSub() : ParseUnary();
     return std::make_shared<UnaryOpExpr>(UnaryOp::LowByte, operand);
   }
 
@@ -293,7 +293,7 @@ std::shared_ptr<Expression> ExpressionParser::ParseUnary() {
     Consume();
     // In Merlin, `>base+offset` means `>(base+offset)` — the operator
     // applies to the entire following additive expression.
-    auto operand = features_.merlin_byte_ops_greedy ? ParseAddSub() : ParseUnary();
+    std::shared_ptr<Expression> operand = features_.merlin_byte_ops_greedy ? ParseAddSub() : ParseUnary();
     return std::make_shared<UnaryOpExpr>(UnaryOp::HighByte, operand);
   }
 
@@ -303,7 +303,7 @@ std::shared_ptr<Expression> ExpressionParser::ParseUnary() {
   // reached when `^` appears in a unary/primary context.
   if (c == '^') {
     Consume();
-    auto operand = ParseUnary();
+    std::shared_ptr<Expression> operand = ParseUnary();
     return std::make_shared<UnaryOpExpr>(UnaryOp::BankByte, operand);
   }
 
@@ -319,7 +319,7 @@ std::shared_ptr<Expression> ExpressionParser::ParsePrimary() {
   // Parenthesized expression
   if (Peek() == '(') {
     Consume();
-    auto expr = ParseLogicalOr();
+    std::shared_ptr<Expression> expr = ParseLogicalOr();
     SkipWhitespace();
     if (Peek() != ')') {
       throw std::runtime_error("Expected closing parenthesis");
@@ -332,7 +332,7 @@ std::shared_ptr<Expression> ExpressionParser::ParsePrimary() {
   // ADR-005 V7: gated behind ParserFeatures.allow_bracket_grouping
   if (features_.allow_bracket_grouping && Peek() == '[') {
     Consume();
-    auto expr = ParseLogicalOr();
+    std::shared_ptr<Expression> expr = ParseLogicalOr();
     SkipWhitespace();
     if (Peek() != ']') {
       throw std::runtime_error("Expected closing bracket");
@@ -468,7 +468,7 @@ std::shared_ptr<Expression> ExpressionParser::ParsePrimary() {
     SkipWhitespace();
     if (Peek() == '(') {
       Consume();
-      auto arg = ParseLogicalOr();
+      std::shared_ptr<Expression> arg = ParseLogicalOr();
       SkipWhitespace();
       if (Peek() != ')') {
         throw std::runtime_error(

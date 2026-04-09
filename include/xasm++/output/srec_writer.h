@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include "xasm++/output/output_format_constants.h"
 #include "xasm++/output/output_writer.h"
 #include "xasm++/section.h"
 
@@ -120,7 +121,7 @@ public:
   void SetBytesPerLine(size_t bytes);
 
 private:
-  size_t bytes_per_line_; ///< Number of data bytes per record (default: 32)
+  size_t bytes_per_line_ = output_format::SREC_DEFAULT_BYTES_PER_LINE; ///< Number of data bytes per record (default: 32)
 
   /**
    * @brief Determine which S-Record format to use based on max address

@@ -7,8 +7,7 @@
 
 #include <string>
 
-namespace xasm {
-namespace scmasm {
+namespace xasm::scmasm {
 
 /**
  * @brief Normalize identifiers in expression string to uppercase
@@ -72,5 +71,4 @@ std::string CanonicalizeSlashHighByte(const std::string &expr);
  */
 std::string CanonicalizeEqualityOperator(const std::string &expr);
 
-} // namespace scmasm
-} // namespace xasm
+} // namespace xasm::scmasm

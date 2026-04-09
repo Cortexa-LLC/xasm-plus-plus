@@ -22,6 +22,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include "xasm++/assembler.h"
 #include "xasm++/symbol.h"
 #include <string>
@@ -51,7 +53,7 @@ public:
   /**
    * @brief Color output mode
    */
-  enum class ColorMode {
+  enum class ColorMode : std::uint8_t {
     Auto,    ///< Auto-detect based on terminal and NO_COLOR env var
     Enabled, ///< Always use colors
     Disabled ///< Never use colors

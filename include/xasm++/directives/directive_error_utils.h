@@ -45,8 +45,7 @@
 #include <stdexcept>
 #include <string>
 
-namespace xasm {
-namespace directive_utils {
+namespace xasm::directive_utils {
 
 /**
  * @brief Format error message with source location context
@@ -184,5 +183,4 @@ inline void RequireNonEmpty(const std::string &value,
   throw std::runtime_error(FormatError(message, context));
 }
 
-} // namespace directive_utils
-} // namespace xasm
+} // namespace xasm::directive_utils

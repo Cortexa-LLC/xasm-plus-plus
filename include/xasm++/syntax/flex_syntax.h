@@ -11,6 +11,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include "xasm++/common/macro_processor.h"
 #include "xasm++/section.h"
 #include "xasm++/symbol.h"
@@ -158,7 +160,7 @@ private:
   /**
    * @brief Parser mode state machine
    */
-  enum class ParserMode {
+  enum class ParserMode : std::uint8_t {
     Normal,             ///< Normal parsing
     InMacroDefinition,  ///< Collecting macro definition
     InRepeatBlock,      ///< Collecting repeat block

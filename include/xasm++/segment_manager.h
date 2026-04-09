@@ -22,7 +22,7 @@ namespace xasm {
 /**
  * @brief Segment types supported by Z80 assemblers
  */
-enum class SegmentType {
+enum class SegmentType : std::uint8_t {
   Code,     ///< CSEG - Code segment
   Data,     ///< DSEG - Data segment
   Absolute, ///< ASEG - Absolute segment
@@ -152,7 +152,7 @@ private:
     bool has_origin = false; ///< True if ORG has been set for this segment
   };
 
-  SegmentType current_segment_;     ///< Currently active segment type
+  SegmentType current_segment_ = SegmentType::Code;     ///< Currently active segment type
   std::string current_common_name_; ///< Current COMMON block name (if any)
 
   /// Address counters for each standard segment type

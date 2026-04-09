@@ -9,9 +9,7 @@
 #ifndef XASMPP_DIRECTIVES_SCMASM_DIRECTIVE_CONSTANTS_H
 #define XASMPP_DIRECTIVES_SCMASM_DIRECTIVE_CONSTANTS_H
 
-namespace xasm {
-namespace scmasm {
-namespace directives {
+namespace xasm::scmasm::directives {
 
 // Origin and addressing
 constexpr const char *OR = ".OR";
@@ -60,8 +58,6 @@ constexpr const char *FIN = ".FIN";   // Conditional assembly end
 constexpr const char *LU = ".LU";     // Lookup table
 constexpr const char *ENDU = ".ENDU"; // End user macro/loop
 
-} // namespace directives
-} // namespace scmasm
-} // namespace xasm
+} // namespace xasm::scmasm::directives
 
 #endif // XASMPP_DIRECTIVES_SCMASM_DIRECTIVE_CONSTANTS_H

@@ -12,8 +12,7 @@
 #include "xasm++/syntax/directive_registry.h"
 #include <string>
 
-namespace xasm {
-namespace merlin {
+namespace xasm::merlin {
 
 /**
  * @brief Handle ORG directive (set origin address)
@@ -285,7 +284,6 @@ void HandleRev(const std::string &label, const std::string &operand,
 void HandleLup(const std::string &label, const std::string &operand,
                DirectiveContext &context);
 
-} // namespace merlin
-} // namespace xasm
+} // namespace xasm::merlin
 
 #endif // XASMPP_DIRECTIVES_MERLIN_DIRECTIVE_HANDLERS_H

@@ -12,8 +12,7 @@
 #include "xasm++/syntax/directive_registry.h"
 #include <string>
 
-namespace xasm {
-namespace scmasm {
+namespace xasm::scmasm {
 
 /**
  * @brief Handle .OR directive (set origin address)
@@ -266,7 +265,6 @@ void HandleFin(const std::string &label, const std::string &operand,
 void HandleAc(const std::string &label, const std::string &operand,
               DirectiveContext &context);
 
-} // namespace scmasm
-} // namespace xasm
+} // namespace xasm::scmasm
 
 #endif // XASMPP_DIRECTIVES_SCMASM_DIRECTIVE_HANDLERS_H

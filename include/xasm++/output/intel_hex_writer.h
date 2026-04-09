@@ -13,6 +13,7 @@
 
 #pragma once
 
+#include "xasm++/output/output_format_constants.h"
 #include "xasm++/output/output_writer.h"
 #include "xasm++/section.h"
 
@@ -108,7 +109,7 @@ public:
   void SetBytesPerLine(size_t bytes);
 
 private:
-  size_t bytes_per_line_; ///< Number of data bytes per record (default: 16)
+  size_t bytes_per_line_ = output_format::INTEL_HEX_DEFAULT_BYTES_PER_LINE; ///< Number of data bytes per record (default: 16)
 
   /**
    * @brief Write a single Intel HEX record

@@ -107,8 +107,8 @@ public:
   void SetEntryPoint(uint64_t address);
 
 private:
-  bool has_entry_point_;      ///< Whether entry point is specified
-  uint64_t entry_point_addr_; ///< Entry point address
+  bool has_entry_point_ = false;      ///< Whether entry point is specified
+  uint64_t entry_point_addr_ = 0; ///< Entry point address
 
   /**
    * @brief Write a single segment

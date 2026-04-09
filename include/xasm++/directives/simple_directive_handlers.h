@@ -12,8 +12,7 @@
 #include "xasm++/syntax/directive_registry.h"
 #include <string>
 
-namespace xasm {
-namespace simple {
+namespace xasm::simple {
 
 /**
  * @brief Handle ORG directive (set origin address)
@@ -42,7 +41,6 @@ void HandleDb(const std::string &label, const std::string &operand,
 void HandleDw(const std::string &label, const std::string &operand,
               DirectiveContext &context);
 
-} // namespace simple
-} // namespace xasm
+} // namespace xasm::simple
 
 #endif // XASMPP_DIRECTIVES_SIMPLE_DIRECTIVE_HANDLERS_H

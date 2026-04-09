@@ -11,6 +11,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include <map>
 #include <memory>
 #include <string>
@@ -31,7 +33,7 @@ class Section;
  * Different symbol types have different semantics regarding
  * definition, redefinition, and relocation.
  */
-enum class SymbolType {
+enum class SymbolType : std::uint8_t {
   Label,  ///< Address label (e.g., "start:") - cannot be redefined
   Equate, ///< EQU constant (e.g., "SCREEN = $400") - cannot be redefined
   Set,    ///< SET variable (e.g., "counter .set 0") - can be redefined
@@ -265,7 +267,7 @@ public:
   void SetCurrentLocation(int64_t location);
 
 private:
-  std::unordered_map<std::string, Symbol> symbols_; ///< Internal symbol storage
+  std::unordered_map<std::string, Symbol> symbols_{}; ///< Internal symbol storage
   int64_t current_location_ = 0; ///< Current assembly address for $ operator
   bool uppercase_fallback_ = false; ///< SCMASM: retry lookup with UPPERCASE name
   bool dotted_namespace_fallback_ = false; ///< SCMASM: strip leading X. and retry

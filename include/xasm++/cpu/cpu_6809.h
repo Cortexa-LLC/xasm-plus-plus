@@ -30,7 +30,7 @@ namespace xasm {
  * The 6809 has 13 primary addressing modes with 16 indexed sub-modes,
  * making it one of the most flexible 8-bit CPUs.
  */
-enum class AddressingMode6809 {
+enum class AddressingMode6809 : std::uint8_t {
   Inherent,    ///< No operand (e.g., NOP, CLRA, RTS)
   Immediate8,  ///< 8-bit immediate value (e.g., LDA #$42)
   Immediate16, ///< 16-bit immediate value (e.g., LDD #$1234)

@@ -19,8 +19,7 @@
 
 #pragma once
 
-namespace xasm {
-namespace CommonDirectives {
+namespace xasm::CommonDirectives {
 
 // ============================================================================
 // Origin and Address Control
@@ -146,5 +145,4 @@ constexpr const char *REPT = "REPT";
 /// End assembly (stop processing source)
 constexpr const char *END = "END";
 
-} // namespace CommonDirectives
-} // namespace xasm
+} // namespace xasm::CommonDirectives

@@ -161,28 +161,28 @@ std::vector<uint8_t> CpuZ80::EncodeLD_L_n(uint8_t value) {
 
 std::vector<uint8_t> CpuZ80::EncodeLD_BC_nn(uint16_t value) {
   std::vector<uint8_t> result = {Opcodes::LD_BC_nn};
-  auto bytes = ToLittleEndian(value);
+  std::vector<uint8_t> bytes = ToLittleEndian(value);
   result.insert(result.end(), bytes.begin(), bytes.end());
   return result;
 }
 
 std::vector<uint8_t> CpuZ80::EncodeLD_DE_nn(uint16_t value) {
   std::vector<uint8_t> result = {Opcodes::LD_DE_nn};
-  auto bytes = ToLittleEndian(value);
+  std::vector<uint8_t> bytes = ToLittleEndian(value);
   result.insert(result.end(), bytes.begin(), bytes.end());
   return result;
 }
 
 std::vector<uint8_t> CpuZ80::EncodeLD_HL_nn(uint16_t value) {
   std::vector<uint8_t> result = {Opcodes::LD_HL_nn};
-  auto bytes = ToLittleEndian(value);
+  std::vector<uint8_t> bytes = ToLittleEndian(value);
   result.insert(result.end(), bytes.begin(), bytes.end());
   return result;
 }
 
 std::vector<uint8_t> CpuZ80::EncodeLD_SP_nn(uint16_t value) {
   std::vector<uint8_t> result = {Opcodes::LD_SP_nn};
-  auto bytes = ToLittleEndian(value);
+  std::vector<uint8_t> bytes = ToLittleEndian(value);
   result.insert(result.end(), bytes.begin(), bytes.end());
   return result;
 }
@@ -209,14 +209,14 @@ std::vector<uint8_t> CpuZ80::EncodeLD_HL_n(uint8_t value) {
 
 std::vector<uint8_t> CpuZ80::EncodeLD_HL_addr(uint16_t address) {
   std::vector<uint8_t> result = {Opcodes::LD_HL_addr};
-  auto bytes = ToLittleEndian(address);
+  std::vector<uint8_t> bytes = ToLittleEndian(address);
   result.insert(result.end(), bytes.begin(), bytes.end());
   return result;
 }
 
 std::vector<uint8_t> CpuZ80::EncodeLD_addr_HL(uint16_t address) {
   std::vector<uint8_t> result = {Opcodes::LD_addr_HL};
-  auto bytes = ToLittleEndian(address);
+  std::vector<uint8_t> bytes = ToLittleEndian(address);
   result.insert(result.end(), bytes.begin(), bytes.end());
   return result;
 }
@@ -249,7 +249,7 @@ std::vector<uint8_t> CpuZ80::EncodeNOP() { return {Opcodes::NOP}; }
 
 std::vector<uint8_t> CpuZ80::EncodeJP_nn(uint16_t address) {
   std::vector<uint8_t> result = {Opcodes::JP_nn};
-  auto bytes = ToLittleEndian(address);
+  std::vector<uint8_t> bytes = ToLittleEndian(address);
   result.insert(result.end(), bytes.begin(), bytes.end());
   return result;
 }
@@ -291,7 +291,7 @@ std::vector<uint8_t> CpuZ80::EncodeRES(uint8_t bit, uint8_t reg) {
 
 std::vector<uint8_t> CpuZ80::EncodeLD_IX_nn(uint16_t value) {
   std::vector<uint8_t> result = {Opcodes::DD_PREFIX, Opcodes::DD::LD_IX_nn};
-  auto bytes = ToLittleEndian(value);
+  std::vector<uint8_t> bytes = ToLittleEndian(value);
   result.insert(result.end(), bytes.begin(), bytes.end());
   return result;
 }
@@ -307,7 +307,7 @@ std::vector<uint8_t> CpuZ80::EncodeLD_A_IX_d(int8_t displacement) {
 
 std::vector<uint8_t> CpuZ80::EncodeLD_IY_nn(uint16_t value) {
   std::vector<uint8_t> result = {Opcodes::FD_PREFIX, Opcodes::FD::LD_IY_nn};
-  auto bytes = ToLittleEndian(value);
+  std::vector<uint8_t> bytes = ToLittleEndian(value);
   result.insert(result.end(), bytes.begin(), bytes.end());
   return result;
 }
@@ -393,14 +393,14 @@ std::vector<uint8_t> CpuZ80::EncodeJR_C_e(int8_t offset) {
 
 std::vector<uint8_t> CpuZ80::EncodeLD_A_addr(uint16_t address) {
   std::vector<uint8_t> result = {Opcodes::LD_A_addr};
-  auto bytes = ToLittleEndian(address);
+  std::vector<uint8_t> bytes = ToLittleEndian(address);
   result.insert(result.end(), bytes.begin(), bytes.end());
   return result;
 }
 
 std::vector<uint8_t> CpuZ80::EncodeLD_addr_A(uint16_t address) {
   std::vector<uint8_t> result = {Opcodes::LD_addr_A};
-  auto bytes = ToLittleEndian(address);
+  std::vector<uint8_t> bytes = ToLittleEndian(address);
   result.insert(result.end(), bytes.begin(), bytes.end());
   return result;
 }
@@ -561,14 +561,14 @@ std::vector<uint8_t> CpuZ80::EncodePOP_AF() { return {Opcodes::POP_AF}; }
 
 std::vector<uint8_t> CpuZ80::EncodeCALL_nn(uint16_t address) {
   std::vector<uint8_t> result = {Opcodes::CALL_nn};
-  auto bytes = ToLittleEndian(address);
+  std::vector<uint8_t> bytes = ToLittleEndian(address);
   result.insert(result.end(), bytes.begin(), bytes.end());
   return result;
 }
 
 std::vector<uint8_t> CpuZ80::EncodeCALL_NZ_nn(uint16_t address) {
   std::vector<uint8_t> result = {Opcodes::CALL_NZ_nn};
-  auto bytes = ToLittleEndian(address);
+  std::vector<uint8_t> bytes = ToLittleEndian(address);
   result.insert(result.end(), bytes.begin(), bytes.end());
   return result;
 }

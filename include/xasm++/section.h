@@ -33,7 +33,7 @@ namespace xasm {
  *                  static_cast<uint32_t>(SectionAttributes::Execute);
  * @endcode
  */
-enum class SectionAttributes {
+enum class SectionAttributes : std::uint8_t {
   Code = 0x01,    ///< Code section (contains executable instructions)
   Data = 0x02,    ///< Data section (contains initialized data)
   Bss = 0x04,     ///< BSS section (contains uninitialized data)
@@ -63,11 +63,11 @@ enum class SectionAttributes {
  */
 class Section {
 public:
-  std::string name; ///< Section name (e.g., "CODE", "DATA")
+  std::string name{}; ///< Section name (e.g., "CODE", "DATA")
   uint32_t attributes =
       0;            ///< Section attributes (bitwise OR of SectionAttributes)
   uint64_t org = 0; ///< Origin address (starting address)
-  std::vector<std::shared_ptr<Atom>> atoms; ///< List of atoms in this section
+  std::vector<std::shared_ptr<Atom>> atoms{}; ///< List of atoms in this section
   size_t current_offset = 0;                ///< Current offset within section
 
   /**

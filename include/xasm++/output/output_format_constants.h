@@ -10,10 +10,10 @@
 
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 
-namespace xasm {
-namespace output_format {
+namespace xasm::output_format {
 
 // =============================================================================
 // Format Field Widths
@@ -215,5 +215,4 @@ constexpr uint8_t ZERO_BYTE = 0x00;
 
 } // namespace binary
 
-} // namespace output_format
-} // namespace xasm
+} // namespace xasm::output_format

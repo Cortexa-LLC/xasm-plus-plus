@@ -31,7 +31,7 @@ namespace xasm {
  * additional modes, and the 65816 further extends the addressing
  * capabilities with 24-bit addressing and stack-relative modes.
  */
-enum class AddressingMode {
+enum class AddressingMode : std::uint8_t {
   Implied,     ///< No operand (e.g., RTS, NOP)
   Accumulator, ///< Operate on accumulator (e.g., ASL A)
   Immediate,   ///< Immediate value (e.g., LDA #$42)
@@ -70,7 +70,7 @@ enum class AddressingMode {
  * The assembler needs to know which CPU mode is active to validate instructions
  * and generate correct opcodes.
  */
-enum class CpuMode {
+enum class CpuMode : std::uint8_t {
   Cpu6502,      ///< Original 6502 (default)
   Cpu65C02,     ///< 65C02 with enhanced opcodes
   Cpu65C02Rock, ///< 65C02 with Rockwell extensions (BBR, BBS, etc.)
@@ -645,7 +645,7 @@ private:
   };
 
   /// @brief Controls immediate operand width for 65816 MX-flag-sensitive instructions
-  enum class ImmWidth {
+  enum class ImmWidth : std::uint8_t {
     Byte,  ///< Always 8-bit immediate (default / non-65816)
     UseM,  ///< 16-bit when M=0 (accumulator instructions: LDA, ADC, AND, …)
     UseX,  ///< 16-bit when X=0 (index instructions: LDX, LDY, CPX, CPY)

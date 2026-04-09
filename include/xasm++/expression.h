@@ -31,7 +31,7 @@ class UndefinedSymbolError : public std::runtime_error {
 public:
   explicit UndefinedSymbolError(const std::string &sym)
       : std::runtime_error("Undefined symbol: " + sym), symbol(sym) {}
-  std::string symbol;
+  std::string symbol{};
 };
 
 /**
@@ -40,7 +40,7 @@ public:
  * These operators combine two sub-expressions to produce a result.
  * More operators will be added in future phases.
  */
-enum class BinaryOp {
+enum class BinaryOp : std::uint8_t {
   Add,            ///< Addition: a + b
   Subtract,       ///< Subtraction: a - b
   Multiply,       ///< Multiplication: a * b
@@ -67,7 +67,7 @@ enum class BinaryOp {
  * These operators apply to a single sub-expression to produce a result.
  * More operators will be added in future phases.
  */
-enum class UnaryOp {
+enum class UnaryOp : std::uint8_t {
   Negate,     ///< Negation: -a
   BitwiseNot, ///< Bitwise NOT: ~a
   LogicalNot, ///< Logical NOT: !a
@@ -282,7 +282,7 @@ public:
   const std::string &GetSymbol() const { return symbol; }
 
 private:
-  std::string symbol; ///< The symbol name
+  std::string symbol{}; ///< The symbol name
 };
 
 /**
@@ -367,8 +367,10 @@ public:
    * @throws std::runtime_error if division by zero or unknown operator
    */
   int64_t Evaluate(const SymbolTable &symbols) const override {
-    int64_t lval = left->Evaluate(symbols);
-    int64_t rval = right->Evaluate(symbols);
+    int64_t lval = 0;
+    lval = left->Evaluate(symbols);
+    int64_t rval = 0;
+    rval = right->Evaluate(symbols);
 
     switch (operation) {
     case BinaryOp::Add:
@@ -493,7 +495,8 @@ public:
    * @throws std::runtime_error if unknown operator
    */
   int64_t Evaluate(const SymbolTable &symbols) const override {
-    int64_t val = expr->Evaluate(symbols);
+    int64_t val = 0;
+    val = expr->Evaluate(symbols);
 
     switch (operation) {
     case UnaryOp::Negate:
