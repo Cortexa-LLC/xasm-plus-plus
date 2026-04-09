@@ -124,8 +124,8 @@ private:
    * @param line_number Line number (1-based)
    * @return Line content (without newline) or empty string if not found
    */
-  std::string ReadSourceLine(const std::string &filename,
-                             size_t line_number) const;
+  static std::string ReadSourceLine(const std::string &filename,
+                             size_t line_number);
 
   /**
    * @brief Generate column marker line
@@ -154,8 +154,8 @@ private:
    * @return Vector of suggested symbol names (may be empty)
    */
   std::vector<std::string>
-  FindSimilarSymbols(const std::string &typo,
-                     const ConcreteSymbolTable *symbols) const;
+  static FindSimilarSymbols(const std::string &typo,
+                     const ConcreteSymbolTable *symbols);
 
   /**
    * @brief Extract symbol name from error message
@@ -167,7 +167,7 @@ private:
    * @param message Error message
    * @return Symbol name if found, empty string otherwise
    */
-  std::string ExtractSymbolName(const std::string &message) const;
+  static std::string ExtractSymbolName(const std::string &message);
 
   /**
    * @brief Format symbol suggestions as help text

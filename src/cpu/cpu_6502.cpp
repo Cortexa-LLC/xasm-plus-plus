@@ -318,10 +318,10 @@ std::vector<uint8_t> Cpu6502::EncodeJMP(uint16_t operand,
 }
 
 // NOP - No Operation
-std::vector<uint8_t> Cpu6502::EncodeNOP() const { return {Opcodes::NOP}; }
+std::vector<uint8_t> Cpu6502::EncodeNOP() { return {Opcodes::NOP}; }
 
 // RTS - Return from Subroutine
-std::vector<uint8_t> Cpu6502::EncodeRTS() const { return {Opcodes::RTS}; }
+std::vector<uint8_t> Cpu6502::EncodeRTS() { return {Opcodes::RTS}; }
 
 // Phase 2.2: Arithmetic Instructions
 
@@ -861,16 +861,16 @@ std::vector<uint8_t> Cpu6502::EncodeBVS(uint16_t operand,
 // Phase 2.2: Inc/Dec Instructions
 
 // INX - Increment X Register
-std::vector<uint8_t> Cpu6502::EncodeINX() const { return {Opcodes::INX}; }
+std::vector<uint8_t> Cpu6502::EncodeINX() { return {Opcodes::INX}; }
 
 // INY - Increment Y Register
-std::vector<uint8_t> Cpu6502::EncodeINY() const { return {Opcodes::INY}; }
+std::vector<uint8_t> Cpu6502::EncodeINY() { return {Opcodes::INY}; }
 
 // DEX - Decrement X Register
-std::vector<uint8_t> Cpu6502::EncodeDEX() const { return {Opcodes::DEX}; }
+std::vector<uint8_t> Cpu6502::EncodeDEX() { return {Opcodes::DEX}; }
 
 // DEY - Decrement Y Register
-std::vector<uint8_t> Cpu6502::EncodeDEY() const { return {Opcodes::DEY}; }
+std::vector<uint8_t> Cpu6502::EncodeDEY() { return {Opcodes::DEY}; }
 
 // INC - Increment Memory
 std::vector<uint8_t> Cpu6502::EncodeINC(uint16_t operand,
@@ -927,16 +927,16 @@ std::vector<uint8_t> Cpu6502::EncodeDEC(uint16_t operand,
 // Phase 2.2: Stack Operations
 
 // PHA - Push Accumulator
-std::vector<uint8_t> Cpu6502::EncodePHA() const { return {Opcodes::PHA}; }
+std::vector<uint8_t> Cpu6502::EncodePHA() { return {Opcodes::PHA}; }
 
 // PLA - Pull Accumulator
-std::vector<uint8_t> Cpu6502::EncodePLA() const { return {Opcodes::PLA}; }
+std::vector<uint8_t> Cpu6502::EncodePLA() { return {Opcodes::PLA}; }
 
 // PHP - Push Processor Status
-std::vector<uint8_t> Cpu6502::EncodePHP() const { return {Opcodes::PHP}; }
+std::vector<uint8_t> Cpu6502::EncodePHP() { return {Opcodes::PHP}; }
 
 // PLP - Pull Processor Status
-std::vector<uint8_t> Cpu6502::EncodePLP() const { return {Opcodes::PLP}; }
+std::vector<uint8_t> Cpu6502::EncodePLP() { return {Opcodes::PLP}; }
 
 // Phase 2.2: Subroutine
 
@@ -1125,56 +1125,56 @@ std::vector<uint8_t> Cpu6502::EncodeROR(uint16_t operand,
 // Group 4: Interrupt Instructions
 
 // RTI - Return from Interrupt
-std::vector<uint8_t> Cpu6502::EncodeRTI() const { return {Opcodes::RTI}; }
+std::vector<uint8_t> Cpu6502::EncodeRTI() { return {Opcodes::RTI}; }
 
 // BRK - Break
-std::vector<uint8_t> Cpu6502::EncodeBRK() const { return {Opcodes::BRK}; }
+std::vector<uint8_t> Cpu6502::EncodeBRK() { return {Opcodes::BRK}; }
 
 // Group 5: Flag Operations
 
 // CLC - Clear Carry
-std::vector<uint8_t> Cpu6502::EncodeCLC() const { return {Opcodes::CLC}; }
+std::vector<uint8_t> Cpu6502::EncodeCLC() { return {Opcodes::CLC}; }
 
 // SEC - Set Carry
-std::vector<uint8_t> Cpu6502::EncodeSEC() const { return {Opcodes::SEC}; }
+std::vector<uint8_t> Cpu6502::EncodeSEC() { return {Opcodes::SEC}; }
 
 // CLD - Clear Decimal
-std::vector<uint8_t> Cpu6502::EncodeCLD() const { return {Opcodes::CLD}; }
+std::vector<uint8_t> Cpu6502::EncodeCLD() { return {Opcodes::CLD}; }
 
 // SED - Set Decimal
-std::vector<uint8_t> Cpu6502::EncodeSED() const { return {Opcodes::SED}; }
+std::vector<uint8_t> Cpu6502::EncodeSED() { return {Opcodes::SED}; }
 
 // CLI - Clear Interrupt Disable
-std::vector<uint8_t> Cpu6502::EncodeCLI() const { return {Opcodes::CLI}; }
+std::vector<uint8_t> Cpu6502::EncodeCLI() { return {Opcodes::CLI}; }
 
 // SEI - Set Interrupt Disable
-std::vector<uint8_t> Cpu6502::EncodeSEI() const { return {Opcodes::SEI}; }
+std::vector<uint8_t> Cpu6502::EncodeSEI() { return {Opcodes::SEI}; }
 
 // CLV - Clear Overflow
-std::vector<uint8_t> Cpu6502::EncodeCLV() const { return {Opcodes::CLV}; }
+std::vector<uint8_t> Cpu6502::EncodeCLV() { return {Opcodes::CLV}; }
 
 // Group 6: Transfer Instructions
 
 // TSX - Transfer SP to X
-std::vector<uint8_t> Cpu6502::EncodeTSX() const { return {Opcodes::TSX}; }
+std::vector<uint8_t> Cpu6502::EncodeTSX() { return {Opcodes::TSX}; }
 
 // TXS - Transfer X to SP
-std::vector<uint8_t> Cpu6502::EncodeTXS() const { return {Opcodes::TXS}; }
+std::vector<uint8_t> Cpu6502::EncodeTXS() { return {Opcodes::TXS}; }
 
 // TAX - Transfer A to X
-std::vector<uint8_t> Cpu6502::EncodeTAX() const { return {Opcodes::TAX}; }
+std::vector<uint8_t> Cpu6502::EncodeTAX() { return {Opcodes::TAX}; }
 
 // TAY - Transfer A to Y
-std::vector<uint8_t> Cpu6502::EncodeTAY() const { return {Opcodes::TAY}; }
+std::vector<uint8_t> Cpu6502::EncodeTAY() { return {Opcodes::TAY}; }
 
 // TXA - Transfer X to A
-std::vector<uint8_t> Cpu6502::EncodeTXA() const { return {Opcodes::TXA}; }
+std::vector<uint8_t> Cpu6502::EncodeTXA() { return {Opcodes::TXA}; }
 
 // TYA - Transfer Y to A
-std::vector<uint8_t> Cpu6502::EncodeTYA() const { return {Opcodes::TYA}; }
+std::vector<uint8_t> Cpu6502::EncodeTYA() { return {Opcodes::TYA}; }
 
 // Calculate instruction size based on addressing mode
-size_t Cpu6502::CalculateInstructionSize(AddressingMode mode) const {
+size_t Cpu6502::CalculateInstructionSize(AddressingMode mode) {
   switch (mode) {
   case AddressingMode::Implied:
     return 1;
@@ -1914,12 +1914,12 @@ std::vector<uint8_t> Cpu6502::EncodeTSC() const {
 }
 
 // TXY - Transfer X to Y (65816 implied, opcode $9B)
-std::vector<uint8_t> Cpu6502::EncodeTXY() const {
+std::vector<uint8_t> Cpu6502::EncodeTXY() {
   return {Opcodes::TXY};
 }
 
 // TYX - Transfer Y to X (65816 implied, opcode $BB)
-std::vector<uint8_t> Cpu6502::EncodeTYX() const {
+std::vector<uint8_t> Cpu6502::EncodeTYX() {
   return {Opcodes::TYX};
 }
 

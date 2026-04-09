@@ -487,7 +487,7 @@ private:
                          const std::string &operand, DirectiveContext &context);
 
   // Parsing helpers
-  std::string StripComments(const std::string &line);
+  static std::string StripComments(const std::string &line);
 
   /**
    * @brief Scope a Merlin local label to the current global label
@@ -535,7 +535,7 @@ private:
    *   "#\"A\"+1"   → "#$C1+1"
    *   "'r'-CTRL"   → "$F2-CTRL"
    */
-  std::string ExpandMerlinCharLiterals(const std::string &operand) const;
+  static std::string ExpandMerlinCharLiterals(const std::string &operand);
 
   /**
    * @brief Substitute ]variable references in a line with their current values
@@ -548,14 +548,14 @@ private:
    * Scans the line for ]identifier tokens and replaces each with the decimal
    * representation of its current value from the symbol table.
    */
-  std::string SubstituteMerlinVars(const std::string &line,
-                                   const ConcreteSymbolTable &symbols) const;
+  static std::string SubstituteMerlinVars(const std::string &line,
+                                   const ConcreteSymbolTable &symbols);
 
   void ParseLine(const std::string &line, Section &section,
                  ConcreteSymbolTable &symbols);
 
   // Label parsing
-  std::string ParseLabel(const std::string &line, size_t &pos, Section &section,
+  static std::string ParseLabel(const std::string &line, size_t &pos, Section &section,
                          ConcreteSymbolTable &symbols);
 
   // Directive handlers
@@ -596,7 +596,7 @@ private:
                    Section &section, ConcreteSymbolTable &symbols);
 
   // Macro helpers
-  std::string SubstituteParameters(const std::string &line,
+  static std::string SubstituteParameters(const std::string &line,
                                    const std::vector<std::string> &params);
 
   // Error formatting with source location

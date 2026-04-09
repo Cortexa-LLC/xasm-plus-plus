@@ -18,7 +18,7 @@ namespace xasm {
 // Helper Functions
 // ============================================================================
 
-std::string MacroProcessor::ToUpper(const std::string &str) const {
+std::string MacroProcessor::ToUpper(const std::string &str) {
   std::string result = str;
   std::transform(result.begin(), result.end(), result.begin(),
                  [](unsigned char c) { return std::toupper(c); });

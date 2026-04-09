@@ -117,7 +117,7 @@ protected:
    * @param arguments Argument values
    * @return Line with parameters substituted
    */
-  std::string SubstituteParameters(const std::string &line,
+  static std::string SubstituteParameters(const std::string &line,
                                    const MacroDefinition &macro,
                                    const std::vector<std::string> &arguments);
 
@@ -128,7 +128,7 @@ protected:
    * @param expansion_id Unique expansion ID
    * @return Unique label name
    */
-  std::string MakeLocalLabelUnique(const std::string &label, int expansion_id);
+  static std::string MakeLocalLabelUnique(const std::string &label, int expansion_id);
 
   /**
    * @brief Expand macro with arguments
@@ -227,7 +227,7 @@ private:
    * @param line Line to process
    * @return Line without comments
    */
-  std::string StripComments(const std::string &line);
+  static std::string StripComments(const std::string &line);
 
   /**
    * @brief Trim whitespace from both ends
@@ -235,7 +235,7 @@ private:
    * @param str String to trim
    * @return Trimmed string
    */
-  std::string Trim(const std::string &str);
+  static std::string Trim(const std::string &str);
 
   /**
    * @brief Convert string to uppercase
@@ -243,7 +243,7 @@ private:
    * @param str String to convert
    * @return Uppercase string
    */
-  std::string ToUpper(const std::string &str);
+  static std::string ToUpper(const std::string &str);
 
   /**
    * @brief Check if line is a comment line (starts with *)

@@ -105,7 +105,7 @@ public:
    * @param value Immediate 8-bit value
    * @return Vector of encoded bytes {0x3E, n}
    */
-  std::vector<uint8_t> EncodeLD_A_n(uint8_t value) const;
+  static std::vector<uint8_t> EncodeLD_A_n(uint8_t value);
 
   /**
    * @brief Encode LD B, n instruction (load immediate into B)
@@ -113,7 +113,7 @@ public:
    * @param value Immediate 8-bit value
    * @return Vector of encoded bytes {0x06, n}
    */
-  std::vector<uint8_t> EncodeLD_B_n(uint8_t value) const;
+  static std::vector<uint8_t> EncodeLD_B_n(uint8_t value);
 
   /**
    * @brief Encode LD C, n instruction (load immediate into C)
@@ -121,7 +121,7 @@ public:
    * @param value Immediate 8-bit value
    * @return Vector of encoded bytes {0x0E, n}
    */
-  std::vector<uint8_t> EncodeLD_C_n(uint8_t value) const;
+  static std::vector<uint8_t> EncodeLD_C_n(uint8_t value);
 
   /**
    * @brief Encode LD D, n instruction (load immediate into D)
@@ -129,7 +129,7 @@ public:
    * @param value Immediate 8-bit value
    * @return Vector of encoded bytes {0x16, n}
    */
-  std::vector<uint8_t> EncodeLD_D_n(uint8_t value) const;
+  static std::vector<uint8_t> EncodeLD_D_n(uint8_t value);
 
   /**
    * @brief Encode LD E, n instruction (load immediate into E)
@@ -137,7 +137,7 @@ public:
    * @param value Immediate 8-bit value
    * @return Vector of encoded bytes {0x1E, n}
    */
-  std::vector<uint8_t> EncodeLD_E_n(uint8_t value) const;
+  static std::vector<uint8_t> EncodeLD_E_n(uint8_t value);
 
   /**
    * @brief Encode LD H, n instruction (load immediate into H)
@@ -145,7 +145,7 @@ public:
    * @param value Immediate 8-bit value
    * @return Vector of encoded bytes {0x26, n}
    */
-  std::vector<uint8_t> EncodeLD_H_n(uint8_t value) const;
+  static std::vector<uint8_t> EncodeLD_H_n(uint8_t value);
 
   /**
    * @brief Encode LD L, n instruction (load immediate into L)
@@ -153,7 +153,7 @@ public:
    * @param value Immediate 8-bit value
    * @return Vector of encoded bytes {0x2E, n}
    */
-  std::vector<uint8_t> EncodeLD_L_n(uint8_t value) const;
+  static std::vector<uint8_t> EncodeLD_L_n(uint8_t value);
 
   /** @} */ // End of 8-bit Load Instructions
 
@@ -207,28 +207,28 @@ public:
    *
    * @return Vector of encoded bytes {0x0A}
    */
-  std::vector<uint8_t> EncodeLD_A_BC() const;
+  static std::vector<uint8_t> EncodeLD_A_BC();
 
   /**
    * @brief Encode LD A, (DE) instruction (load A from address in DE)
    *
    * @return Vector of encoded bytes {0x1A}
    */
-  std::vector<uint8_t> EncodeLD_A_DE() const;
+  static std::vector<uint8_t> EncodeLD_A_DE();
 
   /**
    * @brief Encode LD (BC), A instruction (store A to address in BC)
    *
    * @return Vector of encoded bytes {0x02}
    */
-  std::vector<uint8_t> EncodeLD_BC_A() const;
+  static std::vector<uint8_t> EncodeLD_BC_A();
 
   /**
    * @brief Encode LD (DE), A instruction (store A to address in DE)
    *
    * @return Vector of encoded bytes {0x12}
    */
-  std::vector<uint8_t> EncodeLD_DE_A() const;
+  static std::vector<uint8_t> EncodeLD_DE_A();
 
   /**
    * @brief Encode LD (HL), n instruction (store immediate to address in HL)
@@ -236,7 +236,7 @@ public:
    * @param value Immediate 8-bit value
    * @return Vector of encoded bytes {0x36, n}
    */
-  std::vector<uint8_t> EncodeLD_HL_n(uint8_t value) const;
+  static std::vector<uint8_t> EncodeLD_HL_n(uint8_t value);
 
   /**
    * @brief Encode LD HL, (nn) instruction (load HL from memory address)
@@ -263,7 +263,7 @@ public:
    *
    * @return Vector of encoded bytes {0xF9}
    */
-  std::vector<uint8_t> EncodeLD_SP_HL() const;
+  static std::vector<uint8_t> EncodeLD_SP_HL();
 
   /** @} */ // End of 16-bit Load Instructions
 
@@ -278,7 +278,7 @@ public:
    * @param value Immediate 8-bit value
    * @return Vector of encoded bytes {0xC6, n}
    */
-  std::vector<uint8_t> EncodeADD_A_n(uint8_t value) const;
+  static std::vector<uint8_t> EncodeADD_A_n(uint8_t value);
 
   /**
    * @brief Encode SUB n instruction (subtract immediate from A)
@@ -286,21 +286,21 @@ public:
    * @param value Immediate 8-bit value
    * @return Vector of encoded bytes {0xD6, n}
    */
-  std::vector<uint8_t> EncodeSUB_n(uint8_t value) const;
+  static std::vector<uint8_t> EncodeSUB_n(uint8_t value);
 
   /**
    * @brief Encode INC A instruction (increment A)
    *
    * @return Vector of encoded bytes {0x3C}
    */
-  std::vector<uint8_t> EncodeINC_A() const;
+  static std::vector<uint8_t> EncodeINC_A();
 
   /**
    * @brief Encode DEC A instruction (decrement A)
    *
    * @return Vector of encoded bytes {0x3D}
    */
-  std::vector<uint8_t> EncodeDEC_A() const;
+  static std::vector<uint8_t> EncodeDEC_A();
 
   /** @} */ // End of Arithmetic Instructions
 
@@ -314,7 +314,7 @@ public:
    *
    * @return Vector of encoded bytes {0x00}
    */
-  std::vector<uint8_t> EncodeNOP() const;
+  static std::vector<uint8_t> EncodeNOP();
 
   /**
    * @brief Encode JP nn instruction (jump to absolute address)
@@ -331,7 +331,7 @@ public:
    *
    * @return Vector of encoded bytes {0xC9}
    */
-  std::vector<uint8_t> EncodeRET() const;
+  static std::vector<uint8_t> EncodeRET();
 
   /** @} */ // End of Control Flow Instructions
 
@@ -345,14 +345,14 @@ public:
    *
    * @return Vector of encoded bytes {0xC5}
    */
-  std::vector<uint8_t> EncodePUSH_BC() const;
+  static std::vector<uint8_t> EncodePUSH_BC();
 
   /**
    * @brief Encode POP BC instruction (pop BC from stack)
    *
    * @return Vector of encoded bytes {0xC1}
    */
-  std::vector<uint8_t> EncodePOP_BC() const;
+  static std::vector<uint8_t> EncodePOP_BC();
 
   /** @} */ // End of Stack Operations
 
@@ -370,7 +370,7 @@ public:
    *
    * @note Opcode = 0x40 + (bit << 3) + reg
    */
-  std::vector<uint8_t> EncodeBIT(uint8_t bit, uint8_t reg) const;
+  static std::vector<uint8_t> EncodeBIT(uint8_t bit, uint8_t reg);
 
   /**
    * @brief Encode SET b, r instruction (set bit in register)
@@ -381,7 +381,7 @@ public:
    *
    * @note Opcode = 0xC0 + (bit << 3) + reg
    */
-  std::vector<uint8_t> EncodeSET(uint8_t bit, uint8_t reg) const;
+  static std::vector<uint8_t> EncodeSET(uint8_t bit, uint8_t reg);
 
   /**
    * @brief Encode RES b, r instruction (reset bit in register)
@@ -392,7 +392,7 @@ public:
    *
    * @note Opcode = 0x80 + (bit << 3) + reg
    */
-  std::vector<uint8_t> EncodeRES(uint8_t bit, uint8_t reg) const;
+  static std::vector<uint8_t> EncodeRES(uint8_t bit, uint8_t reg);
 
   /** @} */ // End of Bit Operations
 
@@ -417,7 +417,7 @@ public:
    * @param displacement Signed 8-bit displacement
    * @return Vector of encoded bytes {0xDD, 0x7E, displacement}
    */
-  std::vector<uint8_t> EncodeLD_A_IX_d(int8_t displacement) const;
+  static std::vector<uint8_t> EncodeLD_A_IX_d(int8_t displacement);
 
   /** @} */ // End of IX Register Operations
 
@@ -442,7 +442,7 @@ public:
    * @param displacement Signed 8-bit displacement
    * @return Vector of encoded bytes {0xFD, 0x7E, displacement}
    */
-  std::vector<uint8_t> EncodeLD_A_IY_d(int8_t displacement) const;
+  static std::vector<uint8_t> EncodeLD_A_IY_d(int8_t displacement);
 
   /** @} */ // End of IY Register Operations
 
@@ -455,25 +455,25 @@ public:
    * @brief Encode LD A, B instruction (load B into A)
    * @return Vector of encoded bytes {0x78}
    */
-  std::vector<uint8_t> EncodeLD_A_B() const;
+  static std::vector<uint8_t> EncodeLD_A_B();
 
   /**
    * @brief Encode LD A, C instruction (load C into A)
    * @return Vector of encoded bytes {0x79}
    */
-  std::vector<uint8_t> EncodeLD_A_C() const;
+  static std::vector<uint8_t> EncodeLD_A_C();
 
   /**
    * @brief Encode LD B, A instruction (load A into B)
    * @return Vector of encoded bytes {0x47}
    */
-  std::vector<uint8_t> EncodeLD_B_A() const;
+  static std::vector<uint8_t> EncodeLD_B_A();
 
   /**
    * @brief Encode LD C, A instruction (load A into C)
    * @return Vector of encoded bytes {0x4F}
    */
-  std::vector<uint8_t> EncodeLD_C_A() const;
+  static std::vector<uint8_t> EncodeLD_C_A();
 
   /** @} */ // End of Register-to-Register Load Instructions
 
@@ -488,7 +488,7 @@ public:
    * @param value Immediate 8-bit value
    * @return Vector of encoded bytes {0xCE, n}
    */
-  std::vector<uint8_t> EncodeADC_A_n(uint8_t value) const;
+  static std::vector<uint8_t> EncodeADC_A_n(uint8_t value);
 
   /**
    * @brief Encode SBC A, n instruction (subtract with carry)
@@ -496,7 +496,7 @@ public:
    * @param value Immediate 8-bit value
    * @return Vector of encoded bytes {0xDE, n}
    */
-  std::vector<uint8_t> EncodeSBC_A_n(uint8_t value) const;
+  static std::vector<uint8_t> EncodeSBC_A_n(uint8_t value);
 
   /**
    * @brief Encode CP n instruction (compare immediate with A)
@@ -504,7 +504,7 @@ public:
    * @param value Immediate 8-bit value
    * @return Vector of encoded bytes {0xFE, n}
    */
-  std::vector<uint8_t> EncodeCP_n(uint8_t value) const;
+  static std::vector<uint8_t> EncodeCP_n(uint8_t value);
 
   /** @} */ // End of Additional Arithmetic Instructions
 
@@ -519,7 +519,7 @@ public:
    * @param value Immediate 8-bit value
    * @return Vector of encoded bytes {0xE6, n}
    */
-  std::vector<uint8_t> EncodeAND_n(uint8_t value) const;
+  static std::vector<uint8_t> EncodeAND_n(uint8_t value);
 
   /**
    * @brief Encode OR n instruction (logical OR with immediate)
@@ -527,7 +527,7 @@ public:
    * @param value Immediate 8-bit value
    * @return Vector of encoded bytes {0xF6, n}
    */
-  std::vector<uint8_t> EncodeOR_n(uint8_t value) const;
+  static std::vector<uint8_t> EncodeOR_n(uint8_t value);
 
   /**
    * @brief Encode XOR n instruction (logical XOR with immediate)
@@ -535,7 +535,7 @@ public:
    * @param value Immediate 8-bit value
    * @return Vector of encoded bytes {0xEE, n}
    */
-  std::vector<uint8_t> EncodeXOR_n(uint8_t value) const;
+  static std::vector<uint8_t> EncodeXOR_n(uint8_t value);
 
   /**
    * @brief Encode XOR A instruction (clear A register)
@@ -544,7 +544,7 @@ public:
    *
    * @note This is a common idiom to clear the accumulator
    */
-  std::vector<uint8_t> EncodeXOR_A() const;
+  static std::vector<uint8_t> EncodeXOR_A();
 
   /** @} */ // End of Logical Operations
 
@@ -559,7 +559,7 @@ public:
    * @param offset Signed 8-bit displacement (-128 to +127)
    * @return Vector of encoded bytes {0x18, e}
    */
-  std::vector<uint8_t> EncodeJR_e(int8_t offset) const;
+  static std::vector<uint8_t> EncodeJR_e(int8_t offset);
 
   /**
    * @brief Encode JR NZ, e instruction (jump if not zero)
@@ -567,7 +567,7 @@ public:
    * @param offset Signed 8-bit displacement
    * @return Vector of encoded bytes {0x20, e}
    */
-  std::vector<uint8_t> EncodeJR_NZ_e(int8_t offset) const;
+  static std::vector<uint8_t> EncodeJR_NZ_e(int8_t offset);
 
   /**
    * @brief Encode JR Z, e instruction (jump if zero)
@@ -575,7 +575,7 @@ public:
    * @param offset Signed 8-bit displacement
    * @return Vector of encoded bytes {0x28, e}
    */
-  std::vector<uint8_t> EncodeJR_Z_e(int8_t offset) const;
+  static std::vector<uint8_t> EncodeJR_Z_e(int8_t offset);
 
   /**
    * @brief Encode JR NC, e instruction (jump if no carry)
@@ -583,7 +583,7 @@ public:
    * @param offset Signed 8-bit displacement
    * @return Vector of encoded bytes {0x30, e}
    */
-  std::vector<uint8_t> EncodeJR_NC_e(int8_t offset) const;
+  static std::vector<uint8_t> EncodeJR_NC_e(int8_t offset);
 
   /**
    * @brief Encode JR C, e instruction (jump if carry)
@@ -591,7 +591,7 @@ public:
    * @param offset Signed 8-bit displacement
    * @return Vector of encoded bytes {0x38, e}
    */
-  std::vector<uint8_t> EncodeJR_C_e(int8_t offset) const;
+  static std::vector<uint8_t> EncodeJR_C_e(int8_t offset);
 
   /** @} */ // End of Branch Instructions
 
@@ -620,13 +620,13 @@ public:
    * @brief Encode LD A, (HL) instruction (load from HL)
    * @return Vector of encoded bytes {0x7E}
    */
-  std::vector<uint8_t> EncodeLD_A_HL() const;
+  static std::vector<uint8_t> EncodeLD_A_HL();
 
   /**
    * @brief Encode LD (HL), A instruction (store to HL)
    * @return Vector of encoded bytes {0x77}
    */
-  std::vector<uint8_t> EncodeLD_HL_A() const;
+  static std::vector<uint8_t> EncodeLD_HL_A();
 
   /** @} */ // End of Memory Access Instructions
 
@@ -639,25 +639,25 @@ public:
    * @brief Encode RLCA instruction (rotate left circular accumulator)
    * @return Vector of encoded bytes {0x07}
    */
-  std::vector<uint8_t> EncodeRLCA() const;
+  static std::vector<uint8_t> EncodeRLCA();
 
   /**
    * @brief Encode RRCA instruction (rotate right circular accumulator)
    * @return Vector of encoded bytes {0x0F}
    */
-  std::vector<uint8_t> EncodeRRCA() const;
+  static std::vector<uint8_t> EncodeRRCA();
 
   /**
    * @brief Encode RLA instruction (rotate left through carry)
    * @return Vector of encoded bytes {0x17}
    */
-  std::vector<uint8_t> EncodeRLA() const;
+  static std::vector<uint8_t> EncodeRLA();
 
   /**
    * @brief Encode RRA instruction (rotate right through carry)
    * @return Vector of encoded bytes {0x1F}
    */
-  std::vector<uint8_t> EncodeRRA() const;
+  static std::vector<uint8_t> EncodeRRA();
 
   /**
    * @brief Encode RLD instruction (rotate left digit)
@@ -667,7 +667,7 @@ public:
    *
    * @return Vector of encoded bytes {0xED, 0x6F}
    */
-  std::vector<uint8_t> EncodeRLD() const;
+  static std::vector<uint8_t> EncodeRLD();
 
   /**
    * @brief Encode RRD instruction (rotate right digit)
@@ -677,7 +677,7 @@ public:
    *
    * @return Vector of encoded bytes {0xED, 0x67}
    */
-  std::vector<uint8_t> EncodeRRD() const;
+  static std::vector<uint8_t> EncodeRRD();
 
   /** @} */ // End of Rotate and Shift Instructions
 
@@ -696,7 +696,7 @@ public:
    * @param port 8-bit port address
    * @return Vector of encoded bytes {0xDB, port}
    */
-  std::vector<uint8_t> EncodeIN_A_n(uint8_t port) const;
+  static std::vector<uint8_t> EncodeIN_A_n(uint8_t port);
 
   /**
    * @brief Encode OUT (n), A instruction
@@ -706,7 +706,7 @@ public:
    * @param port 8-bit port address
    * @return Vector of encoded bytes {0xD3, port}
    */
-  std::vector<uint8_t> EncodeOUT_n_A(uint8_t port) const;
+  static std::vector<uint8_t> EncodeOUT_n_A(uint8_t port);
 
   /**
    * @brief Encode IN B, (C) instruction
@@ -715,7 +715,7 @@ public:
    *
    * @return Vector of encoded bytes {0xED, 0x40}
    */
-  std::vector<uint8_t> EncodeIN_B_C() const;
+  static std::vector<uint8_t> EncodeIN_B_C();
 
   /**
    * @brief Encode IN C, (C) instruction
@@ -724,7 +724,7 @@ public:
    *
    * @return Vector of encoded bytes {0xED, 0x48}
    */
-  std::vector<uint8_t> EncodeIN_C_C() const;
+  static std::vector<uint8_t> EncodeIN_C_C();
 
   /**
    * @brief Encode IN D, (C) instruction
@@ -733,7 +733,7 @@ public:
    *
    * @return Vector of encoded bytes {0xED, 0x50}
    */
-  std::vector<uint8_t> EncodeIN_D_C() const;
+  static std::vector<uint8_t> EncodeIN_D_C();
 
   /**
    * @brief Encode IN E, (C) instruction
@@ -742,7 +742,7 @@ public:
    *
    * @return Vector of encoded bytes {0xED, 0x58}
    */
-  std::vector<uint8_t> EncodeIN_E_C() const;
+  static std::vector<uint8_t> EncodeIN_E_C();
 
   /**
    * @brief Encode IN H, (C) instruction
@@ -751,7 +751,7 @@ public:
    *
    * @return Vector of encoded bytes {0xED, 0x60}
    */
-  std::vector<uint8_t> EncodeIN_H_C() const;
+  static std::vector<uint8_t> EncodeIN_H_C();
 
   /**
    * @brief Encode IN L, (C) instruction
@@ -760,7 +760,7 @@ public:
    *
    * @return Vector of encoded bytes {0xED, 0x68}
    */
-  std::vector<uint8_t> EncodeIN_L_C() const;
+  static std::vector<uint8_t> EncodeIN_L_C();
 
   /**
    * @brief Encode IN A, (C) instruction
@@ -769,7 +769,7 @@ public:
    *
    * @return Vector of encoded bytes {0xED, 0x78}
    */
-  std::vector<uint8_t> EncodeIN_A_C() const;
+  static std::vector<uint8_t> EncodeIN_A_C();
 
   /**
    * @brief Encode OUT (C), B instruction
@@ -778,7 +778,7 @@ public:
    *
    * @return Vector of encoded bytes {0xED, 0x41}
    */
-  std::vector<uint8_t> EncodeOUT_C_B() const;
+  static std::vector<uint8_t> EncodeOUT_C_B();
 
   /**
    * @brief Encode OUT (C), C instruction
@@ -787,7 +787,7 @@ public:
    *
    * @return Vector of encoded bytes {0xED, 0x49}
    */
-  std::vector<uint8_t> EncodeOUT_C_C() const;
+  static std::vector<uint8_t> EncodeOUT_C_C();
 
   /**
    * @brief Encode OUT (C), D instruction
@@ -796,7 +796,7 @@ public:
    *
    * @return Vector of encoded bytes {0xED, 0x51}
    */
-  std::vector<uint8_t> EncodeOUT_C_D() const;
+  static std::vector<uint8_t> EncodeOUT_C_D();
 
   /**
    * @brief Encode OUT (C), E instruction
@@ -805,7 +805,7 @@ public:
    *
    * @return Vector of encoded bytes {0xED, 0x59}
    */
-  std::vector<uint8_t> EncodeOUT_C_E() const;
+  static std::vector<uint8_t> EncodeOUT_C_E();
 
   /**
    * @brief Encode OUT (C), H instruction
@@ -814,7 +814,7 @@ public:
    *
    * @return Vector of encoded bytes {0xED, 0x61}
    */
-  std::vector<uint8_t> EncodeOUT_C_H() const;
+  static std::vector<uint8_t> EncodeOUT_C_H();
 
   /**
    * @brief Encode OUT (C), L instruction
@@ -823,7 +823,7 @@ public:
    *
    * @return Vector of encoded bytes {0xED, 0x69}
    */
-  std::vector<uint8_t> EncodeOUT_C_L() const;
+  static std::vector<uint8_t> EncodeOUT_C_L();
 
   /**
    * @brief Encode OUT (C), A instruction
@@ -832,7 +832,7 @@ public:
    *
    * @return Vector of encoded bytes {0xED, 0x79}
    */
-  std::vector<uint8_t> EncodeOUT_C_A() const;
+  static std::vector<uint8_t> EncodeOUT_C_A();
 
   /** @} */ // End of Input/Output Instructions
 
@@ -845,25 +845,25 @@ public:
    * @brief Encode LD I, A instruction (load interrupt vector register)
    * @return Vector of encoded bytes {0xED, 0x47}
    */
-  std::vector<uint8_t> EncodeLD_I_A() const;
+  static std::vector<uint8_t> EncodeLD_I_A();
 
   /**
    * @brief Encode LD A, I instruction (load from interrupt vector)
    * @return Vector of encoded bytes {0xED, 0x57}
    */
-  std::vector<uint8_t> EncodeLD_A_I() const;
+  static std::vector<uint8_t> EncodeLD_A_I();
 
   /**
    * @brief Encode LD R, A instruction (load refresh register)
    * @return Vector of encoded bytes {0xED, 0x4F}
    */
-  std::vector<uint8_t> EncodeLD_R_A() const;
+  static std::vector<uint8_t> EncodeLD_R_A();
 
   /**
    * @brief Encode LD A, R instruction (load from refresh register)
    * @return Vector of encoded bytes {0xED, 0x5F}
    */
-  std::vector<uint8_t> EncodeLD_A_R() const;
+  static std::vector<uint8_t> EncodeLD_A_R();
 
   /**
    * @brief Encode LDIR instruction (load, increment, repeat)
@@ -872,7 +872,7 @@ public:
    *
    * @return Vector of encoded bytes {0xED, 0xB0}
    */
-  std::vector<uint8_t> EncodeLDIR() const;
+  static std::vector<uint8_t> EncodeLDIR();
 
   /**
    * @brief Encode CPIR instruction (compare, increment, repeat)
@@ -881,13 +881,13 @@ public:
    *
    * @return Vector of encoded bytes {0xED, 0xB1}
    */
-  std::vector<uint8_t> EncodeCPIR() const;
+  static std::vector<uint8_t> EncodeCPIR();
 
   /**
    * @brief Encode NEG instruction (negate accumulator - two's complement)
    * @return Vector of encoded bytes {0xED, 0x44}
    */
-  std::vector<uint8_t> EncodeNEG() const;
+  static std::vector<uint8_t> EncodeNEG();
 
   /** @} */ // End of Extended Instructions
 
@@ -900,37 +900,37 @@ public:
    * @brief Encode PUSH DE instruction
    * @return Vector of encoded bytes {0xD5}
    */
-  std::vector<uint8_t> EncodePUSH_DE() const;
+  static std::vector<uint8_t> EncodePUSH_DE();
 
   /**
    * @brief Encode PUSH HL instruction
    * @return Vector of encoded bytes {0xE5}
    */
-  std::vector<uint8_t> EncodePUSH_HL() const;
+  static std::vector<uint8_t> EncodePUSH_HL();
 
   /**
    * @brief Encode PUSH AF instruction
    * @return Vector of encoded bytes {0xF5}
    */
-  std::vector<uint8_t> EncodePUSH_AF() const;
+  static std::vector<uint8_t> EncodePUSH_AF();
 
   /**
    * @brief Encode POP DE instruction
    * @return Vector of encoded bytes {0xD1}
    */
-  std::vector<uint8_t> EncodePOP_DE() const;
+  static std::vector<uint8_t> EncodePOP_DE();
 
   /**
    * @brief Encode POP HL instruction
    * @return Vector of encoded bytes {0xE1}
    */
-  std::vector<uint8_t> EncodePOP_HL() const;
+  static std::vector<uint8_t> EncodePOP_HL();
 
   /**
    * @brief Encode POP AF instruction
    * @return Vector of encoded bytes {0xF1}
    */
-  std::vector<uint8_t> EncodePOP_AF() const;
+  static std::vector<uint8_t> EncodePOP_AF();
 
   /** @} */ // End of Additional Stack Operations
 
@@ -959,13 +959,13 @@ public:
    * @brief Encode RET Z instruction (return if zero)
    * @return Vector of encoded bytes {0xC8}
    */
-  std::vector<uint8_t> EncodeRET_Z() const;
+  static std::vector<uint8_t> EncodeRET_Z();
 
   /**
    * @brief Encode RET NZ instruction (return if not zero)
    * @return Vector of encoded bytes {0xC0}
    */
-  std::vector<uint8_t> EncodeRET_NZ() const;
+  static std::vector<uint8_t> EncodeRET_NZ();
 
   /** @} */ // End of Conditional Call and Return Instructions
 
@@ -984,7 +984,7 @@ private:
    * ToLittleEndian(0x1234) -> {0x34, 0x12}  // LSB first
    * @endcode
    */
-  std::vector<uint8_t> ToLittleEndian(uint16_t value) const;
+  static std::vector<uint8_t> ToLittleEndian(uint16_t value);
 };
 
 } // namespace xasm

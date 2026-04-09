@@ -483,7 +483,7 @@ private:
    * @param line Input line
    * @return Line with line number removed
    */
-  std::string StripLineNumber(const std::string &line);
+  static std::string StripLineNumber(const std::string &line);
 
   /**
    * @brief Strip comments from line
@@ -493,7 +493,7 @@ private:
    * @param line Input line
    * @return Line with comments removed
    */
-  std::string StripComments(const std::string &line);
+  static std::string StripComments(const std::string &line);
 
   /**
    * @brief Strip Apple II editor commands from line
@@ -689,7 +689,7 @@ private:
    * @param params Parameter values
    * @return Line with parameters substituted
    */
-  std::string SubstituteParameters(const std::string &line,
+  static std::string SubstituteParameters(const std::string &line,
                                    const std::vector<std::string> &params);
 
   /**
@@ -727,7 +727,7 @@ private:
    * @param delimiter Delimiter character
    * @return Transformed character
    */
-  uint8_t ApplyHighBitRule(char c, char delimiter) const;
+  static uint8_t ApplyHighBitRule(char c, char delimiter);
 
   /**
    * @brief Parse string with delimiter semantics
@@ -746,7 +746,7 @@ private:
    * @param label Label to check
    * @return true if local label, false otherwise
    */
-  bool IsLocalLabel(const std::string &label);
+  static bool IsLocalLabel(const std::string &label);
 
   /**
    * @brief Trim whitespace from both ends
@@ -754,7 +754,7 @@ private:
    * @param str Input string
    * @return Trimmed string
    */
-  std::string Trim(const std::string &str);
+  static std::string Trim(const std::string &str);
 
   /**
    * @brief Format error message with source location

@@ -170,7 +170,7 @@ private:
    * @param mnemonic Input mnemonic
    * @return Uppercase version of mnemonic
    */
-  std::string ToUpper(const std::string &mnemonic) const;
+  static std::string ToUpper(const std::string &mnemonic);
 
   /// Map of uppercase mnemonic -> handler function
   std::unordered_map<std::string, DirectiveHandler> handlers_;

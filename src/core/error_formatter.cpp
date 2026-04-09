@@ -162,7 +162,7 @@ std::string ErrorFormatter::Colorize(const std::string &text,
 }
 
 std::string ErrorFormatter::ReadSourceLine(const std::string &filename,
-                                           size_t line_number) const {
+                                           size_t line_number) {
   std::ifstream file(filename);
   if (!file.is_open()) {
     return "";
@@ -220,7 +220,7 @@ ErrorFormatter::GenerateColumnMarker(size_t column, size_t length,
 
 std::vector<std::string>
 ErrorFormatter::FindSimilarSymbols(const std::string &typo,
-                                   const ConcreteSymbolTable *symbols) const {
+                                   const ConcreteSymbolTable *symbols) {
 
   if (!symbols) {
     return {};
@@ -257,7 +257,7 @@ ErrorFormatter::FindSimilarSymbols(const std::string &typo,
 }
 
 std::string
-ErrorFormatter::ExtractSymbolName(const std::string &message) const {
+ErrorFormatter::ExtractSymbolName(const std::string &message) {
   // Look for patterns like "symbol 'NAME'" or "'NAME' not defined"
   size_t start = message.find('\'');
   if (start == std::string::npos) {

@@ -8,7 +8,7 @@
 namespace xasm {
 
 bool Cpu6502BranchHandler::NeedsBranchRelaxation(uint16_t current_addr,
-                                                 uint16_t target_addr) const {
+                                                 uint16_t target_addr) {
   // Calculate offset: target - (PC + 2)
   // PC + 2 because branch instruction is 2 bytes (opcode + offset)
   int16_t offset = static_cast<int16_t>(target_addr) -
@@ -19,7 +19,7 @@ bool Cpu6502BranchHandler::NeedsBranchRelaxation(uint16_t current_addr,
 }
 
 uint8_t Cpu6502BranchHandler::GetComplementaryBranchOpcode(
-    uint8_t branch_opcode) const {
+    uint8_t branch_opcode) {
   return branch_opcode ^ Opcodes::BRANCH_COMPLEMENT_MASK;
 }
 

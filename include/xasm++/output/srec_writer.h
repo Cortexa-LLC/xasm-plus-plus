@@ -128,7 +128,7 @@ private:
    * @param max_address Highest address in all sections
    * @return Record type for data records (1=S1, 2=S2, 3=S3)
    */
-  int DetermineFormat(uint64_t max_address);
+  static int DetermineFormat(uint64_t max_address);
 
   /**
    * @brief Write a single S-Record
@@ -152,7 +152,7 @@ private:
    * @param data Data bytes
    * @return Calculated checksum (8-bit)
    */
-  uint8_t CalculateChecksum(uint8_t byte_count, uint64_t address,
+  static uint8_t CalculateChecksum(uint8_t byte_count, uint64_t address,
                             size_t addr_size, const std::vector<uint8_t> &data);
 
   /**
@@ -191,7 +191,7 @@ private:
    * @return Vector of (address, byte) pairs
    */
   std::vector<std::pair<uint64_t, uint8_t>>
-  ExtractBytes(const Section &section);
+  static ExtractBytes(const Section &section);
 
   /**
    * @brief Get address size in bytes for format type
@@ -199,7 +199,7 @@ private:
    * @param format Format type (1=2 bytes, 2=3 bytes, 3=4 bytes)
    * @return Address size in bytes
    */
-  size_t GetAddressSize(int format) const;
+  static size_t GetAddressSize(int format);
 };
 
 } // namespace xasm

@@ -352,216 +352,216 @@ EncodeMemInstr(const InstrOpcodes &entry, uint32_t operand,
 // Inherent-mode (no operand) instructions
 // ============================================================================
 
-std::vector<uint8_t> Cpu6809::EncodeNOP() const {
+std::vector<uint8_t> Cpu6809::EncodeNOP() {
   return {Opcodes6809::NOP}; // NOP opcode
 }
 
-std::vector<uint8_t> Cpu6809::EncodeRTS() const {
+std::vector<uint8_t> Cpu6809::EncodeRTS() {
   return {Opcodes6809::RTS}; // RTS opcode
 }
 
-std::vector<uint8_t> Cpu6809::EncodeCLRA() const {
+std::vector<uint8_t> Cpu6809::EncodeCLRA() {
   return {Opcodes6809::CLRA}; // CLRA opcode
 }
 
-std::vector<uint8_t> Cpu6809::EncodeCLRB() const {
+std::vector<uint8_t> Cpu6809::EncodeCLRB() {
   return {Opcodes6809::CLRB}; // CLRB opcode
 }
 
 // Shift and Rotate Instructions
-std::vector<uint8_t> Cpu6809::EncodeASLA() const { return {Opcodes6809::ASLA}; }
+std::vector<uint8_t> Cpu6809::EncodeASLA() { return {Opcodes6809::ASLA}; }
 
-std::vector<uint8_t> Cpu6809::EncodeASLB() const { return {Opcodes6809::ASLB}; }
+std::vector<uint8_t> Cpu6809::EncodeASLB() { return {Opcodes6809::ASLB}; }
 
-std::vector<uint8_t> Cpu6809::EncodeASRA() const { return {Opcodes6809::ASRA}; }
+std::vector<uint8_t> Cpu6809::EncodeASRA() { return {Opcodes6809::ASRA}; }
 
-std::vector<uint8_t> Cpu6809::EncodeASRB() const { return {Opcodes6809::ASRB}; }
+std::vector<uint8_t> Cpu6809::EncodeASRB() { return {Opcodes6809::ASRB}; }
 
-std::vector<uint8_t> Cpu6809::EncodeLSRA() const { return {Opcodes6809::LSRA}; }
+std::vector<uint8_t> Cpu6809::EncodeLSRA() { return {Opcodes6809::LSRA}; }
 
-std::vector<uint8_t> Cpu6809::EncodeLSRB() const { return {Opcodes6809::LSRB}; }
+std::vector<uint8_t> Cpu6809::EncodeLSRB() { return {Opcodes6809::LSRB}; }
 
-std::vector<uint8_t> Cpu6809::EncodeROLA() const { return {Opcodes6809::ROLA}; }
+std::vector<uint8_t> Cpu6809::EncodeROLA() { return {Opcodes6809::ROLA}; }
 
-std::vector<uint8_t> Cpu6809::EncodeROLB() const { return {Opcodes6809::ROLB}; }
+std::vector<uint8_t> Cpu6809::EncodeROLB() { return {Opcodes6809::ROLB}; }
 
-std::vector<uint8_t> Cpu6809::EncodeRORA() const { return {Opcodes6809::RORA}; }
+std::vector<uint8_t> Cpu6809::EncodeRORA() { return {Opcodes6809::RORA}; }
 
-std::vector<uint8_t> Cpu6809::EncodeRORB() const { return {Opcodes6809::RORB}; }
+std::vector<uint8_t> Cpu6809::EncodeRORB() { return {Opcodes6809::RORB}; }
 
 // Increment / Decrement
-std::vector<uint8_t> Cpu6809::EncodeINCA() const { return {Opcodes6809::INCA}; }
+std::vector<uint8_t> Cpu6809::EncodeINCA() { return {Opcodes6809::INCA}; }
 
-std::vector<uint8_t> Cpu6809::EncodeINCB() const { return {Opcodes6809::INCB}; }
+std::vector<uint8_t> Cpu6809::EncodeINCB() { return {Opcodes6809::INCB}; }
 
-std::vector<uint8_t> Cpu6809::EncodeDECA() const { return {Opcodes6809::DECA}; }
+std::vector<uint8_t> Cpu6809::EncodeDECA() { return {Opcodes6809::DECA}; }
 
-std::vector<uint8_t> Cpu6809::EncodeDECB() const { return {Opcodes6809::DECB}; }
+std::vector<uint8_t> Cpu6809::EncodeDECB() { return {Opcodes6809::DECB}; }
 
 // Test and Complement/Negate
-std::vector<uint8_t> Cpu6809::EncodeTSTA() const { return {Opcodes6809::TSTA}; }
+std::vector<uint8_t> Cpu6809::EncodeTSTA() { return {Opcodes6809::TSTA}; }
 
-std::vector<uint8_t> Cpu6809::EncodeTSTB() const { return {Opcodes6809::TSTB}; }
+std::vector<uint8_t> Cpu6809::EncodeTSTB() { return {Opcodes6809::TSTB}; }
 
-std::vector<uint8_t> Cpu6809::EncodeCOMA() const { return {Opcodes6809::COMA}; }
+std::vector<uint8_t> Cpu6809::EncodeCOMA() { return {Opcodes6809::COMA}; }
 
-std::vector<uint8_t> Cpu6809::EncodeCOMB() const { return {Opcodes6809::COMB}; }
+std::vector<uint8_t> Cpu6809::EncodeCOMB() { return {Opcodes6809::COMB}; }
 
-std::vector<uint8_t> Cpu6809::EncodeNEGA() const { return {Opcodes6809::NEGA}; }
+std::vector<uint8_t> Cpu6809::EncodeNEGA() { return {Opcodes6809::NEGA}; }
 
-std::vector<uint8_t> Cpu6809::EncodeNEGB() const { return {Opcodes6809::NEGB}; }
+std::vector<uint8_t> Cpu6809::EncodeNEGB() { return {Opcodes6809::NEGB}; }
 
 // ============================================================================
 // Memory-operand instructions  (delegates to kOpcodeTable via EncodeMemInstr)
 // ============================================================================
 
 std::vector<uint8_t> Cpu6809::EncodeLDA(uint32_t operand,
-                                        AddressingMode6809 mode) const {
+                                        AddressingMode6809 mode) {
   return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonics::LDA), operand, mode);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeLDB(uint32_t operand,
-                                        AddressingMode6809 mode) const {
+                                        AddressingMode6809 mode) {
   return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonics::LDB), operand, mode);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeLDD(uint32_t operand,
-                                        AddressingMode6809 mode) const {
+                                        AddressingMode6809 mode) {
   return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonics::LDD), operand, mode);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeLDX(uint32_t operand,
-                                        AddressingMode6809 mode) const {
+                                        AddressingMode6809 mode) {
   return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonics::LDX), operand, mode);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeLDY(uint32_t operand,
-                                        AddressingMode6809 mode) const {
+                                        AddressingMode6809 mode) {
   return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonics::LDY), operand, mode);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeSTA(uint32_t operand,
-                                        AddressingMode6809 mode) const {
+                                        AddressingMode6809 mode) {
   return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonics::STA), operand, mode);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeSTB(uint32_t operand,
-                                        AddressingMode6809 mode) const {
+                                        AddressingMode6809 mode) {
   return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonics::STB), operand, mode);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeSTD(uint32_t operand,
-                                        AddressingMode6809 mode) const {
+                                        AddressingMode6809 mode) {
   return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonics::STD), operand, mode);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeSTX(uint32_t operand,
-                                        AddressingMode6809 mode) const {
+                                        AddressingMode6809 mode) {
   return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonics::STX), operand, mode);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeSTY(uint32_t operand,
-                                        AddressingMode6809 mode) const {
+                                        AddressingMode6809 mode) {
   return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonics::STY), operand, mode);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeADDA(uint32_t operand,
-                                         AddressingMode6809 mode) const {
+                                         AddressingMode6809 mode) {
   return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonics::ADDA), operand, mode);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeADDB(uint32_t operand,
-                                         AddressingMode6809 mode) const {
+                                         AddressingMode6809 mode) {
   return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonics::ADDB), operand, mode);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeSUBA(uint32_t operand,
-                                         AddressingMode6809 mode) const {
+                                         AddressingMode6809 mode) {
   return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonics::SUBA), operand, mode);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeSUBB(uint32_t operand,
-                                         AddressingMode6809 mode) const {
+                                         AddressingMode6809 mode) {
   return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonics::SUBB), operand, mode);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeCMPA(uint32_t operand,
-                                         AddressingMode6809 mode) const {
+                                         AddressingMode6809 mode) {
   return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonics::CMPA), operand, mode);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeCMPB(uint32_t operand,
-                                         AddressingMode6809 mode) const {
+                                         AddressingMode6809 mode) {
   return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonics::CMPB), operand, mode);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeCMPX(uint32_t operand,
-                                         AddressingMode6809 mode) const {
+                                         AddressingMode6809 mode) {
   return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonics::CMPX), operand, mode);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeCMPY(uint32_t operand,
-                                         AddressingMode6809 mode) const {
+                                         AddressingMode6809 mode) {
   return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonics::CMPY), operand, mode);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeANDA(uint32_t operand,
-                                         AddressingMode6809 mode) const {
+                                         AddressingMode6809 mode) {
   return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonics::ANDA), operand, mode);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeANDB(uint32_t operand,
-                                         AddressingMode6809 mode) const {
+                                         AddressingMode6809 mode) {
   return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonics::ANDB), operand, mode);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeORA(uint32_t operand,
-                                        AddressingMode6809 mode) const {
+                                        AddressingMode6809 mode) {
   return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonics::ORA), operand, mode);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeORB(uint32_t operand,
-                                        AddressingMode6809 mode) const {
+                                        AddressingMode6809 mode) {
   return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonics::ORB), operand, mode);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeEORA(uint32_t operand,
-                                         AddressingMode6809 mode) const {
+                                         AddressingMode6809 mode) {
   return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonics::EORA), operand, mode);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeEORB(uint32_t operand,
-                                         AddressingMode6809 mode) const {
+                                         AddressingMode6809 mode) {
   return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonics::EORB), operand, mode);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeBITA(uint32_t operand,
-                                         AddressingMode6809 mode) const {
+                                         AddressingMode6809 mode) {
   return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonics::BITA), operand, mode);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeBITB(uint32_t operand,
-                                         AddressingMode6809 mode) const {
+                                         AddressingMode6809 mode) {
   return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonics::BITB), operand, mode);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeJMP(uint32_t operand,
-                                        AddressingMode6809 mode) const {
+                                        AddressingMode6809 mode) {
   return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonics::JMP), operand, mode);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeJSR(uint32_t operand,
-                                        AddressingMode6809 mode) const {
+                                        AddressingMode6809 mode) {
   return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonics::JSR), operand, mode);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeLEAX(uint32_t operand,
-                                          AddressingMode6809 mode) const {
+                                          AddressingMode6809 mode) {
   return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonics::LEAX), operand, mode);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeLEAY(uint32_t operand,
-                                          AddressingMode6809 mode) const {
+                                          AddressingMode6809 mode) {
   return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonics::LEAY), operand, mode);
 }
 
@@ -570,7 +570,7 @@ std::vector<uint8_t> Cpu6809::EncodeLEAY(uint32_t operand,
 // ============================================================================
 
 std::vector<uint8_t> Cpu6809::EncodeBRA(int32_t offset,
-                                        AddressingMode6809 mode) const {
+                                        AddressingMode6809 mode) {
   if (mode == AddressingMode6809::Relative8) {
     return {Opcodes6809::BRA, static_cast<uint8_t>(offset & 0xFF)};
   }
@@ -578,7 +578,7 @@ std::vector<uint8_t> Cpu6809::EncodeBRA(int32_t offset,
 }
 
 std::vector<uint8_t> Cpu6809::EncodeBEQ(int32_t offset,
-                                        AddressingMode6809 mode) const {
+                                        AddressingMode6809 mode) {
   if (mode == AddressingMode6809::Relative8) {
     return {Opcodes6809::BEQ, static_cast<uint8_t>(offset & 0xFF)};
   }
@@ -586,7 +586,7 @@ std::vector<uint8_t> Cpu6809::EncodeBEQ(int32_t offset,
 }
 
 std::vector<uint8_t> Cpu6809::EncodeBNE(int32_t offset,
-                                        AddressingMode6809 mode) const {
+                                        AddressingMode6809 mode) {
   if (mode == AddressingMode6809::Relative8) {
     return {Opcodes6809::BNE, static_cast<uint8_t>(offset & 0xFF)};
   }
@@ -594,7 +594,7 @@ std::vector<uint8_t> Cpu6809::EncodeBNE(int32_t offset,
 }
 
 std::vector<uint8_t> Cpu6809::EncodeBCC(int32_t offset,
-                                        AddressingMode6809 mode) const {
+                                        AddressingMode6809 mode) {
   if (mode == AddressingMode6809::Relative8) {
     return {Opcodes6809::BCC, static_cast<uint8_t>(offset & 0xFF)};
   }
@@ -602,7 +602,7 @@ std::vector<uint8_t> Cpu6809::EncodeBCC(int32_t offset,
 }
 
 std::vector<uint8_t> Cpu6809::EncodeBCS(int32_t offset,
-                                        AddressingMode6809 mode) const {
+                                        AddressingMode6809 mode) {
   if (mode == AddressingMode6809::Relative8) {
     return {Opcodes6809::BCS, static_cast<uint8_t>(offset & 0xFF)};
   }
@@ -610,7 +610,7 @@ std::vector<uint8_t> Cpu6809::EncodeBCS(int32_t offset,
 }
 
 std::vector<uint8_t> Cpu6809::EncodeBMI(int32_t offset,
-                                        AddressingMode6809 mode) const {
+                                        AddressingMode6809 mode) {
   if (mode == AddressingMode6809::Relative8) {
     return {Opcodes6809::BMI, static_cast<uint8_t>(offset & 0xFF)};
   }
@@ -618,7 +618,7 @@ std::vector<uint8_t> Cpu6809::EncodeBMI(int32_t offset,
 }
 
 std::vector<uint8_t> Cpu6809::EncodeBPL(int32_t offset,
-                                        AddressingMode6809 mode) const {
+                                        AddressingMode6809 mode) {
   if (mode == AddressingMode6809::Relative8) {
     return {Opcodes6809::BPL, static_cast<uint8_t>(offset & 0xFF)};
   }
@@ -626,7 +626,7 @@ std::vector<uint8_t> Cpu6809::EncodeBPL(int32_t offset,
 }
 
 std::vector<uint8_t> Cpu6809::EncodeBVS(int32_t offset,
-                                        AddressingMode6809 mode) const {
+                                        AddressingMode6809 mode) {
   if (mode == AddressingMode6809::Relative8) {
     return {Opcodes6809::BVS, static_cast<uint8_t>(offset & 0xFF)};
   }
@@ -634,7 +634,7 @@ std::vector<uint8_t> Cpu6809::EncodeBVS(int32_t offset,
 }
 
 std::vector<uint8_t> Cpu6809::EncodeBVC(int32_t offset,
-                                        AddressingMode6809 mode) const {
+                                        AddressingMode6809 mode) {
   if (mode == AddressingMode6809::Relative8) {
     return {Opcodes6809::BVC, static_cast<uint8_t>(offset & 0xFF)};
   }
@@ -642,7 +642,7 @@ std::vector<uint8_t> Cpu6809::EncodeBVC(int32_t offset,
 }
 
 std::vector<uint8_t> Cpu6809::EncodeBGE(int32_t offset,
-                                        AddressingMode6809 mode) const {
+                                        AddressingMode6809 mode) {
   if (mode == AddressingMode6809::Relative8) {
     return {Opcodes6809::BGE, static_cast<uint8_t>(offset & 0xFF)};
   }
@@ -650,7 +650,7 @@ std::vector<uint8_t> Cpu6809::EncodeBGE(int32_t offset,
 }
 
 std::vector<uint8_t> Cpu6809::EncodeBGT(int32_t offset,
-                                        AddressingMode6809 mode) const {
+                                        AddressingMode6809 mode) {
   if (mode == AddressingMode6809::Relative8) {
     return {Opcodes6809::BGT, static_cast<uint8_t>(offset & 0xFF)};
   }
@@ -658,7 +658,7 @@ std::vector<uint8_t> Cpu6809::EncodeBGT(int32_t offset,
 }
 
 std::vector<uint8_t> Cpu6809::EncodeBLE(int32_t offset,
-                                        AddressingMode6809 mode) const {
+                                        AddressingMode6809 mode) {
   if (mode == AddressingMode6809::Relative8) {
     return {Opcodes6809::BLE, static_cast<uint8_t>(offset & 0xFF)};
   }
@@ -666,7 +666,7 @@ std::vector<uint8_t> Cpu6809::EncodeBLE(int32_t offset,
 }
 
 std::vector<uint8_t> Cpu6809::EncodeBLT(int32_t offset,
-                                        AddressingMode6809 mode) const {
+                                        AddressingMode6809 mode) {
   if (mode == AddressingMode6809::Relative8) {
     return {Opcodes6809::BLT, static_cast<uint8_t>(offset & 0xFF)};
   }
@@ -674,7 +674,7 @@ std::vector<uint8_t> Cpu6809::EncodeBLT(int32_t offset,
 }
 
 std::vector<uint8_t> Cpu6809::EncodeBHI(int32_t offset,
-                                        AddressingMode6809 mode) const {
+                                        AddressingMode6809 mode) {
   if (mode == AddressingMode6809::Relative8) {
     return {Opcodes6809::BHI, static_cast<uint8_t>(offset & 0xFF)};
   }
@@ -682,7 +682,7 @@ std::vector<uint8_t> Cpu6809::EncodeBHI(int32_t offset,
 }
 
 std::vector<uint8_t> Cpu6809::EncodeBLS(int32_t offset,
-                                        AddressingMode6809 mode) const {
+                                        AddressingMode6809 mode) {
   if (mode == AddressingMode6809::Relative8) {
     return {Opcodes6809::BLS, static_cast<uint8_t>(offset & 0xFF)};
   }
@@ -690,7 +690,7 @@ std::vector<uint8_t> Cpu6809::EncodeBLS(int32_t offset,
 }
 
 std::vector<uint8_t> Cpu6809::EncodeBSR(int32_t offset,
-                                        AddressingMode6809 mode) const {
+                                        AddressingMode6809 mode) {
   if (mode == AddressingMode6809::Relative8) {
     return {Opcodes6809::BSR, static_cast<uint8_t>(offset & 0xFF)};
   }
@@ -709,55 +709,55 @@ static std::vector<uint8_t> MakeLongBranch(uint8_t opcode, int16_t offset) {
   return result;
 }
 
-std::vector<uint8_t> Cpu6809::EncodeLBRA(int16_t offset) const {
+std::vector<uint8_t> Cpu6809::EncodeLBRA(int16_t offset) {
   return MakeLongBranch(Opcodes6809::Page2::LBRA, offset);
 }
-std::vector<uint8_t> Cpu6809::EncodeLBRN(int16_t offset) const {
+std::vector<uint8_t> Cpu6809::EncodeLBRN(int16_t offset) {
   return MakeLongBranch(Opcodes6809::Page2::LBRN, offset);
 }
-std::vector<uint8_t> Cpu6809::EncodeLBEQ(int16_t offset) const {
+std::vector<uint8_t> Cpu6809::EncodeLBEQ(int16_t offset) {
   return MakeLongBranch(Opcodes6809::Page2::LBEQ, offset);
 }
-std::vector<uint8_t> Cpu6809::EncodeLBNE(int16_t offset) const {
+std::vector<uint8_t> Cpu6809::EncodeLBNE(int16_t offset) {
   return MakeLongBranch(Opcodes6809::Page2::LBNE, offset);
 }
-std::vector<uint8_t> Cpu6809::EncodeLBCC(int16_t offset) const {
+std::vector<uint8_t> Cpu6809::EncodeLBCC(int16_t offset) {
   return MakeLongBranch(Opcodes6809::Page2::LBCC, offset);
 }
-std::vector<uint8_t> Cpu6809::EncodeLBCS(int16_t offset) const {
+std::vector<uint8_t> Cpu6809::EncodeLBCS(int16_t offset) {
   return MakeLongBranch(Opcodes6809::Page2::LBCS, offset);
 }
-std::vector<uint8_t> Cpu6809::EncodeLBMI(int16_t offset) const {
+std::vector<uint8_t> Cpu6809::EncodeLBMI(int16_t offset) {
   return MakeLongBranch(Opcodes6809::Page2::LBMI, offset);
 }
-std::vector<uint8_t> Cpu6809::EncodeLBPL(int16_t offset) const {
+std::vector<uint8_t> Cpu6809::EncodeLBPL(int16_t offset) {
   return MakeLongBranch(Opcodes6809::Page2::LBPL, offset);
 }
-std::vector<uint8_t> Cpu6809::EncodeLBVS(int16_t offset) const {
+std::vector<uint8_t> Cpu6809::EncodeLBVS(int16_t offset) {
   return MakeLongBranch(Opcodes6809::Page2::LBVS, offset);
 }
-std::vector<uint8_t> Cpu6809::EncodeLBVC(int16_t offset) const {
+std::vector<uint8_t> Cpu6809::EncodeLBVC(int16_t offset) {
   return MakeLongBranch(Opcodes6809::Page2::LBVC, offset);
 }
-std::vector<uint8_t> Cpu6809::EncodeLBGE(int16_t offset) const {
+std::vector<uint8_t> Cpu6809::EncodeLBGE(int16_t offset) {
   return MakeLongBranch(Opcodes6809::Page2::LBGE, offset);
 }
-std::vector<uint8_t> Cpu6809::EncodeLBLT(int16_t offset) const {
+std::vector<uint8_t> Cpu6809::EncodeLBLT(int16_t offset) {
   return MakeLongBranch(Opcodes6809::Page2::LBLT, offset);
 }
-std::vector<uint8_t> Cpu6809::EncodeLBGT(int16_t offset) const {
+std::vector<uint8_t> Cpu6809::EncodeLBGT(int16_t offset) {
   return MakeLongBranch(Opcodes6809::Page2::LBGT, offset);
 }
-std::vector<uint8_t> Cpu6809::EncodeLBLE(int16_t offset) const {
+std::vector<uint8_t> Cpu6809::EncodeLBLE(int16_t offset) {
   return MakeLongBranch(Opcodes6809::Page2::LBLE, offset);
 }
-std::vector<uint8_t> Cpu6809::EncodeLBHI(int16_t offset) const {
+std::vector<uint8_t> Cpu6809::EncodeLBHI(int16_t offset) {
   return MakeLongBranch(Opcodes6809::Page2::LBHI, offset);
 }
-std::vector<uint8_t> Cpu6809::EncodeLBLS(int16_t offset) const {
+std::vector<uint8_t> Cpu6809::EncodeLBLS(int16_t offset) {
   return MakeLongBranch(Opcodes6809::Page2::LBLS, offset);
 }
-std::vector<uint8_t> Cpu6809::EncodeLBSR(int16_t offset) const {
+std::vector<uint8_t> Cpu6809::EncodeLBSR(int16_t offset) {
   return MakeLongBranch(Opcodes6809::Page2::LBSR, offset);
 }
 
@@ -765,13 +765,13 @@ std::vector<uint8_t> Cpu6809::EncodeLBSR(int16_t offset) const {
 // Register-transfer and Exchange
 // ============================================================================
 
-std::vector<uint8_t> Cpu6809::EncodeTFR(uint8_t src, uint8_t dst) const {
+std::vector<uint8_t> Cpu6809::EncodeTFR(uint8_t src, uint8_t dst) {
   // Post-byte format: high nibble = source, low nibble = destination
   uint8_t postbyte = (src << 4) | dst;
   return {Opcodes6809::TFR, postbyte};
 }
 
-std::vector<uint8_t> Cpu6809::EncodeEXG(uint8_t reg1, uint8_t reg2) const {
+std::vector<uint8_t> Cpu6809::EncodeEXG(uint8_t reg1, uint8_t reg2) {
   // Post-byte format: high nibble = reg1, low nibble = reg2
   uint8_t postbyte = (reg1 << 4) | reg2;
   return {Opcodes6809::EXG, postbyte};
@@ -781,19 +781,19 @@ std::vector<uint8_t> Cpu6809::EncodeEXG(uint8_t reg1, uint8_t reg2) const {
 // Stack push / pull
 // ============================================================================
 
-std::vector<uint8_t> Cpu6809::EncodePSHS(uint8_t mask) const {
+std::vector<uint8_t> Cpu6809::EncodePSHS(uint8_t mask) {
   return {Opcodes6809::PSHS, mask};
 }
 
-std::vector<uint8_t> Cpu6809::EncodePULS(uint8_t mask) const {
+std::vector<uint8_t> Cpu6809::EncodePULS(uint8_t mask) {
   return {Opcodes6809::PULS, mask};
 }
 
-std::vector<uint8_t> Cpu6809::EncodePSHU(uint8_t mask) const {
+std::vector<uint8_t> Cpu6809::EncodePSHU(uint8_t mask) {
   return {Opcodes6809::PSHU, mask};
 }
 
-std::vector<uint8_t> Cpu6809::EncodePULU(uint8_t mask) const {
+std::vector<uint8_t> Cpu6809::EncodePULU(uint8_t mask) {
   return {Opcodes6809::PULU, mask};
 }
 
@@ -803,7 +803,7 @@ std::vector<uint8_t> Cpu6809::EncodePULU(uint8_t mask) const {
 
 std::vector<uint8_t>
 Cpu6809::EncodeIndexedPostByte(AddressingMode6809 mode, int32_t offset,
-                               uint8_t base_reg) const {
+                               uint8_t base_reg) {
   // Delegate to the free-function implementation (shared with EncodeMemInstr).
   return BuildIndexedPostByte(mode, offset, base_reg);
 }
@@ -812,7 +812,7 @@ Cpu6809::EncodeIndexedPostByte(AddressingMode6809 mode, int32_t offset,
 // Instruction Size Calculation
 // ============================================================================
 
-size_t Cpu6809::CalculateInstructionSize(AddressingMode6809 mode) const {
+size_t Cpu6809::CalculateInstructionSize(AddressingMode6809 mode) {
   switch (mode) {
   case AddressingMode6809::Inherent:
     return 1;

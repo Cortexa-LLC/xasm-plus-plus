@@ -428,7 +428,7 @@ MerlinSyntaxParser::ScopeLocalLabel(const std::string &label) const {
 
 std::string
 MerlinSyntaxParser::SubstituteMerlinVars(const std::string &line,
-                                         const ConcreteSymbolTable &symbols) const {
+                                         const ConcreteSymbolTable &symbols) {
   // Fast path: no ] in line
   if (line.find(']') == std::string::npos) {
     return line;
@@ -561,7 +561,7 @@ MerlinSyntaxParser::ScopeLocalLabelsInOperand(const std::string &operand) const 
 // because only the "A" token is replaced; the +1 is left for the generic
 // expression evaluator.
 std::string
-MerlinSyntaxParser::ExpandMerlinCharLiterals(const std::string &operand) const {
+MerlinSyntaxParser::ExpandMerlinCharLiterals(const std::string &operand) {
   // Fast path: no quote character → nothing to expand
   if (operand.find('"') == std::string::npos &&
       operand.find('\'') == std::string::npos) {

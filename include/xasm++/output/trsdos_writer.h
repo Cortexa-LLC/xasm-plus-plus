@@ -127,7 +127,7 @@ private:
    * @param output Output stream
    * @param value 16-bit value to write
    */
-  void WriteLE16(std::ostream &output, uint16_t value);
+  static void WriteLE16(std::ostream &output, uint16_t value);
 
   /**
    * @brief Extract bytes from atoms for writing
@@ -139,7 +139,7 @@ private:
    * @return Vector of (address, byte) pairs
    */
   std::vector<std::pair<uint64_t, uint8_t>>
-  ExtractBytes(const Section &section);
+  static ExtractBytes(const Section &section);
 };
 
 } // namespace xasm

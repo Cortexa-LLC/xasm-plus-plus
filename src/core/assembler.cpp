@@ -1149,7 +1149,7 @@ void Assembler::ResolveSymbols(std::vector<std::shared_ptr<Atom>> &atoms,
 
 bool Assembler::CheckConvergence(
     const std::vector<size_t> &previous_sizes,
-    const std::vector<size_t> &current_sizes) const {
+    const std::vector<size_t> &current_sizes) {
   // Convergence achieved when instruction sizes are identical between passes
   //
   // WHY THIS WORKS:

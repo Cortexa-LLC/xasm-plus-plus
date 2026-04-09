@@ -44,7 +44,7 @@ bool DirectiveRegistry::IsRegistered(const std::string &mnemonic) const {
   return handlers_.find(upper) != handlers_.end();
 }
 
-std::string DirectiveRegistry::ToUpper(const std::string &mnemonic) const {
+std::string DirectiveRegistry::ToUpper(const std::string &mnemonic) {
   std::string result;
   result.reserve(mnemonic.size());
   for (char c : mnemonic) {

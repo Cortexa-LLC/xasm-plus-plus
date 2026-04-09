@@ -92,7 +92,7 @@ public:
    *
    * @throws std::runtime_error if file cannot be written
    */
-  void WriteOutputWithRw18(const std::string &filename,
+  static void WriteOutputWithRw18(const std::string &filename,
                            const std::vector<Section *> &sections,
                            const SymbolTable &symbols,
                            const std::array<uint16_t, 4> *rw18_header);

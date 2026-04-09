@@ -467,11 +467,11 @@ private:
 
   // Parsing helpers
   void InitializeDirectiveRegistry(); ///< Register all directives
-  std::string StripComments(const std::string &line);
-  std::string Trim(const std::string &str);
+  static std::string StripComments(const std::string &line);
+  static std::string Trim(const std::string &str);
 
   // Macro helpers
-  std::string MakeLocalLabelUnique(const std::string &line,
+  static std::string MakeLocalLabelUnique(const std::string &line,
                                    const std::vector<std::string> &local_labels,
                                    int unique_id);
 

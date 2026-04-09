@@ -118,7 +118,7 @@ CpuZ80::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
 // Helper Methods
 // ============================================================================
 
-std::vector<uint8_t> CpuZ80::ToLittleEndian(uint16_t value) const {
+std::vector<uint8_t> CpuZ80::ToLittleEndian(uint16_t value) {
   return {static_cast<uint8_t>(value & 0xFF),         // Low byte
           static_cast<uint8_t>((value >> 8) & 0xFF)}; // High byte
 }
@@ -127,31 +127,31 @@ std::vector<uint8_t> CpuZ80::ToLittleEndian(uint16_t value) const {
 // 8-bit Load Instructions
 // ============================================================================
 
-std::vector<uint8_t> CpuZ80::EncodeLD_A_n(uint8_t value) const {
+std::vector<uint8_t> CpuZ80::EncodeLD_A_n(uint8_t value) {
   return {Opcodes::LD_A_n, value};
 }
 
-std::vector<uint8_t> CpuZ80::EncodeLD_B_n(uint8_t value) const {
+std::vector<uint8_t> CpuZ80::EncodeLD_B_n(uint8_t value) {
   return {Opcodes::LD_B_n, value};
 }
 
-std::vector<uint8_t> CpuZ80::EncodeLD_C_n(uint8_t value) const {
+std::vector<uint8_t> CpuZ80::EncodeLD_C_n(uint8_t value) {
   return {Opcodes::LD_C_n, value};
 }
 
-std::vector<uint8_t> CpuZ80::EncodeLD_D_n(uint8_t value) const {
+std::vector<uint8_t> CpuZ80::EncodeLD_D_n(uint8_t value) {
   return {Opcodes::LD_D_n, value};
 }
 
-std::vector<uint8_t> CpuZ80::EncodeLD_E_n(uint8_t value) const {
+std::vector<uint8_t> CpuZ80::EncodeLD_E_n(uint8_t value) {
   return {Opcodes::LD_E_n, value};
 }
 
-std::vector<uint8_t> CpuZ80::EncodeLD_H_n(uint8_t value) const {
+std::vector<uint8_t> CpuZ80::EncodeLD_H_n(uint8_t value) {
   return {Opcodes::LD_H_n, value};
 }
 
-std::vector<uint8_t> CpuZ80::EncodeLD_L_n(uint8_t value) const {
+std::vector<uint8_t> CpuZ80::EncodeLD_L_n(uint8_t value) {
   return {Opcodes::LD_L_n, value};
 }
 
@@ -187,23 +187,23 @@ std::vector<uint8_t> CpuZ80::EncodeLD_SP_nn(uint16_t value) const {
   return result;
 }
 
-std::vector<uint8_t> CpuZ80::EncodeLD_A_BC() const {
+std::vector<uint8_t> CpuZ80::EncodeLD_A_BC() {
   return {Opcodes::LD_A_BC};
 }
 
-std::vector<uint8_t> CpuZ80::EncodeLD_A_DE() const {
+std::vector<uint8_t> CpuZ80::EncodeLD_A_DE() {
   return {Opcodes::LD_A_DE};
 }
 
-std::vector<uint8_t> CpuZ80::EncodeLD_BC_A() const {
+std::vector<uint8_t> CpuZ80::EncodeLD_BC_A() {
   return {Opcodes::LD_BC_A};
 }
 
-std::vector<uint8_t> CpuZ80::EncodeLD_DE_A() const {
+std::vector<uint8_t> CpuZ80::EncodeLD_DE_A() {
   return {Opcodes::LD_DE_A};
 }
 
-std::vector<uint8_t> CpuZ80::EncodeLD_HL_n(uint8_t value) const {
+std::vector<uint8_t> CpuZ80::EncodeLD_HL_n(uint8_t value) {
   return {Opcodes::LD_HL_n, value};
 }
 
@@ -221,7 +221,7 @@ std::vector<uint8_t> CpuZ80::EncodeLD_addr_HL(uint16_t address) const {
   return result;
 }
 
-std::vector<uint8_t> CpuZ80::EncodeLD_SP_HL() const {
+std::vector<uint8_t> CpuZ80::EncodeLD_SP_HL() {
   return {Opcodes::LD_SP_HL};
 }
 
@@ -229,23 +229,23 @@ std::vector<uint8_t> CpuZ80::EncodeLD_SP_HL() const {
 // Arithmetic Instructions
 // ============================================================================
 
-std::vector<uint8_t> CpuZ80::EncodeADD_A_n(uint8_t value) const {
+std::vector<uint8_t> CpuZ80::EncodeADD_A_n(uint8_t value) {
   return {Opcodes::ADD_A_n, value};
 }
 
-std::vector<uint8_t> CpuZ80::EncodeSUB_n(uint8_t value) const {
+std::vector<uint8_t> CpuZ80::EncodeSUB_n(uint8_t value) {
   return {Opcodes::SUB_n, value};
 }
 
-std::vector<uint8_t> CpuZ80::EncodeINC_A() const { return {Opcodes::INC_A}; }
+std::vector<uint8_t> CpuZ80::EncodeINC_A() { return {Opcodes::INC_A}; }
 
-std::vector<uint8_t> CpuZ80::EncodeDEC_A() const { return {Opcodes::DEC_A}; }
+std::vector<uint8_t> CpuZ80::EncodeDEC_A() { return {Opcodes::DEC_A}; }
 
 // ============================================================================
 // Control Flow Instructions
 // ============================================================================
 
-std::vector<uint8_t> CpuZ80::EncodeNOP() const { return {Opcodes::NOP}; }
+std::vector<uint8_t> CpuZ80::EncodeNOP() { return {Opcodes::NOP}; }
 
 std::vector<uint8_t> CpuZ80::EncodeJP_nn(uint16_t address) const {
   std::vector<uint8_t> result = {Opcodes::JP_nn};
@@ -254,33 +254,33 @@ std::vector<uint8_t> CpuZ80::EncodeJP_nn(uint16_t address) const {
   return result;
 }
 
-std::vector<uint8_t> CpuZ80::EncodeRET() const { return {Opcodes::RET}; }
+std::vector<uint8_t> CpuZ80::EncodeRET() { return {Opcodes::RET}; }
 
 // ============================================================================
 // Stack Operations
 // ============================================================================
 
-std::vector<uint8_t> CpuZ80::EncodePUSH_BC() const {
+std::vector<uint8_t> CpuZ80::EncodePUSH_BC() {
   return {Opcodes::PUSH_BC};
 }
 
-std::vector<uint8_t> CpuZ80::EncodePOP_BC() const { return {Opcodes::POP_BC}; }
+std::vector<uint8_t> CpuZ80::EncodePOP_BC() { return {Opcodes::POP_BC}; }
 
 // ============================================================================
 // Bit Operations (CB Prefix)
 // ============================================================================
 
-std::vector<uint8_t> CpuZ80::EncodeBIT(uint8_t bit, uint8_t reg) const {
+std::vector<uint8_t> CpuZ80::EncodeBIT(uint8_t bit, uint8_t reg) {
   uint8_t opcode = 0x40 + (bit << 3) + reg;
   return {Opcodes::CB_PREFIX, opcode};
 }
 
-std::vector<uint8_t> CpuZ80::EncodeSET(uint8_t bit, uint8_t reg) const {
+std::vector<uint8_t> CpuZ80::EncodeSET(uint8_t bit, uint8_t reg) {
   uint8_t opcode = 0xC0 + (bit << 3) + reg;
   return {Opcodes::CB_PREFIX, opcode};
 }
 
-std::vector<uint8_t> CpuZ80::EncodeRES(uint8_t bit, uint8_t reg) const {
+std::vector<uint8_t> CpuZ80::EncodeRES(uint8_t bit, uint8_t reg) {
   uint8_t opcode = 0x80 + (bit << 3) + reg;
   return {Opcodes::CB_PREFIX, opcode};
 }
@@ -296,7 +296,7 @@ std::vector<uint8_t> CpuZ80::EncodeLD_IX_nn(uint16_t value) const {
   return result;
 }
 
-std::vector<uint8_t> CpuZ80::EncodeLD_A_IX_d(int8_t displacement) const {
+std::vector<uint8_t> CpuZ80::EncodeLD_A_IX_d(int8_t displacement) {
   return {Opcodes::DD_PREFIX, Opcodes::DD::LD_A_IX_d,
           static_cast<uint8_t>(displacement)};
 }
@@ -312,7 +312,7 @@ std::vector<uint8_t> CpuZ80::EncodeLD_IY_nn(uint16_t value) const {
   return result;
 }
 
-std::vector<uint8_t> CpuZ80::EncodeLD_A_IY_d(int8_t displacement) const {
+std::vector<uint8_t> CpuZ80::EncodeLD_A_IY_d(int8_t displacement) {
   return {Opcodes::FD_PREFIX, Opcodes::FD::LD_A_IY_d,
           static_cast<uint8_t>(displacement)};
 }
@@ -321,27 +321,27 @@ std::vector<uint8_t> CpuZ80::EncodeLD_A_IY_d(int8_t displacement) const {
 // Register-to-Register Load Instructions
 // ============================================================================
 
-std::vector<uint8_t> CpuZ80::EncodeLD_A_B() const { return {Opcodes::LD_A_B}; }
+std::vector<uint8_t> CpuZ80::EncodeLD_A_B() { return {Opcodes::LD_A_B}; }
 
-std::vector<uint8_t> CpuZ80::EncodeLD_A_C() const { return {Opcodes::LD_A_C}; }
+std::vector<uint8_t> CpuZ80::EncodeLD_A_C() { return {Opcodes::LD_A_C}; }
 
-std::vector<uint8_t> CpuZ80::EncodeLD_B_A() const { return {Opcodes::LD_B_A}; }
+std::vector<uint8_t> CpuZ80::EncodeLD_B_A() { return {Opcodes::LD_B_A}; }
 
-std::vector<uint8_t> CpuZ80::EncodeLD_C_A() const { return {Opcodes::LD_C_A}; }
+std::vector<uint8_t> CpuZ80::EncodeLD_C_A() { return {Opcodes::LD_C_A}; }
 
 // ============================================================================
 // Additional Arithmetic Instructions
 // ============================================================================
 
-std::vector<uint8_t> CpuZ80::EncodeADC_A_n(uint8_t value) const {
+std::vector<uint8_t> CpuZ80::EncodeADC_A_n(uint8_t value) {
   return {Opcodes::ADC_A_n, value};
 }
 
-std::vector<uint8_t> CpuZ80::EncodeSBC_A_n(uint8_t value) const {
+std::vector<uint8_t> CpuZ80::EncodeSBC_A_n(uint8_t value) {
   return {Opcodes::SBC_A_n, value};
 }
 
-std::vector<uint8_t> CpuZ80::EncodeCP_n(uint8_t value) const {
+std::vector<uint8_t> CpuZ80::EncodeCP_n(uint8_t value) {
   return {Opcodes::CP_n, value};
 }
 
@@ -349,41 +349,41 @@ std::vector<uint8_t> CpuZ80::EncodeCP_n(uint8_t value) const {
 // Logical Operations
 // ============================================================================
 
-std::vector<uint8_t> CpuZ80::EncodeAND_n(uint8_t value) const {
+std::vector<uint8_t> CpuZ80::EncodeAND_n(uint8_t value) {
   return {Opcodes::AND_n, value};
 }
 
-std::vector<uint8_t> CpuZ80::EncodeOR_n(uint8_t value) const {
+std::vector<uint8_t> CpuZ80::EncodeOR_n(uint8_t value) {
   return {Opcodes::OR_n, value};
 }
 
-std::vector<uint8_t> CpuZ80::EncodeXOR_n(uint8_t value) const {
+std::vector<uint8_t> CpuZ80::EncodeXOR_n(uint8_t value) {
   return {Opcodes::XOR_n, value};
 }
 
-std::vector<uint8_t> CpuZ80::EncodeXOR_A() const { return {Opcodes::XOR_A}; }
+std::vector<uint8_t> CpuZ80::EncodeXOR_A() { return {Opcodes::XOR_A}; }
 
 // ============================================================================
 // Branch Instructions
 // ============================================================================
 
-std::vector<uint8_t> CpuZ80::EncodeJR_e(int8_t offset) const {
+std::vector<uint8_t> CpuZ80::EncodeJR_e(int8_t offset) {
   return {Opcodes::JR_e, static_cast<uint8_t>(offset)};
 }
 
-std::vector<uint8_t> CpuZ80::EncodeJR_NZ_e(int8_t offset) const {
+std::vector<uint8_t> CpuZ80::EncodeJR_NZ_e(int8_t offset) {
   return {Opcodes::JR_NZ_e, static_cast<uint8_t>(offset)};
 }
 
-std::vector<uint8_t> CpuZ80::EncodeJR_Z_e(int8_t offset) const {
+std::vector<uint8_t> CpuZ80::EncodeJR_Z_e(int8_t offset) {
   return {Opcodes::JR_Z_e, static_cast<uint8_t>(offset)};
 }
 
-std::vector<uint8_t> CpuZ80::EncodeJR_NC_e(int8_t offset) const {
+std::vector<uint8_t> CpuZ80::EncodeJR_NC_e(int8_t offset) {
   return {Opcodes::JR_NC_e, static_cast<uint8_t>(offset)};
 }
 
-std::vector<uint8_t> CpuZ80::EncodeJR_C_e(int8_t offset) const {
+std::vector<uint8_t> CpuZ80::EncodeJR_C_e(int8_t offset) {
   return {Opcodes::JR_C_e, static_cast<uint8_t>(offset)};
 }
 
@@ -405,11 +405,11 @@ std::vector<uint8_t> CpuZ80::EncodeLD_addr_A(uint16_t address) const {
   return result;
 }
 
-std::vector<uint8_t> CpuZ80::EncodeLD_A_HL() const {
+std::vector<uint8_t> CpuZ80::EncodeLD_A_HL() {
   return {Opcodes::LD_A_HL};
 }
 
-std::vector<uint8_t> CpuZ80::EncodeLD_HL_A() const {
+std::vector<uint8_t> CpuZ80::EncodeLD_HL_A() {
   return {Opcodes::LD_HL_A};
 }
 
@@ -417,19 +417,19 @@ std::vector<uint8_t> CpuZ80::EncodeLD_HL_A() const {
 // Rotate and Shift Instructions
 // ============================================================================
 
-std::vector<uint8_t> CpuZ80::EncodeRLCA() const { return {Opcodes::RLCA}; }
+std::vector<uint8_t> CpuZ80::EncodeRLCA() { return {Opcodes::RLCA}; }
 
-std::vector<uint8_t> CpuZ80::EncodeRRCA() const { return {Opcodes::RRCA}; }
+std::vector<uint8_t> CpuZ80::EncodeRRCA() { return {Opcodes::RRCA}; }
 
-std::vector<uint8_t> CpuZ80::EncodeRLA() const { return {Opcodes::RLA}; }
+std::vector<uint8_t> CpuZ80::EncodeRLA() { return {Opcodes::RLA}; }
 
-std::vector<uint8_t> CpuZ80::EncodeRRA() const { return {Opcodes::RRA}; }
+std::vector<uint8_t> CpuZ80::EncodeRRA() { return {Opcodes::RRA}; }
 
-std::vector<uint8_t> CpuZ80::EncodeRLD() const {
+std::vector<uint8_t> CpuZ80::EncodeRLD() {
   return {Opcodes::ED_PREFIX, Opcodes::ED::RLD};
 }
 
-std::vector<uint8_t> CpuZ80::EncodeRRD() const {
+std::vector<uint8_t> CpuZ80::EncodeRRD() {
   return {Opcodes::ED_PREFIX, Opcodes::ED::RRD};
 }
 
@@ -437,67 +437,67 @@ std::vector<uint8_t> CpuZ80::EncodeRRD() const {
 // Input/Output Instructions
 // ============================================================================
 
-std::vector<uint8_t> CpuZ80::EncodeIN_A_n(uint8_t port) const {
+std::vector<uint8_t> CpuZ80::EncodeIN_A_n(uint8_t port) {
   return {Opcodes::IN_A_n, port};
 }
 
-std::vector<uint8_t> CpuZ80::EncodeOUT_n_A(uint8_t port) const {
+std::vector<uint8_t> CpuZ80::EncodeOUT_n_A(uint8_t port) {
   return {Opcodes::OUT_n_A, port};
 }
 
-std::vector<uint8_t> CpuZ80::EncodeIN_B_C() const {
+std::vector<uint8_t> CpuZ80::EncodeIN_B_C() {
   return {Opcodes::ED_PREFIX, Opcodes::ED::IN_B_C};
 }
 
-std::vector<uint8_t> CpuZ80::EncodeIN_C_C() const {
+std::vector<uint8_t> CpuZ80::EncodeIN_C_C() {
   return {Opcodes::ED_PREFIX, Opcodes::ED::IN_C_C};
 }
 
-std::vector<uint8_t> CpuZ80::EncodeIN_D_C() const {
+std::vector<uint8_t> CpuZ80::EncodeIN_D_C() {
   return {Opcodes::ED_PREFIX, Opcodes::ED::IN_D_C};
 }
 
-std::vector<uint8_t> CpuZ80::EncodeIN_E_C() const {
+std::vector<uint8_t> CpuZ80::EncodeIN_E_C() {
   return {Opcodes::ED_PREFIX, Opcodes::ED::IN_E_C};
 }
 
-std::vector<uint8_t> CpuZ80::EncodeIN_H_C() const {
+std::vector<uint8_t> CpuZ80::EncodeIN_H_C() {
   return {Opcodes::ED_PREFIX, Opcodes::ED::IN_H_C};
 }
 
-std::vector<uint8_t> CpuZ80::EncodeIN_L_C() const {
+std::vector<uint8_t> CpuZ80::EncodeIN_L_C() {
   return {Opcodes::ED_PREFIX, Opcodes::ED::IN_L_C};
 }
 
-std::vector<uint8_t> CpuZ80::EncodeIN_A_C() const {
+std::vector<uint8_t> CpuZ80::EncodeIN_A_C() {
   return {Opcodes::ED_PREFIX, Opcodes::ED::IN_A_C};
 }
 
-std::vector<uint8_t> CpuZ80::EncodeOUT_C_B() const {
+std::vector<uint8_t> CpuZ80::EncodeOUT_C_B() {
   return {Opcodes::ED_PREFIX, Opcodes::ED::OUT_C_B};
 }
 
-std::vector<uint8_t> CpuZ80::EncodeOUT_C_C() const {
+std::vector<uint8_t> CpuZ80::EncodeOUT_C_C() {
   return {Opcodes::ED_PREFIX, Opcodes::ED::OUT_C_C};
 }
 
-std::vector<uint8_t> CpuZ80::EncodeOUT_C_D() const {
+std::vector<uint8_t> CpuZ80::EncodeOUT_C_D() {
   return {Opcodes::ED_PREFIX, Opcodes::ED::OUT_C_D};
 }
 
-std::vector<uint8_t> CpuZ80::EncodeOUT_C_E() const {
+std::vector<uint8_t> CpuZ80::EncodeOUT_C_E() {
   return {Opcodes::ED_PREFIX, Opcodes::ED::OUT_C_E};
 }
 
-std::vector<uint8_t> CpuZ80::EncodeOUT_C_H() const {
+std::vector<uint8_t> CpuZ80::EncodeOUT_C_H() {
   return {Opcodes::ED_PREFIX, Opcodes::ED::OUT_C_H};
 }
 
-std::vector<uint8_t> CpuZ80::EncodeOUT_C_L() const {
+std::vector<uint8_t> CpuZ80::EncodeOUT_C_L() {
   return {Opcodes::ED_PREFIX, Opcodes::ED::OUT_C_L};
 }
 
-std::vector<uint8_t> CpuZ80::EncodeOUT_C_A() const {
+std::vector<uint8_t> CpuZ80::EncodeOUT_C_A() {
   return {Opcodes::ED_PREFIX, Opcodes::ED::OUT_C_A};
 }
 
@@ -505,31 +505,31 @@ std::vector<uint8_t> CpuZ80::EncodeOUT_C_A() const {
 // Extended Instructions (ED Prefix)
 // ============================================================================
 
-std::vector<uint8_t> CpuZ80::EncodeLD_I_A() const {
+std::vector<uint8_t> CpuZ80::EncodeLD_I_A() {
   return {Opcodes::ED_PREFIX, Opcodes::ED::LD_I_A};
 }
 
-std::vector<uint8_t> CpuZ80::EncodeLD_A_I() const {
+std::vector<uint8_t> CpuZ80::EncodeLD_A_I() {
   return {Opcodes::ED_PREFIX, Opcodes::ED::LD_A_I};
 }
 
-std::vector<uint8_t> CpuZ80::EncodeLD_R_A() const {
+std::vector<uint8_t> CpuZ80::EncodeLD_R_A() {
   return {Opcodes::ED_PREFIX, Opcodes::ED::LD_R_A};
 }
 
-std::vector<uint8_t> CpuZ80::EncodeLD_A_R() const {
+std::vector<uint8_t> CpuZ80::EncodeLD_A_R() {
   return {Opcodes::ED_PREFIX, Opcodes::ED::LD_A_R};
 }
 
-std::vector<uint8_t> CpuZ80::EncodeLDIR() const {
+std::vector<uint8_t> CpuZ80::EncodeLDIR() {
   return {Opcodes::ED_PREFIX, Opcodes::ED::LDIR};
 }
 
-std::vector<uint8_t> CpuZ80::EncodeCPIR() const {
+std::vector<uint8_t> CpuZ80::EncodeCPIR() {
   return {Opcodes::ED_PREFIX, Opcodes::ED::CPIR};
 }
 
-std::vector<uint8_t> CpuZ80::EncodeNEG() const {
+std::vector<uint8_t> CpuZ80::EncodeNEG() {
   return {Opcodes::ED_PREFIX, Opcodes::ED::NEG};
 }
 
@@ -537,23 +537,23 @@ std::vector<uint8_t> CpuZ80::EncodeNEG() const {
 // Additional Stack Operations
 // ============================================================================
 
-std::vector<uint8_t> CpuZ80::EncodePUSH_DE() const {
+std::vector<uint8_t> CpuZ80::EncodePUSH_DE() {
   return {Opcodes::PUSH_DE};
 }
 
-std::vector<uint8_t> CpuZ80::EncodePUSH_HL() const {
+std::vector<uint8_t> CpuZ80::EncodePUSH_HL() {
   return {Opcodes::PUSH_HL};
 }
 
-std::vector<uint8_t> CpuZ80::EncodePUSH_AF() const {
+std::vector<uint8_t> CpuZ80::EncodePUSH_AF() {
   return {Opcodes::PUSH_AF};
 }
 
-std::vector<uint8_t> CpuZ80::EncodePOP_DE() const { return {Opcodes::POP_DE}; }
+std::vector<uint8_t> CpuZ80::EncodePOP_DE() { return {Opcodes::POP_DE}; }
 
-std::vector<uint8_t> CpuZ80::EncodePOP_HL() const { return {Opcodes::POP_HL}; }
+std::vector<uint8_t> CpuZ80::EncodePOP_HL() { return {Opcodes::POP_HL}; }
 
-std::vector<uint8_t> CpuZ80::EncodePOP_AF() const { return {Opcodes::POP_AF}; }
+std::vector<uint8_t> CpuZ80::EncodePOP_AF() { return {Opcodes::POP_AF}; }
 
 // ============================================================================
 // Conditional Call and Return Instructions
@@ -573,9 +573,9 @@ std::vector<uint8_t> CpuZ80::EncodeCALL_NZ_nn(uint16_t address) const {
   return result;
 }
 
-std::vector<uint8_t> CpuZ80::EncodeRET_Z() const { return {Opcodes::RET_Z}; }
+std::vector<uint8_t> CpuZ80::EncodeRET_Z() { return {Opcodes::RET_Z}; }
 
-std::vector<uint8_t> CpuZ80::EncodeRET_NZ() const { return {Opcodes::RET_NZ}; }
+std::vector<uint8_t> CpuZ80::EncodeRET_NZ() { return {Opcodes::RET_NZ}; }
 
 // ============================================================================
 // CpuPlugin Interface Implementation - HasOpcode()

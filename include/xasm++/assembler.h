@@ -230,7 +230,7 @@ private:
    * @param org_address Current origin address
    * @param result Result object to append errors to
    */
-  void ResolveSymbols(std::vector<std::shared_ptr<Atom>> &atoms,
+  static void ResolveSymbols(std::vector<std::shared_ptr<Atom>> &atoms,
                       ConcreteSymbolTable &symbols, uint32_t org_address,
                       AssemblerResult &result);
 
@@ -259,8 +259,8 @@ private:
    * @param current_sizes Instruction sizes from current pass
    * @return true if sizes are identical (converged), false otherwise
    */
-  bool CheckConvergence(const std::vector<size_t> &previous_sizes,
-                        const std::vector<size_t> &current_sizes) const;
+  static bool CheckConvergence(const std::vector<size_t> &previous_sizes,
+                        const std::vector<size_t> &current_sizes);
 
   /**
    * @brief Re-evaluate data and equate atoms using final converged symbols

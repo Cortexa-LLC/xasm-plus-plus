@@ -181,7 +181,7 @@ private:
    * @param line Line to process
    * @return Line without comments
    */
-  std::string StripComments(const std::string &line);
+  static std::string StripComments(const std::string &line);
 
   /**
    * @brief Trim whitespace from both ends
@@ -189,7 +189,7 @@ private:
    * @param str String to trim
    * @return Trimmed string
    */
-  std::string Trim(const std::string &str);
+  static std::string Trim(const std::string &str);
 
   /**
    * @brief Convert string to uppercase
@@ -197,7 +197,7 @@ private:
    * @param str String to convert
    * @return Uppercase string
    */
-  std::string ToUpper(const std::string &str);
+  static std::string ToUpper(const std::string &str);
 
   /**
    * @brief Check if line is a comment line (starts with *)

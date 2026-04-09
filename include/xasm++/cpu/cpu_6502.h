@@ -267,13 +267,13 @@ public:
    * @brief Encode NOP (No Operation) instruction
    * @return Vector containing single NOP opcode byte {0xEA}
    */
-  std::vector<uint8_t> EncodeNOP() const;
+  static std::vector<uint8_t> EncodeNOP();
 
   /**
    * @brief Encode RTS (Return from Subroutine) instruction
    * @return Vector containing single RTS opcode byte {0x60}
    */
-  std::vector<uint8_t> EncodeRTS() const;
+  static std::vector<uint8_t> EncodeRTS();
 
   // Phase 2.2: Arithmetic instructions
   std::vector<uint8_t> EncodeADC(uint16_t operand, AddressingMode mode) const;
@@ -306,18 +306,18 @@ public:
   std::vector<uint8_t> EncodeBVS(uint16_t operand, AddressingMode mode) const;
 
   // Phase 2.2: Inc/Dec instructions
-  std::vector<uint8_t> EncodeINX() const;
-  std::vector<uint8_t> EncodeINY() const;
-  std::vector<uint8_t> EncodeDEX() const;
-  std::vector<uint8_t> EncodeDEY() const;
+  static std::vector<uint8_t> EncodeINX();
+  static std::vector<uint8_t> EncodeINY();
+  static std::vector<uint8_t> EncodeDEX();
+  static std::vector<uint8_t> EncodeDEY();
   std::vector<uint8_t> EncodeINC(uint16_t operand, AddressingMode mode) const;
   std::vector<uint8_t> EncodeDEC(uint16_t operand, AddressingMode mode) const;
 
   // Phase 2.2: Stack operations
-  std::vector<uint8_t> EncodePHA() const;
-  std::vector<uint8_t> EncodePLA() const;
-  std::vector<uint8_t> EncodePHP() const;
-  std::vector<uint8_t> EncodePLP() const;
+  static std::vector<uint8_t> EncodePHA();
+  static std::vector<uint8_t> EncodePLA();
+  static std::vector<uint8_t> EncodePHP();
+  static std::vector<uint8_t> EncodePLP();
 
   // Phase 2.5 - Group 2: 65C02 Stack operations
   std::vector<uint8_t> EncodePHX() const; // Push X (65C02+)
@@ -463,8 +463,8 @@ public:
   std::vector<uint8_t> EncodeTDC() const; // Transfer Direct Page to C (65816)
   std::vector<uint8_t> EncodeTCS() const; // Transfer C to Stack Pointer (65816)
   std::vector<uint8_t> EncodeTSC() const; // Transfer Stack Pointer to C (65816)
-  std::vector<uint8_t> EncodeTXY() const; // Transfer X to Y (65816)
-  std::vector<uint8_t> EncodeTYX() const; // Transfer Y to X (65816)
+  static std::vector<uint8_t> EncodeTXY(); // Transfer X to Y (65816)
+  static std::vector<uint8_t> EncodeTYX(); // Transfer Y to X (65816)
 
   // Phase 2.5 - Group 13: 65816 Long Jumps
   std::vector<uint8_t>
@@ -520,25 +520,25 @@ public:
   std::vector<uint8_t> EncodeROR(uint16_t operand, AddressingMode mode) const;
 
   // Group 4: Interrupt Instructions
-  std::vector<uint8_t> EncodeRTI() const;
-  std::vector<uint8_t> EncodeBRK() const;
+  static std::vector<uint8_t> EncodeRTI();
+  static std::vector<uint8_t> EncodeBRK();
 
   // Group 5: Flag Operations
-  std::vector<uint8_t> EncodeCLC() const;
-  std::vector<uint8_t> EncodeSEC() const;
-  std::vector<uint8_t> EncodeCLD() const;
-  std::vector<uint8_t> EncodeSED() const;
-  std::vector<uint8_t> EncodeCLI() const;
-  std::vector<uint8_t> EncodeSEI() const;
-  std::vector<uint8_t> EncodeCLV() const;
+  static std::vector<uint8_t> EncodeCLC();
+  static std::vector<uint8_t> EncodeSEC();
+  static std::vector<uint8_t> EncodeCLD();
+  static std::vector<uint8_t> EncodeSED();
+  static std::vector<uint8_t> EncodeCLI();
+  static std::vector<uint8_t> EncodeSEI();
+  static std::vector<uint8_t> EncodeCLV();
 
   // Group 6: Transfer Instructions
-  std::vector<uint8_t> EncodeTSX() const;
-  std::vector<uint8_t> EncodeTXS() const;
-  std::vector<uint8_t> EncodeTAX() const;
-  std::vector<uint8_t> EncodeTAY() const;
-  std::vector<uint8_t> EncodeTXA() const;
-  std::vector<uint8_t> EncodeTYA() const;
+  static std::vector<uint8_t> EncodeTSX();
+  static std::vector<uint8_t> EncodeTXS();
+  static std::vector<uint8_t> EncodeTAX();
+  static std::vector<uint8_t> EncodeTAY();
+  static std::vector<uint8_t> EncodeTXA();
+  static std::vector<uint8_t> EncodeTYA();
 
   /** @} */ // End of Instruction Encoding Methods
 
@@ -557,7 +557,7 @@ public:
    * - Absolute: 3 bytes
    * - AbsoluteLong: 4 bytes
    */
-  size_t CalculateInstructionSize(AddressingMode mode) const;
+  static size_t CalculateInstructionSize(AddressingMode mode);
 
   /**
    * @name Branch Relaxation Methods

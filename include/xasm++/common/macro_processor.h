@@ -137,7 +137,7 @@ private:
    * @param str String to convert
    * @return Uppercase string
    */
-  std::string ToUpper(const std::string &str) const;
+  static std::string ToUpper(const std::string &str);
 
   /**
    * @brief Substitute parameters in a macro line
@@ -150,7 +150,7 @@ private:
    * @param arguments Argument values
    * @return Line with parameters substituted
    */
-  std::string SubstituteParameters(const std::string &line,
+  static std::string SubstituteParameters(const std::string &line,
                                    const MacroDefinition &macro,
                                    const std::vector<std::string> &arguments);
 
@@ -164,7 +164,7 @@ private:
    * @param expansion_id Unique expansion ID
    * @return Unique label name
    */
-  std::string MakeLocalLabelUnique(const std::string &label, int expansion_id);
+  static std::string MakeLocalLabelUnique(const std::string &label, int expansion_id);
 
   std::unordered_map<std::string, MacroDefinition> macros_; ///< Defined macros
   int expansion_counter_ = 0; ///< Unique ID for macro expansions

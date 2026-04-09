@@ -1623,7 +1623,7 @@ uint32_t ScmasmSyntaxParser::EvaluateExpression(const std::string &str,
   return static_cast<uint32_t>(expr->Evaluate(symbols));
 }
 
-uint8_t ScmasmSyntaxParser::ApplyHighBitRule(char c, char delimiter) const {
+uint8_t ScmasmSyntaxParser::ApplyHighBitRule(char c, char delimiter) {
   // SCMASM high-bit rule:
   // If delimiter ASCII < 0x27 (apostrophe '), high bit is SET
   // Otherwise, high bit is CLEAR

@@ -36,7 +36,7 @@ public:
    * @param target_addr Target address to branch to
    * @return true if branch is out of range and needs relaxation
    */
-  bool NeedsBranchRelaxation(uint16_t current_addr, uint16_t target_addr) const;
+  static bool NeedsBranchRelaxation(uint16_t current_addr, uint16_t target_addr);
 
   /**
    * @brief Get complementary (inverted) branch opcode
@@ -51,7 +51,7 @@ public:
    * @param branch_opcode Original branch opcode
    * @return Complementary branch opcode
    */
-  uint8_t GetComplementaryBranchOpcode(uint8_t branch_opcode) const;
+  static uint8_t GetComplementaryBranchOpcode(uint8_t branch_opcode);
 
   /**
    * @brief Encode branch instruction with automatic relaxation if needed

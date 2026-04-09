@@ -200,7 +200,7 @@ SRecordWriter::ExtractBytes(const Section &section) {
   return bytes;
 }
 
-size_t SRecordWriter::GetAddressSize(int format) const {
+size_t SRecordWriter::GetAddressSize(int format) {
   switch (format) {
   case output_format::srec::RECORD_TYPE_HEADER:
   case output_format::srec::RECORD_TYPE_DATA_16BIT:

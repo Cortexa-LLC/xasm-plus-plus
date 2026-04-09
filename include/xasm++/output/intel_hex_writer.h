@@ -134,7 +134,7 @@ private:
    * @param data Data bytes
    * @return Calculated checksum (8-bit)
    */
-  uint8_t CalculateChecksum(uint8_t byte_count, uint16_t address,
+  static uint8_t CalculateChecksum(uint8_t byte_count, uint16_t address,
                             uint8_t record_type,
                             const std::vector<uint8_t> &data);
 
@@ -164,7 +164,7 @@ private:
    * @return Vector of (address, byte) pairs
    */
   std::vector<std::pair<uint64_t, uint8_t>>
-  ExtractBytes(const Section &section);
+  static ExtractBytes(const Section &section);
 };
 
 } // namespace xasm
