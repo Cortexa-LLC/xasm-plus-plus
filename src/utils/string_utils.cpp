@@ -3,8 +3,8 @@
 #include <cctype>
 #include <stdexcept>
 
-namespace xasm {
-namespace util {
+
+namespace xasm::util {
 
 std::string Trim(const std::string &str) {
   std::string result;
@@ -31,5 +31,5 @@ std::string ToUpper(const std::string &str) {
 // ParseHex moved to src/core/parse_utils.cpp for consolidation
 // See: .ai/tasks/2026-01-31_refactor-number-parsing/
 
-} // namespace util
-} // namespace xasm
+} // namespace xasm::util
+

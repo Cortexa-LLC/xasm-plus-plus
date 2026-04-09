@@ -376,7 +376,7 @@ public:
    * @param s Expression string that may contain character literals
    * @return Expression string with character literals replaced by $XX hex tokens
    */
-  std::string ExpandCharLiteralsInExpr(const std::string &s) const;
+  static std::string ExpandCharLiteralsInExpr(const std::string &s) ;
 
   /**
    * @brief Expand local label references (.N / :N) in an operand string to
@@ -505,7 +505,7 @@ private:
    * @param line Input line
    * @return Empty string if line is an editor command, original line otherwise
    */
-  std::string StripEditorCommands(const std::string &line);
+  static std::string StripEditorCommands(const std::string &line);
 
   /**
    * @brief Parse a single line of source
@@ -621,7 +621,7 @@ private:
    * @param section Section to add data atom
    * @param symbols Symbol table for expression evaluation
    */
-  void HandleHs(const std::string &operand, Section &section,
+  static void HandleHs(const std::string &operand, Section &section,
                 ConcreteSymbolTable &symbols);
 
   /**
@@ -705,7 +705,7 @@ private:
    * @return Parsed number value
    * @throws std::runtime_error on invalid format
    */
-  uint32_t ParseNumber(const std::string &str);
+  static uint32_t ParseNumber(const std::string &str);
 
   /**
    * @brief Parse expression
@@ -738,7 +738,7 @@ private:
    * @param result Output vector of bytes
    * @return Delimiter character used
    */
-  char ParseString(const std::string &operand, std::vector<uint8_t> &result);
+  static char ParseString(const std::string &operand, std::vector<uint8_t> &result);
 
   /**
    * @brief Check if label is a local label (.0-.9)

@@ -184,7 +184,7 @@ BuildIndexedPostByte(AddressingMode6809 mode, int32_t offset,
     result.push_back(0x84 | reg_bits);
     break;
   case AddressingMode6809::Indexed5BitOffset: {
-    uint8_t offset_5bit = static_cast<uint8_t>(offset & 0x1F);
+    auto offset_5bit = static_cast<uint8_t>(offset & 0x1F);
     result.push_back(offset_5bit | reg_bits);
     break;
   }
@@ -1026,7 +1026,7 @@ Cpu6809::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
 
   // ── Short branches ────────────────────────────────────────────────────────
   {
-    int32_t off = static_cast<int32_t>(operand);
+    auto off = static_cast<int32_t>(operand);
     if (mnemonic == M6809Mnemonics::BRA) return EncodeBRA(off, mode);
     if (mnemonic == M6809Mnemonics::BEQ) return EncodeBEQ(off, mode);
     if (mnemonic == M6809Mnemonics::BNE) return EncodeBNE(off, mode);
@@ -1049,7 +1049,7 @@ Cpu6809::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
 
   // ── Long branches ─────────────────────────────────────────────────────────
   {
-    int16_t off16 = static_cast<int16_t>(operand);
+    auto off16 = static_cast<int16_t>(operand);
     if (mnemonic == M6809Mnemonics::LBRA) return EncodeLBRA(off16);
     if (mnemonic == M6809Mnemonics::LBSR) return EncodeLBSR(off16);
     if (mnemonic == M6809Mnemonics::LBRN) return EncodeLBRN(off16);
@@ -1073,13 +1073,13 @@ Cpu6809::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
 
   // ── Register-pair instructions ────────────────────────────────────────────
   if (mnemonic == M6809Mnemonics::TFR) {
-    uint8_t src = static_cast<uint8_t>((operand >> 4) & 0x0F);
-    uint8_t dst = static_cast<uint8_t>(operand & 0x0F);
+    auto src = static_cast<uint8_t>((operand >> 4) & 0x0F);
+    auto dst = static_cast<uint8_t>(operand & 0x0F);
     return EncodeTFR(src, dst);
   }
   if (mnemonic == M6809Mnemonics::EXG) {
-    uint8_t r1 = static_cast<uint8_t>((operand >> 4) & 0x0F);
-    uint8_t r2 = static_cast<uint8_t>(operand & 0x0F);
+    auto r1 = static_cast<uint8_t>((operand >> 4) & 0x0F);
+    auto r2 = static_cast<uint8_t>(operand & 0x0F);
     return EncodeEXG(r1, r2);
   }
 

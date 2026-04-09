@@ -49,9 +49,7 @@ ErrorFormatter::FormatError(const AssemblerError &error,
     if (!source_line.empty()) {
       // Calculate gutter width (line number width)
       int gutter_width = std::to_string(error.location.line).length();
-      if (gutter_width < 2) {
-        gutter_width = 2;
-      }
+      gutter_width = std::max(gutter_width, 2);
 
       // Empty line before context
       if (ShouldUseColors()) {
@@ -239,7 +237,7 @@ ErrorFormatter::FindSimilarSymbols(const std::string &typo,
 
     // Only consider symbols with edit distance <= 2
     if (distance <= 2) {
-      candidates.push_back({symbol, distance});
+      candidates.emplace_back(symbol, distance);
     }
   }
 
@@ -250,7 +248,7 @@ ErrorFormatter::FindSimilarSymbols(const std::string &typo,
   // Return up to 3 best matches
   std::vector<std::string> suggestions;
   for (size_t i = 0; i < std::min(size_t(3), candidates.size()); ++i) {
-    suggestions.push_back(candidates[i].first);
+    suggestions.emplace_back(candidates[i].first);
   }
 
   return suggestions;

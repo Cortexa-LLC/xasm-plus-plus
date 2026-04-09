@@ -346,7 +346,7 @@ public:
    * @param operand Symbol list string
    * @return Vector of symbol names
    */
-  std::vector<std::string> ParseSymbolList(const std::string &operand);
+  static std::vector<std::string> ParseSymbolList(const std::string &operand);
 
   /**
    * @brief Conditional assembly block state
@@ -483,7 +483,7 @@ private:
                          ConcreteSymbolTable &symbols);
 
   // Instruction size estimation
-  uint32_t EstimateZ80InstructionSize(const std::string &mnemonic,
+  static uint32_t EstimateZ80InstructionSize(const std::string &mnemonic,
                                       const std::string &operand);
 
   // Expression/number parsing

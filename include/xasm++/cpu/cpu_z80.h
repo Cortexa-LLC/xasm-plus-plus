@@ -170,7 +170,7 @@ public:
    *
    * @note Uses little-endian byte order (LSB first)
    */
-  std::vector<uint8_t> EncodeLD_BC_nn(uint16_t value) const;
+  static std::vector<uint8_t> EncodeLD_BC_nn(uint16_t value) ;
 
   /**
    * @brief Encode LD DE, nn instruction (load immediate into DE)
@@ -180,7 +180,7 @@ public:
    *
    * @note Uses little-endian byte order (LSB first)
    */
-  std::vector<uint8_t> EncodeLD_DE_nn(uint16_t value) const;
+  static std::vector<uint8_t> EncodeLD_DE_nn(uint16_t value) ;
 
   /**
    * @brief Encode LD HL, nn instruction (load immediate into HL)
@@ -190,7 +190,7 @@ public:
    *
    * @note Uses little-endian byte order (LSB first)
    */
-  std::vector<uint8_t> EncodeLD_HL_nn(uint16_t value) const;
+  static std::vector<uint8_t> EncodeLD_HL_nn(uint16_t value) ;
 
   /**
    * @brief Encode LD SP, nn instruction (load immediate into SP)
@@ -200,7 +200,7 @@ public:
    *
    * @note Uses little-endian byte order (LSB first)
    */
-  std::vector<uint8_t> EncodeLD_SP_nn(uint16_t value) const;
+  static std::vector<uint8_t> EncodeLD_SP_nn(uint16_t value) ;
 
   /**
    * @brief Encode LD A, (BC) instruction (load A from address in BC)
@@ -246,7 +246,7 @@ public:
    *
    * @note Uses little-endian byte order (LSB first)
    */
-  std::vector<uint8_t> EncodeLD_HL_addr(uint16_t address) const;
+  static std::vector<uint8_t> EncodeLD_HL_addr(uint16_t address) ;
 
   /**
    * @brief Encode LD (nn), HL instruction (store HL to memory address)
@@ -256,7 +256,7 @@ public:
    *
    * @note Uses little-endian byte order (LSB first)
    */
-  std::vector<uint8_t> EncodeLD_addr_HL(uint16_t address) const;
+  static std::vector<uint8_t> EncodeLD_addr_HL(uint16_t address) ;
 
   /**
    * @brief Encode LD SP, HL instruction (copy HL to stack pointer)
@@ -324,7 +324,7 @@ public:
    *
    * @note Uses little-endian byte order (LSB first)
    */
-  std::vector<uint8_t> EncodeJP_nn(uint16_t address) const;
+  static std::vector<uint8_t> EncodeJP_nn(uint16_t address) ;
 
   /**
    * @brief Encode RET instruction (return from subroutine)
@@ -409,7 +409,7 @@ public:
    *
    * @note Uses little-endian byte order (LSB first)
    */
-  std::vector<uint8_t> EncodeLD_IX_nn(uint16_t value) const;
+  static std::vector<uint8_t> EncodeLD_IX_nn(uint16_t value) ;
 
   /**
    * @brief Encode LD A, (IX+d) instruction (load from indexed address)
@@ -434,7 +434,7 @@ public:
    *
    * @note Uses little-endian byte order (LSB first)
    */
-  std::vector<uint8_t> EncodeLD_IY_nn(uint16_t value) const;
+  static std::vector<uint8_t> EncodeLD_IY_nn(uint16_t value) ;
 
   /**
    * @brief Encode LD A, (IY+d) instruction (load from indexed address)
@@ -606,7 +606,7 @@ public:
    * @param address 16-bit address
    * @return Vector of encoded bytes {0x3A, low_byte, high_byte}
    */
-  std::vector<uint8_t> EncodeLD_A_addr(uint16_t address) const;
+  static std::vector<uint8_t> EncodeLD_A_addr(uint16_t address) ;
 
   /**
    * @brief Encode LD (nn), A instruction (store to absolute address)
@@ -614,7 +614,7 @@ public:
    * @param address 16-bit address
    * @return Vector of encoded bytes {0x32, low_byte, high_byte}
    */
-  std::vector<uint8_t> EncodeLD_addr_A(uint16_t address) const;
+  static std::vector<uint8_t> EncodeLD_addr_A(uint16_t address) ;
 
   /**
    * @brief Encode LD A, (HL) instruction (load from HL)
@@ -945,7 +945,7 @@ public:
    * @param address 16-bit target address
    * @return Vector of encoded bytes {0xCD, low_byte, high_byte}
    */
-  std::vector<uint8_t> EncodeCALL_nn(uint16_t address) const;
+  static std::vector<uint8_t> EncodeCALL_nn(uint16_t address) ;
 
   /**
    * @brief Encode CALL NZ, nn instruction (call if not zero)
@@ -953,7 +953,7 @@ public:
    * @param address 16-bit target address
    * @return Vector of encoded bytes {0xC4, low_byte, high_byte}
    */
-  std::vector<uint8_t> EncodeCALL_NZ_nn(uint16_t address) const;
+  static std::vector<uint8_t> EncodeCALL_NZ_nn(uint16_t address) ;
 
   /**
    * @brief Encode RET Z instruction (return if zero)

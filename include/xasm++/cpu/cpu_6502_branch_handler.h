@@ -72,9 +72,9 @@ public:
    * @param target_addr Target address to branch to
    * @return Encoded bytes (2 bytes if in range, 5 bytes if relaxed)
    */
-  std::vector<uint8_t> EncodeBranchWithRelaxation(uint8_t branch_opcode,
+  static std::vector<uint8_t> EncodeBranchWithRelaxation(uint8_t branch_opcode,
                                                   uint16_t current_addr,
-                                                  uint16_t target_addr) const;
+                                                  uint16_t target_addr) ;
 };
 
 } // namespace xasm

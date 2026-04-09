@@ -132,14 +132,14 @@ CocoLoadmWriter::ExtractBytes(const Section &section) {
     if (auto data_atom = std::dynamic_pointer_cast<DataAtom>(atom)) {
       // Data atom - extract bytes
       for (uint8_t byte : data_atom->data) {
-        bytes.push_back({current_address, byte});
+        bytes.emplace_back(current_address, byte);
         ++current_address;
       }
     } else if (auto inst_atom =
                    std::dynamic_pointer_cast<InstructionAtom>(atom)) {
       // Instruction atom - extract encoded bytes
       for (uint8_t byte : inst_atom->encoded_bytes) {
-        bytes.push_back({current_address, byte});
+        bytes.emplace_back(current_address, byte);
         ++current_address;
       }
     } else if (auto space_atom = std::dynamic_pointer_cast<SpaceAtom>(atom)) {

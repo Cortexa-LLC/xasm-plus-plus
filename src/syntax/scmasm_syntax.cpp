@@ -183,7 +183,7 @@ bool SCMASMNumberParser::TryParse(const std::string &token,
     // Apply high-bit rule:
     // If delimiter ASCII < 0x27 (apostrophe '), high bit is SET
     // Otherwise, high bit is CLEAR
-    uint8_t result = static_cast<uint8_t>(c);
+    auto result = static_cast<uint8_t>(c);
     if (delimiter < 0x27) {
       result |= 0x80; // Set high bit
     } else {
@@ -1369,7 +1369,7 @@ void ScmasmSyntaxParser::HandleSe(const std::string &label,
   uint32_t value = EvaluateExpression(operand, symbols);
 
   // Check if symbol already exists (SE allows redefinition)
-  int64_t existing_value;
+  int64_t existing_value = 0;
   auto expr = std::make_shared<LiteralExpr>(value);
 
   if (symbols.Lookup(label, existing_value)) {
@@ -1628,7 +1628,7 @@ uint8_t ScmasmSyntaxParser::ApplyHighBitRule(char c, char delimiter) {
   // If delimiter ASCII < 0x27 (apostrophe '), high bit is SET
   // Otherwise, high bit is CLEAR
 
-  uint8_t result = static_cast<uint8_t>(c);
+  auto result = static_cast<uint8_t>(c);
 
   if (delimiter < 0x27) {
     // Set high bit
@@ -1657,7 +1657,7 @@ std::string ScmasmSyntaxParser::ExpandLocalLabelsInOperand(
     return operand;
 
   std::string expanded;
-  expanded.reserve(operand.size() + last_global_label_.size() * 2);
+  expanded.reserve(operand.size() + (last_global_label_.size() * 2));
   for (size_t k = 0; k < operand.size();) {
     char c = operand[k];
     bool at_word_start =
@@ -1686,7 +1686,7 @@ std::string ScmasmSyntaxParser::ExpandLocalLabelsInOperand(
 }
 
 std::string ScmasmSyntaxParser::ExpandCharLiteralsInExpr(
-    const std::string &s) const {
+    const std::string &s) {
   // Replace SCMASM character literals ("X", 'X', "X", 'X) with their
   // numeric hex equivalents so that the generic ParseExpression engine can
   // evaluate expressions like #"0"+1 or #'A'.
@@ -1942,7 +1942,7 @@ void ScmasmSyntaxParser::HandleHs(const std::string &operand, Section &section,
   // Convert pairs to bytes
   for (size_t i = 0; i < hex_digits.length(); i += 2) {
     std::string byte_str = hex_digits.substr(i, 2);
-    uint8_t byte =
+    auto byte =
         static_cast<uint8_t>(std::stoi(byte_str, nullptr, RADIX_HEXADECIMAL));
     data.push_back(byte);
   }
@@ -2221,7 +2221,8 @@ void ScmasmSyntaxParser::HandleDo(const std::string &label,
   }
 
   // Process appropriate block
-  size_t start_line, end_line;
+  size_t start_line = 0;
+  size_t end_line = 0;
 
   if (condition != 0) {
     // Process .DO block

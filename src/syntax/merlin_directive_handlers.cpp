@@ -505,7 +505,7 @@ void HandleAsc(const std::string &label, const std::string &operand,
 
   // Convert string to bytes with high bit set (Apple II standard)
   for (size_t i = 0; i < text.length(); ++i) {
-    uint8_t byte = static_cast<uint8_t>(text[i]);
+    auto byte = static_cast<uint8_t>(text[i]);
 
     // Set high bit on ALL characters (Apple II/Merlin compatibility)
     byte |= 0x80;
@@ -565,7 +565,7 @@ void HandleDci(const std::string &label, const std::string &operand,
 
   // Convert string to bytes, setting high bit on last character
   for (size_t i = 0; i < text.length(); ++i) {
-    uint8_t byte = static_cast<uint8_t>(text[i]);
+    auto byte = static_cast<uint8_t>(text[i]);
 
     // Set high bit on last character
     if (i == text.length() - 1) {
@@ -683,7 +683,7 @@ void HandleFls(const std::string &label, const std::string &operand,
 
   // Convert string to bytes, alternating high bit on every other character
   for (size_t i = 0; i < text.length(); ++i) {
-    uint8_t byte = static_cast<uint8_t>(text[i]);
+    auto byte = static_cast<uint8_t>(text[i]);
 
     // Set high bit on ODD-indexed characters (1, 3, 5...)
     if (i % 2 == 1) {

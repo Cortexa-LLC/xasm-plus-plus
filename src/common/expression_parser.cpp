@@ -400,7 +400,7 @@ std::shared_ptr<Expression> ExpressionParser::ParsePrimary() {
 
     // Try parsing with custom parser if we extracted a token
     if (!token.empty()) {
-      int64_t value;
+      int64_t value = 0;
       if (number_parser_->TryParse(token, value)) {
         return std::make_shared<LiteralExpr>(value);
       }
@@ -458,7 +458,7 @@ std::shared_ptr<Expression> ExpressionParser::ParsePrimary() {
 
     // Try parsing as number first (for RADIX mode where "FF" is a hex number)
     if (number_parser_) {
-      int64_t value;
+      int64_t value = 0;
       if (number_parser_->TryParse(ident, value)) {
         return std::make_shared<LiteralExpr>(value);
       }
@@ -564,7 +564,7 @@ int64_t ExpressionParser::ParseNumber() {
     }
     while (std::isxdigit(Peek())) {
       char c = Consume();
-      int digit;
+      int digit = 0;
       if (c >= '0' && c <= '9') {
         digit = c - '0';
       } else if (c >= 'A' && c <= 'F') {
@@ -574,7 +574,7 @@ int64_t ExpressionParser::ParseNumber() {
       } else {
         break;
       }
-      value = value * 16 + digit;
+      value = (value * 16) + digit;
     }
     return value;
   }
@@ -590,7 +590,7 @@ int64_t ExpressionParser::ParseNumber() {
     while (Peek() == '0' || Peek() == '1' || Peek() == '.') {
       char ch = Consume();
       if (ch != '.') {
-        value = value * 2 + (ch - '0');
+        value = (value * 2) + (ch - '0');
       }
       // '.' is silently skipped as a visual digit separator (e.g. %0000.0000)
     }
@@ -614,7 +614,7 @@ int64_t ExpressionParser::ParseNumber() {
     }
     while (std::isxdigit(Peek())) {
       char c = Consume();
-      int digit;
+      int digit = 0;
       if (c >= '0' && c <= '9') {
         digit = c - '0';
       } else if (c >= 'A' && c <= 'F') {
@@ -624,7 +624,7 @@ int64_t ExpressionParser::ParseNumber() {
       } else {
         break;
       }
-      value = value * 16 + digit;
+      value = (value * 16) + digit;
     }
     return value;
   }
@@ -640,7 +640,7 @@ int64_t ExpressionParser::ParseNumber() {
           "Invalid binary number: expected 0 or 1 after 0b");
     }
     while (Peek() == '0' || Peek() == '1') {
-      value = value * 2 + (Consume() - '0');
+      value = (value * 2) + (Consume() - '0');
     }
     return value;
   }
@@ -651,7 +651,7 @@ int64_t ExpressionParser::ParseNumber() {
   }
   int64_t value = 0;
   while (std::isdigit(Peek())) {
-    value = value * 10 + (Consume() - '0');
+    value = (value * 10) + (Consume() - '0');
   }
   return value;
 }

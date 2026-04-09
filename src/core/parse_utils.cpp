@@ -101,7 +101,7 @@ uint32_t ParseHexSafe(const std::string &str, bool &success,
   // Parse the hex string with exception handling
   try {
     // std::stoul handles the conversion
-    uint32_t value = static_cast<uint32_t>(std::stoul(hex_part, nullptr, 16));
+    auto value = static_cast<uint32_t>(std::stoul(hex_part, nullptr, 16));
     success = true;
     return value;
   } catch (const std::invalid_argument &e) {
@@ -131,7 +131,7 @@ uint64_t ParseBinary(const std::string &str) {
       throw std::invalid_argument("Invalid binary digit '" + std::string(1, c) +
                                   "' in binary string: '" + str + "'");
     }
-    value = value * 2 + (c - '0');
+    value = (value * 2) + (c - '0');
   }
 
   return value;
@@ -149,7 +149,7 @@ uint64_t ParseDecimal(const std::string &str) {
                                   std::string(1, c) + "' in decimal string: '" +
                                   str + "'");
     }
-    value = value * 10 + (c - '0');
+    value = (value * 10) + (c - '0');
   }
 
   return value;
@@ -166,7 +166,7 @@ uint64_t ParseOctal(const std::string &str) {
       throw std::invalid_argument("Invalid octal digit '" + std::string(1, c) +
                                   "' in octal string: '" + str + "'");
     }
-    value = value * 8 + (c - '0');
+    value = (value * 8) + (c - '0');
   }
 
   return value;

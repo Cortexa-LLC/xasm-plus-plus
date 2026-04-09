@@ -100,11 +100,11 @@ bool Z80NumberParser::TryParse(const std::string &token, int64_t &value) const {
     // Convert to value using ParseHexDigit utility
     value = 0;
     for (char c : hex_part) {
-      int digit;
+      int digit = 0;
       if (!ParseHexDigit(c, digit)) {
         return false; // Should not happen due to validation above
       }
-      value = value * RADIX_HEXADECIMAL + digit;
+      value = (value * RADIX_HEXADECIMAL) + digit;
     }
     return true;
   }
@@ -121,11 +121,11 @@ bool Z80NumberParser::TryParse(const std::string &token, int64_t &value) const {
     // Validate all characters are octal digits (0-7) and convert to value
     value = 0;
     for (char c : octal_part) {
-      int digit;
+      int digit = 0;
       if (!ParseOctalDigit(c, digit)) {
         return false;
       }
-      value = value * RADIX_OCTAL + digit;
+      value = (value * RADIX_OCTAL) + digit;
     }
     return true;
   }
@@ -142,11 +142,11 @@ bool Z80NumberParser::TryParse(const std::string &token, int64_t &value) const {
     // Validate all characters are binary digits (0-1) and convert to value
     value = 0;
     for (char c : binary_part) {
-      int digit;
+      int digit = 0;
       if (!ParseBinaryDigit(c, digit)) {
         return false;
       }
-      value = value * RADIX_BINARY + digit;
+      value = (value * RADIX_BINARY) + digit;
     }
     return true;
   }
@@ -163,11 +163,11 @@ bool Z80NumberParser::TryParse(const std::string &token, int64_t &value) const {
     // Validate all characters are decimal digits and convert to value
     value = 0;
     for (char c : decimal_part) {
-      int digit;
+      int digit = 0;
       if (!ParseDecimalDigit(c, digit)) {
         return false;
       }
-      value = value * 10 + digit;
+      value = (value * 10) + digit;
     }
     return true;
   }
@@ -175,7 +175,7 @@ bool Z80NumberParser::TryParse(const std::string &token, int64_t &value) const {
   // No explicit suffix - use current radix
   // Check if ALL characters are valid digits for the current radix
   for (char c : token) {
-    int digit_value;
+    int digit_value = 0;
     if (c >= '0' && c <= '9') {
       digit_value = c - '0';
     } else if (c >= 'A' && c <= 'F') {
@@ -197,11 +197,11 @@ bool Z80NumberParser::TryParse(const std::string &token, int64_t &value) const {
   // ParseHexDigit
   value = 0;
   for (char c : token) {
-    int digit;
+    int digit = 0;
     if (!ParseHexDigit(c, digit)) {
       return false; // Should not happen due to validation above
     }
-    value = value * radix_ + digit;
+    value = (value * radix_) + digit;
   }
   return true;
 }
@@ -298,12 +298,12 @@ void EdtasmM80PlusPlusSyntaxParser::Parse(const std::string &source,
   std::tm *local_time = std::localtime(&now_time);
 
   // DATE: YYYYMMDD format
-  int date_value = (local_time->tm_year + 1900) * 10000 +
-                   (local_time->tm_mon + 1) * 100 + local_time->tm_mday;
+  int date_value = ((local_time->tm_year + 1900) * 10000) +
+                   ((local_time->tm_mon + 1) * 100) + local_time->tm_mday;
   symbols.DefineLabel("DATE", date_value);
 
   // TIME: HHMMSS format
-  int time_value = local_time->tm_hour * 10000 + local_time->tm_min * 100 +
+  int time_value = (local_time->tm_hour * 10000) + (local_time->tm_min * 100) +
                    local_time->tm_sec;
   symbols.DefineLabel("TIME", time_value);
 
@@ -632,7 +632,7 @@ void EdtasmM80PlusPlusSyntaxParser::ParseLine(const std::string &line,
     std::string trimmed_operand = Trim(operand);
     if (!trimmed_operand.empty()) {
       std::string remaining = trimmed_operand;
-      size_t comma_pos;
+      size_t comma_pos = 0;
       while ((comma_pos = remaining.find(',')) != std::string::npos) {
         std::string arg = Trim(remaining.substr(0, comma_pos));
         args.push_back(arg);
@@ -707,8 +707,8 @@ uint32_t EdtasmM80PlusPlusSyntaxParser::EstimateZ80InstructionSize(
   if (operand.find("IX") != std::string::npos ||
       operand.find("IY") != std::string::npos) {
     // With displacement: prefix + opcode + displacement
-    if (operand.find("(") != std::string::npos) {
-      return operand.find(",") != std::string::npos
+    if (operand.find('(') != std::string::npos) {
+      return operand.find(',') != std::string::npos
                  ? 4
                  : INSTRUCTION_SIZE_THREE_BYTES; // With or without immediate
     }
@@ -837,7 +837,7 @@ uint32_t EdtasmM80PlusPlusSyntaxParser::ParseNumber(const std::string &str) {
   // Explicit format overrides radix
   // Hex: $FF, 0xFF, 0FFH
   if (trimmed[0] == HEX_PREFIX_DOLLAR) {
-    bool success;
+    bool success = false;
     std::string error_msg;
     uint32_t result = ParseHexSafe(trimmed, success, error_msg);
     if (!success) {
@@ -848,7 +848,7 @@ uint32_t EdtasmM80PlusPlusSyntaxParser::ParseNumber(const std::string &str) {
              (trimmed[1] == HEX_PREFIX_0X || trimmed[1] == 'X')) {
     // 0xFF format - ParseHex expects just hex digits, so add $ prefix
     std::string hex_str = "$" + trimmed.substr(2);
-    bool success;
+    bool success = false;
     std::string error_msg;
     uint32_t result = ParseHexSafe(hex_str, success, error_msg);
     if (!success) {
@@ -859,7 +859,7 @@ uint32_t EdtasmM80PlusPlusSyntaxParser::ParseNumber(const std::string &str) {
              (trimmed.back() == 'H' || trimmed.back() == 'h')) {
     // 0FFH format - ParseHex expects $ prefix
     std::string hex_str = "$" + trimmed.substr(0, trimmed.size() - 1);
-    bool success;
+    bool success = false;
     std::string error_msg;
     uint32_t result = ParseHexSafe(hex_str, success, error_msg);
     if (!success) {
@@ -897,7 +897,7 @@ uint32_t EdtasmM80PlusPlusSyntaxParser::ParseNumber(const std::string &str) {
       return static_cast<uint32_t>(ParseDecimal(trimmed));
     } else if (current_radix_ == RADIX_HEXADECIMAL) {
       std::string hex_str = "$" + trimmed;
-      bool success;
+      bool success = false;
       std::string error_msg;
       uint32_t result = ParseHexSafe(hex_str, success, error_msg);
       if (!success) {

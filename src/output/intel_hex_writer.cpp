@@ -185,7 +185,7 @@ IntelHexWriter::ExtractBytes(const Section &section) {
       // Data atom - extract bytes
       auto data_atom = std::static_pointer_cast<DataAtom>(atom);
       for (uint8_t byte : data_atom->data) {
-        result.push_back({current_address, byte});
+        result.emplace_back(current_address, byte);
         current_address++;
       }
       break;
@@ -195,7 +195,7 @@ IntelHexWriter::ExtractBytes(const Section &section) {
       // Instruction atom - extract encoded bytes
       auto inst_atom = std::static_pointer_cast<InstructionAtom>(atom);
       for (uint8_t byte : inst_atom->encoded_bytes) {
-        result.push_back({current_address, byte});
+        result.emplace_back(current_address, byte);
         current_address++;
       }
       break;

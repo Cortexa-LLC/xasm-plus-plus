@@ -518,7 +518,7 @@ MerlinSyntaxParser::ScopeLocalLabelsInOperand(const std::string &operand) const 
   }
 
   std::string result;
-  result.reserve(operand.size() + current_scope_.global_label.size() * 2);
+  result.reserve(operand.size() + (current_scope_.global_label.size() * 2));
 
   for (size_t i = 0; i < operand.size();) {
     char c = operand[i];
@@ -1167,7 +1167,7 @@ void MerlinSyntaxParser::HandleMx(const std::string &operand) {
     if (binary.length() == 2 &&
         (binary[0] == '0' || binary[0] == '1') &&
         (binary[1] == '0' || binary[1] == '1')) {
-      mode = (binary[0] - '0') * 2 + (binary[1] - '0');
+      mode = ((binary[0] - '0') * 2) + (binary[1] - '0');
     } else {
       throw std::runtime_error(
           FormatError("MX directive expects binary %00-%11 or decimal 0-3"));

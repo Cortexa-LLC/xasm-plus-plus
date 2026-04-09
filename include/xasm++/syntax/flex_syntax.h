@@ -219,7 +219,7 @@ private:
    * @return Parsed numeric value
    * @throws std::runtime_error on invalid format
    */
-  uint32_t ParseNumber(const std::string &str);
+  static uint32_t ParseNumber(const std::string &str);
 
   /**
    * @brief Strip comments from line
@@ -251,7 +251,7 @@ private:
    * @param line Line to check
    * @return true if comment line
    */
-  bool IsCommentLine(const std::string &line);
+  static bool IsCommentLine(const std::string &line);
 
   // ========== Macro Processor Methods ==========
 

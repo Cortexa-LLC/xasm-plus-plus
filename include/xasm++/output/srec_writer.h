@@ -138,7 +138,7 @@ private:
    * @param address Address field
    * @param data Data bytes (may be empty)
    */
-  void WriteRecord(std::ostream &output, int record_type, uint64_t address,
+  static void WriteRecord(std::ostream &output, int record_type, uint64_t address,
                    const std::vector<uint8_t> &data);
 
   /**
@@ -190,8 +190,7 @@ private:
    * @param section Section to extract bytes from
    * @return Vector of (address, byte) pairs
    */
-  std::vector<std::pair<uint64_t, uint8_t>>
-  static ExtractBytes(const Section &section);
+  static std::vector<std::pair<uint64_t, uint8_t>> ExtractBytes(const Section &section);
 
   /**
    * @brief Get address size in bytes for format type

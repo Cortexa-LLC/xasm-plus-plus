@@ -93,7 +93,7 @@ char ParseString(const std::string &operand, std::vector<uint8_t> &result) {
 // Delimiter >= 0x27: SET high bit
 // Delimiter < 0x27: CLEAR high bit
 uint8_t ApplyInvertedHighBitRule(char c, char delimiter) {
-  uint8_t result = static_cast<uint8_t>(c);
+  auto result = static_cast<uint8_t>(c);
 
   if (delimiter >= HIGH_BIT_DELIMITER_THRESHOLD) {
     // Set high bit (inverted from normal rule)
@@ -792,7 +792,7 @@ void HandleHs(const std::string &label, const std::string &operand,
        i += constants::HEX_DIGITS_PER_BYTE) {
     std::string byte_str =
         "$" + hex_digits.substr(i, constants::HEX_DIGITS_PER_BYTE);
-    bool success;
+    bool success = false;
     std::string error_msg;
     uint32_t byte_val = xasm::ParseHexSafe(byte_str, success, error_msg);
     if (!success) {
@@ -1528,7 +1528,7 @@ void HandlePh(const std::string &label, const std::string &operand,
       EvaluateExpression(ph_expr, *context.symbols, context.parser_state);
 
   // Calculate current real address
-  uint32_t real_addr;
+  uint32_t real_addr = 0;
   if (parser->InPhase()) {
     // If already in phase, calculate real address from phase state
     real_addr = parser->GetCurrentRealAddress(*context.current_address);
@@ -1562,7 +1562,7 @@ void HandleHx(const std::string &label, const std::string &operand,
     }
 
     // Convert single hex digit to nibble value (0-15)
-    int val;
+    int val = 0;
     if (!ParseHexDigit(c, val)) {
       ThrowFormattedError("Invalid hex digit in .HX: " + std::string(1, c),
                          context);

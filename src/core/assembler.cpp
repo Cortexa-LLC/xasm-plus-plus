@@ -229,7 +229,7 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
                   data->data.push_back(static_cast<uint8_t>(value & 0xFF));
                 } else if (data->data_size == DataSize::Long) {
                   // Long data (DA in 65816 mode) - 24-bit little-endian
-                  uint32_t word = static_cast<uint32_t>(value);
+                  auto word = static_cast<uint32_t>(value);
                   data->data.push_back(static_cast<uint8_t>(word & 0xFF));
                   data->data.push_back(
                       static_cast<uint8_t>((word >> 8) & 0xFF));
@@ -237,7 +237,7 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
                       static_cast<uint8_t>((word >> 16) & 0xFF));
                 } else {
                   // Word data (DW/DA) - little-endian
-                  uint32_t word = static_cast<uint32_t>(value);
+                  auto word = static_cast<uint32_t>(value);
                   data->data.push_back(static_cast<uint8_t>(word & 0xFF));
                   data->data.push_back(
                       static_cast<uint8_t>((word >> 8) & 0xFF));
@@ -336,7 +336,7 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
                 // Try to resolve as symbol.  ConcreteSymbolTable::Lookup
                 // handles SCMASM uppercase fallback internally
                 // (ADR-005 V1: migration complete — no manual toupper here).
-                int64_t symbol_value;
+                int64_t symbol_value = 0;
                 int64_t expr_offset = 0;
                 std::string lookup_name = trimmed;
                 if (!symbols.Lookup(lookup_name, symbol_value)) {
@@ -730,14 +730,14 @@ void Assembler::RefixupDataAtoms(ConcreteSymbolTable &symbols,
               if (data->data_size == DataSize::Byte) {
                 data->data.push_back(static_cast<uint8_t>(value & 0xFF));
               } else if (data->data_size == DataSize::Long) {
-                uint32_t word = static_cast<uint32_t>(value);
+                auto word = static_cast<uint32_t>(value);
                 data->data.push_back(static_cast<uint8_t>(word & 0xFF));
                 data->data.push_back(
                     static_cast<uint8_t>((word >> 8) & 0xFF));
                 data->data.push_back(
                     static_cast<uint8_t>((word >> 16) & 0xFF));
               } else {
-                uint32_t word = static_cast<uint32_t>(value);
+                auto word = static_cast<uint32_t>(value);
                 data->data.push_back(static_cast<uint8_t>(word & 0xFF));
                 data->data.push_back(
                     static_cast<uint8_t>((word >> 8) & 0xFF));

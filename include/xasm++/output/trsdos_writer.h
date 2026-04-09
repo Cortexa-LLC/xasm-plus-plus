@@ -118,7 +118,7 @@ private:
    * @param address Load address
    * @param data Data bytes
    */
-  void WriteSegment(std::ostream &output, uint8_t type, uint64_t address,
+  static void WriteSegment(std::ostream &output, uint8_t type, uint64_t address,
                     const std::vector<uint8_t> &data);
 
   /**
@@ -138,8 +138,7 @@ private:
    * @param section Section to extract bytes from
    * @return Vector of (address, byte) pairs
    */
-  std::vector<std::pair<uint64_t, uint8_t>>
-  static ExtractBytes(const Section &section);
+  static std::vector<std::pair<uint64_t, uint8_t>> ExtractBytes(const Section &section);
 };
 
 } // namespace xasm

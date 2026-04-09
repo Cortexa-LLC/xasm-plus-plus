@@ -74,7 +74,7 @@ uint32_t FlexAsmSyntax::ParseNumber(const std::string &str) {
     std::string binary = trimmed.substr(1);
     uint32_t value = 0;
     for (char c : binary) {
-      int digit;
+      int digit = 0;
       if (!ParseBinaryDigit(c, digit)) {
         throw std::runtime_error("Invalid binary digit: " + std::string(1, c));
       }
@@ -754,8 +754,8 @@ bool FlexAsmSyntax::EvaluateCondition(const std::string &condition) {
       if (plus_pos != std::string::npos) {
         std::string left = Trim(trimmed.substr(0, plus_pos));
         std::string right = Trim(trimmed.substr(plus_pos + 1));
-        int64_t left_val = static_cast<int64_t>(ParseNumber(left));
-        int64_t right_val = static_cast<int64_t>(ParseNumber(right));
+        auto left_val = static_cast<int64_t>(ParseNumber(left));
+        auto right_val = static_cast<int64_t>(ParseNumber(right));
         result = left_val + right_val;
         return result != 0;
       }
@@ -765,8 +765,8 @@ bool FlexAsmSyntax::EvaluateCondition(const std::string &condition) {
       if (minus_pos != std::string::npos && minus_pos > 0) {
         std::string left = Trim(trimmed.substr(0, minus_pos));
         std::string right = Trim(trimmed.substr(minus_pos + 1));
-        int64_t left_val = static_cast<int64_t>(ParseNumber(left));
-        int64_t right_val = static_cast<int64_t>(ParseNumber(right));
+        auto left_val = static_cast<int64_t>(ParseNumber(left));
+        auto right_val = static_cast<int64_t>(ParseNumber(right));
         result = left_val - right_val;
         return result != 0;
       }
@@ -786,7 +786,7 @@ bool FlexAsmSyntax::EvaluateCondition(const std::string &condition) {
     // Not a number, might be a symbol name
     // Check if symbol exists in the symbol table
     if (current_symbols_ != nullptr) {
-      int64_t value;
+      int64_t value = 0;
       // Symbol exists and has a value means condition is true
       return current_symbols_->Lookup(trimmed, value);
     }

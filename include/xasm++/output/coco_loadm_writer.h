@@ -130,7 +130,7 @@ private:
    * @param first_address Address of first data block (0 if none)
    * @param total_length Total length of all data (0 if none)
    */
-  void WritePreamble(std::ostream &output, uint64_t first_address,
+  static void WritePreamble(std::ostream &output, uint64_t first_address,
                      size_t total_length);
 
   /**
@@ -140,7 +140,7 @@ private:
    * @param address Load address
    * @param data Data bytes
    */
-  void WriteDataBlock(std::ostream &output, uint64_t address,
+  static void WriteDataBlock(std::ostream &output, uint64_t address,
                       const std::vector<uint8_t> &data);
 
   /**
@@ -167,8 +167,7 @@ private:
    * @param section Section to extract bytes from
    * @return Vector of (address, byte) pairs
    */
-  std::vector<std::pair<uint64_t, uint8_t>>
-  static ExtractBytes(const Section &section);
+  static std::vector<std::pair<uint64_t, uint8_t>> ExtractBytes(const Section &section);
 };
 
 } // namespace xasm

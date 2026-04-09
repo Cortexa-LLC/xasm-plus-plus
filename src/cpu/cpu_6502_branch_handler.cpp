@@ -24,7 +24,7 @@ uint8_t Cpu6502BranchHandler::GetComplementaryBranchOpcode(
 }
 
 std::vector<uint8_t> Cpu6502BranchHandler::EncodeBranchWithRelaxation(
-    uint8_t branch_opcode, uint16_t current_addr, uint16_t target_addr) const {
+    uint8_t branch_opcode, uint16_t current_addr, uint16_t target_addr) {
   std::vector<uint8_t> bytes;
 
   if (!NeedsBranchRelaxation(current_addr, target_addr)) {

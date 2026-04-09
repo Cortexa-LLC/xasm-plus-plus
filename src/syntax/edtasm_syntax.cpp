@@ -94,7 +94,7 @@ uint32_t EdtasmSyntaxParser::ParseNumber(const std::string &str) {
     std::string binary = trimmed.substr(1);
     uint32_t value = 0;
     for (char c : binary) {
-      int digit;
+      int digit = 0;
       if (!ParseBinaryDigit(c, digit)) {
         throw std::runtime_error("Invalid binary digit: " + std::string(1, c));
       }

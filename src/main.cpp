@@ -26,6 +26,7 @@
 #include <iostream>
 #include <optional>
 #include <sstream>
+#include <unordered_map>
 
 // Forward declaration (implemented in cli_parser.cpp)
 namespace xasm {
@@ -99,21 +100,20 @@ int main(int argc, char **argv) {
     Cpu6809 cpu6809;
     CpuZ80 cpu_z80;
 
+    // Map 6502-family CPU name strings to CpuMode enum values
+    static const std::unordered_map<std::string, CpuMode> k6502Modes = {
+        {cpu::CPU_6502, CpuMode::Cpu6502},
+        {cpu::CPU_65C02, CpuMode::Cpu65C02},
+        {cpu::CPU_65C02_ROCK, CpuMode::Cpu65C02Rock},
+        {cpu::CPU_65816, CpuMode::Cpu65816},
+    };
+
     if (opts.cpu == cpu::CPU_6809) {
       cpu = &cpu6809;
     } else if (opts.cpu == cpu::CPU_Z80) {
       cpu = &cpu_z80;
-    } else if (opts.cpu == cpu::CPU_6502) {
-      cpu6502.SetCpuMode(CpuMode::Cpu6502);
-      cpu = &cpu6502;
-    } else if (opts.cpu == cpu::CPU_65C02) {
-      cpu6502.SetCpuMode(CpuMode::Cpu65C02);
-      cpu = &cpu6502;
-    } else if (opts.cpu == cpu::CPU_65C02_ROCK) {
-      cpu6502.SetCpuMode(CpuMode::Cpu65C02Rock);
-      cpu = &cpu6502;
-    } else if (opts.cpu == cpu::CPU_65816) {
-      cpu6502.SetCpuMode(CpuMode::Cpu65816);
+    } else if (auto it = k6502Modes.find(opts.cpu); it != k6502Modes.end()) {
+      cpu6502.SetCpuMode(it->second);
       cpu = &cpu6502;
     } else {
       std::cerr << "Error: Unknown CPU type: " << opts.cpu << "\n";
@@ -267,7 +267,8 @@ int main(int argc, char **argv) {
     // Note: Section was modified in-place by Assemble()
     std::vector<Section *> sections = {&section};
     try {
-      if (opts.format == OutputFormat::IntelHex) {
+      switch (opts.format) {
+      case OutputFormat::IntelHex: {
         // Write Intel HEX format
         IntelHexWriter ihex_writer;
         std::ofstream ihex_out(opts.output);
@@ -280,7 +281,9 @@ int main(int argc, char **argv) {
           sec_copies.push_back(*sp);
         }
         ihex_writer.Write(sec_copies, ihex_out);
-      } else if (opts.format == OutputFormat::SRecord) {
+        break;
+      }
+      case OutputFormat::SRecord: {
         // Write Motorola S-Record format
         SRecordWriter srec_writer;
         std::ofstream srec_out(opts.output);
@@ -293,12 +296,16 @@ int main(int argc, char **argv) {
           sec_copies.push_back(*sp);
         }
         srec_writer.Write(sec_copies, srec_out);
-      } else {
+        break;
+      }
+      default: {
         // Default: binary format
         BinaryOutput output;
         const std::array<uint16_t, 4> *rw18_ptr =
             rw18_header_args.has_value() ? &rw18_header_args.value() : nullptr;
         output.WriteOutputWithRw18(opts.output, sections, symbols, rw18_ptr);
+        break;
+      }
       }
     } catch (const std::filesystem::filesystem_error &e) {
       std::cerr << "File I/O error: " << e.what() << "\n";
