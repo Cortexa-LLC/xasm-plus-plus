@@ -378,12 +378,12 @@ void EdtasmM80PlusPlusSyntaxParser::ParseLine(const std::string &line,
                  ::toupper);
 
   bool is_endm = (upper_line == ENDM ||
-                  upper_line.rfind(std::string(ENDM) + " ", 0) == 0 ||
-                  upper_line.rfind(std::string(ENDM) + "\t", 0) == 0);
+                  upper_line.starts_with(std::string(ENDM) + " ") ||
+                  upper_line.starts_with(std::string(ENDM) + "\t"));
 
   bool is_end =
-      (upper_line == END || upper_line.rfind(std::string(END) + " ", 0) == 0 ||
-       upper_line.rfind(std::string(END) + "\t", 0) == 0);
+      (upper_line == END || upper_line.starts_with(std::string(END) + " ") ||
+       upper_line.starts_with(std::string(END) + "\t"));
 
   // Check if this is a LOCAL directive (should be processed immediately in
   // macro definition)
@@ -392,8 +392,8 @@ void EdtasmM80PlusPlusSyntaxParser::ParseLine(const std::string &line,
   if (first_non_space != std::string::npos) {
     trimmed_upper = trimmed_upper.substr(first_non_space);
   }
-  bool is_local = (trimmed_upper.rfind(std::string(LOCAL) + " ", 0) == 0 ||
-                   trimmed_upper.rfind(std::string(LOCAL) + "\t", 0) == 0);
+  bool is_local = (trimmed_upper.starts_with(std::string(LOCAL) + " ") ||
+                   trimmed_upper.starts_with(std::string(LOCAL) + "\t"));
 
   if (trimmed_line.find(LOCAL) != std::string::npos) {
   }
@@ -432,14 +432,14 @@ void EdtasmM80PlusPlusSyntaxParser::ParseLine(const std::string &line,
       !is_local && !is_end) {
     if (in_macro_definition_) {
       // Check for nested MACRO/REPT/IRP/IRPC to track nesting
-      if (upper_line.rfind(std::string(MACRO) + " ", 0) == 0 ||
-          upper_line.rfind(std::string(MACRO) + "\t", 0) == 0 ||
-          upper_line.rfind(std::string(REPT) + " ", 0) == 0 ||
-          upper_line.rfind(std::string(REPT) + "\t", 0) == 0 ||
-          upper_line.rfind(std::string(IRP) + " ", 0) == 0 ||
-          upper_line.rfind(std::string(IRP) + "\t", 0) == 0 ||
-          upper_line.rfind(std::string(IRPC) + " ", 0) == 0 ||
-          upper_line.rfind(std::string(IRPC) + "\t", 0) == 0) {
+      if (upper_line.starts_with(std::string(MACRO) + " ") ||
+          upper_line.starts_with(std::string(MACRO) + "\t") ||
+          upper_line.starts_with(std::string(REPT) + " ") ||
+          upper_line.starts_with(std::string(REPT) + "\t") ||
+          upper_line.starts_with(std::string(IRP) + " ") ||
+          upper_line.starts_with(std::string(IRP) + "\t") ||
+          upper_line.starts_with(std::string(IRPC) + " ") ||
+          upper_line.starts_with(std::string(IRPC) + "\t")) {
         macro_nesting_depth_++;
         current_macro_.body.push_back(trimmed_line);
         return;
@@ -463,14 +463,14 @@ void EdtasmM80PlusPlusSyntaxParser::ParseLine(const std::string &line,
     } else {
       // In repeat block - track nesting depth for nested REPT/IRP/IRPC/MACRO
       // blocks
-      if (upper_line.rfind(std::string(MACRO) + " ", 0) == 0 ||
-          upper_line.rfind(std::string(MACRO) + "\t", 0) == 0 ||
-          upper_line.rfind(std::string(REPT) + " ", 0) == 0 ||
-          upper_line.rfind(std::string(REPT) + "\t", 0) == 0 ||
-          upper_line.rfind(std::string(IRP) + " ", 0) == 0 ||
-          upper_line.rfind(std::string(IRP) + "\t", 0) == 0 ||
-          upper_line.rfind(std::string(IRPC) + " ", 0) == 0 ||
-          upper_line.rfind(std::string(IRPC) + "\t", 0) == 0) {
+      if (upper_line.starts_with(std::string(MACRO) + " ") ||
+          upper_line.starts_with(std::string(MACRO) + "\t") ||
+          upper_line.starts_with(std::string(REPT) + " ") ||
+          upper_line.starts_with(std::string(REPT) + "\t") ||
+          upper_line.starts_with(std::string(IRP) + " ") ||
+          upper_line.starts_with(std::string(IRP) + "\t") ||
+          upper_line.starts_with(std::string(IRPC) + " ") ||
+          upper_line.starts_with(std::string(IRPC) + "\t")) {
         repeat_nesting_depth_++;
         repeat_body_.push_back(trimmed_line);
         return;
@@ -624,7 +624,7 @@ void EdtasmM80PlusPlusSyntaxParser::ParseLine(const std::string &line,
   }
 
   // Check if it's a macro invocation
-  if (macros_.find(upper_mnemonic) != macros_.end()) {
+  if (macros_.contains(upper_mnemonic)) {
     const MacroDefinition &macro = macros_[upper_mnemonic];
 
     // Parse arguments
@@ -696,7 +696,7 @@ uint32_t EdtasmM80PlusPlusSyntaxParser::EstimateZ80InstructionSize(
   // Actual encoding will be done by CPU plugin (Phase 9+)
 
   // Extended instructions (ED prefix) - typically 2+ bytes
-  if (mnemonic.find("LD") == 0 && (operand.find("I,") != std::string::npos ||
+  if (mnemonic.starts_with("LD") && (operand.find("I,") != std::string::npos ||
                                    operand.find("R,") != std::string::npos ||
                                    operand.find(",I") != std::string::npos ||
                                    operand.find(",R") != std::string::npos)) {
@@ -807,7 +807,7 @@ EdtasmM80PlusPlusSyntaxParser::ParseLabel(const std::string &line, size_t &pos,
 
   // Create label atom ONLY if not a macro LOCAL label
   // Macro LOCAL labels should not create atoms (only used for references)
-  if (macro_local_labels_.find(potential_label) == macro_local_labels_.end()) {
+  if (!macro_local_labels_.contains(potential_label)) {
     auto label_atom =
         std::make_shared<LabelAtom>(potential_label, current_address_);
     label_atom->location = SourceLocation(current_file_, current_line_, 1);

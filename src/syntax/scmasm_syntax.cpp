@@ -416,7 +416,7 @@ void ScmasmSyntaxParser::Parse(const std::string &source, Section &section,
       std::transform(upper_line.begin(), upper_line.end(), upper_line.begin(),
                      ::toupper);
 
-      if (upper_line.find(".EM") == 0 || upper_line.find(".ENDM") == 0) {
+      if (upper_line.starts_with(".EM") || upper_line.starts_with(".ENDM")) {
         // End macro definition
         HandleEm();
         line_idx++;
@@ -1288,7 +1288,7 @@ std::string ScmasmSyntaxParser::ParseLabel(const std::string &line, size_t &pos,
     // Check if this is a macro name (not a label)
     // Macros are invoked from the mnemonic field; a macro name in the label
     // field (column 0) is a label definition, not a macro call.
-    if (macros_.find(label_upper) != macros_.end()) {
+    if (macros_.contains(label_upper)) {
       pos = label_start;
       return "";
     }
@@ -1305,7 +1305,7 @@ std::string ScmasmSyntaxParser::ParseLabel(const std::string &line, size_t &pos,
     // These are common mnemonics that define data/storage
     static const std::unordered_set<std::string> pseudo_ops = {"DB", "DW",
                                                                 "DS"};
-    if (pseudo_ops.find(label_upper) != pseudo_ops.end()) {
+    if (pseudo_ops.contains(label_upper)) {
       // This is a pseudo-op, not a label
       pos = label_start;
       return "";
@@ -2406,9 +2406,9 @@ void ScmasmSyntaxParser::HandleLu(const std::string &label,
     std::transform(upper.begin(), upper.end(), upper.begin(), ::toupper);
 
     using namespace scmasm::directives;
-    if (upper.find(LU) == 0) {
+    if (upper.starts_with(LU)) {
       nesting++;
-    } else if (upper.find(ENDU) == 0) {
+    } else if (upper.starts_with(ENDU)) {
       nesting--;
       if (nesting == 0) {
         endu_line = i;

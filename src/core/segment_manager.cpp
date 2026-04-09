@@ -19,7 +19,7 @@ void SegmentManager::SwitchToSegment(SegmentType type) {
   current_common_name_.clear();
 
   // Ensure segment exists
-  if (segments_.find(type) == segments_.end()) {
+  if (!segments_.contains(type)) {
     segments_[type] = SegmentState{};
   }
 }
@@ -29,7 +29,7 @@ void SegmentManager::SwitchToCommon(const std::string &name) {
   current_common_name_ = name;
 
   // Ensure COMMON block exists
-  if (common_blocks_.find(name) == common_blocks_.end()) {
+  if (!common_blocks_.contains(name)) {
     common_blocks_[name] = SegmentState{};
   }
 }

@@ -94,7 +94,7 @@ void ListingOutput::WriteOutput(const std::string &filename,
     for (size_t i = 0; i < section->atoms.size(); ++i) {
       const auto &atom = section->atoms[i];
       // Handle listing control directives
-      if (auto *ctrl = dynamic_cast<const ListingControlAtom *>(atom.get())) {
+      if (const auto *ctrl = dynamic_cast<const ListingControlAtom *>(atom.get())) {
         bool output_source = false;
 
         switch (ctrl->control_type) {
@@ -161,9 +161,9 @@ void ListingOutput::WriteOutput(const std::string &filename,
       // Skip if listing is disabled
       if (!listing_enabled) {
         // Still need to track address for instructions/data
-        if (auto *inst = dynamic_cast<const InstructionAtom *>(atom.get())) {
+        if (const auto *inst = dynamic_cast<const InstructionAtom *>(atom.get())) {
           current_address += inst->size;
-        } else if (auto *data = dynamic_cast<const DataAtom *>(atom.get())) {
+        } else if (const auto *data = dynamic_cast<const DataAtom *>(atom.get())) {
           current_address += data->data.size();
         }
         continue;
@@ -184,9 +184,9 @@ void ListingOutput::WriteOutput(const std::string &filename,
         source_text = atom->source_line;
       } else {
         // Fallback to constructing from atom type
-        if (auto *lbl = dynamic_cast<const LabelAtom *>(atom.get())) {
+        if (const auto *lbl = dynamic_cast<const LabelAtom *>(atom.get())) {
           source_text = lbl->name + ":";
-        } else if (auto *inst =
+        } else if (const auto *inst =
                        dynamic_cast<const InstructionAtom *>(atom.get())) {
           source_text = inst->mnemonic;
           if (!inst->operand.empty()) {
@@ -196,7 +196,7 @@ void ListingOutput::WriteOutput(const std::string &filename,
       }
 
       // Handle different atom types
-      if (auto *lbl = dynamic_cast<const LabelAtom *>(atom.get())) {
+      if (const auto *lbl = dynamic_cast<const LabelAtom *>(atom.get())) {
         // Label atom - check if next atom is on same line
         // If so, skip the label (it will be shown with the instruction)
         bool skip_label = false;
@@ -212,7 +212,7 @@ void ListingOutput::WriteOutput(const std::string &filename,
           file << line_num << "  " << FormatAddress(current_address)
                << "                        " << source_text << "\n";
         }
-      } else if (auto *inst =
+      } else if (const auto *inst =
                      dynamic_cast<const InstructionAtom *>(atom.get())) {
         // Instruction atom - show address, bytes, and source
         std::string bytes_str = FormatBytes(inst->encoded_bytes);
@@ -221,7 +221,7 @@ void ListingOutput::WriteOutput(const std::string &filename,
              << std::setw(output_format::LISTING_BYTES_COLUMN_WIDTH)
              << bytes_str << "  " << source_text << "\n";
         current_address += inst->encoded_bytes.size();
-      } else if (auto *data = dynamic_cast<const DataAtom *>(atom.get())) {
+      } else if (const auto *data = dynamic_cast<const DataAtom *>(atom.get())) {
         // Data atom - show address and bytes
         std::string bytes_str = FormatBytes(data->data);
         file << line_num << "  " << FormatAddress(current_address) << "     "
@@ -229,7 +229,7 @@ void ListingOutput::WriteOutput(const std::string &filename,
              << std::setw(output_format::LISTING_BYTES_COLUMN_WIDTH)
              << bytes_str << "  " << source_text << "\n";
         current_address += data->data.size();
-      } else if (auto *org = dynamic_cast<const OrgAtom *>(atom.get())) {
+      } else if (const auto *org = dynamic_cast<const OrgAtom *>(atom.get())) {
         // Org directive - update current address BEFORE outputting the line
         current_address = org->address;
         file << line_num << "  " << FormatAddress(org->address)

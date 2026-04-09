@@ -945,7 +945,7 @@ bool Cpu6809::HasOpcode(const std::string &mnemonic) const {
       M6809Mnemonics::NOP,
   };
 
-  return valid_opcodes.count(upper) > 0;
+  return valid_opcodes.contains(upper);
 }
 
 // ============================================================================

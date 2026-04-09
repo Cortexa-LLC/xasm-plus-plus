@@ -484,10 +484,10 @@ void FlexAsmSyntax::ParseLine(const std::string &line, Section &section,
     // Directives that define symbols but don't create label atoms
     static const std::unordered_set<std::string> symbol_directives = {EQU, SET};
 
-    if (directives_set.find(opcode_upper) != directives_set.end()) {
+    if (directives_set.contains(opcode_upper)) {
       // For non-symbol-defining directives, create label atom BEFORE directive
       if (!label.empty() &&
-          symbol_directives.find(opcode_upper) == symbol_directives.end()) {
+          !symbol_directives.contains(opcode_upper)) {
         section.atoms.push_back(
             std::make_shared<LabelAtom>(label, current_address_));
         symbols.DefineLabel(label, static_cast<int64_t>(current_address_));
@@ -589,11 +589,11 @@ bool FlexAsmSyntax::IsMacro(const std::string &name) const {
   std::string name_copy = name; // Need non-const for ToUpper
   std::transform(name_copy.begin(), name_copy.end(), name_copy.begin(),
                  [](unsigned char c) { return std::toupper(c); });
-  return macros_.find(name_copy) != macros_.end();
+  return macros_.contains(name_copy);
 }
 
 bool FlexAsmSyntax::IsMacroDefined(const std::string &name) const {
-  return macros_.find(name) != macros_.end();
+  return macros_.contains(name);
 }
 
 std::vector<std::string>

@@ -78,7 +78,7 @@ void SymbolOutput::WriteOutput(const std::string &filename,
   std::vector<SymbolInfo> symbol_list;
 
   // Get all symbols from the concrete symbol table
-  if (auto *concrete = dynamic_cast<const ConcreteSymbolTable *>(&symbols)) {
+  if (const auto *concrete = dynamic_cast<const ConcreteSymbolTable *>(&symbols)) {
     for (const auto &[name, symbol] : concrete->GetAllSymbols()) {
       SymbolInfo info;
       info.name = name;

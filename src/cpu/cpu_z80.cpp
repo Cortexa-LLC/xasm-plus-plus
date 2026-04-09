@@ -41,7 +41,7 @@ CpuZ80::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
   // LD instruction - various addressing modes
   if (mnemonic == LD) {
     // Check for "BC, #$xxxx" pattern (16-bit immediate to BC)
-    if (trimmed.find("BC,") == 0 || trimmed.find("BC ,") == 0) {
+    if (trimmed.starts_with("BC,") || trimmed.starts_with("BC ,")) {
       size_t comma_pos = trimmed.find(',');
       if (comma_pos != std::string::npos) {
         std::string value_part = util::Trim(trimmed.substr(comma_pos + 1));
@@ -51,7 +51,7 @@ CpuZ80::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
       }
     }
     // Check for "A, #$xx" pattern (immediate load to A)
-    if (trimmed.find("A,") == 0 || trimmed.find("A ,") == 0) {
+    if (trimmed.starts_with("A,") || trimmed.starts_with("A ,")) {
       size_t comma_pos = trimmed.find(',');
       if (comma_pos != std::string::npos) {
         std::string value_part = util::Trim(trimmed.substr(comma_pos + 1));
@@ -66,7 +66,7 @@ CpuZ80::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
   // ADD instruction
   if (mnemonic == ADD) {
     // Check for "A, #$xx" pattern (add immediate to A)
-    if (trimmed.find("A,") == 0 || trimmed.find("A ,") == 0) {
+    if (trimmed.starts_with("A,") || trimmed.starts_with("A ,")) {
       return EncodeADD_A_n(static_cast<uint8_t>(operand));
     }
   }
@@ -638,7 +638,7 @@ bool CpuZ80::HasOpcode(const std::string &mnemonic) const {
       // Interrupt
       Z80Mnemonics::RETI, Z80Mnemonics::RETN, Z80Mnemonics::IM};
 
-  return valid_opcodes.find(upper) != valid_opcodes.end();
+  return valid_opcodes.contains(upper);
 }
 
 } // namespace xasm

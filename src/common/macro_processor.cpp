@@ -42,7 +42,7 @@ void MacroProcessor::DefineMacro(const std::string &name,
 }
 
 bool MacroProcessor::IsMacro(const std::string &name) const {
-  return macros_.find(ToUpper(name)) != macros_.end();
+  return macros_.contains(ToUpper(name));
 }
 
 const MacroDefinition *MacroProcessor::GetMacro(const std::string &name) const {

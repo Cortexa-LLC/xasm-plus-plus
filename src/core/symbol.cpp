@@ -83,7 +83,7 @@ Symbol *ConcreteSymbolTable::GetSymbol(const std::string &name) {
 }
 
 bool ConcreteSymbolTable::IsDefined(const std::string &name) const {
-  return symbols_.find(name) != symbols_.end();
+  return symbols_.contains(name);
 }
 
 const std::unordered_map<std::string, Symbol> &

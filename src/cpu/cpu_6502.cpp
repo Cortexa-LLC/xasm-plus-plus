@@ -1273,7 +1273,7 @@ size_t Cpu6502::GetInstructionSize(const std::string &mnemonic,
       M6502Mnemonics::BVC, M6502Mnemonics::BVS, M6502Mnemonics::BRA,
       M6502Mnemonics::BLT, // alias for BCC
   };
-  if (BRANCHES.count(mn)) {
+  if (BRANCHES.contains(mn)) {
     return 2;
   }
 
@@ -2738,28 +2738,28 @@ bool Cpu6502::HasOpcode(const std::string &mnemonic) const {
       M6502Mnemonics::REP, M6502Mnemonics::SEP};
 
   // All modes include the base 6502 opcode set
-  if (base_opcodes.count(upper)) {
+  if (base_opcodes.contains(upper)) {
     return true;
   }
 
   // 65C02 additions are recognised in 65C02, 65C02 Rockwell, and 65816 modes
   if (cpu_mode_ == CpuMode::Cpu65C02 || cpu_mode_ == CpuMode::Cpu65C02Rock ||
       cpu_mode_ == CpuMode::Cpu65816) {
-    if (c02_opcodes.count(upper)) {
+    if (c02_opcodes.contains(upper)) {
       return true;
     }
   }
 
   // Rockwell extensions are only recognised in the Rockwell variant
   if (cpu_mode_ == CpuMode::Cpu65C02Rock) {
-    if (rockwell_opcodes.count(upper)) {
+    if (rockwell_opcodes.contains(upper)) {
       return true;
     }
   }
 
   // 65816-only opcodes are only recognised in 65816 mode
   if (cpu_mode_ == CpuMode::Cpu65816) {
-    if (w816_opcodes.count(upper)) {
+    if (w816_opcodes.contains(upper)) {
       return true;
     }
   }

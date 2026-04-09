@@ -971,7 +971,7 @@ void HandleInb(const std::string &label, const std::string &operand,
       std::string normalized_virtual = virtual_path_obj.generic_string();
 
       // Check if normalized_path starts with normalized_virtual
-      if (normalized_path.find(normalized_virtual) == 0) {
+      if (normalized_path.starts_with(normalized_virtual)) {
         // Ensure it's a complete path component match (not substring)
         size_t virtual_len = normalized_virtual.length();
         if (virtual_len > normalized_path.length()) {

@@ -709,7 +709,7 @@ void MerlinSyntaxParser::HandleEqu(const std::string &label,
   // uniqued code-label form (]XH_1).  Only insert if not already tracked as
   // a code label (seq > 0).
   if (!label.empty() && label[0] == ']' &&
-      var_label_seq_.find(label) == var_label_seq_.end()) {
+      !var_label_seq_.contains(label)) {
     var_label_seq_[label] = 0;
   }
 }
@@ -1293,7 +1293,7 @@ void MerlinSyntaxParser::ParseLine(const std::string &line, Section &section,
 
     // Check if this line starts a nested LUP block
     std::string lup_directive = std::string(directives::LUP) + " ";
-    if (upper_trimmed.find(lup_directive) == 0 ||
+    if (upper_trimmed.starts_with(lup_directive) ||
         upper_trimmed == directives::LUP) {
       lup_nesting_depth_++;
     }
@@ -1306,7 +1306,7 @@ void MerlinSyntaxParser::ParseLine(const std::string &line, Section &section,
   // Check for conditional assembly directives (DO/ELSE/FIN)
   // These must be processed even when inside a false conditional block
   std::string do_directive = std::string(directives::DO) + " ";
-  if (upper_trimmed.find(do_directive) == 0 ||
+  if (upper_trimmed.starts_with(do_directive) ||
       upper_trimmed == directives::DO) {
     // Extract operand after "DO"
     std::string operand = trimmed.length() > 3 ? Trim(trimmed.substr(3)) : "0";
@@ -1470,7 +1470,7 @@ void MerlinSyntaxParser::ParseLine(const std::string &line, Section &section,
 
   // Not a directive - check if it's a macro invocation
   std::string upper_directive = ToUpper(directive);
-  if (macros_.find(upper_directive) != macros_.end()) {
+  if (macros_.contains(upper_directive)) {
     // Create label atom first if label present
     if (!label.empty()) {
       uint32_t label_addr = in_dum_block_ ? dum_address_ : current_address_;
