@@ -16,13 +16,13 @@
 #include "xasm++/cpu/cpu_6809_constants.h"
 #include "xasm++/cpu/cpu_error_utils.h"
 #include "xasm++/cpu/encoding_utils.h"
+#include "xasm++/cpu/mnemonics_6809.h"
 #include "xasm++/cpu/opcodes_6809.h"
 #include "xasm++/util/string_utils.h"
 
 #include <algorithm>
 #include <stdexcept>
 #include <unordered_map>
-#include <unordered_set>
 
 namespace xasm {
 
@@ -67,94 +67,94 @@ struct InstrOpcodes {
 // ============================================================================
 
 // clang-format off
-static const std::unordered_map<std::string, InstrOpcodes> kOpcodeTable = {
+static const std::unordered_map<M6809Mnemonic, InstrOpcodes> kOpcodeTable = {
   // -------------------------------------------------------------------------
   // 8-bit Load / Store — accumulator A
   // -------------------------------------------------------------------------
-  { M6809Mnemonics::LDA,  { 0x00, Opcodes6809::LDA_IMM,  Opcodes6809::LDA_DIR,  Opcodes6809::LDA_EXT,  Opcodes6809::LDA_IDX,  false } },
-  { M6809Mnemonics::STA,  { 0x00, NO_OP,                  Opcodes6809::STA_DIR,  Opcodes6809::STA_EXT,  Opcodes6809::STA_IDX,  false } },
+  { M6809Mnemonic::LDA,  { 0x00, Opcodes6809::LDA_IMM,  Opcodes6809::LDA_DIR,  Opcodes6809::LDA_EXT,  Opcodes6809::LDA_IDX,  false } },
+  { M6809Mnemonic::STA,  { 0x00, NO_OP,                  Opcodes6809::STA_DIR,  Opcodes6809::STA_EXT,  Opcodes6809::STA_IDX,  false } },
 
   // -------------------------------------------------------------------------
   // 8-bit Load / Store — accumulator B
   // -------------------------------------------------------------------------
-  { M6809Mnemonics::LDB,  { 0x00, Opcodes6809::LDB_IMM,  Opcodes6809::LDB_DIR,  Opcodes6809::LDB_EXT,  Opcodes6809::LDB_IDX,  false } },
-  { M6809Mnemonics::STB,  { 0x00, NO_OP,                  Opcodes6809::STB_DIR,  Opcodes6809::STB_EXT,  Opcodes6809::STB_IDX,  false } },
+  { M6809Mnemonic::LDB,  { 0x00, Opcodes6809::LDB_IMM,  Opcodes6809::LDB_DIR,  Opcodes6809::LDB_EXT,  Opcodes6809::LDB_IDX,  false } },
+  { M6809Mnemonic::STB,  { 0x00, NO_OP,                  Opcodes6809::STB_DIR,  Opcodes6809::STB_EXT,  Opcodes6809::STB_IDX,  false } },
 
   // -------------------------------------------------------------------------
   // 16-bit Load / Store — accumulator D
   // -------------------------------------------------------------------------
-  { M6809Mnemonics::LDD,  { 0x00, Opcodes6809::LDD_IMM,  Opcodes6809::LDD_DIR,  Opcodes6809::LDD_EXT,  Opcodes6809::LDD_IDX,  true  } },
-  { M6809Mnemonics::STD,  { 0x00, NO_OP,                  Opcodes6809::STD_DIR,  Opcodes6809::STD_EXT,  Opcodes6809::STD_IDX,  false } },
+  { M6809Mnemonic::LDD,  { 0x00, Opcodes6809::LDD_IMM,  Opcodes6809::LDD_DIR,  Opcodes6809::LDD_EXT,  Opcodes6809::LDD_IDX,  true  } },
+  { M6809Mnemonic::STD,  { 0x00, NO_OP,                  Opcodes6809::STD_DIR,  Opcodes6809::STD_EXT,  Opcodes6809::STD_IDX,  false } },
 
   // -------------------------------------------------------------------------
   // 16-bit Load / Store — index register X
   // -------------------------------------------------------------------------
-  { M6809Mnemonics::LDX,  { 0x00, Opcodes6809::LDX_IMM,  Opcodes6809::LDX_DIR,  Opcodes6809::LDX_EXT,  Opcodes6809::LDX_IDX,  true  } },
-  { M6809Mnemonics::STX,  { 0x00, NO_OP,                  Opcodes6809::STX_DIR,  Opcodes6809::STX_EXT,  Opcodes6809::STX_IDX,  false } },
+  { M6809Mnemonic::LDX,  { 0x00, Opcodes6809::LDX_IMM,  Opcodes6809::LDX_DIR,  Opcodes6809::LDX_EXT,  Opcodes6809::LDX_IDX,  true  } },
+  { M6809Mnemonic::STX,  { 0x00, NO_OP,                  Opcodes6809::STX_DIR,  Opcodes6809::STX_EXT,  Opcodes6809::STX_IDX,  false } },
 
   // -------------------------------------------------------------------------
   // 16-bit Load / Store — index register Y  (page-2 prefix)
   // -------------------------------------------------------------------------
-  { M6809Mnemonics::LDY,  { 0x10, Opcodes6809::Page2::LDY_IMM, Opcodes6809::Page2::LDY_DIR, Opcodes6809::Page2::LDY_EXT, Opcodes6809::Page2::LDY_IDX, true  } },
-  { M6809Mnemonics::STY,  { 0x10, NO_OP,                        Opcodes6809::Page2::STY_DIR, Opcodes6809::Page2::STY_EXT, Opcodes6809::Page2::STY_IDX, false } },
+  { M6809Mnemonic::LDY,  { 0x10, Opcodes6809::Page2::LDY_IMM, Opcodes6809::Page2::LDY_DIR, Opcodes6809::Page2::LDY_EXT, Opcodes6809::Page2::LDY_IDX, true  } },
+  { M6809Mnemonic::STY,  { 0x10, NO_OP,                        Opcodes6809::Page2::STY_DIR, Opcodes6809::Page2::STY_EXT, Opcodes6809::Page2::STY_IDX, false } },
 
   // -------------------------------------------------------------------------
   // Arithmetic — ADD
   // -------------------------------------------------------------------------
-  { M6809Mnemonics::ADDA, { 0x00, Opcodes6809::ADDA_IMM, Opcodes6809::ADDA_DIR, Opcodes6809::ADDA_EXT, Opcodes6809::ADDA_IDX, false } },
-  { M6809Mnemonics::ADDB, { 0x00, Opcodes6809::ADDB_IMM, Opcodes6809::ADDB_DIR, Opcodes6809::ADDB_EXT, Opcodes6809::ADDB_IDX, false } },
+  { M6809Mnemonic::ADDA, { 0x00, Opcodes6809::ADDA_IMM, Opcodes6809::ADDA_DIR, Opcodes6809::ADDA_EXT, Opcodes6809::ADDA_IDX, false } },
+  { M6809Mnemonic::ADDB, { 0x00, Opcodes6809::ADDB_IMM, Opcodes6809::ADDB_DIR, Opcodes6809::ADDB_EXT, Opcodes6809::ADDB_IDX, false } },
 
   // -------------------------------------------------------------------------
   // Arithmetic — SUB
   // -------------------------------------------------------------------------
-  { M6809Mnemonics::SUBA, { 0x00, Opcodes6809::SUBA_IMM, Opcodes6809::SUBA_DIR, Opcodes6809::SUBA_EXT, Opcodes6809::SUBA_IDX, false } },
-  { M6809Mnemonics::SUBB, { 0x00, Opcodes6809::SUBB_IMM, Opcodes6809::SUBB_DIR, Opcodes6809::SUBB_EXT, Opcodes6809::SUBB_IDX, false } },
+  { M6809Mnemonic::SUBA, { 0x00, Opcodes6809::SUBA_IMM, Opcodes6809::SUBA_DIR, Opcodes6809::SUBA_EXT, Opcodes6809::SUBA_IDX, false } },
+  { M6809Mnemonic::SUBB, { 0x00, Opcodes6809::SUBB_IMM, Opcodes6809::SUBB_DIR, Opcodes6809::SUBB_EXT, Opcodes6809::SUBB_IDX, false } },
 
   // -------------------------------------------------------------------------
   // Arithmetic — CMP (compare without storing result)
   // -------------------------------------------------------------------------
-  { M6809Mnemonics::CMPA, { 0x00, Opcodes6809::CMPA_IMM, Opcodes6809::CMPA_DIR, Opcodes6809::CMPA_EXT, Opcodes6809::CMPA_IDX, false } },
-  { M6809Mnemonics::CMPB, { 0x00, Opcodes6809::CMPB_IMM, Opcodes6809::CMPB_DIR, Opcodes6809::CMPB_EXT, Opcodes6809::CMPB_IDX, false } },
-  { M6809Mnemonics::CMPX, { 0x00, Opcodes6809::CMPX_IMM, Opcodes6809::CMPX_DIR, Opcodes6809::CMPX_EXT, Opcodes6809::CMPX_IDX, true  } },
+  { M6809Mnemonic::CMPA, { 0x00, Opcodes6809::CMPA_IMM, Opcodes6809::CMPA_DIR, Opcodes6809::CMPA_EXT, Opcodes6809::CMPA_IDX, false } },
+  { M6809Mnemonic::CMPB, { 0x00, Opcodes6809::CMPB_IMM, Opcodes6809::CMPB_DIR, Opcodes6809::CMPB_EXT, Opcodes6809::CMPB_IDX, false } },
+  { M6809Mnemonic::CMPX, { 0x00, Opcodes6809::CMPX_IMM, Opcodes6809::CMPX_DIR, Opcodes6809::CMPX_EXT, Opcodes6809::CMPX_IDX, true  } },
 
   // CMPY uses page-2 prefix; no indexed mode defined
-  { M6809Mnemonics::CMPY, { 0x10, Opcodes6809::Page2::CMPY_IMM, Opcodes6809::Page2::CMPY_DIR, Opcodes6809::Page2::CMPY_EXT, NO_OP, true } },
+  { M6809Mnemonic::CMPY, { 0x10, Opcodes6809::Page2::CMPY_IMM, Opcodes6809::Page2::CMPY_DIR, Opcodes6809::Page2::CMPY_EXT, NO_OP, true } },
 
   // -------------------------------------------------------------------------
   // Logical — AND
   // -------------------------------------------------------------------------
-  { M6809Mnemonics::ANDA, { 0x00, Opcodes6809::ANDA_IMM, Opcodes6809::ANDA_DIR, Opcodes6809::ANDA_EXT, Opcodes6809::ANDA_IDX, false } },
-  { M6809Mnemonics::ANDB, { 0x00, Opcodes6809::ANDB_IMM, Opcodes6809::ANDB_DIR, Opcodes6809::ANDB_EXT, Opcodes6809::ANDB_IDX, false } },
+  { M6809Mnemonic::ANDA, { 0x00, Opcodes6809::ANDA_IMM, Opcodes6809::ANDA_DIR, Opcodes6809::ANDA_EXT, Opcodes6809::ANDA_IDX, false } },
+  { M6809Mnemonic::ANDB, { 0x00, Opcodes6809::ANDB_IMM, Opcodes6809::ANDB_DIR, Opcodes6809::ANDB_EXT, Opcodes6809::ANDB_IDX, false } },
 
   // -------------------------------------------------------------------------
   // Logical — OR
   // -------------------------------------------------------------------------
-  { M6809Mnemonics::ORA,  { 0x00, Opcodes6809::ORA_IMM,  Opcodes6809::ORA_DIR,  Opcodes6809::ORA_EXT,  Opcodes6809::ORA_IDX,  false } },
-  { M6809Mnemonics::ORB,  { 0x00, Opcodes6809::ORB_IMM,  Opcodes6809::ORB_DIR,  Opcodes6809::ORB_EXT,  Opcodes6809::ORB_IDX,  false } },
+  { M6809Mnemonic::ORA,  { 0x00, Opcodes6809::ORA_IMM,  Opcodes6809::ORA_DIR,  Opcodes6809::ORA_EXT,  Opcodes6809::ORA_IDX,  false } },
+  { M6809Mnemonic::ORB,  { 0x00, Opcodes6809::ORB_IMM,  Opcodes6809::ORB_DIR,  Opcodes6809::ORB_EXT,  Opcodes6809::ORB_IDX,  false } },
 
   // -------------------------------------------------------------------------
   // Logical — XOR (EOR)
   // -------------------------------------------------------------------------
-  { M6809Mnemonics::EORA, { 0x00, Opcodes6809::EORA_IMM, Opcodes6809::EORA_DIR, Opcodes6809::EORA_EXT, Opcodes6809::EORA_IDX, false } },
-  { M6809Mnemonics::EORB, { 0x00, Opcodes6809::EORB_IMM, Opcodes6809::EORB_DIR, Opcodes6809::EORB_EXT, Opcodes6809::EORB_IDX, false } },
+  { M6809Mnemonic::EORA, { 0x00, Opcodes6809::EORA_IMM, Opcodes6809::EORA_DIR, Opcodes6809::EORA_EXT, Opcodes6809::EORA_IDX, false } },
+  { M6809Mnemonic::EORB, { 0x00, Opcodes6809::EORB_IMM, Opcodes6809::EORB_DIR, Opcodes6809::EORB_EXT, Opcodes6809::EORB_IDX, false } },
 
   // -------------------------------------------------------------------------
   // Logical — BIT test (AND without storing result)
   // -------------------------------------------------------------------------
-  { M6809Mnemonics::BITA, { 0x00, Opcodes6809::BITA_IMM, Opcodes6809::BITA_DIR, Opcodes6809::BITA_EXT, Opcodes6809::BITA_IDX, false } },
-  { M6809Mnemonics::BITB, { 0x00, Opcodes6809::BITB_IMM, Opcodes6809::BITB_DIR, Opcodes6809::BITB_EXT, Opcodes6809::BITB_IDX, false } },
+  { M6809Mnemonic::BITA, { 0x00, Opcodes6809::BITA_IMM, Opcodes6809::BITA_DIR, Opcodes6809::BITA_EXT, Opcodes6809::BITA_IDX, false } },
+  { M6809Mnemonic::BITB, { 0x00, Opcodes6809::BITB_IMM, Opcodes6809::BITB_DIR, Opcodes6809::BITB_EXT, Opcodes6809::BITB_IDX, false } },
 
   // -------------------------------------------------------------------------
   // Jump / Subroutine  (no immediate mode)
   // -------------------------------------------------------------------------
-  { M6809Mnemonics::JMP,  { 0x00, NO_OP, Opcodes6809::JMP_DIR, Opcodes6809::JMP_EXT, Opcodes6809::JMP_IDX, false } },
-  { M6809Mnemonics::JSR,  { 0x00, NO_OP, Opcodes6809::JSR_DIR, Opcodes6809::JSR_EXT, Opcodes6809::JSR_IDX, false } },
+  { M6809Mnemonic::JMP,  { 0x00, NO_OP, Opcodes6809::JMP_DIR, Opcodes6809::JMP_EXT, Opcodes6809::JMP_IDX, false } },
+  { M6809Mnemonic::JSR,  { 0x00, NO_OP, Opcodes6809::JSR_DIR, Opcodes6809::JSR_EXT, Opcodes6809::JSR_IDX, false } },
 
   // -------------------------------------------------------------------------
   // Load Effective Address  (indexed mode only; treated via Extended for addr)
   // -------------------------------------------------------------------------
-  { M6809Mnemonics::LEAX, { 0x00, NO_OP, NO_OP, Opcodes6809::LEAX, Opcodes6809::LEAX, false } },
-  { M6809Mnemonics::LEAY, { 0x00, NO_OP, NO_OP, Opcodes6809::LEAY, Opcodes6809::LEAY, false } },
+  { M6809Mnemonic::LEAX, { 0x00, NO_OP, NO_OP, Opcodes6809::LEAX, Opcodes6809::LEAX, false } },
+  { M6809Mnemonic::LEAY, { 0x00, NO_OP, NO_OP, Opcodes6809::LEAY, Opcodes6809::LEAY, false } },
 };
 // clang-format on
 
@@ -417,152 +417,152 @@ std::vector<uint8_t> Cpu6809::EncodeNEGB() { return {Opcodes6809::NEGB}; }
 
 std::vector<uint8_t> Cpu6809::EncodeLDA(uint32_t operand,
                                         AddressingMode6809 mode) {
-  return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonics::LDA), operand, mode);
+  return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonic::LDA), operand, mode);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeLDB(uint32_t operand,
                                         AddressingMode6809 mode) {
-  return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonics::LDB), operand, mode);
+  return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonic::LDB), operand, mode);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeLDD(uint32_t operand,
                                         AddressingMode6809 mode) {
-  return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonics::LDD), operand, mode);
+  return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonic::LDD), operand, mode);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeLDX(uint32_t operand,
                                         AddressingMode6809 mode) {
-  return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonics::LDX), operand, mode);
+  return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonic::LDX), operand, mode);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeLDY(uint32_t operand,
                                         AddressingMode6809 mode) {
-  return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonics::LDY), operand, mode);
+  return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonic::LDY), operand, mode);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeSTA(uint32_t operand,
                                         AddressingMode6809 mode) {
-  return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonics::STA), operand, mode);
+  return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonic::STA), operand, mode);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeSTB(uint32_t operand,
                                         AddressingMode6809 mode) {
-  return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonics::STB), operand, mode);
+  return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonic::STB), operand, mode);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeSTD(uint32_t operand,
                                         AddressingMode6809 mode) {
-  return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonics::STD), operand, mode);
+  return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonic::STD), operand, mode);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeSTX(uint32_t operand,
                                         AddressingMode6809 mode) {
-  return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonics::STX), operand, mode);
+  return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonic::STX), operand, mode);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeSTY(uint32_t operand,
                                         AddressingMode6809 mode) {
-  return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonics::STY), operand, mode);
+  return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonic::STY), operand, mode);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeADDA(uint32_t operand,
                                          AddressingMode6809 mode) {
-  return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonics::ADDA), operand, mode);
+  return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonic::ADDA), operand, mode);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeADDB(uint32_t operand,
                                          AddressingMode6809 mode) {
-  return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonics::ADDB), operand, mode);
+  return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonic::ADDB), operand, mode);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeSUBA(uint32_t operand,
                                          AddressingMode6809 mode) {
-  return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonics::SUBA), operand, mode);
+  return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonic::SUBA), operand, mode);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeSUBB(uint32_t operand,
                                          AddressingMode6809 mode) {
-  return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonics::SUBB), operand, mode);
+  return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonic::SUBB), operand, mode);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeCMPA(uint32_t operand,
                                          AddressingMode6809 mode) {
-  return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonics::CMPA), operand, mode);
+  return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonic::CMPA), operand, mode);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeCMPB(uint32_t operand,
                                          AddressingMode6809 mode) {
-  return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonics::CMPB), operand, mode);
+  return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonic::CMPB), operand, mode);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeCMPX(uint32_t operand,
                                          AddressingMode6809 mode) {
-  return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonics::CMPX), operand, mode);
+  return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonic::CMPX), operand, mode);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeCMPY(uint32_t operand,
                                          AddressingMode6809 mode) {
-  return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonics::CMPY), operand, mode);
+  return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonic::CMPY), operand, mode);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeANDA(uint32_t operand,
                                          AddressingMode6809 mode) {
-  return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonics::ANDA), operand, mode);
+  return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonic::ANDA), operand, mode);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeANDB(uint32_t operand,
                                          AddressingMode6809 mode) {
-  return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonics::ANDB), operand, mode);
+  return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonic::ANDB), operand, mode);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeORA(uint32_t operand,
                                         AddressingMode6809 mode) {
-  return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonics::ORA), operand, mode);
+  return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonic::ORA), operand, mode);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeORB(uint32_t operand,
                                         AddressingMode6809 mode) {
-  return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonics::ORB), operand, mode);
+  return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonic::ORB), operand, mode);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeEORA(uint32_t operand,
                                          AddressingMode6809 mode) {
-  return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonics::EORA), operand, mode);
+  return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonic::EORA), operand, mode);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeEORB(uint32_t operand,
                                          AddressingMode6809 mode) {
-  return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonics::EORB), operand, mode);
+  return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonic::EORB), operand, mode);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeBITA(uint32_t operand,
                                          AddressingMode6809 mode) {
-  return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonics::BITA), operand, mode);
+  return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonic::BITA), operand, mode);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeBITB(uint32_t operand,
                                          AddressingMode6809 mode) {
-  return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonics::BITB), operand, mode);
+  return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonic::BITB), operand, mode);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeJMP(uint32_t operand,
                                         AddressingMode6809 mode) {
-  return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonics::JMP), operand, mode);
+  return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonic::JMP), operand, mode);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeJSR(uint32_t operand,
                                         AddressingMode6809 mode) {
-  return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonics::JSR), operand, mode);
+  return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonic::JSR), operand, mode);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeLEAX(uint32_t operand,
                                           AddressingMode6809 mode) {
-  return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonics::LEAX), operand, mode);
+  return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonic::LEAX), operand, mode);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeLEAY(uint32_t operand,
                                           AddressingMode6809 mode) {
-  return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonics::LEAY), operand, mode);
+  return EncodeMemInstr(kOpcodeTable.at(M6809Mnemonic::LEAY), operand, mode);
 }
 
 // ============================================================================
@@ -869,83 +869,8 @@ bool Cpu6809::HasOpcode(const std::string &mnemonic) const {
   std::string upper = mnemonic;
   std::transform(upper.begin(), upper.end(), upper.begin(), ::toupper);
 
-  // Create static set of all 6809 mnemonics for O(1) lookup
-  static const std::unordered_set<std::string> valid_opcodes = {
-      // Load/Store
-      M6809Mnemonics::LDA, M6809Mnemonics::LDB, M6809Mnemonics::LDD,
-      M6809Mnemonics::LDX, M6809Mnemonics::LDY, M6809Mnemonics::LDU,
-      M6809Mnemonics::LDS, M6809Mnemonics::STA, M6809Mnemonics::STB,
-      M6809Mnemonics::STD, M6809Mnemonics::STX, M6809Mnemonics::STY,
-      M6809Mnemonics::STU, M6809Mnemonics::STS,
-
-      // Arithmetic
-      M6809Mnemonics::ADDA, M6809Mnemonics::ADDB, M6809Mnemonics::ADDD,
-      M6809Mnemonics::SUBA, M6809Mnemonics::SUBB, M6809Mnemonics::SUBD,
-      M6809Mnemonics::INCA, M6809Mnemonics::INCB, M6809Mnemonics::INC,
-      M6809Mnemonics::DECA, M6809Mnemonics::DECB, M6809Mnemonics::DEC,
-      M6809Mnemonics::NEGA, M6809Mnemonics::NEGB, M6809Mnemonics::NEG,
-
-      // Logical
-      M6809Mnemonics::ANDA, M6809Mnemonics::ANDB,
-      M6809Mnemonics::ORA,  M6809Mnemonics::ORB,
-      M6809Mnemonics::EORA, M6809Mnemonics::EORB,
-      M6809Mnemonics::BITA, M6809Mnemonics::BITB,
-      M6809Mnemonics::COMA, M6809Mnemonics::COMB,
-      M6809Mnemonics::CLRA, M6809Mnemonics::CLRB, M6809Mnemonics::CLR,
-
-      // Compare / Test
-      M6809Mnemonics::CMPA, M6809Mnemonics::CMPB,
-      M6809Mnemonics::CMPX, M6809Mnemonics::CMPY,
-      M6809Mnemonics::CMPU, M6809Mnemonics::CMPS,
-      M6809Mnemonics::TSTA, M6809Mnemonics::TSTB, M6809Mnemonics::TST,
-
-      // Shift / Rotate
-      M6809Mnemonics::ASLA, M6809Mnemonics::ASLB, M6809Mnemonics::ASL,
-      M6809Mnemonics::ASRA, M6809Mnemonics::ASRB, M6809Mnemonics::ASR,
-      M6809Mnemonics::LSRA, M6809Mnemonics::LSRB, M6809Mnemonics::LSR,
-      M6809Mnemonics::ROLA, M6809Mnemonics::ROLB, M6809Mnemonics::ROL,
-      M6809Mnemonics::RORA, M6809Mnemonics::RORB, M6809Mnemonics::ROR,
-
-      // Short Branch (8-bit)
-      M6809Mnemonics::BRA, M6809Mnemonics::BRN,
-      M6809Mnemonics::BHI, M6809Mnemonics::BLS,
-      M6809Mnemonics::BCC, M6809Mnemonics::BHS,   // BHS is alias for BCC
-      M6809Mnemonics::BCS, M6809Mnemonics::BLO,   // BLO is alias for BCS
-      M6809Mnemonics::BNE, M6809Mnemonics::BEQ,
-      M6809Mnemonics::BVC, M6809Mnemonics::BVS,
-      M6809Mnemonics::BPL, M6809Mnemonics::BMI,
-      M6809Mnemonics::BGE, M6809Mnemonics::BLT,
-      M6809Mnemonics::BGT, M6809Mnemonics::BLE,
-      M6809Mnemonics::BSR,
-
-      // Long Branch (16-bit)
-      M6809Mnemonics::LBRA, M6809Mnemonics::LBRN,
-      M6809Mnemonics::LBHI, M6809Mnemonics::LBLS,
-      M6809Mnemonics::LBCC, M6809Mnemonics::LBHS, // LBHS alias for LBCC
-      M6809Mnemonics::LBCS, M6809Mnemonics::LBLO, // LBLO alias for LBCS
-      M6809Mnemonics::LBNE, M6809Mnemonics::LBEQ,
-      M6809Mnemonics::LBVC, M6809Mnemonics::LBVS,
-      M6809Mnemonics::LBPL, M6809Mnemonics::LBMI,
-      M6809Mnemonics::LBGE, M6809Mnemonics::LBLT,
-      M6809Mnemonics::LBGT, M6809Mnemonics::LBLE,
-      M6809Mnemonics::LBSR,
-
-      // Jump / Subroutine
-      M6809Mnemonics::JMP, M6809Mnemonics::JSR, M6809Mnemonics::RTS,
-      M6809Mnemonics::LEAX, M6809Mnemonics::LEAY,
-
-      // Stack
-      M6809Mnemonics::PSHS, M6809Mnemonics::PULS,
-      M6809Mnemonics::PSHU, M6809Mnemonics::PULU,
-
-      // Register Transfer / Exchange
-      M6809Mnemonics::TFR, M6809Mnemonics::EXG,
-
-      // Inherent
-      M6809Mnemonics::NOP,
-  };
-
-  return valid_opcodes.contains(upper);
+  // ParseM6809Mnemonic returns Unknown for unrecognised strings.
+  return ParseM6809Mnemonic(upper) != M6809Mnemonic::Unknown;
 }
 
 // ============================================================================
@@ -955,6 +880,9 @@ bool Cpu6809::HasOpcode(const std::string &mnemonic) const {
 std::vector<uint8_t>
 Cpu6809::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
                            const std::string &operand_str) const {
+  // ── Parse mnemonic string to enum (single map lookup) ───────────────────
+  const M6809Mnemonic mn = ParseM6809Mnemonic(mnemonic);
+
   // Determine addressing mode from operand_str
   std::string trimmed = util::Trim(operand_str);
   AddressingMode6809 mode = AddressingMode6809::Inherent;
@@ -964,11 +892,11 @@ Cpu6809::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
     if (trimmed[0] == '#') {
       // 16-bit immediate for instructions that operate on 16-bit registers
       bool is_16bit =
-          (mnemonic == M6809Mnemonics::LDD  || mnemonic == M6809Mnemonics::LDX  ||
-           mnemonic == M6809Mnemonics::LDY  || mnemonic == M6809Mnemonics::LDU  ||
-           mnemonic == M6809Mnemonics::LDS  ||
-           mnemonic == M6809Mnemonics::CMPX || mnemonic == M6809Mnemonics::CMPY ||
-           mnemonic == M6809Mnemonics::CMPU || mnemonic == M6809Mnemonics::CMPS);
+          (mn == M6809Mnemonic::LDD  || mn == M6809Mnemonic::LDX  ||
+           mn == M6809Mnemonic::LDY  || mn == M6809Mnemonic::LDU  ||
+           mn == M6809Mnemonic::LDS  ||
+           mn == M6809Mnemonic::CMPX || mn == M6809Mnemonic::CMPY ||
+           mn == M6809Mnemonic::CMPU || mn == M6809Mnemonic::CMPS);
       mode = is_16bit ? AddressingMode6809::Immediate16
                       : AddressingMode6809::Immediate8;
     }
@@ -998,109 +926,147 @@ Cpu6809::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
     }
   }
 
-  // ── Inherent (no-operand) instructions ───────────────────────────────────
-  if (mnemonic == M6809Mnemonics::NOP)  return EncodeNOP();
-  if (mnemonic == M6809Mnemonics::RTS)  return EncodeRTS();
-  if (mnemonic == M6809Mnemonics::CLRA) return EncodeCLRA();
-  if (mnemonic == M6809Mnemonics::CLRB) return EncodeCLRB();
-  if (mnemonic == M6809Mnemonics::ASLA) return EncodeASLA();
-  if (mnemonic == M6809Mnemonics::ASLB) return EncodeASLB();
-  if (mnemonic == M6809Mnemonics::ASRA) return EncodeASRA();
-  if (mnemonic == M6809Mnemonics::ASRB) return EncodeASRB();
-  if (mnemonic == M6809Mnemonics::LSRA) return EncodeLSRA();
-  if (mnemonic == M6809Mnemonics::LSRB) return EncodeLSRB();
-  if (mnemonic == M6809Mnemonics::ROLA) return EncodeROLA();
-  if (mnemonic == M6809Mnemonics::ROLB) return EncodeROLB();
-  if (mnemonic == M6809Mnemonics::RORA) return EncodeRORA();
-  if (mnemonic == M6809Mnemonics::RORB) return EncodeRORB();
-  if (mnemonic == M6809Mnemonics::INCA) return EncodeINCA();
-  if (mnemonic == M6809Mnemonics::INCB) return EncodeINCB();
-  if (mnemonic == M6809Mnemonics::DECA) return EncodeDECA();
-  if (mnemonic == M6809Mnemonics::DECB) return EncodeDECB();
-  if (mnemonic == M6809Mnemonics::TSTA) return EncodeTSTA();
-  if (mnemonic == M6809Mnemonics::TSTB) return EncodeTSTB();
-  if (mnemonic == M6809Mnemonics::COMA) return EncodeCOMA();
-  if (mnemonic == M6809Mnemonics::COMB) return EncodeCOMB();
-  if (mnemonic == M6809Mnemonics::NEGA) return EncodeNEGA();
-  if (mnemonic == M6809Mnemonics::NEGB) return EncodeNEGB();
+  // ── Switch on parsed enum (O(1), compiler-exhaustion-checked) ─────────────
+  const auto off   = static_cast<int32_t>(operand);
+  const auto off16 = static_cast<int16_t>(operand);
 
-  // ── Short branches ────────────────────────────────────────────────────────
-  {
-    auto off = static_cast<int32_t>(operand);
-    if (mnemonic == M6809Mnemonics::BRA) return EncodeBRA(off, mode);
-    if (mnemonic == M6809Mnemonics::BEQ) return EncodeBEQ(off, mode);
-    if (mnemonic == M6809Mnemonics::BNE) return EncodeBNE(off, mode);
-    if (mnemonic == M6809Mnemonics::BCC || mnemonic == M6809Mnemonics::BHS)
-      return EncodeBCC(off, mode);
-    if (mnemonic == M6809Mnemonics::BCS || mnemonic == M6809Mnemonics::BLO)
-      return EncodeBCS(off, mode);
-    if (mnemonic == M6809Mnemonics::BMI) return EncodeBMI(off, mode);
-    if (mnemonic == M6809Mnemonics::BPL) return EncodeBPL(off, mode);
-    if (mnemonic == M6809Mnemonics::BVS) return EncodeBVS(off, mode);
-    if (mnemonic == M6809Mnemonics::BVC) return EncodeBVC(off, mode);
-    if (mnemonic == M6809Mnemonics::BGE) return EncodeBGE(off, mode);
-    if (mnemonic == M6809Mnemonics::BGT) return EncodeBGT(off, mode);
-    if (mnemonic == M6809Mnemonics::BLE) return EncodeBLE(off, mode);
-    if (mnemonic == M6809Mnemonics::BLT) return EncodeBLT(off, mode);
-    if (mnemonic == M6809Mnemonics::BHI) return EncodeBHI(off, mode);
-    if (mnemonic == M6809Mnemonics::BLS) return EncodeBLS(off, mode);
-    if (mnemonic == M6809Mnemonics::BSR) return EncodeBSR(off, mode);
+  switch (mn) {
+    // ── Inherent (no-operand) ───────────────────────────────────────────────
+    case M6809Mnemonic::NOP:  return EncodeNOP();
+    case M6809Mnemonic::RTS:  return EncodeRTS();
+    case M6809Mnemonic::CLRA: return EncodeCLRA();
+    case M6809Mnemonic::CLRB: return EncodeCLRB();
+    case M6809Mnemonic::ASLA: return EncodeASLA();
+    case M6809Mnemonic::ASLB: return EncodeASLB();
+    case M6809Mnemonic::ASRA: return EncodeASRA();
+    case M6809Mnemonic::ASRB: return EncodeASRB();
+    case M6809Mnemonic::LSRA: return EncodeLSRA();
+    case M6809Mnemonic::LSRB: return EncodeLSRB();
+    case M6809Mnemonic::ROLA: return EncodeROLA();
+    case M6809Mnemonic::ROLB: return EncodeROLB();
+    case M6809Mnemonic::RORA: return EncodeRORA();
+    case M6809Mnemonic::RORB: return EncodeRORB();
+    case M6809Mnemonic::INCA: return EncodeINCA();
+    case M6809Mnemonic::INCB: return EncodeINCB();
+    case M6809Mnemonic::DECA: return EncodeDECA();
+    case M6809Mnemonic::DECB: return EncodeDECB();
+    case M6809Mnemonic::TSTA: return EncodeTSTA();
+    case M6809Mnemonic::TSTB: return EncodeTSTB();
+    case M6809Mnemonic::COMA: return EncodeCOMA();
+    case M6809Mnemonic::COMB: return EncodeCOMB();
+    case M6809Mnemonic::NEGA: return EncodeNEGA();
+    case M6809Mnemonic::NEGB: return EncodeNEGB();
+
+    // ── Short branches ──────────────────────────────────────────────────────
+    case M6809Mnemonic::BRA: return EncodeBRA(off, mode);
+    case M6809Mnemonic::BEQ: return EncodeBEQ(off, mode);
+    case M6809Mnemonic::BNE: return EncodeBNE(off, mode);
+    case M6809Mnemonic::BCC: [[fallthrough]];
+    case M6809Mnemonic::BHS: return EncodeBCC(off, mode);
+    case M6809Mnemonic::BCS: [[fallthrough]];
+    case M6809Mnemonic::BLO: return EncodeBCS(off, mode);
+    case M6809Mnemonic::BMI: return EncodeBMI(off, mode);
+    case M6809Mnemonic::BPL: return EncodeBPL(off, mode);
+    case M6809Mnemonic::BVS: return EncodeBVS(off, mode);
+    case M6809Mnemonic::BVC: return EncodeBVC(off, mode);
+    case M6809Mnemonic::BGE: return EncodeBGE(off, mode);
+    case M6809Mnemonic::BGT: return EncodeBGT(off, mode);
+    case M6809Mnemonic::BLE: return EncodeBLE(off, mode);
+    case M6809Mnemonic::BLT: return EncodeBLT(off, mode);
+    case M6809Mnemonic::BHI: return EncodeBHI(off, mode);
+    case M6809Mnemonic::BLS: return EncodeBLS(off, mode);
+    case M6809Mnemonic::BSR: return EncodeBSR(off, mode);
+    case M6809Mnemonic::BRN: return {}; // BRN (Branch Never) - no-op
+
+    // ── Long branches ───────────────────────────────────────────────────────
+    case M6809Mnemonic::LBRA: return EncodeLBRA(off16);
+    case M6809Mnemonic::LBSR: return EncodeLBSR(off16);
+    case M6809Mnemonic::LBRN: return EncodeLBRN(off16);
+    case M6809Mnemonic::LBHI: return EncodeLBHI(off16);
+    case M6809Mnemonic::LBLS: return EncodeLBLS(off16);
+    case M6809Mnemonic::LBCC: [[fallthrough]];
+    case M6809Mnemonic::LBHS: return EncodeLBCC(off16);
+    case M6809Mnemonic::LBCS: [[fallthrough]];
+    case M6809Mnemonic::LBLO: return EncodeLBCS(off16);
+    case M6809Mnemonic::LBNE: return EncodeLBNE(off16);
+    case M6809Mnemonic::LBEQ: return EncodeLBEQ(off16);
+    case M6809Mnemonic::LBVC: return EncodeLBVC(off16);
+    case M6809Mnemonic::LBVS: return EncodeLBVS(off16);
+    case M6809Mnemonic::LBPL: return EncodeLBPL(off16);
+    case M6809Mnemonic::LBMI: return EncodeLBMI(off16);
+    case M6809Mnemonic::LBGE: return EncodeLBGE(off16);
+    case M6809Mnemonic::LBLT: return EncodeLBLT(off16);
+    case M6809Mnemonic::LBGT: return EncodeLBGT(off16);
+    case M6809Mnemonic::LBLE: return EncodeLBLE(off16);
+
+    // ── Register-pair instructions ──────────────────────────────────────────
+    case M6809Mnemonic::TFR: {
+      auto src = static_cast<uint8_t>((operand >> 4) & 0x0F);
+      auto dst = static_cast<uint8_t>(operand & 0x0F);
+      return EncodeTFR(src, dst);
+    }
+    case M6809Mnemonic::EXG: {
+      auto r1 = static_cast<uint8_t>((operand >> 4) & 0x0F);
+      auto r2 = static_cast<uint8_t>(operand & 0x0F);
+      return EncodeEXG(r1, r2);
+    }
+
+    // ── Stack operations ────────────────────────────────────────────────────
+    case M6809Mnemonic::PSHS: return EncodePSHS(static_cast<uint8_t>(operand & 0xFF));
+    case M6809Mnemonic::PULS: return EncodePULS(static_cast<uint8_t>(operand & 0xFF));
+    case M6809Mnemonic::PSHU: return EncodePSHU(static_cast<uint8_t>(operand & 0xFF));
+    case M6809Mnemonic::PULU: return EncodePULU(static_cast<uint8_t>(operand & 0xFF));
+
+    // ── Table-driven memory-operand instructions ────────────────────────────
+    case M6809Mnemonic::LDA:  case M6809Mnemonic::STA:
+    case M6809Mnemonic::LDB:  case M6809Mnemonic::STB:
+    case M6809Mnemonic::LDD:  case M6809Mnemonic::STD:
+    case M6809Mnemonic::LDX:  case M6809Mnemonic::STX:
+    case M6809Mnemonic::LDY:  case M6809Mnemonic::STY:
+    case M6809Mnemonic::LDU:  case M6809Mnemonic::STU:
+    case M6809Mnemonic::LDS:  case M6809Mnemonic::STS:
+    case M6809Mnemonic::ADDA: case M6809Mnemonic::ADCA:
+    case M6809Mnemonic::SUBA: case M6809Mnemonic::SBCA:
+    case M6809Mnemonic::CMPA:
+    case M6809Mnemonic::ADDB: case M6809Mnemonic::ADCB:
+    case M6809Mnemonic::SUBB: case M6809Mnemonic::SBCB:
+    case M6809Mnemonic::CMPB:
+    case M6809Mnemonic::ADDD: case M6809Mnemonic::SUBD:
+    case M6809Mnemonic::CMPX: case M6809Mnemonic::CMPY:
+    case M6809Mnemonic::CMPU: case M6809Mnemonic::CMPS:
+    case M6809Mnemonic::CMPD:
+    case M6809Mnemonic::ANDA: case M6809Mnemonic::ORA:
+    case M6809Mnemonic::EORA: case M6809Mnemonic::BITA:
+    case M6809Mnemonic::ANDB: case M6809Mnemonic::ORB:
+    case M6809Mnemonic::EORB: case M6809Mnemonic::BITB:
+    case M6809Mnemonic::ANDCC: case M6809Mnemonic::ORCC:
+    case M6809Mnemonic::CLR:  case M6809Mnemonic::ASL:
+    case M6809Mnemonic::ASR:  case M6809Mnemonic::LSR:
+    case M6809Mnemonic::ROL:  case M6809Mnemonic::ROR:
+    case M6809Mnemonic::INC:  case M6809Mnemonic::DEC:
+    case M6809Mnemonic::TST:  case M6809Mnemonic::NEG:
+    case M6809Mnemonic::JMP:  case M6809Mnemonic::JSR:
+    case M6809Mnemonic::LEAX: case M6809Mnemonic::LEAY:
+    case M6809Mnemonic::LEAS: case M6809Mnemonic::LEAU:
+    case M6809Mnemonic::RTI:  case M6809Mnemonic::MUL:
+    case M6809Mnemonic::SEX:  case M6809Mnemonic::SWI:
+    case M6809Mnemonic::SWI2: case M6809Mnemonic::SWI3:
+    case M6809Mnemonic::SYNC: case M6809Mnemonic::CWAI:
+    case M6809Mnemonic::ABX:  case M6809Mnemonic::DAA: {
+      auto it = kOpcodeTable.find(mn);
+      if (it != kOpcodeTable.end()) {
+        return EncodeMemInstr(it->second, operand, mode);
+      }
+      return {};
+    }
+
+    // ── Unknown / unimplemented ─────────────────────────────────────────────
+    case M6809Mnemonic::Unknown:
+      return {};
   }
 
-  // ── Long branches ─────────────────────────────────────────────────────────
-  {
-    auto off16 = static_cast<int16_t>(operand);
-    if (mnemonic == M6809Mnemonics::LBRA) return EncodeLBRA(off16);
-    if (mnemonic == M6809Mnemonics::LBSR) return EncodeLBSR(off16);
-    if (mnemonic == M6809Mnemonics::LBRN) return EncodeLBRN(off16);
-    if (mnemonic == M6809Mnemonics::LBHI) return EncodeLBHI(off16);
-    if (mnemonic == M6809Mnemonics::LBLS) return EncodeLBLS(off16);
-    if (mnemonic == M6809Mnemonics::LBCC || mnemonic == M6809Mnemonics::LBHS)
-      return EncodeLBCC(off16);
-    if (mnemonic == M6809Mnemonics::LBCS || mnemonic == M6809Mnemonics::LBLO)
-      return EncodeLBCS(off16);
-    if (mnemonic == M6809Mnemonics::LBNE) return EncodeLBNE(off16);
-    if (mnemonic == M6809Mnemonics::LBEQ) return EncodeLBEQ(off16);
-    if (mnemonic == M6809Mnemonics::LBVC) return EncodeLBVC(off16);
-    if (mnemonic == M6809Mnemonics::LBVS) return EncodeLBVS(off16);
-    if (mnemonic == M6809Mnemonics::LBPL) return EncodeLBPL(off16);
-    if (mnemonic == M6809Mnemonics::LBMI) return EncodeLBMI(off16);
-    if (mnemonic == M6809Mnemonics::LBGE) return EncodeLBGE(off16);
-    if (mnemonic == M6809Mnemonics::LBLT) return EncodeLBLT(off16);
-    if (mnemonic == M6809Mnemonics::LBGT) return EncodeLBGT(off16);
-    if (mnemonic == M6809Mnemonics::LBLE) return EncodeLBLE(off16);
-  }
-
-  // ── Register-pair instructions ────────────────────────────────────────────
-  if (mnemonic == M6809Mnemonics::TFR) {
-    auto src = static_cast<uint8_t>((operand >> 4) & 0x0F);
-    auto dst = static_cast<uint8_t>(operand & 0x0F);
-    return EncodeTFR(src, dst);
-  }
-  if (mnemonic == M6809Mnemonics::EXG) {
-    auto r1 = static_cast<uint8_t>((operand >> 4) & 0x0F);
-    auto r2 = static_cast<uint8_t>(operand & 0x0F);
-    return EncodeEXG(r1, r2);
-  }
-
-  // ── Stack operations ──────────────────────────────────────────────────────
-  if (mnemonic == M6809Mnemonics::PSHS)
-    return EncodePSHS(static_cast<uint8_t>(operand & 0xFF));
-  if (mnemonic == M6809Mnemonics::PULS)
-    return EncodePULS(static_cast<uint8_t>(operand & 0xFF));
-  if (mnemonic == M6809Mnemonics::PSHU)
-    return EncodePSHU(static_cast<uint8_t>(operand & 0xFF));
-  if (mnemonic == M6809Mnemonics::PULU)
-    return EncodePULU(static_cast<uint8_t>(operand & 0xFF));
-
-  // ── Table-driven memory-operand instructions ──────────────────────────────
-  auto it = kOpcodeTable.find(mnemonic);
-  if (it != kOpcodeTable.end()) {
-    return EncodeMemInstr(it->second, operand, mode);
-  }
-
-  // Unknown mnemonic
   return {};
 }
+
 
 } // namespace xasm

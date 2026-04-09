@@ -1,11 +1,13 @@
 /**
  * @file test_mnemonic_constants.cpp
- * @brief Unit tests for opcode mnemonic string constants
+ * @brief Unit tests for opcode mnemonic enums and parse functions
  *
- * Tests that mnemonic constants are defined and accessible.
- * Eliminates magic strings code smell by providing named constants.
+ * Tests that mnemonics can be parsed from strings to enum values, and
+ * that the Z80 string constants (kept for syntax-parser backward compat)
+ * are defined and accessible.
  */
 
+#include "xasm++/cpu/mnemonics_6809.h"
 #include "xasm++/cpu/opcodes_6502.h"
 #include "xasm++/cpu/opcodes_6809.h"
 #include "xasm++/cpu/opcodes_z80.h"
@@ -15,18 +17,16 @@
 using namespace xasm;
 
 // ============================================================================
-// Z80 Mnemonic Constants Tests
+// Z80 Mnemonic String Constants Tests (backward-compat constants in Z80Mnemonics)
 // ============================================================================
 
 TEST(MnemonicConstantsTest, Z80_LoadInstructions) {
-  // Test that Z80 load mnemonics are defined and correct
   EXPECT_STREQ("LD", Z80Mnemonics::LD);
   EXPECT_STREQ("PUSH", Z80Mnemonics::PUSH);
   EXPECT_STREQ("POP", Z80Mnemonics::POP);
 }
 
 TEST(MnemonicConstantsTest, Z80_ArithmeticInstructions) {
-  // Test that Z80 arithmetic mnemonics are defined and correct
   EXPECT_STREQ("ADD", Z80Mnemonics::ADD);
   EXPECT_STREQ("ADC", Z80Mnemonics::ADC);
   EXPECT_STREQ("SUB", Z80Mnemonics::SUB);
@@ -36,7 +36,6 @@ TEST(MnemonicConstantsTest, Z80_ArithmeticInstructions) {
 }
 
 TEST(MnemonicConstantsTest, Z80_LogicalInstructions) {
-  // Test that Z80 logical mnemonics are defined and correct
   EXPECT_STREQ("AND", Z80Mnemonics::AND);
   EXPECT_STREQ("OR", Z80Mnemonics::OR);
   EXPECT_STREQ("XOR", Z80Mnemonics::XOR);
@@ -44,7 +43,6 @@ TEST(MnemonicConstantsTest, Z80_LogicalInstructions) {
 }
 
 TEST(MnemonicConstantsTest, Z80_BranchInstructions) {
-  // Test that Z80 branch/jump mnemonics are defined and correct
   EXPECT_STREQ("JP", Z80Mnemonics::JP);
   EXPECT_STREQ("JR", Z80Mnemonics::JR);
   EXPECT_STREQ("CALL", Z80Mnemonics::CALL);
@@ -53,7 +51,6 @@ TEST(MnemonicConstantsTest, Z80_BranchInstructions) {
 }
 
 TEST(MnemonicConstantsTest, Z80_RotateInstructions) {
-  // Test that Z80 rotate/shift mnemonics are defined and correct
   EXPECT_STREQ("RLCA", Z80Mnemonics::RLCA);
   EXPECT_STREQ("RRCA", Z80Mnemonics::RRCA);
   EXPECT_STREQ("RLA", Z80Mnemonics::RLA);
@@ -68,14 +65,12 @@ TEST(MnemonicConstantsTest, Z80_RotateInstructions) {
 }
 
 TEST(MnemonicConstantsTest, Z80_BitInstructions) {
-  // Test that Z80 bit manipulation mnemonics are defined and correct
   EXPECT_STREQ("BIT", Z80Mnemonics::BIT);
   EXPECT_STREQ("SET", Z80Mnemonics::SET);
   EXPECT_STREQ("RES", Z80Mnemonics::RES);
 }
 
 TEST(MnemonicConstantsTest, Z80_MiscInstructions) {
-  // Test that Z80 miscellaneous mnemonics are defined and correct
   EXPECT_STREQ("NOP", Z80Mnemonics::NOP);
   EXPECT_STREQ("HALT", Z80Mnemonics::HALT);
   EXPECT_STREQ("DI", Z80Mnemonics::DI);
@@ -88,7 +83,6 @@ TEST(MnemonicConstantsTest, Z80_MiscInstructions) {
 }
 
 TEST(MnemonicConstantsTest, Z80_BlockInstructions) {
-  // Test that Z80 block operation mnemonics are defined and correct
   EXPECT_STREQ("LDI", Z80Mnemonics::LDI);
   EXPECT_STREQ("LDIR", Z80Mnemonics::LDIR);
   EXPECT_STREQ("LDD", Z80Mnemonics::LDD);
@@ -100,11 +94,29 @@ TEST(MnemonicConstantsTest, Z80_BlockInstructions) {
 }
 
 // ============================================================================
-// 6502 Mnemonic Constants Tests
+// Z80Mnemonic enum + ParseZ80Mnemonic tests
+// ============================================================================
+
+TEST(MnemonicEnumTest, Z80_ParseKnown) {
+  EXPECT_EQ(Z80Mnemonic::LD,   ParseZ80Mnemonic("LD"));
+  EXPECT_EQ(Z80Mnemonic::ADD,  ParseZ80Mnemonic("ADD"));
+  EXPECT_EQ(Z80Mnemonic::JP,   ParseZ80Mnemonic("JP"));
+  EXPECT_EQ(Z80Mnemonic::NOP,  ParseZ80Mnemonic("NOP"));
+  EXPECT_EQ(Z80Mnemonic::DJNZ, ParseZ80Mnemonic("DJNZ"));
+  EXPECT_EQ(Z80Mnemonic::LDIR, ParseZ80Mnemonic("LDIR"));
+}
+
+TEST(MnemonicEnumTest, Z80_ParseUnknown) {
+  EXPECT_EQ(Z80Mnemonic::Unknown, ParseZ80Mnemonic(""));
+  EXPECT_EQ(Z80Mnemonic::Unknown, ParseZ80Mnemonic("FOOBAR"));
+  EXPECT_EQ(Z80Mnemonic::Unknown, ParseZ80Mnemonic("lda")); // lowercase
+}
+
+// ============================================================================
+// 6502 Mnemonic Constants Tests (unchanged)
 // ============================================================================
 
 TEST(MnemonicConstantsTest, M6502_LoadStoreInstructions) {
-  // Test that 6502 load/store mnemonics are defined and correct
   EXPECT_STREQ("LDA", M6502Mnemonics::LDA);
   EXPECT_STREQ("LDX", M6502Mnemonics::LDX);
   EXPECT_STREQ("LDY", M6502Mnemonics::LDY);
@@ -114,7 +126,6 @@ TEST(MnemonicConstantsTest, M6502_LoadStoreInstructions) {
 }
 
 TEST(MnemonicConstantsTest, M6502_ArithmeticInstructions) {
-  // Test that 6502 arithmetic mnemonics are defined and correct
   EXPECT_STREQ("ADC", M6502Mnemonics::ADC);
   EXPECT_STREQ("SBC", M6502Mnemonics::SBC);
   EXPECT_STREQ("INC", M6502Mnemonics::INC);
@@ -126,7 +137,6 @@ TEST(MnemonicConstantsTest, M6502_ArithmeticInstructions) {
 }
 
 TEST(MnemonicConstantsTest, M6502_LogicalInstructions) {
-  // Test that 6502 logical mnemonics are defined and correct
   EXPECT_STREQ("AND", M6502Mnemonics::AND);
   EXPECT_STREQ("ORA", M6502Mnemonics::ORA);
   EXPECT_STREQ("EOR", M6502Mnemonics::EOR);
@@ -134,7 +144,6 @@ TEST(MnemonicConstantsTest, M6502_LogicalInstructions) {
 }
 
 TEST(MnemonicConstantsTest, M6502_BranchInstructions) {
-  // Test that 6502 branch mnemonics are defined and correct
   EXPECT_STREQ("BCC", M6502Mnemonics::BCC);
   EXPECT_STREQ("BCS", M6502Mnemonics::BCS);
   EXPECT_STREQ("BEQ", M6502Mnemonics::BEQ);
@@ -146,7 +155,6 @@ TEST(MnemonicConstantsTest, M6502_BranchInstructions) {
 }
 
 TEST(MnemonicConstantsTest, M6502_JumpInstructions) {
-  // Test that 6502 jump/subroutine mnemonics are defined and correct
   EXPECT_STREQ("JMP", M6502Mnemonics::JMP);
   EXPECT_STREQ("JSR", M6502Mnemonics::JSR);
   EXPECT_STREQ("RTS", M6502Mnemonics::RTS);
@@ -154,40 +162,57 @@ TEST(MnemonicConstantsTest, M6502_JumpInstructions) {
 }
 
 // ============================================================================
-// 6809 Mnemonic Constants Tests
+// M6809Mnemonic enum + ParseM6809Mnemonic tests (replacing old string consts)
 // ============================================================================
 
-TEST(MnemonicConstantsTest, M6809_LoadStoreInstructions) {
-  // Test that 6809 load/store mnemonics are defined and correct
-  EXPECT_STREQ("LDA", M6809Mnemonics::LDA);
-  EXPECT_STREQ("LDB", M6809Mnemonics::LDB);
-  EXPECT_STREQ("LDD", M6809Mnemonics::LDD);
-  EXPECT_STREQ("LDX", M6809Mnemonics::LDX);
-  EXPECT_STREQ("LDY", M6809Mnemonics::LDY);
-  EXPECT_STREQ("STA", M6809Mnemonics::STA);
-  EXPECT_STREQ("STB", M6809Mnemonics::STB);
-  EXPECT_STREQ("STD", M6809Mnemonics::STD);
-  EXPECT_STREQ("STX", M6809Mnemonics::STX);
-  EXPECT_STREQ("STY", M6809Mnemonics::STY);
+TEST(MnemonicEnumTest, M6809_ParseLoadStore) {
+  EXPECT_EQ(M6809Mnemonic::LDA, ParseM6809Mnemonic("LDA"));
+  EXPECT_EQ(M6809Mnemonic::LDB, ParseM6809Mnemonic("LDB"));
+  EXPECT_EQ(M6809Mnemonic::LDD, ParseM6809Mnemonic("LDD"));
+  EXPECT_EQ(M6809Mnemonic::LDX, ParseM6809Mnemonic("LDX"));
+  EXPECT_EQ(M6809Mnemonic::LDY, ParseM6809Mnemonic("LDY"));
+  EXPECT_EQ(M6809Mnemonic::STA, ParseM6809Mnemonic("STA"));
+  EXPECT_EQ(M6809Mnemonic::STB, ParseM6809Mnemonic("STB"));
+  EXPECT_EQ(M6809Mnemonic::STD, ParseM6809Mnemonic("STD"));
+  EXPECT_EQ(M6809Mnemonic::STX, ParseM6809Mnemonic("STX"));
+  EXPECT_EQ(M6809Mnemonic::STY, ParseM6809Mnemonic("STY"));
 }
 
-TEST(MnemonicConstantsTest, M6809_ArithmeticInstructions) {
-  // Test that 6809 arithmetic mnemonics are defined and correct
-  EXPECT_STREQ("ADDA", M6809Mnemonics::ADDA);
-  EXPECT_STREQ("ADDB", M6809Mnemonics::ADDB);
-  EXPECT_STREQ("ADDD", M6809Mnemonics::ADDD);
-  EXPECT_STREQ("SUBA", M6809Mnemonics::SUBA);
-  EXPECT_STREQ("SUBB", M6809Mnemonics::SUBB);
-  EXPECT_STREQ("SUBD", M6809Mnemonics::SUBD);
+TEST(MnemonicEnumTest, M6809_ParseArithmetic) {
+  EXPECT_EQ(M6809Mnemonic::ADDA, ParseM6809Mnemonic("ADDA"));
+  EXPECT_EQ(M6809Mnemonic::ADDB, ParseM6809Mnemonic("ADDB"));
+  EXPECT_EQ(M6809Mnemonic::ADDD, ParseM6809Mnemonic("ADDD"));
+  EXPECT_EQ(M6809Mnemonic::SUBA, ParseM6809Mnemonic("SUBA"));
+  EXPECT_EQ(M6809Mnemonic::SUBB, ParseM6809Mnemonic("SUBB"));
+  EXPECT_EQ(M6809Mnemonic::SUBD, ParseM6809Mnemonic("SUBD"));
 }
 
-TEST(MnemonicConstantsTest, M6809_BranchInstructions) {
-  // Test that 6809 branch mnemonics are defined and correct
-  EXPECT_STREQ("BRA", M6809Mnemonics::BRA);
-  EXPECT_STREQ("BCC", M6809Mnemonics::BCC);
-  EXPECT_STREQ("BCS", M6809Mnemonics::BCS);
-  EXPECT_STREQ("BEQ", M6809Mnemonics::BEQ);
-  EXPECT_STREQ("BNE", M6809Mnemonics::BNE);
-  EXPECT_STREQ("BMI", M6809Mnemonics::BMI);
-  EXPECT_STREQ("BPL", M6809Mnemonics::BPL);
+TEST(MnemonicEnumTest, M6809_ParseBranch) {
+  EXPECT_EQ(M6809Mnemonic::BRA,  ParseM6809Mnemonic("BRA"));
+  EXPECT_EQ(M6809Mnemonic::BCC,  ParseM6809Mnemonic("BCC"));
+  EXPECT_EQ(M6809Mnemonic::BCS,  ParseM6809Mnemonic("BCS"));
+  EXPECT_EQ(M6809Mnemonic::BEQ,  ParseM6809Mnemonic("BEQ"));
+  EXPECT_EQ(M6809Mnemonic::BNE,  ParseM6809Mnemonic("BNE"));
+  EXPECT_EQ(M6809Mnemonic::BMI,  ParseM6809Mnemonic("BMI"));
+  EXPECT_EQ(M6809Mnemonic::BPL,  ParseM6809Mnemonic("BPL"));
+}
+
+TEST(MnemonicEnumTest, M6809_ParseLongBranch) {
+  EXPECT_EQ(M6809Mnemonic::LBRA, ParseM6809Mnemonic("LBRA"));
+  EXPECT_EQ(M6809Mnemonic::LBEQ, ParseM6809Mnemonic("LBEQ"));
+  EXPECT_EQ(M6809Mnemonic::LBLT, ParseM6809Mnemonic("LBLT"));
+}
+
+TEST(MnemonicEnumTest, M6809_ParseInherent) {
+  EXPECT_EQ(M6809Mnemonic::NOP,  ParseM6809Mnemonic("NOP"));
+  EXPECT_EQ(M6809Mnemonic::RTS,  ParseM6809Mnemonic("RTS"));
+  EXPECT_EQ(M6809Mnemonic::CLRA, ParseM6809Mnemonic("CLRA"));
+  EXPECT_EQ(M6809Mnemonic::DAA,  ParseM6809Mnemonic("DAA"));
+  EXPECT_EQ(M6809Mnemonic::MUL,  ParseM6809Mnemonic("MUL"));
+}
+
+TEST(MnemonicEnumTest, M6809_ParseUnknown) {
+  EXPECT_EQ(M6809Mnemonic::Unknown, ParseM6809Mnemonic(""));
+  EXPECT_EQ(M6809Mnemonic::Unknown, ParseM6809Mnemonic("FOOBAR"));
+  EXPECT_EQ(M6809Mnemonic::Unknown, ParseM6809Mnemonic("lda")); // lowercase
 }

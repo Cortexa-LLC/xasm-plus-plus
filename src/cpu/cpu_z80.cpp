@@ -11,11 +11,9 @@
 #include "xasm++/cpu/opcodes_z80.h"
 #include "xasm++/util/string_utils.h"
 #include <algorithm>
-#include <unordered_set>
 
 namespace xasm {
 
-using namespace Z80Mnemonics;
 namespace Opcodes = Z80Opcodes;
 
 // ============================================================================
@@ -25,92 +23,117 @@ namespace Opcodes = Z80Opcodes;
 std::vector<uint8_t>
 CpuZ80::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
                           const std::string &operand_str) const {
+  // ── Parse mnemonic string to enum (single map lookup) ───────────────────
+  const Z80Mnemonic mn = ParseZ80Mnemonic(mnemonic);
+
   // Helper to trim whitespace
   std::string trimmed = util::Trim(operand_str);
 
-  // NOP instruction
-  if (mnemonic == NOP) {
-    return EncodeNOP();
-  }
+  switch (mn) {
+    case Z80Mnemonic::NOP:
+      return EncodeNOP();
 
-  // RET instruction
-  if (mnemonic == RET) {
-    return EncodeRET();
-  }
+    case Z80Mnemonic::RET:
+      return EncodeRET();
 
-  // LD instruction - various addressing modes
-  if (mnemonic == LD) {
-    // Check for "BC, #$xxxx" pattern (16-bit immediate to BC)
-    if (trimmed.starts_with("BC,") || trimmed.starts_with("BC ,")) {
-      size_t comma_pos = trimmed.find(',');
-      if (comma_pos != std::string::npos) {
-        std::string value_part = util::Trim(trimmed.substr(comma_pos + 1));
-        if (!value_part.empty() && value_part[0] == '#') {
-          return EncodeLD_BC_nn(static_cast<uint16_t>(operand));
+    case Z80Mnemonic::LD: {
+      // Check for "BC, #$xxxx" pattern (16-bit immediate to BC)
+      if (trimmed.starts_with("BC,") || trimmed.starts_with("BC ,")) {
+        size_t comma_pos = trimmed.find(',');
+        if (comma_pos != std::string::npos) {
+          std::string value_part = util::Trim(trimmed.substr(comma_pos + 1));
+          if (!value_part.empty() && value_part[0] == '#') {
+            return EncodeLD_BC_nn(static_cast<uint16_t>(operand));
+          }
         }
       }
-    }
-    // Check for "A, #$xx" pattern (immediate load to A)
-    if (trimmed.starts_with("A,") || trimmed.starts_with("A ,")) {
-      size_t comma_pos = trimmed.find(',');
-      if (comma_pos != std::string::npos) {
-        std::string value_part = util::Trim(trimmed.substr(comma_pos + 1));
-        // Check for immediate mode indicator (#)
-        if (!value_part.empty() && value_part[0] == '#') {
-          return EncodeLD_A_n(static_cast<uint8_t>(operand));
+      // Check for "A, #$xx" pattern (immediate load to A)
+      if (trimmed.starts_with("A,") || trimmed.starts_with("A ,")) {
+        size_t comma_pos = trimmed.find(',');
+        if (comma_pos != std::string::npos) {
+          std::string value_part = util::Trim(trimmed.substr(comma_pos + 1));
+          if (!value_part.empty() && value_part[0] == '#') {
+            return EncodeLD_A_n(static_cast<uint8_t>(operand));
+          }
         }
       }
+      return {};
     }
+
+    case Z80Mnemonic::ADD:
+      // Check for "A, #$xx" pattern (add immediate to A)
+      if (trimmed.starts_with("A,") || trimmed.starts_with("A ,")) {
+        return EncodeADD_A_n(static_cast<uint8_t>(operand));
+      }
+      return {};
+
+    case Z80Mnemonic::SUB:
+      // SUB n (immediate subtract from A)
+      return EncodeSUB_n(static_cast<uint8_t>(operand));
+
+    case Z80Mnemonic::INC:
+      if (trimmed == "A") {
+        return EncodeINC_A();
+      }
+      return {};
+
+    case Z80Mnemonic::DEC:
+      if (trimmed == "A") {
+        return EncodeDEC_A();
+      }
+      return {};
+
+    case Z80Mnemonic::XOR:
+      if (trimmed == "A") {
+        return EncodeXOR_A();
+      }
+      return {};
+
+    case Z80Mnemonic::JP:
+      // Simple absolute address (no condition)
+      return EncodeJP_nn(static_cast<uint16_t>(operand));
+
+    case Z80Mnemonic::JR:
+      // Simple relative jump (no condition)
+      return EncodeJR_e(static_cast<int8_t>(operand));
+
+    // All other Z80 mnemonics — not yet implemented
+    case Z80Mnemonic::ADC:
+    case Z80Mnemonic::SBC:
+    case Z80Mnemonic::AND:
+    case Z80Mnemonic::OR:
+    case Z80Mnemonic::CP:
+    case Z80Mnemonic::BIT:
+    case Z80Mnemonic::SET:
+    case Z80Mnemonic::RES:
+    case Z80Mnemonic::RL: case Z80Mnemonic::RLA:
+    case Z80Mnemonic::RLC: case Z80Mnemonic::RLCA:
+    case Z80Mnemonic::RR: case Z80Mnemonic::RRA:
+    case Z80Mnemonic::RRC: case Z80Mnemonic::RRCA:
+    case Z80Mnemonic::SLA: case Z80Mnemonic::SRA: case Z80Mnemonic::SRL:
+    case Z80Mnemonic::CALL: case Z80Mnemonic::RETI: case Z80Mnemonic::RETN:
+    case Z80Mnemonic::RST: case Z80Mnemonic::DJNZ:
+    case Z80Mnemonic::LDI: case Z80Mnemonic::LDIR:
+    case Z80Mnemonic::LDD: case Z80Mnemonic::LDDR:
+    case Z80Mnemonic::CPI: case Z80Mnemonic::CPIR:
+    case Z80Mnemonic::CPD: case Z80Mnemonic::CPDR:
+    case Z80Mnemonic::INI: case Z80Mnemonic::INIR:
+    case Z80Mnemonic::IND: case Z80Mnemonic::INDR:
+    case Z80Mnemonic::OUTI: case Z80Mnemonic::OTIR:
+    case Z80Mnemonic::OUTD: case Z80Mnemonic::OTDR:
+    case Z80Mnemonic::IN: case Z80Mnemonic::OUT:
+    case Z80Mnemonic::EX: case Z80Mnemonic::EXX:
+    case Z80Mnemonic::HALT:
+    case Z80Mnemonic::CCF: case Z80Mnemonic::SCF:
+    case Z80Mnemonic::CPL: case Z80Mnemonic::NEG: case Z80Mnemonic::DAA:
+    case Z80Mnemonic::DI: case Z80Mnemonic::EI: case Z80Mnemonic::IM:
+    case Z80Mnemonic::PUSH: case Z80Mnemonic::POP:
+      return {};
+
+    case Z80Mnemonic::Unknown:
+      return {};
   }
 
-  // ADD instruction
-  if (mnemonic == ADD) {
-    // Check for "A, #$xx" pattern (add immediate to A)
-    if (trimmed.starts_with("A,") || trimmed.starts_with("A ,")) {
-      return EncodeADD_A_n(static_cast<uint8_t>(operand));
-    }
-  }
-
-  // SUB instruction
-  if (mnemonic == SUB) {
-    // SUB n (immediate subtract from A)
-    return EncodeSUB_n(static_cast<uint8_t>(operand));
-  }
-
-  // INC instruction
-  if (mnemonic == INC) {
-    if (trimmed == "A") {
-      return EncodeINC_A();
-    }
-  }
-
-  // DEC instruction
-  if (mnemonic == DEC) {
-    if (trimmed == "A") {
-      return EncodeDEC_A();
-    }
-  }
-
-  // XOR instruction
-  if (mnemonic == XOR) {
-    if (trimmed == "A") {
-      return EncodeXOR_A();
-    }
-  }
-
-  // JP instruction - absolute jump
-  if (mnemonic == JP) {
-    // Simple absolute address (no condition)
-    return EncodeJP_nn(static_cast<uint16_t>(operand));
-  }
-
-  // JR instruction - relative jump
-  if (mnemonic == JR) {
-    // Simple relative jump (no condition)
-    return EncodeJR_e(static_cast<int8_t>(operand));
-  }
-
-  // Return empty vector if instruction not recognized
   return {};
 }
 
@@ -592,53 +615,8 @@ bool CpuZ80::HasOpcode(const std::string &mnemonic) const {
   std::string upper = mnemonic;
   std::transform(upper.begin(), upper.end(), upper.begin(), ::toupper);
 
-  // Create static set of all Z80 mnemonics for O(1) lookup
-  static const std::unordered_set<std::string> valid_opcodes = {
-      // Load/Store
-      Z80Mnemonics::LD, Z80Mnemonics::PUSH, Z80Mnemonics::POP,
-
-      // Arithmetic
-      Z80Mnemonics::ADD, Z80Mnemonics::ADC, Z80Mnemonics::SUB,
-      Z80Mnemonics::SBC, Z80Mnemonics::INC, Z80Mnemonics::DEC,
-
-      // Logical
-      Z80Mnemonics::AND, Z80Mnemonics::OR, Z80Mnemonics::XOR, Z80Mnemonics::CP,
-
-      // Branch/Jump
-      Z80Mnemonics::JP, Z80Mnemonics::JR, Z80Mnemonics::CALL, Z80Mnemonics::RET,
-      Z80Mnemonics::RST, Z80Mnemonics::DJNZ,
-
-      // Rotate/Shift
-      Z80Mnemonics::RLCA, Z80Mnemonics::RRCA, Z80Mnemonics::RLA,
-      Z80Mnemonics::RRA, Z80Mnemonics::RLC, Z80Mnemonics::RRC, Z80Mnemonics::RL,
-      Z80Mnemonics::RR, Z80Mnemonics::SLA, Z80Mnemonics::SRA, Z80Mnemonics::SRL,
-
-      // Bit Manipulation
-      Z80Mnemonics::BIT, Z80Mnemonics::SET, Z80Mnemonics::RES,
-
-      // Miscellaneous
-      Z80Mnemonics::NOP, Z80Mnemonics::HALT, Z80Mnemonics::DI, Z80Mnemonics::EI,
-      Z80Mnemonics::NEG, Z80Mnemonics::CPL, Z80Mnemonics::CCF,
-      Z80Mnemonics::SCF, Z80Mnemonics::DAA,
-
-      // Block Transfer/Search
-      Z80Mnemonics::LDI, Z80Mnemonics::LDIR, Z80Mnemonics::LDD,
-      Z80Mnemonics::LDDR, Z80Mnemonics::CPI, Z80Mnemonics::CPIR,
-      Z80Mnemonics::CPD, Z80Mnemonics::CPDR,
-
-      // Input/Output
-      Z80Mnemonics::IN, Z80Mnemonics::OUT, Z80Mnemonics::INI,
-      Z80Mnemonics::INIR, Z80Mnemonics::IND, Z80Mnemonics::INDR,
-      Z80Mnemonics::OUTI, Z80Mnemonics::OTIR, Z80Mnemonics::OUTD,
-      Z80Mnemonics::OTDR,
-
-      // Exchange
-      Z80Mnemonics::EX, Z80Mnemonics::EXX,
-
-      // Interrupt
-      Z80Mnemonics::RETI, Z80Mnemonics::RETN, Z80Mnemonics::IM};
-
-  return valid_opcodes.contains(upper);
+  // ParseZ80Mnemonic returns Unknown for unrecognised strings.
+  return ParseZ80Mnemonic(upper) != Z80Mnemonic::Unknown;
 }
 
 } // namespace xasm

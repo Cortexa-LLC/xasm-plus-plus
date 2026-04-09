@@ -4,6 +4,9 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
+#include <string_view>
+#include <unordered_map>
 
 namespace xasm {
 
@@ -102,6 +105,118 @@ constexpr const char *RETN = "RETN";
 constexpr const char *IM = "IM";
 
 } // namespace Z80Mnemonics
+
+// ============================================================================
+// Z80Mnemonic enum class — one enumerator per Z80 instruction
+// ============================================================================
+
+enum class Z80Mnemonic {
+  Unknown = 0,
+
+  // Load / Store
+  LD, PUSH, POP,
+
+  // Arithmetic
+  ADD, ADC, SUB, SBC, INC, DEC,
+
+  // Logical / Bit-test
+  AND, OR, XOR, CP,
+  BIT, SET, RES,
+
+  // Shift / Rotate
+  RL, RLA, RLC, RLCA,
+  RR, RRA, RRC, RRCA,
+  SLA, SRA, SRL,
+
+  // Jump / Call / Return
+  JP, JR, CALL, RET, RETI, RETN, RST, DJNZ,
+
+  // Block instructions
+  LDI, LDIR, LDD, LDDR,
+  CPI, CPIR, CPD, CPDR,
+  INI, INIR, IND, INDR,
+  OUTI, OTIR, OUTD, OTDR,
+
+  // I/O
+  IN, OUT,
+
+  // Exchange
+  EX, EXX,
+
+  // Miscellaneous
+  NOP, HALT,
+  CCF, SCF, CPL, NEG, DAA,
+  DI, EI,
+  IM,
+};
+
+/**
+ * @brief Convert an uppercase mnemonic string to Z80Mnemonic.
+ *
+ * Returns Z80Mnemonic::Unknown for any unrecognised string.
+ * The map is built once (function-local static).
+ */
+inline Z80Mnemonic ParseZ80Mnemonic(std::string_view s) {
+  // clang-format off
+  static const std::unordered_map<std::string, Z80Mnemonic> kMap = {
+    // Load / Store
+    { "LD",   Z80Mnemonic::LD   }, { "PUSH", Z80Mnemonic::PUSH },
+    { "POP",  Z80Mnemonic::POP  },
+
+    // Arithmetic
+    { "ADD",  Z80Mnemonic::ADD  }, { "ADC",  Z80Mnemonic::ADC  },
+    { "SUB",  Z80Mnemonic::SUB  }, { "SBC",  Z80Mnemonic::SBC  },
+    { "INC",  Z80Mnemonic::INC  }, { "DEC",  Z80Mnemonic::DEC  },
+
+    // Logical / Bit-test
+    { "AND",  Z80Mnemonic::AND  }, { "OR",   Z80Mnemonic::OR   },
+    { "XOR",  Z80Mnemonic::XOR  }, { "CP",   Z80Mnemonic::CP   },
+    { "BIT",  Z80Mnemonic::BIT  }, { "SET",  Z80Mnemonic::SET  },
+    { "RES",  Z80Mnemonic::RES  },
+
+    // Shift / Rotate
+    { "RL",   Z80Mnemonic::RL   }, { "RLA",  Z80Mnemonic::RLA  },
+    { "RLC",  Z80Mnemonic::RLC  }, { "RLCA", Z80Mnemonic::RLCA },
+    { "RR",   Z80Mnemonic::RR   }, { "RRA",  Z80Mnemonic::RRA  },
+    { "RRC",  Z80Mnemonic::RRC  }, { "RRCA", Z80Mnemonic::RRCA },
+    { "SLA",  Z80Mnemonic::SLA  }, { "SRA",  Z80Mnemonic::SRA  },
+    { "SRL",  Z80Mnemonic::SRL  },
+
+    // Jump / Call / Return
+    { "JP",   Z80Mnemonic::JP   }, { "JR",   Z80Mnemonic::JR   },
+    { "CALL", Z80Mnemonic::CALL }, { "RET",  Z80Mnemonic::RET  },
+    { "RETI", Z80Mnemonic::RETI }, { "RETN", Z80Mnemonic::RETN },
+    { "RST",  Z80Mnemonic::RST  }, { "DJNZ", Z80Mnemonic::DJNZ },
+
+    // Block instructions
+    { "LDI",  Z80Mnemonic::LDI  }, { "LDIR", Z80Mnemonic::LDIR },
+    { "LDD",  Z80Mnemonic::LDD  }, { "LDDR", Z80Mnemonic::LDDR },
+    { "CPI",  Z80Mnemonic::CPI  }, { "CPIR", Z80Mnemonic::CPIR },
+    { "CPD",  Z80Mnemonic::CPD  }, { "CPDR", Z80Mnemonic::CPDR },
+    { "INI",  Z80Mnemonic::INI  }, { "INIR", Z80Mnemonic::INIR },
+    { "IND",  Z80Mnemonic::IND  }, { "INDR", Z80Mnemonic::INDR },
+    { "OUTI", Z80Mnemonic::OUTI }, { "OTIR", Z80Mnemonic::OTIR },
+    { "OUTD", Z80Mnemonic::OUTD }, { "OTDR", Z80Mnemonic::OTDR },
+
+    // I/O
+    { "IN",   Z80Mnemonic::IN   }, { "OUT",  Z80Mnemonic::OUT  },
+
+    // Exchange
+    { "EX",   Z80Mnemonic::EX   }, { "EXX",  Z80Mnemonic::EXX  },
+
+    // Miscellaneous
+    { "NOP",  Z80Mnemonic::NOP  }, { "HALT", Z80Mnemonic::HALT },
+    { "CCF",  Z80Mnemonic::CCF  }, { "SCF",  Z80Mnemonic::SCF  },
+    { "CPL",  Z80Mnemonic::CPL  }, { "NEG",  Z80Mnemonic::NEG  },
+    { "DAA",  Z80Mnemonic::DAA  }, { "DI",   Z80Mnemonic::DI   },
+    { "EI",   Z80Mnemonic::EI   }, { "IM",   Z80Mnemonic::IM   },
+  };
+  // clang-format on
+
+  auto it = kMap.find(std::string(s));
+  return it != kMap.end() ? it->second : Z80Mnemonic::Unknown;
+}
+
 
 namespace Z80Opcodes {
 

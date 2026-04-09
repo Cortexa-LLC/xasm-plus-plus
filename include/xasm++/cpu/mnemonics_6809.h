@@ -1,472 +1,214 @@
 /**
  * @file mnemonics_6809.h
- * @brief Mnemonic string constants for Motorola 6809 instructions
+ * @brief Mnemonic enum and parse-time mapping for Motorola 6809 instructions
  *
- * Eliminates magic strings from 6809 CPU instruction encoding.
- * Part of magic string elimination initiative (Phase 6b).
+ * Replaces the prior `constexpr const char*` namespace with an `enum class`
+ * so that all mnemonic dispatch uses a single `unordered_map` lookup at
+ * parse time and an O(1), compiler-checked `switch` at encode time.
  *
  * @section usage Usage Example
  * @code
- * // Instead of:
- * if (mnemonic == "LDA") { ... }  // Magic string
+ * // Parse once at instruction-decode time:
+ * M6809Mnemonic mn = ParseM6809Mnemonic(str);
  *
- * // Use:
- * if (mnemonic == M6809Mnemonics::LDA) { ... }  // Named constant
+ * // Switch in encoder (compiler warns on unhandled cases):
+ * switch (mn) {
+ *   case M6809Mnemonic::LDA: ...
+ *   ...
+ * }
  * @endcode
  */
 
 #pragma once
 
+#include <string>
+#include <string_view>
+#include <unordered_map>
+
 namespace xasm {
-namespace M6809Mnemonics {
 
 // ============================================================================
-// Data Movement Instructions - Load
+// Mnemonic enum — one enumerator per M6809 instruction
 // ============================================================================
 
-/// LDA - Load Accumulator A
-constexpr const char *LDA = "LDA";
+enum class M6809Mnemonic {
+  Unknown = 0,
 
-/// LDB - Load Accumulator B
-constexpr const char *LDB = "LDB";
+  // Load / Store — 8-bit accumulators
+  LDA, STA,
+  LDB, STB,
 
-/// LDD - Load Accumulator D (16-bit)
-constexpr const char *LDD = "LDD";
+  // Load / Store — 16-bit registers
+  LDD, STD,
+  LDX, STX,
+  LDY, STY,
+  LDU, STU,
+  LDS, STS,
 
-/// LDX - Load Index Register X
-constexpr const char *LDX = "LDX";
+  // Arithmetic — Accumulator A
+  ADDA, ADCA, SUBA, SBCA, CMPA,
+  // Arithmetic — Accumulator B
+  ADDB, ADCB, SUBB, SBCB, CMPB,
+  // Arithmetic — 16-bit
+  ADDD, SUBD, CMPX, CMPY, CMPU, CMPS, CMPD,
 
-/// LDY - Load Index Register Y
-constexpr const char *LDY = "LDY";
+  // Logical — Accumulator A
+  ANDA, ORA, EORA, BITA,
+  // Logical — Accumulator B
+  ANDB, ORB, EORB, BITB,
 
-/// LDU - Load User Stack Pointer
-constexpr const char *LDU = "LDU";
+  // Register-flag operations
+  ANDCC, ORCC,
 
-/// LDS - Load System Stack Pointer
-constexpr const char *LDS = "LDS";
+  // Inherent — Accumulator A only
+  CLRA, ASLA, ASRA, LSRA, ROLA, RORA, INCA, DECA, TSTA, NEGA, COMA, DAA,
+  // Inherent — Accumulator B only
+  CLRB, ASLB, ASRB, LSRB, ROLB, RORB, INCB, DECB, TSTB, NEGB, COMB,
 
-// ============================================================================
-// Data Movement Instructions - Store
-// ============================================================================
+  // Memory-addressed single-operand
+  CLR, ASL, ASR, LSR, ROL, ROR, INC, DEC, TST, NEG,
 
-/// STA - Store Accumulator A
-constexpr const char *STA = "STA";
+  // Transfer / Exchange / Stack
+  EXG, TFR,
+  PSHS, PULS,
+  PSHU, PULU,
 
-/// STB - Store Accumulator B
-constexpr const char *STB = "STB";
+  // Inherent (no operand)
+  NOP, RTS, RTI, MUL, SEX, SWI, SWI2, SWI3, SYNC, CWAI, ABX,
 
-/// STD - Store Accumulator D (16-bit)
-constexpr const char *STD = "STD";
+  // Jump / Call
+  JMP, JSR,
 
-/// STX - Store Index Register X
-constexpr const char *STX = "STX";
+  // Load Effective Address
+  LEAX, LEAY, LEAS, LEAU,
 
-/// STY - Store Index Register Y
-constexpr const char *STY = "STY";
+  // Short Branch (8-bit relative)
+  BRA, BRN, BSR,
+  BEQ, BNE,
+  BCS, BCC, BLO, BHS,
+  BMI, BPL, BVS, BVC,
+  BHI, BLS, BGE, BGT, BLE, BLT,
 
-/// STU - Store User Stack Pointer
-constexpr const char *STU = "STU";
-
-/// STS - Store System Stack Pointer
-constexpr const char *STS = "STS";
-
-// ============================================================================
-// Arithmetic Instructions
-// ============================================================================
-
-/// ADDA - Add to Accumulator A
-constexpr const char *ADDA = "ADDA";
-
-/// ADDB - Add to Accumulator B
-constexpr const char *ADDB = "ADDB";
-
-/// ADDD - Add 16-bit value to Accumulator D
-constexpr const char *ADDD = "ADDD";
-
-/// ADCA - Add with Carry to Accumulator A
-constexpr const char *ADCA = "ADCA";
-
-/// ADCB - Add with Carry to Accumulator B
-constexpr const char *ADCB = "ADCB";
-
-/// ADCA - Add with Carry to Accumulator A
-constexpr const char *ADCA = "ADCA";
-
-/// ADCB - Add with Carry to Accumulator B
-constexpr const char *ADCB = "ADCB";
-
-/// SUBA - Subtract from Accumulator A
-constexpr const char *SUBA = "SUBA";
-
-/// SUBB - Subtract from Accumulator B
-constexpr const char *SUBB = "SUBB";
-
-/// SUBD - Subtract 16-bit value from Accumulator D
-constexpr const char *SUBD = "SUBD";
-
-/// SBCA - Subtract with Carry from Accumulator A
-constexpr const char *SBCA = "SBCA";
-
-/// SBCB - Subtract with Carry from Accumulator B
-constexpr const char *SBCB = "SBCB";
-
-/// SBCA - Subtract with Carry from Accumulator A
-constexpr const char *SBCA = "SBCA";
-
-/// SBCB - Subtract with Carry from Accumulator B
-constexpr const char *SBCB = "SBCB";
-
-/// MUL - Unsigned Multiply (A × B → D)
-constexpr const char *MUL = "MUL";
-
-/// DAA - Decimal Adjust Accumulator A
-constexpr const char *DAA = "DAA";
-
-/// SEX - Sign Extend B into D
-constexpr const char *SEX = "SEX";
-
-/// ANDCC - AND Condition Code Register with immediate
-constexpr const char *ANDCC = "ANDCC";
-
-/// ORCC - OR Condition Code Register with immediate
-constexpr const char *ORCC = "ORCC";
+  // Long Branch (16-bit relative)
+  LBRA, LBRN, LBSR,
+  LBEQ, LBNE,
+  LBCS, LBCC, LBLO, LBHS,
+  LBMI, LBPL, LBVS, LBVC,
+  LBHI, LBLS, LBGE, LBGT, LBLE, LBLT,
+};
 
 // ============================================================================
-// Compare Instructions (additional)
+// Parse-time string -> M6809Mnemonic mapping
 // ============================================================================
 
-/// CMPD - Compare Accumulator D (16-bit) with memory
-constexpr const char *CMPD = "CMPD";
+/**
+ * @brief Convert an uppercase mnemonic string to M6809Mnemonic.
+ *
+ * Returns M6809Mnemonic::Unknown for any unrecognised string.
+ * The map is built once (function-local static).
+ */
+inline M6809Mnemonic ParseM6809Mnemonic(std::string_view s) {
+  // clang-format off
+  static const std::unordered_map<std::string, M6809Mnemonic> kMap = {
+    // Load / Store
+    { "LDA",  M6809Mnemonic::LDA  }, { "STA",  M6809Mnemonic::STA  },
+    { "LDB",  M6809Mnemonic::LDB  }, { "STB",  M6809Mnemonic::STB  },
+    { "LDD",  M6809Mnemonic::LDD  }, { "STD",  M6809Mnemonic::STD  },
+    { "LDX",  M6809Mnemonic::LDX  }, { "STX",  M6809Mnemonic::STX  },
+    { "LDY",  M6809Mnemonic::LDY  }, { "STY",  M6809Mnemonic::STY  },
+    { "LDU",  M6809Mnemonic::LDU  }, { "STU",  M6809Mnemonic::STU  },
+    { "LDS",  M6809Mnemonic::LDS  }, { "STS",  M6809Mnemonic::STS  },
+
+    // Arithmetic
+    { "ADDA", M6809Mnemonic::ADDA }, { "ADCA", M6809Mnemonic::ADCA },
+    { "SUBA", M6809Mnemonic::SUBA }, { "SBCA", M6809Mnemonic::SBCA },
+    { "CMPA", M6809Mnemonic::CMPA },
+    { "ADDB", M6809Mnemonic::ADDB }, { "ADCB", M6809Mnemonic::ADCB },
+    { "SUBB", M6809Mnemonic::SUBB }, { "SBCB", M6809Mnemonic::SBCB },
+    { "CMPB", M6809Mnemonic::CMPB },
+    { "ADDD", M6809Mnemonic::ADDD }, { "SUBD", M6809Mnemonic::SUBD },
+    { "CMPX", M6809Mnemonic::CMPX }, { "CMPY", M6809Mnemonic::CMPY },
+    { "CMPU", M6809Mnemonic::CMPU }, { "CMPS", M6809Mnemonic::CMPS },
+    { "CMPD", M6809Mnemonic::CMPD },
+
+    // Logical
+    { "ANDA", M6809Mnemonic::ANDA }, { "ORA",  M6809Mnemonic::ORA  },
+    { "EORA", M6809Mnemonic::EORA }, { "BITA", M6809Mnemonic::BITA },
+    { "ANDB", M6809Mnemonic::ANDB }, { "ORB",  M6809Mnemonic::ORB  },
+    { "EORB", M6809Mnemonic::EORB }, { "BITB", M6809Mnemonic::BITB },
+    { "ANDCC",M6809Mnemonic::ANDCC}, { "ORCC", M6809Mnemonic::ORCC },
+
+    // Inherent accumulator A
+    { "CLRA", M6809Mnemonic::CLRA }, { "ASLA", M6809Mnemonic::ASLA },
+    { "ASRA", M6809Mnemonic::ASRA }, { "LSRA", M6809Mnemonic::LSRA },
+    { "ROLA", M6809Mnemonic::ROLA }, { "RORA", M6809Mnemonic::RORA },
+    { "INCA", M6809Mnemonic::INCA }, { "DECA", M6809Mnemonic::DECA },
+    { "TSTA", M6809Mnemonic::TSTA }, { "NEGA", M6809Mnemonic::NEGA },
+    { "COMA", M6809Mnemonic::COMA }, { "DAA",  M6809Mnemonic::DAA  },
+
+    // Inherent accumulator B
+    { "CLRB", M6809Mnemonic::CLRB }, { "ASLB", M6809Mnemonic::ASLB },
+    { "ASRB", M6809Mnemonic::ASRB }, { "LSRB", M6809Mnemonic::LSRB },
+    { "ROLB", M6809Mnemonic::ROLB }, { "RORB", M6809Mnemonic::RORB },
+    { "INCB", M6809Mnemonic::INCB }, { "DECB", M6809Mnemonic::DECB },
+    { "TSTB", M6809Mnemonic::TSTB }, { "NEGB", M6809Mnemonic::NEGB },
+    { "COMB", M6809Mnemonic::COMB },
+
+    // Memory-addressed single-operand
+    { "CLR",  M6809Mnemonic::CLR  }, { "ASL",  M6809Mnemonic::ASL  },
+    { "ASR",  M6809Mnemonic::ASR  }, { "LSR",  M6809Mnemonic::LSR  },
+    { "ROL",  M6809Mnemonic::ROL  }, { "ROR",  M6809Mnemonic::ROR  },
+    { "INC",  M6809Mnemonic::INC  }, { "DEC",  M6809Mnemonic::DEC  },
+    { "TST",  M6809Mnemonic::TST  }, { "NEG",  M6809Mnemonic::NEG  },
+
+    // Transfer / Exchange / Stack
+    { "EXG",  M6809Mnemonic::EXG  }, { "TFR",  M6809Mnemonic::TFR  },
+    { "PSHS", M6809Mnemonic::PSHS }, { "PULS", M6809Mnemonic::PULS },
+    { "PSHU", M6809Mnemonic::PSHU }, { "PULU", M6809Mnemonic::PULU },
+
+    // Inherent (no operand)
+    { "NOP",  M6809Mnemonic::NOP  }, { "RTS",  M6809Mnemonic::RTS  },
+    { "RTI",  M6809Mnemonic::RTI  }, { "MUL",  M6809Mnemonic::MUL  },
+    { "SEX",  M6809Mnemonic::SEX  }, { "SWI",  M6809Mnemonic::SWI  },
+    { "SWI2", M6809Mnemonic::SWI2 }, { "SWI3", M6809Mnemonic::SWI3 },
+    { "SYNC", M6809Mnemonic::SYNC }, { "CWAI", M6809Mnemonic::CWAI },
+    { "ABX",  M6809Mnemonic::ABX  },
+
+    // Jump / Call
+    { "JMP",  M6809Mnemonic::JMP  }, { "JSR",  M6809Mnemonic::JSR  },
+
+    // Load Effective Address
+    { "LEAX", M6809Mnemonic::LEAX }, { "LEAY", M6809Mnemonic::LEAY },
+    { "LEAS", M6809Mnemonic::LEAS }, { "LEAU", M6809Mnemonic::LEAU },
+
+    // Short Branch
+    { "BRA",  M6809Mnemonic::BRA  }, { "BRN",  M6809Mnemonic::BRN  },
+    { "BSR",  M6809Mnemonic::BSR  },
+    { "BEQ",  M6809Mnemonic::BEQ  }, { "BNE",  M6809Mnemonic::BNE  },
+    { "BCS",  M6809Mnemonic::BCS  }, { "BCC",  M6809Mnemonic::BCC  },
+    { "BLO",  M6809Mnemonic::BLO  }, { "BHS",  M6809Mnemonic::BHS  },
+    { "BMI",  M6809Mnemonic::BMI  }, { "BPL",  M6809Mnemonic::BPL  },
+    { "BVS",  M6809Mnemonic::BVS  }, { "BVC",  M6809Mnemonic::BVC  },
+    { "BHI",  M6809Mnemonic::BHI  }, { "BLS",  M6809Mnemonic::BLS  },
+    { "BGE",  M6809Mnemonic::BGE  }, { "BGT",  M6809Mnemonic::BGT  },
+    { "BLE",  M6809Mnemonic::BLE  }, { "BLT",  M6809Mnemonic::BLT  },
+
+    // Long Branch
+    { "LBRA", M6809Mnemonic::LBRA }, { "LBRN", M6809Mnemonic::LBRN },
+    { "LBSR", M6809Mnemonic::LBSR },
+    { "LBEQ", M6809Mnemonic::LBEQ }, { "LBNE", M6809Mnemonic::LBNE },
+    { "LBCS", M6809Mnemonic::LBCS }, { "LBCC", M6809Mnemonic::LBCC },
+    { "LBLO", M6809Mnemonic::LBLO }, { "LBHS", M6809Mnemonic::LBHS },
+    { "LBMI", M6809Mnemonic::LBMI }, { "LBPL", M6809Mnemonic::LBPL },
+    { "LBVS", M6809Mnemonic::LBVS }, { "LBVC", M6809Mnemonic::LBVC },
+    { "LBHI", M6809Mnemonic::LBHI }, { "LBLS", M6809Mnemonic::LBLS },
+    { "LBGE", M6809Mnemonic::LBGE }, { "LBGT", M6809Mnemonic::LBGT },
+    { "LBLE", M6809Mnemonic::LBLE }, { "LBLT", M6809Mnemonic::LBLT },
+  };
+  // clang-format on
+
+  auto it = kMap.find(std::string(s));
+  return it != kMap.end() ? it->second : M6809Mnemonic::Unknown;
+}
 
-// ============================================================================
-// Load Effective Address (additional)
-// ============================================================================
-
-/// LEAS - Load Effective Address into S Stack Pointer
-constexpr const char *LEAS = "LEAS";
-
-/// LEAU - Load Effective Address into U Stack Pointer
-constexpr const char *LEAU = "LEAU";
-
-// ============================================================================
-// Branch Instructions (additional)
-// ============================================================================
-
-/// BRN - Branch Never (tests branch logic, never taken)
-constexpr const char *BRN = "BRN";
-
-/// INCA - Increment Accumulator A
-constexpr const char *INCA = "INCA";
-
-/// INCB - Increment Accumulator B
-constexpr const char *INCB = "INCB";
-
-/// DECA - Decrement Accumulator A
-constexpr const char *DECA = "DECA";
-
-/// DECB - Decrement Accumulator B
-constexpr const char *DECB = "DECB";
-
-// ============================================================================
-// Logical Operations
-// ============================================================================
-
-/// ANDA - AND with Accumulator A
-constexpr const char *ANDA = "ANDA";
-
-/// ANDB - AND with Accumulator B
-constexpr const char *ANDB = "ANDB";
-
-/// ORA - OR with Accumulator A
-constexpr const char *ORA = "ORA";
-
-/// ORB - OR with Accumulator B
-constexpr const char *ORB = "ORB";
-
-/// EORA - Exclusive OR with Accumulator A
-constexpr const char *EORA = "EORA";
-
-/// EORB - Exclusive OR with Accumulator B
-constexpr const char *EORB = "EORB";
-
-/// BITA - Bit Test Accumulator A
-constexpr const char *BITA = "BITA";
-
-/// BITB - Bit Test Accumulator B
-constexpr const char *BITB = "BITB";
-
-// ============================================================================
-// Comparison Instructions
-// ============================================================================
-
-/// CMPA - Compare Accumulator A
-constexpr const char *CMPA = "CMPA";
-
-/// CMPB - Compare Accumulator B
-constexpr const char *CMPB = "CMPB";
-
-/// CMPX - Compare Index Register X
-constexpr const char *CMPX = "CMPX";
-
-/// CMPY - Compare Index Register Y
-constexpr const char *CMPY = "CMPY";
-
-/// CMPU - Compare User Stack Pointer
-constexpr const char *CMPU = "CMPU";
-
-/// CMPS - Compare System Stack Pointer
-constexpr const char *CMPS = "CMPS";
-
-// ============================================================================
-// Shift and Rotate Instructions
-// ============================================================================
-
-/// ASLA - Arithmetic Shift Left Accumulator A
-constexpr const char *ASLA = "ASLA";
-
-/// ASLB - Arithmetic Shift Left Accumulator B
-constexpr const char *ASLB = "ASLB";
-
-/// ASRA - Arithmetic Shift Right Accumulator A
-constexpr const char *ASRA = "ASRA";
-
-/// ASRB - Arithmetic Shift Right Accumulator B
-constexpr const char *ASRB = "ASRB";
-
-/// LSRA - Logical Shift Right Accumulator A
-constexpr const char *LSRA = "LSRA";
-
-/// LSRB - Logical Shift Right Accumulator B
-constexpr const char *LSRB = "LSRB";
-
-/// ROLA - Rotate Left Accumulator A
-constexpr const char *ROLA = "ROLA";
-
-/// ROLB - Rotate Left Accumulator B
-constexpr const char *ROLB = "ROLB";
-
-/// RORA - Rotate Right Accumulator A
-constexpr const char *RORA = "RORA";
-
-/// RORB - Rotate Right Accumulator B
-constexpr const char *RORB = "RORB";
-
-// ============================================================================
-// Test/Clear/Complement/Negate Instructions
-// ============================================================================
-
-/// TSTA - Test Accumulator A
-constexpr const char *TSTA = "TSTA";
-
-/// TSTB - Test Accumulator B
-constexpr const char *TSTB = "TSTB";
-
-/// CLRA - Clear Accumulator A
-constexpr const char *CLRA = "CLRA";
-
-/// CLRB - Clear Accumulator B
-constexpr const char *CLRB = "CLRB";
-
-/// COMA - Complement Accumulator A
-constexpr const char *COMA = "COMA";
-
-/// COMB - Complement Accumulator B
-constexpr const char *COMB = "COMB";
-
-/// NEGA - Negate Accumulator A
-constexpr const char *NEGA = "NEGA";
-
-/// NEGB - Negate Accumulator B
-constexpr const char *NEGB = "NEGB";
-
-// ============================================================================
-// Short Branch Instructions (8-bit relative)
-// ============================================================================
-
-/// BRA - Branch Always
-constexpr const char *BRA = "BRA";
-
-/// BEQ - Branch if Equal
-constexpr const char *BEQ = "BEQ";
-
-/// BNE - Branch if Not Equal
-constexpr const char *BNE = "BNE";
-
-/// BCC - Branch if Carry Clear
-constexpr const char *BCC = "BCC";
-
-/// BHS - Branch if Higher or Same (alias for BCC)
-constexpr const char *BHS = "BHS";
-
-/// BCS - Branch if Carry Set
-constexpr const char *BCS = "BCS";
-
-/// BLO - Branch if Lower (alias for BCS)
-constexpr const char *BLO = "BLO";
-
-/// BMI - Branch if Minus
-constexpr const char *BMI = "BMI";
-
-/// BPL - Branch if Plus
-constexpr const char *BPL = "BPL";
-
-/// BVS - Branch if Overflow Set
-constexpr const char *BVS = "BVS";
-
-/// BVC - Branch if Overflow Clear
-constexpr const char *BVC = "BVC";
-
-/// BGE - Branch if Greater or Equal (signed)
-constexpr const char *BGE = "BGE";
-
-/// BLT - Branch if Less Than (signed)
-constexpr const char *BLT = "BLT";
-
-/// BGT - Branch if Greater Than (signed)
-constexpr const char *BGT = "BGT";
-
-/// BLE - Branch if Less or Equal (signed)
-constexpr const char *BLE = "BLE";
-
-/// BHI - Branch if Higher (unsigned)
-constexpr const char *BHI = "BHI";
-
-/// BLS - Branch if Lower or Same (unsigned)
-constexpr const char *BLS = "BLS";
-
-/// BSR - Branch to Subroutine
-constexpr const char *BSR = "BSR";
-
-// ============================================================================
-// Long Branch Instructions (16-bit relative)
-// ============================================================================
-
-/// LBRA - Long Branch Always
-constexpr const char *LBRA = "LBRA";
-
-/// LBSR - Long Branch to Subroutine
-constexpr const char *LBSR = "LBSR";
-
-/// LBRN - Long Branch Never
-constexpr const char *LBRN = "LBRN";
-
-/// LBHI - Long Branch if Higher (unsigned)
-constexpr const char *LBHI = "LBHI";
-
-/// LBLS - Long Branch if Lower or Same (unsigned)
-constexpr const char *LBLS = "LBLS";
-
-/// LBCC - Long Branch if Carry Clear
-constexpr const char *LBCC = "LBCC";
-
-/// LBHS - Long Branch if Higher or Same (alias for LBCC)
-constexpr const char *LBHS = "LBHS";
-
-/// LBCS - Long Branch if Carry Set
-constexpr const char *LBCS = "LBCS";
-
-/// LBLO - Long Branch if Lower (alias for LBCS)
-constexpr const char *LBLO = "LBLO";
-
-/// LBNE - Long Branch if Not Equal
-constexpr const char *LBNE = "LBNE";
-
-/// LBEQ - Long Branch if Equal
-constexpr const char *LBEQ = "LBEQ";
-
-/// LBVC - Long Branch if Overflow Clear
-constexpr const char *LBVC = "LBVC";
-
-/// LBVS - Long Branch if Overflow Set
-constexpr const char *LBVS = "LBVS";
-
-/// LBPL - Long Branch if Plus
-constexpr const char *LBPL = "LBPL";
-
-/// LBMI - Long Branch if Minus
-constexpr const char *LBMI = "LBMI";
-
-/// LBGE - Long Branch if Greater or Equal (signed)
-constexpr const char *LBGE = "LBGE";
-
-/// LBLT - Long Branch if Less Than (signed)
-constexpr const char *LBLT = "LBLT";
-
-/// LBGT - Long Branch if Greater Than (signed)
-constexpr const char *LBGT = "LBGT";
-
-/// LBLE - Long Branch if Less or Equal (signed)
-constexpr const char *LBLE = "LBLE";
-
-// ============================================================================
-// Control Flow Instructions
-// ============================================================================
-
-/// JMP - Jump
-constexpr const char *JMP = "JMP";
-
-/// JSR - Jump to Subroutine
-constexpr const char *JSR = "JSR";
-
-/// RTS - Return from Subroutine
-constexpr const char *RTS = "RTS";
-
-/// RTI - Return from Interrupt
-constexpr const char *RTI = "RTI";
-
-/// NOP - No Operation
-constexpr const char *NOP = "NOP";
-
-/// SYNC - Synchronize to Interrupt
-constexpr const char *SYNC = "SYNC";
-
-/// SWI - Software Interrupt 1
-constexpr const char *SWI = "SWI";
-
-/// SWI2 - Software Interrupt 2 (page 2)
-constexpr const char *SWI2 = "SWI2";
-
-/// SWI3 - Software Interrupt 3 (page 3)
-constexpr const char *SWI3 = "SWI3";
-
-/// CWAI - Clear CCs and Wait for Interrupt
-constexpr const char *CWAI = "CWAI";
-
-// ============================================================================
-// Load Effective Address Instructions
-// ============================================================================
-
-/// LEAX - Load Effective Address into X
-constexpr const char *LEAX = "LEAX";
-
-/// LEAY - Load Effective Address into Y
-constexpr const char *LEAY = "LEAY";
-
-// ============================================================================
-// Stack Operations
-// ============================================================================
-
-/// PSHS - Push registers onto System Stack
-constexpr const char *PSHS = "PSHS";
-
-/// PULS - Pull registers from System Stack
-constexpr const char *PULS = "PULS";
-
-/// PSHU - Push registers onto User Stack
-constexpr const char *PSHU = "PSHU";
-
-/// PULU - Pull registers from User Stack
-constexpr const char *PULU = "PULU";
-
-// ============================================================================
-// Register Transfer and Exchange
-// ============================================================================
-
-/// TFR - Transfer between registers
-constexpr const char *TFR = "TFR";
-
-/// EXG - Exchange registers
-constexpr const char *EXG = "EXG";
-
-} // namespace M6809Mnemonics
 } // namespace xasm
