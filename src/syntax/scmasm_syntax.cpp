@@ -1074,7 +1074,9 @@ void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
           while (pos < operand.length() &&
                  (operand[pos] == ' ' || operand[pos] == '\t'))
             ++pos;
-          if (pos >= operand.length()) break;
+          if (pos >= operand.length()) {
+            break;
+          }
 
           // Scan to the first whitespace or comma (argument boundary).
           size_t arg_start = pos;
@@ -1672,7 +1674,9 @@ std::string ScmasmSyntaxParser::ExpandLocalLabelsInOperand(
       while (kk < operand.size() && std::isdigit((unsigned char)operand[kk]))
         ref_label += operand[kk++];
       expanded += LocalLabelScope(ref_label);
-      if (c == '.') expanded += '@';
+      if (c == '.') {
+        expanded += '@';
+      }
       expanded += c;
       k++;
       while (k < operand.size() && std::isdigit((unsigned char)operand[k]))

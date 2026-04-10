@@ -11,7 +11,6 @@ Checks: >
   readability-*,
   cppcoreguidelines-*,
   -modernize-use-trailing-return-type,
-  -readability-braces-around-statements,
   -readability-else-after-return,
   -readability-magic-numbers,
   -cppcoreguidelines-avoid-magic-numbers,

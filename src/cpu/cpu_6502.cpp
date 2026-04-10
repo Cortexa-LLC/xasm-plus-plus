@@ -2074,10 +2074,17 @@ CpuMode Cpu6502::GetCpuMode() const { return cpu_mode_; }
 
 void Cpu6502::SetCpuModeFromAtom(int mode) {
   switch (mode) {
-    case 0: SetCpuMode(CpuMode::Cpu6502);  break;
-    case 1: SetCpuMode(CpuMode::Cpu65C02); break;
-    case 2: SetCpuMode(CpuMode::Cpu65816); break;
-    default: break;
+    case 0:
+      SetCpuMode(CpuMode::Cpu6502);
+      break;
+    case 1:
+      SetCpuMode(CpuMode::Cpu65C02);
+      break;
+    case 2:
+      SetCpuMode(CpuMode::Cpu65816);
+      break;
+    default:
+      break;
   }
   // Reset MX flags to 8-bit default whenever the CPU mode changes.
   // REP/SEP instructions in the atom stream will update them as they

@@ -921,10 +921,18 @@ void HandleXc(const std::string &label, const std::string &operand,
   if (context.section && parser->GetCpu()) {
     int mode_int = 0;
     switch (parser->GetCpu()->GetCpuMode()) {
-      case CpuMode::Cpu6502:   mode_int = 0; break;
-      case CpuMode::Cpu65C02:  mode_int = 1; break;
-      case CpuMode::Cpu65816:  mode_int = 2; break;
-      default:                 mode_int = 0; break;
+      case CpuMode::Cpu6502:
+        mode_int = 0;
+        break;
+      case CpuMode::Cpu65C02:
+        mode_int = 1;
+        break;
+      case CpuMode::Cpu65816:
+        mode_int = 2;
+        break;
+      default:
+        mode_int = 0;
+        break;
     }
     context.section->atoms.push_back(std::make_shared<CpuModeAtom>(mode_int));
   }
@@ -950,10 +958,18 @@ void HandleMx(const std::string &label, const std::string &operand,
   if (!op.empty()) {
     if (op[0] == '%') {
       std::string bin = op.substr(1);
-      if (bin == "00") mode = 0;
-      else if (bin == "01") mode = 1;
-      else if (bin == "10") mode = 2;
-      else if (bin == "11") mode = 3;
+      if (bin == "00") {
+        mode = 0;
+      }
+      else if (bin == "01") {
+        mode = 1;
+      }
+      else if (bin == "10") {
+        mode = 2;
+      }
+      else if (bin == "11") {
+        mode = 3;
+      }
     } else if (op.length() == 1 && op[0] >= '0' && op[0] <= '3') {
       mode = op[0] - '0';
     }

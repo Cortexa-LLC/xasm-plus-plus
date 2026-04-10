@@ -50,13 +50,19 @@ void BinaryOutput::WriteOutputWithRw18(const std::string &filename,
       for (const auto &atom : section->atoms) {
         if (atom->type == AtomType::Data) {
           auto d = std::dynamic_pointer_cast<DataAtom>(atom);
-          if (d) code_size += d->data.size();
+          if (d) {
+            code_size += d->data.size();
+          }
         } else if (atom->type == AtomType::Instruction) {
           auto inst = std::dynamic_pointer_cast<InstructionAtom>(atom);
-          if (inst) code_size += inst->encoded_bytes.size();
+          if (inst) {
+            code_size += inst->encoded_bytes.size();
+          }
         } else if (atom->type == AtomType::Space) {
           auto sp = std::dynamic_pointer_cast<SpaceAtom>(atom);
-          if (sp) code_size += sp->count;
+          if (sp) {
+            code_size += sp->count;
+          }
         }
       }
     }
