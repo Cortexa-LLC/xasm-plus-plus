@@ -247,7 +247,7 @@ ErrorFormatter::FindSimilarSymbols(const std::string &typo,
 
   // Return up to 3 best matches
   std::vector<std::string> suggestions;
-  for (size_t i = 0; i < std::min(size_t(3), candidates.size()); ++i) {
+  for (size_t i = 0; i < std::min(static_cast<size_t>(3), candidates.size()); ++i) {
     suggestions.emplace_back(candidates[i].first);
   }
 

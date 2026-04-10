@@ -147,14 +147,14 @@ private:
    * @param output Output stream
    * @param upper_address Upper 16 bits of 32-bit address
    */
-  void WriteExtendedLinearAddress(std::ostream &output, uint16_t upper_address);
+  static void WriteExtendedLinearAddress(std::ostream &output, uint16_t upper_address);
 
   /**
    * @brief Write EOF record (type 01)
    *
    * @param output Output stream
    */
-  void WriteEOF(std::ostream &output);
+  static void WriteEOF(std::ostream &output);
 
   /**
    * @brief Extract bytes from atoms for writing

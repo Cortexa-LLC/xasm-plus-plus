@@ -7,6 +7,7 @@
 #include "xasm++/atom.h"
 #include "xasm++/output/output_format_constants.h"
 
+#include <algorithm>
 #include <iomanip>
 #include <sstream>
 #include <stdexcept>
@@ -29,9 +30,7 @@ void SRecordWriter::Write(const std::vector<Section> &sections,
   // Determine max address to select format
   uint64_t max_address = 0;
   for (const auto &[addr, byte] : all_bytes) {
-    if (addr > max_address) {
-      max_address = addr;
-    }
+    max_address = std::max(max_address, addr);
   }
 
   int format = DetermineFormat(max_address);
@@ -168,7 +167,9 @@ void SRecordWriter::WriteCountRecord(std::ostream &output, size_t record_count,
   int count_type = (record_count < output_format::srec::COUNT_16BIT_THRESHOLD)
                        ? output_format::srec::RECORD_TYPE_COUNT_16BIT
                        : output_format::srec::RECORD_TYPE_COUNT_24BIT;
-  WriteRecord(output, count_type, record_count, {});
+  // S5/S6: the "address" field holds the record count (per S-Record spec)
+  const uint64_t count_as_address = static_cast<uint64_t>(record_count);
+  WriteRecord(output, count_type, count_as_address, {});
 }
 
 std::vector<std::pair<uint64_t, uint8_t>>

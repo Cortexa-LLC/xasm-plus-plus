@@ -148,7 +148,7 @@ private:
    *
    * @param output Output stream
    */
-  void WritePostamble(std::ostream &output);
+  void WritePostamble(std::ostream &output) const;
 
   /**
    * @brief Write 16-bit value in big-endian format

@@ -98,7 +98,7 @@ void CocoLoadmWriter::WriteDataBlock(std::ostream &output, uint64_t address,
   }
 }
 
-void CocoLoadmWriter::WritePostamble(std::ostream &output) {
+void CocoLoadmWriter::WritePostamble(std::ostream &output) const {
   output.put(static_cast<char>(
       output_format::coco_loadm::RECORD_TYPE_POSTAMBLE));   // Postamble type
   output.put(output_format::coco_loadm::POSTAMBLE_SUBTYPE); // Subtype

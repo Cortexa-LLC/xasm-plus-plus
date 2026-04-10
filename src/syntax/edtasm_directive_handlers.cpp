@@ -35,8 +35,7 @@ static std::vector<std::string> ParseDataTokens(const std::string &operand) {
   char string_delimiter = '\0';
   bool escape_next = false;
 
-  for (size_t i = 0; i < operand.size(); ++i) {
-    char c = operand[i];
+  for (char c : operand) {
 
     if (escape_next) {
       current_token += c;
@@ -881,7 +880,7 @@ void HandleIrpcDirective(const std::string & /*label*/,
   // Convert each character to a string argument
   std::vector<std::string> args;
   for (char c : str) {
-    args.push_back(std::string(1, c));
+    args.emplace_back(1, c);
   }
 
   // Start IRPC block

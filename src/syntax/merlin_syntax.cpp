@@ -9,9 +9,9 @@
 #include "xasm++/util/string_utils.h"
 #include <algorithm>
 #include <cctype>
-#include <cstdio>
 #include <cstdlib>
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
@@ -33,7 +33,7 @@ constexpr int RADIX_HEXADECIMAL = 16;
 // or plain decimal digits).  Returns true if the string was a numeric literal
 // and sets *out_value; returns false if the string looks like a symbol name.
 // Throws std::runtime_error on malformed input (e.g. "$" with no hex digits).
-static bool ParseNumericLiteral(const std::string &op, uint32_t &out_value) {
+bool ParseNumericLiteral(const std::string &op, uint32_t &out_value) {
   if (op.empty())
     return false;
   if (op[0] == '$') {
@@ -52,7 +52,7 @@ static bool ParseNumericLiteral(const std::string &op, uint32_t &out_value) {
 }
 
 // Platform-aware temp directory helper
-static std::string get_temp_dir() {
+std::string get_temp_dir() {
 #ifdef _WIN32
   const char *temp = std::getenv("TEMP");
   if (!temp)
@@ -583,10 +583,11 @@ MerlinSyntaxParser::ExpandMerlinCharLiterals(const std::string &operand) {
         // Replace "X" or 'X' with $XX (Apple II high-bit value)
         uint8_t val = static_cast<uint8_t>(operand[i + 1]) | 0x80;
         // Format as $XX
-        char hex_buf[8];
-        std::snprintf(hex_buf, sizeof(hex_buf), "$%02X",
-                      static_cast<unsigned>(val));
-        result += hex_buf;
+        // Format as $XX using stream formatting instead of snprintf
+        std::ostringstream oss;
+        oss << '$' << std::hex << std::uppercase << std::setw(2)
+            << std::setfill('0') << static_cast<unsigned>(val);
+        result += oss.str();
         i += 3; // skip quote, char, closing quote
         continue;
       }
@@ -630,18 +631,16 @@ MerlinSyntaxParser::ExpandVarLabelsInOperand(const std::string &operand) const {
         // definition, which may be a backward or forward reference resolved
         // in multi-pass assembly).
         result += var_name + "_" + std::to_string(it->second);
-      } else if (!followed_by_colon && it != var_label_seq_.end() &&
-                 it->second == 0) {
-        // EQU-style ]var = VALUE assignment: symbol stored under plain name.
-        // Use plain name so the lookup in the symbol table succeeds.
-        result += var_name;
-      } else if (!followed_by_colon && !var_name.empty()) {
+      } else if (!followed_by_colon && !var_name.empty() &&
+                 (it == var_label_seq_.end() || it->second != 0)) {
         // No definition seen yet: this is a forward reference to the first
         // occurrence of a code-label ]var.  Expand to ]var_1 so that once
         // the definition is parsed it resolves in multi-pass.
         result += var_name + "_1";
       } else {
-        // Scope qualifier — keep as-is
+        // EQU-style ]var = VALUE (it->second == 0): use plain name so the
+        // lookup in the symbol table succeeds.
+        // Also covers scope qualifier — keep as-is.
         result += var_name;
       }
     } else {
@@ -822,7 +821,10 @@ void MerlinSyntaxParser::HandleDS(const std::string &operand, Section &section,
         // Check it's not a multiplication operator (operands on both sides)
         bool before = (i > 0 && (std::isalnum(static_cast<unsigned char>(raw[i-1])) || raw[i-1] == ')'));
         bool after  = (i+1 < raw.size() && (std::isalnum(static_cast<unsigned char>(raw[i+1])) || raw[i+1] == '(' || raw[i+1] == '$' || raw[i+1] == '%'));
-        if (!(before && after)) { has_star = true; break; }
+        if (!(before && after)) {
+          has_star = true;
+          break;
+        }
       }
     }
     if (has_star) {
@@ -1102,7 +1104,7 @@ std::string MerlinSyntaxParser::SubstituteParameters(
   for (size_t i = 0; i < line.length(); ++i) {
     if (line[i] == ']' && i + 1 < line.length() && std::isdigit(line[i + 1])) {
       int param_num = line[i + 1] - '0';
-      if (param_num > 0 && param_num <= static_cast<int>(params.size())) {
+      if (param_num > 0 && static_cast<size_t>(param_num) <= params.size()) {
         // Valid parameter reference - substitute
         result += params[param_num - 1];
         i++; // Skip the digit

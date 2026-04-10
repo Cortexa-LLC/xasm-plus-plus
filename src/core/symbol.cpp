@@ -19,7 +19,7 @@ void ConcreteSymbolTable::Define(const std::string &name, SymbolType type,
     was_imported = it->second.is_imported;
   }
 
-  symbols_[name] = Symbol(name, type, value);
+  symbols_[name] = Symbol(name, type, std::move(value));
 
   // Restore flags
   symbols_[name].is_exported = was_exported;

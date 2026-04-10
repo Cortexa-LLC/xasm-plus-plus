@@ -71,8 +71,8 @@ void SymbolOutput::WriteOutput(const std::string &filename,
   // Structure to hold symbol information
   struct SymbolInfo {
     std::string name;
-    int32_t value;
-    SymbolType type;
+    int32_t value{0};
+    SymbolType type{SymbolType::Label};
   };
 
   std::vector<SymbolInfo> symbol_list;

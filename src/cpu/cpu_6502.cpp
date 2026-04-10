@@ -220,10 +220,8 @@ std::vector<uint8_t> Cpu6502::EncodeWithTable(const OpcodeTable &table,
 
     case AddressingMode::Accumulator:
     case AddressingMode::Implied:
-      // No operand bytes
-      break;
-
     default:
+      // No operand bytes
       break;
     }
   }
@@ -1360,16 +1358,16 @@ size_t Cpu6502::GetInstructionSize(const std::string &mnemonic,
  */
 bool Cpu6502::NeedsBranchRelaxation(uint16_t current_addr,
                                     uint16_t target_addr) const {
-  return branch_handler_.NeedsBranchRelaxation(current_addr, target_addr);
+  return Cpu6502BranchHandler::NeedsBranchRelaxation(current_addr, target_addr);
 }
 
 uint8_t Cpu6502::GetComplementaryBranchOpcode(uint8_t branch_opcode) const {
-  return branch_handler_.GetComplementaryBranchOpcode(branch_opcode);
+  return Cpu6502BranchHandler::GetComplementaryBranchOpcode(branch_opcode);
 }
 
 std::vector<uint8_t> Cpu6502::EncodeBranchWithRelaxation(
     uint8_t branch_opcode, uint16_t current_addr, uint16_t target_addr) const {
-  return branch_handler_.EncodeBranchWithRelaxation(branch_opcode, current_addr,
+  return Cpu6502BranchHandler::EncodeBranchWithRelaxation(branch_opcode, current_addr,
                                                     target_addr);
 }
 
@@ -1874,44 +1872,8 @@ std::vector<uint8_t> Cpu6502::EncodeBRA(uint16_t operand,
 }
 
 // ============================================================================
-// Phase 2.5 - Groups 11-14: 65816 Instructions
+// Phase 2.5 - 65816 Transfer Instructions (no CPU state access)
 // ============================================================================
-
-std::vector<uint8_t> Cpu6502::EncodePHB() const {
-  return {Opcodes::PHB};
-}
-
-std::vector<uint8_t> Cpu6502::EncodePLB() const {
-  return {Opcodes::PLB};
-}
-
-std::vector<uint8_t> Cpu6502::EncodePHK() const {
-  return {Opcodes::PHK};
-}
-
-std::vector<uint8_t> Cpu6502::EncodePHD() const {
-  return {Opcodes::PHD};
-}
-
-std::vector<uint8_t> Cpu6502::EncodePLD() const {
-  return {Opcodes::PLD};
-}
-
-std::vector<uint8_t> Cpu6502::EncodeTCD() const {
-  return {Opcodes::TCD};
-}
-
-std::vector<uint8_t> Cpu6502::EncodeTDC() const {
-  return {Opcodes::TDC};
-}
-
-std::vector<uint8_t> Cpu6502::EncodeTCS() const {
-  return {Opcodes::TCS};
-}
-
-std::vector<uint8_t> Cpu6502::EncodeTSC() const {
-  return {Opcodes::TSC};
-}
 
 // TXY - Transfer X to Y (65816 implied, opcode $9B)
 std::vector<uint8_t> Cpu6502::EncodeTXY() {
@@ -1921,106 +1883,6 @@ std::vector<uint8_t> Cpu6502::EncodeTXY() {
 // TYX - Transfer Y to X (65816 implied, opcode $BB)
 std::vector<uint8_t> Cpu6502::EncodeTYX() {
   return {Opcodes::TYX};
-}
-
-std::vector<uint8_t> Cpu6502::EncodeJML(uint32_t operand,
-                                        AddressingMode mode) const {
-
-  if (mode == AddressingMode::AbsoluteLong) {
-    std::vector<uint8_t> bytes = {Opcodes::JML_ALG};
-    bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-    bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF));
-    bytes.push_back(static_cast<uint8_t>((operand >> 16) & 0xFF));
-    return bytes;
-  } else if (mode == AddressingMode::Indirect) {
-    std::vector<uint8_t> bytes = {Opcodes::JML_IND};
-    bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-    bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF));
-    return bytes;
-  }
-  return {};
-}
-
-std::vector<uint8_t> Cpu6502::EncodeJSL(uint32_t operand,
-                                        AddressingMode mode) const {
-
-  if (mode == AddressingMode::AbsoluteLong) {
-    std::vector<uint8_t> bytes = {Opcodes::JSL_ALG};
-    bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-    bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF));
-    bytes.push_back(static_cast<uint8_t>((operand >> 16) & 0xFF));
-    return bytes;
-  }
-  return {};
-}
-
-std::vector<uint8_t> Cpu6502::EncodeRTL() const {
-  return {Opcodes::RTL};
-}
-
-std::vector<uint8_t> Cpu6502::EncodePEA(uint16_t operand,
-                                        AddressingMode mode) const {
-
-  if (mode == AddressingMode::Absolute) {
-    std::vector<uint8_t> bytes = {Opcodes::PEA};
-    bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-    bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF));
-    return bytes;
-  }
-  return {};
-}
-
-std::vector<uint8_t> Cpu6502::EncodePEI(uint8_t operand,
-                                        AddressingMode mode) const {
-
-  if (mode == AddressingMode::ZeroPage) {
-    return {Opcodes::PEI, operand};
-  }
-  return {};
-}
-
-std::vector<uint8_t> Cpu6502::EncodePER(uint16_t operand,
-                                        AddressingMode mode) const {
-
-  if (mode == AddressingMode::Relative) {
-    std::vector<uint8_t> bytes = {Opcodes::PER};
-    bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-    bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF));
-    return bytes;
-  }
-  return {};
-}
-
-std::vector<uint8_t> Cpu6502::EncodeMVN(uint8_t srcbank,
-                                        uint8_t destbank) const {
-  return {Opcodes::MVN, srcbank, destbank};
-}
-
-std::vector<uint8_t> Cpu6502::EncodeMVP(uint8_t srcbank,
-                                        uint8_t destbank) const {
-  return {Opcodes::MVP, srcbank, destbank};
-}
-
-std::vector<uint8_t> Cpu6502::EncodeCOP(uint8_t operand,
-                                        AddressingMode mode) const {
-
-  if (mode == AddressingMode::Immediate) {
-    return {Opcodes::COP, operand};
-  }
-  return {};
-}
-
-std::vector<uint8_t> Cpu6502::EncodeWDM(uint8_t operand,
-                                        AddressingMode mode) const {
-
-  if (mode == AddressingMode::Immediate) {
-    return {Opcodes::WDM, operand};
-  }
-  return {};
-}
-
-std::vector<uint8_t> Cpu6502::EncodeXBA() const {
-  return {Opcodes::XBA};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeXCE() const {
@@ -2047,8 +1909,12 @@ std::vector<uint8_t> Cpu6502::EncodeSEP(uint16_t value,
   (void)mode;
   // Update M/X flags: SEP sets bits (1 = 8-bit)
   // Bit 5 (0x20) = M flag, Bit 4 (0x10) = X flag
-  if (value & 0x20) m_flag_ = true;  // set M → 8-bit accumulator
-  if (value & 0x10) x_flag_ = true;  // set X → 8-bit index
+  if (value & 0x20) {
+    m_flag_ = true;  // set M → 8-bit accumulator
+  }
+  if (value & 0x10) {
+    x_flag_ = true;  // set X → 8-bit index
+  }
   return {Opcodes::SEP, static_cast<uint8_t>(value & 0xFF)};
 }
 
@@ -2059,8 +1925,12 @@ std::vector<uint8_t> Cpu6502::EncodeREP(uint16_t value,
   (void)mode;
   // Update M/X flags: REP clears bits (0 = 16-bit)
   // Bit 5 (0x20) = M flag, Bit 4 (0x10) = X flag
-  if (value & 0x20) m_flag_ = false;  // clear M → 16-bit accumulator
-  if (value & 0x10) x_flag_ = false;  // clear X → 16-bit index
+  if (value & 0x20) {
+    m_flag_ = false;  // clear M → 16-bit accumulator
+  }
+  if (value & 0x10) {
+    x_flag_ = false;  // clear X → 16-bit index
+  }
   return {Opcodes::REP, static_cast<uint8_t>(value & 0xFF)};
 }
 
@@ -2167,12 +2037,8 @@ Cpu6502::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
     if (trimmed == "A") {
       mode = AddressingMode::Accumulator;
     }
-    // Immediate mode
-    else if (trimmed[0] == '#') {
-      mode = AddressingMode::Immediate;
-    }
-    // SCMASM high byte immediate: /expr (equivalent to #>expr)
-    else if (trimmed[0] == '/') {
+    // Immediate mode (# prefix or SCMASM / high-byte prefix)
+    else if (trimmed[0] == '#' || trimmed[0] == '/') {
       mode = AddressingMode::Immediate;
     }
     // 65816 indirect long: [$zp] or [$zp],Y
@@ -2597,7 +2463,7 @@ Cpu6502::EncodeInstructionSpecial(const std::string &mnemonic,
     uint8_t branch_opcode = it->second;
 
     // Check if branch is out of range
-    if (branch_handler_.NeedsBranchRelaxation(current_address, target_addr)) {
+    if (Cpu6502BranchHandler::NeedsBranchRelaxation(current_address, target_addr)) {
       if (!relax_branches_) {
         // Error by default — matches original assembler behavior (Merlin 8, etc.)
         // Programmer is responsible for keeping branches in range.

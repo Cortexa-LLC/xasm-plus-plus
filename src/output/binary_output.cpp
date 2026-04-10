@@ -140,29 +140,14 @@ void BinaryOutput::WriteOutputWithRw18(const std::string &filename,
         break;
       }
 
-      case AtomType::Org:
-        // OrgAtom: Track address but don't write bytes
-        break;
-      case AtomType::DummyOrg:
-        // DummyOrgAtom: .OR inside .DUMMY/.ED — no bytes, no PC change
-        break;
-      case AtomType::Label:
-        // LabelAtom: No bytes generated
-        break;
-      case AtomType::ListingControl:
-        // ListingControlAtom: No bytes generated (listing only)
-        break;
-      case AtomType::Phase:
-        // PhaseAtom: No bytes generated (address tracking only)
-        break;
-      case AtomType::Equate:
-        // EquateAtom: No bytes generated (symbol value only)
-        break;
-      case AtomType::CpuMode:
-        // CpuModeAtom: No bytes generated (mode change only)
-        break;
-      case AtomType::MxState:
-        // MxAtom: No bytes generated (M/X state change only)
+      case AtomType::Org:         // OrgAtom: Track address but don't write bytes
+      case AtomType::DummyOrg:    // DummyOrgAtom: .OR inside .DUMMY/.ED — no bytes
+      case AtomType::Label:       // LabelAtom: No bytes generated
+      case AtomType::ListingControl: // ListingControlAtom: listing only
+      case AtomType::Phase:       // PhaseAtom: address tracking only
+      case AtomType::Equate:      // EquateAtom: symbol value only
+      case AtomType::CpuMode:     // CpuModeAtom: mode change only
+      case AtomType::MxState:     // MxAtom: M/X state change only
         break;
       }
     }

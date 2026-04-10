@@ -117,12 +117,11 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
           current_address = org->address;
           virtual_address = org->address;
         } break;
-        case AtomType::DummyOrg: {
-          // .OR inside .DUMMY/.ED: do NOT change the real program counter.
+        case AtomType::DummyOrg:
+        case AtomType::Label: {
+          // DummyOrg: .OR inside .DUMMY/.ED: do NOT change the real program counter.
           // Symbol addresses are fixed up in ResolveSymbols; the emitter just
           // skips this atom so no bytes are written and the PC is unaffected.
-        } break;
-        case AtomType::Label: {
           // Labels don't advance address yet, but we track them
           // (address will be finalized in Pass 2)
         } break;
@@ -173,8 +172,8 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
               symbols.Define(eq->label_name, SymbolType::Equate,
                              std::make_shared<LiteralExpr>(
                                  static_cast<uint32_t>(value)));
-            } catch (const std::exception &) {
-              // Forward reference - ignore this pass, will resolve later
+            } catch (const std::exception &e) {
+              (void)e; // Forward reference - ignore this pass, will resolve later
             }
           }
         } break;
@@ -583,8 +582,8 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
                   space->count = static_cast<size_t>(value);
                   space->size = space->count;
                 }
-              } catch (const std::exception &) {
-                // Forward reference or error - keep previous count
+              } catch (const std::exception &e) {
+                (void)e; // Forward reference or error - keep previous count
               }
             }
             current_address += space->size;
@@ -690,8 +689,8 @@ void Assembler::RefixupDataAtoms(ConcreteSymbolTable &symbols,
             symbols.Define(eq->label_name, SymbolType::Equate,
                            std::make_shared<LiteralExpr>(
                                static_cast<uint32_t>(value)));
-          } catch (const std::exception &) {
-            // Should be resolved by now; ignore.
+          } catch (const std::exception &e) {
+            (void)e; // Should be resolved by now; ignore.
           }
         }
       } break;

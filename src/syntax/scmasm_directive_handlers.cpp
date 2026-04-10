@@ -554,8 +554,7 @@ void HandleDa(const std::string &label, const std::string &operand,
     // Expand character literals BEFORE checking prefix
     // This allows #'N' to be expanded to #$4E before we strip the #
     ValidateParser(context.parser_state);
-    auto *parser = static_cast<ScmasmSyntaxParser *>(context.parser_state);
-    trimmed_expr = parser->ExpandCharLiteralsInExpr(trimmed_expr);
+    trimmed_expr = ScmasmSyntaxParser::ExpandCharLiteralsInExpr(trimmed_expr);
 
     char prefix = trimmed_expr[0];
     std::string base_expr;
@@ -1241,7 +1240,9 @@ void HandleOp(const std::string &label, const std::string &operand,
   // Strip SCMASM inline comment: take only the first whitespace-delimited token
   {
     size_t ws = trimmed.find_first_of(" \t");
-    if (ws != std::string::npos) { trimmed = trimmed.substr(0, ws); }
+    if (ws != std::string::npos) {
+      trimmed = trimmed.substr(0, ws);
+    }
   }
   std::transform(trimmed.begin(), trimmed.end(), trimmed.begin(), ::toupper);
 

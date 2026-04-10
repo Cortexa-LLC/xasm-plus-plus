@@ -131,13 +131,9 @@ void ListingOutput::WriteOutput(const std::string &filename,
           }
           break;
         case ListingControlType::Lall:
-          // Enable macro expansion display in listing
-          // (Future: control whether macro body lines are shown in listing)
-          output_source = true;
-          break;
         case ListingControlType::Sall:
-          // Disable macro expansion display in listing
-          // (Future: suppress macro body lines from listing)
+          // Enable/disable macro expansion display in listing
+          // (Future: control whether macro body lines are shown in listing)
           output_source = true;
           break;
         }

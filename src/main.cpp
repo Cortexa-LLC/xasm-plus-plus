@@ -194,7 +194,7 @@ int main(int argc, char **argv) {
             size_t eq_pos = mapping.find('=');
             if (eq_pos == std::string::npos) {
               std::cerr << "Error: Invalid path mapping format: " << mapping
-                        << " (expected format: virtual=actual)" << std::endl;
+                        << " (expected format: virtual=actual)\n";
               return 1;
             }
             std::string virtual_path = mapping.substr(0, eq_pos);
@@ -277,6 +277,7 @@ int main(int argc, char **argv) {
           return 1;
         }
         std::vector<Section> sec_copies;
+        sec_copies.reserve(sections.size());
         for (const auto *sp : sections) {
           sec_copies.push_back(*sp);
         }
@@ -292,6 +293,7 @@ int main(int argc, char **argv) {
           return 1;
         }
         std::vector<Section> sec_copies;
+        sec_copies.reserve(sections.size());
         for (const auto *sp : sections) {
           sec_copies.push_back(*sp);
         }
@@ -300,10 +302,9 @@ int main(int argc, char **argv) {
       }
       default: {
         // Default: binary format
-        BinaryOutput output;
         const std::array<uint16_t, 4> *rw18_ptr =
             rw18_header_args.has_value() ? &rw18_header_args.value() : nullptr;
-        output.WriteOutputWithRw18(opts.output, sections, symbols, rw18_ptr);
+        BinaryOutput::WriteOutputWithRw18(opts.output, sections, symbols, rw18_ptr);
         break;
       }
       }

@@ -162,7 +162,7 @@ private:
    * @param output Output stream
    * @param module_name Optional module name/metadata
    */
-  void WriteHeader(std::ostream &output, const std::string &module_name = "");
+  static void WriteHeader(std::ostream &output, const std::string &module_name = "");
 
   /**
    * @brief Write terminator record (S7/S8/S9)
@@ -171,7 +171,7 @@ private:
    * @param format Format type (1=S9, 2=S8, 3=S7)
    * @param start_address Optional start/entry address (default: 0)
    */
-  void WriteTerminator(std::ostream &output, int format,
+  static void WriteTerminator(std::ostream &output, int format,
                        uint64_t start_address = 0);
 
   /**
@@ -181,7 +181,7 @@ private:
    * @param record_count Number of data records written
    * @param format Format type (1=S5, 2=S6, 3=S6)
    */
-  void WriteCountRecord(std::ostream &output, size_t record_count, int format);
+  static void WriteCountRecord(std::ostream &output, size_t record_count, int format);
 
   /**
    * @brief Extract bytes from atoms for writing

@@ -4,14 +4,6 @@
 
 namespace xasm {
 
-// ============================================================================
-
-// Set CPU mode (6502, 65C02, 65C02-Rockwell, 65816)
-void Cpu6502::SetCpuMode(CpuMode mode) { cpu_mode_ = mode; }
-
-// Get current CPU mode
-CpuMode Cpu6502::GetCpuMode() const { return cpu_mode_; }
-
 // Group 11: 65816 Bank Operations
 // ============================================================================
 
@@ -256,62 +248,6 @@ std::vector<uint8_t> Cpu6502::EncodeXBA() const {
     return {};
   }
   return {0xEB};
-}
-
-// XCE - Exchange Carry and Emulation (65816)
-std::vector<uint8_t> Cpu6502::EncodeXCE() const {
-  if (!IsCpu65816()) {
-    return {};
-  }
-  return {0xFB};
-}
-
-// ============================================================================
-// Group 8: 65816 MX Directive (Register Width Control)
-// ============================================================================
-
-// Set MX flags (register width control for 65816)
-// m_flag: true = 8-bit accumulator, false = 16-bit accumulator
-// x_flag: true = 8-bit index, false = 16-bit index
-void Cpu6502::SetMX(bool m_flag, bool x_flag) {
-  m_flag_ = m_flag;
-  x_flag_ = x_flag;
-}
-
-// Check if accumulator is 8-bit
-bool Cpu6502::IsAccumulator8Bit() const {
-  return m_flag_; // true = 8-bit, false = 16-bit
-}
-
-// Check if index registers (X/Y) are 8-bit
-bool Cpu6502::IsIndex8Bit() const {
-  return x_flag_; // true = 8-bit, false = 16-bit
-}
-
-// SEP - Set Processor Status Bits (65816 only)
-// Sets bits in the processor status register based on immediate value
-std::vector<uint8_t> Cpu6502::EncodeSEP(uint16_t value,
-                                        AddressingMode mode) const {
-  if (!IsCpu65816()) {
-    return {};
-  }
-  if (mode != AddressingMode::Immediate) {
-    return {}; // SEP only supports immediate addressing
-  }
-  return {0xE2, static_cast<uint8_t>(value & 0xFF)};
-}
-
-// REP - Reset Processor Status Bits (65816 only)
-// Clears bits in the processor status register based on immediate value
-std::vector<uint8_t> Cpu6502::EncodeREP(uint16_t value,
-                                        AddressingMode mode) const {
-  if (!IsCpu65816()) {
-    return {};
-  }
-  if (mode != AddressingMode::Immediate) {
-    return {}; // REP only supports immediate addressing
-  }
-  return {0xC2, static_cast<uint8_t>(value & 0xFF)};
 }
 
 } // namespace xasm

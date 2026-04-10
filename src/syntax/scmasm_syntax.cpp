@@ -935,7 +935,7 @@ void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
             ".STR", ".BS",  ".BYT", ".WORD", ".PH",
         };
         bool emit_label_atom =
-            kDataEmittingDirectives.count(opcode_upper) > 0 &&
+            kDataEmittingDirectives.contains(opcode_upper) &&
             !in_dummy_section_;
 
         if (IsLocalLabel(label)) {
@@ -1198,9 +1198,9 @@ void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
             uint32_t val = EvaluateExpression(eval_expr, symbols);
             if (val <= 0xFF)
               est = 2;
-          } catch (...) {
-            // Expression has a forward reference or is otherwise
-            // unevaluable — keep the 3-byte estimate.
+          } catch (const std::exception &e) {
+            (void)e; // Expression has a forward reference or is otherwise
+                     // unevaluable — keep the 3-byte estimate.
           }
         }
         current_address_ += static_cast<uint32_t>(est);
@@ -1595,8 +1595,8 @@ uint32_t ScmasmSyntaxParser::EvaluateExpression(const std::string &str,
     if (trimmed[0] == '%' && trimmed.find('.') != std::string::npos) {
       try {
         return ParseNumber(trimmed);
-      } catch (...) {
-        // Fall through to ExpressionParser
+      } catch (const std::exception &e) {
+        (void)e; // Fall through to ExpressionParser
       }
     }
 
@@ -1606,8 +1606,8 @@ uint32_t ScmasmSyntaxParser::EvaluateExpression(const std::string &str,
         trimmed[0] != '$' && trimmed[0] != '%') {
       try {
         return ParseNumber(trimmed);
-      } catch (...) {
-        // Fall through to ExpressionParser
+      } catch (const std::exception &e) {
+        (void)e; // Fall through to ExpressionParser
       }
     }
   }
@@ -2111,7 +2111,7 @@ std::string ScmasmSyntaxParser::SubstituteParameters(
       // ]N = parameter N (1-based in SCMASM)
       if (next >= '1' && next <= '9') {
         int param_idx = next - '1'; // Convert to 0-based
-        if (param_idx < static_cast<int>(params.size())) {
+        if (static_cast<size_t>(param_idx) < params.size()) {
           result += params[param_idx];
         }
         // If parameter not provided, substitute with empty string
@@ -2127,7 +2127,7 @@ std::string ScmasmSyntaxParser::SubstituteParameters(
       // \N = parameter N (0-based)
       if (next >= '0' && next <= '9') {
         int param_idx = next - '0'; // Already 0-based
-        if (param_idx < static_cast<int>(params.size())) {
+        if (static_cast<size_t>(param_idx) < params.size()) {
           result += params[param_idx];
         }
         // If parameter not provided, substitute with empty string

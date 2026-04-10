@@ -361,9 +361,7 @@ std::shared_ptr<Expression> ExpressionParser::ParsePrimary() {
       while (pos_ < expr_.length()) {
         char c = Peek();
 
-        if (std::isalnum(c) || c == '_') {
-          token += Consume();
-        } else if (c == '.' && is_binary) {
+        if (std::isalnum(c) || c == '_' || (c == '.' && is_binary)) {
           // Allow . separator in binary numbers only
           token += Consume();
         } else {
@@ -666,9 +664,9 @@ std::string ExpressionParser::ParseIdentifier() {
   // ADR-005 V9: In Merlin mode, '.' is an operator, not an identifier character.
   bool is_merlin_var = (features_.allow_merlin_var_prefix && Peek() == ']');
   bool allow_dot_in_ident = !features_.allow_merlin_bitwise_ops;
-  if (!std::isalpha(Peek()) && Peek() != '_' &&
-      !(allow_dot_in_ident && Peek() == '.') && Peek() != '$' &&
-      Peek() != '?' && !is_merlin_var) {
+  if (!(std::isalpha(Peek()) || Peek() == '_' ||
+        (allow_dot_in_ident && Peek() == '.') || Peek() == '$' ||
+        Peek() == '?' || is_merlin_var)) {
     throw std::runtime_error("Expected identifier");
   }
 

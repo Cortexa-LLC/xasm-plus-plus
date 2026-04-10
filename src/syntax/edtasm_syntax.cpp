@@ -164,7 +164,9 @@ void EdtasmSyntaxParser::ParseLine(const std::string &line, Section &section,
   }
 
   // Parse line structure: [label] [opcode] [operands]
-  std::string label, opcode, operands;
+  std::string label;
+  std::string opcode;
+  std::string operands;
 
   // Check if line starts with whitespace (no label)
   if (line.empty() || std::isspace(static_cast<unsigned char>(line[0]))) {

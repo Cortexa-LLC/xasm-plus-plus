@@ -43,13 +43,13 @@ void SegmentManager::SetOrigin(uint64_t address) {
 
 uint64_t SegmentManager::GetCurrentAddress() const {
   if (current_segment_ == SegmentType::Common) {
-    std::map<std::string, SegmentState>::const_iterator it = common_blocks_.find(current_common_name_);
+    auto it = common_blocks_.find(current_common_name_);
     if (it != common_blocks_.end()) {
       return it->second.address;
     }
     return 0;
   } else {
-    std::map<SegmentType, SegmentState>::const_iterator it = segments_.find(current_segment_);
+    auto it = segments_.find(current_segment_);
     if (it != segments_.end()) {
       return it->second.address;
     }

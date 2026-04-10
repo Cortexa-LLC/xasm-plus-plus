@@ -263,12 +263,8 @@ void EdtasmM80PlusPlusSyntaxParser::PopConditional() {
 }
 
 bool EdtasmM80PlusPlusSyntaxParser::ShouldSuppressEmission() const {
-  for (const auto &block : conditional_stack_) {
-    if (!block.should_emit) {
-      return true;
-    }
-  }
-  return false;
+  return std::any_of(conditional_stack_.begin(), conditional_stack_.end(),
+                     [](const auto &block) { return !block.should_emit; });
 }
 
 void EdtasmM80PlusPlusSyntaxParser::Parse(const std::string &source,
@@ -368,7 +364,7 @@ void EdtasmM80PlusPlusSyntaxParser::ParseLine(const std::string &line,
                                               Section &section,
                                               ConcreteSymbolTable &symbols) {
   // Store original line for listing output (before comment stripping)
-  std::string original_line = line;
+  const std::string &original_line = line;
 
   // Check if we're capturing a macro/repeat block
   // First check if this line is ENDM (to end capture) or END (to stop assembly)
@@ -716,13 +712,13 @@ uint32_t EdtasmM80PlusPlusSyntaxParser::EstimateZ80InstructionSize(
   }
 
   // Immediate 16-bit operands (e.g., LD HL,nnnn)
-  if (operand.find(",") != std::string::npos &&
-      (operand.find("$") != std::string::npos ||
-       operand.find("0") != std::string::npos)) {
+  if (operand.find(',') != std::string::npos &&
+      (operand.find('$') != std::string::npos ||
+       operand.find('0') != std::string::npos)) {
     std::string trimmed_op = Trim(operand);
     // Check if likely 16-bit value (hex with 3+ digits, or decimal > 255)
-    if (trimmed_op.find("$") != std::string::npos) {
-      size_t hex_start = trimmed_op.find("$") + 1;
+    if (trimmed_op.find('$') != std::string::npos) {
+      size_t hex_start = trimmed_op.find('$') + 1;
       size_t hex_end = hex_start;
       while (hex_end < trimmed_op.size() &&
              std::isxdigit(trimmed_op[hex_end])) {
@@ -735,9 +731,8 @@ uint32_t EdtasmM80PlusPlusSyntaxParser::EstimateZ80InstructionSize(
   }
 
   // Immediate 8-bit operands (e.g., LD A,n)
-  if (operand.find(",") != std::string::npos) {
-    return INSTRUCTION_SIZE_TWO_BYTES; // opcode + byte operand (default for
-                                       // immediate data)
+  if (operand.find(',') != std::string::npos) {
+    return INSTRUCTION_SIZE_TWO_BYTES; // opcode + byte operand (default for immediate data)
   }
 
   // Relative jumps (JR, DJNZ) - opcode + displacement
@@ -967,7 +962,7 @@ std::string EdtasmM80PlusPlusSyntaxParser::SubstituteMacroParameters(
 
   // Substitute each parameter
   for (size_t i = 0; i < param_names.size(); ++i) {
-    std::string param_name = param_names[i];
+    const std::string &param_name = param_names[i];
     std::string param_value = (i < param_values.size()) ? param_values[i] : "";
 
     // & prefix - textual substitution

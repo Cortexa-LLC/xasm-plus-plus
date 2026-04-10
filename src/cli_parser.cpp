@@ -89,7 +89,10 @@ CommandLineOptions ParseCommandLine(int argc, char **argv) {
                  "Warning level: 0=none, 1=default, 2=extra, 3=all")
       ->default_val(1)
       ->check(CLI::Range(0, 3));
-  app.add_flag("--no-warn", [&opts](int64_t /*count*/) { opts.warn = 0; },
+  app.add_flag("--no-warn",
+               [&opts](int64_t /*count*/) {
+                 opts.warn = 0;
+               },
                "Suppress all warnings (equivalent to --warn 0)");
   app.add_flag("--werror", opts.werror,
                "Treat warnings as errors");

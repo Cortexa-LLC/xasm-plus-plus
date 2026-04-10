@@ -226,30 +226,13 @@ IntelHexWriter::ExtractBytes(const Section &section) {
       break;
     }
 
-    case AtomType::DummyOrg:
-      // DummyOrgAtom: .OR inside .DUMMY/.ED — no bytes, no PC change
-      break;
-
-    case AtomType::Label:
-      // Label atom - no bytes, no address change
-      break;
-
-    case AtomType::ListingControl:
-      // Listing control atom - no bytes, no address change
-      break;
-
-    case AtomType::Phase:
-      // Phase atom - no bytes generated (address tracking only)
-      break;
-
-    case AtomType::Equate:
-      // Equate atom - no bytes generated (symbol value only)
-      break;
-    case AtomType::CpuMode:
-      // CpuModeAtom - no bytes generated (mode change only)
-      break;
-    case AtomType::MxState:
-      // MxAtom - no bytes generated (M/X state change only)
+    case AtomType::DummyOrg:    // .OR inside .DUMMY/.ED — no bytes, no PC change
+    case AtomType::Label:       // Label atom - no bytes, no address change
+    case AtomType::ListingControl: // Listing control atom - no bytes
+    case AtomType::Phase:       // Phase atom - address tracking only
+    case AtomType::Equate:      // Equate atom - symbol value only
+    case AtomType::CpuMode:     // CpuModeAtom - mode change only
+    case AtomType::MxState:     // MxAtom - M/X state change only
       break;
     }
   }
