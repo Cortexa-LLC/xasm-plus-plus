@@ -12,18 +12,18 @@
 
 namespace xasm {
 
-std::string BinaryOutput::GetName() const { return "binary"; }
+std::string BinaryOutput::GetName() const { return "binary"; } // NOLINT(readability-convert-member-functions-to-static)
 
-std::string BinaryOutput::GetFileExtension() const { return ".bin"; }
+std::string BinaryOutput::GetFileExtension() const { return ".bin"; } // NOLINT(readability-convert-member-functions-to-static)
 
-void BinaryOutput::WriteOutput(const std::string &filename,
+void BinaryOutput::WriteOutput(const std::string &filename, // NOLINT(readability-convert-member-functions-to-static)
                                const std::vector<Section *> &sections,
                                const SymbolTable &symbols) {
   // Call WriteOutputWithRw18 with no RW18 header
   WriteOutputWithRw18(filename, sections, symbols, nullptr);
 }
 
-void BinaryOutput::WriteOutputWithRw18(const std::string &filename,
+void BinaryOutput::WriteOutputWithRw18(const std::string &filename, // NOLINT(readability-convert-member-functions-to-static)
                                        const std::vector<Section *> &sections,
                                        const SymbolTable &symbols,
                                        const std::array<uint16_t, 4> *rw18_header) {

@@ -74,7 +74,7 @@ using xasm::directives::STAR_RADIX;
 // Z80NumberParser Implementation
 // ============================================================================
 
-bool Z80NumberParser::TryParse(const std::string &token, int64_t &value) const {
+bool Z80NumberParser::TryParse(const std::string &token, int64_t &value) const { // NOLINT(readability-convert-member-functions-to-static)
   if (token.empty()) {
     return false;
   }
@@ -220,7 +220,7 @@ EdtasmM80PlusPlusSyntaxParser::EdtasmM80PlusPlusSyntaxParser()
   InitializeDirectiveRegistry();
 }
 
-void EdtasmM80PlusPlusSyntaxParser::InitializeDirectiveRegistry() {
+void EdtasmM80PlusPlusSyntaxParser::InitializeDirectiveRegistry() { // NOLINT(readability-convert-member-functions-to-static)
   // Register all EDTASM directive handlers (implemented as free functions)
   RegisterEdtasmDirectiveHandlers(directive_registry_);
 }
@@ -235,7 +235,7 @@ void EdtasmM80PlusPlusSyntaxParser::SetRadix(int radix) {
   z80_number_parser_.SetRadix(radix);
 }
 
-void EdtasmM80PlusPlusSyntaxParser::PushConditional(bool condition) {
+void EdtasmM80PlusPlusSyntaxParser::PushConditional(bool condition) { // NOLINT(readability-convert-member-functions-to-static)
   ConditionalBlock block;
   block.condition = condition;
   block.in_else_block = false;
@@ -243,7 +243,7 @@ void EdtasmM80PlusPlusSyntaxParser::PushConditional(bool condition) {
   conditional_stack_.push_back(block);
 }
 
-void EdtasmM80PlusPlusSyntaxParser::ToggleConditional() {
+void EdtasmM80PlusPlusSyntaxParser::ToggleConditional() { // NOLINT(readability-convert-member-functions-to-static)
   if (conditional_stack_.empty()) {
     throw std::runtime_error("ELSE without matching IF");
   }
@@ -255,7 +255,7 @@ void EdtasmM80PlusPlusSyntaxParser::ToggleConditional() {
   block.should_emit = !block.condition;
 }
 
-void EdtasmM80PlusPlusSyntaxParser::PopConditional() {
+void EdtasmM80PlusPlusSyntaxParser::PopConditional() { // NOLINT(readability-convert-member-functions-to-static)
   if (conditional_stack_.empty()) {
     throw std::runtime_error("ENDIF without matching IF");
   }
@@ -342,7 +342,7 @@ void EdtasmM80PlusPlusSyntaxParser::Parse(const std::string &source,
 }
 
 std::string
-EdtasmM80PlusPlusSyntaxParser::StripComments(const std::string &line) {
+EdtasmM80PlusPlusSyntaxParser::StripComments(const std::string &line) { // NOLINT(readability-convert-member-functions-to-static)
   // Find semicolon comment
   size_t semi_pos = line.find(';');
   if (semi_pos != std::string::npos) {
@@ -351,7 +351,7 @@ EdtasmM80PlusPlusSyntaxParser::StripComments(const std::string &line) {
   return line;
 }
 
-std::string EdtasmM80PlusPlusSyntaxParser::Trim(const std::string &str) {
+std::string EdtasmM80PlusPlusSyntaxParser::Trim(const std::string &str) { // NOLINT(readability-convert-member-functions-to-static)
   size_t first = str.find_first_not_of(" \t\r\n");
   if (first == std::string::npos) {
     return "";
@@ -686,7 +686,7 @@ void EdtasmM80PlusPlusSyntaxParser::ParseLine(const std::string &line,
   current_address_ += estimated_size;
 }
 
-uint32_t EdtasmM80PlusPlusSyntaxParser::EstimateZ80InstructionSize(
+uint32_t EdtasmM80PlusPlusSyntaxParser::EstimateZ80InstructionSize( // NOLINT(readability-convert-member-functions-to-static)
     const std::string &mnemonic, const std::string &operand) {
   // Heuristic Z80 instruction size estimation
   // Actual encoding will be done by CPU plugin (Phase 9+)
@@ -755,7 +755,7 @@ uint32_t EdtasmM80PlusPlusSyntaxParser::EstimateZ80InstructionSize(
 }
 
 std::string
-EdtasmM80PlusPlusSyntaxParser::ParseLabel(const std::string &line, size_t &pos,
+EdtasmM80PlusPlusSyntaxParser::ParseLabel(const std::string &line, size_t &pos, // NOLINT(readability-convert-member-functions-to-static)
                                           Section &section,
                                           ConcreteSymbolTable &symbols) {
   // Check if line starts with a label (identifier followed by : or ::)
@@ -811,7 +811,7 @@ EdtasmM80PlusPlusSyntaxParser::ParseLabel(const std::string &line, size_t &pos,
   }
 
   // Update scope if it's a global label (not starting with . $ ?)
-  if (potential_label[0] != '.' && potential_label[0] != '$' &&
+  if (potential_label[0] != '.' && potential_label[0] != '$' && // NOLINT(bugprone-branch-clone)
       potential_label[0] != '?') {
     current_scope_.global_label = potential_label;
     current_scope_.local_labels.clear();
@@ -864,7 +864,7 @@ uint32_t EdtasmM80PlusPlusSyntaxParser::ParseNumber(const std::string &str) {
   }
   // Binary: 11110000B
   else if (trimmed.size() >= 2 &&
-           (trimmed.back() == 'B' || trimmed.back() == 'b')) {
+           (trimmed.back() == 'B' || trimmed.back() == 'b')) { // NOLINT(bugprone-branch-clone)
     return static_cast<uint32_t>(
         ParseBinary(trimmed.substr(0, trimmed.size() - 1)));
   }
@@ -884,7 +884,7 @@ uint32_t EdtasmM80PlusPlusSyntaxParser::ParseNumber(const std::string &str) {
   // No explicit format - use current radix
   else {
     // Use appropriate parser based on current radix
-    if (current_radix_ == RADIX_BINARY) {
+    if (current_radix_ == RADIX_BINARY) { // NOLINT(bugprone-branch-clone)
       return static_cast<uint32_t>(ParseBinary(trimmed));
     } else if (current_radix_ == RADIX_OCTAL) {
       return static_cast<uint32_t>(ParseOctal(trimmed));
@@ -907,7 +907,7 @@ uint32_t EdtasmM80PlusPlusSyntaxParser::ParseNumber(const std::string &str) {
 }
 
 std::shared_ptr<Expression>
-EdtasmM80PlusPlusSyntaxParser::ParseExpression(const std::string &str,
+EdtasmM80PlusPlusSyntaxParser::ParseExpression(const std::string &str, // NOLINT(readability-convert-member-functions-to-static)
                                                ConcreteSymbolTable &symbols) {
   // Create ExpressionParser with symbol table, Z80 number parser, and Z80
   // dialect features (allow_bracket_grouping for [expr] syntax — ADR-005 V7)
@@ -955,7 +955,7 @@ void EdtasmM80PlusPlusSyntaxParser::ExpandAndParseLines(
  * & = textual substitution
  * % = numeric expression evaluation
  */
-std::string EdtasmM80PlusPlusSyntaxParser::SubstituteMacroParameters(
+std::string EdtasmM80PlusPlusSyntaxParser::SubstituteMacroParameters( // NOLINT(readability-convert-member-functions-to-static)
     const std::string &line, const std::vector<std::string> &param_names,
     const std::vector<std::string> &param_values) {
   std::string result = line;
@@ -1026,7 +1026,7 @@ std::string EdtasmM80PlusPlusSyntaxParser::SubstituteMacroParameters(
  *
  * Appends unique ID to labels declared as LOCAL.
  */
-std::string EdtasmM80PlusPlusSyntaxParser::MakeLocalLabelUnique(
+std::string EdtasmM80PlusPlusSyntaxParser::MakeLocalLabelUnique( // NOLINT(readability-convert-member-functions-to-static)
     const std::string &line, const std::vector<std::string> &local_labels,
     int unique_id) {
   std::string result = line;
@@ -1080,7 +1080,7 @@ std::string EdtasmM80PlusPlusSyntaxParser::MakeLocalLabelUnique(
 }
 
 std::vector<std::string>
-EdtasmM80PlusPlusSyntaxParser::ParseSymbolList(const std::string &operand) {
+EdtasmM80PlusPlusSyntaxParser::ParseSymbolList(const std::string &operand) { // NOLINT(readability-convert-member-functions-to-static)
   // Parse comma-separated list of symbols
   std::vector<std::string> symbols;
   std::istringstream iss(operand);

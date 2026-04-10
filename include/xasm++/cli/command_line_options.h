@@ -42,31 +42,31 @@ enum class OutputFormat : std::uint8_t {
  * @endcode
  */
 struct CommandLineOptions {
-  std::string input_file;          ///< Input assembly source file
+  std::string input_file{};          ///< Input assembly source file
   std::string cpu = "6502";        ///< Target CPU (6502, 65c02, 65816, etc.)
   std::string syntax = "simple";   ///< Syntax style (simple, merlin)
   std::string output = "a.out";    ///< Output filename
   bool output_explicit = false;    ///< True when -o was provided on the command line
-  std::string listing_file;        ///< Listing file (.lst) - optional
-  std::string symbol_file;         ///< Symbol table file (.sym) - optional
+  std::string listing_file{};        ///< Listing file (.lst) - optional
+  std::string symbol_file{};         ///< Symbol table file (.sym) - optional
   std::string color_mode = "auto"; ///< Color output mode (auto, always, never)
-  std::vector<std::string> include; ///< Include search path for .INB directive (can be multiple)
-  std::vector<std::string> define; ///< Define macros (format: NAME=VALUE)
+  std::vector<std::string> include{}; ///< Include search path for .INB directive (can be multiple)
+  std::vector<std::string> define{}; ///< Define macros (format: NAME=VALUE)
   int max_passes = 50; ///< Maximum assembly passes (must match Assembler::MAX_PASSES default)
-  std::string label_map;           ///< Label map file for debugging
+  std::string label_map{};           ///< Label map file for debugging
   int warn = 1;                    ///< Warning level: 0=none, 1=default, 2=extra, 3=all
   bool werror = false;             ///< Treat warnings as errors
   bool quiet = false;              ///< Suppress non-essential output
   bool verbose = false;            ///< Enable verbose output
   int64_t org = -1;                ///< Origin address override (-1 means not set)
   OutputFormat format = OutputFormat::Binary; ///< Output format (binary, ihex, srec)
-  std::vector<std::string> path_mappings; ///< Path mappings for .INB directive
+  std::vector<std::string> path_mappings{}; ///< Path mappings for .INB directive
                                           ///< (format: "virtual=actual")
   bool relax_branches = false;            ///< Expand out-of-range branches (default: error)
   bool rw18 = false;                      ///< Emit RW18 module header (USR directive args prepended)
   bool show_help = false;                 ///< True if --help was specified
   bool show_version = false;              ///< True if --version was specified
-  std::string help_message; ///< Help message text (populated when --help used)
+  std::string help_message{}; ///< Help message text (populated when --help used)
 };
 
 } // namespace xasm

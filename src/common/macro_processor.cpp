@@ -18,7 +18,7 @@ namespace xasm {
 // Helper Functions
 // ============================================================================
 
-std::string MacroProcessor::ToUpper(const std::string &str) {
+std::string MacroProcessor::ToUpper(const std::string &str) { // NOLINT(readability-convert-member-functions-to-static)
   std::string result = str;
   std::transform(result.begin(), result.end(), result.begin(),
                  [](unsigned char c) { return std::toupper(c); });
@@ -29,7 +29,7 @@ std::string MacroProcessor::ToUpper(const std::string &str) {
 // Public API Methods
 // ============================================================================
 
-void MacroProcessor::DefineMacro(const std::string &name,
+void MacroProcessor::DefineMacro(const std::string &name, // NOLINT(readability-convert-member-functions-to-static)
                                  const std::vector<std::string> &parameters,
                                  const std::vector<std::string> &body) {
   MacroDefinition macro;
@@ -45,7 +45,7 @@ bool MacroProcessor::IsMacro(const std::string &name) const {
   return macros_.contains(ToUpper(name));
 }
 
-const MacroDefinition *MacroProcessor::GetMacro(const std::string &name) const {
+const MacroDefinition *MacroProcessor::GetMacro(const std::string &name) const { // NOLINT(readability-convert-member-functions-to-static)
   auto it = macros_.find(ToUpper(name));
   if (it != macros_.end()) {
     return &it->second;
@@ -130,7 +130,7 @@ MacroProcessor::ExpandMacro(const std::string &name,
 // Private Implementation Methods
 // ============================================================================
 
-std::string MacroProcessor::SubstituteParameters(
+std::string MacroProcessor::SubstituteParameters( // NOLINT(readability-convert-member-functions-to-static)
     const std::string &line, const MacroDefinition &macro,
     const std::vector<std::string> &arguments) {
   std::string result = line;
@@ -144,10 +144,10 @@ std::string MacroProcessor::SubstituteParameters(
     size_t pos = 0;
     while ((pos = result.find(param, pos)) != std::string::npos) {
       // Check if this is a whole word match
-      bool is_start_boundary =
+      bool is_start_boundary = // NOLINT(cppcoreguidelines-init-variables)
           (pos == 0 ||
            !std::isalnum(static_cast<unsigned char>(result[pos - 1])));
-      bool is_end_boundary = (pos + param.length() >= result.length() ||
+      bool is_end_boundary = (pos + param.length() >= result.length() || // NOLINT(cppcoreguidelines-init-variables)
                               !std::isalnum(static_cast<unsigned char>(
                                   result[pos + param.length()])));
 
@@ -168,7 +168,7 @@ std::string MacroProcessor::SubstituteParameters(
   return result;
 }
 
-std::string MacroProcessor::MakeLocalLabelUnique(const std::string &label,
+std::string MacroProcessor::MakeLocalLabelUnique(const std::string &label, // NOLINT(readability-convert-member-functions-to-static)
                                                  int expansion_id) {
   // Local labels start with '.' in FLEX ASM09
   if (label.empty() || label[0] != '.') {

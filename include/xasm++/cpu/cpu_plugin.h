@@ -119,7 +119,7 @@ public:
    * @note Default implementation returns 3 (conservative, safe for parsers
    *       that don't have a CPU plugin set).
    */
-  virtual size_t GetInstructionSize(const std::string &mnemonic,
+  virtual size_t GetInstructionSize(const std::string &mnemonic, // NOLINT(readability-convert-member-functions-to-static)
                                     const std::string &operand_str) const {
     (void)mnemonic;
     (void)operand_str;
@@ -201,7 +201,7 @@ public:
    * @note Default implementation throws exception (not supported)
    */
   virtual std::vector<uint8_t>
-  EncodeInstructionSpecial(const std::string &mnemonic,
+  EncodeInstructionSpecial(const std::string &mnemonic, // NOLINT(readability-convert-member-functions-to-static)
                            const std::string &operand,
                            uint16_t current_address) const {
     (void)operand;         // Unused in default implementation

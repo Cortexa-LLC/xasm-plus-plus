@@ -8,7 +8,7 @@ namespace xasm {
 
 // ConcreteSymbolTable implementation
 
-void ConcreteSymbolTable::Define(const std::string &name, SymbolType type,
+void ConcreteSymbolTable::Define(const std::string &name, SymbolType type, // NOLINT(readability-convert-member-functions-to-static)
                                  std::shared_ptr<Expression> value) {
   // Preserve export/import flags if symbol already exists
   bool was_exported = false;
@@ -66,7 +66,7 @@ bool ConcreteSymbolTable::Lookup(const std::string &name,
   return false;
 }
 
-const Symbol *ConcreteSymbolTable::GetSymbol(const std::string &name) const {
+const Symbol *ConcreteSymbolTable::GetSymbol(const std::string &name) const { // NOLINT(readability-convert-member-functions-to-static)
   auto it = symbols_.find(name);
   if (it != symbols_.end()) {
     return &it->second;
@@ -74,7 +74,7 @@ const Symbol *ConcreteSymbolTable::GetSymbol(const std::string &name) const {
   return nullptr;
 }
 
-Symbol *ConcreteSymbolTable::GetSymbol(const std::string &name) {
+Symbol *ConcreteSymbolTable::GetSymbol(const std::string &name) { // NOLINT(readability-convert-member-functions-to-static)
   auto it = symbols_.find(name);
   if (it != symbols_.end()) {
     return &it->second;

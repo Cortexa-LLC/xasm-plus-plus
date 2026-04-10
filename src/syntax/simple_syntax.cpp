@@ -37,7 +37,7 @@ static bool IsIdentifierStart(char c) {
 
 SimpleSyntaxParser::SimpleSyntaxParser() { InitializeDirectives(); }
 
-void SimpleSyntaxParser::InitializeDirectives() {
+void SimpleSyntaxParser::InitializeDirectives() { // NOLINT(readability-convert-member-functions-to-static)
   using namespace directives;
 
   // Register .ORG directive
@@ -50,7 +50,7 @@ void SimpleSyntaxParser::InitializeDirectives() {
   directive_registry_.Register(DW, simple::HandleDw);
 }
 
-void SimpleSyntaxParser::Parse(const std::string &source, Section &section,
+void SimpleSyntaxParser::Parse(const std::string &source, Section &section, // NOLINT(readability-convert-member-functions-to-static)
                                ConcreteSymbolTable &symbols) {
   if (source.empty()) {
     return;
@@ -121,7 +121,7 @@ void SimpleSyntaxParser::Parse(const std::string &source, Section &section,
       size_t space_pos = line.find(' ');
       std::string mnemonic, operands;
 
-      if (space_pos != std::string::npos) {
+      if (space_pos != std::string::npos) { // NOLINT(bugprone-branch-clone)
         mnemonic = ToUpper(util::Trim(line.substr(0, space_pos)));
         operands = util::Trim(line.substr(space_pos + 1));
       } else {

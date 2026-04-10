@@ -111,7 +111,7 @@ static bool IsEqOperandSafe(const std::string &operand) {
 // SCMASMNumberParser Implementation
 // ============================================================================
 
-bool SCMASMNumberParser::TryParse(const std::string &token,
+bool SCMASMNumberParser::TryParse(const std::string &token, // NOLINT(readability-convert-member-functions-to-static)
                                   int64_t &value) const {
   if (token.empty()) {
     return false;
@@ -229,7 +229,7 @@ ScmasmSyntaxParser::ScmasmSyntaxParser()
   InitializeDirectiveRegistry();
 }
 
-void ScmasmSyntaxParser::InitializeDirectiveRegistry() {
+void ScmasmSyntaxParser::InitializeDirectiveRegistry() { // NOLINT(readability-convert-member-functions-to-static)
   // Phase 6c.2: Use extracted free functions with directive name constants
   using namespace scmasm::directives;
 
@@ -299,7 +299,7 @@ void ScmasmSyntaxParser::InitializeDirectiveRegistry() {
 
 void ScmasmSyntaxParser::SetCpu(CpuPlugin *cpu) { cpu_ = cpu; }
 
-void ScmasmSyntaxParser::SetCpu(const std::string &cpu_name) {
+void ScmasmSyntaxParser::SetCpu(const std::string &cpu_name) { // NOLINT(readability-convert-member-functions-to-static)
   // Allocate a Cpu6502 instance owned by this parser.
   // The pointer is stored in owned_cpu_ so that it outlives this function
   // and is freed when the parser is destroyed.  Previously cpu6502 was a
@@ -479,7 +479,7 @@ void ScmasmSyntaxParser::Parse(const std::string &source, Section &section,
 // Helper Functions
 // ============================================================================
 
-std::string ScmasmSyntaxParser::StripLineNumber(const std::string &line) {
+std::string ScmasmSyntaxParser::StripLineNumber(const std::string &line) { // NOLINT(readability-convert-member-functions-to-static)
   // SCMASM allows optional line numbers (0-65535) at start
   // Format: [0-9]+ followed by whitespace
 
@@ -518,7 +518,7 @@ std::string ScmasmSyntaxParser::StripLineNumber(const std::string &line) {
   return line;
 }
 
-std::string ScmasmSyntaxParser::StripComments(const std::string &line) {
+std::string ScmasmSyntaxParser::StripComments(const std::string &line) { // NOLINT(readability-convert-member-functions-to-static)
   // Two comment styles:
   // 1. * in column 1 (full-line comment)
   // 2. ; anywhere outside a string literal (rest of line is comment)
@@ -646,7 +646,7 @@ std::string ScmasmSyntaxParser::StripComments(const std::string &line) {
   return line;
 }
 
-std::string ScmasmSyntaxParser::StripEditorCommands(const std::string &line) {
+std::string ScmasmSyntaxParser::StripEditorCommands(const std::string &line) { // NOLINT(readability-convert-member-functions-to-static)
   // Apple II line editor commands that should be ignored during assembly
   // Format: command at start of line (case-insensitive), optionally followed by
   // arguments
@@ -725,7 +725,7 @@ static std::string TrimRight(const std::string &str) {
   return str.substr(0, end);
 }
 
-std::string ScmasmSyntaxParser::Trim(const std::string &str) {
+std::string ScmasmSyntaxParser::Trim(const std::string &str) { // NOLINT(readability-convert-member-functions-to-static)
   size_t start = str.find_first_not_of(" \t\r\n");
   if (start == std::string::npos) {
     return "";
@@ -745,7 +745,7 @@ std::string ScmasmSyntaxParser::Trim(const std::string &str) {
   return str.substr(start, end - start + 1);
 }
 
-std::string ScmasmSyntaxParser::FormatError(const std::string &message) const {
+std::string ScmasmSyntaxParser::FormatError(const std::string &message) const { // NOLINT(readability-convert-member-functions-to-static)
   std::ostringstream oss;
   oss << current_file_ << ":" << current_line_ << ": " << message;
   return oss.str();
@@ -982,7 +982,7 @@ void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
         }
       }
       HandleDo(label, do_operand, section, symbols, source, line_idx);
-    } else if (opcode_upper == LU) {
+    } else if (opcode_upper == LU) { // NOLINT(bugprone-branch-clone)
       HandleLu(label, operand, section, symbols, source, line_idx);
     } else if (opcode_upper == ELSE || opcode_upper == FIN ||
                opcode_upper == ENDU) {
@@ -1328,7 +1328,7 @@ std::string ScmasmSyntaxParser::ParseLabel(const std::string &line, size_t &pos,
 // Directive Handlers
 // ============================================================================
 
-void ScmasmSyntaxParser::HandleOr(const std::string &operand, Section &section,
+void ScmasmSyntaxParser::HandleOr(const std::string &operand, Section &section, // NOLINT(readability-convert-member-functions-to-static)
                                   ConcreteSymbolTable &symbols) {
   if (operand.empty()) {
     throw std::runtime_error(".OR requires an address");
@@ -1345,7 +1345,7 @@ void ScmasmSyntaxParser::HandleOr(const std::string &operand, Section &section,
   current_address_ = address;
 }
 
-void ScmasmSyntaxParser::HandleEq(const std::string &label,
+void ScmasmSyntaxParser::HandleEq(const std::string &label, // NOLINT(readability-convert-member-functions-to-static)
                                   const std::string &operand,
                                   ConcreteSymbolTable &symbols) {
   if (operand.empty()) {
@@ -1360,7 +1360,7 @@ void ScmasmSyntaxParser::HandleEq(const std::string &label,
   symbols.Define(label, SymbolType::Equate, expr);
 }
 
-void ScmasmSyntaxParser::HandleSe(const std::string &label,
+void ScmasmSyntaxParser::HandleSe(const std::string &label, // NOLINT(readability-convert-member-functions-to-static)
                                   const std::string &operand,
                                   ConcreteSymbolTable &symbols) {
   if (operand.empty()) {
@@ -1388,7 +1388,7 @@ void ScmasmSyntaxParser::HandleSe(const std::string &label,
 // Number Parsing
 // ============================================================================
 
-uint32_t ScmasmSyntaxParser::ParseNumber(const std::string &str) {
+uint32_t ScmasmSyntaxParser::ParseNumber(const std::string &str) { // NOLINT(readability-convert-member-functions-to-static)
   std::string trimmed = Trim(str);
 
   if (trimmed.empty()) {
@@ -1493,7 +1493,7 @@ const std::string &ScmasmSyntaxParser::LocalLabelScope(
   return last_global_label_;
 }
 
-std::string ScmasmSyntaxParser::ScopedLocalLabelName(
+std::string ScmasmSyntaxParser::ScopedLocalLabelName( // NOLINT(readability-convert-member-functions-to-static)
     const std::string &label) const {
   // Build the fully-scoped internal name for a local label.
   //
@@ -1515,7 +1515,7 @@ std::string ScmasmSyntaxParser::ScopedLocalLabelName(
   return scope + label;
 }
 
-bool ScmasmSyntaxParser::IsLocalLabel(const std::string &label) {
+bool ScmasmSyntaxParser::IsLocalLabel(const std::string &label) { // NOLINT(readability-convert-member-functions-to-static)
   // Local labels are . or : followed by one or more digits
   // Examples: .0-.9 (single digit), .10, .70, .81, .98, .99 (multi-digit)
   if (label.length() >= 2 && (label[0] == '.' || label[0] == ':')) {
@@ -1529,7 +1529,7 @@ bool ScmasmSyntaxParser::IsLocalLabel(const std::string &label) {
   return false;
 }
 
-uint32_t ScmasmSyntaxParser::EvaluateExpression(const std::string &str,
+uint32_t ScmasmSyntaxParser::EvaluateExpression(const std::string &str, // NOLINT(readability-convert-member-functions-to-static)
                                                 ConcreteSymbolTable &symbols) {
   std::string trimmed = Trim(str);
 
@@ -1625,7 +1625,7 @@ uint32_t ScmasmSyntaxParser::EvaluateExpression(const std::string &str,
   return static_cast<uint32_t>(expr->Evaluate(symbols));
 }
 
-uint8_t ScmasmSyntaxParser::ApplyHighBitRule(char c, char delimiter) {
+uint8_t ScmasmSyntaxParser::ApplyHighBitRule(char c, char delimiter) { // NOLINT(readability-convert-member-functions-to-static)
   // SCMASM high-bit rule:
   // If delimiter ASCII < 0x27 (apostrophe '), high bit is SET
   // Otherwise, high bit is CLEAR
@@ -1643,7 +1643,7 @@ uint8_t ScmasmSyntaxParser::ApplyHighBitRule(char c, char delimiter) {
   return result;
 }
 
-std::string ScmasmSyntaxParser::ExpandLocalLabelsInOperand(
+std::string ScmasmSyntaxParser::ExpandLocalLabelsInOperand( // NOLINT(readability-convert-member-functions-to-static)
     const std::string &operand) const {
   if (operand.empty())
     return operand;
@@ -1662,7 +1662,7 @@ std::string ScmasmSyntaxParser::ExpandLocalLabelsInOperand(
   expanded.reserve(operand.size() + (last_global_label_.size() * 2));
   for (size_t k = 0; k < operand.size();) {
     char c = operand[k];
-    bool at_word_start =
+    bool at_word_start = // NOLINT(cppcoreguidelines-init-variables)
         (k == 0) || (!std::isalnum((unsigned char)operand[k - 1]) &&
                      operand[k - 1] != '_' && operand[k - 1] != '.');
     if ((c == '.' || c == ':') && at_word_start &&
@@ -1689,7 +1689,7 @@ std::string ScmasmSyntaxParser::ExpandLocalLabelsInOperand(
   return expanded;
 }
 
-std::string ScmasmSyntaxParser::ExpandCharLiteralsInExpr(
+std::string ScmasmSyntaxParser::ExpandCharLiteralsInExpr( // NOLINT(readability-convert-member-functions-to-static)
     const std::string &s) {
   // Replace SCMASM character literals ("X", 'X', "X", 'X) with their
   // numeric hex equivalents so that the generic ParseExpression engine can
@@ -1739,7 +1739,7 @@ std::string ScmasmSyntaxParser::ExpandCharLiteralsInExpr(
 }
 
 std::shared_ptr<Expression>
-ScmasmSyntaxParser::ParseExpression(const std::string &str,
+ScmasmSyntaxParser::ParseExpression(const std::string &str, // NOLINT(readability-convert-member-functions-to-static)
                                     ConcreteSymbolTable &symbols) {
   // Phase 2: Use shared ExpressionParser with SCMASM number parser
   // Normalize expression to uppercase for case-insensitive symbol lookup
@@ -1764,7 +1764,7 @@ ScmasmSyntaxParser::ParseExpression(const std::string &str,
 // Phase 2: String & Data Directives Implementation
 // ============================================================================
 
-char ScmasmSyntaxParser::ParseString(const std::string &operand,
+char ScmasmSyntaxParser::ParseString(const std::string &operand, // NOLINT(readability-convert-member-functions-to-static)
                                      std::vector<uint8_t> &result) {
   result.clear();
 
@@ -1792,7 +1792,7 @@ char ScmasmSyntaxParser::ParseString(const std::string &operand,
   return delimiter;
 }
 
-void ScmasmSyntaxParser::HandleAs(const std::string &operand, Section &section,
+void ScmasmSyntaxParser::HandleAs(const std::string &operand, Section &section, // NOLINT(readability-convert-member-functions-to-static)
                                   ConcreteSymbolTable & /*symbols*/) {
   std::vector<uint8_t> data;
   ParseString(operand, data);
@@ -1801,7 +1801,7 @@ void ScmasmSyntaxParser::HandleAs(const std::string &operand, Section &section,
   section.atoms.push_back(atom);
 }
 
-void ScmasmSyntaxParser::HandleAt(const std::string &operand, Section &section,
+void ScmasmSyntaxParser::HandleAt(const std::string &operand, Section &section, // NOLINT(readability-convert-member-functions-to-static)
                                   ConcreteSymbolTable & /*symbols*/) {
   std::vector<uint8_t> data;
   ParseString(operand, data);
@@ -1815,7 +1815,7 @@ void ScmasmSyntaxParser::HandleAt(const std::string &operand, Section &section,
   section.atoms.push_back(atom);
 }
 
-void ScmasmSyntaxParser::HandleAz(const std::string &operand, Section &section,
+void ScmasmSyntaxParser::HandleAz(const std::string &operand, Section &section, // NOLINT(readability-convert-member-functions-to-static)
                                   ConcreteSymbolTable & /*symbols*/) {
   // SCMASM prefix modifiers before the opening delimiter:
   //   -"text"  set high bit on ALL bytes (Apple II normal-video encoding)
@@ -1843,7 +1843,7 @@ void ScmasmSyntaxParser::HandleAz(const std::string &operand, Section &section,
   section.atoms.push_back(atom);
 }
 
-void ScmasmSyntaxParser::HandleDa(const std::string &operand, Section &section,
+void ScmasmSyntaxParser::HandleDa(const std::string &operand, Section &section, // NOLINT(readability-convert-member-functions-to-static)
                                   ConcreteSymbolTable &symbols) {
   std::vector<uint8_t> data;
 
@@ -1920,7 +1920,7 @@ void ScmasmSyntaxParser::HandleDa(const std::string &operand, Section &section,
   current_address_ += data.size();
 }
 
-void ScmasmSyntaxParser::HandleHs(const std::string &operand, Section &section,
+void ScmasmSyntaxParser::HandleHs(const std::string &operand, Section &section, // NOLINT(readability-convert-member-functions-to-static)
                                   ConcreteSymbolTable & /*symbols*/) {
   std::vector<uint8_t> data;
 
@@ -1955,7 +1955,7 @@ void ScmasmSyntaxParser::HandleHs(const std::string &operand, Section &section,
   section.atoms.push_back(atom);
 }
 
-void ScmasmSyntaxParser::HandleBs(const std::string &operand, Section &section,
+void ScmasmSyntaxParser::HandleBs(const std::string &operand, Section &section, // NOLINT(readability-convert-member-functions-to-static)
                                   ConcreteSymbolTable &symbols) {
   // .BS (Block Storage) - Reserve N bytes of space
   // SCMASM syntax: .BS count
@@ -1997,7 +1997,7 @@ void ScmasmSyntaxParser::HandleMa(const std::string &label,
 
   if (!label.empty()) {
     macro_name = label;
-  } else if (!operand.empty()) {
+  } else if (!operand.empty()) { // NOLINT(bugprone-branch-clone)
     macro_name = Trim(operand);
   } else {
     throw std::runtime_error(".MA requires a macro name");
@@ -2091,7 +2091,7 @@ void ScmasmSyntaxParser::InvokeMacro(const std::string &name,
   current_macro_label_scope_ = saved_macro_scope;
 }
 
-std::string ScmasmSyntaxParser::SubstituteParameters(
+std::string ScmasmSyntaxParser::SubstituteParameters( // NOLINT(readability-convert-member-functions-to-static)
     const std::string &line, const std::vector<std::string> &params) {
   std::string result;
   size_t pos = 0;

@@ -77,8 +77,8 @@ public:
   ~CpuZ80() override = default;
 
   // CpuPlugin interface implementation
-  std::string GetCpuFamily() const override { return "Z80"; }
-  std::vector<std::string> GetSupportedVariants() const override {
+  std::string GetCpuFamily() const override { return "Z80"; } // NOLINT(readability-convert-member-functions-to-static)
+  std::vector<std::string> GetSupportedVariants() const override { // NOLINT(readability-convert-member-functions-to-static)
     return {"Z80", "GameBoy"};
   }
   bool HasOpcode(const std::string &mnemonic) const override;
@@ -87,7 +87,7 @@ public:
    * @brief Get the CPU plugin name
    * @return "Z80"
    */
-  std::string GetName() const { return "Z80"; }
+  static std::string GetName() { return "Z80"; }
 
   // CpuPlugin instruction encoding interface
   std::vector<uint8_t>

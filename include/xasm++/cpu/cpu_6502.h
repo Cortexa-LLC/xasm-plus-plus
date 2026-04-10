@@ -123,8 +123,8 @@ public:
   ~Cpu6502() override = default;
 
   // CpuPlugin interface implementation
-  std::string GetCpuFamily() const override { return "6502"; }
-  std::vector<std::string> GetSupportedVariants() const override {
+  std::string GetCpuFamily() const override { return "6502"; } // NOLINT(readability-convert-member-functions-to-static)
+  std::vector<std::string> GetSupportedVariants() const override { // NOLINT(readability-convert-member-functions-to-static)
     return {"6502", "65c02", "65c02rock", "65816"};
   }
   bool HasOpcode(const std::string &mnemonic) const override;
@@ -133,7 +133,7 @@ public:
    * @brief Get the CPU plugin name
    * @return "6502"
    */
-  std::string GetName() const { return "6502"; }
+  static std::string GetName() { return "6502"; }
 
   // CpuPlugin instruction encoding interface
   std::vector<uint8_t>
@@ -623,25 +623,25 @@ private:
   // Opcode table structure for reducing duplication
   // Maps addressing modes to their corresponding opcodes for an instruction
   struct OpcodeTable {
-    std::optional<uint8_t> immediate;
-    std::optional<uint8_t> zero_page;
-    std::optional<uint8_t> zero_page_x;
-    std::optional<uint8_t> zero_page_y;
-    std::optional<uint8_t> absolute;
-    std::optional<uint8_t> absolute_x;
-    std::optional<uint8_t> absolute_y;
-    std::optional<uint8_t> indirect;
-    std::optional<uint8_t> indirect_x;
-    std::optional<uint8_t> indirect_y;
-    std::optional<uint8_t> accumulator;
-    std::optional<uint8_t> relative;
-    std::optional<uint8_t> indirect_zero_page;                // 65C02+
-    std::optional<uint8_t> absolute_indexed_indirect;         // 65C02+
-    std::optional<uint8_t> absolute_long;                     // 65816
-    std::optional<uint8_t> indirect_long;                     // 65816
-    std::optional<uint8_t> indirect_long_indexed_y;           // 65816
-    std::optional<uint8_t> stack_relative;                    // 65816
-    std::optional<uint8_t> stack_relative_indirect_indexed_y; // 65816
+    std::optional<uint8_t> immediate{};
+    std::optional<uint8_t> zero_page{};
+    std::optional<uint8_t> zero_page_x{};
+    std::optional<uint8_t> zero_page_y{};
+    std::optional<uint8_t> absolute{};
+    std::optional<uint8_t> absolute_x{};
+    std::optional<uint8_t> absolute_y{};
+    std::optional<uint8_t> indirect{};
+    std::optional<uint8_t> indirect_x{};
+    std::optional<uint8_t> indirect_y{};
+    std::optional<uint8_t> accumulator{};
+    std::optional<uint8_t> relative{};
+    std::optional<uint8_t> indirect_zero_page{};                // 65C02+
+    std::optional<uint8_t> absolute_indexed_indirect{};         // 65C02+
+    std::optional<uint8_t> absolute_long{};                     // 65816
+    std::optional<uint8_t> indirect_long{};                     // 65816
+    std::optional<uint8_t> indirect_long_indexed_y{};           // 65816
+    std::optional<uint8_t> stack_relative{};                    // 65816
+    std::optional<uint8_t> stack_relative_indirect_indexed_y{}; // 65816
   };
 
   /// @brief Controls immediate operand width for 65816 MX-flag-sensitive instructions

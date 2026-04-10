@@ -91,7 +91,7 @@ public:
   size_t size = 0;                ///< Size in bytes (current pass)
   size_t last_size = 0;           ///< Size in bytes (previous pass)
   uint32_t changes = 0;           ///< Number of times size has changed
-  std::shared_ptr<Atom> next; ///< Next atom in linked list (nullptr if last)
+  std::shared_ptr<Atom> next{}; ///< Next atom in linked list (nullptr if last)
   std::string source_line{}; ///< Original source line text (for listing output)
 
   /**
@@ -123,7 +123,7 @@ public:
 class LabelAtom : public Atom {
 public:
   std::string name{}; ///< Symbol name
-  uint32_t address; ///< Resolved address of this label
+  uint32_t address{0}; ///< Resolved address of this label
 
   /**
    * @brief Construct a label atom
@@ -156,7 +156,7 @@ public:
   std::string mnemonic{}; ///< Instruction mnemonic (e.g., "LDA", "STA")
   std::string operand{};  ///< Operand string (e.g., "#$42", "$1234,X")
   std::vector<uint8_t>
-      encoded_bytes; ///< Encoded machine code (set by CPU plugin)
+      encoded_bytes{}; ///< Encoded machine code (set by CPU plugin)
 
   /**
    * @brief Construct an instruction atom
@@ -265,7 +265,7 @@ public:
  */
 class SpaceAtom : public Atom {
 public:
-  size_t count; ///< Number of bytes to reserve
+  size_t count{0}; ///< Number of bytes to reserve
   std::string expression_str{}; ///< Raw expression (contains '*') for re-evaluation each pass
 
   /**
@@ -325,7 +325,7 @@ public:
  */
 class OrgAtom : public Atom {
 public:
-  uint32_t address; ///< New program counter address
+  uint32_t address{0}; ///< New program counter address
 
   /**
    * @brief Construct an org atom
@@ -355,7 +355,7 @@ public:
  */
 class DummyOrgAtom : public Atom {
 public:
-  uint32_t address; ///< Zero-page (or other) address for symbol resolution
+  uint32_t address{0}; ///< Zero-page (or other) address for symbol resolution
 
   /**
    * @brief Construct a dummy-section org atom
@@ -383,8 +383,8 @@ public:
  */
 class PhaseAtom : public Atom {
 public:
-  bool is_start;         ///< true = .PH start of phase, false = .EP end
-  uint32_t virtual_addr; ///< Virtual address for phase start (unused for end)
+  bool is_start{false};      ///< true = .PH start of phase, false = .EP end
+  uint32_t virtual_addr{0};   ///< Virtual address for phase start (unused for end)
 
   /**
    * @brief Construct a phase atom
@@ -429,9 +429,9 @@ enum class ListingControlType : std::uint8_t {
  */
 class ListingControlAtom : public Atom {
 public:
-  ListingControlType control_type; ///< Type of listing control
+  ListingControlType control_type{}; ///< Type of listing control
   std::string value{};               ///< String value (for TITLE)
-  int count;                       ///< Numeric value (for SPACE)
+  int count{0};                      ///< Numeric value (for SPACE)
 
   /**
    * @brief Construct a listing control atom with string value

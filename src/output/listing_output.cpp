@@ -21,9 +21,9 @@
 
 namespace xasm {
 
-std::string ListingOutput::GetName() const { return "listing"; }
+std::string ListingOutput::GetName() const { return "listing"; } // NOLINT(readability-convert-member-functions-to-static)
 
-std::string ListingOutput::GetFileExtension() const { return ".lst"; }
+std::string ListingOutput::GetFileExtension() const { return ".lst"; } // NOLINT(readability-convert-member-functions-to-static)
 
 /**
  * @brief Format a hex address with padding
@@ -52,8 +52,9 @@ FormatBytes(const std::vector<uint8_t> &bytes,
   std::ostringstream oss;
   size_t count = std::min(bytes.size(), max_bytes);
   for (size_t i = 0; i < count; ++i) {
-    if (i > 0)
+    if (i > 0) {
       oss << ' ';
+    }
     oss << std::uppercase << std::hex
         << std::setw(output_format::HEX_BYTE_WIDTH)
         << std::setfill(output_format::HEX_FILL_CHAR)
@@ -62,7 +63,7 @@ FormatBytes(const std::vector<uint8_t> &bytes,
   return oss.str();
 }
 
-void ListingOutput::WriteOutput(const std::string &filename,
+void ListingOutput::WriteOutput(const std::string &filename, // NOLINT(readability-convert-member-functions-to-static)
                                 const std::vector<Section *> &sections,
                                 const SymbolTable & /* symbols */) {
   std::ofstream file(filename);

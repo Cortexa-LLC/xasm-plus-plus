@@ -56,10 +56,10 @@ enum class SymbolType : std::uint8_t {
  */
 class Symbol {
 public:
-  std::string name;                  ///< Symbol name
-  SymbolType type;                   ///< Symbol type (label, equate, set)
-  std::shared_ptr<Expression> value; ///< Symbol value (expression tree)
-  Section *section; ///< Section where defined (nullptr for absolute symbols)
+  std::string name{};                   ///< Symbol name
+  SymbolType type{SymbolType::Label};   ///< Symbol type (label, equate, set)
+  std::shared_ptr<Expression> value{};  ///< Symbol value (expression tree)
+  Section *section{nullptr}; ///< Section where defined (nullptr for absolute symbols)
   bool is_exported; ///< True if exported to other modules
   bool is_imported; ///< True if imported from another module
   SourceLocation definition; ///< Source location where defined

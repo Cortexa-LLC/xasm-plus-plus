@@ -198,7 +198,7 @@ BuildIndexedPostByte(AddressingMode6809 mode, int32_t offset,
     result.insert(result.end(), ob.begin(), ob.end());
     break;
   }
-  case AddressingMode6809::IndexedAccumA:
+  case AddressingMode6809::IndexedAccumA: // NOLINT(bugprone-branch-clone)
     result.push_back(0x86 | reg_bits);
     break;
   case AddressingMode6809::IndexedAccumB:
@@ -230,7 +230,7 @@ BuildIndexedPostByte(AddressingMode6809 mode, int32_t offset,
     break;
   }
   case AddressingMode6809::IndexedIndirect: {
-    if (offset == 0) {
+    if (offset == 0) { // NOLINT(bugprone-branch-clone)
       result.push_back(0x94 | reg_bits);
     } else if (offset >= -128 && offset <= 127) {
       result.push_back(0x98 | reg_bits);
@@ -300,7 +300,7 @@ EncodeMemInstr(const InstrOpcodes &entry, uint32_t operand,
 
   switch (mode) {
   // ---------------------------------------------------------
-  case AddressingMode6809::Immediate8:
+  case AddressingMode6809::Immediate8: // NOLINT(bugprone-branch-clone)
     return make_imm8(entry.imm);
 
   case AddressingMode6809::Immediate16:
@@ -332,8 +332,9 @@ EncodeMemInstr(const InstrOpcodes &entry, uint32_t operand,
   case AddressingMode6809::IndexedPCRelative16:
   case AddressingMode6809::IndexedIndirect:
   case AddressingMode6809::IndexedExtendedIndirect: {
-    if (entry.idx == NO_OP)
+    if (entry.idx == NO_OP) {
       return {};
+}
     std::vector<uint8_t> result;
     if (entry.prefix)
       result.push_back(entry.prefix);
@@ -352,64 +353,64 @@ EncodeMemInstr(const InstrOpcodes &entry, uint32_t operand,
 // Inherent-mode (no operand) instructions
 // ============================================================================
 
-std::vector<uint8_t> Cpu6809::EncodeNOP() {
+std::vector<uint8_t> Cpu6809::EncodeNOP() { // NOLINT(readability-convert-member-functions-to-static)
   return {Opcodes6809::NOP}; // NOP opcode
 }
 
-std::vector<uint8_t> Cpu6809::EncodeRTS() {
+std::vector<uint8_t> Cpu6809::EncodeRTS() { // NOLINT(readability-convert-member-functions-to-static)
   return {Opcodes6809::RTS}; // RTS opcode
 }
 
-std::vector<uint8_t> Cpu6809::EncodeCLRA() {
+std::vector<uint8_t> Cpu6809::EncodeCLRA() { // NOLINT(readability-convert-member-functions-to-static)
   return {Opcodes6809::CLRA}; // CLRA opcode
 }
 
-std::vector<uint8_t> Cpu6809::EncodeCLRB() {
+std::vector<uint8_t> Cpu6809::EncodeCLRB() { // NOLINT(readability-convert-member-functions-to-static)
   return {Opcodes6809::CLRB}; // CLRB opcode
 }
 
 // Shift and Rotate Instructions
-std::vector<uint8_t> Cpu6809::EncodeASLA() { return {Opcodes6809::ASLA}; }
+std::vector<uint8_t> Cpu6809::EncodeASLA() { return {Opcodes6809::ASLA}; } // NOLINT(readability-convert-member-functions-to-static)
 
-std::vector<uint8_t> Cpu6809::EncodeASLB() { return {Opcodes6809::ASLB}; }
+std::vector<uint8_t> Cpu6809::EncodeASLB() { return {Opcodes6809::ASLB}; } // NOLINT(readability-convert-member-functions-to-static)
 
-std::vector<uint8_t> Cpu6809::EncodeASRA() { return {Opcodes6809::ASRA}; }
+std::vector<uint8_t> Cpu6809::EncodeASRA() { return {Opcodes6809::ASRA}; } // NOLINT(readability-convert-member-functions-to-static)
 
-std::vector<uint8_t> Cpu6809::EncodeASRB() { return {Opcodes6809::ASRB}; }
+std::vector<uint8_t> Cpu6809::EncodeASRB() { return {Opcodes6809::ASRB}; } // NOLINT(readability-convert-member-functions-to-static)
 
-std::vector<uint8_t> Cpu6809::EncodeLSRA() { return {Opcodes6809::LSRA}; }
+std::vector<uint8_t> Cpu6809::EncodeLSRA() { return {Opcodes6809::LSRA}; } // NOLINT(readability-convert-member-functions-to-static)
 
-std::vector<uint8_t> Cpu6809::EncodeLSRB() { return {Opcodes6809::LSRB}; }
+std::vector<uint8_t> Cpu6809::EncodeLSRB() { return {Opcodes6809::LSRB}; } // NOLINT(readability-convert-member-functions-to-static)
 
-std::vector<uint8_t> Cpu6809::EncodeROLA() { return {Opcodes6809::ROLA}; }
+std::vector<uint8_t> Cpu6809::EncodeROLA() { return {Opcodes6809::ROLA}; } // NOLINT(readability-convert-member-functions-to-static)
 
-std::vector<uint8_t> Cpu6809::EncodeROLB() { return {Opcodes6809::ROLB}; }
+std::vector<uint8_t> Cpu6809::EncodeROLB() { return {Opcodes6809::ROLB}; } // NOLINT(readability-convert-member-functions-to-static)
 
-std::vector<uint8_t> Cpu6809::EncodeRORA() { return {Opcodes6809::RORA}; }
+std::vector<uint8_t> Cpu6809::EncodeRORA() { return {Opcodes6809::RORA}; } // NOLINT(readability-convert-member-functions-to-static)
 
-std::vector<uint8_t> Cpu6809::EncodeRORB() { return {Opcodes6809::RORB}; }
+std::vector<uint8_t> Cpu6809::EncodeRORB() { return {Opcodes6809::RORB}; } // NOLINT(readability-convert-member-functions-to-static)
 
 // Increment / Decrement
-std::vector<uint8_t> Cpu6809::EncodeINCA() { return {Opcodes6809::INCA}; }
+std::vector<uint8_t> Cpu6809::EncodeINCA() { return {Opcodes6809::INCA}; } // NOLINT(readability-convert-member-functions-to-static)
 
-std::vector<uint8_t> Cpu6809::EncodeINCB() { return {Opcodes6809::INCB}; }
+std::vector<uint8_t> Cpu6809::EncodeINCB() { return {Opcodes6809::INCB}; } // NOLINT(readability-convert-member-functions-to-static)
 
-std::vector<uint8_t> Cpu6809::EncodeDECA() { return {Opcodes6809::DECA}; }
+std::vector<uint8_t> Cpu6809::EncodeDECA() { return {Opcodes6809::DECA}; } // NOLINT(readability-convert-member-functions-to-static)
 
-std::vector<uint8_t> Cpu6809::EncodeDECB() { return {Opcodes6809::DECB}; }
+std::vector<uint8_t> Cpu6809::EncodeDECB() { return {Opcodes6809::DECB}; } // NOLINT(readability-convert-member-functions-to-static)
 
 // Test and Complement/Negate
-std::vector<uint8_t> Cpu6809::EncodeTSTA() { return {Opcodes6809::TSTA}; }
+std::vector<uint8_t> Cpu6809::EncodeTSTA() { return {Opcodes6809::TSTA}; } // NOLINT(readability-convert-member-functions-to-static)
 
-std::vector<uint8_t> Cpu6809::EncodeTSTB() { return {Opcodes6809::TSTB}; }
+std::vector<uint8_t> Cpu6809::EncodeTSTB() { return {Opcodes6809::TSTB}; } // NOLINT(readability-convert-member-functions-to-static)
 
-std::vector<uint8_t> Cpu6809::EncodeCOMA() { return {Opcodes6809::COMA}; }
+std::vector<uint8_t> Cpu6809::EncodeCOMA() { return {Opcodes6809::COMA}; } // NOLINT(readability-convert-member-functions-to-static)
 
-std::vector<uint8_t> Cpu6809::EncodeCOMB() { return {Opcodes6809::COMB}; }
+std::vector<uint8_t> Cpu6809::EncodeCOMB() { return {Opcodes6809::COMB}; } // NOLINT(readability-convert-member-functions-to-static)
 
-std::vector<uint8_t> Cpu6809::EncodeNEGA() { return {Opcodes6809::NEGA}; }
+std::vector<uint8_t> Cpu6809::EncodeNEGA() { return {Opcodes6809::NEGA}; } // NOLINT(readability-convert-member-functions-to-static)
 
-std::vector<uint8_t> Cpu6809::EncodeNEGB() { return {Opcodes6809::NEGB}; }
+std::vector<uint8_t> Cpu6809::EncodeNEGB() { return {Opcodes6809::NEGB}; } // NOLINT(readability-convert-member-functions-to-static)
 
 // ============================================================================
 // Memory-operand instructions  (delegates to kOpcodeTable via EncodeMemInstr)
@@ -569,7 +570,7 @@ std::vector<uint8_t> Cpu6809::EncodeLEAY(uint32_t operand,
 // Short Branch Instructions (8-bit relative addressing)
 // ============================================================================
 
-std::vector<uint8_t> Cpu6809::EncodeBRA(int32_t offset,
+std::vector<uint8_t> Cpu6809::EncodeBRA(int32_t offset, // NOLINT(readability-convert-member-functions-to-static)
                                         AddressingMode6809 mode) {
   if (mode == AddressingMode6809::Relative8) {
     return {Opcodes6809::BRA, static_cast<uint8_t>(offset & 0xFF)};
@@ -577,7 +578,7 @@ std::vector<uint8_t> Cpu6809::EncodeBRA(int32_t offset,
   return {};
 }
 
-std::vector<uint8_t> Cpu6809::EncodeBEQ(int32_t offset,
+std::vector<uint8_t> Cpu6809::EncodeBEQ(int32_t offset, // NOLINT(readability-convert-member-functions-to-static)
                                         AddressingMode6809 mode) {
   if (mode == AddressingMode6809::Relative8) {
     return {Opcodes6809::BEQ, static_cast<uint8_t>(offset & 0xFF)};
@@ -585,7 +586,7 @@ std::vector<uint8_t> Cpu6809::EncodeBEQ(int32_t offset,
   return {};
 }
 
-std::vector<uint8_t> Cpu6809::EncodeBNE(int32_t offset,
+std::vector<uint8_t> Cpu6809::EncodeBNE(int32_t offset, // NOLINT(readability-convert-member-functions-to-static)
                                         AddressingMode6809 mode) {
   if (mode == AddressingMode6809::Relative8) {
     return {Opcodes6809::BNE, static_cast<uint8_t>(offset & 0xFF)};
@@ -593,7 +594,7 @@ std::vector<uint8_t> Cpu6809::EncodeBNE(int32_t offset,
   return {};
 }
 
-std::vector<uint8_t> Cpu6809::EncodeBCC(int32_t offset,
+std::vector<uint8_t> Cpu6809::EncodeBCC(int32_t offset, // NOLINT(readability-convert-member-functions-to-static)
                                         AddressingMode6809 mode) {
   if (mode == AddressingMode6809::Relative8) {
     return {Opcodes6809::BCC, static_cast<uint8_t>(offset & 0xFF)};
@@ -601,7 +602,7 @@ std::vector<uint8_t> Cpu6809::EncodeBCC(int32_t offset,
   return {};
 }
 
-std::vector<uint8_t> Cpu6809::EncodeBCS(int32_t offset,
+std::vector<uint8_t> Cpu6809::EncodeBCS(int32_t offset, // NOLINT(readability-convert-member-functions-to-static)
                                         AddressingMode6809 mode) {
   if (mode == AddressingMode6809::Relative8) {
     return {Opcodes6809::BCS, static_cast<uint8_t>(offset & 0xFF)};
@@ -609,7 +610,7 @@ std::vector<uint8_t> Cpu6809::EncodeBCS(int32_t offset,
   return {};
 }
 
-std::vector<uint8_t> Cpu6809::EncodeBMI(int32_t offset,
+std::vector<uint8_t> Cpu6809::EncodeBMI(int32_t offset, // NOLINT(readability-convert-member-functions-to-static)
                                         AddressingMode6809 mode) {
   if (mode == AddressingMode6809::Relative8) {
     return {Opcodes6809::BMI, static_cast<uint8_t>(offset & 0xFF)};
@@ -617,7 +618,7 @@ std::vector<uint8_t> Cpu6809::EncodeBMI(int32_t offset,
   return {};
 }
 
-std::vector<uint8_t> Cpu6809::EncodeBPL(int32_t offset,
+std::vector<uint8_t> Cpu6809::EncodeBPL(int32_t offset, // NOLINT(readability-convert-member-functions-to-static)
                                         AddressingMode6809 mode) {
   if (mode == AddressingMode6809::Relative8) {
     return {Opcodes6809::BPL, static_cast<uint8_t>(offset & 0xFF)};
@@ -625,7 +626,7 @@ std::vector<uint8_t> Cpu6809::EncodeBPL(int32_t offset,
   return {};
 }
 
-std::vector<uint8_t> Cpu6809::EncodeBVS(int32_t offset,
+std::vector<uint8_t> Cpu6809::EncodeBVS(int32_t offset, // NOLINT(readability-convert-member-functions-to-static)
                                         AddressingMode6809 mode) {
   if (mode == AddressingMode6809::Relative8) {
     return {Opcodes6809::BVS, static_cast<uint8_t>(offset & 0xFF)};
@@ -633,7 +634,7 @@ std::vector<uint8_t> Cpu6809::EncodeBVS(int32_t offset,
   return {};
 }
 
-std::vector<uint8_t> Cpu6809::EncodeBVC(int32_t offset,
+std::vector<uint8_t> Cpu6809::EncodeBVC(int32_t offset, // NOLINT(readability-convert-member-functions-to-static)
                                         AddressingMode6809 mode) {
   if (mode == AddressingMode6809::Relative8) {
     return {Opcodes6809::BVC, static_cast<uint8_t>(offset & 0xFF)};
@@ -641,7 +642,7 @@ std::vector<uint8_t> Cpu6809::EncodeBVC(int32_t offset,
   return {};
 }
 
-std::vector<uint8_t> Cpu6809::EncodeBGE(int32_t offset,
+std::vector<uint8_t> Cpu6809::EncodeBGE(int32_t offset, // NOLINT(readability-convert-member-functions-to-static)
                                         AddressingMode6809 mode) {
   if (mode == AddressingMode6809::Relative8) {
     return {Opcodes6809::BGE, static_cast<uint8_t>(offset & 0xFF)};
@@ -649,7 +650,7 @@ std::vector<uint8_t> Cpu6809::EncodeBGE(int32_t offset,
   return {};
 }
 
-std::vector<uint8_t> Cpu6809::EncodeBGT(int32_t offset,
+std::vector<uint8_t> Cpu6809::EncodeBGT(int32_t offset, // NOLINT(readability-convert-member-functions-to-static)
                                         AddressingMode6809 mode) {
   if (mode == AddressingMode6809::Relative8) {
     return {Opcodes6809::BGT, static_cast<uint8_t>(offset & 0xFF)};
@@ -657,7 +658,7 @@ std::vector<uint8_t> Cpu6809::EncodeBGT(int32_t offset,
   return {};
 }
 
-std::vector<uint8_t> Cpu6809::EncodeBLE(int32_t offset,
+std::vector<uint8_t> Cpu6809::EncodeBLE(int32_t offset, // NOLINT(readability-convert-member-functions-to-static)
                                         AddressingMode6809 mode) {
   if (mode == AddressingMode6809::Relative8) {
     return {Opcodes6809::BLE, static_cast<uint8_t>(offset & 0xFF)};
@@ -665,7 +666,7 @@ std::vector<uint8_t> Cpu6809::EncodeBLE(int32_t offset,
   return {};
 }
 
-std::vector<uint8_t> Cpu6809::EncodeBLT(int32_t offset,
+std::vector<uint8_t> Cpu6809::EncodeBLT(int32_t offset, // NOLINT(readability-convert-member-functions-to-static)
                                         AddressingMode6809 mode) {
   if (mode == AddressingMode6809::Relative8) {
     return {Opcodes6809::BLT, static_cast<uint8_t>(offset & 0xFF)};
@@ -673,7 +674,7 @@ std::vector<uint8_t> Cpu6809::EncodeBLT(int32_t offset,
   return {};
 }
 
-std::vector<uint8_t> Cpu6809::EncodeBHI(int32_t offset,
+std::vector<uint8_t> Cpu6809::EncodeBHI(int32_t offset, // NOLINT(readability-convert-member-functions-to-static)
                                         AddressingMode6809 mode) {
   if (mode == AddressingMode6809::Relative8) {
     return {Opcodes6809::BHI, static_cast<uint8_t>(offset & 0xFF)};
@@ -681,7 +682,7 @@ std::vector<uint8_t> Cpu6809::EncodeBHI(int32_t offset,
   return {};
 }
 
-std::vector<uint8_t> Cpu6809::EncodeBLS(int32_t offset,
+std::vector<uint8_t> Cpu6809::EncodeBLS(int32_t offset, // NOLINT(readability-convert-member-functions-to-static)
                                         AddressingMode6809 mode) {
   if (mode == AddressingMode6809::Relative8) {
     return {Opcodes6809::BLS, static_cast<uint8_t>(offset & 0xFF)};
@@ -689,7 +690,7 @@ std::vector<uint8_t> Cpu6809::EncodeBLS(int32_t offset,
   return {};
 }
 
-std::vector<uint8_t> Cpu6809::EncodeBSR(int32_t offset,
+std::vector<uint8_t> Cpu6809::EncodeBSR(int32_t offset, // NOLINT(readability-convert-member-functions-to-static)
                                         AddressingMode6809 mode) {
   if (mode == AddressingMode6809::Relative8) {
     return {Opcodes6809::BSR, static_cast<uint8_t>(offset & 0xFF)};
@@ -765,13 +766,13 @@ std::vector<uint8_t> Cpu6809::EncodeLBSR(int16_t offset) {
 // Register-transfer and Exchange
 // ============================================================================
 
-std::vector<uint8_t> Cpu6809::EncodeTFR(uint8_t src, uint8_t dst) {
+std::vector<uint8_t> Cpu6809::EncodeTFR(uint8_t src, uint8_t dst) { // NOLINT(readability-convert-member-functions-to-static)
   // Post-byte format: high nibble = source, low nibble = destination
   uint8_t postbyte = (src << 4) | dst;
   return {Opcodes6809::TFR, postbyte};
 }
 
-std::vector<uint8_t> Cpu6809::EncodeEXG(uint8_t reg1, uint8_t reg2) {
+std::vector<uint8_t> Cpu6809::EncodeEXG(uint8_t reg1, uint8_t reg2) { // NOLINT(readability-convert-member-functions-to-static)
   // Post-byte format: high nibble = reg1, low nibble = reg2
   uint8_t postbyte = (reg1 << 4) | reg2;
   return {Opcodes6809::EXG, postbyte};
@@ -781,19 +782,19 @@ std::vector<uint8_t> Cpu6809::EncodeEXG(uint8_t reg1, uint8_t reg2) {
 // Stack push / pull
 // ============================================================================
 
-std::vector<uint8_t> Cpu6809::EncodePSHS(uint8_t mask) {
+std::vector<uint8_t> Cpu6809::EncodePSHS(uint8_t mask) { // NOLINT(readability-convert-member-functions-to-static)
   return {Opcodes6809::PSHS, mask};
 }
 
-std::vector<uint8_t> Cpu6809::EncodePULS(uint8_t mask) {
+std::vector<uint8_t> Cpu6809::EncodePULS(uint8_t mask) { // NOLINT(readability-convert-member-functions-to-static)
   return {Opcodes6809::PULS, mask};
 }
 
-std::vector<uint8_t> Cpu6809::EncodePSHU(uint8_t mask) {
+std::vector<uint8_t> Cpu6809::EncodePSHU(uint8_t mask) { // NOLINT(readability-convert-member-functions-to-static)
   return {Opcodes6809::PSHU, mask};
 }
 
-std::vector<uint8_t> Cpu6809::EncodePULU(uint8_t mask) {
+std::vector<uint8_t> Cpu6809::EncodePULU(uint8_t mask) { // NOLINT(readability-convert-member-functions-to-static)
   return {Opcodes6809::PULU, mask};
 }
 
@@ -812,7 +813,7 @@ Cpu6809::EncodeIndexedPostByte(AddressingMode6809 mode, int32_t offset,
 // Instruction Size Calculation
 // ============================================================================
 
-size_t Cpu6809::CalculateInstructionSize(AddressingMode6809 mode) {
+size_t Cpu6809::CalculateInstructionSize(AddressingMode6809 mode) { // NOLINT(readability-convert-member-functions-to-static)
   switch (mode) {
   case AddressingMode6809::Inherent:
     return 1;
@@ -864,7 +865,7 @@ size_t Cpu6809::CalculateInstructionSize(AddressingMode6809 mode) {
 // HasOpcode
 // ============================================================================
 
-bool Cpu6809::HasOpcode(const std::string &mnemonic) const {
+bool Cpu6809::HasOpcode(const std::string &mnemonic) const { // NOLINT(readability-convert-member-functions-to-static)
   // Convert to uppercase for case-insensitive comparison
   std::string upper = mnemonic;
   std::transform(upper.begin(), upper.end(), upper.begin(), ::toupper);
@@ -878,10 +879,10 @@ bool Cpu6809::HasOpcode(const std::string &mnemonic) const {
 // ============================================================================
 
 std::vector<uint8_t>
-Cpu6809::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
+Cpu6809::EncodeInstruction(const std::string &mnemonic, uint32_t operand, // NOLINT(readability-convert-member-functions-to-static)
                            const std::string &operand_str) const {
   // ── Parse mnemonic string to enum (single map lookup) ───────────────────
-  const M6809Mnemonic mn = ParseM6809Mnemonic(mnemonic);
+  const M6809Mnemonic mn = ParseM6809Mnemonic(mnemonic); // NOLINT(cppcoreguidelines-init-variables)
 
   // Determine addressing mode from operand_str
   std::string trimmed = util::Trim(operand_str);
@@ -932,7 +933,7 @@ Cpu6809::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
 
   switch (mn) {
     // ── Inherent (no-operand) ───────────────────────────────────────────────
-    case M6809Mnemonic::NOP:  return EncodeNOP();
+    case M6809Mnemonic::NOP:  return EncodeNOP(); // NOLINT(bugprone-branch-clone)
     case M6809Mnemonic::RTS:  return EncodeRTS();
     case M6809Mnemonic::CLRA: return EncodeCLRA();
     case M6809Mnemonic::CLRB: return EncodeCLRB();
@@ -979,7 +980,7 @@ Cpu6809::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
     case M6809Mnemonic::BRN: return {}; // BRN (Branch Never) - no-op
 
     // ── Long branches ───────────────────────────────────────────────────────
-    case M6809Mnemonic::LBRA: return EncodeLBRA(off16);
+    case M6809Mnemonic::LBRA: return EncodeLBRA(off16); // NOLINT(bugprone-branch-clone)
     case M6809Mnemonic::LBSR: return EncodeLBSR(off16);
     case M6809Mnemonic::LBRN: return EncodeLBRN(off16);
     case M6809Mnemonic::LBHI: return EncodeLBHI(off16);
@@ -1012,7 +1013,7 @@ Cpu6809::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
     }
 
     // ── Stack operations ────────────────────────────────────────────────────
-    case M6809Mnemonic::PSHS: return EncodePSHS(static_cast<uint8_t>(operand & 0xFF));
+    case M6809Mnemonic::PSHS: return EncodePSHS(static_cast<uint8_t>(operand & 0xFF)); // NOLINT(bugprone-branch-clone)
     case M6809Mnemonic::PULS: return EncodePULS(static_cast<uint8_t>(operand & 0xFF));
     case M6809Mnemonic::PSHU: return EncodePSHU(static_cast<uint8_t>(operand & 0xFF));
     case M6809Mnemonic::PULU: return EncodePULU(static_cast<uint8_t>(operand & 0xFF));

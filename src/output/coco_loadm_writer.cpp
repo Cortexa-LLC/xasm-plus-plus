@@ -14,7 +14,7 @@ namespace xasm {
 CocoLoadmWriter::CocoLoadmWriter()
     : has_entry_point_(false), entry_point_addr_(0) {}
 
-void CocoLoadmWriter::Write(const std::vector<Section> &sections,
+void CocoLoadmWriter::Write(const std::vector<Section> &sections, // NOLINT(readability-convert-member-functions-to-static)
                             std::ostream &output) {
   // Extract all bytes from all sections
   std::vector<std::pair<uint64_t, uint8_t>> all_bytes;
@@ -56,9 +56,9 @@ void CocoLoadmWriter::Write(const std::vector<Section> &sections,
   WritePostamble(output);
 }
 
-std::string CocoLoadmWriter::GetExtension() const { return "bin"; }
+std::string CocoLoadmWriter::GetExtension() const { return "bin"; } // NOLINT(readability-convert-member-functions-to-static)
 
-std::string CocoLoadmWriter::GetFormatName() const {
+std::string CocoLoadmWriter::GetFormatName() const { // NOLINT(readability-convert-member-functions-to-static)
   return "CoCo DOS (LOADM)";
 }
 
@@ -67,7 +67,7 @@ void CocoLoadmWriter::SetEntryPoint(uint64_t address) {
   entry_point_addr_ = address;
 }
 
-void CocoLoadmWriter::WritePreamble(std::ostream &output,
+void CocoLoadmWriter::WritePreamble(std::ostream &output, // NOLINT(readability-convert-member-functions-to-static)
                                     uint64_t first_address,
                                     size_t total_length) {
   // Validate address fits in 16-bit
@@ -80,7 +80,7 @@ void CocoLoadmWriter::WritePreamble(std::ostream &output,
   WriteBE16(output, static_cast<uint16_t>(first_address));
 }
 
-void CocoLoadmWriter::WriteDataBlock(std::ostream &output, uint64_t address,
+void CocoLoadmWriter::WriteDataBlock(std::ostream &output, uint64_t address, // NOLINT(readability-convert-member-functions-to-static)
                                      const std::vector<uint8_t> &data) {
   // Validate address fits in 16-bit
   if (address > output_format::bit_ops::MASK_LOW_WORD) {
@@ -115,7 +115,7 @@ void CocoLoadmWriter::WritePostamble(std::ostream &output) const {
   }
 }
 
-void CocoLoadmWriter::WriteBE16(std::ostream &output, uint16_t value) {
+void CocoLoadmWriter::WriteBE16(std::ostream &output, uint16_t value) { // NOLINT(readability-convert-member-functions-to-static)
   output.put(
       static_cast<char>((value >> output_format::bit_ops::SHIFT_HIGH_BYTE) &
                         output_format::bit_ops::MASK_LOW_BYTE)); // High byte

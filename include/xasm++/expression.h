@@ -220,7 +220,7 @@ public:
   int64_t GetValue() const { return value; }
 
 private:
-  int64_t value; ///< The constant value
+  int64_t value{0}; ///< The constant value
 };
 
 /**
@@ -456,8 +456,8 @@ public:
 
 private:
   BinaryOp operation;                ///< The binary operator
-  std::shared_ptr<Expression> left;  ///< Left operand
-  std::shared_ptr<Expression> right; ///< Right operand
+  std::shared_ptr<Expression> left{};  ///< Left operand
+  std::shared_ptr<Expression> right{}; ///< Right operand
 };
 
 /**
@@ -542,7 +542,7 @@ public:
 
 private:
   UnaryOp operation;                ///< The unary operator
-  std::shared_ptr<Expression> expr; ///< The operand
+  std::shared_ptr<Expression> expr{}; ///< The operand
 };
 
 } // namespace xasm

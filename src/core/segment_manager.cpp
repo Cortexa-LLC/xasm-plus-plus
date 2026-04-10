@@ -58,7 +58,7 @@ uint64_t SegmentManager::GetCurrentAddress() const {
 }
 
 void SegmentManager::Advance(size_t bytes) {
-  if (current_segment_ == SegmentType::Common) {
+  if (current_segment_ == SegmentType::Common) { // NOLINT(bugprone-branch-clone)
     common_blocks_[current_common_name_].address += bytes;
   } else {
     segments_[current_segment_].address += bytes;

@@ -26,11 +26,11 @@ namespace xasm {
  * Contains all information needed to define and expand a macro.
  */
 struct MacroDefinition {
-  std::string name; ///< Macro name
+  std::string name{}; ///< Macro name
   std::vector<std::string>
-      parameters;                ///< Parameter names (max 8 per FLEX spec)
-  std::vector<std::string> body; ///< Macro body lines
-  int definition_line;           ///< Line number where defined
+      parameters{};                ///< Parameter names (max 8 per FLEX spec)
+  std::vector<std::string> body{}; ///< Macro body lines
+  int definition_line{0};          ///< Line number where defined
 };
 
 /**
@@ -166,7 +166,7 @@ private:
    */
   static std::string MakeLocalLabelUnique(const std::string &label, int expansion_id);
 
-  std::unordered_map<std::string, MacroDefinition> macros_; ///< Defined macros
+  std::unordered_map<std::string, MacroDefinition> macros_{}; ///< Defined macros
   int expansion_counter_ = 0; ///< Unique ID for macro expansions
 };
 

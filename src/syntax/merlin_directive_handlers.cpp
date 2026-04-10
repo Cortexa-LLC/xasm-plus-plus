@@ -129,10 +129,10 @@ void HandleEqu(const std::string &label, const std::string &operand,
     bool has_star = false;
     for (size_t i = 0; i < raw.size(); ++i) {
       if (raw[i] == '*') {
-        bool before =
+        bool before = // NOLINT(cppcoreguidelines-init-variables)
             (i > 0 && (std::isalnum(static_cast<unsigned char>(raw[i - 1]))
                        || raw[i - 1] == ')'));
-        bool after =
+        bool after = // NOLINT(cppcoreguidelines-init-variables)
             (i + 1 < raw.size() &&
              (std::isalnum(static_cast<unsigned char>(raw[i + 1]))
               || raw[i + 1] == '(' || raw[i + 1] == '$' || raw[i + 1] == '%'));

@@ -7,7 +7,7 @@
 
 namespace xasm {
 
-bool Cpu6502BranchHandler::NeedsBranchRelaxation(uint16_t current_addr,
+bool Cpu6502BranchHandler::NeedsBranchRelaxation(uint16_t current_addr, // NOLINT(readability-convert-member-functions-to-static)
                                                  uint16_t target_addr) {
   // Calculate offset: target - (PC + 2)
   // PC + 2 because branch instruction is 2 bytes (opcode + offset)
@@ -18,12 +18,12 @@ bool Cpu6502BranchHandler::NeedsBranchRelaxation(uint16_t current_addr,
   return (offset < -128 || offset > 127);
 }
 
-uint8_t Cpu6502BranchHandler::GetComplementaryBranchOpcode(
+uint8_t Cpu6502BranchHandler::GetComplementaryBranchOpcode( // NOLINT(readability-convert-member-functions-to-static)
     uint8_t branch_opcode) {
   return branch_opcode ^ Opcodes::BRANCH_COMPLEMENT_MASK;
 }
 
-std::vector<uint8_t> Cpu6502BranchHandler::EncodeBranchWithRelaxation(
+std::vector<uint8_t> Cpu6502BranchHandler::EncodeBranchWithRelaxation( // NOLINT(readability-convert-member-functions-to-static)
     uint8_t branch_opcode, uint16_t current_addr, uint16_t target_addr) {
   std::vector<uint8_t> bytes;
 

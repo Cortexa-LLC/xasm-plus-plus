@@ -127,7 +127,7 @@ void MerlinSyntaxParser::InitializeDirectiveRegistry() {
   directive_registry_[LUP] = merlin::HandleLup;
 }
 
-bool MerlinSyntaxParser::DispatchDirective(const std::string &directive,
+bool MerlinSyntaxParser::DispatchDirective(const std::string &directive, // NOLINT(readability-convert-member-functions-to-static)
                                            const std::string &label,
                                            const std::string &operand,
                                            DirectiveContext &context) {
@@ -145,7 +145,7 @@ bool MerlinSyntaxParser::DispatchDirective(const std::string &directive,
 // ============================================================================
 
 // Strip comments: * in column 1 or ; anywhere
-std::string MerlinSyntaxParser::StripComments(const std::string &line) {
+std::string MerlinSyntaxParser::StripComments(const std::string &line) { // NOLINT(readability-convert-member-functions-to-static)
   // Empty line
   if (line.empty()) {
     return "";
@@ -172,7 +172,7 @@ std::string MerlinSyntaxParser::StripComments(const std::string &line) {
 }
 
 // Format error message with source location
-std::string MerlinSyntaxParser::FormatError(const std::string &message) const {
+std::string MerlinSyntaxParser::FormatError(const std::string &message) const { // NOLINT(readability-convert-member-functions-to-static)
   std::ostringstream oss;
   oss << current_file_ << ":" << current_line_ << ": error: " << message;
   return oss.str();
@@ -184,7 +184,7 @@ std::string MerlinSyntaxParser::FormatError(const std::string &message) const {
 
 // Parse number in various formats: $hex, %binary, decimal
 // NOTE: Kept for HandleOrg compatibility - will refactor in future phase
-uint32_t MerlinSyntaxParser::ParseNumber(const std::string &str) {
+uint32_t MerlinSyntaxParser::ParseNumber(const std::string &str) { // NOLINT(readability-convert-member-functions-to-static)
   if (str.empty()) {
     return 0;
   }
@@ -214,7 +214,7 @@ uint32_t MerlinSyntaxParser::ParseNumber(const std::string &str) {
 // Parse expression - delegates to ExpressionParser for standard operations
 // while preserving Merlin-specific features: character literals, low/high byte
 std::shared_ptr<Expression>
-MerlinSyntaxParser::ParseExpression(const std::string &str,
+MerlinSyntaxParser::ParseExpression(const std::string &str, // NOLINT(readability-convert-member-functions-to-static)
                                     ConcreteSymbolTable &symbols) {
 
   std::string expr = Trim(str);
@@ -287,7 +287,7 @@ MerlinSyntaxParser::ParseExpression(const std::string &str,
         auto left_expr  = std::make_shared<LiteralExpr>(char_val);
         auto right_expr = ParseExpression(rhs, symbols);
         switch (op) {
-          case '+':
+          case '+': // NOLINT(bugprone-branch-clone)
             return std::make_shared<BinaryOpExpr>(BinaryOp::Add, left_expr,
                                                   right_expr);
           case '-':
@@ -386,10 +386,10 @@ MerlinSyntaxParser::ParseExpression(const std::string &str,
     std::string pc_hex = hex_stream.str();
     size_t p = 0;
     while ((p = expr.find('*', p)) != std::string::npos) {
-      bool before_ident =
+      bool before_ident = // NOLINT(cppcoreguidelines-init-variables)
           p > 0 && (std::isalnum(static_cast<unsigned char>(expr[p - 1])) ||
                     expr[p - 1] == ')');
-      bool after_ident =
+      bool after_ident = // NOLINT(cppcoreguidelines-init-variables)
           p + 1 < expr.length() &&
           (std::isalnum(static_cast<unsigned char>(expr[p + 1])) ||
            expr[p + 1] == '(' || expr[p + 1] == '$' || expr[p + 1] == '%');
@@ -418,7 +418,7 @@ MerlinSyntaxParser::ParseExpression(const std::string &str,
 // ============================================================================
 
 std::string
-MerlinSyntaxParser::ScopeLocalLabel(const std::string &label) const {
+MerlinSyntaxParser::ScopeLocalLabel(const std::string &label) const { // NOLINT(readability-convert-member-functions-to-static)
   if (!label.empty() && label[0] == ':' &&
       !current_scope_.global_label.empty()) {
     return current_scope_.global_label + label;
@@ -427,7 +427,7 @@ MerlinSyntaxParser::ScopeLocalLabel(const std::string &label) const {
 }
 
 std::string
-MerlinSyntaxParser::SubstituteMerlinVars(const std::string &line,
+MerlinSyntaxParser::SubstituteMerlinVars(const std::string &line, // NOLINT(readability-convert-member-functions-to-static)
                                          const ConcreteSymbolTable &symbols) {
   // Fast path: no ] in line
   if (line.find(']') == std::string::npos) {
@@ -512,7 +512,7 @@ MerlinSyntaxParser::SubstituteMerlinVars(const std::string &line,
 }
 
 std::string
-MerlinSyntaxParser::ScopeLocalLabelsInOperand(const std::string &operand) const {
+MerlinSyntaxParser::ScopeLocalLabelsInOperand(const std::string &operand) const { // NOLINT(readability-convert-member-functions-to-static)
   if (current_scope_.global_label.empty() || operand.empty()) {
     return operand;
   }
@@ -523,7 +523,7 @@ MerlinSyntaxParser::ScopeLocalLabelsInOperand(const std::string &operand) const 
   for (size_t i = 0; i < operand.size();) {
     char c = operand[i];
     // A ':word' token starts at position 0 or after a non-identifier char
-    bool at_word_start =
+    bool at_word_start = // NOLINT(cppcoreguidelines-init-variables)
         (i == 0) ||
         (!std::isalnum(static_cast<unsigned char>(operand[i - 1])) &&
          operand[i - 1] != '_');
@@ -561,7 +561,7 @@ MerlinSyntaxParser::ScopeLocalLabelsInOperand(const std::string &operand) const 
 // because only the "A" token is replaced; the +1 is left for the generic
 // expression evaluator.
 std::string
-MerlinSyntaxParser::ExpandMerlinCharLiterals(const std::string &operand) {
+MerlinSyntaxParser::ExpandMerlinCharLiterals(const std::string &operand) { // NOLINT(readability-convert-member-functions-to-static)
   // Fast path: no quote character → nothing to expand
   if (operand.find('"') == std::string::npos &&
       operand.find('\'') == std::string::npos) {
@@ -599,7 +599,7 @@ MerlinSyntaxParser::ExpandMerlinCharLiterals(const std::string &operand) {
 }
 
 std::string
-MerlinSyntaxParser::ExpandVarLabelsInOperand(const std::string &operand) const {
+MerlinSyntaxParser::ExpandVarLabelsInOperand(const std::string &operand) const { // NOLINT(readability-convert-member-functions-to-static)
   // Fast path: no ] in operand
   if (operand.find(']') == std::string::npos) {
     return operand;
@@ -655,7 +655,7 @@ MerlinSyntaxParser::ExpandVarLabelsInOperand(const std::string &operand) const {
 // Label Parsing
 // ============================================================================
 
-std::string MerlinSyntaxParser::ParseLabel(const std::string &line, size_t &pos,
+std::string MerlinSyntaxParser::ParseLabel(const std::string &line, size_t &pos, // NOLINT(readability-convert-member-functions-to-static)
                                            Section & /*section*/,
                                            ConcreteSymbolTable & /*symbols*/) {
   // Merlin labels can be:
@@ -686,7 +686,7 @@ std::string MerlinSyntaxParser::ParseLabel(const std::string &line, size_t &pos,
 // Directive Handlers
 // ============================================================================
 
-void MerlinSyntaxParser::HandleEqu(const std::string &label,
+void MerlinSyntaxParser::HandleEqu(const std::string &label, // NOLINT(readability-convert-member-functions-to-static)
                                    const std::string &operand,
                                    ConcreteSymbolTable &symbols) {
   // EQU directive - define symbolic constant (no code generated)
@@ -819,8 +819,8 @@ void MerlinSyntaxParser::HandleDS(const std::string &operand, Section &section,
     for (size_t i = 0; i < raw.size(); ++i) {
       if (raw[i] == '*') {
         // Check it's not a multiplication operator (operands on both sides)
-        bool before = (i > 0 && (std::isalnum(static_cast<unsigned char>(raw[i-1])) || raw[i-1] == ')'));
-        bool after  = (i+1 < raw.size() && (std::isalnum(static_cast<unsigned char>(raw[i+1])) || raw[i+1] == '(' || raw[i+1] == '$' || raw[i+1] == '%'));
+        bool before = (i > 0 && (std::isalnum(static_cast<unsigned char>(raw[i-1])) || raw[i-1] == ')')); // NOLINT(cppcoreguidelines-init-variables)
+        bool after  = (i+1 < raw.size() && (std::isalnum(static_cast<unsigned char>(raw[i+1])) || raw[i+1] == '(' || raw[i+1] == '$' || raw[i+1] == '%')); // NOLINT(cppcoreguidelines-init-variables)
         if (!(before && after)) {
           has_star = true;
           break;
@@ -858,7 +858,7 @@ void MerlinSyntaxParser::HandleDum(const std::string &operand,
   } else {
     // Symbol - look it up
     int64_t value = 0;
-    if (symbols.Lookup(op, value)) {
+    if (symbols.Lookup(op, value)) { // NOLINT(bugprone-branch-clone)
       dum_address_ = static_cast<uint32_t>(value);
     } else {
       // Symbol not found - ERROR instead of silently using 0
@@ -873,7 +873,7 @@ void MerlinSyntaxParser::HandleDend() {
   in_dum_block_ = false;
 }
 
-void MerlinSyntaxParser::HandlePut(const std::string &operand, Section &section,
+void MerlinSyntaxParser::HandlePut(const std::string &operand, Section &section, // NOLINT(readability-convert-member-functions-to-static)
                                    ConcreteSymbolTable &symbols) {
   // PUT filename - include another source file
   std::string filename = Trim(operand);
@@ -919,7 +919,7 @@ void MerlinSyntaxParser::HandlePut(const std::string &operand, Section &section,
   include_stack_.pop_back();
 }
 
-void MerlinSyntaxParser::HandleDo(const std::string &operand,
+void MerlinSyntaxParser::HandleDo(const std::string &operand, // NOLINT(readability-convert-member-functions-to-static)
                                   ConcreteSymbolTable &symbols) {
   // DO directive - begin conditional assembly block
   // Evaluate operand expression: non-zero = true, zero = false
@@ -944,7 +944,7 @@ void MerlinSyntaxParser::HandleDo(const std::string &operand,
   conditional_.BeginIf(value != 0);
 }
 
-void MerlinSyntaxParser::HandleElse() {
+void MerlinSyntaxParser::HandleElse() { // NOLINT(readability-convert-member-functions-to-static)
   // ELSE directive - toggle conditional assembly state
   try {
     conditional_.BeginElse();
@@ -960,7 +960,7 @@ void MerlinSyntaxParser::HandleElse() {
   }
 }
 
-void MerlinSyntaxParser::HandleFin() {
+void MerlinSyntaxParser::HandleFin() { // NOLINT(readability-convert-member-functions-to-static)
   // FIN directive - end conditional assembly block
   // Merlin ignores extra FIN directives (no matching DO) — treat as no-op.
   if (conditional_.IsBalanced()) {
@@ -1059,7 +1059,7 @@ void MerlinSyntaxParser::ExpandMacro(const std::string &macro_name,
     char string_delimiter = '\0';
 
     // Determine separator: semicolon for MAC style, comma otherwise
-    char separator = (operand.find(';') != std::string::npos) ? ';' : ',';
+    char separator = (operand.find(';') != std::string::npos) ? ';' : ','; // NOLINT(cppcoreguidelines-init-variables)
 
     for (char c :
          operand + separator) { // Add trailing separator to flush last token
@@ -1096,7 +1096,7 @@ void MerlinSyntaxParser::ExpandMacro(const std::string &macro_name,
   macro_expansion_depth_--;
 }
 
-std::string MerlinSyntaxParser::SubstituteParameters(
+std::string MerlinSyntaxParser::SubstituteParameters( // NOLINT(readability-convert-member-functions-to-static)
     const std::string &line, const std::vector<std::string> &params) {
   // Replace ]1, ]2, etc. with actual parameters
   std::string result;
@@ -1152,7 +1152,7 @@ void MerlinSyntaxParser::HandleXc(const std::string &operand) {
   }
 }
 
-void MerlinSyntaxParser::HandleMx(const std::string &operand) {
+void MerlinSyntaxParser::HandleMx(const std::string &operand) { // NOLINT(readability-convert-member-functions-to-static)
   // MX mode - Set 65816 accumulator and index register widths
   // This is a directive only - tracks state but doesn't change CPU encoding
 
@@ -1353,7 +1353,7 @@ void MerlinSyntaxParser::ParseLine(const std::string &line, Section &section,
       // the wrong (earlier) definition.
       if (!label.empty() && label[0] == ']' &&
           label.find(':') == std::string::npos) {
-        int seq = ++var_label_seq_[label];
+        int seq = ++var_label_seq_[label]; // NOLINT(cppcoreguidelines-init-variables)
         scoped_label = label + "_" + std::to_string(seq);
       }
       symbols.Define(scoped_label, SymbolType::Label,
@@ -1395,10 +1395,10 @@ void MerlinSyntaxParser::ParseLine(const std::string &line, Section &section,
       for (size_t i = 0; i < value.size(); ++i) {
         char c = value[i];
         if (c == '*') {
-          bool before =
+          bool before = // NOLINT(cppcoreguidelines-init-variables)
               (i > 0 && (std::isalnum(static_cast<unsigned char>(value[i - 1]))
                          || value[i - 1] == ')'));
-          bool after =
+          bool after = // NOLINT(cppcoreguidelines-init-variables)
               (i + 1 < value.size() &&
                (std::isalnum(static_cast<unsigned char>(value[i + 1]))
                 || value[i + 1] == '(' || value[i + 1] == '$'
@@ -1507,7 +1507,7 @@ void MerlinSyntaxParser::ParseLine(const std::string &line, Section &section,
     // definitions get unique names; EQU-style ]var = VALUE assignments keep
     // their original name because they act as mutable numeric variables.
     if (!label.empty() && label[0] == ']' && label.find(':') == std::string::npos) {
-      int seq = ++var_label_seq_[label]; // increment and capture new seq#
+      int seq = ++var_label_seq_[label]; // increment and capture new seq# // NOLINT(cppcoreguidelines-init-variables)
       scoped_label = label + "_" + std::to_string(seq);
     }
 

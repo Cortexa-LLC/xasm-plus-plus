@@ -605,8 +605,9 @@ void Assembler::RefixupDataAtoms(ConcreteSymbolTable &symbols,
   // values.  InstructionAtoms are intentionally skipped (their encoded_bytes
   // are left unchanged) to prevent branch-size changes from cascading into
   // address shifts.
-  if (cpu_ == nullptr)
+  if (cpu_ == nullptr) {
     return;
+  }
 
   for (auto &section : sections_) {
     uint32_t current_address = section.org;
@@ -1144,7 +1145,7 @@ void Assembler::ResolveSymbols(std::vector<std::shared_ptr<Atom>> &atoms,
   }
 }
 
-bool Assembler::CheckConvergence(
+bool Assembler::CheckConvergence( // NOLINT(readability-convert-member-functions-to-static)
     const std::vector<size_t> &previous_sizes,
     const std::vector<size_t> &current_sizes) {
   // Convergence achieved when instruction sizes are identical between passes

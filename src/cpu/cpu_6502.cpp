@@ -37,7 +37,7 @@ std::vector<uint8_t> Cpu6502::EncodeWithTable(const OpcodeTable &table,
 
   // Map addressing mode to opcode from table
   switch (mode) {
-  case AddressingMode::Immediate:
+  case AddressingMode::Immediate: // NOLINT(bugprone-branch-clone)
     opcode = table.immediate;
     break;
 
@@ -85,7 +85,7 @@ std::vector<uint8_t> Cpu6502::EncodeWithTable(const OpcodeTable &table,
     opcode = table.relative;
     break;
 
-  case AddressingMode::IndirectZeroPage:
+  case AddressingMode::IndirectZeroPage: // NOLINT(bugprone-branch-clone)
     // Only available in 65C02 and later
     if (cpu_mode_ != CpuMode::Cpu6502) {
       opcode = table.indirect_zero_page;
@@ -99,7 +99,7 @@ std::vector<uint8_t> Cpu6502::EncodeWithTable(const OpcodeTable &table,
     }
     break;
 
-  case AddressingMode::AbsoluteLong:
+  case AddressingMode::AbsoluteLong: // NOLINT(bugprone-branch-clone)
     // Only available in 65816
     if (cpu_mode_ == CpuMode::Cpu65816) {
       opcode = table.absolute_long;
@@ -176,17 +176,20 @@ std::vector<uint8_t> Cpu6502::EncodeWithTable(const OpcodeTable &table,
       // 16-bit immediates depending on the M and X status flags.
       bool use_16bit = false;
       if (cpu_mode_ == CpuMode::Cpu65816) {
-        if (imm_width == ImmWidth::UseM && !m_flag_)
+        if (imm_width == ImmWidth::UseM && !m_flag_) {
           use_16bit = true;
-        if (imm_width == ImmWidth::UseX && !x_flag_)
+        }
+        if (imm_width == ImmWidth::UseX && !x_flag_) {
           use_16bit = true;
+        }
       }
       bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
-      if (use_16bit)
+      if (use_16bit) {
         bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF));
+      }
       break;
     }
-    case AddressingMode::ZeroPage:
+    case AddressingMode::ZeroPage: // NOLINT(bugprone-branch-clone)
     case AddressingMode::ZeroPageX:
     case AddressingMode::ZeroPageY:
     case AddressingMode::IndirectX:
@@ -235,7 +238,7 @@ std::vector<uint8_t> Cpu6502::EncodeWithTable(const OpcodeTable &table,
 
 // LDA - Load Accumulator
 // Note: Changed to uint32_t for 65816 24-bit addressing support
-std::vector<uint8_t> Cpu6502::EncodeLDA(uint32_t operand,
+std::vector<uint8_t> Cpu6502::EncodeLDA(uint32_t operand, // NOLINT(readability-convert-member-functions-to-static)
                                         AddressingMode mode) const {
   static const OpcodeTable LDA_TABLE = {
       .immediate = Opcodes::LDA_IMM,
@@ -263,7 +266,7 @@ std::vector<uint8_t> Cpu6502::EncodeLDA(uint32_t operand,
 }
 
 // STA - Store Accumulator
-std::vector<uint8_t> Cpu6502::EncodeSTA(uint16_t operand,
+std::vector<uint8_t> Cpu6502::EncodeSTA(uint16_t operand, // NOLINT(readability-convert-member-functions-to-static)
                                         AddressingMode mode) const {
   static const OpcodeTable STA_TABLE = {
       .immediate = std::nullopt,
@@ -290,7 +293,7 @@ std::vector<uint8_t> Cpu6502::EncodeSTA(uint16_t operand,
 }
 
 // JMP - Jump
-std::vector<uint8_t> Cpu6502::EncodeJMP(uint16_t operand,
+std::vector<uint8_t> Cpu6502::EncodeJMP(uint16_t operand, // NOLINT(readability-convert-member-functions-to-static)
                                         AddressingMode mode) const {
   static const OpcodeTable JMP_TABLE = {
       .immediate = std::nullopt,
@@ -316,15 +319,15 @@ std::vector<uint8_t> Cpu6502::EncodeJMP(uint16_t operand,
 }
 
 // NOP - No Operation
-std::vector<uint8_t> Cpu6502::EncodeNOP() { return {Opcodes::NOP}; }
+std::vector<uint8_t> Cpu6502::EncodeNOP() { return {Opcodes::NOP}; } // NOLINT(readability-convert-member-functions-to-static)
 
 // RTS - Return from Subroutine
-std::vector<uint8_t> Cpu6502::EncodeRTS() { return {Opcodes::RTS}; }
+std::vector<uint8_t> Cpu6502::EncodeRTS() { return {Opcodes::RTS}; } // NOLINT(readability-convert-member-functions-to-static)
 
 // Phase 2.2: Arithmetic Instructions
 
 // ADC - Add with Carry
-std::vector<uint8_t> Cpu6502::EncodeADC(uint16_t operand,
+std::vector<uint8_t> Cpu6502::EncodeADC(uint16_t operand, // NOLINT(readability-convert-member-functions-to-static)
                                         AddressingMode mode) const {
   static const OpcodeTable ADC_TABLE = {
       .immediate = Opcodes::ADC_IMM,
@@ -351,7 +354,7 @@ std::vector<uint8_t> Cpu6502::EncodeADC(uint16_t operand,
 }
 
 // SBC - Subtract with Carry
-std::vector<uint8_t> Cpu6502::EncodeSBC(uint16_t operand,
+std::vector<uint8_t> Cpu6502::EncodeSBC(uint16_t operand, // NOLINT(readability-convert-member-functions-to-static)
                                         AddressingMode mode) const {
   static const OpcodeTable SBC_TABLE = {
       .immediate = Opcodes::SBC_IMM,
@@ -380,7 +383,7 @@ std::vector<uint8_t> Cpu6502::EncodeSBC(uint16_t operand,
 // Phase 2.2: Logic Instructions
 
 // AND - Logical AND
-std::vector<uint8_t> Cpu6502::EncodeAND(uint16_t operand,
+std::vector<uint8_t> Cpu6502::EncodeAND(uint16_t operand, // NOLINT(readability-convert-member-functions-to-static)
                                         AddressingMode mode) const {
   static const OpcodeTable AND_TABLE = {
       .immediate = Opcodes::AND_IMM,
@@ -407,7 +410,7 @@ std::vector<uint8_t> Cpu6502::EncodeAND(uint16_t operand,
 }
 
 // ORA - Logical OR
-std::vector<uint8_t> Cpu6502::EncodeORA(uint16_t operand,
+std::vector<uint8_t> Cpu6502::EncodeORA(uint16_t operand, // NOLINT(readability-convert-member-functions-to-static)
                                         AddressingMode mode) const {
   static const OpcodeTable ORA_TABLE = {
       .immediate = Opcodes::ORA_IMM,
@@ -434,7 +437,7 @@ std::vector<uint8_t> Cpu6502::EncodeORA(uint16_t operand,
 }
 
 // EOR - Exclusive OR
-std::vector<uint8_t> Cpu6502::EncodeEOR(uint16_t operand,
+std::vector<uint8_t> Cpu6502::EncodeEOR(uint16_t operand, // NOLINT(readability-convert-member-functions-to-static)
                                         AddressingMode mode) const {
   static const OpcodeTable EOR_TABLE = {
       .immediate = Opcodes::EOR_IMM,
@@ -463,7 +466,7 @@ std::vector<uint8_t> Cpu6502::EncodeEOR(uint16_t operand,
 // Phase 2.2: Additional Loads/Stores
 
 // LDX - Load X Register
-std::vector<uint8_t> Cpu6502::EncodeLDX(uint16_t operand,
+std::vector<uint8_t> Cpu6502::EncodeLDX(uint16_t operand, // NOLINT(readability-convert-member-functions-to-static)
                                         AddressingMode mode) const {
   static const OpcodeTable LDX_TABLE = {
       .immediate = Opcodes::LDX_IMM,
@@ -489,7 +492,7 @@ std::vector<uint8_t> Cpu6502::EncodeLDX(uint16_t operand,
 }
 
 // LDY - Load Y Register
-std::vector<uint8_t> Cpu6502::EncodeLDY(uint16_t operand,
+std::vector<uint8_t> Cpu6502::EncodeLDY(uint16_t operand, // NOLINT(readability-convert-member-functions-to-static)
                                         AddressingMode mode) const {
   static const OpcodeTable LDY_TABLE = {
       .immediate = Opcodes::LDY_IMM,
@@ -515,7 +518,7 @@ std::vector<uint8_t> Cpu6502::EncodeLDY(uint16_t operand,
 }
 
 // STX - Store X Register
-std::vector<uint8_t> Cpu6502::EncodeSTX(uint16_t operand,
+std::vector<uint8_t> Cpu6502::EncodeSTX(uint16_t operand, // NOLINT(readability-convert-member-functions-to-static)
                                         AddressingMode mode) const {
   static const OpcodeTable STX_TABLE = {
       .immediate = std::nullopt,
@@ -541,7 +544,7 @@ std::vector<uint8_t> Cpu6502::EncodeSTX(uint16_t operand,
 }
 
 // STY - Store Y Register
-std::vector<uint8_t> Cpu6502::EncodeSTY(uint16_t operand,
+std::vector<uint8_t> Cpu6502::EncodeSTY(uint16_t operand, // NOLINT(readability-convert-member-functions-to-static)
                                         AddressingMode mode) const {
   static const OpcodeTable STY_TABLE = {
       .immediate = std::nullopt,
@@ -569,7 +572,7 @@ std::vector<uint8_t> Cpu6502::EncodeSTY(uint16_t operand,
 // Phase 2.2: Comparisons
 
 // CMP - Compare Accumulator
-std::vector<uint8_t> Cpu6502::EncodeCMP(uint16_t operand,
+std::vector<uint8_t> Cpu6502::EncodeCMP(uint16_t operand, // NOLINT(readability-convert-member-functions-to-static)
                                         AddressingMode mode) const {
   static const OpcodeTable CMP_TABLE = {
       .immediate = Opcodes::CMP_IMM,
@@ -595,7 +598,7 @@ std::vector<uint8_t> Cpu6502::EncodeCMP(uint16_t operand,
 }
 
 // CPX - Compare X Register
-std::vector<uint8_t> Cpu6502::EncodeCPX(uint16_t operand,
+std::vector<uint8_t> Cpu6502::EncodeCPX(uint16_t operand, // NOLINT(readability-convert-member-functions-to-static)
                                         AddressingMode mode) const {
   static const OpcodeTable CPX_TABLE = {
       .immediate = Opcodes::CPX_IMM,
@@ -621,7 +624,7 @@ std::vector<uint8_t> Cpu6502::EncodeCPX(uint16_t operand,
 }
 
 // CPY - Compare Y Register
-std::vector<uint8_t> Cpu6502::EncodeCPY(uint16_t operand,
+std::vector<uint8_t> Cpu6502::EncodeCPY(uint16_t operand, // NOLINT(readability-convert-member-functions-to-static)
                                         AddressingMode mode) const {
   static const OpcodeTable CPY_TABLE = {
       .immediate = Opcodes::CPY_IMM,
@@ -649,7 +652,7 @@ std::vector<uint8_t> Cpu6502::EncodeCPY(uint16_t operand,
 // Phase 2.2: Branch Instructions
 
 // BEQ - Branch if Equal
-std::vector<uint8_t> Cpu6502::EncodeBEQ(uint16_t operand,
+std::vector<uint8_t> Cpu6502::EncodeBEQ(uint16_t operand, // NOLINT(readability-convert-member-functions-to-static)
                                         AddressingMode mode) const {
   static const OpcodeTable BEQ_TABLE = {
       .immediate = std::nullopt,
@@ -675,7 +678,7 @@ std::vector<uint8_t> Cpu6502::EncodeBEQ(uint16_t operand,
 }
 
 // BNE - Branch if Not Equal
-std::vector<uint8_t> Cpu6502::EncodeBNE(uint16_t operand,
+std::vector<uint8_t> Cpu6502::EncodeBNE(uint16_t operand, // NOLINT(readability-convert-member-functions-to-static)
                                         AddressingMode mode) const {
   static const OpcodeTable BNE_TABLE = {
       .immediate = std::nullopt,
@@ -701,7 +704,7 @@ std::vector<uint8_t> Cpu6502::EncodeBNE(uint16_t operand,
 }
 
 // BCC - Branch if Carry Clear
-std::vector<uint8_t> Cpu6502::EncodeBCC(uint16_t operand,
+std::vector<uint8_t> Cpu6502::EncodeBCC(uint16_t operand, // NOLINT(readability-convert-member-functions-to-static)
                                         AddressingMode mode) const {
   static const OpcodeTable BCC_TABLE = {
       .immediate = std::nullopt,
@@ -727,7 +730,7 @@ std::vector<uint8_t> Cpu6502::EncodeBCC(uint16_t operand,
 }
 
 // BCS - Branch if Carry Set
-std::vector<uint8_t> Cpu6502::EncodeBCS(uint16_t operand,
+std::vector<uint8_t> Cpu6502::EncodeBCS(uint16_t operand, // NOLINT(readability-convert-member-functions-to-static)
                                         AddressingMode mode) const {
   static const OpcodeTable BCS_TABLE = {
       .immediate = std::nullopt,
@@ -753,7 +756,7 @@ std::vector<uint8_t> Cpu6502::EncodeBCS(uint16_t operand,
 }
 
 // BMI - Branch if Minus
-std::vector<uint8_t> Cpu6502::EncodeBMI(uint16_t operand,
+std::vector<uint8_t> Cpu6502::EncodeBMI(uint16_t operand, // NOLINT(readability-convert-member-functions-to-static)
                                         AddressingMode mode) const {
   static const OpcodeTable BMI_TABLE = {
       .immediate = std::nullopt,
@@ -779,7 +782,7 @@ std::vector<uint8_t> Cpu6502::EncodeBMI(uint16_t operand,
 }
 
 // BPL - Branch if Plus
-std::vector<uint8_t> Cpu6502::EncodeBPL(uint16_t operand,
+std::vector<uint8_t> Cpu6502::EncodeBPL(uint16_t operand, // NOLINT(readability-convert-member-functions-to-static)
                                         AddressingMode mode) const {
   static const OpcodeTable BPL_TABLE = {
       .immediate = std::nullopt,
@@ -805,7 +808,7 @@ std::vector<uint8_t> Cpu6502::EncodeBPL(uint16_t operand,
 }
 
 // BVC - Branch if Overflow Clear
-std::vector<uint8_t> Cpu6502::EncodeBVC(uint16_t operand,
+std::vector<uint8_t> Cpu6502::EncodeBVC(uint16_t operand, // NOLINT(readability-convert-member-functions-to-static)
                                         AddressingMode mode) const {
   static const OpcodeTable BVC_TABLE = {
       .immediate = std::nullopt,
@@ -831,7 +834,7 @@ std::vector<uint8_t> Cpu6502::EncodeBVC(uint16_t operand,
 }
 
 // BVS - Branch if Overflow Set
-std::vector<uint8_t> Cpu6502::EncodeBVS(uint16_t operand,
+std::vector<uint8_t> Cpu6502::EncodeBVS(uint16_t operand, // NOLINT(readability-convert-member-functions-to-static)
                                         AddressingMode mode) const {
   static const OpcodeTable BVS_TABLE = {
       .immediate = std::nullopt,
@@ -859,19 +862,19 @@ std::vector<uint8_t> Cpu6502::EncodeBVS(uint16_t operand,
 // Phase 2.2: Inc/Dec Instructions
 
 // INX - Increment X Register
-std::vector<uint8_t> Cpu6502::EncodeINX() { return {Opcodes::INX}; }
+std::vector<uint8_t> Cpu6502::EncodeINX() { return {Opcodes::INX}; } // NOLINT(readability-convert-member-functions-to-static)
 
 // INY - Increment Y Register
-std::vector<uint8_t> Cpu6502::EncodeINY() { return {Opcodes::INY}; }
+std::vector<uint8_t> Cpu6502::EncodeINY() { return {Opcodes::INY}; } // NOLINT(readability-convert-member-functions-to-static)
 
 // DEX - Decrement X Register
-std::vector<uint8_t> Cpu6502::EncodeDEX() { return {Opcodes::DEX}; }
+std::vector<uint8_t> Cpu6502::EncodeDEX() { return {Opcodes::DEX}; } // NOLINT(readability-convert-member-functions-to-static)
 
 // DEY - Decrement Y Register
-std::vector<uint8_t> Cpu6502::EncodeDEY() { return {Opcodes::DEY}; }
+std::vector<uint8_t> Cpu6502::EncodeDEY() { return {Opcodes::DEY}; } // NOLINT(readability-convert-member-functions-to-static)
 
 // INC - Increment Memory
-std::vector<uint8_t> Cpu6502::EncodeINC(uint16_t operand,
+std::vector<uint8_t> Cpu6502::EncodeINC(uint16_t operand, // NOLINT(readability-convert-member-functions-to-static)
                                         AddressingMode mode) const {
   static const OpcodeTable INC_TABLE = {
       .immediate = std::nullopt,
@@ -897,7 +900,7 @@ std::vector<uint8_t> Cpu6502::EncodeINC(uint16_t operand,
 }
 
 // DEC - Decrement Memory
-std::vector<uint8_t> Cpu6502::EncodeDEC(uint16_t operand,
+std::vector<uint8_t> Cpu6502::EncodeDEC(uint16_t operand, // NOLINT(readability-convert-member-functions-to-static)
                                         AddressingMode mode) const {
   static const OpcodeTable DEC_TABLE = {
       .immediate = std::nullopt,
@@ -925,21 +928,21 @@ std::vector<uint8_t> Cpu6502::EncodeDEC(uint16_t operand,
 // Phase 2.2: Stack Operations
 
 // PHA - Push Accumulator
-std::vector<uint8_t> Cpu6502::EncodePHA() { return {Opcodes::PHA}; }
+std::vector<uint8_t> Cpu6502::EncodePHA() { return {Opcodes::PHA}; } // NOLINT(readability-convert-member-functions-to-static)
 
 // PLA - Pull Accumulator
-std::vector<uint8_t> Cpu6502::EncodePLA() { return {Opcodes::PLA}; }
+std::vector<uint8_t> Cpu6502::EncodePLA() { return {Opcodes::PLA}; } // NOLINT(readability-convert-member-functions-to-static)
 
 // PHP - Push Processor Status
-std::vector<uint8_t> Cpu6502::EncodePHP() { return {Opcodes::PHP}; }
+std::vector<uint8_t> Cpu6502::EncodePHP() { return {Opcodes::PHP}; } // NOLINT(readability-convert-member-functions-to-static)
 
 // PLP - Pull Processor Status
-std::vector<uint8_t> Cpu6502::EncodePLP() { return {Opcodes::PLP}; }
+std::vector<uint8_t> Cpu6502::EncodePLP() { return {Opcodes::PLP}; } // NOLINT(readability-convert-member-functions-to-static)
 
 // Phase 2.2: Subroutine
 
 // JSR - Jump to Subroutine
-std::vector<uint8_t> Cpu6502::EncodeJSR(uint16_t operand,
+std::vector<uint8_t> Cpu6502::EncodeJSR(uint16_t operand, // NOLINT(readability-convert-member-functions-to-static)
                                         AddressingMode mode) const {
   static const OpcodeTable JSR_TABLE = {
       .immediate = std::nullopt,
@@ -975,7 +978,7 @@ std::vector<uint8_t> Cpu6502::EncodeBIT(uint16_t operand,
   std::vector<uint8_t> bytes;
 
   switch (mode) {
-  case AddressingMode::ZeroPage:
+  case AddressingMode::ZeroPage: // NOLINT(bugprone-branch-clone)
     bytes.push_back(Opcodes::BIT_ZP);
     bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
     break;
@@ -991,7 +994,7 @@ std::vector<uint8_t> Cpu6502::EncodeBIT(uint16_t operand,
   case AddressingMode::AbsoluteX:
     // These modes only available in 65C02+
     if (cpu_mode_ != CpuMode::Cpu6502) {
-      if (mode == AddressingMode::Immediate) {
+      if (mode == AddressingMode::Immediate) { // NOLINT(bugprone-branch-clone)
         bytes.push_back(Opcodes::BIT_IMM);
         bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
       } else if (mode == AddressingMode::ZeroPageX) {
@@ -1015,7 +1018,7 @@ std::vector<uint8_t> Cpu6502::EncodeBIT(uint16_t operand,
 // Group 2: Shift Instructions
 
 // ASL - Arithmetic Shift Left
-std::vector<uint8_t> Cpu6502::EncodeASL(uint16_t operand,
+std::vector<uint8_t> Cpu6502::EncodeASL(uint16_t operand, // NOLINT(readability-convert-member-functions-to-static)
                                         AddressingMode mode) const {
   static const OpcodeTable ASL_TABLE = {
       .immediate = std::nullopt,
@@ -1041,7 +1044,7 @@ std::vector<uint8_t> Cpu6502::EncodeASL(uint16_t operand,
 }
 
 // LSR - Logical Shift Right
-std::vector<uint8_t> Cpu6502::EncodeLSR(uint16_t operand,
+std::vector<uint8_t> Cpu6502::EncodeLSR(uint16_t operand, // NOLINT(readability-convert-member-functions-to-static)
                                         AddressingMode mode) const {
   static const OpcodeTable LSR_TABLE = {
       .immediate = std::nullopt,
@@ -1069,7 +1072,7 @@ std::vector<uint8_t> Cpu6502::EncodeLSR(uint16_t operand,
 // Group 3: Rotate Instructions
 
 // ROL - Rotate Left
-std::vector<uint8_t> Cpu6502::EncodeROL(uint16_t operand,
+std::vector<uint8_t> Cpu6502::EncodeROL(uint16_t operand, // NOLINT(readability-convert-member-functions-to-static)
                                         AddressingMode mode) const {
   static const OpcodeTable ROL_TABLE = {
       .immediate = std::nullopt,
@@ -1095,7 +1098,7 @@ std::vector<uint8_t> Cpu6502::EncodeROL(uint16_t operand,
 }
 
 // ROR - Rotate Right
-std::vector<uint8_t> Cpu6502::EncodeROR(uint16_t operand,
+std::vector<uint8_t> Cpu6502::EncodeROR(uint16_t operand, // NOLINT(readability-convert-member-functions-to-static)
                                         AddressingMode mode) const {
   static const OpcodeTable ROR_TABLE = {
       .immediate = std::nullopt,
@@ -1123,56 +1126,56 @@ std::vector<uint8_t> Cpu6502::EncodeROR(uint16_t operand,
 // Group 4: Interrupt Instructions
 
 // RTI - Return from Interrupt
-std::vector<uint8_t> Cpu6502::EncodeRTI() { return {Opcodes::RTI}; }
+std::vector<uint8_t> Cpu6502::EncodeRTI() { return {Opcodes::RTI}; } // NOLINT(readability-convert-member-functions-to-static)
 
 // BRK - Break
-std::vector<uint8_t> Cpu6502::EncodeBRK() { return {Opcodes::BRK}; }
+std::vector<uint8_t> Cpu6502::EncodeBRK() { return {Opcodes::BRK}; } // NOLINT(readability-convert-member-functions-to-static)
 
 // Group 5: Flag Operations
 
 // CLC - Clear Carry
-std::vector<uint8_t> Cpu6502::EncodeCLC() { return {Opcodes::CLC}; }
+std::vector<uint8_t> Cpu6502::EncodeCLC() { return {Opcodes::CLC}; } // NOLINT(readability-convert-member-functions-to-static)
 
 // SEC - Set Carry
-std::vector<uint8_t> Cpu6502::EncodeSEC() { return {Opcodes::SEC}; }
+std::vector<uint8_t> Cpu6502::EncodeSEC() { return {Opcodes::SEC}; } // NOLINT(readability-convert-member-functions-to-static)
 
 // CLD - Clear Decimal
-std::vector<uint8_t> Cpu6502::EncodeCLD() { return {Opcodes::CLD}; }
+std::vector<uint8_t> Cpu6502::EncodeCLD() { return {Opcodes::CLD}; } // NOLINT(readability-convert-member-functions-to-static)
 
 // SED - Set Decimal
-std::vector<uint8_t> Cpu6502::EncodeSED() { return {Opcodes::SED}; }
+std::vector<uint8_t> Cpu6502::EncodeSED() { return {Opcodes::SED}; } // NOLINT(readability-convert-member-functions-to-static)
 
 // CLI - Clear Interrupt Disable
-std::vector<uint8_t> Cpu6502::EncodeCLI() { return {Opcodes::CLI}; }
+std::vector<uint8_t> Cpu6502::EncodeCLI() { return {Opcodes::CLI}; } // NOLINT(readability-convert-member-functions-to-static)
 
 // SEI - Set Interrupt Disable
-std::vector<uint8_t> Cpu6502::EncodeSEI() { return {Opcodes::SEI}; }
+std::vector<uint8_t> Cpu6502::EncodeSEI() { return {Opcodes::SEI}; } // NOLINT(readability-convert-member-functions-to-static)
 
 // CLV - Clear Overflow
-std::vector<uint8_t> Cpu6502::EncodeCLV() { return {Opcodes::CLV}; }
+std::vector<uint8_t> Cpu6502::EncodeCLV() { return {Opcodes::CLV}; } // NOLINT(readability-convert-member-functions-to-static)
 
 // Group 6: Transfer Instructions
 
 // TSX - Transfer SP to X
-std::vector<uint8_t> Cpu6502::EncodeTSX() { return {Opcodes::TSX}; }
+std::vector<uint8_t> Cpu6502::EncodeTSX() { return {Opcodes::TSX}; } // NOLINT(readability-convert-member-functions-to-static)
 
 // TXS - Transfer X to SP
-std::vector<uint8_t> Cpu6502::EncodeTXS() { return {Opcodes::TXS}; }
+std::vector<uint8_t> Cpu6502::EncodeTXS() { return {Opcodes::TXS}; } // NOLINT(readability-convert-member-functions-to-static)
 
 // TAX - Transfer A to X
-std::vector<uint8_t> Cpu6502::EncodeTAX() { return {Opcodes::TAX}; }
+std::vector<uint8_t> Cpu6502::EncodeTAX() { return {Opcodes::TAX}; } // NOLINT(readability-convert-member-functions-to-static)
 
 // TAY - Transfer A to Y
-std::vector<uint8_t> Cpu6502::EncodeTAY() { return {Opcodes::TAY}; }
+std::vector<uint8_t> Cpu6502::EncodeTAY() { return {Opcodes::TAY}; } // NOLINT(readability-convert-member-functions-to-static)
 
 // TXA - Transfer X to A
-std::vector<uint8_t> Cpu6502::EncodeTXA() { return {Opcodes::TXA}; }
+std::vector<uint8_t> Cpu6502::EncodeTXA() { return {Opcodes::TXA}; } // NOLINT(readability-convert-member-functions-to-static)
 
 // TYA - Transfer Y to A
-std::vector<uint8_t> Cpu6502::EncodeTYA() { return {Opcodes::TYA}; }
+std::vector<uint8_t> Cpu6502::EncodeTYA() { return {Opcodes::TYA}; } // NOLINT(readability-convert-member-functions-to-static)
 
 // Calculate instruction size based on addressing mode
-size_t Cpu6502::CalculateInstructionSize(AddressingMode mode) {
+size_t Cpu6502::CalculateInstructionSize(AddressingMode mode) { // NOLINT(readability-convert-member-functions-to-static)
   switch (mode) {
   case AddressingMode::Implied:
     return 1;
@@ -1230,7 +1233,7 @@ size_t Cpu6502::CalculateInstructionSize(AddressingMode mode) {
  *  - "$xx"  (1–2 hex digits)  → 2 bytes (explicit zero-page)
  *  - "$xxxx" or symbol        → 3 bytes (absolute)
  */
-size_t Cpu6502::GetInstructionSize(const std::string &mnemonic,
+size_t Cpu6502::GetInstructionSize(const std::string &mnemonic, // NOLINT(readability-convert-member-functions-to-static)
                                    const std::string &operand_str) const {
   // Strip trailing '!' from mnemonic before processing
   std::string clean_mnemonic = mnemonic;
@@ -1356,16 +1359,16 @@ size_t Cpu6502::GetInstructionSize(const std::string &mnemonic,
  * @param target_addr Target address to branch to
  * @return true if branch needs relaxation (out of range), false otherwise
  */
-bool Cpu6502::NeedsBranchRelaxation(uint16_t current_addr,
+bool Cpu6502::NeedsBranchRelaxation(uint16_t current_addr, // NOLINT(readability-convert-member-functions-to-static)
                                     uint16_t target_addr) const {
   return Cpu6502BranchHandler::NeedsBranchRelaxation(current_addr, target_addr);
 }
 
-uint8_t Cpu6502::GetComplementaryBranchOpcode(uint8_t branch_opcode) const {
+uint8_t Cpu6502::GetComplementaryBranchOpcode(uint8_t branch_opcode) const { // NOLINT(readability-convert-member-functions-to-static)
   return Cpu6502BranchHandler::GetComplementaryBranchOpcode(branch_opcode);
 }
 
-std::vector<uint8_t> Cpu6502::EncodeBranchWithRelaxation(
+std::vector<uint8_t> Cpu6502::EncodeBranchWithRelaxation( // NOLINT(readability-convert-member-functions-to-static)
     uint8_t branch_opcode, uint16_t current_addr, uint16_t target_addr) const {
   return Cpu6502BranchHandler::EncodeBranchWithRelaxation(branch_opcode, current_addr,
                                                     target_addr);
@@ -1876,12 +1879,12 @@ std::vector<uint8_t> Cpu6502::EncodeBRA(uint16_t operand,
 // ============================================================================
 
 // TXY - Transfer X to Y (65816 implied, opcode $9B)
-std::vector<uint8_t> Cpu6502::EncodeTXY() {
+std::vector<uint8_t> Cpu6502::EncodeTXY() { // NOLINT(readability-convert-member-functions-to-static)
   return {Opcodes::TXY};
 }
 
 // TYX - Transfer Y to X (65816 implied, opcode $BB)
-std::vector<uint8_t> Cpu6502::EncodeTYX() {
+std::vector<uint8_t> Cpu6502::EncodeTYX() { // NOLINT(readability-convert-member-functions-to-static)
   return {Opcodes::TYX};
 }
 
@@ -1994,7 +1997,7 @@ void Cpu6502::SetRelaxBranches(bool relax) { relax_branches_ = relax; }
  * @throws std::out_of_range if operand value out of range
  */
 std::vector<uint8_t>
-Cpu6502::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
+Cpu6502::EncodeInstruction(const std::string &mnemonic, uint32_t operand, // NOLINT(readability-convert-member-functions-to-static)
                            const std::string &operand_str) const {
   // Strip trailing '!' from mnemonic before processing
   // The '!' suffix is used in some assembly dialects to force
@@ -2084,8 +2087,9 @@ Cpu6502::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
     else if (trimmed.find(",X") != std::string::npos ||
              trimmed.find(", X") != std::string::npos) {
       size_t comma_pos = trimmed.find(",X");
-      if (comma_pos == std::string::npos)
+      if (comma_pos == std::string::npos) {
         comma_pos = trimmed.find(", X");
+      }
       std::string addr_part = util::Trim(trimmed.substr(0, comma_pos));
 
       if (!addr_part.empty() && addr_part[0] == '$') {
@@ -2103,8 +2107,9 @@ Cpu6502::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
     } else if (trimmed.find(",Y") != std::string::npos ||
                trimmed.find(", Y") != std::string::npos) {
       size_t comma_pos = trimmed.find(",Y");
-      if (comma_pos == std::string::npos)
+      if (comma_pos == std::string::npos) {
         comma_pos = trimmed.find(", Y");
+      }
       std::string addr_part = util::Trim(trimmed.substr(0, comma_pos));
 
       if (!addr_part.empty() && addr_part[0] == '$') {
@@ -2365,7 +2370,7 @@ Cpu6502::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
  * @param mnemonic Instruction mnemonic to check
  * @return true if the instruction requires special encoding
  */
-bool Cpu6502::RequiresSpecialEncoding(const std::string &mnemonic) const {
+bool Cpu6502::RequiresSpecialEncoding(const std::string &mnemonic) const { // NOLINT(readability-convert-member-functions-to-static)
   // Strip trailing '!' from mnemonic before checking
   std::string clean_mnemonic = mnemonic;
   if (!clean_mnemonic.empty() && clean_mnemonic.back() == '!') {

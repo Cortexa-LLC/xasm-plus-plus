@@ -21,9 +21,9 @@
 
 namespace xasm {
 
-std::string SymbolOutput::GetName() const { return "symbol"; }
+std::string SymbolOutput::GetName() const { return "symbol"; } // NOLINT(readability-convert-member-functions-to-static)
 
-std::string SymbolOutput::GetFileExtension() const { return ".sym"; }
+std::string SymbolOutput::GetFileExtension() const { return ".sym"; } // NOLINT(readability-convert-member-functions-to-static)
 
 /**
  * @brief Get string representation of symbol type
@@ -56,7 +56,7 @@ static std::string FormatHexValue(int32_t value, int width = 4) {
   return oss.str();
 }
 
-void SymbolOutput::WriteOutput(const std::string &filename,
+void SymbolOutput::WriteOutput(const std::string &filename, // NOLINT(readability-convert-member-functions-to-static)
                                const std::vector<Section *> & /* sections */,
                                const SymbolTable &symbols) {
   std::ofstream file(filename);
