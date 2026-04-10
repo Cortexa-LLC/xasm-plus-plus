@@ -21,7 +21,7 @@ namespace Opcodes = Z80Opcodes;
 // ============================================================================
 
 std::vector<uint8_t>
-CpuZ80::EncodeInstruction(const std::string &mnemonic, uint32_t operand, // NOLINT(readability-convert-member-functions-to-static)
+CpuZ80::EncodeInstruction(const std::string &mnemonic, uint32_t operand, // NOLINT(readability-convert-member-functions-to-static,bugprone-easily-swappable-parameters)
                           const std::string &operand_str) const {
   // ── Parse mnemonic string to enum (single map lookup) ───────────────────
   const Z80Mnemonic mn = ParseZ80Mnemonic(mnemonic); // NOLINT(cppcoreguidelines-init-variables)
@@ -293,17 +293,17 @@ std::vector<uint8_t> CpuZ80::EncodePOP_BC() { return {Opcodes::POP_BC}; } // NOL
 // Bit Operations (CB Prefix)
 // ============================================================================
 
-std::vector<uint8_t> CpuZ80::EncodeBIT(uint8_t bit, uint8_t reg) { // NOLINT(readability-convert-member-functions-to-static)
+std::vector<uint8_t> CpuZ80::EncodeBIT(uint8_t bit, uint8_t reg) { // NOLINT(readability-convert-member-functions-to-static,bugprone-easily-swappable-parameters)
   uint8_t opcode = 0x40 + (bit << 3) + reg;
   return {Opcodes::CB_PREFIX, opcode};
 }
 
-std::vector<uint8_t> CpuZ80::EncodeSET(uint8_t bit, uint8_t reg) { // NOLINT(readability-convert-member-functions-to-static)
+std::vector<uint8_t> CpuZ80::EncodeSET(uint8_t bit, uint8_t reg) { // NOLINT(readability-convert-member-functions-to-static,bugprone-easily-swappable-parameters)
   uint8_t opcode = 0xC0 + (bit << 3) + reg;
   return {Opcodes::CB_PREFIX, opcode};
 }
 
-std::vector<uint8_t> CpuZ80::EncodeRES(uint8_t bit, uint8_t reg) { // NOLINT(readability-convert-member-functions-to-static)
+std::vector<uint8_t> CpuZ80::EncodeRES(uint8_t bit, uint8_t reg) { // NOLINT(readability-convert-member-functions-to-static,bugprone-easily-swappable-parameters)
   uint8_t opcode = 0x80 + (bit << 3) + reg;
   return {Opcodes::CB_PREFIX, opcode};
 }

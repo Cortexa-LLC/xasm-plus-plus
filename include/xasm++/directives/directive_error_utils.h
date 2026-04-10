@@ -15,7 +15,7 @@
  * @code
  * #include "xasm++/directives/directive_error_utils.h"
  *
- * void HandleOrg(const std::string &label, const std::string &operand,
+ * void HandleOrg(const std::string &operand,
  *                DirectiveContext &context) {
  *   using namespace xasm::directive_utils;
  *

@@ -125,8 +125,7 @@ static void ProcessStringLiteral(const std::string &token,
 // ============================================================================
 
 // DB/DEFB/BYTE/DM/DEFM/TEXT/ASCII - Define byte(s)
-void HandleDbDirective(const std::string & /*label*/,
-                       const std::string &operand, DirectiveContext &ctx) {
+void HandleDbDirective(const std::string &operand, DirectiveContext &ctx) {
   auto *parser = static_cast<EdtasmM80PlusPlusSyntaxParser *>(ctx.parser_state);
   auto tokens = ParseDataTokens(operand);
   std::vector<uint8_t> immediate_bytes;
@@ -181,8 +180,7 @@ void HandleDbDirective(const std::string & /*label*/,
 }
 
 // DW/DEFW/WORD - Define word(s)
-void HandleDwDirective(const std::string & /*label*/,
-                       const std::string &operand, DirectiveContext &ctx) {
+void HandleDwDirective(const std::string &operand, DirectiveContext &ctx) {
   auto tokens = ParseDataTokens(operand);
 
   // DW now always stores as expressions for consistent forward/backward ref
@@ -207,8 +205,7 @@ void HandleDwDirective(const std::string & /*label*/,
 }
 
 // DS/DEFS/DSPACE/BLOCK - Define storage
-void HandleDsDirective(const std::string & /*label*/,
-                       const std::string &operand, DirectiveContext &ctx) {
+void HandleDsDirective(const std::string &operand, DirectiveContext &ctx) {
   auto *parser = static_cast<EdtasmM80PlusPlusSyntaxParser *>(ctx.parser_state);
 
   // Parse size and optional fill value
@@ -245,15 +242,13 @@ void HandleDsDirective(const std::string & /*label*/,
 }
 
 // DD/DEFD/DWORD - Define doubleword(s)
-void HandleDdDirective(const std::string & /*label*/,
-                       const std::string &operand, DirectiveContext & /*ctx*/) {
+void HandleDdDirective(const std::string &operand, DirectiveContext & /*ctx*/) {
   // TODO: Implement DD directive when DataSize::DWord is added to atom.h
   throw std::runtime_error("DD directive not yet implemented: " + operand);
 }
 
 // PUBLIC/GLOBAL/ENTRY - Mark symbols as public
-void HandlePublicDirective(const std::string & /*label*/,
-                           const std::string &operand, DirectiveContext &ctx) {
+void HandlePublicDirective(const std::string &operand, DirectiveContext &ctx) {
   auto tokens = ParseDataTokens(operand);
   for (const std::string &symbol : tokens) {
     if (!symbol.empty()) {
@@ -273,8 +268,7 @@ void HandlePublicDirective(const std::string & /*label*/,
 }
 
 // EXTERN/EXTRN/EXT - Mark symbols as external
-void HandleExternDirective(const std::string & /*label*/,
-                           const std::string &operand, DirectiveContext &ctx) {
+void HandleExternDirective(const std::string &operand, DirectiveContext &ctx) {
   auto tokens = ParseDataTokens(operand);
   for (const std::string &symbol : tokens) {
     if (!symbol.empty()) {
@@ -285,48 +279,42 @@ void HandleExternDirective(const std::string & /*label*/,
 }
 
 // CSEG - Code segment
-void HandleCsegDirective(const std::string & /*label*/,
-                         const std::string & /*operand*/,
+void HandleCsegDirective(const std::string & /*operand*/,
                          DirectiveContext &ctx) {
   auto *parser = static_cast<EdtasmM80PlusPlusSyntaxParser *>(ctx.parser_state);
   parser->GetSegmentManager().SwitchToSegment(SegmentType::Code);
 }
 
 // DSEG - Data segment
-void HandleDsegDirective(const std::string & /*label*/,
-                         const std::string & /*operand*/,
+void HandleDsegDirective(const std::string & /*operand*/,
                          DirectiveContext &ctx) {
   auto *parser = static_cast<EdtasmM80PlusPlusSyntaxParser *>(ctx.parser_state);
   parser->GetSegmentManager().SwitchToSegment(SegmentType::Data);
 }
 
 // ASEG - Absolute segment
-void HandleAsegDirective(const std::string & /*label*/,
-                         const std::string & /*operand*/,
+void HandleAsegDirective(const std::string & /*operand*/,
                          DirectiveContext &ctx) {
   auto *parser = static_cast<EdtasmM80PlusPlusSyntaxParser *>(ctx.parser_state);
   parser->GetSegmentManager().SwitchToSegment(SegmentType::Absolute);
 }
 
 // COMMON - Common block
-void HandleCommonDirective(const std::string & /*label*/,
-                           const std::string &operand, DirectiveContext &ctx) {
+void HandleCommonDirective(const std::string &operand, DirectiveContext &ctx) {
   auto *parser = static_cast<EdtasmM80PlusPlusSyntaxParser *>(ctx.parser_state);
   std::string block_name = util::Trim(operand);
   parser->GetSegmentManager().SwitchToCommon(block_name);
 }
 
 // ENDC - End common block
-void HandleEndcDirective(const std::string & /*label*/,
-                         const std::string & /*operand*/,
+void HandleEndcDirective(const std::string & /*operand*/,
                          DirectiveContext &ctx) {
   auto *parser = static_cast<EdtasmM80PlusPlusSyntaxParser *>(ctx.parser_state);
   parser->GetSegmentManager().SwitchToSegment(SegmentType::Code);
 }
 
 // IF - Conditional assembly
-void HandleIfDirective(const std::string & /*label*/,
-                       const std::string &operand, DirectiveContext &ctx) {
+void HandleIfDirective(const std::string &operand, DirectiveContext &ctx) {
   auto *parser = static_cast<EdtasmM80PlusPlusSyntaxParser *>(ctx.parser_state);
   uint32_t value =
       ParseAndEvaluateExpression(operand, *parser, *ctx.symbols, "IF");
@@ -334,24 +322,21 @@ void HandleIfDirective(const std::string & /*label*/,
 }
 
 // ELSE - Conditional assembly else
-void HandleElseDirective(const std::string & /*label*/,
-                         const std::string & /*operand*/,
+void HandleElseDirective(const std::string & /*operand*/,
                          DirectiveContext &ctx) {
   auto *parser = static_cast<EdtasmM80PlusPlusSyntaxParser *>(ctx.parser_state);
   parser->ToggleConditional();
 }
 
 // ENDIF - End conditional assembly
-void HandleEndifDirective(const std::string & /*label*/,
-                          const std::string & /*operand*/,
+void HandleEndifDirective(const std::string & /*operand*/,
                           DirectiveContext &ctx) {
   auto *parser = static_cast<EdtasmM80PlusPlusSyntaxParser *>(ctx.parser_state);
   parser->PopConditional();
 }
 
 // IFDEF - If symbol defined
-void HandleIfdefDirective(const std::string & /*label*/,
-                          const std::string &operand, DirectiveContext &ctx) {
+void HandleIfdefDirective(const std::string &operand, DirectiveContext &ctx) {
   auto *parser = static_cast<EdtasmM80PlusPlusSyntaxParser *>(ctx.parser_state);
   std::string symbol = util::Trim(operand);
   bool defined = ctx.symbols->GetSymbol(symbol) != nullptr;
@@ -359,8 +344,7 @@ void HandleIfdefDirective(const std::string & /*label*/,
 }
 
 // IFNDEF - If symbol not defined
-void HandleIfndefDirective(const std::string & /*label*/,
-                           const std::string &operand, DirectiveContext &ctx) {
+void HandleIfndefDirective(const std::string &operand, DirectiveContext &ctx) {
   auto *parser = static_cast<EdtasmM80PlusPlusSyntaxParser *>(ctx.parser_state);
   std::string symbol = util::Trim(operand);
   bool defined = ctx.symbols->GetSymbol(symbol) != nullptr;
@@ -368,8 +352,7 @@ void HandleIfndefDirective(const std::string & /*label*/,
 }
 
 // IFE - If equal to zero
-void HandleIfeDirective(const std::string & /*label*/,
-                        const std::string &operand, DirectiveContext &ctx) {
+void HandleIfeDirective(const std::string &operand, DirectiveContext &ctx) {
   auto *parser = static_cast<EdtasmM80PlusPlusSyntaxParser *>(ctx.parser_state);
   uint32_t value =
       ParseAndEvaluateExpression(operand, *parser, *ctx.symbols, "IFE");
@@ -377,14 +360,12 @@ void HandleIfeDirective(const std::string & /*label*/,
 }
 
 // IFEQ - If equal
-void HandleIfeqDirective(const std::string & /*label*/,
-                         const std::string &operand, DirectiveContext &ctx) {
-  HandleIfeDirective(std::string(), operand, ctx);
+void HandleIfeqDirective(const std::string &operand, DirectiveContext &ctx) {
+  HandleIfeDirective(operand, ctx);
 }
 
 // IFNE - If not equal to zero
-void HandleIfneDirective(const std::string & /*label*/,
-                         const std::string &operand, DirectiveContext &ctx) {
+void HandleIfneDirective(const std::string &operand, DirectiveContext &ctx) {
   auto *parser = static_cast<EdtasmM80PlusPlusSyntaxParser *>(ctx.parser_state);
   uint32_t value =
       ParseAndEvaluateExpression(operand, *parser, *ctx.symbols, "IFNE");
@@ -392,8 +373,7 @@ void HandleIfneDirective(const std::string & /*label*/,
 }
 
 // IFGT - If greater than zero
-void HandleIfgtDirective(const std::string & /*label*/,
-                         const std::string &operand, DirectiveContext &ctx) {
+void HandleIfgtDirective(const std::string &operand, DirectiveContext &ctx) {
   auto *parser = static_cast<EdtasmM80PlusPlusSyntaxParser *>(ctx.parser_state);
   int32_t value =
       ParseAndEvaluateAsSignedInt(operand, *parser, *ctx.symbols, "IFGT");
@@ -401,8 +381,7 @@ void HandleIfgtDirective(const std::string & /*label*/,
 }
 
 // IFGE - If greater than or equal to zero
-void HandleIfgeDirective(const std::string & /*label*/,
-                         const std::string &operand, DirectiveContext &ctx) {
+void HandleIfgeDirective(const std::string &operand, DirectiveContext &ctx) {
   auto *parser = static_cast<EdtasmM80PlusPlusSyntaxParser *>(ctx.parser_state);
   int32_t value =
       ParseAndEvaluateAsSignedInt(operand, *parser, *ctx.symbols, "IFGE");
@@ -410,8 +389,7 @@ void HandleIfgeDirective(const std::string & /*label*/,
 }
 
 // IFLT - If less than zero
-void HandleIfltDirective(const std::string & /*label*/,
-                         const std::string &operand, DirectiveContext &ctx) {
+void HandleIfltDirective(const std::string &operand, DirectiveContext &ctx) {
   auto *parser = static_cast<EdtasmM80PlusPlusSyntaxParser *>(ctx.parser_state);
   int32_t value =
       ParseAndEvaluateAsSignedInt(operand, *parser, *ctx.symbols, "IFLT");
@@ -419,8 +397,7 @@ void HandleIfltDirective(const std::string & /*label*/,
 }
 
 // IFLE - If less than or equal to zero
-void HandleIfleDirective(const std::string & /*label*/,
-                         const std::string &operand, DirectiveContext &ctx) {
+void HandleIfleDirective(const std::string &operand, DirectiveContext &ctx) {
   auto *parser = static_cast<EdtasmM80PlusPlusSyntaxParser *>(ctx.parser_state);
   int32_t value =
       ParseAndEvaluateAsSignedInt(operand, *parser, *ctx.symbols, "IFLE");
@@ -428,8 +405,7 @@ void HandleIfleDirective(const std::string & /*label*/,
 }
 
 // IF1 - If first pass (always false for single-pass assembler)
-void HandleIf1Directive(const std::string & /*label*/,
-                        const std::string & /*operand*/,
+void HandleIf1Directive(const std::string & /*operand*/,
                         DirectiveContext &ctx) {
   auto *parser = static_cast<EdtasmM80PlusPlusSyntaxParser *>(ctx.parser_state);
   // Single-pass assembler: IF1 is always false (we're never on "pass 1")
@@ -437,8 +413,7 @@ void HandleIf1Directive(const std::string & /*label*/,
 }
 
 // IF2 - If second pass (always false for single-pass assembler)
-void HandleIf2Directive(const std::string & /*label*/,
-                        const std::string & /*operand*/,
+void HandleIf2Directive(const std::string & /*operand*/,
                         DirectiveContext &ctx) {
   auto *parser = static_cast<EdtasmM80PlusPlusSyntaxParser *>(ctx.parser_state);
   // Single-pass assembler: IF2 is always false (we're never on "pass 2")
@@ -446,22 +421,19 @@ void HandleIf2Directive(const std::string & /*label*/,
 }
 
 // IFB - If blank
-void HandleIfbDirective(const std::string & /*label*/,
-                        const std::string &operand, DirectiveContext &ctx) {
+void HandleIfbDirective(const std::string &operand, DirectiveContext &ctx) {
   auto *parser = static_cast<EdtasmM80PlusPlusSyntaxParser *>(ctx.parser_state);
   parser->PushConditional(util::Trim(operand).empty());
 }
 
 // IFNB - If not blank
-void HandleIfnbDirective(const std::string & /*label*/,
-                         const std::string &operand, DirectiveContext &ctx) {
+void HandleIfnbDirective(const std::string &operand, DirectiveContext &ctx) {
   auto *parser = static_cast<EdtasmM80PlusPlusSyntaxParser *>(ctx.parser_state);
   parser->PushConditional(!util::Trim(operand).empty());
 }
 
 // IFIDN - If identical (case-insensitive)
-void HandleIfidnDirective(const std::string & /*label*/,
-                          const std::string &operand, DirectiveContext &ctx) {
+void HandleIfidnDirective(const std::string &operand, DirectiveContext &ctx) {
   auto *parser = static_cast<EdtasmM80PlusPlusSyntaxParser *>(ctx.parser_state);
 
   // Parse two operands separated by comma
@@ -477,8 +449,7 @@ void HandleIfidnDirective(const std::string & /*label*/,
 }
 
 // IFDIF - If different (case-insensitive)
-void HandleIfdifDirective(const std::string & /*label*/,
-                          const std::string &operand, DirectiveContext &ctx) {
+void HandleIfdifDirective(const std::string &operand, DirectiveContext &ctx) {
   auto *parser = static_cast<EdtasmM80PlusPlusSyntaxParser *>(ctx.parser_state);
 
   // Parse two operands separated by comma
@@ -494,16 +465,14 @@ void HandleIfdifDirective(const std::string & /*label*/,
 }
 
 // INCLUDE - Include file
-void HandleIncludeDirective(const std::string & /*label*/,
-                            const std::string &operand,
+void HandleIncludeDirective(const std::string &operand,
                             DirectiveContext & /*ctx*/) {
   // TODO: Implement file inclusion when needed
   throw std::runtime_error("INCLUDE directive not yet implemented: " + operand);
 }
 
 // LIST - Enable listing
-void HandleListDirective(const std::string & /*label*/,
-                         const std::string & /*operand*/,
+void HandleListDirective(const std::string & /*operand*/,
                          DirectiveContext &ctx) {
   auto *parser = static_cast<EdtasmM80PlusPlusSyntaxParser *>(ctx.parser_state);
   parser->EnableListing();
@@ -514,8 +483,7 @@ void HandleListDirective(const std::string & /*label*/,
 }
 
 // NOLIST - Disable listing
-void HandleNolistDirective(const std::string & /*label*/,
-                           const std::string & /*operand*/,
+void HandleNolistDirective(const std::string & /*operand*/,
                            DirectiveContext &ctx) {
   auto *parser = static_cast<EdtasmM80PlusPlusSyntaxParser *>(ctx.parser_state);
   parser->DisableListing();
@@ -526,8 +494,7 @@ void HandleNolistDirective(const std::string & /*label*/,
 }
 
 // TITLE - Set listing title
-void HandleTitleDirective(const std::string & /*label*/,
-                          const std::string &operand, DirectiveContext &ctx) {
+void HandleTitleDirective(const std::string &operand, DirectiveContext &ctx) {
   auto *parser = static_cast<EdtasmM80PlusPlusSyntaxParser *>(ctx.parser_state);
   parser->SetListingTitle(operand);
   // Create atom for listing control
@@ -537,8 +504,7 @@ void HandleTitleDirective(const std::string & /*label*/,
 }
 
 // SUBTTL - Set listing subtitle
-void HandleSubttlDirective(const std::string & /*label*/,
-                           const std::string &operand, DirectiveContext &ctx) {
+void HandleSubttlDirective(const std::string &operand, DirectiveContext &ctx) {
   auto *parser = static_cast<EdtasmM80PlusPlusSyntaxParser *>(ctx.parser_state);
   parser->SetListingSubtitle(operand);
   // Create atom for listing control
@@ -548,37 +514,35 @@ void HandleSubttlDirective(const std::string & /*label*/,
 }
 
 // NAME - Set module name
-void HandleNameDirective(const std::string & /*label*/,
-                         const std::string &operand, DirectiveContext &ctx) {
+void HandleNameDirective(const std::string &operand, DirectiveContext &ctx) {
   auto *parser = static_cast<EdtasmM80PlusPlusSyntaxParser *>(ctx.parser_state);
   parser->SetModuleName(util::Trim(operand));
 }
 
 // END - End of source file (stops assembly)
-void HandleEndDirective(const std::string & /*label*/,
-                        const std::string & /*operand*/,
+void HandleEndDirective(const std::string & /*operand*/,
                         DirectiveContext &ctx) {
   auto *parser = static_cast<EdtasmM80PlusPlusSyntaxParser *>(ctx.parser_state);
   parser->MarkEndDirectiveSeen();
 }
 
 // EQU - Define constant symbol
-void HandleEquDirective(const std::string &label, const std::string &operand,
+void HandleEquDirective(const std::string &operand,
                         DirectiveContext &ctx) {
-  if (label.empty()) {
+  if (ctx.label.empty()) {
     throw std::runtime_error("EQU requires a label");
   }
 
   auto *parser = static_cast<EdtasmM80PlusPlusSyntaxParser *>(ctx.parser_state);
   uint32_t value =
       ParseAndEvaluateExpression(operand, *parser, *ctx.symbols, "EQU");
-  ctx.symbols->DefineLabel(label, value);
+  ctx.symbols->DefineLabel(ctx.label, value);
 }
 
 // SET/=/DEFL - Define redefinable symbol
-void HandleSetDirective(const std::string &label, const std::string &operand,
+void HandleSetDirective(const std::string &operand,
                         DirectiveContext &ctx) {
-  if (label.empty()) {
+  if (ctx.label.empty()) {
     throw std::runtime_error("SET requires a label");
   }
 
@@ -586,12 +550,11 @@ void HandleSetDirective(const std::string &label, const std::string &operand,
   uint32_t value =
       ParseAndEvaluateExpression(operand, *parser, *ctx.symbols, "SET");
   // SET allows redefinition, so just define/redefine the label
-  ctx.symbols->DefineLabel(label, value);
+  ctx.symbols->DefineLabel(ctx.label, value);
 }
 
 // ORG - Set origin address
-void HandleOrgDirective(const std::string & /*label*/,
-                        const std::string &operand, DirectiveContext &ctx) {
+void HandleOrgDirective(const std::string &operand, DirectiveContext &ctx) {
   auto *parser = static_cast<EdtasmM80PlusPlusSyntaxParser *>(ctx.parser_state);
   uint32_t address =
       ParseAndEvaluateExpression(operand, *parser, *ctx.symbols, "ORG");
@@ -605,8 +568,7 @@ void HandleOrgDirective(const std::string & /*label*/,
 }
 
 // *LIST - Toggle listing (Z80ASM style)
-void HandleStarListDirective(const std::string & /*label*/,
-                             const std::string &operand,
+void HandleStarListDirective(const std::string &operand,
                              DirectiveContext &ctx) {
   auto *parser = static_cast<EdtasmM80PlusPlusSyntaxParser *>(ctx.parser_state);
 
@@ -639,24 +601,21 @@ void HandleStarListDirective(const std::string & /*label*/,
 }
 
 // LALL - List all (macro expansion)
-void HandleLallDirective(const std::string & /*label*/,
-                         const std::string & /*operand*/,
+void HandleLallDirective(const std::string & /*operand*/,
                          DirectiveContext & /*ctx*/) {
   // TODO: Implement when macro listing control is needed
   // For now, this is a no-op as we don't have macro listing control yet
 }
 
 // SALL - Suppress all (macro expansion)
-void HandleSallDirective(const std::string & /*label*/,
-                         const std::string & /*operand*/,
+void HandleSallDirective(const std::string & /*operand*/,
                          DirectiveContext & /*ctx*/) {
   // TODO: Implement when macro listing control is needed
   // For now, this is a no-op as we don't have macro listing control yet
 }
 
 // EJECT - Page eject (listing control)
-void HandleEjectDirective(const std::string & /*label*/,
-                          const std::string & /*operand*/,
+void HandleEjectDirective(const std::string & /*operand*/,
                           DirectiveContext &ctx) {
   // Create atom for listing control (page break)
   auto atom =
@@ -665,8 +624,7 @@ void HandleEjectDirective(const std::string & /*label*/,
 }
 
 // SPACE - Add blank lines (listing control)
-void HandleSpaceDirective(const std::string & /*label*/,
-                          const std::string &operand, DirectiveContext &ctx) {
+void HandleSpaceDirective(const std::string &operand, DirectiveContext &ctx) {
   // Parse the operand to get line count
   int count = 1; // Default to 1 line
   if (!operand.empty()) {
@@ -683,8 +641,7 @@ void HandleSpaceDirective(const std::string & /*label*/,
 }
 
 // RADIX - Set number radix
-void HandleRadixDirective(const std::string & /*label*/,
-                          const std::string &operand, DirectiveContext &ctx) {
+void HandleRadixDirective(const std::string &operand, DirectiveContext &ctx) {
   auto *parser = static_cast<EdtasmM80PlusPlusSyntaxParser *>(ctx.parser_state);
 
   // RADIX operand must be parsed in decimal (base 10) always
@@ -697,16 +654,16 @@ void HandleRadixDirective(const std::string & /*label*/,
 }
 
 // MACRO - Start macro definition
-void HandleMacroDirective(const std::string &label, const std::string &operand,
+void HandleMacroDirective(const std::string &operand,
                           DirectiveContext &ctx) {
   auto *parser = static_cast<EdtasmM80PlusPlusSyntaxParser *>(ctx.parser_state);
 
   std::string macro_name;
   std::vector<std::string> params;
 
-  if (!label.empty()) {
+  if (!ctx.label.empty()) {
     // Label-based syntax: MYNAME MACRO param1,param2
-    macro_name = label;
+    macro_name = ctx.label;
     if (!operand.empty()) {
       auto tokens = ParseDataTokens(operand);
       for (const auto &token : tokens) {
@@ -737,8 +694,7 @@ void HandleMacroDirective(const std::string &label, const std::string &operand,
 }
 
 // ENDM - End macro/repeat block
-void HandleEndmDirective(const std::string & /*label*/,
-                         const std::string & /*operand*/,
+void HandleEndmDirective(const std::string & /*operand*/,
                          DirectiveContext &ctx) {
   auto *parser = static_cast<EdtasmM80PlusPlusSyntaxParser *>(ctx.parser_state);
 
@@ -799,8 +755,7 @@ void HandleEndmDirective(const std::string & /*label*/,
 }
 
 // LOCAL - Define local symbol in macro
-void HandleLocalDirective(const std::string & /*label*/,
-                          const std::string & /*operand*/,
+void HandleLocalDirective(const std::string & /*operand*/,
                           DirectiveContext & /*ctx*/) {
   // LOCAL is handled specially during macro capture in ParseLine
   // This handler should never be called in normal execution
@@ -808,16 +763,14 @@ void HandleLocalDirective(const std::string & /*label*/,
 }
 
 // EXITM - Exit macro early
-void HandleExitmDirective(const std::string & /*label*/,
-                          const std::string & /*operand*/,
+void HandleExitmDirective(const std::string & /*operand*/,
                           DirectiveContext &ctx) {
   auto *parser = static_cast<EdtasmM80PlusPlusSyntaxParser *>(ctx.parser_state);
   parser->exitm_triggered_ = true;
 }
 
 // REPT - Repeat block
-void HandleReptDirective(const std::string & /*label*/,
-                         const std::string &operand, DirectiveContext &ctx) {
+void HandleReptDirective(const std::string &operand, DirectiveContext &ctx) {
   auto *parser = static_cast<EdtasmM80PlusPlusSyntaxParser *>(ctx.parser_state);
   int count = static_cast<int>(
       ParseAndEvaluateExpression(operand, *parser, *ctx.symbols, "REPT"));
@@ -830,8 +783,7 @@ void HandleReptDirective(const std::string & /*label*/,
 }
 
 // IRP - Iterate over parameters
-void HandleIrpDirective(const std::string & /*label*/,
-                        const std::string &operand, DirectiveContext &ctx) {
+void HandleIrpDirective(const std::string &operand, DirectiveContext &ctx) {
   auto *parser = static_cast<EdtasmM80PlusPlusSyntaxParser *>(ctx.parser_state);
 
   // Parse: IRP symbol,<arg1,arg2,...>
@@ -859,8 +811,7 @@ void HandleIrpDirective(const std::string & /*label*/,
 }
 
 // IRPC - Iterate over characters
-void HandleIrpcDirective(const std::string & /*label*/,
-                         const std::string &operand, DirectiveContext &ctx) {
+void HandleIrpcDirective(const std::string &operand, DirectiveContext &ctx) {
   auto *parser = static_cast<EdtasmM80PlusPlusSyntaxParser *>(ctx.parser_state);
 
   // Parse: IRPC symbol,<string>

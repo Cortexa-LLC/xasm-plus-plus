@@ -18,7 +18,8 @@ protected:
 };
 
 /**
- * @test Verify that a directive handler can be registered and executed
+ * @test Verify that a directive handler can be registered and executed.
+ *       label is passed via Execute and stored in context.label.
  */
 TEST_F(DirectiveRegistryTest, RegisterAndExecute) {
   // Track if handler was called
@@ -26,12 +27,12 @@ TEST_F(DirectiveRegistryTest, RegisterAndExecute) {
   std::string received_label;
   std::string received_operand;
 
-  // Create a simple handler
+  // Create a simple handler — label is accessed via context.label
   auto handler = [&handler_called, &received_label, &received_operand](
-                     const std::string &label, const std::string &operand,
-                     DirectiveContext & /*context*/) {
+                     const std::string &operand,
+                     DirectiveContext &context) {
     handler_called = true;
-    received_label = label;
+    received_label = context.label;
     received_operand = operand;
   };
 
@@ -41,7 +42,7 @@ TEST_F(DirectiveRegistryTest, RegisterAndExecute) {
   // Create a minimal context
   DirectiveContext context;
 
-  // Execute the handler
+  // Execute the handler (Execute sets context.label = "MY_LABEL" before calling)
   registry_.Execute("TEST", "MY_LABEL", "some_operand", context);
 
   // Verify handler was called with correct parameters
@@ -56,8 +57,7 @@ TEST_F(DirectiveRegistryTest, RegisterAndExecute) {
 TEST_F(DirectiveRegistryTest, CaseInsensitiveLookup) {
   bool handler_called = false;
 
-  auto handler = [&handler_called](const std::string & /*label*/,
-                                   const std::string & /*operand*/,
+  auto handler = [&handler_called](const std::string & /*operand*/,
                                    DirectiveContext & /*context*/) {
     handler_called = true;
   };
@@ -97,14 +97,12 @@ TEST_F(DirectiveRegistryTest, MultipleDirectives) {
   unsigned int org_count = 0;
   unsigned int equ_count = 0;
 
-  auto org_handler = [&org_count](const std::string & /*label*/,
-                                  const std::string & /*operand*/,
+  auto org_handler = [&org_count](const std::string & /*operand*/,
                                   DirectiveContext & /*context*/) {
     org_count++;
   };
 
-  auto equ_handler = [&equ_count](const std::string & /*label*/,
-                                  const std::string & /*operand*/,
+  auto equ_handler = [&equ_count](const std::string & /*operand*/,
                                   DirectiveContext & /*context*/) {
     equ_count++;
   };
@@ -127,8 +125,7 @@ TEST_F(DirectiveRegistryTest, MultipleDirectives) {
  * @test Verify that directive can be checked for existence
  */
 TEST_F(DirectiveRegistryTest, IsRegistered) {
-  auto handler = [](const std::string & /*label*/,
-                    const std::string & /*operand*/,
+  auto handler = [](const std::string & /*operand*/,
                     DirectiveContext & /*context*/) {};
 
   // Initially not registered
@@ -151,8 +148,7 @@ TEST_F(DirectiveRegistryTest, IsRegistered) {
 TEST_F(DirectiveRegistryTest, MultipleAliases) {
   unsigned int handler_count = 0;
 
-  auto handler = [&handler_count](const std::string & /*label*/,
-                                  const std::string & /*operand*/,
+  auto handler = [&handler_count](const std::string & /*operand*/,
                                   DirectiveContext & /*context*/) {
     handler_count++;
   };

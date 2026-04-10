@@ -29,7 +29,7 @@ namespace edtasm {
  * @param operand Operand field (address expression)
  * @param context Directive execution context
  */
-void HandleOrg(const std::string &label, const std::string &operand,
+void HandleOrg(const std::string &operand,
                DirectiveContext &context);
 
 /**
@@ -39,7 +39,7 @@ void HandleOrg(const std::string &label, const std::string &operand,
  * @param operand Operand field (optional entry point)
  * @param context Directive execution context
  */
-void HandleEnd(const std::string &label, const std::string &operand,
+void HandleEnd(const std::string &operand,
                DirectiveContext &context);
 
 /**
@@ -49,7 +49,7 @@ void HandleEnd(const std::string &label, const std::string &operand,
  * @param operand Operand field (value expression)
  * @param context Directive execution context
  */
-void HandleEqu(const std::string &label, const std::string &operand,
+void HandleEqu(const std::string &operand,
                DirectiveContext &context);
 
 /**
@@ -59,7 +59,7 @@ void HandleEqu(const std::string &label, const std::string &operand,
  * @param operand Operand field (value expression)
  * @param context Directive execution context
  */
-void HandleSet(const std::string &label, const std::string &operand,
+void HandleSet(const std::string &operand,
                DirectiveContext &context);
 
 /**
@@ -69,7 +69,7 @@ void HandleSet(const std::string &label, const std::string &operand,
  * @param operand Operand field (comma-separated byte values)
  * @param context Directive execution context
  */
-void HandleFcb(const std::string &label, const std::string &operand,
+void HandleFcb(const std::string &operand,
                DirectiveContext &context);
 
 /**
@@ -79,7 +79,7 @@ void HandleFcb(const std::string &label, const std::string &operand,
  * @param operand Operand field (comma-separated word values)
  * @param context Directive execution context
  */
-void HandleFdb(const std::string &label, const std::string &operand,
+void HandleFdb(const std::string &operand,
                DirectiveContext &context);
 
 /**
@@ -89,7 +89,7 @@ void HandleFdb(const std::string &label, const std::string &operand,
  * @param operand Operand field (delimited string)
  * @param context Directive execution context
  */
-void HandleFcc(const std::string &label, const std::string &operand,
+void HandleFcc(const std::string &operand,
                DirectiveContext &context);
 
 /**
@@ -99,7 +99,7 @@ void HandleFcc(const std::string &label, const std::string &operand,
  * @param operand Operand field (number of bytes to reserve)
  * @param context Directive execution context
  */
-void HandleRmb(const std::string &label, const std::string &operand,
+void HandleRmb(const std::string &operand,
                DirectiveContext &context);
 
 /**
@@ -109,7 +109,7 @@ void HandleRmb(const std::string &label, const std::string &operand,
  * @param operand Operand field (direct page value)
  * @param context Directive execution context
  */
-void HandleSetdp(const std::string &label, const std::string &operand,
+void HandleSetdp(const std::string &operand,
                  DirectiveContext &context);
 
 } // namespace edtasm

@@ -135,7 +135,8 @@ bool MerlinSyntaxParser::DispatchDirective(const std::string &directive, // NOLI
   auto it = directive_registry_.find(directive);
   if (it != directive_registry_.end()) {
     // Found directive - invoke handler
-    it->second(label, operand, context);
+    context.label = label;
+    it->second(operand, context);
     return true;
   }
   return false; // Unknown directive

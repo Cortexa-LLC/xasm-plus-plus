@@ -161,9 +161,9 @@ uint32_t EvaluateExpression(const std::string &str,
 // Directive Handlers
 // ============================================================================
 
-void HandleOr(const std::string &label, const std::string &operand,
+void HandleOr(const std::string &operand,
               DirectiveContext &context) {
-  (void)label; // Label handled separately before dispatch
+  (void)context.label; // Label handled separately before dispatch
 
   RequireOperand(operand, ".OR", context);
 
@@ -199,7 +199,7 @@ void HandleOr(const std::string &label, const std::string &operand,
   *context.current_address = address;
 }
 
-void HandleEq(const std::string &label, const std::string &operand,
+void HandleEq(const std::string &operand,
               DirectiveContext &context) {
   RequireOperand(operand, ".EQ", context);
 
@@ -231,15 +231,15 @@ void HandleEq(const std::string &label, const std::string &operand,
   }
 
   // Normalize label to uppercase for case-insensitive SCMASM compatibility
-  std::string norm_label = util::ToUpper(label);
+  std::string norm_label = util::ToUpper(context.label);
 
   // For local labels (':N' or '.N'), use the scoped name to match how branch
   // operands reference them (via LocalLabelScope in ParseLine). This is
   // critical for ':1 .EQ *' patterns inside macros (e.g. INCW.G), where each
   // macro invocation must have its own per-invocation scope prefix so that the
   // EquateAtom re-evaluates the correct scoped symbol across multi-pass runs.
-  if (context.parser_state && !label.empty() &&
-      (label[0] == ':' || label[0] == '.')) {
+  if (context.parser_state && !context.label.empty() &&
+      (context.label[0] == ':' || context.label[0] == '.')) {
     auto *eq_parser = static_cast<ScmasmSyntaxParser *>(context.parser_state);
     norm_label = eq_parser->ScopedLocalLabelName(norm_label);
   }
@@ -280,7 +280,7 @@ void HandleEq(const std::string &label, const std::string &operand,
   }
 }
 
-void HandleSe(const std::string &label, const std::string &operand,
+void HandleSe(const std::string &operand,
               DirectiveContext &context) {
   RequireOperand(operand, ".SE", context);
 
@@ -298,12 +298,12 @@ void HandleSe(const std::string &label, const std::string &operand,
   // .SE creates Set type (redefinable)
   // Normalize label to uppercase for case-insensitive SCMASM compatibility
   auto expr = std::make_shared<LiteralExpr>(value);
-  context.symbols->Define(util::ToUpper(label), SymbolType::Set, expr);
+  context.symbols->Define(util::ToUpper(context.label), SymbolType::Set, expr);
 }
 
-void HandleAs(const std::string &label, const std::string &operand,
+void HandleAs(const std::string &operand,
               DirectiveContext &context) {
-  (void)label; // Label handled separately
+  (void)context.label; // Label handled separately
 
   RequireOperand(operand, ".AS", context);
 
@@ -331,9 +331,9 @@ void HandleAs(const std::string &label, const std::string &operand,
   *context.current_address += data.size();
 }
 
-void HandleAt(const std::string &label, const std::string &operand,
+void HandleAt(const std::string &operand,
               DirectiveContext &context) {
-  (void)label; // Label handled separately
+  (void)context.label; // Label handled separately
 
   RequireOperand(operand, ".AT", context);
 
@@ -352,9 +352,9 @@ void HandleAt(const std::string &label, const std::string &operand,
   *context.current_address += data.size();
 }
 
-void HandleAz(const std::string &label, const std::string &operand,
+void HandleAz(const std::string &operand,
               DirectiveContext &context) {
-  (void)label; // Label handled separately
+  (void)context.label; // Label handled separately
 
   RequireOperand(operand, ".AZ", context);
 
@@ -387,9 +387,9 @@ void HandleAz(const std::string &label, const std::string &operand,
   *context.current_address += data.size();
 }
 
-void HandleDa(const std::string &label, const std::string &operand,
+void HandleDa(const std::string &operand,
               DirectiveContext &context) {
-  (void)label; // Label handled separately
+  (void)context.label; // Label handled separately
 
   // Split by comma, stopping when an inline comment is encountered.
   //
@@ -681,9 +681,9 @@ void HandleDa(const std::string &label, const std::string &operand,
   *context.current_address += data.size();
 }
 
-void HandleHs(const std::string &label, const std::string &operand,
+void HandleHs(const std::string &operand,
               DirectiveContext &context) {
-  (void)label; // Label handled separately
+  (void)context.label; // Label handled separately
 
   std::vector<uint8_t> data;
   std::string trimmed = Trim(operand);
@@ -815,9 +815,9 @@ void HandleHs(const std::string &label, const std::string &operand,
   *context.current_address += data.size();
 }
 
-void HandleBs(const std::string &label, const std::string &operand,
+void HandleBs(const std::string &operand,
               DirectiveContext &context) {
-  (void)label; // Label handled separately
+  (void)context.label; // Label handled separately
 
   // .BS (Block Storage) - Reserve N bytes of space
   // SCMASM syntax: .BS count
@@ -864,13 +864,13 @@ void HandleBs(const std::string &label, const std::string &operand,
   }
 }
 
-void HandleMa(const std::string &label, const std::string &operand,
+void HandleMa(const std::string &operand,
               DirectiveContext &context) {
   // Macro name can come from label or operand
   std::string macro_name;
 
-  if (!label.empty()) {
-    macro_name = label;
+  if (!context.label.empty()) {
+    macro_name = context.label;
   } else if (!operand.empty()) {
     macro_name = Trim(operand);
   } else {
@@ -884,12 +884,11 @@ void HandleMa(const std::string &label, const std::string &operand,
   // Delegate to parser's HandleMa method
   // Note: This maintains coupling to parser for macro state management
   // which is acceptable as macros require parser-level state tracking
-  parser->HandleMa(label, operand);
+  parser->HandleMa(context.label, operand);
 }
 
-void HandleEndm(const std::string &label, const std::string &operand,
+void HandleEndm(const std::string &operand,
                 DirectiveContext &context) {
-  (void)label;
   (void)operand;
 
   // Access parser state to end macro definition
@@ -904,9 +903,9 @@ void HandleEndm(const std::string &label, const std::string &operand,
 // P0 Priority Directive Handlers (A2oSX Critical)
 // ============================================================================
 
-void HandlePs(const std::string &label, const std::string &operand,
+void HandlePs(const std::string &operand,
               DirectiveContext &context) {
-  (void)label; // Label handled separately
+  (void)context.label; // Label handled separately
 
   RequireOperand(operand, ".PS", context);
 
@@ -931,9 +930,9 @@ void HandlePs(const std::string &label, const std::string &operand,
   *context.current_address += result.size();
 }
 
-void HandleInb(const std::string &label, const std::string &operand,
+void HandleInb(const std::string &operand,
                DirectiveContext &context) {
-  (void)label; // Label handled separately
+  (void)context.label; // Label handled separately
 
   // .INB - Include Source File
   // Parses assembly source file and includes it at current position
@@ -1193,9 +1192,9 @@ void HandleInb(const std::string &label, const std::string &operand,
   }
 }
 
-void HandleList(const std::string &label, const std::string &operand,
+void HandleList(const std::string &operand,
                 DirectiveContext &context) {
-  (void)label;   // Label handled separately
+  (void)context.label;   // Label handled separately
   (void)operand; // Listing control parameter (ON/OFF)
   (void)context; // No state changes needed for stub
 
@@ -1204,9 +1203,9 @@ void HandleList(const std::string &label, const std::string &operand,
   // Full listing output generation is out of scope for P0
 }
 
-void HandleDummy(const std::string &label, const std::string &operand,
+void HandleDummy(const std::string &operand,
                  DirectiveContext &context) {
-  (void)label;   // Label handled separately
+  (void)context.label;   // Label handled separately
   (void)operand; // Optional operand
 
   // Enter dummy section mode - data directives will update address but not emit
@@ -1218,9 +1217,9 @@ void HandleDummy(const std::string &label, const std::string &operand,
   parser->StartDummySection(*context.current_address);
 }
 
-void HandleEd(const std::string &label, const std::string &operand,
+void HandleEd(const std::string &operand,
               DirectiveContext &context) {
-  (void)label;   // Label handled separately
+  (void)context.label;   // Label handled separately
   (void)operand; // Operand unused
 
   // Exit dummy section mode - restore the main-section PC to whatever it was
@@ -1233,9 +1232,9 @@ void HandleEd(const std::string &label, const std::string &operand,
   *context.current_address = saved_addr;
 }
 
-void HandleOp(const std::string &label, const std::string &operand,
+void HandleOp(const std::string &operand,
               DirectiveContext &context) {
-  (void)label; // Label handled separately
+  (void)context.label; // Label handled separately
 
   std::string trimmed = Trim(operand);
   // Strip SCMASM inline comment: take only the first whitespace-delimited token
@@ -1395,9 +1394,9 @@ void ParseCString(const std::string &operand, std::vector<uint8_t> &result,
 
 } // anonymous namespace
 
-void HandleCs(const std::string &label, const std::string &operand,
+void HandleCs(const std::string &operand,
               DirectiveContext &context) {
-  (void)label; // Label handled separately
+  (void)context.label; // Label handled separately
 
   RequireOperand(operand, ".CS", context);
 
@@ -1411,9 +1410,9 @@ void HandleCs(const std::string &label, const std::string &operand,
   *context.current_address += data.size();
 }
 
-void HandleCz(const std::string &label, const std::string &operand,
+void HandleCz(const std::string &operand,
               DirectiveContext &context) {
-  (void)label; // Label handled separately
+  (void)context.label; // Label handled separately
 
   RequireOperand(operand, ".CZ", context);
 
@@ -1430,9 +1429,8 @@ void HandleCz(const std::string &label, const std::string &operand,
   *context.current_address += data.size();
 }
 
-void HandleTf(const std::string &label, const std::string &operand,
+void HandleTf(const std::string &operand,
               DirectiveContext &context) {
-  (void)label;
 
   // .TF <path>[,TSYS]  — sets the output file for this assembly unit.
   // Strip optional type suffix (e.g. ",TSYS", ",TBIN") — these were ProDOS
@@ -1461,9 +1459,9 @@ void HandleTf(const std::string &label, const std::string &operand,
   }
 }
 
-void HandleEp(const std::string &label, const std::string &operand,
+void HandleEp(const std::string &operand,
               DirectiveContext &context) {
-  (void)label; // Label handled separately
+  (void)context.label; // Label handled separately
 
   // Cast parser state to access phase tracking
   auto *parser = static_cast<ScmasmSyntaxParser *>(context.parser_state);
@@ -1510,9 +1508,9 @@ void HandleEp(const std::string &label, const std::string &operand,
   (void)address;
 }
 
-void HandlePh(const std::string &label, const std::string &operand,
+void HandlePh(const std::string &operand,
               DirectiveContext &context) {
-  (void)label; // Label handled separately
+  (void)context.label; // Label handled separately
 
   RequireOperand(operand, ".PH", context);
 
@@ -1549,9 +1547,9 @@ void HandlePh(const std::string &label, const std::string &operand,
   context.section->atoms.push_back(phase_atom);
 }
 
-void HandleHx(const std::string &label, const std::string &operand,
+void HandleHx(const std::string &operand,
               DirectiveContext &context) {
-  (void)label; // Label handled separately
+  (void)context.label; // Label handled separately
 
   std::vector<uint8_t> nibbles;
   std::string trimmed = Trim(operand);
@@ -1597,9 +1595,9 @@ void HandleHx(const std::string &label, const std::string &operand,
   *context.current_address += data.size();
 }
 
-void HandleTa(const std::string &label, const std::string &operand,
+void HandleTa(const std::string &operand,
               DirectiveContext &context) {
-  (void)label;   // Label handled separately
+  (void)context.label;   // Label handled separately
   (void)operand; // Target address
   (void)context; // No-op
 
@@ -1608,9 +1606,9 @@ void HandleTa(const std::string &label, const std::string &operand,
   // In cross-assembly, has no effect
 }
 
-void HandleDo(const std::string &label, const std::string &operand,
+void HandleDo(const std::string &operand,
               DirectiveContext &context) {
-  (void)label;   // Label handled separately
+  (void)context.label;   // Label handled separately
   (void)operand; // Condition expression
   (void)context; // State management
 
@@ -1620,9 +1618,9 @@ void HandleDo(const std::string &label, const std::string &operand,
   ThrowFormattedError(".DO conditional assembly not yet implemented", context);
 }
 
-void HandleFin(const std::string &label, const std::string &operand,
+void HandleFin(const std::string &operand,
                DirectiveContext &context) {
-  (void)label;   // Label handled separately
+  (void)context.label;   // Label handled separately
   (void)operand; // Unused
   (void)context; // State management
 
@@ -1631,9 +1629,9 @@ void HandleFin(const std::string &label, const std::string &operand,
   ThrowFormattedError(".FIN conditional assembly not yet implemented", context);
 }
 
-void HandleAc(const std::string &label, const std::string &operand,
+void HandleAc(const std::string &operand,
               DirectiveContext &context) {
-  (void)label;   // Label handled separately
+  (void)context.label;   // Label handled separately
   (void)operand; // String with optional prefix
   (void)context; // State management
 

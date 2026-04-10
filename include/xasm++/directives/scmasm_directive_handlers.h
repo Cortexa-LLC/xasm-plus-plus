@@ -20,7 +20,7 @@ namespace xasm::scmasm {
  * @param operand Address expression
  * @param context Directive execution context
  */
-void HandleOr(const std::string &label, const std::string &operand,
+void HandleOr(const std::string &operand,
               DirectiveContext &context);
 
 /**
@@ -29,7 +29,7 @@ void HandleOr(const std::string &label, const std::string &operand,
  * @param operand Value expression
  * @param context Directive execution context
  */
-void HandleEq(const std::string &label, const std::string &operand,
+void HandleEq(const std::string &operand,
               DirectiveContext &context);
 
 /**
@@ -38,7 +38,7 @@ void HandleEq(const std::string &label, const std::string &operand,
  * @param operand Value expression
  * @param context Directive execution context
  */
-void HandleSe(const std::string &label, const std::string &operand,
+void HandleSe(const std::string &operand,
               DirectiveContext &context);
 
 /**
@@ -47,7 +47,7 @@ void HandleSe(const std::string &label, const std::string &operand,
  * @param operand String with delimiter
  * @param context Directive execution context
  */
-void HandleAs(const std::string &label, const std::string &operand,
+void HandleAs(const std::string &operand,
               DirectiveContext &context);
 
 /**
@@ -56,7 +56,7 @@ void HandleAs(const std::string &label, const std::string &operand,
  * @param operand String with delimiter
  * @param context Directive execution context
  */
-void HandleAt(const std::string &label, const std::string &operand,
+void HandleAt(const std::string &operand,
               DirectiveContext &context);
 
 /**
@@ -65,7 +65,7 @@ void HandleAt(const std::string &label, const std::string &operand,
  * @param operand String with delimiter
  * @param context Directive execution context
  */
-void HandleAz(const std::string &label, const std::string &operand,
+void HandleAz(const std::string &operand,
               DirectiveContext &context);
 
 /**
@@ -74,7 +74,7 @@ void HandleAz(const std::string &label, const std::string &operand,
  * @param operand Comma-separated values with size prefixes
  * @param context Directive execution context
  */
-void HandleDa(const std::string &label, const std::string &operand,
+void HandleDa(const std::string &operand,
               DirectiveContext &context);
 
 /**
@@ -83,7 +83,7 @@ void HandleDa(const std::string &label, const std::string &operand,
  * @param operand Hex digits (whitespace allowed)
  * @param context Directive execution context
  */
-void HandleHs(const std::string &label, const std::string &operand,
+void HandleHs(const std::string &operand,
               DirectiveContext &context);
 
 /**
@@ -92,7 +92,7 @@ void HandleHs(const std::string &label, const std::string &operand,
  * @param operand Binary digits (whitespace allowed)
  * @param context Directive execution context
  */
-void HandleBs(const std::string &label, const std::string &operand,
+void HandleBs(const std::string &operand,
               DirectiveContext &context);
 
 /**
@@ -101,7 +101,7 @@ void HandleBs(const std::string &label, const std::string &operand,
  * @param operand Macro name (if not in label)
  * @param context Directive execution context
  */
-void HandleMa(const std::string &label, const std::string &operand,
+void HandleMa(const std::string &operand,
               DirectiveContext &context);
 
 /**
@@ -110,7 +110,7 @@ void HandleMa(const std::string &label, const std::string &operand,
  * @param operand Operand (unused)
  * @param context Directive execution context
  */
-void HandleEndm(const std::string &label, const std::string &operand,
+void HandleEndm(const std::string &operand,
                 DirectiveContext &context);
 
 // ============================================================================
@@ -123,7 +123,7 @@ void HandleEndm(const std::string &label, const std::string &operand,
  * @param operand String with delimiter
  * @param context Directive execution context
  */
-void HandlePs(const std::string &label, const std::string &operand,
+void HandlePs(const std::string &operand,
               DirectiveContext &context);
 
 /**
@@ -132,7 +132,7 @@ void HandlePs(const std::string &label, const std::string &operand,
  * @param operand File path
  * @param context Directive execution context
  */
-void HandleInb(const std::string &label, const std::string &operand,
+void HandleInb(const std::string &operand,
                DirectiveContext &context);
 
 /**
@@ -141,7 +141,7 @@ void HandleInb(const std::string &label, const std::string &operand,
  * @param operand Control parameter (ON/OFF)
  * @param context Directive execution context
  */
-void HandleList(const std::string &label, const std::string &operand,
+void HandleList(const std::string &operand,
                 DirectiveContext &context);
 
 /**
@@ -150,7 +150,7 @@ void HandleList(const std::string &label, const std::string &operand,
  * @param operand Optional operand
  * @param context Directive execution context
  */
-void HandleDummy(const std::string &label, const std::string &operand,
+void HandleDummy(const std::string &operand,
                  DirectiveContext &context);
 
 /**
@@ -159,7 +159,7 @@ void HandleDummy(const std::string &label, const std::string &operand,
  * @param operand Operand (unused)
  * @param context Directive execution context
  */
-void HandleEd(const std::string &label, const std::string &operand,
+void HandleEd(const std::string &operand,
               DirectiveContext &context);
 
 /**
@@ -168,7 +168,7 @@ void HandleEd(const std::string &label, const std::string &operand,
  * @param operand CPU type (6502, 65C02, 65816)
  * @param context Directive execution context
  */
-void HandleOp(const std::string &label, const std::string &operand,
+void HandleOp(const std::string &operand,
               DirectiveContext &context);
 
 // ============================================================================
@@ -181,7 +181,7 @@ void HandleOp(const std::string &label, const std::string &operand,
  * @param operand String with delimiter
  * @param context Directive execution context
  */
-void HandleCs(const std::string &label, const std::string &operand,
+void HandleCs(const std::string &operand,
               DirectiveContext &context);
 
 /**
@@ -190,7 +190,7 @@ void HandleCs(const std::string &label, const std::string &operand,
  * @param operand String with delimiter
  * @param context Directive execution context
  */
-void HandleCz(const std::string &label, const std::string &operand,
+void HandleCz(const std::string &operand,
               DirectiveContext &context);
 
 /**
@@ -199,7 +199,7 @@ void HandleCz(const std::string &label, const std::string &operand,
  * @param operand File path or title
  * @param context Directive execution context
  */
-void HandleTf(const std::string &label, const std::string &operand,
+void HandleTf(const std::string &operand,
               DirectiveContext &context);
 
 /**
@@ -208,7 +208,7 @@ void HandleTf(const std::string &label, const std::string &operand,
  * @param operand Entry address expression (optional for phase end)
  * @param context Directive execution context
  */
-void HandleEp(const std::string &label, const std::string &operand,
+void HandleEp(const std::string &operand,
               DirectiveContext &context);
 
 /**
@@ -217,7 +217,7 @@ void HandleEp(const std::string &label, const std::string &operand,
  * @param operand Virtual address expression
  * @param context Directive execution context
  */
-void HandlePh(const std::string &label, const std::string &operand,
+void HandlePh(const std::string &operand,
               DirectiveContext &context);
 
 /**
@@ -226,7 +226,7 @@ void HandlePh(const std::string &label, const std::string &operand,
  * @param operand Hex digits (whitespace/dots/commas allowed)
  * @param context Directive execution context
  */
-void HandleHx(const std::string &label, const std::string &operand,
+void HandleHx(const std::string &operand,
               DirectiveContext &context);
 
 /**
@@ -235,7 +235,7 @@ void HandleHx(const std::string &label, const std::string &operand,
  * @param operand Address expression
  * @param context Directive execution context
  */
-void HandleTa(const std::string &label, const std::string &operand,
+void HandleTa(const std::string &operand,
               DirectiveContext &context);
 
 /**
@@ -244,7 +244,7 @@ void HandleTa(const std::string &label, const std::string &operand,
  * @param operand Condition expression
  * @param context Directive execution context
  */
-void HandleDo(const std::string &label, const std::string &operand,
+void HandleDo(const std::string &operand,
               DirectiveContext &context);
 
 /**
@@ -253,7 +253,7 @@ void HandleDo(const std::string &label, const std::string &operand,
  * @param operand Operand (unused)
  * @param context Directive execution context
  */
-void HandleFin(const std::string &label, const std::string &operand,
+void HandleFin(const std::string &operand,
                DirectiveContext &context);
 
 /**
@@ -262,7 +262,7 @@ void HandleFin(const std::string &label, const std::string &operand,
  * @param operand String with optional prefix
  * @param context Directive execution context
  */
-void HandleAc(const std::string &label, const std::string &operand,
+void HandleAc(const std::string &operand,
               DirectiveContext &context);
 
 } // namespace xasm::scmasm

@@ -29,7 +29,7 @@ std::string MacroProcessor::ToUpper(const std::string &str) { // NOLINT(readabil
 // Public API Methods
 // ============================================================================
 
-void MacroProcessor::DefineMacro(const std::string &name, // NOLINT(readability-convert-member-functions-to-static)
+void MacroProcessor::DefineMacro(const std::string &name, // NOLINT(readability-convert-member-functions-to-static,bugprone-easily-swappable-parameters)
                                  const std::vector<std::string> &parameters,
                                  const std::vector<std::string> &body) {
   MacroDefinition macro;
@@ -59,7 +59,7 @@ void MacroProcessor::Clear() {
 }
 
 std::vector<std::string>
-MacroProcessor::ExpandMacro(const std::string &name,
+MacroProcessor::ExpandMacro(const std::string &name, // NOLINT(bugprone-easily-swappable-parameters)
                             const std::vector<std::string> &arguments) {
   // Find the macro definition
   auto it = macros_.find(ToUpper(name));
@@ -168,7 +168,7 @@ std::string MacroProcessor::SubstituteParameters( // NOLINT(readability-convert-
   return result;
 }
 
-std::string MacroProcessor::MakeLocalLabelUnique(const std::string &label, // NOLINT(readability-convert-member-functions-to-static)
+std::string MacroProcessor::MakeLocalLabelUnique(const std::string &label, // NOLINT(readability-convert-member-functions-to-static,bugprone-easily-swappable-parameters)
                                                  int expansion_id) {
   // Local labels start with '.' in FLEX ASM09
   if (label.empty() || label[0] != '.') {

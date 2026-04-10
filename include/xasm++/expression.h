@@ -350,12 +350,12 @@ public:
    * @brief Construct a binary operation expression
    *
    * @param op Binary operator to apply
-   * @param l Left operand expression
-   * @param r Right operand expression
+   * @param left Left operand expression
+   * @param right Right operand expression
    */
-  BinaryOpExpr(BinaryOp op, std::shared_ptr<Expression> l,
-               std::shared_ptr<Expression> r)
-      : operation(op), left(l), right(r) {}
+  BinaryOpExpr(BinaryOp op, std::shared_ptr<Expression> left,
+               std::shared_ptr<Expression> right)
+      : operation(op), left(left), right(right) {}
 
   /**
    * @brief Evaluate the binary operation

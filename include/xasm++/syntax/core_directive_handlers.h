@@ -78,7 +78,7 @@ namespace xasm {
 // Forward declare DirectiveContext
 struct DirectiveContext;
 
-void HandleOrg(const std::string &label, const std::string &operand,
+void HandleOrg(const std::string &operand,
                DirectiveContext &context);
 
 /**
@@ -104,7 +104,7 @@ void HandleOrg(const std::string &label, const std::string &operand,
  * // symbols now contains IO_PORT=0xD000
  * @endcode
  */
-void HandleEqu(const std::string &label, const std::string &operand,
+void HandleEqu(const std::string &operand,
                DirectiveContext &context);
 
 /**
@@ -128,7 +128,7 @@ void HandleEqu(const std::string &label, const std::string &operand,
  * // address advanced by 4
  * @endcode
  */
-void HandleDb(const std::string &label, const std::string &operand,
+void HandleDb(const std::string &operand,
               DirectiveContext &context);
 
 /**
@@ -152,7 +152,7 @@ void HandleDb(const std::string &label, const std::string &operand,
  * // address advanced by 4 (2 words * 2 bytes)
  * @endcode
  */
-void HandleDw(const std::string &label, const std::string &operand,
+void HandleDw(const std::string &operand,
               DirectiveContext &context);
 
 /**
@@ -181,7 +181,7 @@ void HandleDw(const std::string &label, const std::string &operand,
  * // Evaluates SIZE*2 and reserves that many bytes
  * @endcode
  */
-void HandleDs(const std::string &label, const std::string &operand,
+void HandleDs(const std::string &operand,
               DirectiveContext &context);
 
 // ============================================================================

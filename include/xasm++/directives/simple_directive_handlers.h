@@ -20,7 +20,7 @@ namespace xasm::simple {
  * @param operand Address expression (hex format: $XXXX or XXXX)
  * @param context Directive execution context
  */
-void HandleOrg(const std::string &label, const std::string &operand,
+void HandleOrg(const std::string &operand,
                DirectiveContext &context);
 
 /**
@@ -29,7 +29,7 @@ void HandleOrg(const std::string &label, const std::string &operand,
  * @param operand Comma-separated byte values (hex: $XX or decimal)
  * @param context Directive execution context
  */
-void HandleDb(const std::string &label, const std::string &operand,
+void HandleDb(const std::string &operand,
               DirectiveContext &context);
 
 /**
@@ -38,7 +38,7 @@ void HandleDb(const std::string &label, const std::string &operand,
  * @param operand Comma-separated word values (hex: $XXXX or decimal)
  * @param context Directive execution context
  */
-void HandleDw(const std::string &label, const std::string &operand,
+void HandleDw(const std::string &operand,
               DirectiveContext &context);
 
 } // namespace xasm::simple

@@ -1230,9 +1230,9 @@ TEST_F(ScmasmSyntaxTest, AmpersandLabelPrefixStripped) {
   ASSERT_TRUE(result.success) << "Assembly must succeed; & label prefix must be accepted";
 
   // &CheckSMBStatus should define CHECKSMBSTATUS at $2000
-  auto val = symbols.Lookup("CHECKSMBSTATUS");
-  ASSERT_TRUE(val.has_value()) << "CHECKSMBSTATUS must be defined";
-  EXPECT_EQ(val.value(), 0x2000u) << "label must resolve to $2000";
+  int64_t val = 0;
+  ASSERT_TRUE(symbols.Lookup("CHECKSMBSTATUS", val)) << "CHECKSMBSTATUS must be defined";
+  EXPECT_EQ(static_cast<uint32_t>(val), 0x2000u) << "label must resolve to $2000";
 }
 
 // ============================================================================

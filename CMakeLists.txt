@@ -45,7 +45,7 @@ endif()
 if(MSVC)
     add_compile_options(/W4 /WX)
 else()
-    add_compile_options(-Wall -Wextra -Wpedantic -Werror)
+    add_compile_options(-Wall -Wextra -Wpedantic -Werror -Wno-character-conversion)
     # Enable sanitizers on Unix-like systems (Linux/macOS) only
     # MinGW on Windows doesn't have sanitizer libraries available
     if(CMAKE_BUILD_TYPE STREQUAL "Debug" AND NOT WIN32)
@@ -92,6 +92,15 @@ if(BUILD_TESTING)
     # Prevent googletest from installing
     set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
     FetchContent_MakeAvailable(googletest)
+
+    # Suppress -Wcharacter-conversion for googletest: gtest v1.14.0 triggers
+    # this warning with LLVM 22+ due to char8_t->char32_t conversion in
+    # gtest-printers.h. Our -Werror flag propagates to FetchContent targets.
+    foreach(_gtest_target gtest gtest_main gmock gmock_main)
+        if(TARGET ${_gtest_target})
+            target_compile_options(${_gtest_target} PRIVATE -Wno-character-conversion)
+        endif()
+    endforeach()
 
     enable_testing()
     include(GoogleTest)

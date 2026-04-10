@@ -94,9 +94,9 @@ namespace edtasm {
 // Directive Handlers - Free Functions in edtasm namespace
 // ===========================================================================
 
-void HandleOrg(const std::string &label, const std::string &operand,
+void HandleOrg(const std::string &operand,
                DirectiveContext &context) {
-  (void)label; // Label handled in ParseLine
+  (void)context.label; // Label handled in ParseLine
 
   auto *parser = GetParser(context);
   if (!parser) {
@@ -108,40 +108,40 @@ void HandleOrg(const std::string &label, const std::string &operand,
   *context.current_address = address;
 }
 
-void HandleEnd(const std::string &label, const std::string &operand,
+void HandleEnd(const std::string &operand,
                DirectiveContext &context) {
-  (void)label;   // Label handled in ParseLine
+  (void)context.label;   // Label handled in ParseLine
   (void)operand; // Entry point not currently used
   (void)context; // END produces no atoms
   // END directive produces no atoms, signals end of assembly
 }
 
-void HandleEqu(const std::string &label, const std::string &operand,
+void HandleEqu(const std::string &operand,
                DirectiveContext &context) {
-  if (label.empty()) {
-    throw std::runtime_error("EQU requires a label");
+  if (context.label.empty()) {
+    throw std::runtime_error("EQU requires a context.label");
   }
 
   uint32_t value = ParseNumber(operand);
-  context.symbols->Define(label, SymbolType::Equate,
+  context.symbols->Define(context.label, SymbolType::Equate,
                           std::make_shared<LiteralExpr>(value));
 }
 
-void HandleSet(const std::string &label, const std::string &operand,
+void HandleSet(const std::string &operand,
                DirectiveContext &context) {
-  if (label.empty()) {
-    throw std::runtime_error("SET requires a label");
+  if (context.label.empty()) {
+    throw std::runtime_error("SET requires a context.label");
   }
 
   uint32_t value = ParseNumber(operand);
   // SET allows redefinition, so we define it as Set type
-  context.symbols->Define(label, SymbolType::Set,
+  context.symbols->Define(context.label, SymbolType::Set,
                           std::make_shared<LiteralExpr>(value));
 }
 
-void HandleFcb(const std::string &label, const std::string &operand,
+void HandleFcb(const std::string &operand,
                DirectiveContext &context) {
-  (void)label; // Label handled in ParseLine
+  (void)context.label; // Label handled in ParseLine
 
   std::vector<uint8_t> bytes;
   std::istringstream ops(operand);
@@ -158,9 +158,9 @@ void HandleFcb(const std::string &label, const std::string &operand,
   *context.current_address += bytes.size();
 }
 
-void HandleFdb(const std::string &label, const std::string &operand,
+void HandleFdb(const std::string &operand,
                DirectiveContext &context) {
-  (void)label; // Label handled in ParseLine
+  (void)context.label; // Label handled in ParseLine
 
   std::vector<uint8_t> bytes;
   std::istringstream ops(operand);
@@ -180,9 +180,9 @@ void HandleFdb(const std::string &label, const std::string &operand,
   *context.current_address += bytes.size();
 }
 
-void HandleFcc(const std::string &label, const std::string &operand,
+void HandleFcc(const std::string &operand,
                DirectiveContext &context) {
-  (void)label; // Label handled in ParseLine
+  (void)context.label; // Label handled in ParseLine
 
   std::string trimmed = Trim(operand);
   if (trimmed.empty()) {
@@ -204,18 +204,18 @@ void HandleFcc(const std::string &label, const std::string &operand,
   *context.current_address += bytes.size();
 }
 
-void HandleRmb(const std::string &label, const std::string &operand,
+void HandleRmb(const std::string &operand,
                DirectiveContext &context) {
-  (void)label; // Label handled in ParseLine
+  (void)context.label; // Label handled in ParseLine
 
   uint32_t size = ParseNumber(operand);
   context.section->atoms.push_back(std::make_shared<SpaceAtom>(size));
   *context.current_address += size;
 }
 
-void HandleSetdp(const std::string &label, const std::string &operand,
+void HandleSetdp(const std::string &operand,
                  DirectiveContext &context) {
-  (void)label; // Label handled in ParseLine
+  (void)context.label; // Label handled in ParseLine
 
   auto *parser = GetParser(context);
   if (!parser) {

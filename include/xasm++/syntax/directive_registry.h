@@ -48,6 +48,9 @@ struct DirectiveContext {
   const std::map<std::string, std::string> *path_mappings =
       nullptr; ///< Path substitutions for .INB directive (virtual→actual)
 
+  // Label on the current source line (empty if none)
+  std::string label; ///< Label field (populated by Execute before handler call)
+
   /**
    * @brief Constructor with common context
    */
@@ -57,15 +60,13 @@ struct DirectiveContext {
 /**
  * @brief Handler function signature for directive processing
  *
- * @param label Label on the line (if any), empty string if no label
  * @param operand Operand field after directive mnemonic
- * @param context Directive execution context (section, symbols, etc.)
+ * @param context Directive execution context (section, symbols, label, etc.)
  *
  * @throws std::runtime_error on directive processing errors
  */
 using DirectiveHandler =
-    std::function<void(const std::string &label, const std::string &operand,
-                       DirectiveContext &context)>;
+    std::function<void(const std::string &operand, DirectiveContext &context)>;
 
 /**
  * @brief Registry for directive handlers
@@ -85,22 +86,20 @@ using DirectiveHandler =
  * DirectiveRegistry registry;
  *
  * // Register handlers
- * registry.Register("ORG", [this](const std::string& label,
- *                                  const std::string& operand,
+ * registry.Register("ORG", [this](const std::string& operand,
  *                                  DirectiveContext& ctx) {
- *   // ORG implementation
+ *   // ORG implementation (label available as ctx.label)
  *   auto expr = ParseExpression(operand, *ctx.symbols);
  *   uint32_t address = expr->Evaluate(*ctx.symbols);
  *   *ctx.current_address = address;
  * });
  *
- * registry.Register("EQU", [this](const std::string& label,
- *                                  const std::string& operand,
+ * registry.Register("EQU", [this](const std::string& operand,
  *                                  DirectiveContext& ctx) {
  *   // EQU implementation
- *   if (!label.empty()) {
+ *   if (!ctx.label.empty()) {
  *     auto expr = ParseExpression(operand, *ctx.symbols);
- *     ctx.symbols->Define(label, SymbolType::Equate, expr);
+ *     ctx.symbols->Define(ctx.label, SymbolType::Equate, expr);
  *   }
  * });
  *
@@ -143,10 +142,11 @@ public:
    * @brief Execute a registered directive handler
    *
    * Looks up and executes the handler for the given directive mnemonic.
+   * Sets context.label before invoking the handler.
    * Lookup is case-insensitive.
    *
    * @param mnemonic Directive name to execute
-   * @param label Label on the line (empty string if no label)
+   * @param label Label on the line (empty string if no label); stored in context.label
    * @param operand Operand field after directive
    * @param context Execution context (section, symbols, etc.)
    *

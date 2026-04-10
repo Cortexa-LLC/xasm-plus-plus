@@ -35,8 +35,11 @@ void DirectiveRegistry::Execute(const std::string &mnemonic, // NOLINT(readabili
     throw std::runtime_error("Unknown directive: " + mnemonic);
   }
 
+  // Populate context.label so handlers can access it without an extra parameter
+  context.label = label;
+
   // Execute the handler
-  it->second(label, operand, context);
+  it->second(operand, context);
 }
 
 bool DirectiveRegistry::IsRegistered(const std::string &mnemonic) const { // NOLINT(readability-convert-member-functions-to-static)

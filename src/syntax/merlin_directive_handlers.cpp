@@ -80,9 +80,8 @@ static uint32_t ParseNumber(const std::string &str,
 // Directive Handlers
 // ============================================================================
 
-void HandleOrg(const std::string &label, const std::string &operand,
+void HandleOrg(const std::string &operand,
                DirectiveContext &context) {
-  (void)label;
 
   // ORG directive - set assembly origin address
   RequireOperand(operand, "ORG", context);
@@ -109,7 +108,7 @@ void HandleOrg(const std::string &label, const std::string &operand,
   *context.current_address = address;
 }
 
-void HandleEqu(const std::string &label, const std::string &operand,
+void HandleEqu(const std::string &operand,
                DirectiveContext &context) {
   // Get parser instance for expression parsing
   ValidateParser(context.parser_state);
@@ -117,7 +116,7 @@ void HandleEqu(const std::string &label, const std::string &operand,
 
   // EQU directive - define symbolic constant (no code generated)
   auto expr = parser->ParseExpression(operand, *context.symbols);
-  context.symbols->Define(label, SymbolType::Label, expr);
+  context.symbols->Define(context.label, SymbolType::Label, expr);
 
   // If the expression contains '*' as a PC reference (not multiplication),
   // push an EquateAtom so the assembler re-evaluates it each pass with the
@@ -144,24 +143,24 @@ void HandleEqu(const std::string &label, const std::string &operand,
     }
     if (has_star) {
       context.section->atoms.push_back(
-          std::make_shared<EquateAtom>(label, raw));
+          std::make_shared<EquateAtom>(context.label, raw));
     }
   }
 }
 
-void HandleDb(const std::string &label, const std::string &operand,
+void HandleDb(const std::string &operand,
               DirectiveContext &context) {
   // Get parser instance for label handling
   ValidateParser(context.parser_state);
   auto *parser = static_cast<MerlinSyntaxParser *>(context.parser_state);
 
   // Create label atom first if label present
-  if (!label.empty()) {
+  if (!context.label.empty()) {
     uint32_t current_address = *context.current_address;
-    context.symbols->Define(label, SymbolType::Label,
+    context.symbols->Define(context.label, SymbolType::Label,
                             std::make_shared<LiteralExpr>(current_address));
     context.section->atoms.push_back(
-        std::make_shared<LabelAtom>(label, current_address));
+        std::make_shared<LabelAtom>(context.label, current_address));
   }
 
   // DB directive - define byte(s)
@@ -197,16 +196,16 @@ void HandleDb(const std::string &label, const std::string &operand,
   *context.current_address += expressions.size();
 }
 
-void HandleDw(const std::string &label, const std::string &operand,
+void HandleDw(const std::string &operand,
               DirectiveContext &context) {
 
   // Create label atom first if label present
-  if (!label.empty()) {
+  if (!context.label.empty()) {
     uint32_t current_address = *context.current_address;
-    context.symbols->Define(label, SymbolType::Label,
+    context.symbols->Define(context.label, SymbolType::Label,
                             std::make_shared<LiteralExpr>(current_address));
     context.section->atoms.push_back(
-        std::make_shared<LabelAtom>(label, current_address));
+        std::make_shared<LabelAtom>(context.label, current_address));
   }
 
   // DW directive - define word(s) (16-bit values)
@@ -230,16 +229,16 @@ void HandleDw(const std::string &label, const std::string &operand,
   *context.current_address += expressions.size() * 2;
 }
 
-void HandleHex(const std::string &label, const std::string &operand,
+void HandleHex(const std::string &operand,
                DirectiveContext &context) {
 
   // Create label atom first if label present
-  if (!label.empty()) {
+  if (!context.label.empty()) {
     uint32_t current_address = *context.current_address;
-    context.symbols->Define(label, SymbolType::Label,
+    context.symbols->Define(context.label, SymbolType::Label,
                             std::make_shared<LiteralExpr>(current_address));
     context.section->atoms.push_back(
-        std::make_shared<LabelAtom>(label, current_address));
+        std::make_shared<LabelAtom>(context.label, current_address));
   }
 
   // HEX directive - Direct implementation from merlin_directives.cpp
@@ -306,14 +305,14 @@ void HandleHex(const std::string &label, const std::string &operand,
   *context.current_address += bytes.size();
 }
 
-void HandleDs(const std::string &label, const std::string &operand,
+void HandleDs(const std::string &operand,
               DirectiveContext &context) {
   // Get parser instance from context
   ValidateParser(context.parser_state);
   auto *parser = static_cast<MerlinSyntaxParser *>(context.parser_state);
 
   // Create label atom first if label present
-  if (!label.empty()) {
+  if (!context.label.empty()) {
     // Use dum_address_ if in DUM block, otherwise current_address_
     uint32_t label_address = parser->IsInDumBlock()
                                  ? parser->GetDumAddress()
@@ -321,7 +320,7 @@ void HandleDs(const std::string &label, const std::string &operand,
     // ]variable labels in DS directives (e.g. "]dest DS 2" in DUM blocks)
     // must be uniqued the same way as instruction-defined ]var labels so
     // that ExpandVarLabelsInOperand resolves backward references correctly.
-    std::string effective_label = parser->UniqueVarLabel(label);
+    std::string effective_label = parser->UniqueVarLabel(context.label);
     context.symbols->Define(effective_label, SymbolType::Label,
                             std::make_shared<LiteralExpr>(label_address));
     // In DUM mode, do NOT push a LabelAtom into the atom stream.
@@ -339,9 +338,8 @@ void HandleDs(const std::string &label, const std::string &operand,
   parser->HandleDS(operand, *context.section, *context.symbols);
 }
 
-void HandleDum(const std::string &label, const std::string &operand,
+void HandleDum(const std::string &operand,
                DirectiveContext &context) {
-  (void)label;
 
   // Get parser instance from context
   ValidateParser(context.parser_state);
@@ -350,9 +348,8 @@ void HandleDum(const std::string &label, const std::string &operand,
   parser->HandleDum(operand, *context.symbols);
 }
 
-void HandleDend(const std::string &label, const std::string &operand,
+void HandleDend(const std::string &operand,
                 DirectiveContext &context) {
-  (void)label;
   (void)operand;
   (void)context.section;
   (void)context.symbols;
@@ -364,9 +361,8 @@ void HandleDend(const std::string &label, const std::string &operand,
   parser->HandleDend();
 }
 
-void HandlePut(const std::string &label, const std::string &operand,
+void HandlePut(const std::string &operand,
                DirectiveContext &context) {
-  (void)label;
 
   // Get parser instance from context
   ValidateParser(context.parser_state);
@@ -375,17 +371,17 @@ void HandlePut(const std::string &label, const std::string &operand,
   parser->HandlePut(operand, *context.section, *context.symbols);
 }
 
-void HandleDo(const std::string &label, const std::string &operand,
+void HandleDo(const std::string &operand,
               DirectiveContext &context) {
   // Define label at current address before processing the conditional.
   // e.g. ":1b do EditorDisk" — :1b must be defined here so forward BNE :1b
   // references resolve correctly even when EditorDisk=0 skips the block.
-  if (!label.empty()) {
+  if (!context.label.empty()) {
     uint32_t current_address = *context.current_address;
-    context.symbols->Define(label, SymbolType::Label,
+    context.symbols->Define(context.label, SymbolType::Label,
                             std::make_shared<LiteralExpr>(current_address));
     context.section->atoms.push_back(
-        std::make_shared<LabelAtom>(label, current_address));
+        std::make_shared<LabelAtom>(context.label, current_address));
   }
 
   // Get parser instance from context
@@ -395,9 +391,8 @@ void HandleDo(const std::string &label, const std::string &operand,
   parser->HandleDo(operand, *context.symbols);
 }
 
-void HandleElse(const std::string &label, const std::string &operand,
+void HandleElse(const std::string &operand,
                 DirectiveContext &context) {
-  (void)label;
   (void)operand;
   (void)context.section;
   (void)context.symbols;
@@ -409,9 +404,8 @@ void HandleElse(const std::string &label, const std::string &operand,
   parser->HandleElse();
 }
 
-void HandleFin(const std::string &label, const std::string &operand,
+void HandleFin(const std::string &operand,
                DirectiveContext &context) {
-  (void)label;
   (void)operand;
   (void)context.section;
   (void)context.symbols;
@@ -423,9 +417,8 @@ void HandleFin(const std::string &label, const std::string &operand,
   parser->HandleFin();
 }
 
-void HandleLst(const std::string &label, const std::string &operand,
+void HandleLst(const std::string &operand,
                DirectiveContext &context) {
-  (void)label;
   (void)operand;
   (void)context;
 
@@ -434,9 +427,8 @@ void HandleLst(const std::string &label, const std::string &operand,
   // No-op for compatibility (listing not implemented)
 }
 
-void HandleLstdo(const std::string &label, const std::string &operand,
+void HandleLstdo(const std::string &operand,
                  DirectiveContext &context) {
-  (void)label;
   (void)operand;
   (void)context;
 
@@ -445,9 +437,8 @@ void HandleLstdo(const std::string &label, const std::string &operand,
   // No-op for compatibility (listing not implemented)
 }
 
-void HandleTr(const std::string &label, const std::string &operand,
+void HandleTr(const std::string &operand,
               DirectiveContext &context) {
-  (void)label;
   (void)operand;
   (void)context;
 
@@ -456,16 +447,16 @@ void HandleTr(const std::string &label, const std::string &operand,
   // No-op for compatibility (listing not implemented)
 }
 
-void HandleAsc(const std::string &label, const std::string &operand,
+void HandleAsc(const std::string &operand,
                DirectiveContext &context) {
 
   // Create label atom first if label present
-  if (!label.empty()) {
+  if (!context.label.empty()) {
     uint32_t current_address = *context.current_address;
-    context.symbols->Define(label, SymbolType::Label,
+    context.symbols->Define(context.label, SymbolType::Label,
                             std::make_shared<LiteralExpr>(current_address));
     context.section->atoms.push_back(
-        std::make_shared<LabelAtom>(label, current_address));
+        std::make_shared<LabelAtom>(context.label, current_address));
   }
 
   // ASC directive - Direct implementation from merlin_directives.cpp
@@ -517,16 +508,16 @@ void HandleAsc(const std::string &label, const std::string &operand,
   *context.current_address += bytes.size();
 }
 
-void HandleDci(const std::string &label, const std::string &operand,
+void HandleDci(const std::string &operand,
                DirectiveContext &context) {
 
   // Create label atom first if label present
-  if (!label.empty()) {
+  if (!context.label.empty()) {
     uint32_t current_address = *context.current_address;
-    context.symbols->Define(label, SymbolType::Label,
+    context.symbols->Define(context.label, SymbolType::Label,
                             std::make_shared<LiteralExpr>(current_address));
     context.section->atoms.push_back(
-        std::make_shared<LabelAtom>(label, current_address));
+        std::make_shared<LabelAtom>(context.label, current_address));
   }
 
   // DCI directive - Direct implementation from merlin_directives.cpp
@@ -579,16 +570,16 @@ void HandleDci(const std::string &label, const std::string &operand,
   *context.current_address += bytes.size();
 }
 
-void HandleInv(const std::string &label, const std::string &operand,
+void HandleInv(const std::string &operand,
                DirectiveContext &context) {
 
   // Create label atom first if label present
-  if (!label.empty()) {
+  if (!context.label.empty()) {
     uint32_t current_address = *context.current_address;
-    context.symbols->Define(label, SymbolType::Label,
+    context.symbols->Define(context.label, SymbolType::Label,
                             std::make_shared<LiteralExpr>(current_address));
     context.section->atoms.push_back(
-        std::make_shared<LabelAtom>(label, current_address));
+        std::make_shared<LabelAtom>(context.label, current_address));
   }
 
   // INV directive - Direct implementation from merlin_directives.cpp
@@ -635,16 +626,16 @@ void HandleInv(const std::string &label, const std::string &operand,
   *context.current_address += bytes.size();
 }
 
-void HandleFls(const std::string &label, const std::string &operand,
+void HandleFls(const std::string &operand,
                DirectiveContext &context) {
 
   // Create label atom first if label present
-  if (!label.empty()) {
+  if (!context.label.empty()) {
     uint32_t current_address = *context.current_address;
-    context.symbols->Define(label, SymbolType::Label,
+    context.symbols->Define(context.label, SymbolType::Label,
                             std::make_shared<LiteralExpr>(current_address));
     context.section->atoms.push_back(
-        std::make_shared<LabelAtom>(label, current_address));
+        std::make_shared<LabelAtom>(context.label, current_address));
   }
 
   // FLS directive - Direct implementation from merlin_directives.cpp
@@ -697,7 +688,7 @@ void HandleFls(const std::string &label, const std::string &operand,
   *context.current_address += bytes.size();
 }
 
-void HandleDa(const std::string &label, const std::string &operand,
+void HandleDa(const std::string &operand,
               DirectiveContext &context) {
   // DA (Define Address) - In 65816 mode (Merlin 16/32), DA emits 3 bytes
   // (24-bit little-endian address).  In 6502/65C02 mode it emits 2 bytes.
@@ -711,17 +702,17 @@ void HandleDa(const std::string &label, const std::string &operand,
   }
 
   if (!is_65816) {
-    HandleDw(label, operand, context);
+    HandleDw(operand, context);
     return;
   }
 
   // 65816 mode: emit as 24-bit long address (DataSize::Long)
-  if (!label.empty()) {
+  if (!context.label.empty()) {
     uint32_t current_address = *context.current_address;
-    context.symbols->Define(label, SymbolType::Label,
+    context.symbols->Define(context.label, SymbolType::Label,
                             std::make_shared<LiteralExpr>(current_address));
     context.section->atoms.push_back(
-        std::make_shared<LabelAtom>(label, current_address));
+        std::make_shared<LabelAtom>(context.label, current_address));
   }
 
   std::vector<std::string> expressions;
@@ -739,7 +730,7 @@ void HandleDa(const std::string &label, const std::string &operand,
   *context.current_address += expressions.size() * 3;
 }
 
-void HandlePmc(const std::string &label, const std::string &operand,
+void HandlePmc(const std::string &operand,
                DirectiveContext &context) {
   (void)context.section;
   (void)context.symbols;
@@ -748,12 +739,11 @@ void HandlePmc(const std::string &label, const std::string &operand,
   ValidateParser(context.parser_state);
   auto *parser = static_cast<MerlinSyntaxParser *>(context.parser_state);
 
-  parser->HandlePMC(label.empty() ? operand : label);
+  parser->HandlePMC(context.label.empty() ? operand : context.label);
 }
 
-void HandleEom(const std::string &label, const std::string &operand,
+void HandleEom(const std::string &operand,
                DirectiveContext &context) {
-  (void)label;
   (void)operand;
   (void)context.section;
   (void)context.symbols;
@@ -765,7 +755,7 @@ void HandleEom(const std::string &label, const std::string &operand,
   parser->HandleEOM();
 }
 
-void HandleMac(const std::string &label, const std::string &operand,
+void HandleMac(const std::string &operand,
                DirectiveContext &context) {
   // Get parser instance from context
   ValidateParser(context.parser_state);
@@ -775,8 +765,8 @@ void HandleMac(const std::string &label, const std::string &operand,
   std::string params_str;
 
   // Check if label is present - if so, it's the macro name
-  if (!label.empty()) {
-    macro_name = ToUpper(label);
+  if (!context.label.empty()) {
+    macro_name = ToUpper(context.label);
     params_str = operand;
   } else {
     // Parse macro name and parameters from operand
@@ -808,16 +798,16 @@ void HandleMac(const std::string &label, const std::string &operand,
   }
 }
 
-void HandleUsr(const std::string &label, const std::string &operand,
+void HandleUsr(const std::string &operand,
                DirectiveContext &context) {
   // USR directive - captures arguments for RW18 output format
   // Create label if present
-  if (!label.empty()) {
+  if (!context.label.empty()) {
     uint32_t current_address = *context.current_address;
-    context.symbols->Define(label, SymbolType::Label,
+    context.symbols->Define(context.label, SymbolType::Label,
                             std::make_shared<LiteralExpr>(current_address));
     context.section->atoms.push_back(
-        std::make_shared<LabelAtom>(label, current_address));
+        std::make_shared<LabelAtom>(context.label, current_address));
   }
 
   // Parse USR directive arguments for RW18 mode
@@ -869,7 +859,7 @@ void HandleUsr(const std::string &label, const std::string &operand,
   // USR is a no-op - user-defined subroutine (no atoms generated)
 }
 
-void HandleEnd(const std::string &label, const std::string &operand,
+void HandleEnd(const std::string &operand,
                DirectiveContext &context) {
   (void)operand;
 
@@ -879,12 +869,12 @@ void HandleEnd(const std::string &label, const std::string &operand,
 
   // END directive - Direct implementation from merlin_directives.cpp
   // Create label if present
-  if (!label.empty()) {
+  if (!context.label.empty()) {
     uint32_t current_address = *context.current_address;
-    context.symbols->Define(label, SymbolType::Label,
+    context.symbols->Define(context.label, SymbolType::Label,
                             std::make_shared<LiteralExpr>(current_address));
     context.section->atoms.push_back(
-        std::make_shared<LabelAtom>(label, current_address));
+        std::make_shared<LabelAtom>(context.label, current_address));
   }
 
   // END - mark end of source (stop processing further lines)
@@ -892,9 +882,8 @@ void HandleEnd(const std::string &label, const std::string &operand,
   parser->HandleEnd();
 }
 
-void HandleSav(const std::string &label, const std::string &operand,
+void HandleSav(const std::string &operand,
                DirectiveContext &context) {
-  (void)label;
   (void)operand;
   (void)context;
 
@@ -903,9 +892,8 @@ void HandleSav(const std::string &label, const std::string &operand,
   // No-op for compatibility (output filename controlled by command-line args)
 }
 
-void HandleXc(const std::string &label, const std::string &operand,
+void HandleXc(const std::string &operand,
               DirectiveContext &context) {
-  (void)label;
   (void)context.symbols;
 
   // Get parser instance from context
@@ -938,9 +926,8 @@ void HandleXc(const std::string &label, const std::string &operand,
   }
 }
 
-void HandleMx(const std::string &label, const std::string &operand,
+void HandleMx(const std::string &operand,
               DirectiveContext &context) {
-  (void)label;
   (void)context.symbols;
 
   // Get parser instance from context
@@ -982,7 +969,7 @@ void HandleMx(const std::string &label, const std::string &operand,
   context.section->atoms.push_back(std::make_shared<MxAtom>(m_flag, x_flag));
 }
 
-void HandleRev(const std::string &label, const std::string &operand,
+void HandleRev(const std::string &operand,
                DirectiveContext &context) {
   // REV "string" - Reverse ASCII string
   std::string op = Trim(operand);
@@ -1017,12 +1004,12 @@ void HandleRev(const std::string &label, const std::string &operand,
   }
 
   // Create label at current address (before emitting bytes)
-  if (!label.empty()) {
+  if (!context.label.empty()) {
     uint32_t current_address = *context.current_address;
-    context.symbols->Define(label, SymbolType::Label,
+    context.symbols->Define(context.label, SymbolType::Label,
                             std::make_shared<LiteralExpr>(current_address));
     context.section->atoms.push_back(
-        std::make_shared<LabelAtom>(label, current_address));
+        std::make_shared<LabelAtom>(context.label, current_address));
   }
 
   // Reverse the string
@@ -1038,9 +1025,8 @@ void HandleRev(const std::string &label, const std::string &operand,
   *context.current_address += bytes.size();
 }
 
-void HandleLup(const std::string &label, const std::string &operand,
+void HandleLup(const std::string &operand,
                DirectiveContext &context) {
-  (void)label;
   (void)context.section;
   (void)context.symbols;
 

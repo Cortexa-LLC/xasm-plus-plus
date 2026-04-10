@@ -106,9 +106,9 @@ void RegisterCoreDirectiveHandlers(DirectiveRegistry &registry) {
 // Public Handler Functions
 // ============================================================================
 
-void HandleOrg(const std::string &label, const std::string &operand,
+void HandleOrg(const std::string &operand,
                DirectiveContext &context) {
-  (void)label; // ORG doesn't use label
+  (void)context.label; // ORG doesn't use context.label
   std::string op = Trim(operand);
 
   if (op.empty()) {
@@ -130,9 +130,9 @@ void HandleOrg(const std::string &label, const std::string &operand,
   *context.current_address = static_cast<uint32_t>(address);
 }
 
-void HandleEqu(const std::string &label, const std::string &operand,
+void HandleEqu(const std::string &operand,
                DirectiveContext &context) {
-  std::string lbl = Trim(label);
+  std::string lbl = Trim(context.label);
   std::string op = Trim(operand);
 
   if (lbl.empty()) {
@@ -146,9 +146,9 @@ void HandleEqu(const std::string &label, const std::string &operand,
   context.symbols->Define(lbl, SymbolType::Equate, expr);
 }
 
-void HandleDb(const std::string &label, const std::string &operand,
+void HandleDb(const std::string &operand,
               DirectiveContext &context) {
-  (void)label; // DB doesn't use label (could be used for auto-label feature)
+  (void)context.label; // DB doesn't use context.label (could be used for auto-context.label feature)
   std::string op = Trim(operand);
 
   // Split by commas
@@ -166,9 +166,9 @@ void HandleDb(const std::string &label, const std::string &operand,
   *context.current_address += static_cast<uint32_t>(expressions.size());
 }
 
-void HandleDw(const std::string &label, const std::string &operand,
+void HandleDw(const std::string &operand,
               DirectiveContext &context) {
-  (void)label; // DW doesn't use label (could be used for auto-label feature)
+  (void)context.label; // DW doesn't use context.label (could be used for auto-context.label feature)
   std::string op = Trim(operand);
 
   // Split by commas
@@ -186,9 +186,9 @@ void HandleDw(const std::string &label, const std::string &operand,
   *context.current_address += static_cast<uint32_t>(expressions.size() * 2);
 }
 
-void HandleDs(const std::string &label, const std::string &operand,
+void HandleDs(const std::string &operand,
               DirectiveContext &context) {
-  (void)label; // DS doesn't use label (could be used for auto-label feature)
+  (void)context.label; // DS doesn't use context.label (could be used for auto-context.label feature)
   std::string op = Trim(operand);
 
   uint32_t count = 0;

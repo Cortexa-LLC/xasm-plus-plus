@@ -28,7 +28,7 @@ namespace simple {
 // Directive Handlers
 // ============================================================================
 
-void HandleOrg(const std::string & /*label*/, const std::string &operand,
+void HandleOrg(const std::string &operand,
                DirectiveContext &context) {
   // ORG directive - set assembly origin address
   uint32_t address = ParseHex(operand);
@@ -36,7 +36,7 @@ void HandleOrg(const std::string & /*label*/, const std::string &operand,
   *context.current_address = address;
 }
 
-void HandleDb(const std::string & /*label*/, const std::string &operand,
+void HandleDb(const std::string &operand,
               DirectiveContext &context) {
   // DB directive - define byte(s)
   std::vector<uint8_t> bytes;
@@ -54,7 +54,7 @@ void HandleDb(const std::string & /*label*/, const std::string &operand,
   *context.current_address += bytes.size();
 }
 
-void HandleDw(const std::string & /*label*/, const std::string &operand,
+void HandleDw(const std::string &operand,
               DirectiveContext &context) {
   // DW directive - define word(s) in little-endian format
   std::vector<uint8_t> bytes;

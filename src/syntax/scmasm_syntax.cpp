@@ -1018,7 +1018,8 @@ void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
         context.current_line = current_line_;
         context.include_paths = &include_paths_;
         context.path_mappings = &path_mappings_;
-        it->second(label, directive_operand, context);
+        context.label = label;
+        it->second(directive_operand, context);
       } else {
         // Not in registry and not a control flow directive
         throw std::runtime_error("Unknown directive: " + opcode);
@@ -2162,7 +2163,7 @@ std::string ScmasmSyntaxParser::SubstituteParameters( // NOLINT(readability-conv
   return result;
 }
 
-void ScmasmSyntaxParser::HandleDo(const std::string &label, 
+void ScmasmSyntaxParser::HandleDo(const std::string &label,
                                   const std::string &operand, Section &section,
                                   ConcreteSymbolTable &symbols,
                                   const std::vector<std::string> &source,
@@ -2400,7 +2401,7 @@ void ScmasmSyntaxParser::HandleDo(const std::string &label,
   line_idx = fin_line;
 }
 
-void ScmasmSyntaxParser::HandleLu(const std::string &label, 
+void ScmasmSyntaxParser::HandleLu(const std::string &label,
                                   const std::string &operand, Section &section,
                                   ConcreteSymbolTable &symbols,
                                   const std::vector<std::string> &source,

@@ -389,7 +389,7 @@ public:
 private:
   // Directive handler function signature (DirectiveContext pattern)
   using DirectiveHandler =
-      std::function<void(const std::string &label, const std::string &operand,
+      std::function<void(const std::string &operand,
                          DirectiveContext &context)>;
 
   // Macro definition structure
