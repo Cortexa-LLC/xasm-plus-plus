@@ -80,7 +80,7 @@ uint32_t ParseNumber(const std::string &str) {
   // Decimal (default)
   try {
     return static_cast<uint32_t>(xasm::ParseDecimal(trimmed));
-  } catch (const std::exception &e) {
+  } catch (const std::exception &e) { // NOLINT(bugprone-empty-catch)
     throw std::runtime_error("Invalid decimal number: " + trimmed);
   }
 }

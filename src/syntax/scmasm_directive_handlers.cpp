@@ -1148,8 +1148,9 @@ void HandleInb(const std::string &label, const std::string &operand,
     if (!tried_paths.empty()) {
       error_msg += " (searched: ";
       for (size_t i = 0; i < tried_paths.size(); ++i) {
-        if (i > 0)
+        if (i > 0) {
           error_msg += ", ";
+        }
         error_msg += tried_paths[i];
       }
       error_msg += ")";

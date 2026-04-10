@@ -823,7 +823,7 @@ EdtasmM80PlusPlusSyntaxParser::ParseLabel(const std::string &line, size_t &pos, 
   return potential_label;
 }
 
-uint32_t EdtasmM80PlusPlusSyntaxParser::ParseNumber(const std::string &str) {
+uint32_t EdtasmM80PlusPlusSyntaxParser::ParseNumber(const std::string &str) const {
   std::string trimmed = Trim(str);
   if (trimmed.empty()) {
     return 0;

@@ -188,7 +188,7 @@ bool TryParseAndEvaluateExpression(const std::string &expr_str,
       result = static_cast<uint32_t>(expr->Evaluate(symbols));
       return true;
     }
-  } catch (...) {
+  } catch (...) { // NOLINT(bugprone-empty-catch)
     // Expression could not be evaluated (e.g., forward reference)
   }
   return false;

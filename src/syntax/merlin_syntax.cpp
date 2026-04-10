@@ -34,8 +34,9 @@ constexpr int RADIX_HEXADECIMAL = 16;
 // and sets *out_value; returns false if the string looks like a symbol name.
 // Throws std::runtime_error on malformed input (e.g. "$" with no hex digits).
 bool ParseNumericLiteral(const std::string &op, uint32_t &out_value) {
-  if (op.empty())
+  if (op.empty()) {
     return false;
+  }
   if (op[0] == '$') {
     out_value = static_cast<uint32_t>(std::stoul(op.substr(1), nullptr, RADIX_HEXADECIMAL));
     return true;
@@ -205,7 +206,7 @@ uint32_t MerlinSyntaxParser::ParseNumber(const std::string &str) { // NOLINT(rea
   try {
     auto expr = parser.Parse(clean_str);
     return static_cast<uint32_t>(expr->Evaluate(empty_symbols));
-  } catch (const std::runtime_error &e) {
+  } catch (const std::runtime_error &e) { // NOLINT(bugprone-empty-catch)
     // Re-throw with Merlin formatting
     throw std::runtime_error(FormatError(e.what()));
   }
@@ -407,7 +408,7 @@ MerlinSyntaxParser::ParseExpression(const std::string &str, // NOLINT(readabilit
   ExpressionParser parser(&symbols, nullptr, ParserFeatures::ForMerlin());
   try {
     return parser.Parse(expr);
-  } catch (const std::runtime_error &e) {
+  } catch (const std::runtime_error &e) { // NOLINT(bugprone-empty-catch)
     // Catch exceptions from ExpressionParser and add location context
     throw std::runtime_error(FormatError(e.what()));
   }
@@ -713,7 +714,7 @@ void MerlinSyntaxParser::HandleEqu(const std::string &label, // NOLINT(readabili
   }
 }
 
-void MerlinSyntaxParser::HandleDS(const std::string &operand, Section &section,
+void MerlinSyntaxParser::HandleDS(const std::string &operand, Section &section, // NOLINT(readability-make-member-function-const)
                                   ConcreteSymbolTable &symbols) {
   // DS directive - define space (reserve bytes)
   // Supports: DS 100        (literal)
@@ -1204,7 +1205,7 @@ void MerlinSyntaxParser::HandleLup(const std::string &operand) {
   int count = 0;
   try {
     count = static_cast<int>(ParseNumber(count_str));
-  } catch (...) {
+  } catch (...) { // NOLINT(bugprone-empty-catch)
     throw std::runtime_error(
         FormatError("LUP count must be a number: " + count_str));
   }
@@ -1545,8 +1546,9 @@ void MerlinSyntaxParser::ParseLine(const std::string &line, Section &section,
     std::string stripped = operands;
     // Skip leading '#' or '<' prefix (immediate / low-byte operators)
     size_t offset = 0;
-    if (!stripped.empty() && (stripped[0] == '#' || stripped[0] == '<'))
+    if (!stripped.empty() && (stripped[0] == '#' || stripped[0] == '<')) {
       offset = 1;
+    }
     // If the expression itself starts with a quote, leave it alone (char literal)
     if (offset < stripped.size() && stripped[offset] != '"' &&
         stripped[offset] != '\'') {

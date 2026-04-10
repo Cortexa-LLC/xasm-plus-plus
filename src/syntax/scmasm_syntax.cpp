@@ -50,8 +50,9 @@ constexpr int RADIX_HEXADECIMAL = 16;
 static bool IsEqOperandSafe(const std::string &operand) {
   // Trim leading/trailing whitespace
   size_t start = operand.find_first_not_of(" \t");
-  if (start == std::string::npos)
+  if (start == std::string::npos) {
     return false; // empty operand — treat as unsafe
+  }
   size_t end = operand.find_last_not_of(" \t");
   std::string s = operand.substr(start, end - start + 1);
 
@@ -62,8 +63,9 @@ static bool IsEqOperandSafe(const std::string &operand) {
     if (c == '$') {
       // Hex literal: all following chars until delimiter must be [0-9A-Fa-f]
       ++i;
-      if (i >= s.size())
+      if (i >= s.size()) {
         return false; // bare '$' with no digits
+      }
       bool any_digit = false;
       while (i < s.size()) {
         char h = s[i];
@@ -74,25 +76,29 @@ static bool IsEqOperandSafe(const std::string &operand) {
           break; // end of hex literal (operator or end-of-string)
         }
       }
-      if (!any_digit)
+      if (!any_digit) {
         return false; // '$' followed by a non-hex char
+      }
     } else if (c == '%') {
       // Binary literal: following chars must be [0-1.]
       ++i;
-      if (i >= s.size())
+      if (i >= s.size()) {
         return false;
+      }
       bool any_bit = false;
       while (i < s.size() &&
              (s[i] == '0' || s[i] == '1' || s[i] == '.')) {
         any_bit = true;
         ++i;
       }
-      if (!any_bit)
+      if (!any_bit) {
         return false;
+      }
     } else if (std::isdigit(static_cast<unsigned char>(c))) {
       // Decimal digits
-      while (i < s.size() && std::isdigit(static_cast<unsigned char>(s[i])))
+      while (i < s.size() && std::isdigit(static_cast<unsigned char>(s[i]))) {
         ++i;
+      }
     } else if (std::isalpha(static_cast<unsigned char>(c)) || c == '_') {
       // A letter or underscore NOT preceded by '$' → symbol reference
       return false;
@@ -432,7 +438,7 @@ void ScmasmSyntaxParser::Parse(const std::string &source, Section &section,
     // Parse the line
     try {
       ParseLine(line, section, symbols, lines, line_idx);
-    } catch (const std::exception &e) {
+    } catch (const std::exception &e) { // NOLINT(bugprone-empty-catch)
       throw std::runtime_error(FormatError(e.what()));
     }
 
@@ -567,8 +573,9 @@ std::string ScmasmSyntaxParser::StripComments(const std::string &line) { // NOLI
         // where the opcode would be "(uint32_t" rather than a directive.
         size_t opcode_pos = pos;
         while (opcode_pos < line.size() &&
-               (line[opcode_pos] == ' ' || line[opcode_pos] == '\t'))
+               (line[opcode_pos] == ' ' || line[opcode_pos] == '\t')) {
           opcode_pos++;
+        }
         if (opcode_pos < line.size() && line[opcode_pos] == '.') {
           // For value-defining directives (.EQ / .SE) also validate that the
           // operand does not contain forward-reference symbols or invalid
@@ -580,26 +587,30 @@ std::string ScmasmSyntaxParser::StripComments(const std::string &line) { // NOLI
           // Identify the end of the opcode token.
           size_t op_end = opcode_pos;
           while (op_end < line.size() && line[op_end] != ' ' &&
-                 line[op_end] != '\t')
+                 line[op_end] != '\t') {
             ++op_end;
+          }
 
           // Extract and upper-case the opcode to compare.
           std::string opcode_token = line.substr(opcode_pos, op_end - opcode_pos);
-          for (char &ch : opcode_token)
+          for (char &ch : opcode_token) {
             ch = static_cast<char>(std::toupper(static_cast<unsigned char>(ch)));
+          }
 
           if (opcode_token == ".EQ" || opcode_token == ".SE") {
             // Extract the operand (everything after the opcode token).
             size_t operand_start = op_end;
             while (operand_start < line.size() &&
-                   (line[operand_start] == ' ' || line[operand_start] == '\t'))
+                   (line[operand_start] == ' ' || line[operand_start] == '\t')) {
               ++operand_start;
+            }
             std::string operand_str = line.substr(operand_start);
 
             // Strip inline comment from operand (semicolon-delimited).
             size_t semi = operand_str.find(';');
-            if (semi != std::string::npos)
+            if (semi != std::string::npos) {
               operand_str = operand_str.substr(0, semi);
+            }
 
             if (!IsEqOperandSafe(operand_str)) {
               // Operand contains a forward-reference symbol or an invalid
@@ -1072,8 +1083,9 @@ void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
           // Skip leading whitespace before each argument (only matters after a
           // comma separator, e.g. ">MACRO arg1, arg2").
           while (pos < operand.length() &&
-                 (operand[pos] == ' ' || operand[pos] == '\t'))
+                 (operand[pos] == ' ' || operand[pos] == '\t')) {
             ++pos;
+          }
           if (pos >= operand.length()) {
             break;
           }
@@ -1081,8 +1093,9 @@ void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
           // Scan to the first whitespace or comma (argument boundary).
           size_t arg_start = pos;
           while (pos < operand.length() && operand[pos] != ' ' &&
-                 operand[pos] != '\t' && operand[pos] != ',')
+                 operand[pos] != '\t' && operand[pos] != ',') {
             ++pos;
+          }
 
           std::string param = operand.substr(arg_start, pos - arg_start);
           if (!param.empty()) {
@@ -1123,8 +1136,9 @@ void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
         for (size_t k = 0; k < instr_operand.size(); ++k) {
           char ch = instr_operand[k];
           if (in_quote) {
-            if (ch == quote_ch)
+            if (ch == quote_ch) {
               in_quote = false;
+            }
           } else if (ch == '\'' || ch == '"') {
             in_quote = true;
             quote_ch = ch;
@@ -1196,8 +1210,9 @@ void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
             eval_expr = Trim(eval_expr.substr(0, comma));
           try {
             uint32_t val = EvaluateExpression(eval_expr, symbols);
-            if (val <= 0xFF)
+            if (val <= 0xFF) {
               est = 2;
+            }
           } catch (const std::exception &e) {
             (void)e; // Expression has a forward reference or is otherwise
                      // unevaluable — keep the 3-byte estimate.
@@ -1414,7 +1429,7 @@ uint32_t ScmasmSyntaxParser::ParseNumber(const std::string &str) { // NOLINT(rea
 
     try {
       return std::stoul(hex, nullptr, RADIX_HEXADECIMAL);
-    } catch (const std::exception &e) {
+    } catch (const std::exception &e) { // NOLINT(bugprone-empty-catch)
       throw std::runtime_error("Failed to parse hex number '" + trimmed +
                                "': " + e.what());
     }
@@ -1446,7 +1461,7 @@ uint32_t ScmasmSyntaxParser::ParseNumber(const std::string &str) { // NOLINT(rea
 
     try {
       return std::stoul(binary, nullptr, RADIX_BINARY);
-    } catch (const std::exception &e) {
+    } catch (const std::exception &e) { // NOLINT(bugprone-empty-catch)
       throw std::runtime_error("Failed to parse binary number '" + trimmed +
                                "': " + e.what());
     }
@@ -1477,7 +1492,7 @@ uint32_t ScmasmSyntaxParser::ParseNumber(const std::string &str) { // NOLINT(rea
   // Decimal
   try {
     return std::stoul(trimmed, nullptr, RADIX_DECIMAL);
-  } catch (const std::exception &e) {
+  } catch (const std::exception &e) { // NOLINT(bugprone-empty-catch)
     throw std::runtime_error("Failed to parse decimal number '" + trimmed +
                              "': " + e.what());
   }
@@ -1645,8 +1660,9 @@ uint8_t ScmasmSyntaxParser::ApplyHighBitRule(char c, char delimiter) { // NOLINT
 
 std::string ScmasmSyntaxParser::ExpandLocalLabelsInOperand( // NOLINT(readability-convert-member-functions-to-static)
     const std::string &operand) const {
-  if (operand.empty())
+  if (operand.empty()) {
     return operand;
+  }
   // Skip expansion only when BOTH the global label scope AND the macro scope
   // are empty.  When inside a macro invocation, ':N' local labels are scoped
   // via current_macro_label_scope_ even if no global label has been set yet —
@@ -1655,8 +1671,9 @@ std::string ScmasmSyntaxParser::ExpandLocalLabelsInOperand( // NOLINT(readabilit
   // promoted to ":@1:2"), making the symbol lookup fail in EncodeInstructions
   // and the branch encode with offset = -2 (branch-to-self), producing an
   // infinite loop at runtime.
-  if (last_global_label_.empty() && current_macro_label_scope_.empty())
+  if (last_global_label_.empty() && current_macro_label_scope_.empty()) {
     return operand;
+  }
 
   std::string expanded;
   expanded.reserve(operand.size() + (last_global_label_.size() * 2));
@@ -1671,16 +1688,18 @@ std::string ScmasmSyntaxParser::ExpandLocalLabelsInOperand( // NOLINT(readabilit
       // Build the full label (e.g., ".10")
       std::string ref_label(1, c);
       size_t kk = k + 1;
-      while (kk < operand.size() && std::isdigit((unsigned char)operand[kk]))
+      while (kk < operand.size() && std::isdigit((unsigned char)operand[kk])) {
         ref_label += operand[kk++];
+      }
       expanded += LocalLabelScope(ref_label);
       if (c == '.') {
         expanded += '@';
       }
       expanded += c;
       k++;
-      while (k < operand.size() && std::isdigit((unsigned char)operand[k]))
+      while (k < operand.size() && std::isdigit((unsigned char)operand[k])) {
         expanded += operand[k++];
+      }
     } else {
       expanded += c;
       k++;
@@ -2174,8 +2193,9 @@ void ScmasmSyntaxParser::HandleDo(const std::string &label,
     line = StripComments(line);
     line = Trim(line);
 
-    if (line.empty())
+    if (line.empty()) {
       continue;
+    }
 
     // Extract first token (might be label + directive)
     size_t token_pos = 0;
@@ -2298,25 +2318,29 @@ void ScmasmSyntaxParser::HandleDo(const std::string &label,
   // The DO handler never calls ParseLine for the boundary line itself, so
   // labels on those lines would otherwise be silently dropped.
   auto define_boundary_label = [&](size_t boundary_idx) {
-    if (boundary_idx >= source.size())
+    if (boundary_idx >= source.size()) {
       return;
+    }
     std::string bline = source[boundary_idx];
     bline = StripLineNumber(bline);
     bline = StripComments(bline);
     bline = Trim(bline);
-    if (bline.empty())
+    if (bline.empty()) {
       return;
+    }
     // Extract the first whitespace-delimited token
     size_t lend = 0;
-    while (lend < bline.length() && !std::isspace(bline[lend]))
+    while (lend < bline.length() && !std::isspace(bline[lend])) {
       lend++;
+    }
     std::string blabel = bline.substr(0, lend);
     // If the first token starts with '.' and is NOT a local label (.N where N
     // is one-or-more digits), then it's the directive itself (.FIN, .ELSE) —
     // skip it.  Local labels like '.28' or '.8' on a .FIN/.ELSE line must be
     // defined at the current boundary address.
-    if (blabel.empty() || (blabel[0] == '.' && !IsLocalLabel(blabel)))
+    if (blabel.empty() || (blabel[0] == '.' && !IsLocalLabel(blabel))) {
       return;
+    }
     // Define the label at the current address
     if (IsLocalLabel(blabel)) {
       local_labels_[blabel] = current_address_;

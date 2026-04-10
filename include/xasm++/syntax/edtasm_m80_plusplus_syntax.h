@@ -489,7 +489,7 @@ private:
                                       const std::string &operand);
 
   // Expression/number parsing
-  uint32_t ParseNumber(const std::string &str);
+  uint32_t ParseNumber(const std::string &str) const;
 
   // Error formatting with source location
   std::string FormatError(const std::string &message) const;

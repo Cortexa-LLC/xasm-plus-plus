@@ -68,7 +68,7 @@ static uint32_t ParseNumber(const std::string &str,
   try {
     auto expr = parser.Parse(clean_str);
     return static_cast<uint32_t>(expr->Evaluate(symbols));
-  } catch (const std::runtime_error &e) {
+  } catch (const std::runtime_error &e) { // NOLINT(bugprone-empty-catch)
     // Re-throw with context
     throw std::runtime_error(std::string("Parse error: ") + e.what());
   }
@@ -856,7 +856,7 @@ void HandleUsr(const std::string &label, const std::string &operand,
         auto expr = parser->ParseExpression(arg, *context.symbols);
         int64_t value = expr->Evaluate(*context.symbols);
         args[i] = static_cast<uint16_t>(value & 0xFFFF);
-      } catch (const std::exception &e) {
+      } catch (const std::exception &e) { // NOLINT(bugprone-empty-catch)
         // On error, use 0 for this argument
         args[i] = 0;
       }
