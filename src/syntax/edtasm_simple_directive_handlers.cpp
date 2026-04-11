@@ -87,8 +87,7 @@ uint32_t ParseNumber(const std::string &str) {
 
 } // anonymous namespace
 
-namespace xasm {
-namespace edtasm {
+namespace xasm::edtasm {
 
 // ===========================================================================
 // Directive Handlers - Free Functions in edtasm namespace
@@ -226,5 +225,4 @@ void HandleSetdp(const std::string &operand,
   // SETDP produces no atoms, just informs assembler
 }
 
-} // namespace edtasm
-} // namespace xasm
+} // namespace xasm::edtasm

@@ -76,7 +76,7 @@ public:
    *
    * Default bytes per line: 32
    */
-  SRecordWriter();
+  SRecordWriter() = default;
 
   /**
    * @brief Write sections to S-Record format

@@ -36,9 +36,9 @@ struct DirectiveContext {
   void *parser_state = nullptr;           ///< Opaque parser state (for casting)
 
   // Source location tracking for listing output
-  std::string current_file; ///< Current source filename
+  std::string current_file = {}; ///< Current source filename
   int current_line = 0;     ///< Current line number
-  std::string source_line;  ///< Original source line text
+  std::string source_line = {};  ///< Original source line text
 
   // Include path search directories
   const std::vector<std::string> *include_paths =
@@ -49,7 +49,7 @@ struct DirectiveContext {
       nullptr; ///< Path substitutions for .INB directive (virtual→actual)
 
   // Label on the current source line (empty if none)
-  std::string label; ///< Label field (populated by Execute before handler call)
+  std::string label = {}; ///< Label field (populated by Execute before handler call)
 
   /**
    * @brief Constructor with common context
@@ -173,7 +173,7 @@ private:
   static std::string ToUpper(const std::string &mnemonic);
 
   /// Map of uppercase mnemonic -> handler function
-  std::unordered_map<std::string, DirectiveHandler> handlers_;
+  std::unordered_map<std::string, DirectiveHandler> handlers_ = {};
 };
 
 } // namespace xasm

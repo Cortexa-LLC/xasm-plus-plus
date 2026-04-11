@@ -66,7 +66,7 @@ public:
    *
    * Default bytes per line: 16
    */
-  IntelHexWriter();
+  IntelHexWriter() = default;
 
   /**
    * @brief Write sections to Intel HEX format

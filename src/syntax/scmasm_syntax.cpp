@@ -47,7 +47,7 @@ constexpr int RADIX_HEXADECIMAL = 16;
 // When this returns false, StripComments treats the *LABEL .EQ line as an
 // ordinary full-line comment.
 // ---------------------------------------------------------------------------
-static bool IsEqOperandSafe(const std::string &operand) {
+bool IsEqOperandSafe(const std::string &operand) {
   // Trim leading/trailing whitespace
   size_t start = operand.find_first_not_of(" \t");
   if (start == std::string::npos) {
@@ -225,15 +225,7 @@ bool SCMASMNumberParser::TryParse(const std::string &token, // NOLINT(readabilit
 // Constructor
 // ============================================================================
 
-ScmasmSyntaxParser::ScmasmSyntaxParser()
-    : current_address_(0), current_file_("<source>"), current_line_(0),
-      cpu_(nullptr), in_macro_definition_(false), macro_invocation_depth_(0),
-      macro_invocation_counter_(0), current_macro_label_scope_(""),
-      pending_label_(""), last_global_label_(""), in_dummy_section_(false),
-      dummy_saved_address_(0), in_phase_(false), phase_virtual_addr_(0),
-      phase_real_addr_(0) {
-  InitializeDirectiveRegistry();
-}
+ScmasmSyntaxParser::ScmasmSyntaxParser() { InitializeDirectiveRegistry(); }
 
 void ScmasmSyntaxParser::InitializeDirectiveRegistry() { // NOLINT(readability-convert-member-functions-to-static)
   // Phase 6c.2: Use extracted free functions with directive name constants
@@ -408,7 +400,9 @@ void ScmasmSyntaxParser::Parse(const std::string &source, Section &section,
     // position in ParseLabel must reflect the original indentation.
     {
       size_t end = line.size();
-      while (end > 0 && (line[end - 1] == ' ' || line[end - 1] == '\t' ||
+      // NOLINT(bugprone-infinite-loop): false positive — --end decrements the
+      // loop variable 'end' inside the loop body on every iteration.
+      while (end > 0 && (line[end - 1] == ' ' || line[end - 1] == '\t' || // NOLINT(bugprone-infinite-loop)
                          line[end - 1] == '\r' || line[end - 1] == '\n')) {
         --end;
       }
@@ -1649,11 +1643,11 @@ uint8_t ScmasmSyntaxParser::ApplyHighBitRule(char c, char delimiter) { // NOLINT
   auto result = static_cast<uint8_t>(c);
 
   if (delimiter < 0x27) {
-    // Set high bit
-    result |= 0x80;
+    // Set high bit — explicit cast resolves narrowing: uint8_t |= unsigned
+    result = static_cast<uint8_t>(static_cast<unsigned>(result) | 0x80U); // NOLINT(bugprone-narrowing-conversions,cppcoreguidelines-narrowing-conversions)
   } else {
-    // Clear high bit
-    result &= 0x7F;
+    // Clear high bit — explicit cast resolves narrowing: uint8_t &= unsigned
+    result = static_cast<uint8_t>(static_cast<unsigned>(result) & 0x7FU); // NOLINT(bugprone-narrowing-conversions,cppcoreguidelines-narrowing-conversions)
   }
 
   return result;

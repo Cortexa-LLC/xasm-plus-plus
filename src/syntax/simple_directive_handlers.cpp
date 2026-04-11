@@ -17,8 +17,7 @@
 #include <stdexcept>
 #include <vector>
 
-namespace xasm {
-namespace simple {
+namespace xasm::simple {
 
 // ============================================================================
 // Helper Functions
@@ -74,5 +73,4 @@ void HandleDw(const std::string &operand,
   *context.current_address += bytes.size();
 }
 
-} // namespace simple
-} // namespace xasm
+} // namespace xasm::simple

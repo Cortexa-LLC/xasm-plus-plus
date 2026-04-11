@@ -60,8 +60,8 @@ public:
   SymbolType type{SymbolType::Label};   ///< Symbol type (label, equate, set)
   std::shared_ptr<Expression> value{};  ///< Symbol value (expression tree)
   Section *section{nullptr}; ///< Section where defined (nullptr for absolute symbols)
-  bool is_exported; ///< True if exported to other modules
-  bool is_imported; ///< True if imported from another module
+  bool is_exported = false; ///< True if exported to other modules
+  bool is_imported = false; ///< True if imported from another module
   SourceLocation definition; ///< Source location where defined
 
   /**
@@ -69,9 +69,7 @@ public:
    *
    * Creates an invalid symbol. Needed for std::unordered_map.
    */
-  Symbol()
-      : name(), type(SymbolType::Label), value(nullptr), section(nullptr),
-        is_exported(false), is_imported(false) {}
+  Symbol() {}
 
   /**
    * @brief Construct a symbol with name, type, and value
@@ -81,8 +79,7 @@ public:
    * @param val Symbol value (expression tree)
    */
   Symbol(const std::string &n, SymbolType t, std::shared_ptr<Expression> val)
-      : name(n), type(t), value(val), section(nullptr), is_exported(false),
-        is_imported(false) {}
+      : name(n), type(t), value(val) {}
 };
 
 /**

@@ -14,9 +14,6 @@
 
 namespace xasm {
 
-SRecordWriter::SRecordWriter()
-    : bytes_per_line_(output_format::SREC_DEFAULT_BYTES_PER_LINE) {}
-
 void SRecordWriter::Write(const std::vector<Section> &sections, // NOLINT(readability-convert-member-functions-to-static)
                           std::ostream &output) {
   // Extract all bytes from all sections

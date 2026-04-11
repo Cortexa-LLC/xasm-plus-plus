@@ -439,8 +439,7 @@ public:
    * @param val String value
    */
   ListingControlAtom(ListingControlType type, const std::string &val)
-      : Atom(AtomType::ListingControl), control_type(type), value(val),
-        count(0) {
+      : Atom(AtomType::ListingControl), control_type(type), value(val) {
     size = 0; // Listing control doesn't generate bytes
   }
 
@@ -459,7 +458,7 @@ public:
    * @param type Control type
    */
   explicit ListingControlAtom(ListingControlType type)
-      : Atom(AtomType::ListingControl), control_type(type), count(0) {
+      : Atom(AtomType::ListingControl), control_type(type) {
     size = 0; // Listing control doesn't generate bytes
   }
 };

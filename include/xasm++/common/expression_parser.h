@@ -211,8 +211,8 @@ private:
   const SymbolTable *symbols_;         ///< Symbol table for symbol resolution
   const INumberParser *number_parser_; ///< Optional custom number parser
   ParserFeatures features_;            ///< Dialect feature flags
-  std::string expr_;                   ///< Current expression being parsed
-  size_t pos_;                         ///< Current position in expression
+  std::string expr_ = {};              ///< Current expression being parsed
+  size_t pos_ = 0;                     ///< Current position in expression
 
   // ========================================================================
   // Recursive descent parsing methods (precedence order: low to high)

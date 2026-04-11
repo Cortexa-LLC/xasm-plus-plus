@@ -78,14 +78,7 @@ std::string get_temp_dir() {
 // Constructor
 // ============================================================================
 
-MerlinSyntaxParser::MerlinSyntaxParser()
-    : in_macro_definition_(false), macro_expansion_depth_(0),
-      in_lup_block_(false), lup_count_(0), lup_nesting_depth_(0),
-      in_dum_block_(false), dum_address_(0), current_address_(0),
-      end_directive_seen_(false), current_file_("<stdin>"), current_line_(0),
-      cpu_(nullptr) {
-  InitializeDirectiveRegistry();
-}
+MerlinSyntaxParser::MerlinSyntaxParser() { InitializeDirectiveRegistry(); }
 
 void MerlinSyntaxParser::SetCpu(Cpu6502 *cpu) { cpu_ = cpu; }
 

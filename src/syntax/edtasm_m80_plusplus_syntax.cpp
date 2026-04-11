@@ -210,13 +210,7 @@ bool Z80NumberParser::TryParse(const std::string &token, int64_t &value) const {
 // EdtasmM80PlusPlusSyntaxParser Implementation
 // ============================================================================
 
-EdtasmM80PlusPlusSyntaxParser::EdtasmM80PlusPlusSyntaxParser()
-    : in_macro_definition_(false), macro_expansion_depth_(0),
-      macro_unique_counter_(0), next_macro_unique_id_(0),
-      exitm_triggered_(false), macro_nesting_depth_(0),
-      in_repeat_block_(RepeatType::NONE), rept_count_(0),
-      repeat_nesting_depth_(0), current_address_(0), end_directive_seen_(false),
-      current_line_(0), listing_enabled_(true), current_radix_(RADIX_DECIMAL) {
+EdtasmM80PlusPlusSyntaxParser::EdtasmM80PlusPlusSyntaxParser() {
   InitializeDirectiveRegistry();
 }
 

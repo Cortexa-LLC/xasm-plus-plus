@@ -378,9 +378,9 @@ private:
    * Local labels are scoped to the most recent global label.
    */
   struct LabelScope {
-    std::string global_label; ///< The global label this scope belongs to
+    std::string global_label = {};    ///< The global label this scope belongs to
     std::unordered_map<std::string, uint32_t>
-        local_labels; ///< :label -> address
+        local_labels = {}; ///< :label -> address
   };
 
   LabelScope current_scope_; ///< Current label scope (for :LOCAL labels)
@@ -391,28 +391,28 @@ private:
    * Stores a macro body for later expansion via MAC directive.
    */
   struct MacroDefinition {
-    std::string name;              ///< Macro name
-    std::vector<std::string> body; ///< Lines of macro body (unexpanded)
-    int param_count;               ///< Number of parameters used (]1, ]2, etc.)
+    std::string name = {};           ///< Macro name
+    std::vector<std::string> body = {}; ///< Lines of macro body (unexpanded)
+    int param_count = 0;             ///< Number of parameters used (]1, ]2, etc.)
   };
 
   // Macro state
   bool in_macro_definition_ = false;      ///< True if defining a macro
   MacroDefinition current_macro_; ///< Current macro being defined
-  std::unordered_map<std::string, MacroDefinition> macros_; ///< Defined macros
+  std::unordered_map<std::string, MacroDefinition> macros_ = {}; ///< Defined macros
   int macro_expansion_depth_ = 0; ///< Prevent infinite recursion
 
   // LUP (loop/repeat) block state
   bool in_lup_block_ = false;                 ///< True if currently inside a LUP block
   int lup_count_ = 0;                     ///< Number of times to repeat LUP block
-  std::vector<std::string> lup_body_; ///< Lines captured in LUP block
+  std::vector<std::string> lup_body_ = {}; ///< Lines captured in LUP block
   int lup_nesting_depth_ = 0;             ///< Track nested LUP blocks
 
   // DUM block state
   bool in_dum_block_ = false;    ///< True if currently inside a DUM block
   uint32_t dum_address_ = 0; ///< Current address within DUM block
   std::unordered_map<std::string, uint32_t>
-      variable_labels_; ///< ]variable -> offset
+      variable_labels_ = {}; ///< ]variable -> offset
 
   /// Tracks the current instance number for each ]variable code label.
   /// Each time "]var INSTR" (label on instruction) is defined, its counter
@@ -420,13 +420,13 @@ private:
   /// (e.g., ]rts_1, ]rts_2, ...) rather than all resolving to the last global
   /// definition of ]rts. This fixes multi-pass assembly of Merlin ]variables
   /// that are redefined across subroutines (like "]rts  rts").
-  std::unordered_map<std::string, int> var_label_seq_; ///< ]varname -> seq#
+  std::unordered_map<std::string, int> var_label_seq_ = {}; ///< ]varname -> seq#
 
   uint32_t current_address_ = 0; ///< Current address (for tracking label addresses)
   bool end_directive_seen_ = false;  ///< True if END directive has been processed
 
   std::vector<std::string>
-      include_stack_; ///< Include file tracking (for circular detection)
+      include_stack_ = {}; ///< Include file tracking (for circular detection)
 
   // Source location tracking (for error reporting)
   std::string current_file_ = "<stdin>"; ///< Current source filename
@@ -463,7 +463,7 @@ private:
   /**
    * @brief Directive registry mapping directive names to handlers
    */
-  std::unordered_map<std::string, DirectiveHandler> directive_registry_;
+  std::unordered_map<std::string, DirectiveHandler> directive_registry_ = {};
 
   /**
    * @brief Initialize directive registry with all supported directives

@@ -11,10 +11,6 @@
 
 namespace xasm {
 
-ConditionalAssembler::ConditionalAssembler() {
-  // Start with empty stack (unconditional emission)
-}
-
 void ConditionalAssembler::BeginIf(bool condition) { // NOLINT(readability-convert-member-functions-to-static)
   // Determine if code should be emitted based on:
   // 1. Current condition

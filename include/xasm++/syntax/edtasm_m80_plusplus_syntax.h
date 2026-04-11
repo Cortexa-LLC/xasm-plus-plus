@@ -356,13 +356,13 @@ public:
    * Tracks IF/ELSE/ENDIF conditional assembly blocks.
    */
   struct ConditionalBlock {
-    bool condition;     ///< True if condition is met
-    bool in_else_block; ///< True if currently in ELSE block
-    bool should_emit;   ///< True if code should be emitted
+    bool condition = false;     ///< True if condition is met
+    bool in_else_block = false; ///< True if currently in ELSE block
+    bool should_emit = false;   ///< True if code should be emitted
   };
 
   std::vector<ConditionalBlock>
-      conditional_stack_; ///< Stack of nested conditionals
+      conditional_stack_ = {}; ///< Stack of nested conditionals
 
   /**
    * @brief Macro definition
@@ -370,10 +370,10 @@ public:
    * Stores a macro body for later expansion.
    */
   struct MacroDefinition {
-    std::string name;                ///< Macro name
-    std::vector<std::string> body;   ///< Lines of macro body (unexpanded)
-    std::vector<std::string> params; ///< Parameter names
-    std::vector<std::string> locals; ///< LOCAL symbols in macro
+    std::string name = {};                ///< Macro name
+    std::vector<std::string> body = {};   ///< Lines of macro body (unexpanded)
+    std::vector<std::string> params = {}; ///< Parameter names
+    std::vector<std::string> locals = {}; ///< LOCAL symbols in macro
   };
 
   /**
@@ -386,7 +386,7 @@ public:
   // Macro state (accessible to directive handlers)
   bool in_macro_definition_ = false; ///< True if defining a macro
   MacroDefinition current_macro_;    ///< Current macro being defined
-  std::unordered_map<std::string, MacroDefinition> macros_; ///< Defined macros
+  std::unordered_map<std::string, MacroDefinition> macros_ = {}; ///< Defined macros
   int macro_expansion_depth_ = 0; ///< Prevent infinite recursion
   int macro_unique_counter_ = 0;  ///< Counter for LOCAL label uniqueness
   int next_macro_unique_id_ =
@@ -396,17 +396,17 @@ public:
   int macro_nesting_depth_ =
       0; ///< Track nesting depth when capturing macro body
   std::set<std::string>
-      macro_local_labels_; ///< Set of current macro LOCAL labels (unique names)
+      macro_local_labels_ = {}; ///< Set of current macro LOCAL labels (unique names)
                            ///< that should not create atoms
 
   // Repeat block state (REPT/IRP/IRPC) (accessible to directive handlers)
   RepeatType in_repeat_block_ =
       RepeatType::NONE; ///< Type of repeat block being captured
   int rept_count_ = 0;  ///< Repeat count for REPT
-  std::vector<std::string> repeat_body_; ///< Lines in repeat block
+  std::vector<std::string> repeat_body_ = {}; ///< Lines in repeat block
   int repeat_nesting_depth_ = 0;         ///< Track nested REPT/IRP/IRPC blocks
-  std::string repeat_param_;             ///< Parameter name for IRP/IRPC
-  std::vector<std::string> repeat_values_; ///< Values for IRP iteration
+  std::string repeat_param_ = {};             ///< Parameter name for IRP/IRPC
+  std::vector<std::string> repeat_values_ = {}; ///< Values for IRP iteration
 
   /**
    * @brief Expand and parse lines (for directive handlers)
@@ -436,9 +436,9 @@ private:
    * global label.
    */
   struct LabelScope {
-    std::string global_label; ///< The global label this scope belongs to
+    std::string global_label = {};    ///< The global label this scope belongs to
     std::unordered_map<std::string, uint32_t>
-        local_labels; ///< local_name -> address
+        local_labels = {}; ///< local_name -> address
   };
 
   LabelScope current_scope_; ///< Current label scope (for local labels)
@@ -447,14 +447,14 @@ private:
   bool end_directive_seen_ = false;  ///< True if END directive has been processed
 
   // Source location tracking (for error reporting)
-  std::string current_file_; ///< Current source filename
+  std::string current_file_ = {}; ///< Current source filename
   int current_line_ = 0;         ///< Current line number
 
   // Listing control state
   bool listing_enabled_ = true;         ///< True if listing output enabled
-  std::string listing_title_;    ///< Listing title (TITLE directive)
-  std::string listing_subtitle_; ///< Listing subtitle (SUBTTL directive)
-  std::string module_name_;      ///< Module name (NAME directive)
+  std::string listing_title_ = {};    ///< Listing title (TITLE directive)
+  std::string listing_subtitle_ = {}; ///< Listing subtitle (SUBTTL directive)
+  std::string module_name_ = {};      ///< Module name (NAME directive)
 
   // Special features state
   int current_radix_ = 10; ///< Current number base (2-16, default 10)

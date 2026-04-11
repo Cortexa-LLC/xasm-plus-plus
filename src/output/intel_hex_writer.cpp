@@ -18,9 +18,6 @@
 
 namespace xasm {
 
-IntelHexWriter::IntelHexWriter()
-    : bytes_per_line_(output_format::INTEL_HEX_DEFAULT_BYTES_PER_LINE) {}
-
 void IntelHexWriter::Write(const std::vector<Section> &sections, // NOLINT(readability-convert-member-functions-to-static)
                            std::ostream &output) {
   // Track current extended address (upper 16 bits for > 64KB addresses)

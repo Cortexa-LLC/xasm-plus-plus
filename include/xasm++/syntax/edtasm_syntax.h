@@ -124,7 +124,7 @@ private:
   using DirectiveHandler =
       std::function<void(const std::string &operand,
                          DirectiveContext &context)>;
-  std::unordered_map<std::string, DirectiveHandler> directive_registry_;
+  std::unordered_map<std::string, DirectiveHandler> directive_registry_ = {};
 
   /**
    * @brief Initialize directive registry with all EDTASM+ directives

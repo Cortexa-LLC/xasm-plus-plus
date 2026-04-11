@@ -54,12 +54,12 @@ static constexpr uint8_t NO_OP = 0xFF;
  *  imm16   — true when the immediate form takes a 16-bit operand
  */
 struct InstrOpcodes {
-  uint8_t prefix; ///< 0x00=none, 0x10=page2, 0x11=page3
-  uint8_t imm;    ///< immediate opcode (8-bit unless imm16==true)
-  uint8_t dir;    ///< direct-page opcode
-  uint8_t ext;    ///< extended opcode
-  uint8_t idx;    ///< indexed opcode
-  bool imm16;     ///< true → 16-bit immediate operand
+  uint8_t prefix = 0; ///< 0x00=none, 0x10=page2, 0x11=page3
+  uint8_t imm = 0;    ///< immediate opcode (8-bit unless imm16==true)
+  uint8_t dir = 0;    ///< direct-page opcode
+  uint8_t ext = 0;    ///< extended opcode
+  uint8_t idx = 0;    ///< indexed opcode
+  bool imm16 = false; ///< true → 16-bit immediate operand
 };
 
 // ============================================================================

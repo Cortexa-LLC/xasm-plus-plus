@@ -26,8 +26,7 @@
 #include <sstream>
 #include <stdexcept>
 
-namespace xasm {
-namespace scmasm {
+namespace xasm::scmasm {
 
 using namespace directive_utils;
 
@@ -1640,5 +1639,4 @@ void HandleAc(const std::string &operand,
   ThrowFormattedError(".AC directive not yet implemented", context);
 }
 
-} // namespace scmasm
-} // namespace xasm
+} // namespace xasm::scmasm

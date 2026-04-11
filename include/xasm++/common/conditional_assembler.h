@@ -84,7 +84,7 @@ public:
   /**
    * @brief Construct a conditional assembler (initially emitting)
    */
-  ConditionalAssembler();
+  ConditionalAssembler() = default;
 
   /**
    * @brief Begin a conditional block (IF/IFDEF/IFNDEF/DO)
@@ -238,9 +238,9 @@ private:
    * @brief State of a single conditional block
    */
   struct ConditionalBlock {
-    bool condition;     ///< True if condition was met
-    bool in_else_block; ///< True if currently in ELSE branch
-    bool should_emit;   ///< True if code should be emitted in this block
+    bool condition = false;     ///< True if condition was met
+    bool in_else_block = false; ///< True if currently in ELSE branch
+    bool should_emit = false;   ///< True if code should be emitted in this block
   };
 
   /**
@@ -249,7 +249,7 @@ private:
    * Each element represents an IF/ELSE/ENDIF block. The stack grows with
    * nested conditionals and shrinks as ENDIFs are processed.
    */
-  std::vector<ConditionalBlock> stack_;
+  std::vector<ConditionalBlock> stack_ = {};
 };
 
 } // namespace xasm

@@ -83,7 +83,7 @@ public:
    * @param origin Starting address for this section (default: 0)
    */
   Section(const std::string &n, uint32_t attr, uint64_t origin = 0)
-      : name(n), attributes(attr), org(origin), current_offset(0) {}
+      : name(n), attributes(attr), org(origin) {}
 };
 
 } // namespace xasm

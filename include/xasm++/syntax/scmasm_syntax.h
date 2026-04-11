@@ -410,46 +410,46 @@ private:
   CpuPlugin *cpu_ = nullptr; ///< CPU plugin for opcode validation (nullable)
   // Owned CPU object when .OP directive overrides the external CPU plugin.
   // Must outlive cpu_ — SetCpu(string) stores the address of this member.
-  std::unique_ptr<Cpu6502> owned_cpu_; ///< CPU owned by parser (via .OP directive)
+  std::unique_ptr<Cpu6502> owned_cpu_ = nullptr; ///< CPU owned by parser (via .OP directive)
 
   // Include search paths
   std::vector<std::string>
-      include_paths_; ///< Directories to search for .INB files
+      include_paths_ = {}; ///< Directories to search for .INB files
 
   // Path mappings for virtual path substitution
   std::map<std::string, std::string>
-      path_mappings_; ///< Virtual→actual path mappings for .INB
+      path_mappings_ = {}; ///< Virtual→actual path mappings for .INB
 
   // .TF target output path (overrides -o default when set)
-  std::string tf_output_; ///< Output path set by .TF directive (empty = not set)
+  std::string tf_output_ = {}; ///< Output path set by .TF directive (empty = not set)
 
   // Symbol tracking for .SE (redefinable)
   std::unordered_map<std::string, bool>
-      variable_symbols_; ///< Track .SE symbols
+      variable_symbols_ = {}; ///< Track .SE symbols
 
   // Phase 3: Macros, Conditionals, Local Labels, Loops
-  std::unordered_map<std::string, MacroDef> macros_; ///< Defined macros
+  std::unordered_map<std::string, MacroDef> macros_ = {}; ///< Defined macros
   std::unordered_map<std::string, uint32_t>
-      local_labels_;               ///< Local labels (.0-.9)
+      local_labels_ = {};               ///< Local labels (.0-.9)
   bool in_macro_definition_ = false;       ///< Currently defining a macro
-  std::string current_macro_name_; ///< Name of macro being defined
+  std::string current_macro_name_ = {}; ///< Name of macro being defined
   std::vector<std::string>
-      current_macro_body_;     ///< Lines of macro being defined
+      current_macro_body_ = {};     ///< Lines of macro being defined
   int macro_invocation_depth_ = 0;   ///< Nesting depth for macro invocations
   int macro_invocation_counter_ = 0; ///< Monotonic counter, unique per invocation
   /// Per-invocation scope prefix for ':N' macro-local labels.
   /// Empty when not inside any macro.  Set to a unique string each time a
   /// macro is invoked so that :1 labels in different expansions of the same
   /// macro (under the same global label) don't collide in the symbol table.
-  std::string current_macro_label_scope_;
+  std::string current_macro_label_scope_ = {};
 
   // Pending label: a label-only line may be associated with the next .EQ/.SE
-  std::string pending_label_; ///< Label deferred from previous label-only line
+  std::string pending_label_ = {}; ///< Label deferred from previous label-only line
 
   // Local label scoping: track the most recent global (non-local) label so
   // that local labels like .8 are stored as "GLOBALNAME.8" in the symbol
   // table and can be resolved by the assembler during branch encoding.
-  std::string last_global_label_; ///< Most recent global label (scope for local labels)
+  std::string last_global_label_ = {}; ///< Most recent global label (scope for local labels)
 
   // Dummy section support (structure definitions)
   bool in_dummy_section_ = false;          ///< Currently in dummy section (.DUMMY active)
@@ -461,7 +461,7 @@ private:
   uint32_t phase_real_addr_ = 0;    ///< Real address where code is stored
 
   // Directive registry
-  std::unordered_map<std::string, DirectiveHandler> directive_registry_;
+  std::unordered_map<std::string, DirectiveHandler> directive_registry_ = {};
 
   // Expression and number parsing (Phase 2 integration)
   SCMASMNumberParser scmasm_number_parser_; ///< SCMASM-specific number parser

@@ -6,8 +6,7 @@
 #include "xasm++/syntax/scmasm_expression_utils.h"
 #include <cctype>
 
-namespace xasm {
-namespace scmasm {
+namespace xasm::scmasm {
 
 std::string NormalizeExpression(const std::string &expr) {
   std::string result;
@@ -136,5 +135,4 @@ std::string CanonicalizeEqualityOperator(const std::string &expr) {
   return result;
 }
 
-} // namespace scmasm
-} // namespace xasm
+} // namespace xasm::scmasm

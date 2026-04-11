@@ -19,8 +19,7 @@
 #include <sstream>
 #include <stdexcept>
 
-namespace xasm {
-namespace merlin {
+namespace xasm::merlin {
 
 using xasm::util::ToUpper;
 using xasm::util::Trim;
@@ -1037,5 +1036,4 @@ void HandleLup(const std::string &operand,
   parser->HandleLup(operand);
 }
 
-} // namespace merlin
-} // namespace xasm
+} // namespace xasm::merlin

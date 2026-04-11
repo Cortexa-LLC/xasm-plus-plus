@@ -15,7 +15,7 @@ ExpressionParser::ExpressionParser(const SymbolTable *symbols,
                                    const INumberParser *number_parser,
                                    ParserFeatures features)
     : symbols_(symbols), number_parser_(number_parser),
-      features_(features), pos_(0) {}
+      features_(features) {}
 
 std::shared_ptr<Expression> ExpressionParser::Parse(const std::string &str) {
   expr_ = str;
