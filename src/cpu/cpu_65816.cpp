@@ -9,9 +9,6 @@ namespace xasm {
 
 // PHB - Push Data Bank Register (65816)
 std::vector<uint8_t> Cpu6502::EncodePHB() const {
-  if (!IsCpu65816()) {
-    return {};
-  }
   return {0x8B};
 }
 
@@ -53,9 +50,6 @@ std::vector<uint8_t> Cpu6502::EncodePLD() const {
 
 // TCD - Transfer C to Direct Page (65816)
 std::vector<uint8_t> Cpu6502::EncodeTCD() const {
-  if (!IsCpu65816()) {
-    return {};
-  }
   return {0x5B};
 }
 
@@ -69,9 +63,6 @@ std::vector<uint8_t> Cpu6502::EncodeTDC() const {
 
 // TCS - Transfer C to Stack Pointer (65816)
 std::vector<uint8_t> Cpu6502::EncodeTCS() const {
-  if (!IsCpu65816()) {
-    return {};
-  }
   return {0x1B};
 }
 
@@ -90,10 +81,6 @@ std::vector<uint8_t> Cpu6502::EncodeTSC() const {
 // JML - Jump Long (65816)
 std::vector<uint8_t> Cpu6502::EncodeJML(uint32_t operand,
                                         AddressingMode mode) const {
-  if (!IsCpu65816()) {
-    return {};
-  }
-
   std::vector<uint8_t> bytes;
 
   if (mode == AddressingMode::AbsoluteLong) {
@@ -109,10 +96,6 @@ std::vector<uint8_t> Cpu6502::EncodeJML(uint32_t operand,
 // JSL - Jump Subroutine Long (65816)
 std::vector<uint8_t> Cpu6502::EncodeJSL(uint32_t operand,
                                         AddressingMode mode) const {
-  if (!IsCpu65816()) {
-    return {};
-  }
-
   std::vector<uint8_t> bytes;
 
   if (mode == AddressingMode::AbsoluteLong) {
@@ -127,9 +110,6 @@ std::vector<uint8_t> Cpu6502::EncodeJSL(uint32_t operand,
 
 // RTL - Return from Subroutine Long (65816)
 std::vector<uint8_t> Cpu6502::EncodeRTL() const {
-  if (!IsCpu65816()) {
-    return {};
-  }
   return {0x6B};
 }
 
@@ -146,7 +126,7 @@ std::vector<uint8_t> Cpu6502::EncodePEA(uint16_t operand,
 
   std::vector<uint8_t> bytes;
 
-  if (mode == AddressingMode::Immediate) {
+  if (mode == AddressingMode::Absolute) {
     bytes.push_back(0xF4);                                        // PEA opcode
     bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
     bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
@@ -193,9 +173,6 @@ std::vector<uint8_t> Cpu6502::EncodePER(uint16_t operand,
 // MVN - Block Move Negative (65816)
 std::vector<uint8_t> Cpu6502::EncodeMVN(uint8_t srcbank, // NOLINT(bugprone-easily-swappable-parameters)
                                         uint8_t destbank) const {
-  if (!IsCpu65816()) {
-    return {};
-  }
   return {0x54, srcbank, destbank};
 }
 
@@ -244,9 +221,6 @@ std::vector<uint8_t> Cpu6502::EncodeWDM(uint8_t operand,
 
 // XBA - Exchange B and A (65816)
 std::vector<uint8_t> Cpu6502::EncodeXBA() const {
-  if (!IsCpu65816()) {
-    return {};
-  }
   return {0xEB};
 }
 
