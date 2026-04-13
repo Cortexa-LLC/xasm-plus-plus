@@ -79,8 +79,8 @@ std::vector<uint8_t> Cpu6502::EncodeTSC() const {
 // ============================================================================
 
 // JML - Jump Long (65816)
-std::vector<uint8_t> Cpu6502::EncodeJML(uint32_t operand,
-                                        AddressingMode mode) const { // NOLINT(readability-convert-member-functions-to-static)
+std::vector<uint8_t> Cpu6502::EncodeJML(uint32_t operand, // NOLINT(readability-convert-member-functions-to-static)
+                                        AddressingMode mode) const {
   std::vector<uint8_t> bytes;
 
   if (mode == AddressingMode::AbsoluteLong) {
@@ -94,8 +94,8 @@ std::vector<uint8_t> Cpu6502::EncodeJML(uint32_t operand,
 }
 
 // JSL - Jump Subroutine Long (65816)
-std::vector<uint8_t> Cpu6502::EncodeJSL(uint32_t operand,
-                                        AddressingMode mode) const { // NOLINT(readability-convert-member-functions-to-static)
+std::vector<uint8_t> Cpu6502::EncodeJSL(uint32_t operand, // NOLINT(readability-convert-member-functions-to-static)
+                                        AddressingMode mode) const {
   std::vector<uint8_t> bytes;
 
   if (mode == AddressingMode::AbsoluteLong) {
