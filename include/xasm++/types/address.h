@@ -32,8 +32,8 @@ namespace xasm {
  * Example usage:
  * @code
  *   Address zp(0x42);
- *   if (zp.is_zero_page()) {
- *       std::cout << "Zero page address: " << zp.to_hex() << "\n";
+ *   if (zp.IsZeroPage()) {
+ *       std::cout << "Zero page address: " << zp.ToHex() << "\n";
  *   }
  *
  *   Address abs(0x1234);
@@ -52,7 +52,7 @@ public:
    * @brief Get the raw address value
    * @return The uint32_t address value
    */
-  [[nodiscard]] constexpr uint32_t value() const noexcept { return value_; }
+  [[nodiscard]] constexpr uint32_t Value() const noexcept { return value_; }
 
   /**
    * @brief Check if address is in zero page (0x00-0xFF)
@@ -60,7 +60,7 @@ public:
    *
    * Zero page addresses use faster, shorter instructions on 6502.
    */
-  [[nodiscard]] constexpr bool is_zero_page() const noexcept {
+  [[nodiscard]] constexpr bool IsZeroPage() const noexcept {
     return value_ <= 0xFF;
   }
 
@@ -70,7 +70,7 @@ public:
    *
    * Absolute addresses require full 16-bit or 24-bit addressing.
    */
-  [[nodiscard]] constexpr bool is_absolute() const noexcept {
+  [[nodiscard]] constexpr bool IsAbsolute() const noexcept {
     return value_ >= 0x100;
   }
 
@@ -83,7 +83,7 @@ public:
    * - 0x0100-0xFFFF: "$XXXX" (4 hex digits)
    * - 0x010000+: "$XXXXXX" (6 hex digits)
    */
-  [[nodiscard]] std::string to_hex() const {
+  [[nodiscard]] std::string ToHex() const {
     std::ostringstream oss;
     oss << "$" << std::uppercase << std::hex << std::setfill('0');
 
