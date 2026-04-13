@@ -485,8 +485,7 @@ private:
                          ConcreteSymbolTable &symbols);
 
   // Instruction size estimation
-  static uint32_t EstimateZ80InstructionSize(const std::string &mnemonic,
-                                      const std::string &operand);
+  static uint32_t EstimateZ80InstructionSize(const DirectiveContext &ctx);
 
   // Expression/number parsing
   uint32_t ParseNumber(const std::string &str) const;

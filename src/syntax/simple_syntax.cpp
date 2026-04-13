@@ -113,9 +113,12 @@ void SimpleSyntaxParser::Parse(const std::string &source, Section &section,
       context.section = &section;
       context.symbols = &symbols;
       context.current_address = &current_address;
+      context.mnemonic = directive;
+      context.label = "";
+      context.operand = operands;
 
       // Execute directive via registry (throws on unknown directive)
-      directive_registry_.Execute(directive, "", operands, context);
+      directive_registry_.Execute(context);
     } else if (IsIdentifierStart(line[0])) {
       // Parse instruction: mnemonic [operands]
       size_t space_pos = line.find(' ');

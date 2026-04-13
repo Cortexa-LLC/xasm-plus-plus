@@ -138,9 +138,10 @@ void EdtasmSyntaxParser::ParseDirective(const std::string &directive,
     context.current_address = &current_address_;
     context.parser_state = this;
 
-    // Call registered handler (label stored in context.label)
+    // Call registered handler (label and operand stored in context)
     context.label = label;
-    it->second(operands, context);
+    context.operand = operands;
+    it->second(context);
     return;
   }
 

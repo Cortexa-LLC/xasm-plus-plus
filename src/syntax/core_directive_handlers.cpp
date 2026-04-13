@@ -106,8 +106,8 @@ void RegisterCoreDirectiveHandlers(DirectiveRegistry &registry) {
 // Public Handler Functions
 // ============================================================================
 
-void HandleOrg(const std::string &operand,
-               DirectiveContext &context) {
+void HandleOrg(DirectiveContext &context) {
+  const std::string &operand = context.operand;
   (void)context.label; // ORG doesn't use context.label
   std::string op = Trim(operand);
 
@@ -130,8 +130,8 @@ void HandleOrg(const std::string &operand,
   *context.current_address = static_cast<uint32_t>(address);
 }
 
-void HandleEqu(const std::string &operand,
-               DirectiveContext &context) {
+void HandleEqu(DirectiveContext &context) {
+  const std::string &operand = context.operand;
   std::string lbl = Trim(context.label);
   std::string op = Trim(operand);
 
@@ -146,8 +146,8 @@ void HandleEqu(const std::string &operand,
   context.symbols->Define(lbl, SymbolType::Equate, expr);
 }
 
-void HandleDb(const std::string &operand,
-              DirectiveContext &context) {
+void HandleDb(DirectiveContext &context) {
+  const std::string &operand = context.operand;
   (void)context.label; // DB doesn't use context.label (could be used for auto-context.label feature)
   std::string op = Trim(operand);
 
@@ -166,8 +166,8 @@ void HandleDb(const std::string &operand,
   *context.current_address += static_cast<uint32_t>(expressions.size());
 }
 
-void HandleDw(const std::string &operand,
-              DirectiveContext &context) {
+void HandleDw(DirectiveContext &context) {
+  const std::string &operand = context.operand;
   (void)context.label; // DW doesn't use context.label (could be used for auto-context.label feature)
   std::string op = Trim(operand);
 
@@ -186,8 +186,8 @@ void HandleDw(const std::string &operand,
   *context.current_address += static_cast<uint32_t>(expressions.size() * 2);
 }
 
-void HandleDs(const std::string &operand,
-              DirectiveContext &context) {
+void HandleDs(DirectiveContext &context) {
+  const std::string &operand = context.operand;
   (void)context.label; // DS doesn't use context.label (could be used for auto-context.label feature)
   std::string op = Trim(operand);
 

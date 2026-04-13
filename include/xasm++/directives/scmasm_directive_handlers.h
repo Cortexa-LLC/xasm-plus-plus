@@ -20,8 +20,7 @@ namespace xasm::scmasm {
  * @param operand Address expression
  * @param context Directive execution context
  */
-void HandleOr(const std::string &operand,
-              DirectiveContext &context);
+void HandleOr(DirectiveContext &context);
 
 /**
  * @brief Handle .EQ directive (define constant)
@@ -29,8 +28,7 @@ void HandleOr(const std::string &operand,
  * @param operand Value expression
  * @param context Directive execution context
  */
-void HandleEq(const std::string &operand,
-              DirectiveContext &context);
+void HandleEq(DirectiveContext &context);
 
 /**
  * @brief Handle .SE directive (define/redefine variable)
@@ -38,8 +36,7 @@ void HandleEq(const std::string &operand,
  * @param operand Value expression
  * @param context Directive execution context
  */
-void HandleSe(const std::string &operand,
-              DirectiveContext &context);
+void HandleSe(DirectiveContext &context);
 
 /**
  * @brief Handle .AS directive (ASCII string)
@@ -47,8 +44,7 @@ void HandleSe(const std::string &operand,
  * @param operand String with delimiter
  * @param context Directive execution context
  */
-void HandleAs(const std::string &operand,
-              DirectiveContext &context);
+void HandleAs(DirectiveContext &context);
 
 /**
  * @brief Handle .AT directive (ASCII text, high bit on last char)
@@ -56,8 +52,7 @@ void HandleAs(const std::string &operand,
  * @param operand String with delimiter
  * @param context Directive execution context
  */
-void HandleAt(const std::string &operand,
-              DirectiveContext &context);
+void HandleAt(DirectiveContext &context);
 
 /**
  * @brief Handle .AZ directive (ASCII zero-terminated)
@@ -65,8 +60,7 @@ void HandleAt(const std::string &operand,
  * @param operand String with delimiter
  * @param context Directive execution context
  */
-void HandleAz(const std::string &operand,
-              DirectiveContext &context);
+void HandleAz(DirectiveContext &context);
 
 /**
  * @brief Handle .DA / .DFB directive (define address/bytes)
@@ -74,8 +68,7 @@ void HandleAz(const std::string &operand,
  * @param operand Comma-separated values with size prefixes
  * @param context Directive execution context
  */
-void HandleDa(const std::string &operand,
-              DirectiveContext &context);
+void HandleDa(DirectiveContext &context);
 
 /**
  * @brief Handle .HS directive (hex string)
@@ -83,8 +76,7 @@ void HandleDa(const std::string &operand,
  * @param operand Hex digits (whitespace allowed)
  * @param context Directive execution context
  */
-void HandleHs(const std::string &operand,
-              DirectiveContext &context);
+void HandleHs(DirectiveContext &context);
 
 /**
  * @brief Handle .BS directive (binary string)
@@ -92,8 +84,7 @@ void HandleHs(const std::string &operand,
  * @param operand Binary digits (whitespace allowed)
  * @param context Directive execution context
  */
-void HandleBs(const std::string &operand,
-              DirectiveContext &context);
+void HandleBs(DirectiveContext &context);
 
 /**
  * @brief Handle .MA directive (begin macro definition)
@@ -101,8 +92,7 @@ void HandleBs(const std::string &operand,
  * @param operand Macro name (if not in label)
  * @param context Directive execution context
  */
-void HandleMa(const std::string &operand,
-              DirectiveContext &context);
+void HandleMa(DirectiveContext &context);
 
 /**
  * @brief Handle .ENDM / .EM directive (end macro definition)
@@ -110,8 +100,7 @@ void HandleMa(const std::string &operand,
  * @param operand Operand (unused)
  * @param context Directive execution context
  */
-void HandleEndm(const std::string &operand,
-                DirectiveContext &context);
+void HandleEndm(DirectiveContext &context);
 
 // ============================================================================
 // P0 Priority Directive Handlers (A2oSX Critical)
@@ -123,8 +112,7 @@ void HandleEndm(const std::string &operand,
  * @param operand String with delimiter
  * @param context Directive execution context
  */
-void HandlePs(const std::string &operand,
-              DirectiveContext &context);
+void HandlePs(DirectiveContext &context);
 
 /**
  * @brief Handle .INB directive (include binary file)
@@ -132,8 +120,7 @@ void HandlePs(const std::string &operand,
  * @param operand File path
  * @param context Directive execution context
  */
-void HandleInb(const std::string &operand,
-               DirectiveContext &context);
+void HandleInb(DirectiveContext &context);
 
 /**
  * @brief Handle .LIST directive (listing control - stub)
@@ -141,8 +128,7 @@ void HandleInb(const std::string &operand,
  * @param operand Control parameter (ON/OFF)
  * @param context Directive execution context
  */
-void HandleList(const std::string &operand,
-                DirectiveContext &context);
+void HandleList(DirectiveContext &context);
 
 /**
  * @brief Handle .DUMMY directive (dummy section for structures)
@@ -150,8 +136,7 @@ void HandleList(const std::string &operand,
  * @param operand Optional operand
  * @param context Directive execution context
  */
-void HandleDummy(const std::string &operand,
-                 DirectiveContext &context);
+void HandleDummy(DirectiveContext &context);
 
 /**
  * @brief Handle .ED directive (end dummy section)
@@ -159,8 +144,7 @@ void HandleDummy(const std::string &operand,
  * @param operand Operand (unused)
  * @param context Directive execution context
  */
-void HandleEd(const std::string &operand,
-              DirectiveContext &context);
+void HandleEd(DirectiveContext &context);
 
 /**
  * @brief Handle .OP directive (CPU operation mode)
@@ -168,8 +152,7 @@ void HandleEd(const std::string &operand,
  * @param operand CPU type (6502, 65C02, 65816)
  * @param context Directive execution context
  */
-void HandleOp(const std::string &operand,
-              DirectiveContext &context);
+void HandleOp(DirectiveContext &context);
 
 // ============================================================================
 // Phase 3: 100% Coverage Directives
@@ -181,8 +164,7 @@ void HandleOp(const std::string &operand,
  * @param operand String with delimiter
  * @param context Directive execution context
  */
-void HandleCs(const std::string &operand,
-              DirectiveContext &context);
+void HandleCs(DirectiveContext &context);
 
 /**
  * @brief Handle .CZ directive (C-string zero-terminated)
@@ -190,8 +172,7 @@ void HandleCs(const std::string &operand,
  * @param operand String with delimiter
  * @param context Directive execution context
  */
-void HandleCz(const std::string &operand,
-              DirectiveContext &context);
+void HandleCz(DirectiveContext &context);
 
 /**
  * @brief Handle .TF directive (text file/title metadata)
@@ -199,8 +180,7 @@ void HandleCz(const std::string &operand,
  * @param operand File path or title
  * @param context Directive execution context
  */
-void HandleTf(const std::string &operand,
-              DirectiveContext &context);
+void HandleTf(DirectiveContext &context);
 
 /**
  * @brief Handle .EP directive (entry point / end phase)
@@ -208,8 +188,7 @@ void HandleTf(const std::string &operand,
  * @param operand Entry address expression (optional for phase end)
  * @param context Directive execution context
  */
-void HandleEp(const std::string &operand,
-              DirectiveContext &context);
+void HandleEp(DirectiveContext &context);
 
 /**
  * @brief Handle .PH directive (phase assembly)
@@ -217,8 +196,7 @@ void HandleEp(const std::string &operand,
  * @param operand Virtual address expression
  * @param context Directive execution context
  */
-void HandlePh(const std::string &operand,
-              DirectiveContext &context);
+void HandlePh(DirectiveContext &context);
 
 /**
  * @brief Handle .HX directive (hex nibble storage)
@@ -226,8 +204,7 @@ void HandlePh(const std::string &operand,
  * @param operand Hex digits (whitespace/dots/commas allowed)
  * @param context Directive execution context
  */
-void HandleHx(const std::string &operand,
-              DirectiveContext &context);
+void HandleHx(DirectiveContext &context);
 
 /**
  * @brief Handle .TA directive (target address - no-op)
@@ -235,8 +212,7 @@ void HandleHx(const std::string &operand,
  * @param operand Address expression
  * @param context Directive execution context
  */
-void HandleTa(const std::string &operand,
-              DirectiveContext &context);
+void HandleTa(DirectiveContext &context);
 
 /**
  * @brief Handle .DO directive (conditional assembly start)
@@ -244,8 +220,7 @@ void HandleTa(const std::string &operand,
  * @param operand Condition expression
  * @param context Directive execution context
  */
-void HandleDo(const std::string &operand,
-              DirectiveContext &context);
+void HandleDo(DirectiveContext &context);
 
 /**
  * @brief Handle .FIN directive (conditional assembly end)
@@ -253,8 +228,7 @@ void HandleDo(const std::string &operand,
  * @param operand Operand (unused)
  * @param context Directive execution context
  */
-void HandleFin(const std::string &operand,
-               DirectiveContext &context);
+void HandleFin(DirectiveContext &context);
 
 /**
  * @brief Handle .AC directive (ASCII string with optional numeric prefix)
@@ -262,8 +236,7 @@ void HandleFin(const std::string &operand,
  * @param operand String with optional prefix
  * @param context Directive execution context
  */
-void HandleAc(const std::string &operand,
-              DirectiveContext &context);
+void HandleAc(DirectiveContext &context);
 
 } // namespace xasm::scmasm
 

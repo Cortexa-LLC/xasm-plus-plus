@@ -85,6 +85,15 @@ struct AssemblerResult {
  * }
  * @endcode
  */
+
+/**
+ * @brief Instruction sizes from two consecutive passes for convergence checking
+ */
+struct ConvergenceSizes {
+  const std::vector<size_t> &previous; ///< Instruction sizes from the previous pass
+  const std::vector<size_t> &current;  ///< Instruction sizes from the current pass
+};
+
 class Assembler {
 public:
   /// Maximum number of passes in fast phase before switching to slower
@@ -255,12 +264,10 @@ private:
    * If all sizes are identical, the assembly has converged and no more
    * passes are needed.
    *
-   * @param previous_sizes Instruction sizes from previous pass
-   * @param current_sizes Instruction sizes from current pass
+   * @param sizes Instruction sizes from previous and current pass
    * @return true if sizes are identical (converged), false otherwise
    */
-  static bool CheckConvergence(const std::vector<size_t> &previous_sizes,
-                        const std::vector<size_t> &current_sizes);
+  static bool CheckConvergence(ConvergenceSizes sizes);
 
   /**
    * @brief Re-evaluate data and equate atoms using final converged symbols

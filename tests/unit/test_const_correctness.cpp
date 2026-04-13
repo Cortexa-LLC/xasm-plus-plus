@@ -60,8 +60,8 @@ TEST(ConstCorrectnessTest, Cpu6502BranchRelaxationIsConst) {
   const Cpu6502 cpu;
 
   // Branch relaxation methods should be const
-  EXPECT_FALSE(cpu.NeedsBranchRelaxation(0x1000, 0x1010)); // Short branch
-  EXPECT_TRUE(cpu.NeedsBranchRelaxation(0x1000, 0x1100));  // Long branch
+  EXPECT_FALSE(cpu.NeedsBranchRelaxation({0x1000, 0x1010})); // Short branch
+  EXPECT_TRUE(cpu.NeedsBranchRelaxation({0x1000, 0x1100}));  // Long branch
 }
 
 // Test Expression getters are const

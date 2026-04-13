@@ -79,8 +79,8 @@ static uint32_t ParseNumber(const std::string &str,
 // Directive Handlers
 // ============================================================================
 
-void HandleOrg(const std::string &operand,
-               DirectiveContext &context) {
+void HandleOrg(DirectiveContext &context) {
+  const std::string &operand = context.operand;
 
   // ORG directive - set assembly origin address
   RequireOperand(operand, "ORG", context);
@@ -107,8 +107,8 @@ void HandleOrg(const std::string &operand,
   *context.current_address = address;
 }
 
-void HandleEqu(const std::string &operand,
-               DirectiveContext &context) {
+void HandleEqu(DirectiveContext &context) {
+  const std::string &operand = context.operand;
   // Get parser instance for expression parsing
   ValidateParser(context.parser_state);
   auto *parser = static_cast<MerlinSyntaxParser *>(context.parser_state);
@@ -147,8 +147,8 @@ void HandleEqu(const std::string &operand,
   }
 }
 
-void HandleDb(const std::string &operand,
-              DirectiveContext &context) {
+void HandleDb(DirectiveContext &context) {
+  const std::string &operand = context.operand;
   // Get parser instance for label handling
   ValidateParser(context.parser_state);
   auto *parser = static_cast<MerlinSyntaxParser *>(context.parser_state);
@@ -195,8 +195,8 @@ void HandleDb(const std::string &operand,
   *context.current_address += expressions.size();
 }
 
-void HandleDw(const std::string &operand,
-              DirectiveContext &context) {
+void HandleDw(DirectiveContext &context) {
+  const std::string &operand = context.operand;
 
   // Create label atom first if label present
   if (!context.label.empty()) {
@@ -228,8 +228,8 @@ void HandleDw(const std::string &operand,
   *context.current_address += expressions.size() * 2;
 }
 
-void HandleHex(const std::string &operand,
-               DirectiveContext &context) {
+void HandleHex(DirectiveContext &context) {
+  const std::string &operand = context.operand;
 
   // Create label atom first if label present
   if (!context.label.empty()) {
@@ -304,8 +304,8 @@ void HandleHex(const std::string &operand,
   *context.current_address += bytes.size();
 }
 
-void HandleDs(const std::string &operand,
-              DirectiveContext &context) {
+void HandleDs(DirectiveContext &context) {
+  const std::string &operand = context.operand;
   // Get parser instance from context
   ValidateParser(context.parser_state);
   auto *parser = static_cast<MerlinSyntaxParser *>(context.parser_state);
@@ -337,8 +337,8 @@ void HandleDs(const std::string &operand,
   parser->HandleDS(operand, *context.section, *context.symbols);
 }
 
-void HandleDum(const std::string &operand,
-               DirectiveContext &context) {
+void HandleDum(DirectiveContext &context) {
+  const std::string &operand = context.operand;
 
   // Get parser instance from context
   ValidateParser(context.parser_state);
@@ -347,8 +347,8 @@ void HandleDum(const std::string &operand,
   parser->HandleDum(operand, *context.symbols);
 }
 
-void HandleDend(const std::string &operand,
-                DirectiveContext &context) {
+void HandleDend(DirectiveContext &context) {
+  const std::string &operand = context.operand;
   (void)operand;
   (void)context.section;
   (void)context.symbols;
@@ -360,8 +360,8 @@ void HandleDend(const std::string &operand,
   parser->HandleDend();
 }
 
-void HandlePut(const std::string &operand,
-               DirectiveContext &context) {
+void HandlePut(DirectiveContext &context) {
+  const std::string &operand = context.operand;
 
   // Get parser instance from context
   ValidateParser(context.parser_state);
@@ -370,8 +370,8 @@ void HandlePut(const std::string &operand,
   parser->HandlePut(operand, *context.section, *context.symbols);
 }
 
-void HandleDo(const std::string &operand,
-              DirectiveContext &context) {
+void HandleDo(DirectiveContext &context) {
+  const std::string &operand = context.operand;
   // Define label at current address before processing the conditional.
   // e.g. ":1b do EditorDisk" — :1b must be defined here so forward BNE :1b
   // references resolve correctly even when EditorDisk=0 skips the block.
@@ -390,8 +390,8 @@ void HandleDo(const std::string &operand,
   parser->HandleDo(operand, *context.symbols);
 }
 
-void HandleElse(const std::string &operand,
-                DirectiveContext &context) {
+void HandleElse(DirectiveContext &context) {
+  const std::string &operand = context.operand;
   (void)operand;
   (void)context.section;
   (void)context.symbols;
@@ -403,8 +403,8 @@ void HandleElse(const std::string &operand,
   parser->HandleElse();
 }
 
-void HandleFin(const std::string &operand,
-               DirectiveContext &context) {
+void HandleFin(DirectiveContext &context) {
+  const std::string &operand = context.operand;
   (void)operand;
   (void)context.section;
   (void)context.symbols;
@@ -416,8 +416,8 @@ void HandleFin(const std::string &operand,
   parser->HandleFin();
 }
 
-void HandleLst(const std::string &operand,
-               DirectiveContext &context) {
+void HandleLst(DirectiveContext &context) {
+  const std::string &operand = context.operand;
   (void)operand;
   (void)context;
 
@@ -426,8 +426,8 @@ void HandleLst(const std::string &operand,
   // No-op for compatibility (listing not implemented)
 }
 
-void HandleLstdo(const std::string &operand,
-                 DirectiveContext &context) {
+void HandleLstdo(DirectiveContext &context) {
+  const std::string &operand = context.operand;
   (void)operand;
   (void)context;
 
@@ -436,8 +436,8 @@ void HandleLstdo(const std::string &operand,
   // No-op for compatibility (listing not implemented)
 }
 
-void HandleTr(const std::string &operand,
-              DirectiveContext &context) {
+void HandleTr(DirectiveContext &context) {
+  const std::string &operand = context.operand;
   (void)operand;
   (void)context;
 
@@ -446,8 +446,8 @@ void HandleTr(const std::string &operand,
   // No-op for compatibility (listing not implemented)
 }
 
-void HandleAsc(const std::string &operand,
-               DirectiveContext &context) {
+void HandleAsc(DirectiveContext &context) {
+  const std::string &operand = context.operand;
 
   // Create label atom first if label present
   if (!context.label.empty()) {
@@ -507,8 +507,8 @@ void HandleAsc(const std::string &operand,
   *context.current_address += bytes.size();
 }
 
-void HandleDci(const std::string &operand,
-               DirectiveContext &context) {
+void HandleDci(DirectiveContext &context) {
+  const std::string &operand = context.operand;
 
   // Create label atom first if label present
   if (!context.label.empty()) {
@@ -569,8 +569,8 @@ void HandleDci(const std::string &operand,
   *context.current_address += bytes.size();
 }
 
-void HandleInv(const std::string &operand,
-               DirectiveContext &context) {
+void HandleInv(DirectiveContext &context) {
+  const std::string &operand = context.operand;
 
   // Create label atom first if label present
   if (!context.label.empty()) {
@@ -625,8 +625,8 @@ void HandleInv(const std::string &operand,
   *context.current_address += bytes.size();
 }
 
-void HandleFls(const std::string &operand,
-               DirectiveContext &context) {
+void HandleFls(DirectiveContext &context) {
+  const std::string &operand = context.operand;
 
   // Create label atom first if label present
   if (!context.label.empty()) {
@@ -687,8 +687,8 @@ void HandleFls(const std::string &operand,
   *context.current_address += bytes.size();
 }
 
-void HandleDa(const std::string &operand,
-              DirectiveContext &context) {
+void HandleDa(DirectiveContext &context) {
+  const std::string &operand = context.operand;
   // DA (Define Address) - In 65816 mode (Merlin 16/32), DA emits 3 bytes
   // (24-bit little-endian address).  In 6502/65C02 mode it emits 2 bytes.
   bool is_65816 = false;
@@ -701,7 +701,7 @@ void HandleDa(const std::string &operand,
   }
 
   if (!is_65816) {
-    HandleDw(operand, context);
+    HandleDw(context);
     return;
   }
 
@@ -729,8 +729,8 @@ void HandleDa(const std::string &operand,
   *context.current_address += expressions.size() * 3;
 }
 
-void HandlePmc(const std::string &operand,
-               DirectiveContext &context) {
+void HandlePmc(DirectiveContext &context) {
+  const std::string &operand = context.operand;
   (void)context.section;
   (void)context.symbols;
 
@@ -741,8 +741,8 @@ void HandlePmc(const std::string &operand,
   parser->HandlePMC(context.label.empty() ? operand : context.label);
 }
 
-void HandleEom(const std::string &operand,
-               DirectiveContext &context) {
+void HandleEom(DirectiveContext &context) {
+  const std::string &operand = context.operand;
   (void)operand;
   (void)context.section;
   (void)context.symbols;
@@ -754,8 +754,8 @@ void HandleEom(const std::string &operand,
   parser->HandleEOM();
 }
 
-void HandleMac(const std::string &operand,
-               DirectiveContext &context) {
+void HandleMac(DirectiveContext &context) {
+  const std::string &operand = context.operand;
   // Get parser instance from context
   ValidateParser(context.parser_state);
   auto *parser = static_cast<MerlinSyntaxParser *>(context.parser_state);
@@ -786,7 +786,9 @@ void HandleMac(const std::string &operand,
   // Check if macro exists (invocation) or is being defined
   if (parser->MacroExists(macro_name)) {
     // Macro exists - invoke it
-    parser->ExpandMacro(macro_name, params_str, *context.section,
+    context.operand = params_str;
+    context.mnemonic = macro_name;
+    parser->ExpandMacro(context, *context.section,
                         *context.symbols);
   } else {
     // Macro doesn't exist - start definition
@@ -797,8 +799,8 @@ void HandleMac(const std::string &operand,
   }
 }
 
-void HandleUsr(const std::string &operand,
-               DirectiveContext &context) {
+void HandleUsr(DirectiveContext &context) {
+  const std::string &operand = context.operand;
   // USR directive - captures arguments for RW18 output format
   // Create label if present
   if (!context.label.empty()) {
@@ -858,8 +860,8 @@ void HandleUsr(const std::string &operand,
   // USR is a no-op - user-defined subroutine (no atoms generated)
 }
 
-void HandleEnd(const std::string &operand,
-               DirectiveContext &context) {
+void HandleEnd(DirectiveContext &context) {
+  const std::string &operand = context.operand;
   (void)operand;
 
   // Get parser instance for label handling and state
@@ -881,8 +883,8 @@ void HandleEnd(const std::string &operand,
   parser->HandleEnd();
 }
 
-void HandleSav(const std::string &operand,
-               DirectiveContext &context) {
+void HandleSav(DirectiveContext &context) {
+  const std::string &operand = context.operand;
   (void)operand;
   (void)context;
 
@@ -891,8 +893,8 @@ void HandleSav(const std::string &operand,
   // No-op for compatibility (output filename controlled by command-line args)
 }
 
-void HandleXc(const std::string &operand,
-              DirectiveContext &context) {
+void HandleXc(DirectiveContext &context) {
+  const std::string &operand = context.operand;
   (void)context.symbols;
 
   // Get parser instance from context
@@ -925,8 +927,8 @@ void HandleXc(const std::string &operand,
   }
 }
 
-void HandleMx(const std::string &operand,
-              DirectiveContext &context) {
+void HandleMx(DirectiveContext &context) {
+  const std::string &operand = context.operand;
   (void)context.symbols;
 
   // Get parser instance from context
@@ -968,8 +970,8 @@ void HandleMx(const std::string &operand,
   context.section->atoms.push_back(std::make_shared<MxAtom>(m_flag, x_flag));
 }
 
-void HandleRev(const std::string &operand,
-               DirectiveContext &context) {
+void HandleRev(DirectiveContext &context) {
+  const std::string &operand = context.operand;
   // REV "string" - Reverse ASCII string
   std::string op = Trim(operand);
 
@@ -1024,8 +1026,8 @@ void HandleRev(const std::string &operand,
   *context.current_address += bytes.size();
 }
 
-void HandleLup(const std::string &operand,
-               DirectiveContext &context) {
+void HandleLup(DirectiveContext &context) {
+  const std::string &operand = context.operand;
   (void)context.section;
   (void)context.symbols;
 

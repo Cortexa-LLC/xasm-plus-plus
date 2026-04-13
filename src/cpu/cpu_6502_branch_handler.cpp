@@ -7,12 +7,11 @@
 
 namespace xasm {
 
-bool Cpu6502BranchHandler::NeedsBranchRelaxation(uint16_t current_addr, // NOLINT(bugprone-easily-swappable-parameters)
-                                                 uint16_t target_addr) {
+bool Cpu6502BranchHandler::NeedsBranchRelaxation(BranchTarget target) {
   // Calculate offset: target - (PC + 2)
   // PC + 2 because branch instruction is 2 bytes (opcode + offset)
-  int16_t offset = static_cast<int16_t>(target_addr) -
-                   static_cast<int16_t>(current_addr + 2);
+  int16_t offset = static_cast<int16_t>(target.target_addr) -
+                   static_cast<int16_t>(target.current_addr + 2);
 
   // Check if offset fits in 8-bit signed range (-128 to +127)
   return (offset < -128 || offset > 127);
@@ -23,14 +22,14 @@ uint8_t Cpu6502BranchHandler::GetComplementaryBranchOpcode(
   return branch_opcode ^ Opcodes::BRANCH_COMPLEMENT_MASK;
 }
 
-std::vector<uint8_t> Cpu6502BranchHandler::EncodeBranchWithRelaxation( // NOLINT(bugprone-easily-swappable-parameters)
-    uint8_t branch_opcode, uint16_t current_addr, uint16_t target_addr) {
+std::vector<uint8_t> Cpu6502BranchHandler::EncodeBranchWithRelaxation(
+    uint8_t branch_opcode, BranchTarget target) {
   std::vector<uint8_t> bytes;
 
-  if (!NeedsBranchRelaxation(current_addr, target_addr)) {
+  if (!NeedsBranchRelaxation(target)) {
     // Branch is in range - emit normal 2-byte branch
-    int16_t offset = static_cast<int16_t>(target_addr) -
-                     static_cast<int16_t>(current_addr + 2);
+    int16_t offset = static_cast<int16_t>(target.target_addr) -
+                     static_cast<int16_t>(target.current_addr + 2);
     bytes.push_back(branch_opcode);
     bytes.push_back(static_cast<uint8_t>(offset & 0xFF));
   } else if (branch_opcode == Opcodes::BRA) {
@@ -38,8 +37,8 @@ std::vector<uint8_t> Cpu6502BranchHandler::EncodeBranchWithRelaxation( // NOLINT
     // XOR with BRANCH_COMPLEMENT_MASK ($20) gives $A0 = LDY#, which is wrong.
     // Emit a plain JMP absolute (3 bytes) instead of the 5-byte B!cc sequence.
     bytes.push_back(Opcodes::JMP_ABS);
-    bytes.push_back(static_cast<uint8_t>(target_addr & 0xFF));
-    bytes.push_back(static_cast<uint8_t>((target_addr >> 8) & 0xFF));
+    bytes.push_back(static_cast<uint8_t>(target.target_addr & 0xFF));
+    bytes.push_back(static_cast<uint8_t>((target.target_addr >> 8) & 0xFF));
   } else {
     // Branch is out of range - emit relaxed 5-byte sequence
     // Format: [B!cc] [0x03] [JMP] [target_lo] [target_hi]
@@ -52,10 +51,10 @@ std::vector<uint8_t> Cpu6502BranchHandler::EncodeBranchWithRelaxation( // NOLINT
     bytes.push_back(Opcodes::BRANCH_RELAXATION_OFFSET);
 
     // 3. Emit JMP absolute to target
-    bytes.push_back(Opcodes::JMP_ABS);                         // JMP opcode
-    bytes.push_back(static_cast<uint8_t>(target_addr & 0xFF)); // Low byte
+    bytes.push_back(Opcodes::JMP_ABS);                                     // JMP opcode
+    bytes.push_back(static_cast<uint8_t>(target.target_addr & 0xFF));      // Low byte
     bytes.push_back(
-        static_cast<uint8_t>((target_addr >> 8) & 0xFF)); // High byte
+        static_cast<uint8_t>((target.target_addr >> 8) & 0xFF)); // High byte
   }
 
   return bytes;

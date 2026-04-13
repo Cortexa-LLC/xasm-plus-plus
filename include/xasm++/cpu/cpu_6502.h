@@ -575,11 +575,10 @@ public:
    * Determines if the target address is out of range for a short
    * relative branch (-128 to +127 bytes from the branch instruction).
    *
-   * @param current_addr Address of the branch instruction
-   * @param target_addr Target address to branch to
+   * @param target Branch source and destination addresses
    * @return true if branch is out of range and needs relaxation
    */
-  bool NeedsBranchRelaxation(uint16_t current_addr, uint16_t target_addr) const;
+  bool NeedsBranchRelaxation(BranchTarget target) const;
 
   /**
    * @brief Get the complementary branch opcode
@@ -609,13 +608,11 @@ public:
    * @endcode
    *
    * @param branch_opcode Original branch opcode
-   * @param current_addr Address of the branch instruction
-   * @param target_addr Target address to branch to
+   * @param target Branch source and destination addresses
    * @return Vector of encoded bytes for the relaxed sequence (5 bytes)
    */
   std::vector<uint8_t> EncodeBranchWithRelaxation(uint8_t branch_opcode,
-                                                  uint16_t current_addr,
-                                                  uint16_t target_addr) const;
+                                                  BranchTarget target) const;
 
   /** @} */ // End of Branch Relaxation Methods
 

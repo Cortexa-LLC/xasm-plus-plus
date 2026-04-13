@@ -116,6 +116,19 @@ public:
  * parser.Parse(source, section, symbols);
  * @endcode
  */
+
+/// @brief Helper struct for ApplyHighBitRule - groups adjacent char parameters
+struct HighBitChars {
+  char input;     ///< Input character
+  char delimiter; ///< Delimiter character (controls high-bit rule)
+};
+
+/// @brief Helper struct for StartPhase - groups adjacent address parameters
+struct PhaseAddresses {
+  uint32_t real_addr;    ///< Real (physical) address
+  uint32_t virtual_addr; ///< Virtual address
+};
+
 class ScmasmSyntaxParser {
 public:
   /**
@@ -213,7 +226,7 @@ public:
    * @param label Optional label before directive
    * @param operand Macro name (if not in label)
    */
-  void HandleMa(const std::string &label, const std::string &operand);
+  void HandleMa(const DirectiveContext &ctx);
 
   /**
    * @brief Parse .EM directive (end macro definition)
@@ -293,7 +306,7 @@ public:
    * @param real_addr Real address where code is stored
    * @param virtual_addr Virtual address for labels
    */
-  void StartPhase(uint32_t real_addr, uint32_t virtual_addr);
+  void StartPhase(PhaseAddresses addrs);
 
   /**
    * @brief End phase assembly
@@ -389,8 +402,7 @@ public:
 private:
   // Directive handler function signature (DirectiveContext pattern)
   using DirectiveHandler =
-      std::function<void(const std::string &operand,
-                         DirectiveContext &context)>;
+      std::function<void(DirectiveContext &context)>;
 
   // Macro definition structure
   struct MacroDef {
@@ -549,8 +561,7 @@ private:
    * @param operand Expression to evaluate
    * @param symbols Symbol table to add symbol
    */
-  void HandleEq(const std::string &label, const std::string &operand,
-                ConcreteSymbolTable &symbols);
+  void HandleEq(const DirectiveContext &ctx, ConcreteSymbolTable &symbols);
 
   /**
    * @brief Parse .SE directive (set variable)
@@ -561,8 +572,7 @@ private:
    * @param operand Expression to evaluate
    * @param symbols Symbol table to add/update symbol
    */
-  void HandleSe(const std::string &label, const std::string &operand,
-                ConcreteSymbolTable &symbols);
+  void HandleSe(const DirectiveContext &ctx, ConcreteSymbolTable &symbols);
 
   /**
    * @brief Parse .AS directive (ASCII string)
@@ -661,7 +671,7 @@ private:
    * @param source Remaining source lines
    * @param line_idx Current line index (updated)
    */
-  void HandleDo(const std::string &label, const std::string &operand, 
+  void HandleDo(const DirectiveContext &ctx,
                 Section &section, ConcreteSymbolTable &symbols,
                 const std::vector<std::string> &source, size_t &line_idx);
 
@@ -676,7 +686,7 @@ private:
    * @param source Remaining source lines
    * @param line_idx Current line index (updated)
    */
-  void HandleLu(const std::string &label, const std::string &operand, 
+  void HandleLu(const DirectiveContext &ctx,
                 Section &section, ConcreteSymbolTable &symbols,
                 const std::vector<std::string> &source, size_t &line_idx);
 
@@ -727,7 +737,7 @@ private:
    * @param delimiter Delimiter character
    * @return Transformed character
    */
-  static uint8_t ApplyHighBitRule(char c, char delimiter);
+  static uint8_t ApplyHighBitRule(HighBitChars hbc);
 
   /**
    * @brief Parse string with delimiter semantics

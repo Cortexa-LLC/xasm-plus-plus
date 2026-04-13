@@ -48,7 +48,8 @@ protected:
  */
 TEST_F(CoreDirectiveHandlersTest, OrgWithDecimalAddress) {
   // Act
-  HandleOrg("2048", context_);
+  context_.operand = "2048";
+  HandleOrg(context_);
 
   // Assert
   ASSERT_EQ(section_->atoms.size(), 1UL);
@@ -63,7 +64,8 @@ TEST_F(CoreDirectiveHandlersTest, OrgWithDecimalAddress) {
  */
 TEST_F(CoreDirectiveHandlersTest, OrgWithHexAddress) {
   // Act
-  HandleOrg("$C000", context_);
+  context_.operand = "$C000";
+  HandleOrg(context_);
 
   // Assert
   ASSERT_EQ(section_->atoms.size(), 1UL);
@@ -78,7 +80,8 @@ TEST_F(CoreDirectiveHandlersTest, OrgWithHexAddress) {
  */
 TEST_F(CoreDirectiveHandlersTest, OrgWithBinaryAddress) {
   // Act
-  HandleOrg("%11111111", context_);
+  context_.operand = "%11111111";
+  HandleOrg(context_);
 
   // Assert
   ASSERT_EQ(section_->atoms.size(), 1UL);
@@ -97,7 +100,8 @@ TEST_F(CoreDirectiveHandlersTest, OrgWithSymbolAddress) {
                    std::make_shared<LiteralExpr>(0x8000));
 
   // Act
-  HandleOrg("START", context_);
+  context_.operand = "START";
+  HandleOrg(context_);
 
   // Assert
   ASSERT_EQ(section_->atoms.size(), 1UL);
@@ -112,7 +116,7 @@ TEST_F(CoreDirectiveHandlersTest, OrgWithSymbolAddress) {
  */
 TEST_F(CoreDirectiveHandlersTest, OrgWithEmptyOperandThrows) {
   // Act & Assert
-  EXPECT_THROW(HandleOrg("", context_), std::runtime_error);
+  do { context_.operand = ""; EXPECT_THROW(HandleOrg(context_), std::runtime_error); } while(0);
 }
 
 /**
@@ -120,7 +124,8 @@ TEST_F(CoreDirectiveHandlersTest, OrgWithEmptyOperandThrows) {
  */
 TEST_F(CoreDirectiveHandlersTest, OrgWithWhitespace) {
   // Act
-  HandleOrg("  $1000  ", context_);
+  context_.operand = "  $1000  ";
+  HandleOrg(context_);
 
   // Assert
   ASSERT_EQ(section_->atoms.size(), 1UL);
@@ -138,7 +143,9 @@ TEST_F(CoreDirectiveHandlersTest, OrgWithWhitespace) {
  */
 TEST_F(CoreDirectiveHandlersTest, EquWithLiteralValue) {
   // Act
-  context_.label = "BUFFER_SIZE"; HandleEqu("256", context_);
+  context_.label = "BUFFER_SIZE";
+  context_.operand = "256";
+  HandleEqu(context_);
 
   // Assert
   int64_t value = 0;
@@ -151,7 +158,9 @@ TEST_F(CoreDirectiveHandlersTest, EquWithLiteralValue) {
  */
 TEST_F(CoreDirectiveHandlersTest, EquWithHexValue) {
   // Act
-  context_.label = "IO_PORT"; HandleEqu("$D000", context_);
+  context_.label = "IO_PORT";
+  context_.operand = "$D000";
+  HandleEqu(context_);
 
   // Assert
   int64_t value = 0;
@@ -168,7 +177,9 @@ TEST_F(CoreDirectiveHandlersTest, EquWithExpression) {
                    std::make_shared<LiteralExpr>(0x2000));
 
   // Act
-  context_.label = "OFFSET"; HandleEqu("BASE+$100", context_);
+  context_.label = "OFFSET";
+  context_.operand = "BASE+$100";
+  HandleEqu(context_);
 
   // Assert
   int64_t value = 0;
@@ -181,7 +192,7 @@ TEST_F(CoreDirectiveHandlersTest, EquWithExpression) {
  */
 TEST_F(CoreDirectiveHandlersTest, EquWithEmptyLabelThrows) {
   // Act & Assert
-  EXPECT_THROW(HandleEqu("100", context_), std::runtime_error);
+  do { context_.operand = "100"; EXPECT_THROW(HandleEqu(context_), std::runtime_error); } while(0);
 }
 
 /**
@@ -189,7 +200,9 @@ TEST_F(CoreDirectiveHandlersTest, EquWithEmptyLabelThrows) {
  */
 TEST_F(CoreDirectiveHandlersTest, EquDoesNotCreateAtoms) {
   // Act
-  context_.label = "CONSTANT"; HandleEqu("42", context_);
+  context_.label = "CONSTANT";
+  context_.operand = "42";
+  HandleEqu(context_);
 
   // Assert
   EXPECT_EQ(section_->atoms.size(), 0UL);
@@ -204,7 +217,8 @@ TEST_F(CoreDirectiveHandlersTest, EquDoesNotCreateAtoms) {
  */
 TEST_F(CoreDirectiveHandlersTest, DbWithSingleByte) {
   // Act
-  HandleDb("42", context_);
+  context_.operand = "42";
+  HandleDb(context_);
 
   // Assert
   ASSERT_EQ(section_->atoms.size(), 1UL);
@@ -221,7 +235,8 @@ TEST_F(CoreDirectiveHandlersTest, DbWithSingleByte) {
  */
 TEST_F(CoreDirectiveHandlersTest, DbWithMultipleBytes) {
   // Act
-  HandleDb("1,2,3,4,5", context_);
+  context_.operand = "1,2,3,4,5";
+  HandleDb(context_);
 
   // Assert
   ASSERT_EQ(section_->atoms.size(), 1UL);
@@ -239,7 +254,8 @@ TEST_F(CoreDirectiveHandlersTest, DbWithMultipleBytes) {
  */
 TEST_F(CoreDirectiveHandlersTest, DbWithExpressions) {
   // Act
-  HandleDb("$FF,1+2,%00001111", context_);
+  context_.operand = "$FF,1+2,%00001111";
+  HandleDb(context_);
 
   // Assert
   ASSERT_EQ(section_->atoms.size(), 1UL);
@@ -256,7 +272,8 @@ TEST_F(CoreDirectiveHandlersTest, DbWithExpressions) {
  */
 TEST_F(CoreDirectiveHandlersTest, DbWithWhitespace) {
   // Act
-  HandleDb("  1 ,  2  , 3  ", context_);
+  context_.operand = "  1 ,  2  , 3  ";
+  HandleDb(context_);
 
   // Assert
   ASSERT_EQ(section_->atoms.size(), 1UL);
@@ -273,7 +290,8 @@ TEST_F(CoreDirectiveHandlersTest, DbWithWhitespace) {
  */
 TEST_F(CoreDirectiveHandlersTest, DbWithEmptyOperand) {
   // Act
-  HandleDb("", context_);
+  context_.operand = "";
+  HandleDb(context_);
 
   // Assert - should create empty DataAtom
   ASSERT_EQ(section_->atoms.size(), 1UL);
@@ -292,7 +310,8 @@ TEST_F(CoreDirectiveHandlersTest, DbWithEmptyOperand) {
  */
 TEST_F(CoreDirectiveHandlersTest, DwWithSingleWord) {
   // Act
-  HandleDw("$1234", context_);
+  context_.operand = "$1234";
+  HandleDw(context_);
 
   // Assert
   ASSERT_EQ(section_->atoms.size(), 1UL);
@@ -309,7 +328,8 @@ TEST_F(CoreDirectiveHandlersTest, DwWithSingleWord) {
  */
 TEST_F(CoreDirectiveHandlersTest, DwWithMultipleWords) {
   // Act
-  HandleDw("$1000,$2000,$3000", context_);
+  context_.operand = "$1000,$2000,$3000";
+  HandleDw(context_);
 
   // Assert
   ASSERT_EQ(section_->atoms.size(), 1UL);
@@ -325,7 +345,8 @@ TEST_F(CoreDirectiveHandlersTest, DwWithMultipleWords) {
  */
 TEST_F(CoreDirectiveHandlersTest, DwWithWhitespace) {
   // Act
-  HandleDw("  $1000  ,  $2000  ", context_);
+  context_.operand = "  $1000  ,  $2000  ";
+  HandleDw(context_);
 
   // Assert
   ASSERT_EQ(section_->atoms.size(), 1UL);
@@ -345,7 +366,8 @@ TEST_F(CoreDirectiveHandlersTest, DwWithWhitespace) {
  */
 TEST_F(CoreDirectiveHandlersTest, DsWithLiteralCount) {
   // Act
-  HandleDs("100", context_);
+  context_.operand = "100";
+  HandleDs(context_);
 
   // Assert
   ASSERT_EQ(section_->atoms.size(), 1UL);
@@ -360,7 +382,8 @@ TEST_F(CoreDirectiveHandlersTest, DsWithLiteralCount) {
  */
 TEST_F(CoreDirectiveHandlersTest, DsWithHexCount) {
   // Act
-  HandleDs("$100", context_);
+  context_.operand = "$100";
+  HandleDs(context_);
 
   // Assert
   ASSERT_EQ(section_->atoms.size(), 1UL);
@@ -379,7 +402,8 @@ TEST_F(CoreDirectiveHandlersTest, DsWithExpression) {
                    std::make_shared<LiteralExpr>(50));
 
   // Act
-  HandleDs("SIZE*2", context_);
+  context_.operand = "SIZE*2";
+  HandleDs(context_);
 
   // Assert
   ASSERT_EQ(section_->atoms.size(), 1UL);
@@ -394,7 +418,7 @@ TEST_F(CoreDirectiveHandlersTest, DsWithExpression) {
  */
 TEST_F(CoreDirectiveHandlersTest, DsWithNegativeCountThrows) {
   // Act & Assert
-  EXPECT_THROW(HandleDs("-10", context_), std::runtime_error);
+  do { context_.operand = "-10"; EXPECT_THROW(HandleDs(context_), std::runtime_error); } while(0);
 }
 
 /**
@@ -402,7 +426,8 @@ TEST_F(CoreDirectiveHandlersTest, DsWithNegativeCountThrows) {
  */
 TEST_F(CoreDirectiveHandlersTest, DsWithWhitespace) {
   // Act
-  HandleDs("  50  ", context_);
+  context_.operand = "  50  ";
+  HandleDs(context_);
 
   // Assert
   ASSERT_EQ(section_->atoms.size(), 1UL);
@@ -416,7 +441,8 @@ TEST_F(CoreDirectiveHandlersTest, DsWithWhitespace) {
  */
 TEST_F(CoreDirectiveHandlersTest, DsWithEmptyOperand) {
   // Act
-  HandleDs("", context_);
+  context_.operand = "";
+  HandleDs(context_);
 
   // Assert
   ASSERT_EQ(section_->atoms.size(), 1UL);
@@ -461,7 +487,10 @@ protected:
  */
 TEST_F(CoreDirectiveRegistryTest, RegistryOrgWorks) {
   // Act
-  registry_.Execute(directives::ORG, "", "$C000", context_);
+  context_.mnemonic = directives::ORG;
+  context_.label = "";
+  context_.operand = "$C000";
+  registry_.Execute(context_);
 
   // Assert
   ASSERT_EQ(section_->atoms.size(), 1UL);
@@ -476,7 +505,10 @@ TEST_F(CoreDirectiveRegistryTest, RegistryOrgWorks) {
  */
 TEST_F(CoreDirectiveRegistryTest, RegistryEquWorks) {
   // Act
-  registry_.Execute(directives::EQU, "TEST_VALUE", "42", context_);
+  context_.mnemonic = directives::EQU;
+  context_.label = "TEST_VALUE";
+  context_.operand = "42";
+  registry_.Execute(context_);
 
   // Assert
   int64_t value = 0;
@@ -489,7 +521,10 @@ TEST_F(CoreDirectiveRegistryTest, RegistryEquWorks) {
  */
 TEST_F(CoreDirectiveRegistryTest, RegistryDbWorks) {
   // Act
-  registry_.Execute(directives::DB, "", "1,2,3", context_);
+  context_.mnemonic = directives::DB;
+  context_.label = "";
+  context_.operand = "1,2,3";
+  registry_.Execute(context_);
 
   // Assert
   ASSERT_EQ(section_->atoms.size(), 1UL);
@@ -505,7 +540,10 @@ TEST_F(CoreDirectiveRegistryTest, RegistryDbWorks) {
  */
 TEST_F(CoreDirectiveRegistryTest, RegistryDwWorks) {
   // Act
-  registry_.Execute(directives::DW, "", "$1000,$2000", context_);
+  context_.mnemonic = directives::DW;
+  context_.label = "";
+  context_.operand = "$1000,$2000";
+  registry_.Execute(context_);
 
   // Assert
   ASSERT_EQ(section_->atoms.size(), 1UL);
@@ -521,7 +559,10 @@ TEST_F(CoreDirectiveRegistryTest, RegistryDwWorks) {
  */
 TEST_F(CoreDirectiveRegistryTest, RegistryDsWorks) {
   // Act
-  registry_.Execute(directives::DS, "", "100", context_);
+  context_.mnemonic = directives::DS;
+  context_.label = "";
+  context_.operand = "100";
+  registry_.Execute(context_);
 
   // Assert
   ASSERT_EQ(section_->atoms.size(), 1UL);
@@ -536,11 +577,17 @@ TEST_F(CoreDirectiveRegistryTest, RegistryDsWorks) {
  */
 TEST_F(CoreDirectiveRegistryTest, RegistryDbAliases) {
   // Test DEFB
-  registry_.Execute(directives::DEFB, "", "42", context_);
+  context_.mnemonic = directives::DEFB;
+  context_.label = "";
+  context_.operand = "42";
+  registry_.Execute(context_);
   ASSERT_EQ(section_->atoms.size(), 1UL);
 
   // Test BYTE
-  registry_.Execute(directives::BYTE, "", "43", context_);
+  context_.mnemonic = directives::BYTE;
+  context_.label = "";
+  context_.operand = "43";
+  registry_.Execute(context_);
   ASSERT_EQ(section_->atoms.size(), 2UL);
 }
 
@@ -549,11 +596,17 @@ TEST_F(CoreDirectiveRegistryTest, RegistryDbAliases) {
  */
 TEST_F(CoreDirectiveRegistryTest, RegistryDwAliases) {
   // Test DEFW
-  registry_.Execute(directives::DEFW, "", "$1234", context_);
+  context_.mnemonic = directives::DEFW;
+  context_.label = "";
+  context_.operand = "$1234";
+  registry_.Execute(context_);
   ASSERT_EQ(section_->atoms.size(), 1UL);
 
   // Test WORD
-  registry_.Execute(directives::WORD, "", "$5678", context_);
+  context_.mnemonic = directives::WORD;
+  context_.label = "";
+  context_.operand = "$5678";
+  registry_.Execute(context_);
   ASSERT_EQ(section_->atoms.size(), 2UL);
 }
 
@@ -562,15 +615,24 @@ TEST_F(CoreDirectiveRegistryTest, RegistryDwAliases) {
  */
 TEST_F(CoreDirectiveRegistryTest, RegistryDsAliases) {
   // Test DEFS
-  registry_.Execute(directives::DEFS, "", "10", context_);
+  context_.mnemonic = directives::DEFS;
+  context_.label = "";
+  context_.operand = "10";
+  registry_.Execute(context_);
   ASSERT_EQ(section_->atoms.size(), 1UL);
 
   // Test BLOCK
-  registry_.Execute(directives::BLOCK, "", "20", context_);
+  context_.mnemonic = directives::BLOCK;
+  context_.label = "";
+  context_.operand = "20";
+  registry_.Execute(context_);
   ASSERT_EQ(section_->atoms.size(), 2UL);
 
   // Test RMB
-  registry_.Execute(directives::RMB, "", "30", context_);
+  context_.mnemonic = directives::RMB;
+  context_.label = "";
+  context_.operand = "30";
+  registry_.Execute(context_);
   ASSERT_EQ(section_->atoms.size(), 3UL);
 }
 
@@ -602,7 +664,8 @@ TEST_F(CoreDirectiveRegistryTest, RegistryIsRegistered) {
  */
 TEST_F(CoreDirectiveHandlersTest, OrgWithAdditionExpression) {
   // Act
-  HandleOrg("$1000+$100", context_);
+  context_.operand = "$1000+$100";
+  HandleOrg(context_);
 
   // Assert
   ASSERT_EQ(section_->atoms.size(), 1UL);
@@ -617,7 +680,8 @@ TEST_F(CoreDirectiveHandlersTest, OrgWithAdditionExpression) {
  */
 TEST_F(CoreDirectiveHandlersTest, OrgWithSubtractionExpression) {
   // Act
-  HandleOrg("$2000-$100", context_);
+  context_.operand = "$2000-$100";
+  HandleOrg(context_);
 
   // Assert
   ASSERT_EQ(section_->atoms.size(), 1UL);
@@ -632,7 +696,8 @@ TEST_F(CoreDirectiveHandlersTest, OrgWithSubtractionExpression) {
  */
 TEST_F(CoreDirectiveHandlersTest, OrgWithMultiplicationExpression) {
   // Act
-  HandleOrg("$100*16", context_);
+  context_.operand = "$100*16";
+  HandleOrg(context_);
 
   // Assert
   ASSERT_EQ(section_->atoms.size(), 1UL);
@@ -647,7 +712,8 @@ TEST_F(CoreDirectiveHandlersTest, OrgWithMultiplicationExpression) {
  */
 TEST_F(CoreDirectiveHandlersTest, OrgWithDivisionExpression) {
   // Act
-  HandleOrg("$4000/2", context_);
+  context_.operand = "$4000/2";
+  HandleOrg(context_);
 
   // Assert
   ASSERT_EQ(section_->atoms.size(), 1UL);
@@ -662,7 +728,8 @@ TEST_F(CoreDirectiveHandlersTest, OrgWithDivisionExpression) {
  */
 TEST_F(CoreDirectiveHandlersTest, OrgWithModuloExpression) {
   // Act
-  HandleOrg("1000%256", context_);
+  context_.operand = "1000%256";
+  HandleOrg(context_);
 
   // Assert
   ASSERT_EQ(section_->atoms.size(), 1UL);
@@ -677,7 +744,8 @@ TEST_F(CoreDirectiveHandlersTest, OrgWithModuloExpression) {
  */
 TEST_F(CoreDirectiveHandlersTest, OrgWithNestedExpression) {
   // Act
-  HandleOrg("($1000+$100)*2", context_);
+  context_.operand = "($1000+$100)*2";
+  HandleOrg(context_);
 
   // Assert
   ASSERT_EQ(section_->atoms.size(), 1UL);
@@ -692,7 +760,8 @@ TEST_F(CoreDirectiveHandlersTest, OrgWithNestedExpression) {
  */
 TEST_F(CoreDirectiveHandlersTest, OrgWithComplexNestedExpression) {
   // Act
-  HandleOrg("(100+50)*2-20", context_);
+  context_.operand = "(100+50)*2-20";
+  HandleOrg(context_);
 
   // Assert
   ASSERT_EQ(section_->atoms.size(), 1UL);
@@ -711,7 +780,8 @@ TEST_F(CoreDirectiveHandlersTest, OrgWithSymbolArithmetic) {
                    std::make_shared<LiteralExpr>(0x8000));
 
   // Act
-  HandleOrg("BASE+$100", context_);
+  context_.operand = "BASE+$100";
+  HandleOrg(context_);
 
   // Assert
   ASSERT_EQ(section_->atoms.size(), 1UL);
@@ -726,7 +796,9 @@ TEST_F(CoreDirectiveHandlersTest, OrgWithSymbolArithmetic) {
  */
 TEST_F(CoreDirectiveHandlersTest, EquWithMultiplicationExpression) {
   // Act
-  context_.label = "SIZE"; HandleEqu("64*1024", context_);
+  context_.label = "SIZE";
+  context_.operand = "64*1024";
+  HandleEqu(context_);
 
   // Assert
   int64_t value = 0;
@@ -745,7 +817,9 @@ TEST_F(CoreDirectiveHandlersTest, EquWithComplexExpression) {
                    std::make_shared<LiteralExpr>(25));
 
   // Act
-  context_.label = "SCREEN_SIZE"; HandleEqu("WIDTH*HEIGHT", context_);
+  context_.label = "SCREEN_SIZE";
+  context_.operand = "WIDTH*HEIGHT";
+  HandleEqu(context_);
 
   // Assert
   int64_t value = 0;
@@ -764,7 +838,9 @@ TEST_F(CoreDirectiveHandlersTest, EquWithNestedExpressionAndSymbols) {
                    std::make_shared<LiteralExpr>(0x10));
 
   // Act
-  context_.label = "ADDR"; HandleEqu("(BASE+OFFSET)*2", context_);
+  context_.label = "ADDR";
+  context_.operand = "(BASE+OFFSET)*2";
+  HandleEqu(context_);
 
   // Assert
   int64_t value = 0;
@@ -777,7 +853,8 @@ TEST_F(CoreDirectiveHandlersTest, EquWithNestedExpressionAndSymbols) {
  */
 TEST_F(CoreDirectiveHandlersTest, DsWithMultiplicationExpression) {
   // Act
-  HandleDs("10*16", context_);
+  context_.operand = "10*16";
+  HandleDs(context_);
 
   // Assert
   ASSERT_EQ(section_->atoms.size(), 1UL);
@@ -796,7 +873,8 @@ TEST_F(CoreDirectiveHandlersTest, DsWithSymbolAndArithmetic) {
                    std::make_shared<LiteralExpr>(256));
 
   // Act
-  HandleDs("PAGE_SIZE*4", context_);
+  context_.operand = "PAGE_SIZE*4";
+  HandleDs(context_);
 
   // Assert
   ASSERT_EQ(section_->atoms.size(), 1UL);
@@ -811,7 +889,8 @@ TEST_F(CoreDirectiveHandlersTest, DsWithSymbolAndArithmetic) {
  */
 TEST_F(CoreDirectiveHandlersTest, DsWithDivisionExpression) {
   // Act
-  HandleDs("1024/4", context_);
+  context_.operand = "1024/4";
+  HandleDs(context_);
 
   // Assert
   ASSERT_EQ(section_->atoms.size(), 1UL);
@@ -826,7 +905,8 @@ TEST_F(CoreDirectiveHandlersTest, DsWithDivisionExpression) {
  */
 TEST_F(CoreDirectiveHandlersTest, OrgWithOperatorPrecedence) {
   // Act - should evaluate as $1000 + ($10 * 2) = $1000 + $20 = $1020
-  HandleOrg("$1000+$10*2", context_);
+  context_.operand = "$1000+$10*2";
+  HandleOrg(context_);
 
   // Assert
   ASSERT_EQ(section_->atoms.size(), 1UL);

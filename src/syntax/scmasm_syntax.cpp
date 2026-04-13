@@ -986,9 +986,19 @@ void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
           do_operand = do_operand.substr(0, ws);
         }
       }
-      HandleDo(label, do_operand, section, symbols, source, line_idx);
+      {
+        DirectiveContext do_ctx;
+        do_ctx.label = label;
+        do_ctx.operand = do_operand;
+        HandleDo(do_ctx, section, symbols, source, line_idx);
+      }
     } else if (opcode_upper == LU) { // NOLINT(bugprone-branch-clone)
-      HandleLu(label, operand, section, symbols, source, line_idx);
+      {
+        DirectiveContext lu_ctx;
+        lu_ctx.label = label;
+        lu_ctx.operand = operand;
+        HandleLu(lu_ctx, section, symbols, source, line_idx);
+      }
     } else if (opcode_upper == ELSE || opcode_upper == FIN ||
                opcode_upper == ENDU) {
       // These are handled by their opening directives (.DO, .LU)
@@ -1013,7 +1023,8 @@ void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
         context.include_paths = &include_paths_;
         context.path_mappings = &path_mappings_;
         context.label = label;
-        it->second(directive_operand, context);
+        context.operand = directive_operand;
+        it->second(context);
       } else {
         // Not in registry and not a control flow directive
         throw std::runtime_error("Unknown directive: " + opcode);
@@ -1355,9 +1366,10 @@ void ScmasmSyntaxParser::HandleOr(const std::string &operand, Section &section,
   current_address_ = address;
 }
 
-void ScmasmSyntaxParser::HandleEq(const std::string &label,
-                                  const std::string &operand,
+void ScmasmSyntaxParser::HandleEq(const DirectiveContext &ctx,
                                   ConcreteSymbolTable &symbols) {
+  const std::string &label = ctx.label;
+  const std::string &operand = ctx.operand;
   if (operand.empty()) {
     throw std::runtime_error(".EQ requires a value");
   }
@@ -1370,9 +1382,10 @@ void ScmasmSyntaxParser::HandleEq(const std::string &label,
   symbols.Define(label, SymbolType::Equate, expr);
 }
 
-void ScmasmSyntaxParser::HandleSe(const std::string &label,
-                                  const std::string &operand,
+void ScmasmSyntaxParser::HandleSe(const DirectiveContext &ctx,
                                   ConcreteSymbolTable &symbols) {
+  const std::string &label = ctx.label;
+  const std::string &operand = ctx.operand;
   if (operand.empty()) {
     throw std::runtime_error(".SE requires a value");
   }
@@ -1468,7 +1481,7 @@ uint32_t ScmasmSyntaxParser::ParseNumber(const std::string &str) {
   if (!std::isdigit(trimmed[0]) && trimmed.length() == 2) {
     char delimiter = trimmed[0];
     char c = trimmed[1];
-    return ApplyHighBitRule(c, delimiter);
+    return ApplyHighBitRule({c, delimiter});
   }
 
   // If not a digit and not a 2-char constant, it's not a valid number
@@ -1635,14 +1648,14 @@ uint32_t ScmasmSyntaxParser::EvaluateExpression(const std::string &str,
   return static_cast<uint32_t>(expr->Evaluate(symbols));
 }
 
-uint8_t ScmasmSyntaxParser::ApplyHighBitRule(char c, char delimiter) {
+uint8_t ScmasmSyntaxParser::ApplyHighBitRule(HighBitChars hbc) {
   // SCMASM high-bit rule:
   // If delimiter ASCII < 0x27 (apostrophe '), high bit is SET
   // Otherwise, high bit is CLEAR
 
-  auto result = static_cast<uint8_t>(c);
+  auto result = static_cast<uint8_t>(hbc.input);
 
-  if (delimiter < 0x27) {
+  if (hbc.delimiter < 0x27) {
     // Set high bit — explicit cast resolves narrowing: uint8_t |= unsigned
     result = static_cast<uint8_t>(static_cast<unsigned>(result) | 0x80U); // NOLINT(bugprone-narrowing-conversions,cppcoreguidelines-narrowing-conversions)
   } else {
@@ -1738,7 +1751,7 @@ std::string ScmasmSyntaxParser::ExpandCharLiteralsInExpr(
         if (i + 2 < s.size() && s[i + 2] == delim) {
           len = 3; // closing delimiter present: "X" or 'X'
         }
-        uint8_t val = ApplyHighBitRule(ch, delim);
+        uint8_t val = ApplyHighBitRule({ch, delim});
         char hex[8];
         snprintf(hex, sizeof(hex), "$%02X", val);
         result += hex;
@@ -1799,7 +1812,7 @@ char ScmasmSyntaxParser::ParseString(const std::string &operand,
   // Extract string content (between delimiters)
   for (size_t i = 1; i < end; ++i) {
     char c = trimmed[i];
-    uint8_t byte = ApplyHighBitRule(c, delimiter);
+    uint8_t byte = ApplyHighBitRule({c, delimiter});
     result.push_back(byte);
   }
 
@@ -2004,11 +2017,11 @@ void ScmasmSyntaxParser::HandleBs(const std::string &operand, Section &section,
 // Phase 3: Macros, Conditionals, Local Labels, Loops
 // ============================================================================
 
-void ScmasmSyntaxParser::HandleMa(const std::string &label,
-                                  const std::string &operand) {
+void ScmasmSyntaxParser::HandleMa(const DirectiveContext &ctx) {
+  const std::string &label = ctx.label;
+  const std::string &operand = ctx.operand;
   // Macro name can come from label or operand
   std::string macro_name;
-
   if (!label.empty()) {
     macro_name = label;
   } else if (!operand.empty()) { // NOLINT(bugprone-branch-clone)
@@ -2157,11 +2170,13 @@ std::string ScmasmSyntaxParser::SubstituteParameters(
   return result;
 }
 
-void ScmasmSyntaxParser::HandleDo(const std::string &label,
-                                  const std::string &operand, Section &section,
+void ScmasmSyntaxParser::HandleDo(const DirectiveContext &ctx,
+                                  Section &section,
                                   ConcreteSymbolTable &symbols,
                                   const std::vector<std::string> &source,
                                   size_t &line_idx) {
+  const std::string &label = ctx.label;
+  const std::string &operand = ctx.operand;
   // .DO requires an expression
   if (operand.empty()) {
     throw std::runtime_error(".DO requires an expression");
@@ -2395,11 +2410,13 @@ void ScmasmSyntaxParser::HandleDo(const std::string &label,
   line_idx = fin_line;
 }
 
-void ScmasmSyntaxParser::HandleLu(const std::string &label,
-                                  const std::string &operand, Section &section,
+void ScmasmSyntaxParser::HandleLu(const DirectiveContext &ctx,
+                                  Section &section,
                                   ConcreteSymbolTable &symbols,
                                   const std::vector<std::string> &source,
                                   size_t &line_idx) {
+  const std::string &label = ctx.label;
+  const std::string &operand = ctx.operand;
   // .LU requires an expression
   if (operand.empty()) {
     throw std::runtime_error(".LU requires an expression");
@@ -2517,9 +2534,9 @@ uint32_t ScmasmSyntaxParser::EndDummySection() {
 
 bool ScmasmSyntaxParser::InPhase() const { return in_phase_; }
 
-void ScmasmSyntaxParser::StartPhase(uint32_t real_addr, uint32_t virtual_addr) {
-  phase_real_addr_ = real_addr;
-  phase_virtual_addr_ = virtual_addr;
+void ScmasmSyntaxParser::StartPhase(PhaseAddresses addrs) {
+  phase_real_addr_ = addrs.real_addr;
+  phase_virtual_addr_ = addrs.virtual_addr;
   in_phase_ = true;
 }
 

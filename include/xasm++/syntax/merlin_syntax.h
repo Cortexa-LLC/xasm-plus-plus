@@ -29,66 +29,36 @@ struct DirectiveContext;
 
 // Forward declare merlin namespace and directive handlers
 namespace merlin {
-void HandleOrg(const std::string &,
-               xasm::DirectiveContext &);
-void HandleEqu(const std::string &,
-               xasm::DirectiveContext &);
-void HandleDb(const std::string &,
-              xasm::DirectiveContext &);
-void HandleDw(const std::string &,
-              xasm::DirectiveContext &);
-void HandleHex(const std::string &,
-               xasm::DirectiveContext &);
-void HandleDs(const std::string &,
-              xasm::DirectiveContext &);
-void HandleDum(const std::string &,
-               xasm::DirectiveContext &);
-void HandleDend(const std::string &,
-                xasm::DirectiveContext &);
-void HandlePut(const std::string &,
-               xasm::DirectiveContext &);
-void HandleDo(const std::string &,
-              xasm::DirectiveContext &);
-void HandleElse(const std::string &,
-                xasm::DirectiveContext &);
-void HandleFin(const std::string &,
-               xasm::DirectiveContext &);
-void HandleLst(const std::string &,
-               xasm::DirectiveContext &);
-void HandleLstdo(const std::string &,
-                 xasm::DirectiveContext &);
-void HandleTr(const std::string &,
-              xasm::DirectiveContext &);
-void HandleAsc(const std::string &,
-               xasm::DirectiveContext &);
-void HandleDci(const std::string &,
-               xasm::DirectiveContext &);
-void HandleInv(const std::string &,
-               xasm::DirectiveContext &);
-void HandleFls(const std::string &,
-               xasm::DirectiveContext &);
-void HandleDa(const std::string &,
-              xasm::DirectiveContext &);
-void HandlePmc(const std::string &,
-               xasm::DirectiveContext &);
-void HandleEom(const std::string &,
-               xasm::DirectiveContext &);
-void HandleMac(const std::string &,
-               xasm::DirectiveContext &);
-void HandleUsr(const std::string &,
-               xasm::DirectiveContext &);
-void HandleEnd(const std::string &,
-               xasm::DirectiveContext &);
-void HandleSav(const std::string &,
-               xasm::DirectiveContext &);
-void HandleXc(const std::string &,
-              xasm::DirectiveContext &);
-void HandleMx(const std::string &,
-              xasm::DirectiveContext &);
-void HandleRev(const std::string &,
-               xasm::DirectiveContext &);
-void HandleLup(const std::string &,
-               xasm::DirectiveContext &);
+void HandleOrg(xasm::DirectiveContext &);
+void HandleEqu(xasm::DirectiveContext &);
+void HandleDb(xasm::DirectiveContext &);
+void HandleDw(xasm::DirectiveContext &);
+void HandleHex(xasm::DirectiveContext &);
+void HandleDs(xasm::DirectiveContext &);
+void HandleDum(xasm::DirectiveContext &);
+void HandleDend(xasm::DirectiveContext &);
+void HandlePut(xasm::DirectiveContext &);
+void HandleDo(xasm::DirectiveContext &);
+void HandleElse(xasm::DirectiveContext &);
+void HandleFin(xasm::DirectiveContext &);
+void HandleLst(xasm::DirectiveContext &);
+void HandleLstdo(xasm::DirectiveContext &);
+void HandleTr(xasm::DirectiveContext &);
+void HandleAsc(xasm::DirectiveContext &);
+void HandleDci(xasm::DirectiveContext &);
+void HandleInv(xasm::DirectiveContext &);
+void HandleFls(xasm::DirectiveContext &);
+void HandleDa(xasm::DirectiveContext &);
+void HandlePmc(xasm::DirectiveContext &);
+void HandleEom(xasm::DirectiveContext &);
+void HandleMac(xasm::DirectiveContext &);
+void HandleUsr(xasm::DirectiveContext &);
+void HandleEnd(xasm::DirectiveContext &);
+void HandleSav(xasm::DirectiveContext &);
+void HandleXc(xasm::DirectiveContext &);
+void HandleMx(xasm::DirectiveContext &);
+void HandleRev(xasm::DirectiveContext &);
+void HandleLup(xasm::DirectiveContext &);
 } // namespace merlin
 
 // Forward declarations
@@ -175,66 +145,36 @@ class MerlinSyntaxParser {
 public:
   // Friend declarations for extracted directive handlers (xasm::merlin
   // namespace)
-  friend void xasm::merlin::HandleOrg(const std::string &,
-                                      DirectiveContext &);
-  friend void xasm::merlin::HandleEqu(const std::string &,
-                                      DirectiveContext &);
-  friend void xasm::merlin::HandleDb(const std::string &,
-                                     DirectiveContext &);
-  friend void xasm::merlin::HandleDw(const std::string &,
-                                     DirectiveContext &);
-  friend void xasm::merlin::HandleHex(const std::string &,
-                                      DirectiveContext &);
-  friend void xasm::merlin::HandleDs(const std::string &,
-                                     DirectiveContext &);
-  friend void xasm::merlin::HandleDum(const std::string &,
-                                      DirectiveContext &);
-  friend void xasm::merlin::HandleDend(const std::string &,
-                                       DirectiveContext &);
-  friend void xasm::merlin::HandlePut(const std::string &,
-                                      DirectiveContext &);
-  friend void xasm::merlin::HandleDo(const std::string &,
-                                     DirectiveContext &);
-  friend void xasm::merlin::HandleElse(const std::string &,
-                                       DirectiveContext &);
-  friend void xasm::merlin::HandleFin(const std::string &,
-                                      DirectiveContext &);
-  friend void xasm::merlin::HandleLst(const std::string &,
-                                      DirectiveContext &);
-  friend void xasm::merlin::HandleLstdo(const std::string &,
-                                        DirectiveContext &);
-  friend void xasm::merlin::HandleTr(const std::string &,
-                                     DirectiveContext &);
-  friend void xasm::merlin::HandleAsc(const std::string &,
-                                      DirectiveContext &);
-  friend void xasm::merlin::HandleDci(const std::string &,
-                                      DirectiveContext &);
-  friend void xasm::merlin::HandleInv(const std::string &,
-                                      DirectiveContext &);
-  friend void xasm::merlin::HandleFls(const std::string &,
-                                      DirectiveContext &);
-  friend void xasm::merlin::HandleDa(const std::string &,
-                                     DirectiveContext &);
-  friend void xasm::merlin::HandlePmc(const std::string &,
-                                      DirectiveContext &);
-  friend void xasm::merlin::HandleEom(const std::string &,
-                                      DirectiveContext &);
-  friend void xasm::merlin::HandleMac(const std::string &,
-                                      DirectiveContext &);
-  friend void xasm::merlin::HandleUsr(const std::string &,
-                                      DirectiveContext &);
-  friend void xasm::merlin::HandleEnd(const std::string &,
-                                      DirectiveContext &);
-  friend void xasm::merlin::HandleSav(const std::string &,
-                                      DirectiveContext &);
-  friend void xasm::merlin::HandleXc(const std::string &,
-                                     DirectiveContext &);
-  friend void xasm::merlin::HandleMx(const std::string &,
-                                     DirectiveContext &);
-  friend void xasm::merlin::HandleRev(const std::string &,
-                                      DirectiveContext &);
-  friend void xasm::merlin::HandleLup(const std::string &,
-                                      DirectiveContext &);
+  friend void xasm::merlin::HandleOrg(DirectiveContext &);
+  friend void xasm::merlin::HandleEqu(DirectiveContext &);
+  friend void xasm::merlin::HandleDb(DirectiveContext &);
+  friend void xasm::merlin::HandleDw(DirectiveContext &);
+  friend void xasm::merlin::HandleHex(DirectiveContext &);
+  friend void xasm::merlin::HandleDs(DirectiveContext &);
+  friend void xasm::merlin::HandleDum(DirectiveContext &);
+  friend void xasm::merlin::HandleDend(DirectiveContext &);
+  friend void xasm::merlin::HandlePut(DirectiveContext &);
+  friend void xasm::merlin::HandleDo(DirectiveContext &);
+  friend void xasm::merlin::HandleElse(DirectiveContext &);
+  friend void xasm::merlin::HandleFin(DirectiveContext &);
+  friend void xasm::merlin::HandleLst(DirectiveContext &);
+  friend void xasm::merlin::HandleLstdo(DirectiveContext &);
+  friend void xasm::merlin::HandleTr(DirectiveContext &);
+  friend void xasm::merlin::HandleAsc(DirectiveContext &);
+  friend void xasm::merlin::HandleDci(DirectiveContext &);
+  friend void xasm::merlin::HandleInv(DirectiveContext &);
+  friend void xasm::merlin::HandleFls(DirectiveContext &);
+  friend void xasm::merlin::HandleDa(DirectiveContext &);
+  friend void xasm::merlin::HandlePmc(DirectiveContext &);
+  friend void xasm::merlin::HandleEom(DirectiveContext &);
+  friend void xasm::merlin::HandleMac(DirectiveContext &);
+  friend void xasm::merlin::HandleUsr(DirectiveContext &);
+  friend void xasm::merlin::HandleEnd(DirectiveContext &);
+  friend void xasm::merlin::HandleSav(DirectiveContext &);
+  friend void xasm::merlin::HandleXc(DirectiveContext &);
+  friend void xasm::merlin::HandleMx(DirectiveContext &);
+  friend void xasm::merlin::HandleRev(DirectiveContext &);
+  friend void xasm::merlin::HandleLup(DirectiveContext &);
 
   // Legacy friend declarations (to be migrated/removed)
   friend void RegisterMerlinDirectiveHandlers(DirectiveRegistry &registry,
@@ -457,8 +397,7 @@ private:
    * Updated to use DirectiveContext pattern for better extensibility.
    */
   using DirectiveHandler =
-      std::function<void(const std::string &operand,
-                         DirectiveContext &context)>;
+      std::function<void(DirectiveContext &context)>;
 
   /**
    * @brief Directive registry mapping directive names to handlers
@@ -485,6 +424,7 @@ private:
    */
   bool DispatchDirective(const std::string &directive, const std::string &label,
                          const std::string &operand, DirectiveContext &context);
+
 
   // Parsing helpers
   static std::string StripComments(const std::string &line);
@@ -559,8 +499,7 @@ private:
                          ConcreteSymbolTable &symbols);
 
   // Directive handlers
-  void HandleEqu(const std::string &label, const std::string &operand,
-                 ConcreteSymbolTable &symbols);
+  void HandleEqu(const DirectiveContext &ctx, ConcreteSymbolTable &symbols);
   void HandleHex(const std::string &operand, Section &section);
   void HandleDS(const std::string &operand, Section &section,
                 ConcreteSymbolTable &symbols);
@@ -592,7 +531,7 @@ private:
   void HandlePMC(const std::string &operand);
   void HandleEOM();
   void HandleMacroEnd(); // End macro definition (<<<)
-  void ExpandMacro(const std::string &macro_name, const std::string &operand,
+  void ExpandMacro(const DirectiveContext &ctx,
                    Section &section, ConcreteSymbolTable &symbols);
 
   // Macro helpers

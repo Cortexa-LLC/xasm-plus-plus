@@ -1355,23 +1355,20 @@ size_t Cpu6502::GetInstructionSize(const std::string &mnemonic, // NOLINT(bugpro
  * bytes). If target is outside this range, branch must be "relaxed" into B!cc +
  * JMP sequence.
  *
- * @param current_addr Address of the branch instruction
- * @param target_addr Target address to branch to
+ * @param target Branch source and destination addresses
  * @return true if branch needs relaxation (out of range), false otherwise
  */
-bool Cpu6502::NeedsBranchRelaxation(uint16_t current_addr, // NOLINT(bugprone-easily-swappable-parameters)
-                                    uint16_t target_addr) const {
-  return Cpu6502BranchHandler::NeedsBranchRelaxation(current_addr, target_addr);
+bool Cpu6502::NeedsBranchRelaxation(BranchTarget target) const {
+  return Cpu6502BranchHandler::NeedsBranchRelaxation(target);
 }
 
 uint8_t Cpu6502::GetComplementaryBranchOpcode(uint8_t branch_opcode) const {
   return Cpu6502BranchHandler::GetComplementaryBranchOpcode(branch_opcode);
 }
 
-std::vector<uint8_t> Cpu6502::EncodeBranchWithRelaxation( // NOLINT(bugprone-easily-swappable-parameters)
-    uint8_t branch_opcode, uint16_t current_addr, uint16_t target_addr) const {
-  return Cpu6502BranchHandler::EncodeBranchWithRelaxation(branch_opcode, current_addr,
-                                                    target_addr);
+std::vector<uint8_t> Cpu6502::EncodeBranchWithRelaxation(
+    uint8_t branch_opcode, BranchTarget target) const {
+  return Cpu6502BranchHandler::EncodeBranchWithRelaxation(branch_opcode, target);
 }
 
 // ============================================================================
@@ -2468,7 +2465,7 @@ Cpu6502::EncodeInstructionSpecial(const std::string &mnemonic, // NOLINT(bugpron
     uint8_t branch_opcode = it->second;
 
     // Check if branch is out of range
-    if (Cpu6502BranchHandler::NeedsBranchRelaxation(current_address, target_addr)) {
+    if (Cpu6502BranchHandler::NeedsBranchRelaxation({current_address, target_addr})) {
       if (!relax_branches_) {
         // Error by default — matches original assembler behavior (Merlin 8, etc.)
         // Programmer is responsible for keeping branches in range.
@@ -2480,8 +2477,7 @@ Cpu6502::EncodeInstructionSpecial(const std::string &mnemonic, // NOLINT(bugpron
       }
     }
     // Use branch relaxation (handles both short and long branches)
-    return EncodeBranchWithRelaxation(branch_opcode, current_address,
-                                      target_addr);
+    return EncodeBranchWithRelaxation(branch_opcode, {current_address, target_addr});
   }
 
   // MVN/MVP (Block Move with two operands)

@@ -187,7 +187,7 @@ TEST_F(ExceptionSafetyTest, CPU_OutOfRange_SpecificException) {
   try {
     std::vector<uint8_t> bytes =
         cpu->EncodeBranchWithRelaxation(0xF0, // BEQ opcode
-                                        from_addr, to_addr);
+                                        {from_addr, to_addr});
     // Should either succeed with long branch or throw specific exception
     EXPECT_TRUE(true);
   } catch (const std::invalid_argument &e) {

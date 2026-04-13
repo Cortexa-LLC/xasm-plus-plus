@@ -16,30 +16,21 @@ namespace xasm::simple {
 
 /**
  * @brief Handle ORG directive (set origin address)
- * @param label Label (unused for ORG)
- * @param operand Address expression (hex format: $XXXX or XXXX)
- * @param context Directive execution context
+ * @param context Directive execution context (operand contains address expression)
  */
-void HandleOrg(const std::string &operand,
-               DirectiveContext &context);
+void HandleOrg(DirectiveContext &context);
 
 /**
  * @brief Handle DB directive (define byte data)
- * @param label Label (unused)
- * @param operand Comma-separated byte values (hex: $XX or decimal)
- * @param context Directive execution context
+ * @param context Directive execution context (operand contains comma-separated byte values)
  */
-void HandleDb(const std::string &operand,
-              DirectiveContext &context);
+void HandleDb(DirectiveContext &context);
 
 /**
  * @brief Handle DW directive (define word data, little-endian)
- * @param label Label (unused)
- * @param operand Comma-separated word values (hex: $XXXX or decimal)
- * @param context Directive execution context
+ * @param context Directive execution context (operand contains comma-separated word values)
  */
-void HandleDw(const std::string &operand,
-              DirectiveContext &context);
+void HandleDw(DirectiveContext &context);
 
 } // namespace xasm::simple
 

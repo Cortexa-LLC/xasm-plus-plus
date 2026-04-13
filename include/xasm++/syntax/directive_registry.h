@@ -51,6 +51,12 @@ struct DirectiveContext {
   // Label on the current source line (empty if none)
   std::string label = {}; ///< Label field (populated by Execute before handler call)
 
+  // Operand field on the current source line (empty if none)
+  std::string operand = {}; ///< Operand field (populated by Execute before handler call)
+
+  // Mnemonic/directive name on the current source line (empty if none)
+  std::string mnemonic = {}; ///< Mnemonic/directive name (populated by Execute before handler call)
+
   /**
    * @brief Constructor with common context
    */
@@ -66,7 +72,7 @@ struct DirectiveContext {
  * @throws std::runtime_error on directive processing errors
  */
 using DirectiveHandler =
-    std::function<void(const std::string &operand, DirectiveContext &context)>;
+    std::function<void(DirectiveContext &context)>;
 
 /**
  * @brief Registry for directive handlers
@@ -142,18 +148,15 @@ public:
    * @brief Execute a registered directive handler
    *
    * Looks up and executes the handler for the given directive mnemonic.
-   * Sets context.label before invoking the handler.
-   * Lookup is case-insensitive.
+   * The caller must populate context.mnemonic, context.label, and context.operand
+   * before calling. Lookup is case-insensitive using context.mnemonic.
    *
-   * @param mnemonic Directive name to execute
-   * @param label Label on the line (empty string if no label); stored in context.label
-   * @param operand Operand field after directive
-   * @param context Execution context (section, symbols, etc.)
+   * @param context Execution context with mnemonic, label, operand, section,
+   *                symbols, etc. already set.
    *
    * @throws std::runtime_error if directive not registered
    */
-  void Execute(const std::string &mnemonic, const std::string &label,
-               const std::string &operand, DirectiveContext &context);
+  void Execute(DirectiveContext &context);
 
   /**
    * @brief Check if a directive is registered

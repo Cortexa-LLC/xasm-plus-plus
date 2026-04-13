@@ -20,8 +20,7 @@ namespace xasm::merlin {
  * @param operand Address expression
  * @param context Directive execution context
  */
-void HandleOrg(const std::string &operand,
-               DirectiveContext &context);
+void HandleOrg(DirectiveContext &context);
 
 /**
  * @brief Handle EQU directive (define constant)
@@ -29,8 +28,7 @@ void HandleOrg(const std::string &operand,
  * @param operand Value expression
  * @param context Directive execution context
  */
-void HandleEqu(const std::string &operand,
-               DirectiveContext &context);
+void HandleEqu(DirectiveContext &context);
 
 /**
  * @brief Handle DB/DFB directive (define byte data)
@@ -38,8 +36,7 @@ void HandleEqu(const std::string &operand,
  * @param operand Byte values
  * @param context Directive execution context
  */
-void HandleDb(const std::string &operand,
-              DirectiveContext &context);
+void HandleDb(DirectiveContext &context);
 
 /**
  * @brief Handle DW directive (define word data)
@@ -47,8 +44,7 @@ void HandleDb(const std::string &operand,
  * @param operand Word values
  * @param context Directive execution context
  */
-void HandleDw(const std::string &operand,
-              DirectiveContext &context);
+void HandleDw(DirectiveContext &context);
 
 /**
  * @brief Handle HEX directive (define hex bytes)
@@ -56,8 +52,7 @@ void HandleDw(const std::string &operand,
  * @param operand Hex digit string
  * @param context Directive execution context
  */
-void HandleHex(const std::string &operand,
-               DirectiveContext &context);
+void HandleHex(DirectiveContext &context);
 
 /**
  * @brief Handle DS directive (define space)
@@ -65,8 +60,7 @@ void HandleHex(const std::string &operand,
  * @param operand Space size
  * @param context Directive execution context
  */
-void HandleDs(const std::string &operand,
-              DirectiveContext &context);
+void HandleDs(DirectiveContext &context);
 
 /**
  * @brief Handle DUM directive (start dummy section)
@@ -74,8 +68,7 @@ void HandleDs(const std::string &operand,
  * @param operand Address expression
  * @param context Directive execution context
  */
-void HandleDum(const std::string &operand,
-               DirectiveContext &context);
+void HandleDum(DirectiveContext &context);
 
 /**
  * @brief Handle DEND directive (end dummy section)
@@ -83,8 +76,7 @@ void HandleDum(const std::string &operand,
  * @param operand Unused
  * @param context Directive execution context
  */
-void HandleDend(const std::string &operand,
-                DirectiveContext &context);
+void HandleDend(DirectiveContext &context);
 
 /**
  * @brief Handle PUT directive (include file)
@@ -92,8 +84,7 @@ void HandleDend(const std::string &operand,
  * @param operand Filename
  * @param context Directive execution context
  */
-void HandlePut(const std::string &operand,
-               DirectiveContext &context);
+void HandlePut(DirectiveContext &context);
 
 /**
  * @brief Handle DO directive (conditional assembly)
@@ -101,8 +92,7 @@ void HandlePut(const std::string &operand,
  * @param operand Condition expression
  * @param context Directive execution context
  */
-void HandleDo(const std::string &operand,
-              DirectiveContext &context);
+void HandleDo(DirectiveContext &context);
 
 /**
  * @brief Handle ELSE directive (conditional assembly)
@@ -110,8 +100,7 @@ void HandleDo(const std::string &operand,
  * @param operand Unused
  * @param context Directive execution context
  */
-void HandleElse(const std::string &operand,
-                DirectiveContext &context);
+void HandleElse(DirectiveContext &context);
 
 /**
  * @brief Handle FIN directive (end conditional)
@@ -119,8 +108,7 @@ void HandleElse(const std::string &operand,
  * @param operand Unused
  * @param context Directive execution context
  */
-void HandleFin(const std::string &operand,
-               DirectiveContext &context);
+void HandleFin(DirectiveContext &context);
 
 /**
  * @brief Handle LST directive (listing control)
@@ -128,8 +116,7 @@ void HandleFin(const std::string &operand,
  * @param operand Listing option
  * @param context Directive execution context
  */
-void HandleLst(const std::string &operand,
-               DirectiveContext &context);
+void HandleLst(DirectiveContext &context);
 
 /**
  * @brief Handle LSTDO directive (listing control)
@@ -137,8 +124,7 @@ void HandleLst(const std::string &operand,
  * @param operand Unused
  * @param context Directive execution context
  */
-void HandleLstdo(const std::string &operand,
-                 DirectiveContext &context);
+void HandleLstdo(DirectiveContext &context);
 
 /**
  * @brief Handle TR directive (truncate listing)
@@ -146,8 +132,7 @@ void HandleLstdo(const std::string &operand,
  * @param operand Option
  * @param context Directive execution context
  */
-void HandleTr(const std::string &operand,
-              DirectiveContext &context);
+void HandleTr(DirectiveContext &context);
 
 /**
  * @brief Handle ASC directive (ASCII string)
@@ -155,8 +140,7 @@ void HandleTr(const std::string &operand,
  * @param operand String with delimiter
  * @param context Directive execution context
  */
-void HandleAsc(const std::string &operand,
-               DirectiveContext &context);
+void HandleAsc(DirectiveContext &context);
 
 /**
  * @brief Handle DCI directive (DCI string)
@@ -164,8 +148,7 @@ void HandleAsc(const std::string &operand,
  * @param operand String with delimiter
  * @param context Directive execution context
  */
-void HandleDci(const std::string &operand,
-               DirectiveContext &context);
+void HandleDci(DirectiveContext &context);
 
 /**
  * @brief Handle INV directive (inverted ASCII string)
@@ -173,8 +156,7 @@ void HandleDci(const std::string &operand,
  * @param operand String with delimiter
  * @param context Directive execution context
  */
-void HandleInv(const std::string &operand,
-               DirectiveContext &context);
+void HandleInv(DirectiveContext &context);
 
 /**
  * @brief Handle FLS directive (flashing string)
@@ -182,8 +164,7 @@ void HandleInv(const std::string &operand,
  * @param operand String with delimiter
  * @param context Directive execution context
  */
-void HandleFls(const std::string &operand,
-               DirectiveContext &context);
+void HandleFls(DirectiveContext &context);
 
 /**
  * @brief Handle DA directive (define address)
@@ -191,8 +172,7 @@ void HandleFls(const std::string &operand,
  * @param operand Address values
  * @param context Directive execution context
  */
-void HandleDa(const std::string &operand,
-              DirectiveContext &context);
+void HandleDa(DirectiveContext &context);
 
 /**
  * @brief Handle PMC directive (macro definition start)
@@ -200,8 +180,7 @@ void HandleDa(const std::string &operand,
  * @param operand Alternate macro name
  * @param context Directive execution context
  */
-void HandlePmc(const std::string &operand,
-               DirectiveContext &context);
+void HandlePmc(DirectiveContext &context);
 
 /**
  * @brief Handle EOM directive (macro definition end)
@@ -209,8 +188,7 @@ void HandlePmc(const std::string &operand,
  * @param operand Unused
  * @param context Directive execution context
  */
-void HandleEom(const std::string &operand,
-               DirectiveContext &context);
+void HandleEom(DirectiveContext &context);
 
 /**
  * @brief Handle MAC directive (macro definition/invocation)
@@ -218,8 +196,7 @@ void HandleEom(const std::string &operand,
  * @param operand Macro name or parameters
  * @param context Directive execution context
  */
-void HandleMac(const std::string &operand,
-               DirectiveContext &context);
+void HandleMac(DirectiveContext &context);
 
 /**
  * @brief Handle USR directive (user-defined subroutine)
@@ -227,8 +204,7 @@ void HandleMac(const std::string &operand,
  * @param operand Unused
  * @param context Directive execution context
  */
-void HandleUsr(const std::string &operand,
-               DirectiveContext &context);
+void HandleUsr(DirectiveContext &context);
 
 /**
  * @brief Handle END directive (end of source)
@@ -236,8 +212,7 @@ void HandleUsr(const std::string &operand,
  * @param operand Unused
  * @param context Directive execution context
  */
-void HandleEnd(const std::string &operand,
-               DirectiveContext &context);
+void HandleEnd(DirectiveContext &context);
 
 /**
  * @brief Handle SAV directive (save output filename)
@@ -245,8 +220,7 @@ void HandleEnd(const std::string &operand,
  * @param operand Filename
  * @param context Directive execution context
  */
-void HandleSav(const std::string &operand,
-               DirectiveContext &context);
+void HandleSav(DirectiveContext &context);
 
 /**
  * @brief Handle XC directive (toggle 65C02 mode)
@@ -254,8 +228,7 @@ void HandleSav(const std::string &operand,
  * @param operand Mode option
  * @param context Directive execution context
  */
-void HandleXc(const std::string &operand,
-              DirectiveContext &context);
+void HandleXc(DirectiveContext &context);
 
 /**
  * @brief Handle MX directive (set 65816 register widths)
@@ -263,8 +236,7 @@ void HandleXc(const std::string &operand,
  * @param operand Register width flags
  * @param context Directive execution context
  */
-void HandleMx(const std::string &operand,
-              DirectiveContext &context);
+void HandleMx(DirectiveContext &context);
 
 /**
  * @brief Handle REV directive (reverse ASCII string)
@@ -272,8 +244,7 @@ void HandleMx(const std::string &operand,
  * @param operand String value
  * @param context Directive execution context
  */
-void HandleRev(const std::string &operand,
-               DirectiveContext &context);
+void HandleRev(DirectiveContext &context);
 
 /**
  * @brief Handle LUP directive (loop assembly)
@@ -281,8 +252,7 @@ void HandleRev(const std::string &operand,
  * @param operand Loop count
  * @param context Directive execution context
  */
-void HandleLup(const std::string &operand,
-               DirectiveContext &context);
+void HandleLup(DirectiveContext &context);
 
 } // namespace xasm::merlin
 

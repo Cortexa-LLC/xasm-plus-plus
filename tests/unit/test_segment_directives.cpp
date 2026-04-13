@@ -50,7 +50,7 @@ protected:
  */
 TEST_F(SegmentDirectivesTest, AsegSwitchesToAbsoluteSegment) {
   // Act
-  HandleAsegDirective("", ctx_);
+  HandleAsegDirective(ctx_);
 
   // Assert
   EXPECT_EQ(parser_->GetSegmentManager().GetCurrentSegmentType(),
@@ -62,7 +62,7 @@ TEST_F(SegmentDirectivesTest, AsegSwitchesToAbsoluteSegment) {
  */
 TEST_F(SegmentDirectivesTest, AsegDefaultsToZero) {
   // Act
-  HandleAsegDirective("", ctx_);
+  HandleAsegDirective(ctx_);
 
   // Assert - should be at 0 (default for new segment)
   EXPECT_EQ(parser_->GetSegmentManager().GetCurrentAddress(), 0ULL);
@@ -77,7 +77,7 @@ TEST_F(SegmentDirectivesTest, AsegDefaultsToZero) {
  */
 TEST_F(SegmentDirectivesTest, CsegSwitchesToCodeSegment) {
   // Act
-  HandleCsegDirective("", ctx_);
+  HandleCsegDirective(ctx_);
 
   // Assert
   EXPECT_EQ(parser_->GetSegmentManager().GetCurrentSegmentType(),
@@ -89,7 +89,7 @@ TEST_F(SegmentDirectivesTest, CsegSwitchesToCodeSegment) {
  */
 TEST_F(SegmentDirectivesTest, CsegDefaultsToZero) {
   // Act
-  HandleCsegDirective("", ctx_);
+  HandleCsegDirective(ctx_);
 
   // Assert
   EXPECT_EQ(parser_->GetSegmentManager().GetCurrentAddress(), 0ULL);
@@ -104,7 +104,7 @@ TEST_F(SegmentDirectivesTest, CsegDefaultsToZero) {
  */
 TEST_F(SegmentDirectivesTest, DsegSwitchesToDataSegment) {
   // Act
-  HandleDsegDirective("", ctx_);
+  HandleDsegDirective(ctx_);
 
   // Assert
   EXPECT_EQ(parser_->GetSegmentManager().GetCurrentSegmentType(),
@@ -116,7 +116,7 @@ TEST_F(SegmentDirectivesTest, DsegSwitchesToDataSegment) {
  */
 TEST_F(SegmentDirectivesTest, DsegDefaultsToZero) {
   // Act
-  HandleDsegDirective("", ctx_);
+  HandleDsegDirective(ctx_);
 
   // Assert
   EXPECT_EQ(parser_->GetSegmentManager().GetCurrentAddress(), 0ULL);
@@ -131,19 +131,19 @@ TEST_F(SegmentDirectivesTest, DsegDefaultsToZero) {
  */
 TEST_F(SegmentDirectivesTest, SegmentSwitchingPreservesAddresses) {
   // Arrange - Start in CSEG, advance to 0x1000
-  HandleCsegDirective("", ctx_);
+  HandleCsegDirective(ctx_);
   parser_->GetSegmentManager().SetOrigin(0x1000);
   parser_->GetSegmentManager().Advance(10);
   EXPECT_EQ(parser_->GetSegmentManager().GetCurrentAddress(), 0x100AULL);
 
   // Act - Switch to DSEG, set origin to 0x2000
-  HandleDsegDirective("", ctx_);
+  HandleDsegDirective(ctx_);
   parser_->GetSegmentManager().SetOrigin(0x2000);
   parser_->GetSegmentManager().Advance(5);
   EXPECT_EQ(parser_->GetSegmentManager().GetCurrentAddress(), 0x2005ULL);
 
   // Act - Switch back to CSEG
-  HandleCsegDirective("", ctx_);
+  HandleCsegDirective(ctx_);
 
   // Assert - CSEG address should be preserved at 0x100A
   EXPECT_EQ(parser_->GetSegmentManager().GetCurrentAddress(), 0x100AULL);
@@ -156,30 +156,30 @@ TEST_F(SegmentDirectivesTest, SegmentSwitchingPreservesAddresses) {
  */
 TEST_F(SegmentDirectivesTest, MultipleSegmentSwitches) {
   // CSEG @ 0x1000
-  HandleCsegDirective("", ctx_);
+  HandleCsegDirective(ctx_);
   parser_->GetSegmentManager().SetOrigin(0x1000);
   parser_->GetSegmentManager().Advance(20);
 
   // DSEG @ 0x2000
-  HandleDsegDirective("", ctx_);
+  HandleDsegDirective(ctx_);
   parser_->GetSegmentManager().SetOrigin(0x2000);
   parser_->GetSegmentManager().Advance(30);
 
   // ASEG @ 0x3000
-  HandleAsegDirective("", ctx_);
+  HandleAsegDirective(ctx_);
   parser_->GetSegmentManager().SetOrigin(0x3000);
   parser_->GetSegmentManager().Advance(40);
 
   // Verify each segment preserved its address
-  HandleCsegDirective("", ctx_);
+  HandleCsegDirective(ctx_);
   EXPECT_EQ(parser_->GetSegmentManager().GetCurrentAddress(),
             0x1014ULL); // 0x1000 + 20
 
-  HandleDsegDirective("", ctx_);
+  HandleDsegDirective(ctx_);
   EXPECT_EQ(parser_->GetSegmentManager().GetCurrentAddress(),
             0x201EULL); // 0x2000 + 30
 
-  HandleAsegDirective("", ctx_);
+  HandleAsegDirective(ctx_);
   EXPECT_EQ(parser_->GetSegmentManager().GetCurrentAddress(),
             0x3028ULL); // 0x3000 + 40
 }

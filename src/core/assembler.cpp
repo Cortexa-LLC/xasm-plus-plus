@@ -888,7 +888,7 @@ AssemblerResult Assembler::Assemble() {
     // WHY: If instruction sizes are identical to previous pass, addresses won't
     // change, so we've reached a stable state and can stop.
     if (pass > 1) {
-      converged = CheckConvergence(previous_sizes, current_sizes);
+      converged = CheckConvergence({previous_sizes, current_sizes});
     }
     previous_sizes = current_sizes;
   }
@@ -1145,9 +1145,7 @@ void Assembler::ResolveSymbols(std::vector<std::shared_ptr<Atom>> &atoms,
   }
 }
 
-bool Assembler::CheckConvergence(
-    const std::vector<size_t> &previous_sizes,
-    const std::vector<size_t> &current_sizes) {
+bool Assembler::CheckConvergence(ConvergenceSizes sizes) {
   // Convergence achieved when instruction sizes are identical between passes
   //
   // WHY THIS WORKS:
@@ -1160,7 +1158,7 @@ bool Assembler::CheckConvergence(
   //
   // This is the mathematical definition of convergence: f(x) = x
   // where f is "encode one pass" and x is "instruction sizes vector"
-  return current_sizes == previous_sizes;
+  return sizes.current == sizes.previous;
 }
 
 } // namespace xasm

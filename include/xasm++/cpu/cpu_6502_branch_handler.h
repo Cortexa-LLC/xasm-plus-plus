@@ -10,6 +10,14 @@
 namespace xasm {
 
 /**
+ * @brief Source and destination addresses for a branch instruction
+ */
+struct BranchTarget {
+  uint16_t current_addr; ///< Address where branch instruction will be located
+  uint16_t target_addr;  ///< Target address to branch to
+};
+
+/**
  * @brief Handles 6502 branch relaxation logic
  *
  * This class extracts branch-related functionality from Cpu6502,
@@ -32,11 +40,10 @@ public:
    * Branches can only jump -128 to +127 bytes relative to PC+2.
    * If target is outside this range, branch relaxation is needed.
    *
-   * @param current_addr Address where branch instruction will be located
-   * @param target_addr Target address to branch to
+   * @param target Branch source and destination addresses
    * @return true if branch is out of range and needs relaxation
    */
-  static bool NeedsBranchRelaxation(uint16_t current_addr, uint16_t target_addr);
+  static bool NeedsBranchRelaxation(BranchTarget target);
 
   /**
    * @brief Get complementary (inverted) branch opcode
@@ -68,13 +75,11 @@ public:
    *   Relaxed: D0 03 4C 00 12 (BNE *+5; JMP $1200)
    *
    * @param branch_opcode Branch opcode (BEQ, BNE, BCC, BCS, etc.)
-   * @param current_addr Address where branch instruction will be located
-   * @param target_addr Target address to branch to
+   * @param target Branch source and destination addresses
    * @return Encoded bytes (2 bytes if in range, 5 bytes if relaxed)
    */
   static std::vector<uint8_t> EncodeBranchWithRelaxation(uint8_t branch_opcode,
-                                                  uint16_t current_addr,
-                                                  uint16_t target_addr) ;
+                                                         BranchTarget target);
 };
 
 } // namespace xasm

@@ -23,15 +23,15 @@ namespace xasm {
 
 // Forward declarations for edtasm namespace
 namespace edtasm {
-void HandleOrg(const std::string &, DirectiveContext &);
-void HandleEnd(const std::string &, DirectiveContext &);
-void HandleEqu(const std::string &, DirectiveContext &);
-void HandleSet(const std::string &, DirectiveContext &);
-void HandleFcb(const std::string &, DirectiveContext &);
-void HandleFdb(const std::string &, DirectiveContext &);
-void HandleFcc(const std::string &, DirectiveContext &);
-void HandleRmb(const std::string &, DirectiveContext &);
-void HandleSetdp(const std::string &, DirectiveContext &);
+void HandleOrg(DirectiveContext &);
+void HandleEnd(DirectiveContext &);
+void HandleEqu(DirectiveContext &);
+void HandleSet(DirectiveContext &);
+void HandleFcb(DirectiveContext &);
+void HandleFdb(DirectiveContext &);
+void HandleFcc(DirectiveContext &);
+void HandleRmb(DirectiveContext &);
+void HandleSetdp(DirectiveContext &);
 } // namespace edtasm
 
 /**
@@ -84,15 +84,15 @@ void HandleSetdp(const std::string &, DirectiveContext &);
 class EdtasmSyntaxParser {
 public:
   // Friend declarations for edtasm namespace directive handlers
-  friend void edtasm::HandleOrg(const std::string &, DirectiveContext &);
-  friend void edtasm::HandleEnd(const std::string &, DirectiveContext &);
-  friend void edtasm::HandleEqu(const std::string &, DirectiveContext &);
-  friend void edtasm::HandleSet(const std::string &, DirectiveContext &);
-  friend void edtasm::HandleFcb(const std::string &, DirectiveContext &);
-  friend void edtasm::HandleFdb(const std::string &, DirectiveContext &);
-  friend void edtasm::HandleFcc(const std::string &, DirectiveContext &);
-  friend void edtasm::HandleRmb(const std::string &, DirectiveContext &);
-  friend void edtasm::HandleSetdp(const std::string &, DirectiveContext &);
+  friend void edtasm::HandleOrg(DirectiveContext &);
+  friend void edtasm::HandleEnd(DirectiveContext &);
+  friend void edtasm::HandleEqu(DirectiveContext &);
+  friend void edtasm::HandleSet(DirectiveContext &);
+  friend void edtasm::HandleFcb(DirectiveContext &);
+  friend void edtasm::HandleFdb(DirectiveContext &);
+  friend void edtasm::HandleFcc(DirectiveContext &);
+  friend void edtasm::HandleRmb(DirectiveContext &);
+  friend void edtasm::HandleSetdp(DirectiveContext &);
 
   /**
    * @brief Default constructor - initializes directive registry
@@ -122,8 +122,7 @@ private:
 
   // Directive registry pattern (O(1) lookup) - matches Merlin signature
   using DirectiveHandler =
-      std::function<void(const std::string &operand,
-                         DirectiveContext &context)>;
+      std::function<void(DirectiveContext &context)>;
   std::unordered_map<std::string, DirectiveHandler> directive_registry_ = {};
 
   /**

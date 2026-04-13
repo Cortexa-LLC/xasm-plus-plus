@@ -24,22 +24,19 @@ void DirectiveRegistry::Register(std::initializer_list<std::string> mnemonics,
   }
 }
 
-void DirectiveRegistry::Execute(const std::string &mnemonic,
-                                const std::string &label,
-                                const std::string &operand,
-                                DirectiveContext &context) {
-  std::string upper = ToUpper(mnemonic);
+void DirectiveRegistry::Execute(DirectiveContext &context) {
+  std::string upper = ToUpper(context.mnemonic);
 
   auto it = handlers_.find(upper);
   if (it == handlers_.end()) {
-    throw std::runtime_error("Unknown directive: " + mnemonic);
+    throw std::runtime_error("Unknown directive: " + context.mnemonic);
   }
 
-  // Populate context.label so handlers can access it without an extra parameter
-  context.label = label;
+  // Normalize mnemonic to uppercase
+  context.mnemonic = upper;
 
-  // Execute the handler
-  it->second(operand, context);
+  // Execute the handler (mnemonic, label, operand are already in context)
+  it->second(context);
 }
 
 bool DirectiveRegistry::IsRegistered(const std::string &mnemonic) const {

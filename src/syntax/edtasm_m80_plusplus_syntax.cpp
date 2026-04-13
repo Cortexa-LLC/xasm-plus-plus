@@ -589,7 +589,10 @@ void EdtasmM80PlusPlusSyntaxParser::ParseLine(const std::string &line,
       ctx.current_file = current_file_;
       ctx.current_line = current_line_;
       ctx.source_line = original_line;
-      directive_registry_.Execute(upper_mnemonic, label, operand, ctx);
+      ctx.mnemonic = upper_mnemonic;
+      ctx.label = label;
+      ctx.operand = operand;
+      directive_registry_.Execute(ctx);
     }
     return;
   }
@@ -609,7 +612,10 @@ void EdtasmM80PlusPlusSyntaxParser::ParseLine(const std::string &line,
     ctx.current_file = current_file_;
     ctx.current_line = current_line_;
     ctx.source_line = original_line;
-    directive_registry_.Execute(upper_mnemonic, label, operand, ctx);
+    ctx.mnemonic = upper_mnemonic;
+    ctx.label = label;
+    ctx.operand = operand;
+    directive_registry_.Execute(ctx);
     return;
   }
 
@@ -676,12 +682,19 @@ void EdtasmM80PlusPlusSyntaxParser::ParseLine(const std::string &line,
 
   // Estimate instruction size based on mnemonic and operand
   // This is a heuristic until CPU plugin provides exact encoding (Phase 9+)
-  uint32_t estimated_size = EstimateZ80InstructionSize(upper_mnemonic, operand);
-  current_address_ += estimated_size;
+  {
+    DirectiveContext size_ctx;
+    size_ctx.mnemonic = upper_mnemonic;
+    size_ctx.operand = operand;
+    uint32_t estimated_size = EstimateZ80InstructionSize(size_ctx);
+    current_address_ += estimated_size;
+  }
 }
 
 uint32_t EdtasmM80PlusPlusSyntaxParser::EstimateZ80InstructionSize(
-    const std::string &mnemonic, const std::string &operand) {
+    const DirectiveContext &ctx) {
+  const std::string &mnemonic = ctx.mnemonic;
+  const std::string &operand = ctx.operand;
   // Heuristic Z80 instruction size estimation
   // Actual encoding will be done by CPU plugin (Phase 9+)
 

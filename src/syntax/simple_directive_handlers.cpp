@@ -27,16 +27,16 @@ namespace xasm::simple {
 // Directive Handlers
 // ============================================================================
 
-void HandleOrg(const std::string &operand,
-               DirectiveContext &context) {
+void HandleOrg(DirectiveContext &context) {
+  const std::string &operand = context.operand;
   // ORG directive - set assembly origin address
   uint32_t address = ParseHex(operand);
   context.section->atoms.push_back(std::make_shared<OrgAtom>(address));
   *context.current_address = address;
 }
 
-void HandleDb(const std::string &operand,
-              DirectiveContext &context) {
+void HandleDb(DirectiveContext &context) {
+  const std::string &operand = context.operand;
   // DB directive - define byte(s)
   std::vector<uint8_t> bytes;
   std::istringstream ops(operand);
@@ -53,8 +53,8 @@ void HandleDb(const std::string &operand,
   *context.current_address += bytes.size();
 }
 
-void HandleDw(const std::string &operand,
-              DirectiveContext &context) {
+void HandleDw(DirectiveContext &context) {
+  const std::string &operand = context.operand;
   // DW directive - define word(s) in little-endian format
   std::vector<uint8_t> bytes;
   std::istringstream ops(operand);

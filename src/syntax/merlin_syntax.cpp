@@ -129,7 +129,9 @@ bool MerlinSyntaxParser::DispatchDirective(const std::string &directive,
   if (it != directive_registry_.end()) {
     // Found directive - invoke handler
     context.label = label;
-    it->second(operand, context);
+    context.operand = operand;
+    context.mnemonic = directive;
+    it->second(context);
     return true;
   }
   return false; // Unknown directive
@@ -681,9 +683,10 @@ std::string MerlinSyntaxParser::ParseLabel(const std::string &line, size_t &pos,
 // Directive Handlers
 // ============================================================================
 
-void MerlinSyntaxParser::HandleEqu(const std::string &label,
-                                   const std::string &operand,
+void MerlinSyntaxParser::HandleEqu(const DirectiveContext &ctx,
                                    ConcreteSymbolTable &symbols) {
+  const std::string &label = ctx.label;
+  const std::string &operand = ctx.operand;
   // EQU directive - define symbolic constant (no code generated)
   auto expr = ParseExpression(operand, symbols);
   // Eagerly evaluate to a literal when possible to prevent circular
@@ -1022,10 +1025,11 @@ void MerlinSyntaxParser::HandleMacroEnd() {
   in_macro_definition_ = false;
 }
 
-void MerlinSyntaxParser::ExpandMacro(const std::string &macro_name,
-                                     const std::string &operand,
+void MerlinSyntaxParser::ExpandMacro(const DirectiveContext &ctx,
                                      Section &section,
                                      ConcreteSymbolTable &symbols) {
+  const std::string &macro_name = ctx.mnemonic;
+  const std::string &operand = ctx.operand;
   // Expand a macro: MACRONAME param1,param2,...
 
   // Check recursion depth
@@ -1378,7 +1382,12 @@ void MerlinSyntaxParser::ParseLine(const std::string &line, Section &section,
   if (equals_pos != std::string::npos && !label.empty()) {
     // This is an = equate
     std::string value = Trim(code_line.substr(equals_pos + 1));
-    HandleEqu(label, value, symbols);
+    {
+      DirectiveContext equ_ctx;
+      equ_ctx.label = label;
+      equ_ctx.operand = value;
+      HandleEqu(equ_ctx, symbols);
+    }
     // If the expression contains '*' (PC reference) or a code-label reference
     // (alpha identifier not inside a hex literal), push an EquateAtom so the
     // assembler re-evaluates it each pass with the correct virtual address.
@@ -1485,7 +1494,9 @@ void MerlinSyntaxParser::ParseLine(const std::string &line, Section &section,
       }
     }
     // Expand macro
-    ExpandMacro(directive, operands, section, symbols);
+    ctx.operand = operands;
+    ctx.mnemonic = directive;
+    ExpandMacro(ctx, section, symbols);
     return;
   }
 

@@ -78,8 +78,7 @@ namespace xasm {
 // Forward declare DirectiveContext
 struct DirectiveContext;
 
-void HandleOrg(const std::string &operand,
-               DirectiveContext &context);
+void HandleOrg(DirectiveContext &context);
 
 /**
  * @brief Handle EQU directive - define constant symbol
@@ -104,8 +103,7 @@ void HandleOrg(const std::string &operand,
  * // symbols now contains IO_PORT=0xD000
  * @endcode
  */
-void HandleEqu(const std::string &operand,
-               DirectiveContext &context);
+void HandleEqu(DirectiveContext &context);
 
 /**
  * @brief Handle DB directive - define byte data
@@ -128,8 +126,7 @@ void HandleEqu(const std::string &operand,
  * // address advanced by 4
  * @endcode
  */
-void HandleDb(const std::string &operand,
-              DirectiveContext &context);
+void HandleDb(DirectiveContext &context);
 
 /**
  * @brief Handle DW directive - define word data
@@ -152,8 +149,7 @@ void HandleDb(const std::string &operand,
  * // address advanced by 4 (2 words * 2 bytes)
  * @endcode
  */
-void HandleDw(const std::string &operand,
-              DirectiveContext &context);
+void HandleDw(DirectiveContext &context);
 
 /**
  * @brief Handle DS directive - define space (reserve bytes)
@@ -181,8 +177,7 @@ void HandleDw(const std::string &operand,
  * // Evaluates SIZE*2 and reserves that many bytes
  * @endcode
  */
-void HandleDs(const std::string &operand,
-              DirectiveContext &context);
+void HandleDs(DirectiveContext &context);
 
 // ============================================================================
 // DirectiveRegistry Integration

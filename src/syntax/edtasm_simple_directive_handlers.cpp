@@ -93,8 +93,8 @@ namespace xasm::edtasm {
 // Directive Handlers - Free Functions in edtasm namespace
 // ===========================================================================
 
-void HandleOrg(const std::string &operand,
-               DirectiveContext &context) {
+void HandleOrg(DirectiveContext &context) {
+  const std::string &operand = context.operand;
   (void)context.label; // Label handled in ParseLine
 
   auto *parser = GetParser(context);
@@ -107,16 +107,16 @@ void HandleOrg(const std::string &operand,
   *context.current_address = address;
 }
 
-void HandleEnd(const std::string &operand,
-               DirectiveContext &context) {
+void HandleEnd(DirectiveContext &context) {
+  const std::string &operand = context.operand;
   (void)context.label;   // Label handled in ParseLine
   (void)operand; // Entry point not currently used
   (void)context; // END produces no atoms
   // END directive produces no atoms, signals end of assembly
 }
 
-void HandleEqu(const std::string &operand,
-               DirectiveContext &context) {
+void HandleEqu(DirectiveContext &context) {
+  const std::string &operand = context.operand;
   if (context.label.empty()) {
     throw std::runtime_error("EQU requires a context.label");
   }
@@ -126,8 +126,8 @@ void HandleEqu(const std::string &operand,
                           std::make_shared<LiteralExpr>(value));
 }
 
-void HandleSet(const std::string &operand,
-               DirectiveContext &context) {
+void HandleSet(DirectiveContext &context) {
+  const std::string &operand = context.operand;
   if (context.label.empty()) {
     throw std::runtime_error("SET requires a context.label");
   }
@@ -138,8 +138,8 @@ void HandleSet(const std::string &operand,
                           std::make_shared<LiteralExpr>(value));
 }
 
-void HandleFcb(const std::string &operand,
-               DirectiveContext &context) {
+void HandleFcb(DirectiveContext &context) {
+  const std::string &operand = context.operand;
   (void)context.label; // Label handled in ParseLine
 
   std::vector<uint8_t> bytes;
@@ -157,8 +157,8 @@ void HandleFcb(const std::string &operand,
   *context.current_address += bytes.size();
 }
 
-void HandleFdb(const std::string &operand,
-               DirectiveContext &context) {
+void HandleFdb(DirectiveContext &context) {
+  const std::string &operand = context.operand;
   (void)context.label; // Label handled in ParseLine
 
   std::vector<uint8_t> bytes;
@@ -179,8 +179,8 @@ void HandleFdb(const std::string &operand,
   *context.current_address += bytes.size();
 }
 
-void HandleFcc(const std::string &operand,
-               DirectiveContext &context) {
+void HandleFcc(DirectiveContext &context) {
+  const std::string &operand = context.operand;
   (void)context.label; // Label handled in ParseLine
 
   std::string trimmed = Trim(operand);
@@ -203,8 +203,8 @@ void HandleFcc(const std::string &operand,
   *context.current_address += bytes.size();
 }
 
-void HandleRmb(const std::string &operand,
-               DirectiveContext &context) {
+void HandleRmb(DirectiveContext &context) {
+  const std::string &operand = context.operand;
   (void)context.label; // Label handled in ParseLine
 
   uint32_t size = ParseNumber(operand);
@@ -212,8 +212,8 @@ void HandleRmb(const std::string &operand,
   *context.current_address += size;
 }
 
-void HandleSetdp(const std::string &operand,
-                 DirectiveContext &context) {
+void HandleSetdp(DirectiveContext &context) {
+  const std::string &operand = context.operand;
   (void)context.label; // Label handled in ParseLine
 
   auto *parser = GetParser(context);
