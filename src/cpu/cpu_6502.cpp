@@ -240,7 +240,7 @@ std::vector<uint8_t> Cpu6502::EncodeWithTable(const OpcodeTable &table,
 // Note: Changed to uint32_t for 65816 24-bit addressing support
 std::vector<uint8_t> Cpu6502::EncodeLDA(uint32_t operand,
                                         AddressingMode mode) const {
-  static const OpcodeTable LDA_TABLE = {
+  static const OpcodeTable kLdaTable = {
       .immediate = Opcodes::LDA_IMM,
       .zero_page = Opcodes::LDA_ZP,
       .zero_page_x = Opcodes::LDA_ZPX,
@@ -262,13 +262,13 @@ std::vector<uint8_t> Cpu6502::EncodeLDA(uint32_t operand,
       .stack_relative_indirect_indexed_y = Opcodes::LDA_SRY // 65816
   };
 
-  return EncodeWithTable(LDA_TABLE, operand, mode, ImmWidth::UseM);
+  return EncodeWithTable(kLdaTable, operand, mode, ImmWidth::UseM);
 }
 
 // STA - Store Accumulator
 std::vector<uint8_t> Cpu6502::EncodeSTA(uint16_t operand,
                                         AddressingMode mode) const {
-  static const OpcodeTable STA_TABLE = {
+  static const OpcodeTable kStaTable = {
       .immediate = std::nullopt,
       .zero_page = Opcodes::STA_ZP,
       .zero_page_x = Opcodes::STA_ZPX,
@@ -289,13 +289,13 @@ std::vector<uint8_t> Cpu6502::EncodeSTA(uint16_t operand,
       .stack_relative = std::nullopt,
       .stack_relative_indirect_indexed_y = std::nullopt};
 
-  return EncodeWithTable(STA_TABLE, operand, mode);
+  return EncodeWithTable(kStaTable, operand, mode);
 }
 
 // JMP - Jump
 std::vector<uint8_t> Cpu6502::EncodeJMP(uint16_t operand,
                                         AddressingMode mode) const {
-  static const OpcodeTable JMP_TABLE = {
+  static const OpcodeTable kJmpTable = {
       .immediate = std::nullopt,
       .zero_page = std::nullopt,
       .zero_page_x = std::nullopt,
@@ -315,7 +315,7 @@ std::vector<uint8_t> Cpu6502::EncodeJMP(uint16_t operand,
       .indirect_long_indexed_y = std::nullopt,
       .stack_relative = std::nullopt,
       .stack_relative_indirect_indexed_y = std::nullopt};
-  return EncodeWithTable(JMP_TABLE, operand, mode);
+  return EncodeWithTable(kJmpTable, operand, mode);
 }
 
 // NOP - No Operation
@@ -329,7 +329,7 @@ std::vector<uint8_t> Cpu6502::EncodeRTS() { return {Opcodes::RTS}; }
 // ADC - Add with Carry
 std::vector<uint8_t> Cpu6502::EncodeADC(uint16_t operand,
                                         AddressingMode mode) const {
-  static const OpcodeTable ADC_TABLE = {
+  static const OpcodeTable kAdcTable = {
       .immediate = Opcodes::ADC_IMM,
       .zero_page = Opcodes::ADC_ZP,
       .zero_page_x = Opcodes::ADC_ZPX,
@@ -350,13 +350,13 @@ std::vector<uint8_t> Cpu6502::EncodeADC(uint16_t operand,
       .stack_relative = std::nullopt,
       .stack_relative_indirect_indexed_y = std::nullopt};
 
-  return EncodeWithTable(ADC_TABLE, operand, mode, ImmWidth::UseM);
+  return EncodeWithTable(kAdcTable, operand, mode, ImmWidth::UseM);
 }
 
 // SBC - Subtract with Carry
 std::vector<uint8_t> Cpu6502::EncodeSBC(uint16_t operand,
                                         AddressingMode mode) const {
-  static const OpcodeTable SBC_TABLE = {
+  static const OpcodeTable kSbcTable = {
       .immediate = Opcodes::SBC_IMM,
       .zero_page = Opcodes::SBC_ZP,
       .zero_page_x = Opcodes::SBC_ZPX,
@@ -377,7 +377,7 @@ std::vector<uint8_t> Cpu6502::EncodeSBC(uint16_t operand,
       .stack_relative = std::nullopt,
       .stack_relative_indirect_indexed_y = std::nullopt};
 
-  return EncodeWithTable(SBC_TABLE, operand, mode, ImmWidth::UseM);
+  return EncodeWithTable(kSbcTable, operand, mode, ImmWidth::UseM);
 }
 
 // Phase 2.2: Logic Instructions
@@ -385,7 +385,7 @@ std::vector<uint8_t> Cpu6502::EncodeSBC(uint16_t operand,
 // AND - Logical AND
 std::vector<uint8_t> Cpu6502::EncodeAND(uint16_t operand,
                                         AddressingMode mode) const {
-  static const OpcodeTable AND_TABLE = {
+  static const OpcodeTable kAndTable = {
       .immediate = Opcodes::AND_IMM,
       .zero_page = Opcodes::AND_ZP,
       .zero_page_x = Opcodes::AND_ZPX,
@@ -406,13 +406,13 @@ std::vector<uint8_t> Cpu6502::EncodeAND(uint16_t operand,
       .stack_relative = std::nullopt,
       .stack_relative_indirect_indexed_y = std::nullopt};
 
-  return EncodeWithTable(AND_TABLE, operand, mode, ImmWidth::UseM);
+  return EncodeWithTable(kAndTable, operand, mode, ImmWidth::UseM);
 }
 
 // ORA - Logical OR
 std::vector<uint8_t> Cpu6502::EncodeORA(uint16_t operand,
                                         AddressingMode mode) const {
-  static const OpcodeTable ORA_TABLE = {
+  static const OpcodeTable kOraTable = {
       .immediate = Opcodes::ORA_IMM,
       .zero_page = Opcodes::ORA_ZP,
       .zero_page_x = Opcodes::ORA_ZPX,
@@ -433,13 +433,13 @@ std::vector<uint8_t> Cpu6502::EncodeORA(uint16_t operand,
       .stack_relative = std::nullopt,
       .stack_relative_indirect_indexed_y = std::nullopt};
 
-  return EncodeWithTable(ORA_TABLE, operand, mode, ImmWidth::UseM);
+  return EncodeWithTable(kOraTable, operand, mode, ImmWidth::UseM);
 }
 
 // EOR - Exclusive OR
 std::vector<uint8_t> Cpu6502::EncodeEOR(uint16_t operand,
                                         AddressingMode mode) const {
-  static const OpcodeTable EOR_TABLE = {
+  static const OpcodeTable kEorTable = {
       .immediate = Opcodes::EOR_IMM,
       .zero_page = Opcodes::EOR_ZP,
       .zero_page_x = Opcodes::EOR_ZPX,
@@ -460,7 +460,7 @@ std::vector<uint8_t> Cpu6502::EncodeEOR(uint16_t operand,
       .stack_relative = std::nullopt,
       .stack_relative_indirect_indexed_y = std::nullopt};
 
-  return EncodeWithTable(EOR_TABLE, operand, mode, ImmWidth::UseM);
+  return EncodeWithTable(kEorTable, operand, mode, ImmWidth::UseM);
 }
 
 // Phase 2.2: Additional Loads/Stores
@@ -468,7 +468,7 @@ std::vector<uint8_t> Cpu6502::EncodeEOR(uint16_t operand,
 // LDX - Load X Register
 std::vector<uint8_t> Cpu6502::EncodeLDX(uint16_t operand,
                                         AddressingMode mode) const {
-  static const OpcodeTable LDX_TABLE = {
+  static const OpcodeTable kLdxTable = {
       .immediate = Opcodes::LDX_IMM,
       .zero_page = Opcodes::LDX_ZP,
       .zero_page_x = std::nullopt,
@@ -488,13 +488,13 @@ std::vector<uint8_t> Cpu6502::EncodeLDX(uint16_t operand,
       .indirect_long_indexed_y = std::nullopt,
       .stack_relative = std::nullopt,
       .stack_relative_indirect_indexed_y = std::nullopt};
-  return EncodeWithTable(LDX_TABLE, operand, mode, ImmWidth::UseX);
+  return EncodeWithTable(kLdxTable, operand, mode, ImmWidth::UseX);
 }
 
 // LDY - Load Y Register
 std::vector<uint8_t> Cpu6502::EncodeLDY(uint16_t operand,
                                         AddressingMode mode) const {
-  static const OpcodeTable LDY_TABLE = {
+  static const OpcodeTable kLdyTable = {
       .immediate = Opcodes::LDY_IMM,
       .zero_page = Opcodes::LDY_ZP,
       .zero_page_x = Opcodes::LDY_ZPX,
@@ -514,13 +514,13 @@ std::vector<uint8_t> Cpu6502::EncodeLDY(uint16_t operand,
       .indirect_long_indexed_y = std::nullopt,
       .stack_relative = std::nullopt,
       .stack_relative_indirect_indexed_y = std::nullopt};
-  return EncodeWithTable(LDY_TABLE, operand, mode, ImmWidth::UseX);
+  return EncodeWithTable(kLdyTable, operand, mode, ImmWidth::UseX);
 }
 
 // STX - Store X Register
 std::vector<uint8_t> Cpu6502::EncodeSTX(uint16_t operand,
                                         AddressingMode mode) const {
-  static const OpcodeTable STX_TABLE = {
+  static const OpcodeTable kStxTable = {
       .immediate = std::nullopt,
       .zero_page = Opcodes::STX_ZP,
       .zero_page_x = std::nullopt,
@@ -540,13 +540,13 @@ std::vector<uint8_t> Cpu6502::EncodeSTX(uint16_t operand,
       .indirect_long_indexed_y = std::nullopt,
       .stack_relative = std::nullopt,
       .stack_relative_indirect_indexed_y = std::nullopt};
-  return EncodeWithTable(STX_TABLE, operand, mode);
+  return EncodeWithTable(kStxTable, operand, mode);
 }
 
 // STY - Store Y Register
 std::vector<uint8_t> Cpu6502::EncodeSTY(uint16_t operand,
                                         AddressingMode mode) const {
-  static const OpcodeTable STY_TABLE = {
+  static const OpcodeTable kStyTable = {
       .immediate = std::nullopt,
       .zero_page = Opcodes::STY_ZP,
       .zero_page_x = Opcodes::STY_ZPX,
@@ -566,7 +566,7 @@ std::vector<uint8_t> Cpu6502::EncodeSTY(uint16_t operand,
       .indirect_long_indexed_y = std::nullopt,
       .stack_relative = std::nullopt,
       .stack_relative_indirect_indexed_y = std::nullopt};
-  return EncodeWithTable(STY_TABLE, operand, mode);
+  return EncodeWithTable(kStyTable, operand, mode);
 }
 
 // Phase 2.2: Comparisons
@@ -574,7 +574,7 @@ std::vector<uint8_t> Cpu6502::EncodeSTY(uint16_t operand,
 // CMP - Compare Accumulator
 std::vector<uint8_t> Cpu6502::EncodeCMP(uint16_t operand,
                                         AddressingMode mode) const {
-  static const OpcodeTable CMP_TABLE = {
+  static const OpcodeTable kCmpTable = {
       .immediate = Opcodes::CMP_IMM,
       .zero_page = Opcodes::CMP_ZP,
       .zero_page_x = Opcodes::CMP_ZPX,
@@ -594,13 +594,13 @@ std::vector<uint8_t> Cpu6502::EncodeCMP(uint16_t operand,
       .indirect_long_indexed_y = std::nullopt,
       .stack_relative = std::nullopt,
       .stack_relative_indirect_indexed_y = std::nullopt};
-  return EncodeWithTable(CMP_TABLE, operand, mode, ImmWidth::UseM);
+  return EncodeWithTable(kCmpTable, operand, mode, ImmWidth::UseM);
 }
 
 // CPX - Compare X Register
 std::vector<uint8_t> Cpu6502::EncodeCPX(uint16_t operand,
                                         AddressingMode mode) const {
-  static const OpcodeTable CPX_TABLE = {
+  static const OpcodeTable kCpxTable = {
       .immediate = Opcodes::CPX_IMM,
       .zero_page = Opcodes::CPX_ZP,
       .zero_page_x = std::nullopt,
@@ -620,13 +620,13 @@ std::vector<uint8_t> Cpu6502::EncodeCPX(uint16_t operand,
       .indirect_long_indexed_y = std::nullopt,
       .stack_relative = std::nullopt,
       .stack_relative_indirect_indexed_y = std::nullopt};
-  return EncodeWithTable(CPX_TABLE, operand, mode, ImmWidth::UseX);
+  return EncodeWithTable(kCpxTable, operand, mode, ImmWidth::UseX);
 }
 
 // CPY - Compare Y Register
 std::vector<uint8_t> Cpu6502::EncodeCPY(uint16_t operand,
                                         AddressingMode mode) const {
-  static const OpcodeTable CPY_TABLE = {
+  static const OpcodeTable kCpyTable = {
       .immediate = Opcodes::CPY_IMM,
       .zero_page = Opcodes::CPY_ZP,
       .zero_page_x = std::nullopt,
@@ -646,7 +646,7 @@ std::vector<uint8_t> Cpu6502::EncodeCPY(uint16_t operand,
       .indirect_long_indexed_y = std::nullopt,
       .stack_relative = std::nullopt,
       .stack_relative_indirect_indexed_y = std::nullopt};
-  return EncodeWithTable(CPY_TABLE, operand, mode, ImmWidth::UseX);
+  return EncodeWithTable(kCpyTable, operand, mode, ImmWidth::UseX);
 }
 
 // Phase 2.2: Branch Instructions
@@ -654,7 +654,7 @@ std::vector<uint8_t> Cpu6502::EncodeCPY(uint16_t operand,
 // BEQ - Branch if Equal
 std::vector<uint8_t> Cpu6502::EncodeBEQ(uint16_t operand,
                                         AddressingMode mode) const {
-  static const OpcodeTable BEQ_TABLE = {
+  static const OpcodeTable kBeqTable = {
       .immediate = std::nullopt,
       .zero_page = std::nullopt,
       .zero_page_x = std::nullopt,
@@ -674,13 +674,13 @@ std::vector<uint8_t> Cpu6502::EncodeBEQ(uint16_t operand,
       .indirect_long_indexed_y = std::nullopt,
       .stack_relative = std::nullopt,
       .stack_relative_indirect_indexed_y = std::nullopt};
-  return EncodeWithTable(BEQ_TABLE, operand, mode);
+  return EncodeWithTable(kBeqTable, operand, mode);
 }
 
 // BNE - Branch if Not Equal
 std::vector<uint8_t> Cpu6502::EncodeBNE(uint16_t operand,
                                         AddressingMode mode) const {
-  static const OpcodeTable BNE_TABLE = {
+  static const OpcodeTable kBneTable = {
       .immediate = std::nullopt,
       .zero_page = std::nullopt,
       .zero_page_x = std::nullopt,
@@ -700,13 +700,13 @@ std::vector<uint8_t> Cpu6502::EncodeBNE(uint16_t operand,
       .indirect_long_indexed_y = std::nullopt,
       .stack_relative = std::nullopt,
       .stack_relative_indirect_indexed_y = std::nullopt};
-  return EncodeWithTable(BNE_TABLE, operand, mode);
+  return EncodeWithTable(kBneTable, operand, mode);
 }
 
 // BCC - Branch if Carry Clear
 std::vector<uint8_t> Cpu6502::EncodeBCC(uint16_t operand,
                                         AddressingMode mode) const {
-  static const OpcodeTable BCC_TABLE = {
+  static const OpcodeTable kBccTable = {
       .immediate = std::nullopt,
       .zero_page = std::nullopt,
       .zero_page_x = std::nullopt,
@@ -726,13 +726,13 @@ std::vector<uint8_t> Cpu6502::EncodeBCC(uint16_t operand,
       .indirect_long_indexed_y = std::nullopt,
       .stack_relative = std::nullopt,
       .stack_relative_indirect_indexed_y = std::nullopt};
-  return EncodeWithTable(BCC_TABLE, operand, mode);
+  return EncodeWithTable(kBccTable, operand, mode);
 }
 
 // BCS - Branch if Carry Set
 std::vector<uint8_t> Cpu6502::EncodeBCS(uint16_t operand,
                                         AddressingMode mode) const {
-  static const OpcodeTable BCS_TABLE = {
+  static const OpcodeTable kBcsTable = {
       .immediate = std::nullopt,
       .zero_page = std::nullopt,
       .zero_page_x = std::nullopt,
@@ -752,13 +752,13 @@ std::vector<uint8_t> Cpu6502::EncodeBCS(uint16_t operand,
       .indirect_long_indexed_y = std::nullopt,
       .stack_relative = std::nullopt,
       .stack_relative_indirect_indexed_y = std::nullopt};
-  return EncodeWithTable(BCS_TABLE, operand, mode);
+  return EncodeWithTable(kBcsTable, operand, mode);
 }
 
 // BMI - Branch if Minus
 std::vector<uint8_t> Cpu6502::EncodeBMI(uint16_t operand,
                                         AddressingMode mode) const {
-  static const OpcodeTable BMI_TABLE = {
+  static const OpcodeTable kBmiTable = {
       .immediate = std::nullopt,
       .zero_page = std::nullopt,
       .zero_page_x = std::nullopt,
@@ -778,13 +778,13 @@ std::vector<uint8_t> Cpu6502::EncodeBMI(uint16_t operand,
       .indirect_long_indexed_y = std::nullopt,
       .stack_relative = std::nullopt,
       .stack_relative_indirect_indexed_y = std::nullopt};
-  return EncodeWithTable(BMI_TABLE, operand, mode);
+  return EncodeWithTable(kBmiTable, operand, mode);
 }
 
 // BPL - Branch if Plus
 std::vector<uint8_t> Cpu6502::EncodeBPL(uint16_t operand,
                                         AddressingMode mode) const {
-  static const OpcodeTable BPL_TABLE = {
+  static const OpcodeTable kBplTable = {
       .immediate = std::nullopt,
       .zero_page = std::nullopt,
       .zero_page_x = std::nullopt,
@@ -804,13 +804,13 @@ std::vector<uint8_t> Cpu6502::EncodeBPL(uint16_t operand,
       .indirect_long_indexed_y = std::nullopt,
       .stack_relative = std::nullopt,
       .stack_relative_indirect_indexed_y = std::nullopt};
-  return EncodeWithTable(BPL_TABLE, operand, mode);
+  return EncodeWithTable(kBplTable, operand, mode);
 }
 
 // BVC - Branch if Overflow Clear
 std::vector<uint8_t> Cpu6502::EncodeBVC(uint16_t operand,
                                         AddressingMode mode) const {
-  static const OpcodeTable BVC_TABLE = {
+  static const OpcodeTable kBvcTable = {
       .immediate = std::nullopt,
       .zero_page = std::nullopt,
       .zero_page_x = std::nullopt,
@@ -830,13 +830,13 @@ std::vector<uint8_t> Cpu6502::EncodeBVC(uint16_t operand,
       .indirect_long_indexed_y = std::nullopt,
       .stack_relative = std::nullopt,
       .stack_relative_indirect_indexed_y = std::nullopt};
-  return EncodeWithTable(BVC_TABLE, operand, mode);
+  return EncodeWithTable(kBvcTable, operand, mode);
 }
 
 // BVS - Branch if Overflow Set
 std::vector<uint8_t> Cpu6502::EncodeBVS(uint16_t operand,
                                         AddressingMode mode) const {
-  static const OpcodeTable BVS_TABLE = {
+  static const OpcodeTable kBvsTable = {
       .immediate = std::nullopt,
       .zero_page = std::nullopt,
       .zero_page_x = std::nullopt,
@@ -856,7 +856,7 @@ std::vector<uint8_t> Cpu6502::EncodeBVS(uint16_t operand,
       .indirect_long_indexed_y = std::nullopt,
       .stack_relative = std::nullopt,
       .stack_relative_indirect_indexed_y = std::nullopt};
-  return EncodeWithTable(BVS_TABLE, operand, mode);
+  return EncodeWithTable(kBvsTable, operand, mode);
 }
 
 // Phase 2.2: Inc/Dec Instructions
@@ -876,7 +876,7 @@ std::vector<uint8_t> Cpu6502::EncodeDEY() { return {Opcodes::DEY}; }
 // INC - Increment Memory
 std::vector<uint8_t> Cpu6502::EncodeINC(uint16_t operand,
                                         AddressingMode mode) const {
-  static const OpcodeTable INC_TABLE = {
+  static const OpcodeTable kIncTable = {
       .immediate = std::nullopt,
       .zero_page = Opcodes::INC_ZP,
       .zero_page_x = Opcodes::INC_ZPX,
@@ -896,13 +896,13 @@ std::vector<uint8_t> Cpu6502::EncodeINC(uint16_t operand,
       .indirect_long_indexed_y = std::nullopt,
       .stack_relative = std::nullopt,
       .stack_relative_indirect_indexed_y = std::nullopt};
-  return EncodeWithTable(INC_TABLE, operand, mode);
+  return EncodeWithTable(kIncTable, operand, mode);
 }
 
 // DEC - Decrement Memory
 std::vector<uint8_t> Cpu6502::EncodeDEC(uint16_t operand,
                                         AddressingMode mode) const {
-  static const OpcodeTable DEC_TABLE = {
+  static const OpcodeTable kDecTable = {
       .immediate = std::nullopt,
       .zero_page = Opcodes::DEC_ZP,
       .zero_page_x = Opcodes::DEC_ZPX,
@@ -922,7 +922,7 @@ std::vector<uint8_t> Cpu6502::EncodeDEC(uint16_t operand,
       .indirect_long_indexed_y = std::nullopt,
       .stack_relative = std::nullopt,
       .stack_relative_indirect_indexed_y = std::nullopt};
-  return EncodeWithTable(DEC_TABLE, operand, mode);
+  return EncodeWithTable(kDecTable, operand, mode);
 }
 
 // Phase 2.2: Stack Operations
@@ -944,7 +944,7 @@ std::vector<uint8_t> Cpu6502::EncodePLP() { return {Opcodes::PLP}; }
 // JSR - Jump to Subroutine
 std::vector<uint8_t> Cpu6502::EncodeJSR(uint16_t operand,
                                         AddressingMode mode) const {
-  static const OpcodeTable JSR_TABLE = {
+  static const OpcodeTable kJsrTable = {
       .immediate = std::nullopt,
       .zero_page = std::nullopt,
       .zero_page_x = std::nullopt,
@@ -964,7 +964,7 @@ std::vector<uint8_t> Cpu6502::EncodeJSR(uint16_t operand,
       .indirect_long_indexed_y = std::nullopt,
       .stack_relative = std::nullopt,
       .stack_relative_indirect_indexed_y = std::nullopt};
-  return EncodeWithTable(JSR_TABLE, operand, mode);
+  return EncodeWithTable(kJsrTable, operand, mode);
 }
 
 // ============================================================================
@@ -1020,7 +1020,7 @@ std::vector<uint8_t> Cpu6502::EncodeBIT(uint16_t operand,
 // ASL - Arithmetic Shift Left
 std::vector<uint8_t> Cpu6502::EncodeASL(uint16_t operand,
                                         AddressingMode mode) const {
-  static const OpcodeTable ASL_TABLE = {
+  static const OpcodeTable kAslTable = {
       .immediate = std::nullopt,
       .zero_page = Opcodes::ASL_ZP,
       .zero_page_x = Opcodes::ASL_ZPX,
@@ -1040,13 +1040,13 @@ std::vector<uint8_t> Cpu6502::EncodeASL(uint16_t operand,
       .indirect_long_indexed_y = std::nullopt,
       .stack_relative = std::nullopt,
       .stack_relative_indirect_indexed_y = std::nullopt};
-  return EncodeWithTable(ASL_TABLE, operand, mode);
+  return EncodeWithTable(kAslTable, operand, mode);
 }
 
 // LSR - Logical Shift Right
 std::vector<uint8_t> Cpu6502::EncodeLSR(uint16_t operand,
                                         AddressingMode mode) const {
-  static const OpcodeTable LSR_TABLE = {
+  static const OpcodeTable kLsrTable = {
       .immediate = std::nullopt,
       .zero_page = Opcodes::LSR_ZP,
       .zero_page_x = Opcodes::LSR_ZPX,
@@ -1066,7 +1066,7 @@ std::vector<uint8_t> Cpu6502::EncodeLSR(uint16_t operand,
       .indirect_long_indexed_y = std::nullopt,
       .stack_relative = std::nullopt,
       .stack_relative_indirect_indexed_y = std::nullopt};
-  return EncodeWithTable(LSR_TABLE, operand, mode);
+  return EncodeWithTable(kLsrTable, operand, mode);
 }
 
 // Group 3: Rotate Instructions
@@ -1074,7 +1074,7 @@ std::vector<uint8_t> Cpu6502::EncodeLSR(uint16_t operand,
 // ROL - Rotate Left
 std::vector<uint8_t> Cpu6502::EncodeROL(uint16_t operand,
                                         AddressingMode mode) const {
-  static const OpcodeTable ROL_TABLE = {
+  static const OpcodeTable kRolTable = {
       .immediate = std::nullopt,
       .zero_page = Opcodes::ROL_ZP,
       .zero_page_x = Opcodes::ROL_ZPX,
@@ -1094,13 +1094,13 @@ std::vector<uint8_t> Cpu6502::EncodeROL(uint16_t operand,
       .indirect_long_indexed_y = std::nullopt,
       .stack_relative = std::nullopt,
       .stack_relative_indirect_indexed_y = std::nullopt};
-  return EncodeWithTable(ROL_TABLE, operand, mode);
+  return EncodeWithTable(kRolTable, operand, mode);
 }
 
 // ROR - Rotate Right
 std::vector<uint8_t> Cpu6502::EncodeROR(uint16_t operand,
                                         AddressingMode mode) const {
-  static const OpcodeTable ROR_TABLE = {
+  static const OpcodeTable kRorTable = {
       .immediate = std::nullopt,
       .zero_page = Opcodes::ROR_ZP,
       .zero_page_x = Opcodes::ROR_ZPX,
@@ -1120,7 +1120,7 @@ std::vector<uint8_t> Cpu6502::EncodeROR(uint16_t operand,
       .indirect_long_indexed_y = std::nullopt,
       .stack_relative = std::nullopt,
       .stack_relative_indirect_indexed_y = std::nullopt};
-  return EncodeWithTable(ROR_TABLE, operand, mode);
+  return EncodeWithTable(kRorTable, operand, mode);
 }
 
 // Group 4: Interrupt Instructions
@@ -1753,7 +1753,7 @@ std::vector<uint8_t> Cpu6502::EncodeSTZ(uint16_t operand,
     return {}; // Not available in base 6502
   }
 
-  static const OpcodeTable STZ_TABLE = {
+  static const OpcodeTable kStzTable = {
       .immediate = std::nullopt,
       .zero_page = Opcodes::STZ_ZP,
       .zero_page_x = Opcodes::STZ_ZPX,
@@ -1773,7 +1773,7 @@ std::vector<uint8_t> Cpu6502::EncodeSTZ(uint16_t operand,
       .indirect_long_indexed_y = std::nullopt,
       .stack_relative = std::nullopt,
       .stack_relative_indirect_indexed_y = std::nullopt};
-  return EncodeWithTable(STZ_TABLE, operand, mode);
+  return EncodeWithTable(kStzTable, operand, mode);
 }
 
 // ============================================================================
@@ -1786,7 +1786,7 @@ std::vector<uint8_t> Cpu6502::EncodeTRB(uint16_t operand,
     return {};
   }
 
-  static const OpcodeTable TRB_TABLE = {
+  static const OpcodeTable kTrbTable = {
       .immediate = std::nullopt,
       .zero_page = Opcodes::TRB_ZP,
       .zero_page_x = std::nullopt,
@@ -1806,7 +1806,7 @@ std::vector<uint8_t> Cpu6502::EncodeTRB(uint16_t operand,
       .indirect_long_indexed_y = std::nullopt,
       .stack_relative = std::nullopt,
       .stack_relative_indirect_indexed_y = std::nullopt};
-  return EncodeWithTable(TRB_TABLE, operand, mode);
+  return EncodeWithTable(kTrbTable, operand, mode);
 }
 
 std::vector<uint8_t> Cpu6502::EncodeTSB(uint16_t operand,
@@ -1815,7 +1815,7 @@ std::vector<uint8_t> Cpu6502::EncodeTSB(uint16_t operand,
     return {};
   }
 
-  static const OpcodeTable TSB_TABLE = {
+  static const OpcodeTable kTsbTable = {
       .immediate = std::nullopt,
       .zero_page = Opcodes::TSB_ZP,
       .zero_page_x = std::nullopt,
@@ -1835,7 +1835,7 @@ std::vector<uint8_t> Cpu6502::EncodeTSB(uint16_t operand,
       .indirect_long_indexed_y = std::nullopt,
       .stack_relative = std::nullopt,
       .stack_relative_indirect_indexed_y = std::nullopt};
-  return EncodeWithTable(TSB_TABLE, operand, mode);
+  return EncodeWithTable(kTsbTable, operand, mode);
 }
 
 // ============================================================================
@@ -1848,7 +1848,7 @@ std::vector<uint8_t> Cpu6502::EncodeBRA(uint16_t operand,
     return {};
   }
 
-  static const OpcodeTable BRA_TABLE = {
+  static const OpcodeTable kBraTable = {
       .immediate = std::nullopt,
       .zero_page = std::nullopt,
       .zero_page_x = std::nullopt,
@@ -1868,7 +1868,7 @@ std::vector<uint8_t> Cpu6502::EncodeBRA(uint16_t operand,
       .indirect_long_indexed_y = std::nullopt,
       .stack_relative = std::nullopt,
       .stack_relative_indirect_indexed_y = std::nullopt};
-  return EncodeWithTable(BRA_TABLE, operand, mode);
+  return EncodeWithTable(kBraTable, operand, mode);
 }
 
 // ============================================================================
