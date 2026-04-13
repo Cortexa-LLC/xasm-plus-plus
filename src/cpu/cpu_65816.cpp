@@ -8,7 +8,7 @@ namespace xasm {
 // ============================================================================
 
 // PHB - Push Data Bank Register (65816)
-std::vector<uint8_t> Cpu6502::EncodePHB() const { // NOLINT(readability-convert-member-functions-to-static)
+std::vector<uint8_t> Cpu6502::EncodePHB() const {
   return {0x8B};
 }
 
@@ -49,7 +49,7 @@ std::vector<uint8_t> Cpu6502::EncodePLD() const {
 // ============================================================================
 
 // TCD - Transfer C to Direct Page (65816)
-std::vector<uint8_t> Cpu6502::EncodeTCD() const { // NOLINT(readability-convert-member-functions-to-static)
+std::vector<uint8_t> Cpu6502::EncodeTCD() const {
   return {0x5B};
 }
 
@@ -62,7 +62,7 @@ std::vector<uint8_t> Cpu6502::EncodeTDC() const {
 }
 
 // TCS - Transfer C to Stack Pointer (65816)
-std::vector<uint8_t> Cpu6502::EncodeTCS() const { // NOLINT(readability-convert-member-functions-to-static)
+std::vector<uint8_t> Cpu6502::EncodeTCS() const {
   return {0x1B};
 }
 
@@ -79,7 +79,7 @@ std::vector<uint8_t> Cpu6502::EncodeTSC() const {
 // ============================================================================
 
 // JML - Jump Long (65816)
-std::vector<uint8_t> Cpu6502::EncodeJML(uint32_t operand, // NOLINT(readability-convert-member-functions-to-static)
+std::vector<uint8_t> Cpu6502::EncodeJML(uint32_t operand,
                                         AddressingMode mode) const {
   std::vector<uint8_t> bytes;
 
@@ -94,7 +94,7 @@ std::vector<uint8_t> Cpu6502::EncodeJML(uint32_t operand, // NOLINT(readability-
 }
 
 // JSL - Jump Subroutine Long (65816)
-std::vector<uint8_t> Cpu6502::EncodeJSL(uint32_t operand, // NOLINT(readability-convert-member-functions-to-static)
+std::vector<uint8_t> Cpu6502::EncodeJSL(uint32_t operand,
                                         AddressingMode mode) const {
   std::vector<uint8_t> bytes;
 
@@ -109,7 +109,7 @@ std::vector<uint8_t> Cpu6502::EncodeJSL(uint32_t operand, // NOLINT(readability-
 }
 
 // RTL - Return from Subroutine Long (65816)
-std::vector<uint8_t> Cpu6502::EncodeRTL() const { // NOLINT(readability-convert-member-functions-to-static)
+std::vector<uint8_t> Cpu6502::EncodeRTL() const {
   return {0x6B};
 }
 
@@ -171,7 +171,7 @@ std::vector<uint8_t> Cpu6502::EncodePER(uint16_t operand,
 }
 
 // MVN - Block Move Negative (65816)
-std::vector<uint8_t> Cpu6502::EncodeMVN(uint8_t srcbank, // NOLINT(bugprone-easily-swappable-parameters,readability-convert-member-functions-to-static)
+std::vector<uint8_t> Cpu6502::EncodeMVN(uint8_t srcbank, // NOLINT(bugprone-easily-swappable-parameters)
                                         uint8_t destbank) const {
   return {0x54, srcbank, destbank};
 }
@@ -220,7 +220,7 @@ std::vector<uint8_t> Cpu6502::EncodeWDM(uint8_t operand,
 }
 
 // XBA - Exchange B and A (65816)
-std::vector<uint8_t> Cpu6502::EncodeXBA() const { // NOLINT(readability-convert-member-functions-to-static)
+std::vector<uint8_t> Cpu6502::EncodeXBA() const {
   return {0xEB};
 }
 

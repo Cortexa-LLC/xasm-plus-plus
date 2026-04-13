@@ -12,18 +12,18 @@
 
 namespace xasm {
 
-std::string BinaryOutput::GetName() const { return "binary"; } // NOLINT(readability-convert-member-functions-to-static)
+std::string BinaryOutput::GetName() const { return "binary"; }
 
-std::string BinaryOutput::GetFileExtension() const { return ".bin"; } // NOLINT(readability-convert-member-functions-to-static)
+std::string BinaryOutput::GetFileExtension() const { return ".bin"; }
 
-void BinaryOutput::WriteOutput(const std::string &filename, // NOLINT(readability-convert-member-functions-to-static)
+void BinaryOutput::WriteOutput(const std::string &filename,
                                const std::vector<Section *> &sections,
                                const SymbolTable &symbols) {
   // Call WriteOutputWithRw18 with no RW18 header
   WriteOutputWithRw18(filename, sections, symbols, nullptr);
 }
 
-void BinaryOutput::WriteOutputWithRw18(const std::string &filename, // NOLINT(readability-convert-member-functions-to-static)
+void BinaryOutput::WriteOutputWithRw18(const std::string &filename,
                                        const std::vector<Section *> &sections,
                                        const SymbolTable &symbols,
                                        const std::array<uint16_t, 4> *rw18_header) {
@@ -73,8 +73,8 @@ void BinaryOutput::WriteOutputWithRw18(const std::string &filename, // NOLINT(re
       out.write(reinterpret_cast<const char *>(buf), 2);
     };
 
-    const uint8_t magic[4] = {'U', 'S', 'R', 0x1a};
-    out.write(reinterpret_cast<const char *>(magic), 4);
+    const uint8_t kMagic[4] = {'U', 'S', 'R', 0x1a};
+    out.write(reinterpret_cast<const char *>(kMagic), 4);
     write_u16le((*rw18_header)[0]);                // side   = bundle ID
     write_u16le((*rw18_header)[1]);                // track  = disk track
     write_u16le((*rw18_header)[2]);                // offset = intra-track offset

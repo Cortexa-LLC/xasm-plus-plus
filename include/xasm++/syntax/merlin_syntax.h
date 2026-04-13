@@ -289,7 +289,7 @@ public:
    * Only applies to labels starting with ']' and containing no ':'.
    * Returns the unchanged label for non-]var names.
    */
-  std::string UniqueVarLabel(const std::string &label) { // NOLINT(readability-convert-member-functions-to-static)
+  std::string UniqueVarLabel(const std::string &label) {
     if (!label.empty() && label[0] == ']' &&
         label.find(':') == std::string::npos) {
       int seq = 0;

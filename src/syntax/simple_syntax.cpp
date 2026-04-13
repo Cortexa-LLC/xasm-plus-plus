@@ -37,7 +37,7 @@ static bool IsIdentifierStart(char c) {
 
 SimpleSyntaxParser::SimpleSyntaxParser() { InitializeDirectives(); }
 
-void SimpleSyntaxParser::InitializeDirectives() { // NOLINT(readability-convert-member-functions-to-static)
+void SimpleSyntaxParser::InitializeDirectives() {
   using namespace directives;
 
   // Register .ORG directive
@@ -50,7 +50,7 @@ void SimpleSyntaxParser::InitializeDirectives() { // NOLINT(readability-convert-
   directive_registry_.Register(DW, simple::HandleDw);
 }
 
-void SimpleSyntaxParser::Parse(const std::string &source, Section &section, // NOLINT(readability-convert-member-functions-to-static)
+void SimpleSyntaxParser::Parse(const std::string &source, Section &section,
                                ConcreteSymbolTable &symbols) {
   if (source.empty()) {
     return;

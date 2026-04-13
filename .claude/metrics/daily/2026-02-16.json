@@ -1,0 +1,26 @@
+{
+  "date": "2026-02-16",
+  "total_input_tokens": 193700565,
+  "total_output_tokens": 973563,
+  "provider_breakdown": {
+    "anthropic:claude-haiku-4-5-20251001": {
+      "provider": "anthropic",
+      "model": "claude-haiku-4-5-20251001",
+      "calls": 19,
+      "input_tokens": 801329,
+      "output_tokens": 27850,
+      "cost": 1.08
+    },
+    "anthropic:claude-sonnet-4-5-20250929": {
+      "provider": "anthropic",
+      "model": "claude-sonnet-4-5-20250929",
+      "calls": 19,
+      "input_tokens": 192899236,
+      "output_tokens": 945713,
+      "cost": 186.53
+    }
+  },
+  "last_updated": "2026-02-17T06:59:08.196387-08:00",
+  "backfilled": true,
+  "backfill_method": "proportional_by_duration"
+}

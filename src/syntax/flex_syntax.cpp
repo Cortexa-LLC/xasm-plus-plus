@@ -28,7 +28,7 @@ namespace {
 // Helper Functions
 // ============================================================================
 
-std::string FlexAsmSyntax::Trim(const std::string &str) { // NOLINT(readability-convert-member-functions-to-static)
+std::string FlexAsmSyntax::Trim(const std::string &str) {
   size_t start = str.find_first_not_of(" \t");
   if (start == std::string::npos) {
     return "";
@@ -37,14 +37,14 @@ std::string FlexAsmSyntax::Trim(const std::string &str) { // NOLINT(readability-
   return str.substr(start, end - start + 1);
 }
 
-std::string FlexAsmSyntax::ToUpper(const std::string &str) { // NOLINT(readability-convert-member-functions-to-static)
+std::string FlexAsmSyntax::ToUpper(const std::string &str) {
   std::string result = str;
   std::transform(result.begin(), result.end(), result.begin(),
                  [](unsigned char c) { return std::toupper(c); });
   return result;
 }
 
-std::string FlexAsmSyntax::StripComments(const std::string &line) { // NOLINT(readability-convert-member-functions-to-static)
+std::string FlexAsmSyntax::StripComments(const std::string &line) {
   size_t comment_pos = line.find(';');
   if (comment_pos != std::string::npos) {
     return line.substr(0, comment_pos);
@@ -52,12 +52,12 @@ std::string FlexAsmSyntax::StripComments(const std::string &line) { // NOLINT(re
   return line;
 }
 
-bool FlexAsmSyntax::IsCommentLine(const std::string &line) { // NOLINT(readability-convert-member-functions-to-static)
+bool FlexAsmSyntax::IsCommentLine(const std::string &line) {
   std::string trimmed = Trim(line);
   return !trimmed.empty() && trimmed[0] == '*';
 }
 
-uint32_t FlexAsmSyntax::ParseNumber(const std::string &str) { // NOLINT(readability-convert-member-functions-to-static)
+uint32_t FlexAsmSyntax::ParseNumber(const std::string &str) {
   std::string trimmed = Trim(str);
 
   if (trimmed.empty()) {
@@ -477,17 +477,17 @@ void FlexAsmSyntax::ParseLine(const std::string &line, Section &section,
     std::string opcode_upper = ToUpper(opcode);
 
     // List of known directives
-    static const std::unordered_set<std::string> directives_set = {
+    static const std::unordered_set<std::string> kDirectivesSet = {
         ORG, END,  EQU,  SET, FCB,   FDB,  FCC, RMB,  SETDP, NAM,
         TTL, STTL, PAGE, SPC, MACRO, ENDM, IFC, ENDC, RPT,   ENDR};
 
     // Directives that define symbols but don't create label atoms
-    static const std::unordered_set<std::string> symbol_directives = {EQU, SET};
+    static const std::unordered_set<std::string> kSymbolDirectives = {EQU, SET};
 
-    if (directives_set.contains(opcode_upper)) {
+    if (kDirectivesSet.contains(opcode_upper)) {
       // For non-symbol-defining directives, create label atom BEFORE directive
       if (!label.empty() &&
-          !symbol_directives.contains(opcode_upper)) {
+          !kSymbolDirectives.contains(opcode_upper)) {
         section.atoms.push_back(
             std::make_shared<LabelAtom>(label, current_address_));
         symbols.DefineLabel(label, static_cast<int64_t>(current_address_));
@@ -585,7 +585,7 @@ void FlexAsmSyntax::Parse(const std::string &source, Section &section,
 // Macro Processor Stubs (Phase 2)
 // ============================================================================
 
-bool FlexAsmSyntax::IsMacro(const std::string &name) const { // NOLINT(readability-convert-member-functions-to-static)
+bool FlexAsmSyntax::IsMacro(const std::string &name) const {
   std::string name_copy = name; // Need non-const for ToUpper
   std::transform(name_copy.begin(), name_copy.end(), name_copy.begin(),
                  [](unsigned char c) { return std::toupper(c); });
@@ -665,7 +665,7 @@ FlexAsmSyntax::ExpandMacro(const std::string &name,
 }
 
 std::string
-FlexAsmSyntax::SubstituteParameters(const std::string &line, // NOLINT(readability-convert-member-functions-to-static)
+FlexAsmSyntax::SubstituteParameters(const std::string &line,
                                     const MacroDefinition &macro,
                                     const std::vector<std::string> &arguments) {
   std::string result = line;
@@ -700,7 +700,7 @@ FlexAsmSyntax::SubstituteParameters(const std::string &line, // NOLINT(readabili
   return result;
 }
 
-std::string FlexAsmSyntax::MakeLocalLabelUnique(const std::string &label, // NOLINT(readability-convert-member-functions-to-static)
+std::string FlexAsmSyntax::MakeLocalLabelUnique(const std::string &label,
                                                 int expansion_id) {
   // Local labels start with '.' in FLEX ASM09
   if (label.empty() || label[0] != '.') {
@@ -796,7 +796,7 @@ bool FlexAsmSyntax::EvaluateCondition(const std::string &condition) {
   }
 }
 
-bool FlexAsmSyntax::ShouldAssemble() const { // NOLINT(readability-convert-member-functions-to-static)
+bool FlexAsmSyntax::ShouldAssemble() const {
   // Should assemble if all conditions on stack are true
   // Empty stack means no conditionals, should assemble
   if (conditional_stack_.empty()) {

@@ -14,7 +14,7 @@
 
 namespace xasm {
 
-void SRecordWriter::Write(const std::vector<Section> &sections, // NOLINT(readability-convert-member-functions-to-static)
+void SRecordWriter::Write(const std::vector<Section> &sections,
                           std::ostream &output) {
   // Extract all bytes from all sections
   std::vector<std::pair<uint64_t, uint8_t>> all_bytes;
@@ -62,18 +62,18 @@ void SRecordWriter::Write(const std::vector<Section> &sections, // NOLINT(readab
   WriteTerminator(output, format);
 }
 
-std::string SRecordWriter::GetExtension() const { return "s19"; } // NOLINT(readability-convert-member-functions-to-static)
+std::string SRecordWriter::GetExtension() const { return "s19"; }
 
-std::string SRecordWriter::GetFormatName() const { return "Motorola S-Record"; } // NOLINT(readability-convert-member-functions-to-static)
+std::string SRecordWriter::GetFormatName() const { return "Motorola S-Record"; }
 
-void SRecordWriter::SetBytesPerLine(size_t bytes) { // NOLINT(readability-convert-member-functions-to-static)
+void SRecordWriter::SetBytesPerLine(size_t bytes) {
   if (bytes == 0 || bytes > output_format::MAX_BYTES_PER_LINE) {
     throw std::invalid_argument("Bytes per line must be > 0 and <= 255");
   }
   bytes_per_line_ = bytes;
 }
 
-int SRecordWriter::DetermineFormat(uint64_t max_address) { // NOLINT(readability-convert-member-functions-to-static)
+int SRecordWriter::DetermineFormat(uint64_t max_address) {
   if (max_address >= output_format::srec::ADDRESS_24BIT_THRESHOLD) {
     return output_format::srec::RECORD_TYPE_DATA_32BIT; // S3 (32-bit addresses)
   } else if (max_address >= output_format::srec::ADDRESS_16BIT_THRESHOLD) {
@@ -83,7 +83,7 @@ int SRecordWriter::DetermineFormat(uint64_t max_address) { // NOLINT(readability
   }
 }
 
-void SRecordWriter::WriteRecord(std::ostream &output, int record_type, // NOLINT(readability-convert-member-functions-to-static,bugprone-easily-swappable-parameters)
+void SRecordWriter::WriteRecord(std::ostream &output, int record_type, // NOLINT(bugprone-easily-swappable-parameters)
                                 uint64_t address,
                                 const std::vector<uint8_t> &data) {
   size_t addr_size = GetAddressSize(record_type);
@@ -117,7 +117,7 @@ void SRecordWriter::WriteRecord(std::ostream &output, int record_type, // NOLINT
   output << '\n';
 }
 
-uint8_t SRecordWriter::CalculateChecksum(uint8_t byte_count, uint64_t address, // NOLINT(readability-convert-member-functions-to-static,bugprone-easily-swappable-parameters)
+uint8_t SRecordWriter::CalculateChecksum(uint8_t byte_count, uint64_t address, // NOLINT(bugprone-easily-swappable-parameters)
                                          size_t addr_size,
                                          const std::vector<uint8_t> &data) {
   uint8_t sum = byte_count;
@@ -150,7 +150,7 @@ void SRecordWriter::WriteHeader(std::ostream &output,
               output_format::srec::HEADER_ADDRESS, header_data);
 }
 
-void SRecordWriter::WriteTerminator(std::ostream &output, int format, // NOLINT(readability-convert-member-functions-to-static,bugprone-easily-swappable-parameters)
+void SRecordWriter::WriteTerminator(std::ostream &output, int format, // NOLINT(bugprone-easily-swappable-parameters)
                                     uint64_t start_address) {
   // S9 for S1, S8 for S2, S7 for S3
   int terminator_type =
@@ -158,15 +158,15 @@ void SRecordWriter::WriteTerminator(std::ostream &output, int format, // NOLINT(
   WriteRecord(output, terminator_type, start_address, {});
 }
 
-void SRecordWriter::WriteCountRecord(std::ostream &output, size_t record_count, // NOLINT(readability-convert-member-functions-to-static)
+void SRecordWriter::WriteCountRecord(std::ostream &output, size_t record_count,
                                      int /* format */) {
   // S5 for counts < 65536, S6 for larger counts
   int count_type = (record_count < output_format::srec::COUNT_16BIT_THRESHOLD)
                        ? output_format::srec::RECORD_TYPE_COUNT_16BIT
                        : output_format::srec::RECORD_TYPE_COUNT_24BIT;
   // S5/S6: the "address" field holds the record count (per S-Record spec)
-  const uint64_t count_as_address = static_cast<uint64_t>(record_count);
-  WriteRecord(output, count_type, count_as_address, {});
+  const uint64_t kCountAsAddress = static_cast<uint64_t>(record_count);
+  WriteRecord(output, count_type, kCountAsAddress, {});
 }
 
 std::vector<std::pair<uint64_t, uint8_t>>
@@ -198,7 +198,7 @@ SRecordWriter::ExtractBytes(const Section &section) {
   return bytes;
 }
 
-size_t SRecordWriter::GetAddressSize(int format) { // NOLINT(readability-convert-member-functions-to-static)
+size_t SRecordWriter::GetAddressSize(int format) {
   switch (format) {
   case output_format::srec::RECORD_TYPE_HEADER: // NOLINT(bugprone-branch-clone)
   case output_format::srec::RECORD_TYPE_DATA_16BIT:

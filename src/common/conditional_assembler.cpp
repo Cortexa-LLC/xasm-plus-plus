@@ -11,7 +11,7 @@
 
 namespace xasm {
 
-void ConditionalAssembler::BeginIf(bool condition) { // NOLINT(readability-convert-member-functions-to-static)
+void ConditionalAssembler::BeginIf(bool condition) {
   // Determine if code should be emitted based on:
   // 1. Current condition
   // 2. Parent block's should_emit state (if any)
@@ -25,7 +25,7 @@ void ConditionalAssembler::BeginIf(bool condition) { // NOLINT(readability-conve
   });
 }
 
-void ConditionalAssembler::BeginElse() { // NOLINT(readability-convert-member-functions-to-static)
+void ConditionalAssembler::BeginElse() {
   if (stack_.empty()) {
     throw std::runtime_error("ELSE without matching IF");
   }
@@ -45,7 +45,7 @@ void ConditionalAssembler::BeginElse() { // NOLINT(readability-convert-member-fu
   block.should_emit = parent_should_emit && !block.condition;
 }
 
-void ConditionalAssembler::EndIf() { // NOLINT(readability-convert-member-functions-to-static)
+void ConditionalAssembler::EndIf() {
   if (stack_.empty()) {
     throw std::runtime_error("ENDIF without matching IF");
   }
@@ -53,7 +53,7 @@ void ConditionalAssembler::EndIf() { // NOLINT(readability-convert-member-functi
   stack_.pop_back();
 }
 
-bool ConditionalAssembler::ShouldEmit() const { // NOLINT(readability-convert-member-functions-to-static)
+bool ConditionalAssembler::ShouldEmit() const {
   // If stack is empty, emit unconditionally
   if (stack_.empty()) {
     return true;

@@ -100,25 +100,25 @@ ErrorFormatter::FormatError(const AssemblerError &error,
   return oss.str();
 }
 
-size_t ErrorFormatter::CalculateEditDistance(const std::string &s1, // NOLINT(readability-convert-member-functions-to-static)
+size_t ErrorFormatter::CalculateEditDistance(const std::string &s1,
                                              const std::string &s2) {
-  const size_t len1 = s1.length();
-  const size_t len2 = s2.length();
+  const size_t kLen1 = s1.length();
+  const size_t kLen2 = s2.length();
 
   // Create distance matrix
-  std::vector<std::vector<size_t>> dp(len1 + 1, std::vector<size_t>(len2 + 1));
+  std::vector<std::vector<size_t>> dp(kLen1 + 1, std::vector<size_t>(kLen2 + 1));
 
   // Initialize base cases
-  for (size_t i = 0; i <= len1; ++i) { // NOLINT(bugprone-infinite-loop)
+  for (size_t i = 0; i <= kLen1; ++i) { // NOLINT(bugprone-infinite-loop)
     dp[i][0] = i;
   }
-  for (size_t j = 0; j <= len2; ++j) { // NOLINT(bugprone-infinite-loop)
+  for (size_t j = 0; j <= kLen2; ++j) { // NOLINT(bugprone-infinite-loop)
     dp[0][j] = j;
   }
 
   // Fill matrix
-  for (size_t i = 1; i <= len1; ++i) { // NOLINT(bugprone-infinite-loop)
-    for (size_t j = 1; j <= len2; ++j) { // NOLINT(bugprone-infinite-loop)
+  for (size_t i = 1; i <= kLen1; ++i) { // NOLINT(bugprone-infinite-loop)
+    for (size_t j = 1; j <= kLen2; ++j) { // NOLINT(bugprone-infinite-loop)
       size_t cost = (s1[i - 1] == s2[j - 1]) ? 0 : 1;
       dp[i][j] = std::min({
           dp[i - 1][j] + 1,       // deletion
@@ -128,7 +128,7 @@ size_t ErrorFormatter::CalculateEditDistance(const std::string &s1, // NOLINT(re
     }
   }
 
-  return dp[len1][len2];
+  return dp[kLen1][kLen2];
 }
 
 bool ErrorFormatter::ShouldUseColors() const {
@@ -159,7 +159,7 @@ std::string ErrorFormatter::Colorize(const std::string &text,
   return "\033[" + color + "m" + text + "\033[0m";
 }
 
-std::string ErrorFormatter::ReadSourceLine(const std::string &filename, // NOLINT(readability-convert-member-functions-to-static)
+std::string ErrorFormatter::ReadSourceLine(const std::string &filename,
                                            size_t line_number) {
   std::ifstream file(filename);
   if (!file.is_open()) {
@@ -217,7 +217,7 @@ ErrorFormatter::GenerateColumnMarker(size_t column, size_t length,
 }
 
 std::vector<std::string>
-ErrorFormatter::FindSimilarSymbols(const std::string &typo, // NOLINT(readability-convert-member-functions-to-static)
+ErrorFormatter::FindSimilarSymbols(const std::string &typo,
                                    const ConcreteSymbolTable *symbols) {
 
   if (!symbols) {
@@ -255,7 +255,7 @@ ErrorFormatter::FindSimilarSymbols(const std::string &typo, // NOLINT(readabilit
 }
 
 std::string
-ErrorFormatter::ExtractSymbolName(const std::string &message) { // NOLINT(readability-convert-member-functions-to-static)
+ErrorFormatter::ExtractSymbolName(const std::string &message) {
   // Look for patterns like "symbol 'NAME'" or "'NAME' not defined"
   size_t start = message.find('\'');
   if (start == std::string::npos) {

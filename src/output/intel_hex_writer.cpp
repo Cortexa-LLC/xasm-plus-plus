@@ -18,7 +18,7 @@
 
 namespace xasm {
 
-void IntelHexWriter::Write(const std::vector<Section> &sections, // NOLINT(readability-convert-member-functions-to-static)
+void IntelHexWriter::Write(const std::vector<Section> &sections,
                            std::ostream &output) {
   // Track current extended address (upper 16 bits for > 64KB addresses)
   // Start with 0 so we don't emit unnecessary extended address record for low
@@ -93,18 +93,18 @@ void IntelHexWriter::Write(const std::vector<Section> &sections, // NOLINT(reada
   WriteEOF(output);
 }
 
-std::string IntelHexWriter::GetExtension() const { return "hex"; } // NOLINT(readability-convert-member-functions-to-static)
+std::string IntelHexWriter::GetExtension() const { return "hex"; }
 
-std::string IntelHexWriter::GetFormatName() const { return "Intel HEX"; } // NOLINT(readability-convert-member-functions-to-static)
+std::string IntelHexWriter::GetFormatName() const { return "Intel HEX"; }
 
-void IntelHexWriter::SetBytesPerLine(size_t bytes) { // NOLINT(readability-convert-member-functions-to-static)
+void IntelHexWriter::SetBytesPerLine(size_t bytes) {
   if (bytes == 0 || bytes > output_format::MAX_BYTES_PER_LINE) {
     throw std::invalid_argument("Bytes per line must be between 1 and 255");
   }
   bytes_per_line_ = bytes;
 }
 
-void IntelHexWriter::WriteRecord(std::ostream &output, uint8_t byte_count, // NOLINT(readability-convert-member-functions-to-static,bugprone-easily-swappable-parameters)
+void IntelHexWriter::WriteRecord(std::ostream &output, uint8_t byte_count, // NOLINT(bugprone-easily-swappable-parameters)
                                  uint16_t address, uint8_t record_type,
                                  const std::vector<uint8_t> &data) {
   // Calculate checksum
@@ -131,7 +131,7 @@ void IntelHexWriter::WriteRecord(std::ostream &output, uint8_t byte_count, // NO
   output << "\n";
 }
 
-uint8_t IntelHexWriter::CalculateChecksum(uint8_t byte_count, uint16_t address, // NOLINT(readability-convert-member-functions-to-static,bugprone-easily-swappable-parameters)
+uint8_t IntelHexWriter::CalculateChecksum(uint8_t byte_count, uint16_t address, // NOLINT(bugprone-easily-swappable-parameters)
                                           uint8_t record_type,
                                           const std::vector<uint8_t> &data) {
   // Sum all bytes

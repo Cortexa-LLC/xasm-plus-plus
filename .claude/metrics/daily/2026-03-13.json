@@ -1,0 +1,37 @@
+{
+  "date": "2026-03-13",
+  "total_input_tokens": 218162237,
+  "total_output_tokens": 621554,
+  "total_cost": 0,
+  "total_savings": 0,
+  "provider_breakdown": {
+    "anthropic:claude-sonnet-4-6": {
+      "provider": "anthropic",
+      "model": "claude-sonnet-4-6",
+      "calls": 2553,
+      "input_tokens": 208095435,
+      "output_tokens": 582065,
+      "cost": 0,
+      "savings": 0
+    },
+    "openai:gpt-4.1": {
+      "provider": "openai",
+      "model": "gpt-4.1",
+      "calls": 190,
+      "input_tokens": 7025046,
+      "output_tokens": 4964,
+      "cost": 0,
+      "savings": 0
+    },
+    "openai:gpt-5.1-codex-mini": {
+      "provider": "openai",
+      "model": "gpt-5.1-codex-mini",
+      "calls": 124,
+      "input_tokens": 3041756,
+      "output_tokens": 34525,
+      "cost": 0,
+      "savings": 0
+    }
+  },
+  "last_updated": "2026-03-13T20:23:48.265075-07:00"
+}

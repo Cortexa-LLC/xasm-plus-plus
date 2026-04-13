@@ -53,16 +53,16 @@ void TrsDosWriter::Write(const std::vector<Section> &sections,
   }
 }
 
-std::string TrsDosWriter::GetExtension() const { return "cmd"; } // NOLINT(readability-convert-member-functions-to-static)
+std::string TrsDosWriter::GetExtension() const { return "cmd"; }
 
-std::string TrsDosWriter::GetFormatName() const { return "TRS-DOS Binary"; } // NOLINT(readability-convert-member-functions-to-static)
+std::string TrsDosWriter::GetFormatName() const { return "TRS-DOS Binary"; }
 
 void TrsDosWriter::SetEntryPoint(uint64_t address) {
   has_entry_point_ = true;
   entry_point_addr_ = address;
 }
 
-void TrsDosWriter::WriteSegment(std::ostream &output, uint8_t type, // NOLINT(readability-convert-member-functions-to-static)
+void TrsDosWriter::WriteSegment(std::ostream &output, uint8_t type,
                                 uint64_t address,
                                 const std::vector<uint8_t> &data) {
   // Validate address fits in 16-bit
@@ -81,7 +81,7 @@ void TrsDosWriter::WriteSegment(std::ostream &output, uint8_t type, // NOLINT(re
   }
 }
 
-void TrsDosWriter::WriteLE16(std::ostream &output, uint16_t value) { // NOLINT(readability-convert-member-functions-to-static)
+void TrsDosWriter::WriteLE16(std::ostream &output, uint16_t value) {
   output.put(static_cast<char>(value & 0xFF));        // Low byte
   output.put(static_cast<char>((value >> 8) & 0xFF)); // High byte
 }

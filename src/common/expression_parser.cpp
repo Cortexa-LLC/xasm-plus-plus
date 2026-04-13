@@ -517,27 +517,27 @@ std::shared_ptr<Expression> ExpressionParser::ParsePrimary() {
 // Helper methods
 // ============================================================================
 
-void ExpressionParser::SkipWhitespace() { // NOLINT(readability-convert-member-functions-to-static)
+void ExpressionParser::SkipWhitespace() {
   while (pos_ < expr_.length() && std::isspace(expr_[pos_])) {
     pos_++;
   }
 }
 
-char ExpressionParser::Peek() const { // NOLINT(readability-convert-member-functions-to-static)
+char ExpressionParser::Peek() const {
   if (pos_ < expr_.length()) {
     return expr_[pos_];
   }
   return '\0';
 }
 
-char ExpressionParser::Consume() { // NOLINT(readability-convert-member-functions-to-static)
+char ExpressionParser::Consume() {
   if (pos_ < expr_.length()) {
     return expr_[pos_++];
   }
   return '\0';
 }
 
-bool ExpressionParser::Match(const std::string &str) { // NOLINT(readability-convert-member-functions-to-static)
+bool ExpressionParser::Match(const std::string &str) {
   if (pos_ + str.length() > expr_.length()) {
     return false;
   }

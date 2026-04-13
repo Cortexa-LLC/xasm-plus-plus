@@ -53,7 +53,7 @@ bool ParseNumericLiteral(const std::string &op, uint32_t &out_value) {
 }
 
 // Platform-aware temp directory helper
-std::string get_temp_dir() {
+std::string GetTempDir() {
 #ifdef _WIN32
   const char *temp = std::getenv("TEMP");
   if (!temp)
@@ -121,7 +121,7 @@ void MerlinSyntaxParser::InitializeDirectiveRegistry() {
   directive_registry_[LUP] = merlin::HandleLup;
 }
 
-bool MerlinSyntaxParser::DispatchDirective(const std::string &directive, // NOLINT(readability-convert-member-functions-to-static)
+bool MerlinSyntaxParser::DispatchDirective(const std::string &directive,
                                            const std::string &label,
                                            const std::string &operand,
                                            DirectiveContext &context) {
@@ -140,7 +140,7 @@ bool MerlinSyntaxParser::DispatchDirective(const std::string &directive, // NOLI
 // ============================================================================
 
 // Strip comments: * in column 1 or ; anywhere
-std::string MerlinSyntaxParser::StripComments(const std::string &line) { // NOLINT(readability-convert-member-functions-to-static)
+std::string MerlinSyntaxParser::StripComments(const std::string &line) {
   // Empty line
   if (line.empty()) {
     return "";
@@ -167,7 +167,7 @@ std::string MerlinSyntaxParser::StripComments(const std::string &line) { // NOLI
 }
 
 // Format error message with source location
-std::string MerlinSyntaxParser::FormatError(const std::string &message) const { // NOLINT(readability-convert-member-functions-to-static)
+std::string MerlinSyntaxParser::FormatError(const std::string &message) const {
   std::ostringstream oss;
   oss << current_file_ << ":" << current_line_ << ": error: " << message;
   return oss.str();
@@ -179,7 +179,7 @@ std::string MerlinSyntaxParser::FormatError(const std::string &message) const { 
 
 // Parse number in various formats: $hex, %binary, decimal
 // NOTE: Kept for HandleOrg compatibility - will refactor in future phase
-uint32_t MerlinSyntaxParser::ParseNumber(const std::string &str) { // NOLINT(readability-convert-member-functions-to-static)
+uint32_t MerlinSyntaxParser::ParseNumber(const std::string &str) {
   if (str.empty()) {
     return 0;
   }
@@ -209,7 +209,7 @@ uint32_t MerlinSyntaxParser::ParseNumber(const std::string &str) { // NOLINT(rea
 // Parse expression - delegates to ExpressionParser for standard operations
 // while preserving Merlin-specific features: character literals, low/high byte
 std::shared_ptr<Expression>
-MerlinSyntaxParser::ParseExpression(const std::string &str, // NOLINT(readability-convert-member-functions-to-static)
+MerlinSyntaxParser::ParseExpression(const std::string &str,
                                     ConcreteSymbolTable &symbols) {
 
   std::string expr = Trim(str);
@@ -413,7 +413,7 @@ MerlinSyntaxParser::ParseExpression(const std::string &str, // NOLINT(readabilit
 // ============================================================================
 
 std::string
-MerlinSyntaxParser::ScopeLocalLabel(const std::string &label) const { // NOLINT(readability-convert-member-functions-to-static)
+MerlinSyntaxParser::ScopeLocalLabel(const std::string &label) const {
   if (!label.empty() && label[0] == ':' &&
       !current_scope_.global_label.empty()) {
     return current_scope_.global_label + label;
@@ -422,7 +422,7 @@ MerlinSyntaxParser::ScopeLocalLabel(const std::string &label) const { // NOLINT(
 }
 
 std::string
-MerlinSyntaxParser::SubstituteMerlinVars(const std::string &line, // NOLINT(readability-convert-member-functions-to-static)
+MerlinSyntaxParser::SubstituteMerlinVars(const std::string &line,
                                          const ConcreteSymbolTable &symbols) {
   // Fast path: no ] in line
   if (line.find(']') == std::string::npos) {
@@ -507,7 +507,7 @@ MerlinSyntaxParser::SubstituteMerlinVars(const std::string &line, // NOLINT(read
 }
 
 std::string
-MerlinSyntaxParser::ScopeLocalLabelsInOperand(const std::string &operand) const { // NOLINT(readability-convert-member-functions-to-static)
+MerlinSyntaxParser::ScopeLocalLabelsInOperand(const std::string &operand) const {
   if (current_scope_.global_label.empty() || operand.empty()) {
     return operand;
   }
@@ -556,7 +556,7 @@ MerlinSyntaxParser::ScopeLocalLabelsInOperand(const std::string &operand) const 
 // because only the "A" token is replaced; the +1 is left for the generic
 // expression evaluator.
 std::string
-MerlinSyntaxParser::ExpandMerlinCharLiterals(const std::string &operand) { // NOLINT(readability-convert-member-functions-to-static)
+MerlinSyntaxParser::ExpandMerlinCharLiterals(const std::string &operand) {
   // Fast path: no quote character → nothing to expand
   if (operand.find('"') == std::string::npos &&
       operand.find('\'') == std::string::npos) {
@@ -594,7 +594,7 @@ MerlinSyntaxParser::ExpandMerlinCharLiterals(const std::string &operand) { // NO
 }
 
 std::string
-MerlinSyntaxParser::ExpandVarLabelsInOperand(const std::string &operand) const { // NOLINT(readability-convert-member-functions-to-static)
+MerlinSyntaxParser::ExpandVarLabelsInOperand(const std::string &operand) const {
   // Fast path: no ] in operand
   if (operand.find(']') == std::string::npos) {
     return operand;
@@ -650,7 +650,7 @@ MerlinSyntaxParser::ExpandVarLabelsInOperand(const std::string &operand) const {
 // Label Parsing
 // ============================================================================
 
-std::string MerlinSyntaxParser::ParseLabel(const std::string &line, size_t &pos, // NOLINT(readability-convert-member-functions-to-static)
+std::string MerlinSyntaxParser::ParseLabel(const std::string &line, size_t &pos,
                                            Section & /*section*/,
                                            ConcreteSymbolTable & /*symbols*/) {
   // Merlin labels can be:
@@ -681,7 +681,7 @@ std::string MerlinSyntaxParser::ParseLabel(const std::string &line, size_t &pos,
 // Directive Handlers
 // ============================================================================
 
-void MerlinSyntaxParser::HandleEqu(const std::string &label, // NOLINT(readability-convert-member-functions-to-static)
+void MerlinSyntaxParser::HandleEqu(const std::string &label,
                                    const std::string &operand,
                                    ConcreteSymbolTable &symbols) {
   // EQU directive - define symbolic constant (no code generated)
@@ -868,7 +868,7 @@ void MerlinSyntaxParser::HandleDend() {
   in_dum_block_ = false;
 }
 
-void MerlinSyntaxParser::HandlePut(const std::string &operand, Section &section, // NOLINT(readability-convert-member-functions-to-static)
+void MerlinSyntaxParser::HandlePut(const std::string &operand, Section &section,
                                    ConcreteSymbolTable &symbols) {
   // PUT filename - include another source file
   std::string filename = Trim(operand);
@@ -895,7 +895,7 @@ void MerlinSyntaxParser::HandlePut(const std::string &operand, Section &section,
 
   if (!file.is_open() && filename[0] != '/') {
     // Try with temp directory prefix for relative paths (platform-aware)
-    actual_filename = get_temp_dir() + "/" + filename;
+    actual_filename = GetTempDir() + "/" + filename;
     file.open(actual_filename);
   }
 
@@ -914,7 +914,7 @@ void MerlinSyntaxParser::HandlePut(const std::string &operand, Section &section,
   include_stack_.pop_back();
 }
 
-void MerlinSyntaxParser::HandleDo(const std::string &operand, // NOLINT(readability-convert-member-functions-to-static)
+void MerlinSyntaxParser::HandleDo(const std::string &operand,
                                   ConcreteSymbolTable &symbols) {
   // DO directive - begin conditional assembly block
   // Evaluate operand expression: non-zero = true, zero = false
@@ -939,7 +939,7 @@ void MerlinSyntaxParser::HandleDo(const std::string &operand, // NOLINT(readabil
   conditional_.BeginIf(value != 0);
 }
 
-void MerlinSyntaxParser::HandleElse() { // NOLINT(readability-convert-member-functions-to-static)
+void MerlinSyntaxParser::HandleElse() {
   // ELSE directive - toggle conditional assembly state
   try {
     conditional_.BeginElse();
@@ -955,7 +955,7 @@ void MerlinSyntaxParser::HandleElse() { // NOLINT(readability-convert-member-fun
   }
 }
 
-void MerlinSyntaxParser::HandleFin() { // NOLINT(readability-convert-member-functions-to-static)
+void MerlinSyntaxParser::HandleFin() {
   // FIN directive - end conditional assembly block
   // Merlin ignores extra FIN directives (no matching DO) — treat as no-op.
   if (conditional_.IsBalanced()) {
@@ -1091,7 +1091,7 @@ void MerlinSyntaxParser::ExpandMacro(const std::string &macro_name,
   macro_expansion_depth_--;
 }
 
-std::string MerlinSyntaxParser::SubstituteParameters( // NOLINT(readability-convert-member-functions-to-static)
+std::string MerlinSyntaxParser::SubstituteParameters(
     const std::string &line, const std::vector<std::string> &params) {
   // Replace ]1, ]2, etc. with actual parameters
   std::string result;
@@ -1147,7 +1147,7 @@ void MerlinSyntaxParser::HandleXc(const std::string &operand) {
   }
 }
 
-void MerlinSyntaxParser::HandleMx(const std::string &operand) { // NOLINT(readability-convert-member-functions-to-static)
+void MerlinSyntaxParser::HandleMx(const std::string &operand) {
   // MX mode - Set 65816 accumulator and index register widths
   // This is a directive only - tracks state but doesn't change CPU encoding
 

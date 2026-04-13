@@ -10,7 +10,7 @@
 
 namespace xasm {
 
-void DirectiveRegistry::Register(const std::string &mnemonic, // NOLINT(readability-convert-member-functions-to-static)
+void DirectiveRegistry::Register(const std::string &mnemonic,
                                  DirectiveHandler handler) {
   std::string upper = ToUpper(mnemonic);
   handlers_[upper] = handler;
@@ -24,7 +24,7 @@ void DirectiveRegistry::Register(std::initializer_list<std::string> mnemonics,
   }
 }
 
-void DirectiveRegistry::Execute(const std::string &mnemonic, // NOLINT(readability-convert-member-functions-to-static)
+void DirectiveRegistry::Execute(const std::string &mnemonic,
                                 const std::string &label,
                                 const std::string &operand,
                                 DirectiveContext &context) {
@@ -42,12 +42,12 @@ void DirectiveRegistry::Execute(const std::string &mnemonic, // NOLINT(readabili
   it->second(operand, context);
 }
 
-bool DirectiveRegistry::IsRegistered(const std::string &mnemonic) const { // NOLINT(readability-convert-member-functions-to-static)
+bool DirectiveRegistry::IsRegistered(const std::string &mnemonic) const {
   std::string upper = ToUpper(mnemonic);
   return handlers_.contains(upper);
 }
 
-std::string DirectiveRegistry::ToUpper(const std::string &mnemonic) { // NOLINT(readability-convert-member-functions-to-static)
+std::string DirectiveRegistry::ToUpper(const std::string &mnemonic) {
   std::string result;
   result.reserve(mnemonic.size());
   for (char c : mnemonic) {

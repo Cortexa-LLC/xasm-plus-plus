@@ -251,7 +251,7 @@ public:
    * @return The symbol's current value
    * @throws std::runtime_error if symbol is not defined
    */
-  int64_t Evaluate(const SymbolTable &symbols) const override { // NOLINT(readability-convert-member-functions-to-static)
+  int64_t Evaluate(const SymbolTable &symbols) const override {
     int64_t value = 0;
     if (!symbols.Lookup(symbol, value)) {
       throw UndefinedSymbolError(symbol);
@@ -312,7 +312,7 @@ public:
    * @param symbols Symbol table providing current location
    * @return The current assembly address
    */
-  int64_t Evaluate(const SymbolTable &symbols) const override { // NOLINT(readability-convert-member-functions-to-static)
+  int64_t Evaluate(const SymbolTable &symbols) const override {
     return symbols.GetCurrentLocation();
   }
 

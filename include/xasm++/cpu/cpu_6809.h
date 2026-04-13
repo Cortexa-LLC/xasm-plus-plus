@@ -105,8 +105,8 @@ public:
   ~Cpu6809() override = default;
 
   // CpuPlugin interface implementation
-  std::string GetCpuFamily() const override { return "6809"; } // NOLINT(readability-convert-member-functions-to-static)
-  std::vector<std::string> GetSupportedVariants() const override { // NOLINT(readability-convert-member-functions-to-static)
+  std::string GetCpuFamily() const override { return "6809"; }
+  std::vector<std::string> GetSupportedVariants() const override {
     return {"6809"};
   }
   bool HasOpcode(const std::string &mnemonic) const override;

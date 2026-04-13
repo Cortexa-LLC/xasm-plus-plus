@@ -21,9 +21,9 @@
 
 namespace xasm {
 
-std::string ListingOutput::GetName() const { return "listing"; } // NOLINT(readability-convert-member-functions-to-static)
+std::string ListingOutput::GetName() const { return "listing"; }
 
-std::string ListingOutput::GetFileExtension() const { return ".lst"; } // NOLINT(readability-convert-member-functions-to-static)
+std::string ListingOutput::GetFileExtension() const { return ".lst"; }
 
 /**
  * @brief Format a hex address with padding
@@ -63,7 +63,7 @@ FormatBytes(const std::vector<uint8_t> &bytes,
   return oss.str();
 }
 
-void ListingOutput::WriteOutput(const std::string &filename, // NOLINT(readability-convert-member-functions-to-static)
+void ListingOutput::WriteOutput(const std::string &filename,
                                 const std::vector<Section *> &sections,
                                 const SymbolTable & /* symbols */) {
   std::ofstream file(filename);

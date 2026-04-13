@@ -24,7 +24,7 @@ EdtasmSyntaxParser::EdtasmSyntaxParser() { InitializeDirectiveRegistry(); }
 // Directive Registration
 // ===========================================================================
 
-void EdtasmSyntaxParser::InitializeDirectiveRegistry() { // NOLINT(readability-convert-member-functions-to-static)
+void EdtasmSyntaxParser::InitializeDirectiveRegistry() {
   using namespace directives;
 
   // Register directive handlers from edtasm namespace (direct assignment)
@@ -44,7 +44,7 @@ void EdtasmSyntaxParser::InitializeDirectiveRegistry() { // NOLINT(readability-c
 // ===========================================================================
 
 // Helper: Trim whitespace from both ends
-std::string EdtasmSyntaxParser::Trim(const std::string &str) { // NOLINT(readability-convert-member-functions-to-static)
+std::string EdtasmSyntaxParser::Trim(const std::string &str) {
   size_t start = str.find_first_not_of(" \t");
   if (start == std::string::npos) {
     return "";
@@ -54,7 +54,7 @@ std::string EdtasmSyntaxParser::Trim(const std::string &str) { // NOLINT(readabi
 }
 
 // Helper: Convert to uppercase
-std::string EdtasmSyntaxParser::ToUpper(const std::string &str) { // NOLINT(readability-convert-member-functions-to-static)
+std::string EdtasmSyntaxParser::ToUpper(const std::string &str) {
   std::string result = str;
   std::transform(result.begin(), result.end(), result.begin(),
                  [](unsigned char c) { return std::toupper(c); });
@@ -62,7 +62,7 @@ std::string EdtasmSyntaxParser::ToUpper(const std::string &str) { // NOLINT(read
 }
 
 // Helper: Strip comments (semicolon to end of line)
-std::string EdtasmSyntaxParser::StripComments(const std::string &str) { // NOLINT(readability-convert-member-functions-to-static)
+std::string EdtasmSyntaxParser::StripComments(const std::string &str) {
   size_t comment_pos = str.find(';');
   if (comment_pos != std::string::npos) {
     return str.substr(0, comment_pos);
@@ -71,13 +71,13 @@ std::string EdtasmSyntaxParser::StripComments(const std::string &str) { // NOLIN
 }
 
 // Helper: Check if line is a comment line (starts with *)
-bool EdtasmSyntaxParser::IsCommentLine(const std::string &line) { // NOLINT(readability-convert-member-functions-to-static)
+bool EdtasmSyntaxParser::IsCommentLine(const std::string &line) {
   std::string trimmed = Trim(line);
   return !trimmed.empty() && trimmed[0] == '*';
 }
 
 // Helper: Parse numeric value (supports $hex, %binary, 'char', decimal)
-uint32_t EdtasmSyntaxParser::ParseNumber(const std::string &str) { // NOLINT(readability-convert-member-functions-to-static)
+uint32_t EdtasmSyntaxParser::ParseNumber(const std::string &str) {
   std::string trimmed = Trim(str);
 
   if (trimmed.empty()) {
@@ -148,7 +148,7 @@ void EdtasmSyntaxParser::ParseDirective(const std::string &directive,
 }
 
 // Parse a single line
-void EdtasmSyntaxParser::ParseLine(const std::string &line, Section &section, // NOLINT(readability-convert-member-functions-to-static)
+void EdtasmSyntaxParser::ParseLine(const std::string &line, Section &section,
                                    ConcreteSymbolTable &symbols) {
   // Strip comments first
   std::string processed = StripComments(line);
@@ -246,7 +246,7 @@ void EdtasmSyntaxParser::ParseLine(const std::string &line, Section &section, //
 }
 
 // Main parse function
-void EdtasmSyntaxParser::Parse(const std::string &source, Section &section, // NOLINT(readability-convert-member-functions-to-static)
+void EdtasmSyntaxParser::Parse(const std::string &source, Section &section,
                                ConcreteSymbolTable &symbols) {
   if (source.empty()) {
     return;
