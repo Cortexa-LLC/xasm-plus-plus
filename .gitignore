@@ -118,3 +118,5 @@ test_*.sym
 test_*.lst
 test_*.log
 a.out
+.claude/metrics/
+clang-tidy-report.txt
