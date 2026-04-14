@@ -257,6 +257,32 @@ private:
                                          AssemblerResult &result,
                                          int pass_number = 2);
 
+  /// Mutable per-section state threaded through per-atom handlers.
+  struct EncodeAtomState {
+    uint32_t &current_address;
+    uint32_t &virtual_address;
+    uint32_t &phase_real_start;
+    uint32_t &phase_virtual_start;
+    ConcreteSymbolTable &symbols;
+    AssemblerResult &result;
+    std::vector<size_t> &current_sizes;
+    int pass_number;
+  };
+
+  /// Returns true when the caller should `continue` to the next atom.
+  bool HandlePhaseAtom(const std::shared_ptr<Atom> &atom,
+                       EncodeAtomState &state);
+  bool HandleOrgAtom(const std::shared_ptr<Atom> &atom,
+                     EncodeAtomState &state);
+  bool HandleEquateAtom(const std::shared_ptr<Atom> &atom,
+                        EncodeAtomState &state);
+  bool HandleDataAtom(const std::shared_ptr<Atom> &atom,
+                      EncodeAtomState &state);
+  bool HandleInstructionAtom(const std::shared_ptr<Atom> &atom,
+                             EncodeAtomState &state);
+  bool HandleSpaceAtom(const std::shared_ptr<Atom> &atom,
+                       EncodeAtomState &state);
+
   /**
    * @brief Check if instruction sizes have converged
    *

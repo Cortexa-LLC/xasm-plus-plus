@@ -386,43 +386,49 @@ void HandleAz(DirectiveContext &context) {
   *context.current_address += data.size();
 }
 
-void HandleDa(DirectiveContext &context) {
-  const std::string &operand = context.operand;
-  (void)context.label; // Label handled separately
+// ============================================================================
+// HandleDa helpers
+// ============================================================================
 
-  // Split by comma, stopping when an inline comment is encountered.
-  //
-  // In SCMASM, .DA operands are comma-separated, but each operand may be
-  // followed by whitespace-delimited comment text on the same line. A comment
-  // begins at the first whitespace inside a token (i.e. after the expression
-  // value). Crucially, any comma that appears inside the comment text must NOT
-  // be treated as a .DA list separator.
-  //
-  // Example (from LIBBLKDEV.S.txt):
-  //   .DA #$61   6502,Level 1 (65c02)
-  // Here "6502,Level 1 (65c02)" is a comment. The comma after "6502" must
-  // NOT produce a second .DA operand ("Level"), which would emit two extra
-  // zero bytes and corrupt the binary header.
-  //
-  // Algorithm: scan tokens separated by commas. If a token contains
-  // internal whitespace, the part before the whitespace is the operand
-  // value, and the rest (including any subsequent commas) is a comment.
-  // Stop processing as soon as the first such inline comment is detected.
-  std::string trimmed = Trim(operand);
-  std::vector<std::string> raw_expressions;
+namespace {
+
+/**
+ * @brief Token produced by TokenizeDaOperand.
+ *
+ * Represents one comma-separated entry in a .DA operand, or signals that an
+ * inline comment was encountered (comment_ended == true).
+ */
+struct DaToken {
+  std::string expr;          ///< Trimmed expression (empty when comment_ended)
+  bool comment_ended{false}; ///< True when an inline comment stopped scanning
+};
+
+/**
+ * @brief Extract all .DA tokens from the operand string.
+ *
+ * Scans @p src for comma-separated expressions, honouring:
+ *  - $$"..." / $$'...' string literals (commas inside are not separators)
+ *  - Single-char quoted literals ('A', "A") — spaces inside quotes are NOT
+ *    treated as inline-comment starts
+ *  - Inline comments: unquoted whitespace inside a token terminates the list
+ *
+ * Returns the list of tokens in order; if an inline comment was detected the
+ * final DaToken has comment_ended == true and an empty expr.
+ */
+std::vector<DaToken> TokenizeDaOperand(const std::string &src) {
+  std::string trimmed = Trim(src);
+  std::vector<DaToken> tokens;
   size_t start = 0;
   size_t pos = 0;
-  bool found_inline_comment = false;
 
-  while (pos <= trimmed.length() && !found_inline_comment) {
-    // Skip over string literals ($$"..." or $$'...') when scanning for commas
-    // Bug fix: commas inside string literals should not split operands
+  while (pos <= trimmed.length()) {
+    // Skip over $$"..." or $$'...' string literals (commas inside are not
+    // separators and must not be treated as .DA list delimiters).
     if (pos + 2 < trimmed.length() && trimmed[pos] == '$' &&
         trimmed[pos + 1] == '$' &&
         (trimmed[pos + 2] == '"' || trimmed[pos + 2] == '\'')) {
       char delim = trimmed[pos + 2];
       pos += 3; // Skip $$"
-      // Find closing delimiter
       while (pos < trimmed.length() && trimmed[pos] != delim) {
         ++pos;
       }
@@ -432,10 +438,10 @@ void HandleDa(DirectiveContext &context) {
       continue;
     }
 
-    // Skip over single-character quoted literals ("X" or 'X'), including
-    // the case where the character content is whitespace (e.g. #" " or #' ').
-    // Without this, the comma-scanner would misidentify the space inside
-    // #" " as an inline-comment start and truncate the token prematurely.
+    // Skip over single-character quoted literals ("X" or 'X'), including the
+    // case where the character is whitespace (e.g. #" " or #' ').
+    // Without this skip, the comma-scanner would mistake the space inside #" "
+    // for an inline-comment start and truncate the token prematurely.
     if (pos + 2 < trimmed.length() &&
         (trimmed[pos] == '"' || trimmed[pos] == '\'') &&
         trimmed[pos + 2] == trimmed[pos]) {
@@ -444,240 +450,259 @@ void HandleDa(DirectiveContext &context) {
     }
 
     if (pos == trimmed.length() || trimmed[pos] == ',') {
-      std::string value = trimmed.substr(start, pos - start);
-      // Check for internal whitespace → inline comment in this token.
-      // Scan char-by-char so that whitespace inside single-char literals
-      // (e.g. #" " or #' ') does not falsely trigger the comment heuristic.
-      size_t ws = std::string::npos;
+      std::string token = trimmed.substr(start, pos - start);
+
+      // Scan char-by-char for unquoted whitespace so that spaces inside
+      // single-char quoted literals (e.g. #" " or #' ') do not falsely
+      // trigger the inline-comment heuristic.
+      size_t ws_pos = std::string::npos;
       {
         size_t j = 0;
-        while (j < value.size()) {
-          char ch = value[j];
+        while (j < token.size()) {
+          char ch = token[j];
           // Skip single-char quoted literals ("X" or 'X')
-          if ((ch == '"' || ch == '\'') && j + 2 < value.size() &&
-              value[j + 2] == ch) {
+          if ((ch == '"' || ch == '\'') && j + 2 < token.size() &&
+              token[j + 2] == ch) {
             j += 3;
             continue;
           }
           if (ch == ' ' || ch == '\t') {
-            ws = j;
+            ws_pos = j;
             break;
           }
           ++j;
         }
       }
-      if (ws != std::string::npos) {
-        // Strip the comment portion; remaining commas belong to the comment
-        std::string stripped = Trim(value.substr(0, ws));
-        if (!stripped.empty()) {
-          raw_expressions.push_back(stripped);
+
+      if (ws_pos != std::string::npos) {
+        // Everything from ws_pos onward belongs to the inline comment.
+        std::string expr = Trim(token.substr(0, ws_pos));
+        if (!expr.empty()) {
+          tokens.push_back({expr, false});
         }
-        found_inline_comment = true;
-      } else {
-        std::string stripped = Trim(value);
-        if (!stripped.empty()) {
-          raw_expressions.push_back(stripped);
-        }
+        tokens.push_back({"", true}); // sentinel: inline comment found
+        return tokens;
       }
+
+      std::string expr = Trim(token);
+      if (!expr.empty()) {
+        tokens.push_back({expr, false});
+      }
+
       start = pos + 1;
     }
     ++pos;
   }
 
-  // Convert SCMASM operators to byte-level expressions for deferred evaluation
-  // SCMASM .DA: Size determined by operator prefix
-  // #expr → 8-bit (low byte) - convert to <expr
-  // /expr → 8-bit (second byte, bits 8-15) - convert to >expr
-  // expr  → 16-bit (default, little-endian) - expand to <expr, >expr
-  // <expr → 24-bit (little-endian) - expand to 3 byte expressions
-  // >expr → 32-bit (little-endian) - expand to 4 byte expressions
-  //
-  // All expressions are converted to BYTE-level so DataAtom can use
-  // DataSize::Byte This allows the multi-pass assembler to resolve forward
-  // references correctly
-  std::vector<std::string> byte_expressions;
-  std::vector<uint8_t> data; // For immediate evaluation attempt
+  return tokens;
+}
 
-  for (const auto &expr : raw_expressions) {
-    std::string trimmed_expr = Trim(expr);
-
-    if (trimmed_expr.empty()) {
-      continue;
+/**
+ * @brief Emit bytes/expressions for one .DA expression token.
+ *
+ * Interprets the SCMASM prefix (#, /, <, >) to determine width, then
+ * appends the appropriate byte placeholder(s) to @p data and the
+ * corresponding expression string(s) to @p byte_expressions.
+ *
+ * Prefix summary:
+ *   #expr → 8-bit low byte   (<expr)
+ *   /expr → 8-bit high byte  (>expr)
+ *   <expr → 24-bit little-endian (3 bytes)
+ *   >expr → 32-bit little-endian (4 bytes)
+ *   expr  → 16-bit default   (2 bytes, little-endian)
+ */
+void ProcessDaExpression(const std::string &raw_expr,
+                         const DirectiveContext &context,
+                         std::vector<std::string> &byte_expressions,
+                         std::vector<uint8_t> &data) {
+  // Strip inline comment and leading/trailing whitespace.
+  // Scan char-by-char so that whitespace inside single-char quoted literals
+  // (e.g. #" " or #' ') does not falsely trigger the comment heuristic.
+  std::string trimmed_expr = Trim(raw_expr);
+  {
+    size_t j = 0;
+    while (j < trimmed_expr.size()) {
+      char ch = trimmed_expr[j];
+      // Skip single-char quoted literals ("X" or 'X')
+      if ((ch == '"' || ch == '\'') && j + 2 < trimmed_expr.size() &&
+          trimmed_expr[j + 2] == ch) {
+        j += 3;
+        continue;
+      }
+      if (ch == ' ' || ch == '\t') {
+        trimmed_expr = trimmed_expr.substr(0, j);
+        break;
+      }
+      ++j;
     }
-
-    // Strip SCMASM inline comment: each element may be followed by
-    // whitespace-separated comment text (e.g. ".DA #%100   L").
-    // Scan char-by-char so that whitespace inside single-char literals
-    // (e.g. #" " or #' ') does not trigger the comment heuristic.
-    {
-      size_t j = 0;
-      while (j < trimmed_expr.size()) {
-        char ch = trimmed_expr[j];
-        // Skip single-char quoted literals ("X" or 'X')
-        if ((ch == '"' || ch == '\'') && j + 2 < trimmed_expr.size() &&
-            trimmed_expr[j + 2] == ch) {
-          j += 3;
-          continue;
-        }
-        if (ch == ' ' || ch == '\t') {
-          trimmed_expr = trimmed_expr.substr(0, j);
-          break;
-        }
-        ++j;
-      }
-    }
-
-    if (trimmed_expr.empty()) {
-      continue;
-    }
-
-    // SCMASM inline string literal: $$"text" or $$'text'
-    // Emits the raw ASCII bytes of the quoted string.  Used in A2osX opcode
-    // tables (e.g. .DA #3,$$"ADC").
-    if (trimmed_expr.size() >= 4 && trimmed_expr[0] == '$' &&
-        trimmed_expr[1] == '$' &&
-        (trimmed_expr[2] == '"' || trimmed_expr[2] == '\'')) {
-      char delim = trimmed_expr[2];
-      size_t end = trimmed_expr.find(delim, 3);
-      if (end == std::string::npos) {
-        end = trimmed_expr.size();
-      }
-      for (size_t k = 3; k < end; k++) {
-        uint8_t byte = static_cast<uint8_t>(trimmed_expr[k]) & 0x7F;
-        byte_expressions.push_back(std::to_string(byte));
-        data.push_back(byte);
-      }
-      continue;
-    }
-
-    // Expand character literals BEFORE checking prefix
-    // This allows #'N' to be expanded to #$4E before we strip the #
-    ValidateParser(context.parser_state);
-    trimmed_expr = ScmasmSyntaxParser::ExpandCharLiteralsInExpr(trimmed_expr);
-
-    char prefix = trimmed_expr[0];
-    std::string base_expr;
-
-    if (prefix == '#') {
-      // SCMASM # (low byte) → generic < (low byte)
-      // Parenthesise base_expr so that compound expressions like
-      // #CS.END-CS.START evaluate as <(CS.END-CS.START), not (<CS.END)-CS.START
-      base_expr = Trim(trimmed_expr.substr(1));
-      byte_expressions.push_back("<(" + base_expr + ")");
-
-      // Try immediate evaluation
-      try {
-        uint32_t num = EvaluateExpression(base_expr, *context.symbols,
-                                          context.parser_state);
-        data.push_back(static_cast<uint8_t>(num & constants::BYTE_MASK));
-      } catch (...) {
-        // Forward reference - evaluation will happen in assembler
-        data.push_back(0); // Placeholder
-      }
-    } else if (prefix == '/') {
-      // SCMASM / (high byte) → generic > (high byte)
-      base_expr = Trim(trimmed_expr.substr(1));
-      byte_expressions.push_back(">(" + base_expr + ")");
-
-      // Try immediate evaluation
-      try {
-        uint32_t num = EvaluateExpression(base_expr, *context.symbols,
-                                          context.parser_state);
-        data.push_back(static_cast<uint8_t>((num >> constants::BYTE_1_SHIFT) &
-                                            constants::BYTE_MASK));
-      } catch (...) {
-        // Forward reference - evaluation will happen in assembler
-        data.push_back(0); // Placeholder
-      }
-    } else if (prefix == '<') {
-      // SCMASM < (24-bit) → expand to 3 bytes
-      base_expr = Trim(trimmed_expr.substr(1));
-      byte_expressions.push_back("<(" + base_expr + ")"); // Byte 0 (bits 0-7)
-      byte_expressions.push_back(">(" + base_expr + ")"); // Byte 1 (bits 8-15)
-      byte_expressions.push_back("<((" + base_expr + ")/65536)"); // Byte 2 (bits 16-23)
-
-      // Try immediate evaluation
-      try {
-        uint32_t num = EvaluateExpression(base_expr, *context.symbols,
-                                          context.parser_state);
-        data.push_back(static_cast<uint8_t>(num & constants::BYTE_MASK));
-        data.push_back(static_cast<uint8_t>((num >> constants::BYTE_1_SHIFT) &
-                                            constants::BYTE_MASK));
-        data.push_back(static_cast<uint8_t>((num >> constants::BYTE_2_SHIFT) &
-                                            constants::BYTE_MASK));
-      } catch (...) {
-        // Forward reference
-        data.push_back(0);
-        data.push_back(0);
-        data.push_back(0);
-      }
-    } else if (prefix == '>') {
-      // SCMASM > (32-bit) → expand to 4 bytes
-      base_expr = Trim(trimmed_expr.substr(1));
-      byte_expressions.push_back("<(" + base_expr + ")"); // Byte 0 (bits 0-7)
-      byte_expressions.push_back(">(" + base_expr + ")"); // Byte 1 (bits 8-15)
-      byte_expressions.push_back("<((" + base_expr + ")/65536)"); // Byte 2 (bits 16-23)
-      byte_expressions.push_back("<((" + base_expr + ")/16777216)"); // Byte 3 (bits 24-31)
-
-      // Try immediate evaluation
-      try {
-        uint32_t num = EvaluateExpression(base_expr, *context.symbols,
-                                          context.parser_state);
-        data.push_back(static_cast<uint8_t>(num & constants::BYTE_MASK));
-        data.push_back(static_cast<uint8_t>((num >> constants::BYTE_1_SHIFT) &
-                                            constants::BYTE_MASK));
-        data.push_back(static_cast<uint8_t>((num >> constants::BYTE_2_SHIFT) &
-                                            constants::BYTE_MASK));
-        data.push_back(static_cast<uint8_t>((num >> constants::BYTE_3_SHIFT) &
-                                            constants::BYTE_MASK));
-      } catch (...) {
-        // Forward reference
-        data.push_back(0);
-        data.push_back(0);
-        data.push_back(0);
-        data.push_back(0);
-      }
-    } else {
-      // Default: 16-bit word (no prefix) - expand to 2 bytes (little-endian)
-      // Parenthesise so that compound expressions like CS.END-CS.START evaluate
-      // as <(CS.END-CS.START) and >(CS.END-CS.START), not (<CS.END)-CS.START
-      base_expr = trimmed_expr;
-      byte_expressions.push_back("<(" + base_expr + ")"); // Low byte
-      byte_expressions.push_back(">(" + base_expr + ")"); // High byte
-
-      // Try immediate evaluation
-      try {
-        uint32_t num = EvaluateExpression(base_expr, *context.symbols,
-                                          context.parser_state);
-        data.push_back(static_cast<uint8_t>(num & constants::BYTE_MASK));
-        data.push_back(static_cast<uint8_t>((num >> constants::BYTE_1_SHIFT) &
-                                            constants::BYTE_MASK));
-      } catch (...) {
-        // Forward reference
-        data.push_back(0);
-        data.push_back(0);
-      }
-    }
+    trimmed_expr = Trim(trimmed_expr);
   }
 
-  // In dummy sections (.DUMMY/.ED), advance address only — no bytes emitted
-  ValidateParser(context.parser_state);
-  auto *da_parser = static_cast<ScmasmSyntaxParser *>(context.parser_state);
-  if (da_parser->InDummySection()) {
-    *context.current_address += data.size();
+  if (trimmed_expr.empty()) {
     return;
   }
 
-  // Create DataAtom with expressions AND initial data
-  // - expressions: for multi-pass forward reference resolution
-  // - data: for immediate cases (tests, simple expressions)
-  auto atom = std::make_shared<DataAtom>(byte_expressions, DataSize::Byte);
-  atom->data = data;
-  atom->size = data.size();
-  context.section->atoms.push_back(atom);
+  // Handle $$"..." string literals (Apple II encoded strings in .DA).
+  // Delimiter < 0x27 → clear high bit; delimiter >= 0x27 → set high bit.
+  if (trimmed_expr.size() >= 3 && trimmed_expr[0] == '$' &&
+      trimmed_expr[1] == '$') {
+    char delim = trimmed_expr[2];
+    std::string str_content = trimmed_expr.substr(3);
+    if (!str_content.empty() && str_content.back() == delim) {
+      str_content.pop_back();
+    }
+    for (char c : str_content) {
+      uint8_t byte = static_cast<uint8_t>(c);
+      if (delim >= HIGH_BIT_DELIMITER_THRESHOLD) {
+        byte |= HIGH_BIT_MASK;
+      } else {
+        byte &= LOW_7_BITS_MASK;
+      }
+      data.push_back(byte);
+      byte_expressions.push_back(std::to_string(byte));
+    }
+    return;
+  }
 
-  // Update address counter by number of bytes
-  *context.current_address += data.size();
+  // Expand character literals BEFORE checking prefix so that #'N' becomes
+  // #$4E before the '#' is stripped.
+  ValidateParser(context.parser_state);
+  trimmed_expr = ScmasmSyntaxParser::ExpandCharLiteralsInExpr(trimmed_expr);
+
+  char prefix = trimmed_expr[0];
+  std::string base_expr;
+
+  if (prefix == '#') {
+    // SCMASM # (low byte) → generic < (low byte).
+    // Parenthesise so that compound expressions like #CS.END-CS.START evaluate
+    // as <(CS.END-CS.START), not (<CS.END)-CS.START.
+    base_expr = Trim(trimmed_expr.substr(1));
+    byte_expressions.push_back("<(" + base_expr + ")");
+    try {
+      uint32_t num =
+          EvaluateExpression(base_expr, *context.symbols, context.parser_state);
+      data.push_back(static_cast<uint8_t>(num & BYTE_MASK));
+    } catch (...) {
+      data.push_back(0); // Forward reference placeholder
+    }
+    return;
+  }
+
+  if (prefix == '/') {
+    // SCMASM / (high byte) → generic > (high byte).
+    base_expr = Trim(trimmed_expr.substr(1));
+    byte_expressions.push_back(">(" + base_expr + ")");
+    try {
+      uint32_t num =
+          EvaluateExpression(base_expr, *context.symbols, context.parser_state);
+      data.push_back(
+          static_cast<uint8_t>((num >> BYTE_1_SHIFT) & BYTE_MASK));
+    } catch (...) {
+      data.push_back(0);
+    }
+    return;
+  }
+
+  if (prefix == '<') {
+    // SCMASM < (24-bit) → 3 bytes (little-endian).
+    base_expr = Trim(trimmed_expr.substr(1));
+    byte_expressions.push_back("<(" + base_expr + ")");          // Byte 0 (bits 0-7)
+    byte_expressions.push_back(">(" + base_expr + ")");          // Byte 1 (bits 8-15)
+    byte_expressions.push_back("<((" + base_expr + ")/65536)");  // Byte 2 (bits 16-23)
+    try {
+      uint32_t num =
+          EvaluateExpression(base_expr, *context.symbols, context.parser_state);
+      data.push_back(static_cast<uint8_t>(num & BYTE_MASK));
+      data.push_back(static_cast<uint8_t>((num >> BYTE_1_SHIFT) & BYTE_MASK));
+      data.push_back(static_cast<uint8_t>((num >> BYTE_2_SHIFT) & BYTE_MASK));
+    } catch (...) {
+      data.push_back(0);
+      data.push_back(0);
+      data.push_back(0);
+    }
+    return;
+  }
+
+  if (prefix == '>') {
+    // SCMASM > (32-bit) → 4 bytes (little-endian).
+    base_expr = Trim(trimmed_expr.substr(1));
+    byte_expressions.push_back("<(" + base_expr + ")");             // Byte 0 (bits 0-7)
+    byte_expressions.push_back(">(" + base_expr + ")");             // Byte 1 (bits 8-15)
+    byte_expressions.push_back("<((" + base_expr + ")/65536)");     // Byte 2 (bits 16-23)
+    byte_expressions.push_back("<((" + base_expr + ")/16777216)");  // Byte 3 (bits 24-31)
+    try {
+      uint32_t num =
+          EvaluateExpression(base_expr, *context.symbols, context.parser_state);
+      data.push_back(static_cast<uint8_t>(num & constants::BYTE_MASK));
+      data.push_back(static_cast<uint8_t>((num >> constants::BYTE_1_SHIFT) &
+                                          constants::BYTE_MASK));
+      data.push_back(static_cast<uint8_t>((num >> constants::BYTE_2_SHIFT) &
+                                          constants::BYTE_MASK));
+      data.push_back(static_cast<uint8_t>((num >> constants::BYTE_3_SHIFT) &
+                                          constants::BYTE_MASK));
+    } catch (...) {
+      data.push_back(0);
+      data.push_back(0);
+      data.push_back(0);
+      data.push_back(0);
+    }
+    return;
+  }
+
+  // Default: 16-bit word (no prefix) → 2 bytes (little-endian).
+  // Parenthesise so that compound expressions like CS.END-CS.START evaluate as
+  // <(CS.END-CS.START) and >(CS.END-CS.START), not (<CS.END)-CS.START.
+  base_expr = trimmed_expr;
+  byte_expressions.push_back("<(" + base_expr + ")"); // Low byte
+  byte_expressions.push_back(">(" + base_expr + ")"); // High byte
+  try {
+    uint32_t num =
+        EvaluateExpression(base_expr, *context.symbols, context.parser_state);
+    data.push_back(static_cast<uint8_t>(num & BYTE_MASK));
+    data.push_back(static_cast<uint8_t>((num >> BYTE_1_SHIFT) & BYTE_MASK));
+  } catch (...) {
+    data.push_back(0);
+    data.push_back(0);
+  }
+}
+
+} // anonymous namespace
+
+// ============================================================================
+// HandleDa
+// ============================================================================
+
+void HandleDa(DirectiveContext &context) {
+  const std::string &operand = context.operand;
+  (void)context.label; // Label handled separately
+
+  // In SCMASM, .DA operands are comma-separated, but each operand may be
+  // followed by whitespace-delimited comment text on the same line. A comment
+  // begins at the first whitespace inside a token (i.e. after the expression
+  // value). Crucially, any comma that appears inside the comment text must NOT
+  // be treated as a .DA list separator.
+  //
+  // Example (from LIBBLKDEV.S.txt):
+  //   .DA #$61   6502,Level 1 (65c02)
+  // Here "6502,Level 1 (65c02)" is a comment. The comma after "6502" must NOT
+  // trigger a second .DA entry.
+  std::vector<std::string> byte_expressions;
+  std::vector<uint8_t> data;
+
+  for (const auto &tok : TokenizeDaOperand(operand)) {
+    if (tok.comment_ended) {
+      break;
+    }
+    ProcessDaExpression(tok.expr, context, byte_expressions, data);
+  }
+
+  if (!data.empty()) {
+    auto atom = std::make_shared<DataAtom>(byte_expressions, DataSize::Byte);
+    atom->data = data;
+    atom->size = data.size();
+    context.section->atoms.push_back(atom);
+    *context.current_address += data.size();
+  }
 }
 
 void HandleHs(DirectiveContext &context) {
@@ -930,219 +955,177 @@ void HandlePs(DirectiveContext &context) {
   *context.current_address += result.size();
 }
 
+// ============================================================================
+// HandleInb helpers
+// ============================================================================
+
+namespace {
+
+/**
+ * @brief Apply path mappings to an include filename.
+ *
+ * Replaces the longest matching virtual prefix with its actual counterpart.
+ * Returns @p filename unchanged if no mapping matches.
+ */
+std::string ApplyInbPathMappings(const std::string &filename,
+                                 const DirectiveContext &context) {
+  if (context.path_mappings == nullptr || context.path_mappings->empty()) {
+    return filename;
+  }
+
+  std::filesystem::path include_path_obj(filename);
+  std::string normalized_path = include_path_obj.generic_string();
+
+  std::string longest_match_key;
+  std::string longest_match_value;
+  size_t longest_match_len = 0;
+
+  for (const auto &[virtual_path, actual_path] : *context.path_mappings) {
+    std::filesystem::path virtual_path_obj(virtual_path);
+    std::string normalized_virtual = virtual_path_obj.generic_string();
+
+    if (!normalized_path.starts_with(normalized_virtual)) {
+      continue;
+    }
+
+    size_t virtual_len = normalized_virtual.length();
+    if (virtual_len > normalized_path.length()) {
+      continue;
+    }
+
+    // Match must be at a path-component boundary
+    if (virtual_len != 0 && virtual_len != normalized_path.length() &&
+        normalized_path[virtual_len] != '/') {
+      continue;
+    }
+
+    if (virtual_len >= longest_match_len) {
+      longest_match_len = virtual_len;
+      longest_match_key = normalized_virtual;
+      longest_match_value = actual_path;
+    }
+  }
+
+  if (longest_match_value.empty()) {
+    return filename; // No mapping matched
+  }
+
+  std::string suffix = normalized_path.substr(longest_match_len);
+  if (!suffix.empty() && suffix[0] == '/') {
+    suffix = suffix.substr(1);
+  }
+
+  std::filesystem::path actual_base(longest_match_value);
+  if (suffix.empty()) { // NOLINT(bugprone-branch-clone)
+    return actual_base.string();
+  }
+  return (actual_base / suffix).string();
+}
+
+/**
+ * @brief Try to resolve @p filename to an existing path.
+ *
+ * Search order (mirrors the original HandleInb logic):
+ *  1. Absolute path
+ *  2. Relative to source-file directory
+ *  3. Each include-path directory
+ *  4. Current working directory
+ *  5. Parent directory (A2osX compatibility)
+ *
+ * On success returns the resolved path; on failure returns an empty path and
+ * appends every attempted location to @p tried_paths.
+ */
+std::filesystem::path TryResolvePath(const std::string &filename,
+                                     const DirectiveContext &context,
+                                     std::vector<std::string> &tried_paths) {
+  std::filesystem::path include_path(filename);
+
+  // Case 1: Absolute path
+  if (include_path.is_absolute()) {
+    tried_paths.push_back(filename);
+    if (std::filesystem::exists(include_path)) {
+      return include_path;
+    }
+    return {};
+  }
+
+  // Case 2: Relative to source file directory
+  if (!context.current_file.empty()) {
+    std::filesystem::path source_dir =
+        std::filesystem::path(context.current_file).parent_path();
+    std::filesystem::path candidate = source_dir / filename;
+    tried_paths.push_back(candidate.string());
+    if (std::filesystem::exists(candidate)) {
+      return candidate;
+    }
+  }
+
+  // Case 3: Each include-path directory
+  if (context.include_paths != nullptr) {
+    for (const auto &include_dir : *context.include_paths) {
+      std::filesystem::path candidate =
+          std::filesystem::path(include_dir) / filename;
+      tried_paths.push_back(candidate.string());
+      if (std::filesystem::exists(candidate)) {
+        return candidate;
+      }
+    }
+  }
+
+  // Case 4: Current working directory
+  tried_paths.push_back(filename);
+  if (std::filesystem::exists(filename)) {
+    return std::filesystem::path(filename);
+  }
+
+  // Case 5: Parent directory (A2osX compatibility — BIN/ includes INC/)
+  std::filesystem::path parent_candidate =
+      std::filesystem::path("..") / filename;
+  tried_paths.push_back(parent_candidate.string());
+  if (std::filesystem::exists(parent_candidate)) {
+    return parent_candidate;
+  }
+
+  return {};
+}
+
+} // anonymous namespace
+
+// ============================================================================
+// HandleInb
+// ============================================================================
+
 void HandleInb(DirectiveContext &context) {
   const std::string &operand = context.operand;
   (void)context.label; // Label handled separately
 
   // .INB - Include Source File
-  // Parses assembly source file and includes it at current position
-  // Used extensively in A2oSX for modular source file includes
+  // Parses assembly source file and includes it at current position.
+  // Used extensively in A2osX for modular source file includes.
   //
-  // Path resolution (in order):
-  // 1. If absolute path → use as-is
-  // 2. Try relative to source file directory
-  // 3. Try each directory in include_paths (from --include-path CLI option)
-  // 4. Try relative to current working directory (fallback)
+  // Path resolution order:
+  //  1. Absolute path
+  //  2. Relative to source file directory
+  //  3. Each include-path directory (--include-path CLI option)
+  //  4. Current working directory (fallback)
+  //  5. +.txt extension retry for all cases (A2osX compatibility)
 
   RequireOperand(operand, ".INB", context);
 
-  // Trim whitespace from filename
-  std::string include_filename = Trim(operand);
+  std::string include_filename =
+      ApplyInbPathMappings(Trim(operand), context);
 
-  // Apply path mappings (if any)
-  // Example: usr/src/shared/file.s → SHARED/file.s
-  // This allows virtual paths in source to be mapped to actual filesystem paths
-  if (context.path_mappings != nullptr && !context.path_mappings->empty()) {
-    std::filesystem::path include_path_obj(include_filename);
+  std::vector<std::string> tried_paths;
+  std::filesystem::path resolved_path =
+      TryResolvePath(include_filename, context, tried_paths);
 
-    // Normalize path separators for comparison (use /)
-    std::string normalized_path = include_path_obj.generic_string();
-
-    // Find longest matching prefix in path mappings
-    std::string longest_match_key;
-    std::string longest_match_value;
-    size_t longest_match_len = 0;
-
-    for (const auto &[virtual_path, actual_path] : *context.path_mappings) {
-      // Normalize virtual path for comparison
-      std::filesystem::path virtual_path_obj(virtual_path);
-      std::string normalized_virtual = virtual_path_obj.generic_string();
-
-      // Check if normalized_path starts with normalized_virtual
-      if (normalized_path.starts_with(normalized_virtual)) {
-        // Ensure it's a complete path component match (not substring)
-        size_t virtual_len = normalized_virtual.length();
-        if (virtual_len > normalized_path.length()) {
-          continue; // Virtual path longer than include path
-        }
-
-        // Check that match is at path boundary
-        // Empty prefix is always valid (matches everything)
-        if (virtual_len == 0 || virtual_len == normalized_path.length() ||
-            normalized_path[virtual_len] == '/') {
-          // This is a valid prefix match
-          if (virtual_len >= longest_match_len) {
-            longest_match_len = virtual_len;
-            longest_match_key = normalized_virtual;
-            longest_match_value = actual_path;
-          }
-        }
-      }
-    }
-
-    // Apply mapping if found
-    // Note: longest_match_len can be 0 for empty prefix mappings
-    if (!longest_match_value.empty()) {
-      // Replace virtual prefix with actual prefix
-      std::string suffix = normalized_path.substr(longest_match_len);
-
-      // Remove leading separator from suffix if present
-      if (!suffix.empty() && suffix[0] == '/') {
-        suffix = suffix.substr(1);
-      }
-
-      // Construct mapped path
-      std::filesystem::path actual_base(longest_match_value);
-      if (suffix.empty()) { // NOLINT(bugprone-branch-clone)
-        include_filename = actual_base.string();
-      } else {
-        include_filename = (actual_base / suffix).string();
-      }
-    }
-  }
-
-  // Resolve include path
-  std::filesystem::path resolved_path;
-  bool found = false;
-  std::vector<std::string>
-      tried_paths; // Track attempted paths for error message
-
-  // Case 1: Absolute path
-  std::filesystem::path include_path(include_filename);
-  if (include_path.is_absolute()) {
-    tried_paths.push_back(include_filename);
-    if (std::filesystem::exists(include_path)) {
-      resolved_path = include_path;
-      found = true;
-    }
-  } else {
-    // Case 2: Relative to source file directory
-    if (!context.current_file.empty()) {
-      std::filesystem::path source_path(context.current_file);
-      std::filesystem::path source_dir = source_path.parent_path();
-      std::filesystem::path relative_path = source_dir / include_filename;
-
-      tried_paths.push_back(relative_path.string());
-      if (std::filesystem::exists(relative_path)) {
-        resolved_path = relative_path;
-        found = true;
-      }
-    }
-
-    // Case 3: Try each directory in include_paths
-    if (!found && context.include_paths != nullptr) {
-      for (const auto &include_dir : *context.include_paths) {
-        std::filesystem::path search_path =
-            std::filesystem::path(include_dir) / include_filename;
-
-        tried_paths.push_back(search_path.string());
-        if (std::filesystem::exists(search_path)) {
-          resolved_path = search_path;
-          found = true;
-          break;
-        }
-      }
-    }
-
-    // Case 4: Relative to current working directory (fallback)
-    if (!found) {
-      tried_paths.push_back(include_filename);
-      if (std::filesystem::exists(include_filename)) {
-        resolved_path = include_filename;
-        found = true;
-      }
-    }
-
-    // Case 5: Relative to parent directory (A2osX compatibility)
-    // Some A2osX source files in subdirectories (BIN/) include files from
-    // sibling directories (INC/), so we need to search the parent directory
-    if (!found) {
-      std::filesystem::path parent_relative_path =
-          std::filesystem::path("..") / include_filename;
-      tried_paths.push_back(parent_relative_path.string());
-      if (std::filesystem::exists(parent_relative_path)) {
-        resolved_path = parent_relative_path;
-        found = true;
-      }
-    }
-  }
-
-  // If not found, try adding .txt extension (A2osX compatibility)
-  // A2osX source files may reference "file.s" but physical file is "FILE.S.txt"
-  if (!found) {
+  // Retry with .txt extension (A2osX compatibility: "file.s" → "file.s.txt")
+  if (resolved_path.empty()) {
     std::string txt_filename = include_filename + ".txt";
-    std::filesystem::path txt_include_path(txt_filename);
-
-    if (txt_include_path.is_absolute()) {
-      tried_paths.push_back(txt_filename);
-      if (std::filesystem::exists(txt_include_path)) {
-        resolved_path = txt_include_path;
-        found = true;
-      }
-    } else {
-      // Try relative to source directory
-      if (!found && !context.current_file.empty()) {
-        std::filesystem::path source_path(context.current_file);
-        std::filesystem::path source_dir = source_path.parent_path();
-        std::filesystem::path relative_path = source_dir / txt_filename;
-
-        tried_paths.push_back(relative_path.string());
-        if (std::filesystem::exists(relative_path)) {
-          resolved_path = relative_path;
-          found = true;
-        }
-      }
-
-      // Try include paths
-      if (!found && context.include_paths != nullptr) {
-        for (const auto &include_dir : *context.include_paths) {
-          std::filesystem::path search_path =
-              std::filesystem::path(include_dir) / txt_filename;
-
-          tried_paths.push_back(search_path.string());
-          if (std::filesystem::exists(search_path)) {
-            resolved_path = search_path;
-            found = true;
-            break;
-          }
-        }
-      }
-
-      // Try current working directory
-      if (!found) {
-        tried_paths.push_back(txt_filename);
-        if (std::filesystem::exists(txt_filename)) {
-          resolved_path = txt_filename;
-          found = true;
-        }
-      }
-
-      // Try parent directory (A2osX compatibility)
-      // Some A2osX source files in subdirectories (BIN/) include files from
-      // sibling directories (INC/), so we need to search the parent directory
-      if (!found) {
-        std::filesystem::path parent_relative_path =
-            std::filesystem::path("..") / txt_filename;
-        tried_paths.push_back(parent_relative_path.string());
-        if (std::filesystem::exists(parent_relative_path)) {
-          resolved_path = parent_relative_path;
-          found = true;
-        }
-      }
-    }
+    resolved_path = TryResolvePath(txt_filename, context, tried_paths);
   }
 
-  if (!found) {
+  if (resolved_path.empty()) {
     std::string error_msg = ".INB cannot open file: " + include_filename;
     if (!tried_paths.empty()) {
       error_msg += " (searched: ";
@@ -1157,7 +1140,7 @@ void HandleInb(DirectiveContext &context) {
     ThrowFormattedError(error_msg, context);
   }
 
-  // Read included file as text
+  // Open the resolved file
   std::ifstream file(resolved_path);
   if (!file.is_open()) {
     ThrowFormattedError(".INB cannot open file: " + resolved_path.string(),
@@ -1173,10 +1156,8 @@ void HandleInb(DirectiveContext &context) {
   ValidateParser(context.parser_state);
   auto *parser = static_cast<ScmasmSyntaxParser *>(context.parser_state);
 
-  // Save current file for restoration
+  // Track file for error reporting
   std::string previous_file = parser->GetCurrentFile();
-
-  // Update current file to included file (for nested includes)
   parser->SetCurrentFile(resolved_path.string());
 
   try {

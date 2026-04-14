@@ -79,52 +79,27 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
           continue;
         }
 
+        EncodeAtomState state{current_address,
+                              virtual_address,
+                              phase_real_start,
+                              phase_virtual_start,
+                              symbols,
+                              result,
+                              current_sizes,
+                              pass_number};
         switch (atom->type) {
-        case AtomType::Phase: {
-          auto phase = std::dynamic_pointer_cast<PhaseAtom>(atom);
-          if (!phase) {
-            AssemblerError error;
-            error.location = atom->location;
-            error.message =
-                "Failed to cast to PhaseAtom - atom corruption detected";
-            result.errors.push_back(error);
-            result.success = false;
+        case AtomType::Phase:
+          if (HandlePhaseAtom(atom, state))
             continue;
-          }
-          if (phase->is_start) {
-            phase_real_start = current_address;
-            phase_virtual_start = phase->virtual_addr;
-            virtual_address = phase->virtual_addr;
-          } else {
-            uint32_t bytes_emitted = virtual_address - phase_virtual_start;
-            current_address = phase_real_start + bytes_emitted;
-            virtual_address = current_address;
-          }
-        } break;
-        case AtomType::Org: {
-          // Handle .org directive
-          auto org = std::dynamic_pointer_cast<OrgAtom>(atom);
-          if (!org) {
-            // Cast failed - this indicates a corrupted atom
-            AssemblerError error;
-            error.location = atom->location;
-            error.message =
-                "Failed to cast to OrgAtom - atom corruption detected";
-            result.errors.push_back(error);
-            result.success = false;
+          break;
+        case AtomType::Org:
+          if (HandleOrgAtom(atom, state))
             continue;
-          }
-          current_address = org->address;
-          virtual_address = org->address;
-        } break;
+          break;
         case AtomType::DummyOrg:
-        case AtomType::Label: {
-          // DummyOrg: .OR inside .DUMMY/.ED: do NOT change the real program counter.
-          // Symbol addresses are fixed up in ResolveSymbols; the emitter just
-          // skips this atom so no bytes are written and the PC is unaffected.
-          // Labels don't advance address yet, but we track them
-          // (address will be finalized in Pass 2)
-        } break;
+        case AtomType::Label:
+          // Labels resolved in ResolveSymbols; no bytes emitted here.
+          break;
         case AtomType::CpuMode: {
           // XC / XC OFF — replay CPU mode change so subsequent instructions
           // are encoded with the correct feature set.
@@ -141,463 +116,587 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
             cpu_->SetMX(mx->m_flag, mx->x_flag);
           }
         } break;
-        case AtomType::Equate: {
-          // Re-evaluate position-dependent equates (.EQ *) on each pass so
-          // they track the correct address after branch relaxation changes
-          // code sizes between passes.
-          auto eq = std::dynamic_pointer_cast<EquateAtom>(atom);
-          if (eq) {
-            std::string expr_str = eq->expression_str;
-            std::string addr_str = std::to_string(virtual_address);
-            size_t star_pos = 0;
-            while ((star_pos = expr_str.find('*', star_pos)) !=
-                   std::string::npos) {
-              bool preceded_by_ident = false;
-              if (star_pos > 0) {
-                char prev = expr_str[star_pos - 1];
-                preceded_by_ident =
-                    std::isalnum(static_cast<unsigned char>(prev)) ||
-                    prev == '.' || prev == '_' || prev == '?';
-              }
-              if (preceded_by_ident) {
-                star_pos++;
-                continue;
-              }
-              expr_str.replace(star_pos, 1, addr_str);
-              star_pos += addr_str.length();
-            }
-            try {
-              std::shared_ptr<Expression> expr = ExpressionParser(&symbols, nullptr, expression_features_).Parse(expr_str);
-              int64_t value = expr->Evaluate(symbols);
-              symbols.Define(eq->label_name, SymbolType::Equate,
-                             std::make_shared<LiteralExpr>(
-                                 static_cast<uint32_t>(value)));
-            } catch (const std::exception &e) {
-              (void)e; // Forward reference - ignore this pass, will resolve later
-            }
-          }
-        } break;
-        case AtomType::Data: {
-          auto data = std::dynamic_pointer_cast<DataAtom>(atom);
-          if (!data) {
-            // Cast failed - this indicates a corrupted atom
-            AssemblerError error;
-            error.location = atom->location;
-            error.message =
-                "Failed to cast to DataAtom - atom corruption detected";
-            result.errors.push_back(error);
-            result.success = false;
+        case AtomType::Equate:
+          if (HandleEquateAtom(atom, state))
             continue;
-          }
-
-          // Re-evaluate expressions on each pass for forward references
-          if (!data->expressions.empty()) {
-            data->data.clear();
-
-            for (const auto &expr_str_raw : data->expressions) {
-              // Replace * with current virtual address, same as EquateAtom
-              std::string expr_str = expr_str_raw;
-              {
-                std::string addr_str = std::to_string(virtual_address);
-                size_t star_pos = 0;
-                while ((star_pos = expr_str.find('*', star_pos)) !=
-                       std::string::npos) {
-                  bool preceded_by_ident = false;
-                  if (star_pos > 0) {
-                    char prev = expr_str[star_pos - 1];
-                    preceded_by_ident =
-                        std::isalnum(static_cast<unsigned char>(prev)) ||
-                        prev == '.' || prev == '_' || prev == '?';
-                  }
-                  if (preceded_by_ident) {
-                    star_pos++;
-                    continue;
-                  }
-                  expr_str.replace(star_pos, 1, addr_str);
-                  star_pos += addr_str.length();
-                }
-              }
-              try {
-                std::shared_ptr<Expression> expr = ExpressionParser(&symbols, nullptr, expression_features_).Parse(expr_str);
-                int64_t value = expr->Evaluate(symbols);
-
-                if (data->data_size == DataSize::Byte) {
-                  // Byte data (DB/DFB)
-                  data->data.push_back(static_cast<uint8_t>(value & 0xFF));
-                } else if (data->data_size == DataSize::Long) {
-                  // Long data (DA in 65816 mode) - 24-bit little-endian
-                  auto word = static_cast<uint32_t>(value);
-                  data->data.push_back(static_cast<uint8_t>(word & 0xFF));
-                  data->data.push_back(
-                      static_cast<uint8_t>((word >> 8) & 0xFF));
-                  data->data.push_back(
-                      static_cast<uint8_t>((word >> 16) & 0xFF));
-                } else {
-                  // Word data (DW/DA) - little-endian
-                  auto word = static_cast<uint32_t>(value);
-                  data->data.push_back(static_cast<uint8_t>(word & 0xFF));
-                  data->data.push_back(
-                      static_cast<uint8_t>((word >> 8) & 0xFF));
-                }
-              } catch (const UndefinedSymbolError &) {
-                // Forward reference — use placeholder 0, resolve next pass
-                if (data->data_size == DataSize::Byte) {
-                  data->data.push_back(0);
-                } else if (data->data_size == DataSize::Long) {
-                  data->data.push_back(0);
-                  data->data.push_back(0);
-                  data->data.push_back(0);
-                } else {
-                  data->data.push_back(0);
-                  data->data.push_back(0);
-                }
-              }
-            }
-
-            data->size = data->data.size();
-          }
-
-          // Advance both address counters past this data
-          current_address += data->size;
-          virtual_address += data->size;
-          current_sizes.push_back(data->size);
-        } break;
-        case AtomType::Instruction: {
-          auto inst = std::dynamic_pointer_cast<InstructionAtom>(atom);
-          if (!inst) {
-            // Cast failed - this indicates a corrupted atom
-            AssemblerError error;
-            error.location = atom->location;
-            error.message =
-                "Failed to cast to InstructionAtom - atom corruption detected";
-            result.errors.push_back(error);
-            result.success = false;
+          break;
+        case AtomType::Data:
+          if (HandleDataAtom(atom, state))
             continue;
-          }
-          // Clear previous encoding
-          inst->encoded_bytes.clear();
-
-          // Encode the instruction
-          std::string mnemonic = inst->mnemonic;
-          std::string operand = inst->operand;
-
-          // Strip trailing '!' from mnemonic before table lookup
-          // The '!' suffix is used in some assembly dialects to force
-          // a specific instruction encoding but should not affect the
-          // mnemonic lookup in the opcode table.
-          if (!mnemonic.empty() && mnemonic.back() == '!') {
-            mnemonic.pop_back();
-          }
-
-          // Check if instruction requires special encoding (e.g., branch
-          // relaxation, multi-byte instructions)
-          //
-          // WHY SPECIAL ENCODING?
-          // =====================
-          // Some instructions need context beyond standard operand values:
-          //
-          // 1. BRANCH RELAXATION (6502 branches):
-          //    - Branches use 8-bit signed relative offsets (-128 to +127
-          //    bytes)
-          //    - If target is farther, must "relax" into longer sequence:
-          //      Short form (2 bytes):  BEQ label
-          //      Long form (5 bytes):   BNE skip / JMP label / skip: ...
-          //    - Relaxation triggers cascading changes requiring multi-pass
-          //
-          // 2. MULTI-BYTE INSTRUCTIONS (MVN/MVP):
-          //    - 65816 block move instructions take two operands
-          //    - Need special parsing for "srcbank,destbank" format
-          //
-          // CPU plugin handles ALL special cases - core assembler stays
-          // agnostic
-          if (cpu_->RequiresSpecialEncoding(mnemonic)) {
-            try {
-              // Resolve labels in operand before passing to CPU plugin
-              // Branch instructions need target address, not label name
-              std::string resolved_operand = operand;
-              std::string trimmed = Trim(operand);
-
-              // Check if operand is a label reference (not starting with $ or
-              // #). Skip resolution for multi-operand forms like MVN/MVP
-              // (e.g. "0,1" or "$E1,1") — these are bank pairs, not labels.
-              if (trimmed.find(',') != std::string::npos) {
-                // Multi-operand instruction (MVN/MVP block move): pass as-is
-              } else if (trimmed == "*") {
-                // * means current PC address (branch to self)
-                // Use virtual_address so phased code uses the virtual PC
-                std::ostringstream oss;
-                oss << "$" << std::hex << virtual_address;
-                resolved_operand = oss.str();
-              } else if (!trimmed.empty() && trimmed[0] != '$' &&
-                         trimmed[0] != '#' && trimmed[0] != '(') {
-                // Try to resolve as symbol.  ConcreteSymbolTable::Lookup
-                // handles SCMASM uppercase fallback internally
-                // (ADR-005 V1: migration complete — no manual toupper here).
-                int64_t symbol_value = 0;
-                int64_t expr_offset = 0;
-                std::string lookup_name = trimmed;
-                if (!symbols.Lookup(lookup_name, symbol_value)) {
-                  // Try SYMBOL+N or SYMBOL-N form (e.g. "LABEL+5")
-                  // Symbol chars are alphanumeric, '.', '_', '@', ':'
-                  // Scan for a '+' or '-' that follows at least one symbol char
-                  lookup_name = "";
-                  for (size_t i = 1; i < trimmed.size(); ++i) {
-                    char c = trimmed[i];
-                    if (c == '+' || c == '-') {
-                      std::string sym_part = trimmed.substr(0, i);
-                      std::string off_str  = trimmed.substr(i);
-                      int64_t sym_val = 0;
-                      if (symbols.Lookup(sym_part, sym_val)) {
-                        // Parse the numeric offset (decimal or hex)
-                        try {
-                          expr_offset = std::stoll(off_str, nullptr, 0);
-                        } catch (...) {
-                          expr_offset = 0;
-                        }
-                        symbol_value = sym_val;
-                        lookup_name  = sym_part;
-                        break;
-                      }
-                    }
-                  }
-                }
-                if (!lookup_name.empty() && pass_number > 1) {
-                  // Symbol resolved — use actual address (plus any expression
-                  // offset, e.g. LABEL+5).
-                  // "Start short, expand only when necessary": the CPU plugin
-                  // (EncodeInstructionSpecial) checks the resolved distance and
-                  // emits SHORT (2 bytes) if in range, LONG (3 or 5 bytes) only
-                  // if the target is genuinely out of ±127 bytes.  Multiple
-                  // passes converge to the minimum set of LONG branches because
-                  // expanding a branch only shifts later labels forward, which
-                  // is rechecked in the next pass.  No branch is ever made LONG
-                  // unless it truly cannot reach its target.
-                  std::ostringstream oss;
-                  oss << "$" << std::hex << ((symbol_value + expr_offset) & 0xFFFF);
-                  resolved_operand = oss.str();
-                } else {
-                  // Pass 1: always assume SHORT (use current VA as target →
-                  // offset = -2, always in range).  Parse-time addresses can
-                  // be stale (computed with all branches at 2 bytes), so using
-                  // them in pass 1 causes spurious long-branch expansions that
-                  // then cascade into later passes, locking in unnecessary 5-byte
-                  // branches.  By starting all branches short in pass 1, we let
-                  // passes 2+ converge to the minimum expansion set.
-                  // Same path is used when symbol is still unresolved.
-                  std::ostringstream oss;
-                  oss << "$" << std::hex << virtual_address;
-                  resolved_operand = oss.str();
-                }
-              }
-
-              // Delegate to CPU plugin for special encoding
-              // Plugin handles branch relaxation, multi-byte instructions, etc.
-              // Use virtual_address as the PC so branches in phased code are
-              // computed relative to the virtual address.
-              inst->encoded_bytes = cpu_->EncodeInstructionSpecial(
-                  mnemonic, resolved_operand,
-                  static_cast<uint16_t>(virtual_address));
-
-              // Advance both address counters past this instruction
-              current_address += inst->encoded_bytes.size();
-              virtual_address += inst->encoded_bytes.size();
-              current_sizes.push_back(inst->encoded_bytes.size());
-              continue; // Skip to next atom
-            } catch (const std::exception &e) {
-              // Special encoding failed - report error
-              AssemblerError error;
-              error.location = inst->location;
-              error.message =
-                  "Special encoding failed for " + mnemonic + ": " + e.what();
-              result.errors.push_back(error);
-              result.success = false;
-              continue;
-            }
-          }
-
-          // Parse operand value for standard encoding
-          // Note: CPU plugin determines addressing mode from operand string
-          uint16_t value = 0;
-
-          // Make current PC available to expressions (e.g. `jmp *`)
-          symbols.SetCurrentLocation(static_cast<int64_t>(virtual_address));
-
-          // Extract operand value
-          if (!operand.empty()) {
-            std::string trimmed = Trim(operand);
-
-            // Strip parentheses for indirect modes: ($1234) or ($80,X) or
-            // ($80),Y
-            std::string value_str = trimmed;
-            if (value_str[0] == '(') {
-              size_t close_paren = value_str.find(')');
-              if (close_paren != std::string::npos) {
-                value_str = value_str.substr(1, close_paren - 1);
-                value_str = Trim(value_str);
-              }
-            }
-
-            // Strip index registers (,X or ,Y) for value extraction
-            size_t comma_pos = value_str.find(',');
-            if (comma_pos != std::string::npos) {
-              value_str = Trim(value_str.substr(0, comma_pos));
-            }
-
-            // Strip brackets for 65816 indirect long: [$zp] or [$zp],Y
-            if (!value_str.empty() && value_str[0] == '[') {
-              size_t close_bracket = value_str.find(']');
-              if (close_bracket != std::string::npos) {
-                value_str = Trim(value_str.substr(1, close_bracket - 1));
-              }
-            }
-
-            if (value_str[0] == '#') {
-              // Immediate: #$42 or #SYMBOL
-              // Use shared ExpressionParser to handle both hex literals and symbol
-              // references
-              std::string expr_str = value_str.substr(1);
-              try {
-                std::shared_ptr<Expression> expr = ExpressionParser(&symbols, nullptr, expression_features_).Parse(expr_str);
-                int64_t expr_value = expr->Evaluate(symbols);
-                value = static_cast<uint16_t>(expr_value);
-              } catch (const UndefinedSymbolError &) {
-                value = 0; // Forward reference — resolve next pass
-              }
-            } else if (value_str[0] == '$') {
-              // Absolute/Zero Page: $1234 (or $1234,X after stripping)
-              // Use shared ExpressionParser to handle both simple hex and expressions
-              // like $528+2
-              try {
-                std::shared_ptr<Expression> expr = ExpressionParser(&symbols, nullptr, expression_features_).Parse(value_str);
-                int64_t expr_value = expr->Evaluate(symbols);
-                value = static_cast<uint16_t>(expr_value);
-              } catch (const UndefinedSymbolError &) {
-                value = 0; // Forward reference — resolve next pass
-              }
-            } else if (value_str[0] == '/') {
-              // SCMASM high byte immediate: /expr (equivalent to #>expr)
-              // Evaluates expression and takes bits 8-15 as the immediate byte
-              std::string expr_str = value_str.substr(1);
-              try {
-                std::shared_ptr<Expression> expr = ExpressionParser(&symbols, nullptr, expression_features_).Parse(expr_str);
-                int64_t expr_value = expr->Evaluate(symbols);
-                value = static_cast<uint16_t>(
-                    (static_cast<uint32_t>(expr_value) >> 8) & 0xFF);
-              } catch (const UndefinedSymbolError &) {
-                value = 0; // Forward reference — resolve next pass
-              }
-            } else if (value_str != "A") {
-              // Label reference or expression - use shared ExpressionParser to handle
-              // both simple symbols and expressions like ZPPTR+1
-              // BUG-003 FIX: Support expressions with +, -, <, > operators
-              try {
-                std::shared_ptr<Expression> expr = ExpressionParser(&symbols, nullptr, expression_features_).Parse(value_str);
-                int64_t expr_value = expr->Evaluate(symbols);
-                value = static_cast<uint16_t>(expr_value);
-              } catch (const UndefinedSymbolError &) {
-                value = 0; // Forward reference — resolve next pass
-              }
-            }
-          }
-
-          // Use polymorphic CPU plugin interface for instruction encoding
-          try {
-            // Call polymorphic EncodeInstruction() - CPU plugin handles
-            // addressing modes
-            inst->encoded_bytes =
-                cpu_->EncodeInstruction(mnemonic, value, operand);
-          } catch (const std::invalid_argument &e) {
-            // Invalid argument (e.g., unsupported addressing mode)
-            AssemblerError error;
-            error.location = inst->location;
-            error.message =
-                "Invalid argument for " + mnemonic + ": " + e.what();
-            result.errors.push_back(error);
-            result.success = false;
-          } catch (const std::out_of_range &e) {
-            // Value out of range (e.g., branch too far, value too large)
-            AssemblerError error;
-            error.location = inst->location;
-            error.message =
-                "Value out of range for " + mnemonic + ": " + e.what();
-            result.errors.push_back(error);
-            result.success = false;
-          } catch (const std::runtime_error &e) {
-            // Runtime error (e.g., undefined behavior, internal error)
-            AssemblerError error;
-            error.location = inst->location;
-            error.message =
-                "Runtime error encoding " + mnemonic + ": " + e.what();
-            result.errors.push_back(error);
-            result.success = false;
-          } catch (const std::logic_error &e) {
-            // Logic error (programming error, shouldn't happen in production)
-            AssemblerError error;
-            error.location = inst->location;
-            error.message =
-                "Logic error encoding " + mnemonic + ": " + e.what();
-            result.errors.push_back(error);
-            result.success = false;
-          }
-
-          // Record size for convergence check
-          current_sizes.push_back(inst->encoded_bytes.size());
-
-          // Advance both address counters past this instruction
-          current_address += inst->encoded_bytes.size();
-          virtual_address += inst->encoded_bytes.size();
-        } break;
-        case AtomType::Space: {
-          // SpaceAtom (DS/BS directives) — advance addresses past the reserved
-          // bytes so that subsequent instruction virtual_addresses are correct
-          // for branch offset calculations.
-          auto space = std::dynamic_pointer_cast<SpaceAtom>(atom);
-          if (space) {
-            // If this SpaceAtom has a PC-relative expression (e.g. "DS $900-*"),
-            // re-evaluate it each pass so the count stays correct as branch
-            // relaxations shift code sizes between passes.
-            if (!space->expression_str.empty()) {
-              std::string expr_str = space->expression_str;
-              std::string addr_str = std::to_string(virtual_address);
-              size_t star_pos = 0;
-              while ((star_pos = expr_str.find('*', star_pos)) != std::string::npos) {
-                bool before = (star_pos > 0 &&
-                    (std::isalnum(static_cast<unsigned char>(expr_str[star_pos - 1])) ||
-                     expr_str[star_pos - 1] == ')'));
-                bool after = (star_pos + 1 < expr_str.size() &&
-                    (std::isalnum(static_cast<unsigned char>(expr_str[star_pos + 1])) ||
-                     expr_str[star_pos + 1] == '(' || expr_str[star_pos + 1] == '$' ||
-                     expr_str[star_pos + 1] == '%'));
-                if (before && after) {
-                  star_pos++;
-                } else {
-                  expr_str.replace(star_pos, 1, addr_str);
-                  star_pos += addr_str.length();
-                }
-              }
-              try {
-                std::shared_ptr<Expression> expr = ExpressionParser(&symbols, nullptr, expression_features_).Parse(expr_str);
-                int64_t value = expr->Evaluate(symbols);
-                if (value >= 0) {
-                  space->count = static_cast<size_t>(value);
-                  space->size = space->count;
-                }
-              } catch (const std::exception &e) {
-                (void)e; // Forward reference or error - keep previous count
-              }
-            }
-            current_address += space->size;
-            virtual_address += space->size;
-            current_sizes.push_back(space->size);
-          }
-        }
-        default: break;
+          break;
+        case AtomType::Instruction:
+          if (HandleInstructionAtom(atom, state))
+            continue;
+          break;
+        case AtomType::Space:
+          if (HandleSpaceAtom(atom, state))
+            continue;
+          break;
+        default:
+          break;
         } // switch (atom->type)
       }
     }
   }
   return current_sizes;
 }
+
+
+// ─── Per-atom-type handlers extracted from EncodeInstructions ──────────
+
+bool Assembler::HandlePhaseAtom(const std::shared_ptr<Atom> &atom,
+                          EncodeAtomState &st) {
+  uint32_t &current_address = st.current_address;
+  uint32_t &virtual_address = st.virtual_address;
+  uint32_t &phase_real_start = st.phase_real_start;
+  uint32_t &phase_virtual_start = st.phase_virtual_start;
+  (void)st.symbols;
+  AssemblerResult &result = st.result;
+  (void)st.current_sizes;
+  (void)st.pass_number;
+  auto phase = std::dynamic_pointer_cast<PhaseAtom>(atom);
+  if (!phase) {
+    AssemblerError error;
+    error.location = atom->location;
+    error.message =
+        "Failed to cast to PhaseAtom - atom corruption detected";
+    result.errors.push_back(error);
+    result.success = false;
+    return true;
+  }
+  if (phase->is_start) {
+    phase_real_start = current_address;
+    phase_virtual_start = phase->virtual_addr;
+    virtual_address = phase->virtual_addr;
+  } else {
+    uint32_t bytes_emitted = virtual_address - phase_virtual_start;
+    current_address = phase_real_start + bytes_emitted;
+    virtual_address = current_address;
+  }
+  return false;
+}
+
+bool Assembler::HandleOrgAtom(const std::shared_ptr<Atom> &atom,
+                          EncodeAtomState &st) {
+  uint32_t &current_address = st.current_address;
+  uint32_t &virtual_address = st.virtual_address;
+  (void)st.phase_real_start;
+  (void)st.phase_virtual_start;
+  (void)st.symbols;
+  AssemblerResult &result = st.result;
+  (void)st.current_sizes;
+  (void)st.pass_number;
+  // Handle .org directive
+  auto org = std::dynamic_pointer_cast<OrgAtom>(atom);
+  if (!org) {
+    // Cast failed - this indicates a corrupted atom
+    AssemblerError error;
+    error.location = atom->location;
+    error.message =
+        "Failed to cast to OrgAtom - atom corruption detected";
+    result.errors.push_back(error);
+    result.success = false;
+    return true;
+  }
+  current_address = org->address;
+  virtual_address = org->address;
+  return false;
+}
+
+bool Assembler::HandleEquateAtom(const std::shared_ptr<Atom> &atom,
+                          EncodeAtomState &st) {
+  (void)st.current_address;
+  uint32_t &virtual_address = st.virtual_address;
+  (void)st.phase_real_start;
+  (void)st.phase_virtual_start;
+  ConcreteSymbolTable &symbols = st.symbols;
+  (void)st.result;
+  (void)st.current_sizes;
+  (void)st.pass_number;
+  // Re-evaluate position-dependent equates (.EQ *) on each pass so
+  // they track the correct address after branch relaxation changes
+  // code sizes between passes.
+  auto eq = std::dynamic_pointer_cast<EquateAtom>(atom);
+  if (eq) {
+    std::string expr_str = eq->expression_str;
+    std::string addr_str = std::to_string(virtual_address);
+    size_t star_pos = 0;
+    while ((star_pos = expr_str.find('*', star_pos)) !=
+           std::string::npos) {
+      bool preceded_by_ident = false;
+      if (star_pos > 0) {
+        char prev = expr_str[star_pos - 1];
+        preceded_by_ident =
+            std::isalnum(static_cast<unsigned char>(prev)) ||
+            prev == '.' || prev == '_' || prev == '?';
+      }
+      if (preceded_by_ident) {
+        star_pos++;
+        continue;
+      }
+      expr_str.replace(star_pos, 1, addr_str);
+      star_pos += addr_str.length();
+    }
+    try {
+      std::shared_ptr<Expression> expr = ExpressionParser(&symbols, nullptr, expression_features_).Parse(expr_str);
+      int64_t value = expr->Evaluate(symbols);
+      symbols.Define(eq->label_name, SymbolType::Equate,
+                     std::make_shared<LiteralExpr>(
+                         static_cast<uint32_t>(value)));
+    } catch (const std::exception &e) {
+      (void)e; // Forward reference - ignore this pass, will resolve later
+    }
+  }
+  return false;
+}
+
+bool Assembler::HandleDataAtom(const std::shared_ptr<Atom> &atom,
+                          EncodeAtomState &st) {
+  uint32_t &current_address = st.current_address;
+  uint32_t &virtual_address = st.virtual_address;
+  (void)st.phase_real_start;
+  (void)st.phase_virtual_start;
+  ConcreteSymbolTable &symbols = st.symbols;
+  AssemblerResult &result = st.result;
+  std::vector<size_t> &current_sizes = st.current_sizes;
+  (void)st.pass_number;
+  auto data = std::dynamic_pointer_cast<DataAtom>(atom);
+  if (!data) {
+    // Cast failed - this indicates a corrupted atom
+    AssemblerError error;
+    error.location = atom->location;
+    error.message =
+        "Failed to cast to DataAtom - atom corruption detected";
+    result.errors.push_back(error);
+    result.success = false;
+    return true;
+  }
+
+  // Re-evaluate expressions on each pass for forward references
+  if (!data->expressions.empty()) {
+    data->data.clear();
+
+    for (const auto &expr_str_raw : data->expressions) {
+      // Replace * with current virtual address, same as EquateAtom
+      std::string expr_str = expr_str_raw;
+      {
+        std::string addr_str = std::to_string(virtual_address);
+        size_t star_pos = 0;
+        while ((star_pos = expr_str.find('*', star_pos)) !=
+               std::string::npos) {
+          bool preceded_by_ident = false;
+          if (star_pos > 0) {
+            char prev = expr_str[star_pos - 1];
+            preceded_by_ident =
+                std::isalnum(static_cast<unsigned char>(prev)) ||
+                prev == '.' || prev == '_' || prev == '?';
+          }
+          if (preceded_by_ident) {
+            star_pos++;
+            continue;
+          }
+          expr_str.replace(star_pos, 1, addr_str);
+          star_pos += addr_str.length();
+        }
+      }
+      try {
+        std::shared_ptr<Expression> expr = ExpressionParser(&symbols, nullptr, expression_features_).Parse(expr_str);
+        int64_t value = expr->Evaluate(symbols);
+
+        if (data->data_size == DataSize::Byte) {
+          // Byte data (DB/DFB)
+          data->data.push_back(static_cast<uint8_t>(value & 0xFF));
+        } else if (data->data_size == DataSize::Long) {
+          // Long data (DA in 65816 mode) - 24-bit little-endian
+          auto word = static_cast<uint32_t>(value);
+          data->data.push_back(static_cast<uint8_t>(word & 0xFF));
+          data->data.push_back(
+              static_cast<uint8_t>((word >> 8) & 0xFF));
+          data->data.push_back(
+              static_cast<uint8_t>((word >> 16) & 0xFF));
+        } else {
+          // Word data (DW/DA) - little-endian
+          auto word = static_cast<uint32_t>(value);
+          data->data.push_back(static_cast<uint8_t>(word & 0xFF));
+          data->data.push_back(
+              static_cast<uint8_t>((word >> 8) & 0xFF));
+        }
+      } catch (const UndefinedSymbolError &) {
+        // Forward reference — use placeholder 0, resolve next pass
+        if (data->data_size == DataSize::Byte) {
+          data->data.push_back(0);
+        } else if (data->data_size == DataSize::Long) {
+          data->data.push_back(0);
+          data->data.push_back(0);
+          data->data.push_back(0);
+        } else {
+          data->data.push_back(0);
+          data->data.push_back(0);
+        }
+      }
+    }
+
+    data->size = data->data.size();
+  }
+
+  // Advance both address counters past this data
+  current_address += data->size;
+  virtual_address += data->size;
+  current_sizes.push_back(data->size);
+  return false;
+}
+
+bool Assembler::HandleInstructionAtom(const std::shared_ptr<Atom> &atom,
+                          EncodeAtomState &st) {
+  uint32_t &current_address = st.current_address;
+  uint32_t &virtual_address = st.virtual_address;
+  (void)st.phase_real_start;
+  (void)st.phase_virtual_start;
+  ConcreteSymbolTable &symbols = st.symbols;
+  AssemblerResult &result = st.result;
+  std::vector<size_t> &current_sizes = st.current_sizes;
+  int &pass_number = st.pass_number;
+  auto inst = std::dynamic_pointer_cast<InstructionAtom>(atom);
+  if (!inst) {
+    // Cast failed - this indicates a corrupted atom
+    AssemblerError error;
+    error.location = atom->location;
+    error.message =
+        "Failed to cast to InstructionAtom - atom corruption detected";
+    result.errors.push_back(error);
+    result.success = false;
+    return true;
+  }
+  // Clear previous encoding
+  inst->encoded_bytes.clear();
+
+  // Encode the instruction
+  std::string mnemonic = inst->mnemonic;
+  std::string operand = inst->operand;
+
+  // Strip trailing '!' from mnemonic before table lookup
+  // The '!' suffix is used in some assembly dialects to force
+  // a specific instruction encoding but should not affect the
+  // mnemonic lookup in the opcode table.
+  if (!mnemonic.empty() && mnemonic.back() == '!') {
+    mnemonic.pop_back();
+  }
+
+  // Check if instruction requires special encoding (e.g., branch
+  // relaxation, multi-byte instructions)
+  //
+  // WHY SPECIAL ENCODING?
+  // =====================
+  // Some instructions need context beyond standard operand values:
+  //
+  // 1. BRANCH RELAXATION (6502 branches):
+  //    - Branches use 8-bit signed relative offsets (-128 to +127
+  //    bytes)
+  //    - If target is farther, must "relax" into longer sequence:
+  //      Short form (2 bytes):  BEQ label
+  //      Long form (5 bytes):   BNE skip / JMP label / skip: ...
+  //    - Relaxation triggers cascading changes requiring multi-pass
+  //
+  // 2. MULTI-BYTE INSTRUCTIONS (MVN/MVP):
+  //    - 65816 block move instructions take two operands
+  //    - Need special parsing for "srcbank,destbank" format
+  //
+  // CPU plugin handles ALL special cases - core assembler stays
+  // agnostic
+  if (cpu_->RequiresSpecialEncoding(mnemonic)) {
+    try {
+      // Resolve labels in operand before passing to CPU plugin
+      // Branch instructions need target address, not label name
+      std::string resolved_operand = operand;
+      std::string trimmed = Trim(operand);
+
+      // Check if operand is a label reference (not starting with $ or
+      // #). Skip resolution for multi-operand forms like MVN/MVP
+      // (e.g. "0,1" or "$E1,1") — these are bank pairs, not labels.
+      if (trimmed.find(',') != std::string::npos) {
+        // Multi-operand instruction (MVN/MVP block move): pass as-is
+      } else if (trimmed == "*") {
+        // * means current PC address (branch to self)
+        // Use virtual_address so phased code uses the virtual PC
+        std::ostringstream oss;
+        oss << "$" << std::hex << virtual_address;
+        resolved_operand = oss.str();
+      } else if (!trimmed.empty() && trimmed[0] != '$' &&
+                 trimmed[0] != '#' && trimmed[0] != '(') {
+        // Try to resolve as symbol.  ConcreteSymbolTable::Lookup
+        // handles SCMASM uppercase fallback internally
+        // (ADR-005 V1: migration complete — no manual toupper here).
+        int64_t symbol_value = 0;
+        int64_t expr_offset = 0;
+        std::string lookup_name = trimmed;
+        if (!symbols.Lookup(lookup_name, symbol_value)) {
+          // Try SYMBOL+N or SYMBOL-N form (e.g. "LABEL+5")
+          // Symbol chars are alphanumeric, '.', '_', '@', ':'
+          // Scan for a '+' or '-' that follows at least one symbol char
+          lookup_name = "";
+          for (size_t i = 1; i < trimmed.size(); ++i) {
+            char c = trimmed[i];
+            if (c == '+' || c == '-') {
+              std::string sym_part = trimmed.substr(0, i);
+              std::string off_str  = trimmed.substr(i);
+              int64_t sym_val = 0;
+              if (symbols.Lookup(sym_part, sym_val)) {
+                // Parse the numeric offset (decimal or hex)
+                try {
+                  expr_offset = std::stoll(off_str, nullptr, 0);
+                } catch (...) {
+                  expr_offset = 0;
+                }
+                symbol_value = sym_val;
+                lookup_name  = sym_part;
+                break;
+              }
+            }
+          }
+        }
+        if (!lookup_name.empty() && pass_number > 1) {
+          // Symbol resolved — use actual address (plus any expression
+          // offset, e.g. LABEL+5).
+          // "Start short, expand only when necessary": the CPU plugin
+          // (EncodeInstructionSpecial) checks the resolved distance and
+          // emits SHORT (2 bytes) if in range, LONG (3 or 5 bytes) only
+          // if the target is genuinely out of ±127 bytes.  Multiple
+          // passes converge to the minimum set of LONG branches because
+          // expanding a branch only shifts later labels forward, which
+          // is rechecked in the next pass.  No branch is ever made LONG
+          // unless it truly cannot reach its target.
+          std::ostringstream oss;
+          oss << "$" << std::hex << ((symbol_value + expr_offset) & 0xFFFF);
+          resolved_operand = oss.str();
+        } else {
+          // Pass 1: always assume SHORT (use current VA as target →
+          // offset = -2, always in range).  Parse-time addresses can
+          // be stale (computed with all branches at 2 bytes), so using
+          // them in pass 1 causes spurious long-branch expansions that
+          // then cascade into later passes, locking in unnecessary 5-byte
+          // branches.  By starting all branches short in pass 1, we let
+          // passes 2+ converge to the minimum expansion set.
+          // Same path is used when symbol is still unresolved.
+          std::ostringstream oss;
+          oss << "$" << std::hex << virtual_address;
+          resolved_operand = oss.str();
+        }
+      }
+
+      // Delegate to CPU plugin for special encoding
+      // Plugin handles branch relaxation, multi-byte instructions, etc.
+      // Use virtual_address as the PC so branches in phased code are
+      // computed relative to the virtual address.
+      inst->encoded_bytes = cpu_->EncodeInstructionSpecial(
+          mnemonic, resolved_operand,
+          static_cast<uint16_t>(virtual_address));
+
+      // Advance both address counters past this instruction
+      current_address += inst->encoded_bytes.size();
+      virtual_address += inst->encoded_bytes.size();
+      current_sizes.push_back(inst->encoded_bytes.size());
+      return true; // handled
+    } catch (const std::exception &e) {
+      // Special encoding failed - report error
+      AssemblerError error;
+      error.location = inst->location;
+      error.message =
+          "Special encoding failed for " + mnemonic + ": " + e.what();
+      result.errors.push_back(error);
+      result.success = false;
+      return true;
+    }
+  }
+
+  // Parse operand value for standard encoding
+  // Note: CPU plugin determines addressing mode from operand string
+  uint16_t value = 0;
+
+  // Make current PC available to expressions (e.g. `jmp *`)
+  symbols.SetCurrentLocation(static_cast<int64_t>(virtual_address));
+
+  // Extract operand value
+  if (!operand.empty()) {
+    std::string trimmed = Trim(operand);
+
+    // Strip parentheses for indirect modes: ($1234) or ($80,X) or
+    // ($80),Y
+    std::string value_str = trimmed;
+    if (value_str[0] == '(') {
+      size_t close_paren = value_str.find(')');
+      if (close_paren != std::string::npos) {
+        value_str = value_str.substr(1, close_paren - 1);
+        value_str = Trim(value_str);
+      }
+    }
+
+    // Strip index registers (,X or ,Y) for value extraction
+    size_t comma_pos = value_str.find(',');
+    if (comma_pos != std::string::npos) {
+      value_str = Trim(value_str.substr(0, comma_pos));
+    }
+
+    // Strip brackets for 65816 indirect long: [$zp] or [$zp],Y
+    if (!value_str.empty() && value_str[0] == '[') {
+      size_t close_bracket = value_str.find(']');
+      if (close_bracket != std::string::npos) {
+        value_str = Trim(value_str.substr(1, close_bracket - 1));
+      }
+    }
+
+    if (value_str[0] == '#') {
+      // Immediate: #$42 or #SYMBOL
+      // Use shared ExpressionParser to handle both hex literals and symbol
+      // references
+      std::string expr_str = value_str.substr(1);
+      try {
+        std::shared_ptr<Expression> expr = ExpressionParser(&symbols, nullptr, expression_features_).Parse(expr_str);
+        int64_t expr_value = expr->Evaluate(symbols);
+        value = static_cast<uint16_t>(expr_value);
+      } catch (const UndefinedSymbolError &) {
+        value = 0; // Forward reference — resolve next pass
+      }
+    } else if (value_str[0] == '$') {
+      // Absolute/Zero Page: $1234 (or $1234,X after stripping)
+      // Use shared ExpressionParser to handle both simple hex and expressions
+      // like $528+2
+      try {
+        std::shared_ptr<Expression> expr = ExpressionParser(&symbols, nullptr, expression_features_).Parse(value_str);
+        int64_t expr_value = expr->Evaluate(symbols);
+        value = static_cast<uint16_t>(expr_value);
+      } catch (const UndefinedSymbolError &) {
+        value = 0; // Forward reference — resolve next pass
+      }
+    } else if (value_str[0] == '/') {
+      // SCMASM high byte immediate: /expr (equivalent to #>expr)
+      // Evaluates expression and takes bits 8-15 as the immediate byte
+      std::string expr_str = value_str.substr(1);
+      try {
+        std::shared_ptr<Expression> expr = ExpressionParser(&symbols, nullptr, expression_features_).Parse(expr_str);
+        int64_t expr_value = expr->Evaluate(symbols);
+        value = static_cast<uint16_t>(
+            (static_cast<uint32_t>(expr_value) >> 8) & 0xFF);
+      } catch (const UndefinedSymbolError &) {
+        value = 0; // Forward reference — resolve next pass
+      }
+    } else if (value_str != "A") {
+      // Label reference or expression - use shared ExpressionParser to handle
+      // both simple symbols and expressions like ZPPTR+1
+      // BUG-003 FIX: Support expressions with +, -, <, > operators
+      try {
+        std::shared_ptr<Expression> expr = ExpressionParser(&symbols, nullptr, expression_features_).Parse(value_str);
+        int64_t expr_value = expr->Evaluate(symbols);
+        value = static_cast<uint16_t>(expr_value);
+      } catch (const UndefinedSymbolError &) {
+        value = 0; // Forward reference — resolve next pass
+      }
+    }
+  }
+
+  // Use polymorphic CPU plugin interface for instruction encoding
+  try {
+    // Call polymorphic EncodeInstruction() - CPU plugin handles
+    // addressing modes
+    inst->encoded_bytes =
+        cpu_->EncodeInstruction(mnemonic, value, operand);
+  } catch (const std::invalid_argument &e) {
+    // Invalid argument (e.g., unsupported addressing mode)
+    AssemblerError error;
+    error.location = inst->location;
+    error.message =
+        "Invalid argument for " + mnemonic + ": " + e.what();
+    result.errors.push_back(error);
+    result.success = false;
+  } catch (const std::out_of_range &e) {
+    // Value out of range (e.g., branch too far, value too large)
+    AssemblerError error;
+    error.location = inst->location;
+    error.message =
+        "Value out of range for " + mnemonic + ": " + e.what();
+    result.errors.push_back(error);
+    result.success = false;
+  } catch (const std::runtime_error &e) {
+    // Runtime error (e.g., undefined behavior, internal error)
+    AssemblerError error;
+    error.location = inst->location;
+    error.message =
+        "Runtime error encoding " + mnemonic + ": " + e.what();
+    result.errors.push_back(error);
+    result.success = false;
+  } catch (const std::logic_error &e) {
+    // Logic error (programming error, shouldn't happen in production)
+    AssemblerError error;
+    error.location = inst->location;
+    error.message =
+        "Logic error encoding " + mnemonic + ": " + e.what();
+    result.errors.push_back(error);
+    result.success = false;
+  }
+
+  // Record size for convergence check
+  current_sizes.push_back(inst->encoded_bytes.size());
+
+  // Advance both address counters past this instruction
+  current_address += inst->encoded_bytes.size();
+  virtual_address += inst->encoded_bytes.size();
+  return false;
+}
+
+bool Assembler::HandleSpaceAtom(const std::shared_ptr<Atom> &atom,
+                          EncodeAtomState &st) {
+  uint32_t &current_address = st.current_address;
+  uint32_t &virtual_address = st.virtual_address;
+  (void)st.phase_real_start;
+  (void)st.phase_virtual_start;
+  ConcreteSymbolTable &symbols = st.symbols;
+  (void)st.result;
+  std::vector<size_t> &current_sizes = st.current_sizes;
+  (void)st.pass_number;
+  // SpaceAtom (DS/BS directives) — advance addresses past the reserved
+  // bytes so that subsequent instruction virtual_addresses are correct
+  // for branch offset calculations.
+  auto space = std::dynamic_pointer_cast<SpaceAtom>(atom);
+  if (space) {
+    // If this SpaceAtom has a PC-relative expression (e.g. "DS $900-*"),
+    // re-evaluate it each pass so the count stays correct as branch
+    // relaxations shift code sizes between passes.
+    if (!space->expression_str.empty()) {
+      std::string expr_str = space->expression_str;
+      std::string addr_str = std::to_string(virtual_address);
+      size_t star_pos = 0;
+      while ((star_pos = expr_str.find('*', star_pos)) != std::string::npos) {
+        bool before = (star_pos > 0 &&
+            (std::isalnum(static_cast<unsigned char>(expr_str[star_pos - 1])) ||
+             expr_str[star_pos - 1] == ')'));
+        bool after = (star_pos + 1 < expr_str.size() &&
+            (std::isalnum(static_cast<unsigned char>(expr_str[star_pos + 1])) ||
+             expr_str[star_pos + 1] == '(' || expr_str[star_pos + 1] == '$' ||
+             expr_str[star_pos + 1] == '%'));
+        if (before && after) {
+          star_pos++;
+        } else {
+          expr_str.replace(star_pos, 1, addr_str);
+          star_pos += addr_str.length();
+        }
+      }
+      try {
+        std::shared_ptr<Expression> expr = ExpressionParser(&symbols, nullptr, expression_features_).Parse(expr_str);
+        int64_t value = expr->Evaluate(symbols);
+        if (value >= 0) {
+          space->count = static_cast<size_t>(value);
+          space->size = space->count;
+        }
+      } catch (const std::exception &e) {
+        (void)e; // Forward reference or error - keep previous count
+      }
+    }
+    current_address += space->size;
+    virtual_address += space->size;
+    current_sizes.push_back(space->size);
+  }
+  return false;
+}
+
 
 void Assembler::RefixupDataAtoms(ConcreteSymbolTable &symbols,
                                  AssemblerResult &result) {
