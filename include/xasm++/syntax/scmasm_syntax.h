@@ -508,6 +508,17 @@ private:
   static std::string StripComments(const std::string &line);
 
   /**
+   * @brief Handle a line starting with '*' (either private label or comment)
+   * @param line Input line
+   * @param first_non_space Position of first non-space in line
+   * @param result Output: the processed line (or empty for comment)
+   * @return true if the '*' was recognized and result was set; false otherwise
+   */
+  static bool TryHandleAsteriskLine(const std::string &line,
+                                    size_t first_non_space,
+                                    std::string &result);
+
+  /**
    * @brief Strip Apple II editor commands from line
    *
    * Removes lines starting with editor commands (NEW, AUTO, MAN, SAVE, ASM,
@@ -531,6 +542,32 @@ private:
   void ParseLine(const std::string &line, Section &section,
                  ConcreteSymbolTable &symbols,
                  const std::vector<std::string> &source, size_t &line_idx);
+
+  /**
+   * @brief Try to handle a directive line (opcode starts with '.')
+   * @return true if handled
+   */
+  bool TryHandleDirectiveLine(const std::string &opcode_upper,
+                              const std::string &operand,
+                              const std::string &label, Section &section,
+                              ConcreteSymbolTable &symbols,
+                              const std::vector<std::string> &source,
+                              size_t &line_idx);
+
+  /**
+   * @brief Try to handle a macro invocation (opcode starts with '>')
+   * @return true if handled (throws if macro not found but > prefix used)
+   */
+  bool TryHandleMacroLine(const std::string &opcode_upper,
+                          const std::string &operand, Section &section,
+                          ConcreteSymbolTable &symbols);
+
+  /**
+   * @brief Handle an assembly instruction line (6502 etc.)
+   */
+  void HandleInstructionLine(const std::string &opcode_upper,
+                             const std::string &operand, Section &section,
+                             ConcreteSymbolTable &symbols);
 
   /**
    * @brief Parse label at start of line

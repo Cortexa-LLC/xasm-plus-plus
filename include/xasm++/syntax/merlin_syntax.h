@@ -263,6 +263,28 @@ public:
                                               ConcreteSymbolTable &symbols);
 
   /**
+   * @brief Try to parse a Merlin character literal ("x" or 'x')
+   * @return Expression if matched, nullptr otherwise
+   */
+  std::shared_ptr<Expression> TryParseCharLiteral(const std::string &expr,
+                                                  ConcreteSymbolTable &symbols);
+
+  /**
+   * @brief Try to parse a low-byte operator expression (< or #)
+   * @return Expression if matched, nullptr otherwise
+   */
+  std::shared_ptr<Expression>
+  TryParseLowByteOperator(const std::string &expr, ConcreteSymbolTable &symbols);
+
+  /**
+   * @brief Try to parse a high-byte operator expression (>)
+   * @return Expression if matched, nullptr otherwise
+   */
+  std::shared_ptr<Expression>
+  TryParseHighByteOperator(const std::string &expr,
+                           ConcreteSymbolTable &symbols);
+
+  /**
    * @brief Parse a numeric literal
    *
    * @param str Numeric string (hex, decimal, binary, octal)
@@ -493,6 +515,35 @@ private:
 
   void ParseLine(const std::string &line, Section &section,
                  ConcreteSymbolTable &symbols);
+
+  /**
+   * @brief Try to handle a Merlin directive line via DispatchDirective
+   * @return true if handled
+   */
+  bool TryHandleDirectiveLine(const std::string &directive,
+                              const std::string &label,
+                              const std::string &operands,
+                              Section &section,
+                              ConcreteSymbolTable &symbols);
+
+  /**
+   * @brief Try to handle a macro invocation line
+   * @return true if handled (throws if invocation fails)
+   */
+  bool TryHandleMacroLine(const std::string &directive,
+                          const std::string &label,
+                          const std::string &operands,
+                          Section &section,
+                          ConcreteSymbolTable &symbols);
+
+  /**
+   * @brief Handle an assembly instruction line
+   */
+  void HandleInstructionLine(const std::string &directive,
+                             const std::string &label,
+                             std::string operands,
+                             Section &section,
+                             ConcreteSymbolTable &symbols);
 
   // Label parsing
   static std::string ParseLabel(const std::string &line, size_t &pos, Section &section,

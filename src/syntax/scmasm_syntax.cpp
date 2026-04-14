@@ -518,6 +518,109 @@ std::string ScmasmSyntaxParser::StripLineNumber(const std::string &line) {
   return line;
 }
 
+// ============================================================================
+// TryParse helpers for StripComments
+// ============================================================================
+
+bool ScmasmSyntaxParser::TryHandleAsteriskLine(const std::string &line,
+                                               size_t first_non_space,
+                                               std::string &result) {
+  if (first_non_space == std::string::npos || line[first_non_space] != '*') {
+    return false;
+  }
+  if (first_non_space == 0 && line.size() > 1 &&
+      std::isalpha(static_cast<unsigned char>(line[1]))) {
+    // *LABEL <directive> value — private/reserved label marker in SCMASM.
+    // Strip the leading * and process the rest as a normal line.
+    //
+    // Guard: ensure the label token (chars from pos 1 to first whitespace)
+    // contains only valid SCMASM label characters [A-Za-z0-9._].
+    // Lines like "*LCG_PARKMILLER(uint32_t)" contain '(' and are plain
+    // full-line comments.
+    // Scan label chars: must be [A-Za-z0-9._] only (no parens, commas, etc.)
+    size_t pos = 1;
+    bool label_valid = true;
+    while (pos < line.size() && line[pos] != ' ' && line[pos] != '\t') {
+      char c = line[pos];
+      if (!std::isalnum(static_cast<unsigned char>(c)) && c != '.' &&
+          c != '_') {
+        label_valid = false;
+        break;
+      }
+      ++pos;
+    }
+    if (label_valid && pos > 1) {
+      // Also require that the opcode field starts with '.' (SCMASM directive).
+      // This rejects function-signature comments like:
+      //   *LCG_PARKMILLER<TAB>(uint32_t seed) -> uint32_t
+      // where the opcode would be "(uint32_t" rather than a directive.
+      size_t opcode_pos = pos;
+      while (opcode_pos < line.size() &&
+             (line[opcode_pos] == ' ' || line[opcode_pos] == '\t')) {
+        opcode_pos++;
+      }
+      if (opcode_pos < line.size() && line[opcode_pos] == '.') {
+        // For value-defining directives (.EQ / .SE) also validate that the
+        // operand does not contain forward-reference symbols or invalid
+        // placeholder characters.  Examples that must be treated as comments:
+        //   *K.CloseDir   .EQ K.FClose   (K.FClose defined later → fwd ref)
+        //   *IO.D2.ReadSect .EQ $Cn5C    ('n' is not a valid hex digit)
+        // If the operand fails validation, fall through and return "" (comment).
+        //
+        // Identify the end of the opcode token.
+        size_t op_end = opcode_pos;
+        while (op_end < line.size() && line[op_end] != ' ' &&
+               line[op_end] != '\t') {
+          ++op_end;
+        }
+
+        // Extract and upper-case the opcode to compare.
+        std::string opcode_token = line.substr(opcode_pos, op_end - opcode_pos);
+        for (char &ch : opcode_token) {
+          ch = static_cast<char>(std::toupper(static_cast<unsigned char>(ch)));
+        }
+
+        if (opcode_token == ".EQ" || opcode_token == ".SE") {
+          // Extract the operand (everything after the opcode token).
+          size_t operand_start = op_end;
+          while (operand_start < line.size() &&
+                 (line[operand_start] == ' ' || line[operand_start] == '\t')) {
+            ++operand_start;
+          }
+          std::string operand_str = line.substr(operand_start);
+
+          // Strip inline comment from operand (semicolon-delimited).
+          size_t semi = operand_str.find(';');
+          if (semi != std::string::npos) {
+            operand_str = operand_str.substr(0, semi);
+          }
+
+          if (!IsEqOperandSafe(operand_str)) {
+            // Operand contains a forward-reference symbol or an invalid
+            // placeholder character — treat the whole line as a comment.
+            result = "";
+            return true;
+          }
+
+          // Strip the leading * — label starts at position 1.
+          result = line.substr(1);
+          return true;
+        }
+
+        // *LABEL .BS/.DA/.DC/etc. — in SCMASM, only .EQ/.SE after *LABEL are
+        // private label definitions. Any other directive makes the entire line
+        // a comment (the *LABEL is just a visual marker for disabled code).
+        result = "";
+        return true;
+      }
+    }
+  }
+  result = ""; // Entire line is comment
+  return true;
+}
+
+// ============================================================================
+
 std::string ScmasmSyntaxParser::StripComments(const std::string &line) {
   // Two comment styles:
   // 1. * in column 1 (full-line comment)
@@ -538,93 +641,13 @@ std::string ScmasmSyntaxParser::StripComments(const std::string &line) {
   //   * anywhere else (column 0 + non-label char, or after whitespace) →
   //     full-line comment (return empty).
   size_t first_non_space = line.find_first_not_of(" \t");
-  if (first_non_space != std::string::npos && line[first_non_space] == '*') {
-    if (first_non_space == 0 && line.size() > 1 &&
-        std::isalpha(static_cast<unsigned char>(line[1]))) {
-      // *LABEL <directive> value — private/reserved label marker in SCMASM.
-      // Strip the leading * and process the rest as a normal line.
-      //
-      // Guard: ensure the label token (chars from pos 1 to first whitespace)
-      // contains only valid SCMASM label characters [A-Za-z0-9._].
-      // Lines like "*LCG_PARKMILLER(uint32_t)" contain '(' and are plain
-      // full-line comments.
-      // Scan label chars: must be [A-Za-z0-9._] only (no parens, commas, etc.)
-      size_t pos = 1;
-      bool label_valid = true;
-      while (pos < line.size() && line[pos] != ' ' && line[pos] != '\t') {
-        char c = line[pos];
-        if (!std::isalnum(static_cast<unsigned char>(c)) && c != '.' &&
-            c != '_') {
-          label_valid = false;
-          break;
-        }
-        ++pos;
-      }
-      if (label_valid && pos > 1) {
-        // Also require that the opcode field starts with '.' (SCMASM directive).
-        // This rejects function-signature comments like:
-        //   *LCG_PARKMILLER<TAB>(uint32_t seed) -> uint32_t
-        // where the opcode would be "(uint32_t" rather than a directive.
-        size_t opcode_pos = pos;
-        while (opcode_pos < line.size() &&
-               (line[opcode_pos] == ' ' || line[opcode_pos] == '\t')) {
-          opcode_pos++;
-        }
-        if (opcode_pos < line.size() && line[opcode_pos] == '.') {
-          // For value-defining directives (.EQ / .SE) also validate that the
-          // operand does not contain forward-reference symbols or invalid
-          // placeholder characters.  Examples that must be treated as comments:
-          //   *K.CloseDir   .EQ K.FClose   (K.FClose defined later → fwd ref)
-          //   *IO.D2.ReadSect .EQ $Cn5C    ('n' is not a valid hex digit)
-          // If the operand fails validation, fall through and return "" (comment).
-          //
-          // Identify the end of the opcode token.
-          size_t op_end = opcode_pos;
-          while (op_end < line.size() && line[op_end] != ' ' &&
-                 line[op_end] != '\t') {
-            ++op_end;
-          }
-
-          // Extract and upper-case the opcode to compare.
-          std::string opcode_token = line.substr(opcode_pos, op_end - opcode_pos);
-          for (char &ch : opcode_token) {
-            ch = static_cast<char>(std::toupper(static_cast<unsigned char>(ch)));
-          }
-
-          if (opcode_token == ".EQ" || opcode_token == ".SE") {
-            // Extract the operand (everything after the opcode token).
-            size_t operand_start = op_end;
-            while (operand_start < line.size() &&
-                   (line[operand_start] == ' ' || line[operand_start] == '\t')) {
-              ++operand_start;
-            }
-            std::string operand_str = line.substr(operand_start);
-
-            // Strip inline comment from operand (semicolon-delimited).
-            size_t semi = operand_str.find(';');
-            if (semi != std::string::npos) {
-              operand_str = operand_str.substr(0, semi);
-            }
-
-            if (!IsEqOperandSafe(operand_str)) {
-              // Operand contains a forward-reference symbol or an invalid
-              // placeholder character — treat the whole line as a comment.
-              return "";
-            }
-
-            // Strip the leading * — label starts at position 1.
-            return line.substr(1);
-          }
-
-          // *LABEL .BS/.DA/.DC/etc. — in SCMASM, only .EQ/.SE after *LABEL are
-          // private label definitions. Any other directive makes the entire line
-          // a comment (the *LABEL is just a visual marker for disabled code).
-          return "";
-        }
-      }
+  {
+    std::string asterisk_result;
+    if (TryHandleAsteriskLine(line, first_non_space, asterisk_result)) {
+      return asterisk_result;
     }
-    return ""; // Entire line is comment
   }
+
 
   // Scan for ; comment, skipping over quoted string literals so that
   // semicolons inside .CS/.CZ strings (e.g. "\e[37;40m") are not stripped.
@@ -760,6 +783,332 @@ std::string ScmasmSyntaxParser::FormatError(const std::string &message) const {
 // Line Parsing
 // ============================================================================
 
+// ============================================================================
+// TryParse helpers for ParseLine
+// ============================================================================
+
+bool ScmasmSyntaxParser::TryHandleDirectiveLine(
+    const std::string &opcode_upper, const std::string &operand,
+    const std::string &label, Section &section, ConcreteSymbolTable &symbols,
+    const std::vector<std::string> &source, size_t &line_idx) {
+  if (opcode_upper.empty() || opcode_upper[0] != '.') {
+    return false;
+  }
+
+  using namespace scmasm::directives;
+  bool is_control_flow = (opcode_upper == DO || opcode_upper == LU);
+
+  // .EQ and .SE define symbols via their directive handlers (HandleEq/HandleSe),
+  // which evaluate the expression and store the result. Pre-defining the label
+  // as Label(current_address_) here would corrupt their expression evaluation:
+  // e.g. "PAKME.ID .SE PAKME.ID+2" would evaluate PAKME.ID as the current PC
+  // (from the pre-definition) instead of the previous Set value, producing
+  // wrong accumulated counters like PAKME.ID.
+  bool is_value_directive = (opcode_upper == ".EQ" || opcode_upper == ".SE");
+
+  if (!label.empty() && !is_control_flow && !is_value_directive) {
+    if (opcode_upper == ".OR") {
+      // Label before .OR - define it and create label atom at current address
+      if (IsLocalLabel(label)) {
+        local_labels_[label] = current_address_;
+        // Also add scoped version to global symbol table for branch resolution
+        std::string scoped = ScopedLocalLabelName(label);
+        auto expr = std::make_shared<LiteralExpr>(current_address_);
+        symbols.Define(scoped, SymbolType::Label, expr);
+        auto label_atom =
+            std::make_shared<LabelAtom>(scoped, current_address_);
+        section.atoms.push_back(label_atom);
+      } else {
+        // Normalize label to uppercase for case-insensitive SCMASM
+        // compatibility
+        std::string normalized_label = util::ToUpper(label);
+        auto expr = std::make_shared<LiteralExpr>(current_address_);
+        symbols.Define(normalized_label, SymbolType::Label, expr);
+
+        // Create label atom for non-local labels (use normalized name)
+        auto label_atom =
+            std::make_shared<LabelAtom>(normalized_label, current_address_);
+        section.atoms.push_back(label_atom);
+        last_global_label_ = normalized_label;
+      }
+    } else {
+      // Other directives: define the label.
+      // For data-emitting directives (DA, DB, BS, PH, etc.), also push a
+      // LabelAtom so ResolveSymbols updates the address each pass. This
+      // ensures positional labels like "PAKME.CORE .DA CORE.P" and
+      // "CORE.B .PH K.HiMem" track the correct physical address after branch
+      // relaxation changes code sizes.
+      static const std::unordered_set<std::string> kDataEmittingDirectives = {
+          ".DA",  ".DB",  ".DFB", ".DW",  ".DS",  ".DC",  ".HB",  ".HX",
+          ".AS",  ".AT",  ".AZ",  ".CS",  ".CZ",  ".TF",  ".PS",  ".HS",
+          ".STR", ".BS",  ".BYT", ".WORD", ".PH",
+      };
+      bool emit_label_atom =
+          kDataEmittingDirectives.contains(opcode_upper) &&
+          !in_dummy_section_;
+
+      if (IsLocalLabel(label)) {
+        local_labels_[label] = current_address_;
+        // Also add scoped version to global symbol table for branch resolution
+        std::string scoped = ScopedLocalLabelName(label);
+        auto expr = std::make_shared<LiteralExpr>(current_address_);
+        symbols.Define(scoped, SymbolType::Label, expr);
+        if (emit_label_atom) {
+          auto label_atom =
+              std::make_shared<LabelAtom>(scoped, current_address_);
+          section.atoms.push_back(label_atom);
+        }
+      } else {
+        // Normalize label to uppercase for case-insensitive SCMASM
+        // compatibility
+        std::string normalized_label = util::ToUpper(label);
+        auto expr = std::make_shared<LiteralExpr>(current_address_);
+        symbols.Define(normalized_label, SymbolType::Label, expr);
+        last_global_label_ = normalized_label;
+        if (emit_label_atom) {
+          auto label_atom =
+              std::make_shared<LabelAtom>(normalized_label, current_address_);
+          section.atoms.push_back(label_atom);
+        }
+      }
+    }
+  }
+
+  // Special validation for directives that require labels
+  if ((opcode_upper == ".EQ" || opcode_upper == ".SE") && label.empty()) {
+    throw std::runtime_error(opcode_upper + " requires a label");
+  }
+
+  // Control flow directives require special handling (not in registry)
+  using namespace scmasm::directives;
+  if (opcode_upper == DO) {
+    // Strip SCMASM inline comment: .DO expression has no embedded spaces
+    std::string do_operand = operand;
+    {
+      size_t ws = do_operand.find_first_of(" \t");
+      if (ws != std::string::npos) {
+        do_operand = do_operand.substr(0, ws);
+      }
+    }
+    {
+      DirectiveContext do_ctx;
+      do_ctx.label = label;
+      do_ctx.operand = do_operand;
+      HandleDo(do_ctx, section, symbols, source, line_idx);
+    }
+  } else if (opcode_upper == LU) { // NOLINT(bugprone-branch-clone)
+    {
+      DirectiveContext lu_ctx;
+      lu_ctx.label = label;
+      lu_ctx.operand = operand;
+      HandleLu(lu_ctx, section, symbols, source, line_idx);
+    }
+  } else if (opcode_upper == ELSE || opcode_upper == FIN ||
+             opcode_upper == ENDU) {
+    // These are handled by their opening directives (.DO, .LU)
+    // If we encounter them here, they're mismatched
+    throw std::runtime_error("Mismatched " + opcode_upper);
+  } else {
+    // Try to dispatch via registry
+    auto it = directive_registry_.find(opcode_upper);
+    if (it != directive_registry_.end()) {
+      // Found in registry - dispatch with DirectiveContext
+      // Expand local label references in operand before dispatch so that
+      // e.g. ".DA .10" correctly references "GLOBAL@.10" in the symbol table.
+      std::string directive_operand = ExpandLocalLabelsInOperand(operand);
+      DirectiveContext context;
+      context.section = &section;
+      context.symbols = &symbols;
+      context.current_address = &current_address_;
+      context.parser_state =
+          this; // Phase 6c.2: Set parser for handler access
+      context.current_file = current_file_;
+      context.current_line = current_line_;
+      context.include_paths = &include_paths_;
+      context.path_mappings = &path_mappings_;
+      context.label = label;
+      context.operand = directive_operand;
+      it->second(context);
+    } else {
+      // Not in registry and not a control flow directive
+      throw std::runtime_error("Unknown directive: " + opcode_upper);
+    }
+  }
+  return true;
+}
+
+bool ScmasmSyntaxParser::TryHandleMacroLine(const std::string &opcode_upper,
+                                            const std::string &operand,
+                                            Section &section,
+                                            ConcreteSymbolTable &symbols) {
+  // Check if it's a macro invocation
+  // SCMASM uses >MacroName syntax for invocation
+  std::string macro_lookup_name = opcode_upper;
+  if (!opcode_upper.empty() && opcode_upper[0] == '>') {
+    macro_lookup_name = opcode_upper.substr(1);
+  }
+
+  auto it = macros_.find(macro_lookup_name);
+  if (it == macros_.end()) {
+    // If opcode starts with '>' but macro not found, emit clear error
+    if (!opcode_upper.empty() && opcode_upper[0] == '>') {
+      throw std::runtime_error("Undefined macro: " + macro_lookup_name);
+    }
+    return false;
+  }
+
+  // Parse macro parameters from operand
+  std::vector<std::string> params;
+  if (!operand.empty()) {
+    // Parse macro arguments: each argument ends at the first whitespace or
+    // comma.  A comma immediately following an argument introduces the next
+    // argument.  Any whitespace following an argument (without a preceding
+    // comma) terminates the argument list — the rest of the line is treated
+    // as an inline comment (SCMASM convention).
+    //
+    // e.g. ">MLICALL MLI.READ   Read block" → ["MLI.READ"]
+    // e.g. ">STYA ZPPtr1,Y"                → ["ZPPtr1", "Y"]
+    // e.g. ">STYA ZPPtr1   f(), starting"  → ["ZPPtr1"]  (comma in comment
+    //                                         must not become a 2nd arg)
+    size_t pos = 0;
+    while (pos < operand.length()) {
+      // Skip leading whitespace before each argument (only matters after a
+      // comma separator, e.g. ">MACRO arg1, arg2").
+      while (pos < operand.length() &&
+             (operand[pos] == ' ' || operand[pos] == '\t')) {
+        ++pos;
+      }
+      if (pos >= operand.length()) {
+        break;
+      }
+
+      // Scan to the first whitespace or comma (argument boundary).
+      size_t arg_start = pos;
+      while (pos < operand.length() && operand[pos] != ' ' &&
+             operand[pos] != '\t' && operand[pos] != ',') {
+        ++pos;
+      }
+
+      std::string param = operand.substr(arg_start, pos - arg_start);
+      if (!param.empty()) {
+        params.push_back(param);
+      }
+
+      if (pos < operand.length() && operand[pos] == ',') {
+        // Comma separator → another argument follows.
+        ++pos;
+      } else {
+        // Whitespace or end-of-string → rest is inline comment, stop.
+        break;
+      }
+    }
+  }
+  // Invoke the macro (use stripped name without > prefix)
+  InvokeMacro(macro_lookup_name, params, section, symbols);
+  return true;
+}
+
+void ScmasmSyntaxParser::HandleInstructionLine(const std::string &opcode_upper,
+                                               const std::string &operand,
+                                               Section &section,
+                                               ConcreteSymbolTable &symbols) {
+  // Assume it's an assembly instruction (6502, 65C02, etc.)
+  // Phase 3: We don't parse instructions yet, just store them as
+  // InstructionAtom.
+  //
+  // Strip SCMASM inline comment: 6502 operands never have embedded spaces
+  // EXCEPT inside character literals ('x' / "x").  Any whitespace outside
+  // a quoted char literal is treated as a comment delimiter.
+  // e.g. "TAX  %11000000 or %00111000" → operand = "" (empty after opcode)
+  // e.g. "AND K.LC,y  should be %xx..." → operand = "K.LC,y"
+  // e.g. "#' '" → operand = "#' '" (space inside quotes, NOT a comment)
+  std::string instr_operand = operand;
+  {
+    bool in_quote = false;
+    char quote_ch = 0;
+    size_t ws_pos = std::string::npos;
+    for (size_t k = 0; k < instr_operand.size(); ++k) {
+      char ch = instr_operand[k];
+      if (in_quote) {
+        if (ch == quote_ch) {
+          in_quote = false;
+        }
+      } else if (ch == '\'' || ch == '"') {
+        in_quote = true;
+        quote_ch = ch;
+      } else if (ch == ' ' || ch == '\t') {
+        ws_pos = k;
+        break;
+      }
+    }
+    if (ws_pos != std::string::npos) {
+      instr_operand = instr_operand.substr(0, ws_pos);
+    }
+  }
+
+  // Translate local label operands to scoped names for multi-pass
+  // branch resolution.  e.g. ".8" → "GLOBALNAME.8",
+  //                          ".8,X" → "GLOBALNAME.8,X"
+  // Expand SCMASM character literals to hex before local-label scoping
+  // and InstructionAtom creation.  The generic ParseExpression engine in
+  // assembler.cpp has no knowledge of SCMASM quoting conventions, so
+  // "X" / 'X' would be mis-parsed as undefined symbols and silently
+  // evaluate to 0.  Pre-expand them here: "0"→$B0, 'A'→$41, etc.
+  instr_operand = ExpandCharLiteralsInExpr(instr_operand);
+
+  // Expand local label references (.N or :N) anywhere in the operand
+  // expression to their scoped form (GLOBALNAME.N / GLOBALNAME:N).
+  //
+  // The old approach only handled the case where the ENTIRE operand (or
+  // the part before the comma) was a local label.  That missed compound
+  // expressions like:
+  //   sta .1+2    — self-modified absolute address  (X.PrintF.S pattern)
+  //   lda (.1),Y  — indirect indexed through local label address
+  //
+  // A local label reference is '.' or ':' followed by one or more digits,
+  // appearing at the START of the operand string or immediately after a
+  // non-identifier character (operator, paren, '#', etc.).
+  instr_operand = ExpandLocalLabelsInOperand(instr_operand);
+
+  // Instructions inside a .DUMMY section advance the virtual address (for
+  // symbol placement) but do NOT emit code bytes.  Only add the atom when
+  // we are in the real (non-dummy) section.
+  if (!in_dummy_section_) {
+    auto instr_atom =
+        std::make_shared<InstructionAtom>(opcode_upper, instr_operand);
+    section.atoms.push_back(instr_atom);
+  }
+
+  // Advance address by the instruction's estimated byte count.
+  // Using the CPU plugin's heuristic (operand-string analysis) so that
+  // current-address expressions like `.BS TARGET-*` compute correctly.
+  if (cpu_) {
+    size_t est = cpu_->GetInstructionSize(opcode_upper, instr_operand);
+    // GetInstructionSize returns 3 for any symbol operand (it assumes
+    // absolute mode, since it has no access to the symbol table).  But
+    // many 6502 instructions have a 2-byte ZP form.  If the operand
+    // resolves to a ZP address ($00–$FF) right now, correct the estimate
+    // to 2.  This prevents false branch-relaxation: e.g. "dec pStack"
+    // (pStack=$DC) is 2 bytes, but GetInstructionSize returns 3.  With
+    // many PUSHA/PULLA macro calls between a branch and its target the
+    // cumulative overcount pushes the estimated distance past 127, causing
+    // the branch relaxation pass to expand the branch when it should not.
+    try {
+      ConcreteSymbolTable &syms_ref = symbols;
+      auto expr = std::make_shared<SymbolExpr>(instr_operand);
+      int64_t sym_val = expr->Evaluate(syms_ref);
+      if (sym_val >= 0 && sym_val <= 0xFF && est == 3) {
+        est = 2;
+      }
+    } catch (...) {
+      // Symbol not yet defined or expression not a simple symbol — keep est
+    }
+    current_address_ += est;
+  }
+}
+
+// ============================================================================
+
 void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
                                    ConcreteSymbolTable &symbols,
                                    const std::vector<std::string> &source,
@@ -887,348 +1236,44 @@ void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
   }
 
   // Handle directives (must start with .)
-  if (!opcode.empty() && opcode[0] == '.') {
-    // For directives, define the label but DON'T create a label atom
-    // Exception: .OR creates a label atom before changing address
-    // Exception: .DO/.LU defer label definition until after block processing
-    using namespace scmasm::directives;
-    bool is_control_flow = (opcode_upper == DO || opcode_upper == LU);
-    
-    // .EQ and .SE define symbols via their directive handlers (HandleEq/HandleSe),
-    // which evaluate the expression and store the result. Pre-defining the label
-    // as Label(current_address_) here would corrupt their expression evaluation:
-    // e.g. "PAKME.ID .SE PAKME.ID+2" would evaluate PAKME.ID as the current PC
-    // (from the pre-definition) instead of the previous Set value, producing
-    // wrong accumulated counters like PAKME.ID.
-    bool is_value_directive = (opcode_upper == ".EQ" || opcode_upper == ".SE");
+  if (TryHandleDirectiveLine(opcode_upper, operand, label, section, symbols,
+                             source, line_idx)) {
+    return;
+  }
 
-    if (!label.empty() && !is_control_flow && !is_value_directive) {
-      if (opcode_upper == ".OR") {
-        // Label before .OR - define it and create label atom at current address
-        if (IsLocalLabel(label)) {
-          local_labels_[label] = current_address_;
-          // Also add scoped version to global symbol table for branch resolution
-          std::string scoped = ScopedLocalLabelName(label);
-          auto expr = std::make_shared<LiteralExpr>(current_address_);
-          symbols.Define(scoped, SymbolType::Label, expr);
-          auto label_atom =
-              std::make_shared<LabelAtom>(scoped, current_address_);
-          section.atoms.push_back(label_atom);
-        } else {
-          // Normalize label to uppercase for case-insensitive SCMASM
-          // compatibility
-          std::string normalized_label = util::ToUpper(label);
-          auto expr = std::make_shared<LiteralExpr>(current_address_);
-          symbols.Define(normalized_label, SymbolType::Label, expr);
-
-          // Create label atom for non-local labels (use normalized name)
-          auto label_atom =
-              std::make_shared<LabelAtom>(normalized_label, current_address_);
-          section.atoms.push_back(label_atom);
-          last_global_label_ = normalized_label;
-        }
-      } else {
-        // Other directives: define the label.
-        // For data-emitting directives (DA, DB, BS, PH, etc.), also push a
-        // LabelAtom so ResolveSymbols updates the address each pass. This
-        // ensures positional labels like "PAKME.CORE .DA CORE.P" and
-        // "CORE.B .PH K.HiMem" track the correct physical address after branch
-        // relaxation changes code sizes.
-        static const std::unordered_set<std::string> kDataEmittingDirectives = {
-            ".DA",  ".DB",  ".DFB", ".DW",  ".DS",  ".DC",  ".HB",  ".HX",
-            ".AS",  ".AT",  ".AZ",  ".CS",  ".CZ",  ".TF",  ".PS",  ".HS",
-            ".STR", ".BS",  ".BYT", ".WORD", ".PH",
-        };
-        bool emit_label_atom =
-            kDataEmittingDirectives.contains(opcode_upper) &&
-            !in_dummy_section_;
-
-        if (IsLocalLabel(label)) {
-          local_labels_[label] = current_address_;
-          // Also add scoped version to global symbol table for branch resolution
-          std::string scoped = ScopedLocalLabelName(label);
-          auto expr = std::make_shared<LiteralExpr>(current_address_);
-          symbols.Define(scoped, SymbolType::Label, expr);
-          if (emit_label_atom) {
-            auto label_atom =
-                std::make_shared<LabelAtom>(scoped, current_address_);
-            section.atoms.push_back(label_atom);
-          }
-        } else {
-          // Normalize label to uppercase for case-insensitive SCMASM
-          // compatibility
-          std::string normalized_label = util::ToUpper(label);
-          auto expr = std::make_shared<LiteralExpr>(current_address_);
-          symbols.Define(normalized_label, SymbolType::Label, expr);
-          last_global_label_ = normalized_label;
-          if (emit_label_atom) {
-            auto label_atom =
-                std::make_shared<LabelAtom>(normalized_label, current_address_);
-            section.atoms.push_back(label_atom);
-          }
-        }
-      }
-    }
-
-    // Special validation for directives that require labels
-    if ((opcode_upper == ".EQ" || opcode_upper == ".SE") && label.empty()) {
-      throw std::runtime_error(opcode_upper + " requires a label");
-    }
-
-    // Control flow directives require special handling (not in registry)
-    using namespace scmasm::directives;
-    if (opcode_upper == DO) {
-      // Strip SCMASM inline comment: .DO expression has no embedded spaces
-      std::string do_operand = operand;
-      {
-        size_t ws = do_operand.find_first_of(" \t");
-        if (ws != std::string::npos) {
-          do_operand = do_operand.substr(0, ws);
-        }
-      }
-      {
-        DirectiveContext do_ctx;
-        do_ctx.label = label;
-        do_ctx.operand = do_operand;
-        HandleDo(do_ctx, section, symbols, source, line_idx);
-      }
-    } else if (opcode_upper == LU) { // NOLINT(bugprone-branch-clone)
-      {
-        DirectiveContext lu_ctx;
-        lu_ctx.label = label;
-        lu_ctx.operand = operand;
-        HandleLu(lu_ctx, section, symbols, source, line_idx);
-      }
-    } else if (opcode_upper == ELSE || opcode_upper == FIN ||
-               opcode_upper == ENDU) {
-      // These are handled by their opening directives (.DO, .LU)
-      // If we encounter them here, they're mismatched
-      throw std::runtime_error("Mismatched " + opcode_upper);
-    } else {
-      // Try to dispatch via registry
-      auto it = directive_registry_.find(opcode_upper);
-      if (it != directive_registry_.end()) {
-        // Found in registry - dispatch with DirectiveContext
-        // Expand local label references in operand before dispatch so that
-        // e.g. ".DA .10" correctly references "GLOBAL@.10" in the symbol table.
-        std::string directive_operand = ExpandLocalLabelsInOperand(operand);
-        DirectiveContext context;
-        context.section = &section;
-        context.symbols = &symbols;
-        context.current_address = &current_address_;
-        context.parser_state =
-            this; // Phase 6c.2: Set parser for handler access
-        context.current_file = current_file_;
-        context.current_line = current_line_;
-        context.include_paths = &include_paths_;
-        context.path_mappings = &path_mappings_;
-        context.label = label;
-        context.operand = directive_operand;
-        it->second(context);
-      } else {
-        // Not in registry and not a control flow directive
-        throw std::runtime_error("Unknown directive: " + opcode);
-      }
-    }
-  } else {
-    // Not a directive - define label and create label atom for
-    // instructions/macros
-    if (!label.empty()) {
-      if (IsLocalLabel(label)) {
-        local_labels_[label] = current_address_;
-        // Also add scoped version to global symbol table for branch resolution
-        std::string scoped = ScopedLocalLabelName(label);
-        auto expr = std::make_shared<LiteralExpr>(current_address_);
-        symbols.Define(scoped, SymbolType::Label, expr);
-        if (!in_dummy_section_) {
-          auto label_atom =
-              std::make_shared<LabelAtom>(scoped, current_address_);
-          section.atoms.push_back(label_atom);
-        }
-      } else {
-        // Normalize label to uppercase for case-insensitive SCMASM
-        // compatibility
-        std::string normalized_label = util::ToUpper(label);
-        auto expr = std::make_shared<LiteralExpr>(current_address_);
-        symbols.Define(normalized_label, SymbolType::Label, expr);
-
-        // Create label atom for non-local labels (use normalized name)
-        if (!in_dummy_section_) {
-          auto label_atom =
-              std::make_shared<LabelAtom>(normalized_label, current_address_);
-          section.atoms.push_back(label_atom);
-        }
-        last_global_label_ = normalized_label;
-      }
-    }
-
-    // Check if it's a macro invocation
-    // SCMASM uses >MacroName syntax for invocation
-    std::string macro_lookup_name = opcode_upper;
-    if (!opcode_upper.empty() && opcode_upper[0] == '>') {
-      macro_lookup_name = opcode_upper.substr(1);
-    }
-
-    auto it = macros_.find(macro_lookup_name);
-    if (it != macros_.end()) {
-      // Parse macro parameters from operand
-      std::vector<std::string> params;
-      if (!operand.empty()) {
-        // Parse macro arguments: each argument ends at the first whitespace or
-        // comma.  A comma immediately following an argument introduces the next
-        // argument.  Any whitespace following an argument (without a preceding
-        // comma) terminates the argument list — the rest of the line is treated
-        // as an inline comment (SCMASM convention).
-        //
-        // e.g. ">MLICALL MLI.READ   Read block" → ["MLI.READ"]
-        // e.g. ">STYA ZPPtr1,Y"                → ["ZPPtr1", "Y"]
-        // e.g. ">STYA ZPPtr1   f(), starting"  → ["ZPPtr1"]  (comma in comment
-        //                                         must not become a 2nd arg)
-        size_t pos = 0;
-        while (pos < operand.length()) {
-          // Skip leading whitespace before each argument (only matters after a
-          // comma separator, e.g. ">MACRO arg1, arg2").
-          while (pos < operand.length() &&
-                 (operand[pos] == ' ' || operand[pos] == '\t')) {
-            ++pos;
-          }
-          if (pos >= operand.length()) {
-            break;
-          }
-
-          // Scan to the first whitespace or comma (argument boundary).
-          size_t arg_start = pos;
-          while (pos < operand.length() && operand[pos] != ' ' &&
-                 operand[pos] != '\t' && operand[pos] != ',') {
-            ++pos;
-          }
-
-          std::string param = operand.substr(arg_start, pos - arg_start);
-          if (!param.empty()) {
-            params.push_back(param);
-          }
-
-          if (pos < operand.length() && operand[pos] == ',') {
-            // Comma separator → another argument follows.
-            ++pos;
-          } else {
-            // Whitespace or end-of-string → rest is inline comment, stop.
-            break;
-          }
-        }
-      }
-      // Invoke the macro (use stripped name without > prefix)
-      InvokeMacro(macro_lookup_name, params, section, symbols);
-    } else {
-      // If opcode starts with '>' but macro not found, emit clear error
-      if (!opcode_upper.empty() && opcode_upper[0] == '>') {
-        throw std::runtime_error("Undefined macro: " + macro_lookup_name);
-      }
-      // Assume it's an assembly instruction (6502, 65C02, etc.)
-      // Phase 3: We don't parse instructions yet, just store them as
-      // InstructionAtom.
-      //
-      // Strip SCMASM inline comment: 6502 operands never have embedded spaces
-      // EXCEPT inside character literals ('x' / "x").  Any whitespace outside
-      // a quoted char literal is treated as a comment delimiter.
-      // e.g. "TAX  %11000000 or %00111000" → operand = "" (empty after opcode)
-      // e.g. "AND K.LC,y  should be %xx..." → operand = "K.LC,y"
-      // e.g. "#' '" → operand = "#' '" (space inside quotes, NOT a comment)
-      std::string instr_operand = operand;
-      {
-        bool in_quote = false;
-        char quote_ch = 0;
-        size_t ws_pos = std::string::npos;
-        for (size_t k = 0; k < instr_operand.size(); ++k) {
-          char ch = instr_operand[k];
-          if (in_quote) {
-            if (ch == quote_ch) {
-              in_quote = false;
-            }
-          } else if (ch == '\'' || ch == '"') {
-            in_quote = true;
-            quote_ch = ch;
-          } else if (ch == ' ' || ch == '\t') {
-            ws_pos = k;
-            break;
-          }
-        }
-        if (ws_pos != std::string::npos) {
-          instr_operand = instr_operand.substr(0, ws_pos);
-        }
-      }
-
-      // Translate local label operands to scoped names for multi-pass
-      // branch resolution.  e.g. ".8" → "GLOBALNAME.8",
-      //                          ".8,X" → "GLOBALNAME.8,X"
-      // Expand SCMASM character literals to hex before local-label scoping
-      // and InstructionAtom creation.  The generic ParseExpression engine in
-      // assembler.cpp has no knowledge of SCMASM quoting conventions, so
-      // "X" / 'X' would be mis-parsed as undefined symbols and silently
-      // evaluate to 0.  Pre-expand them here: "0"→$B0, 'A'→$41, etc.
-      instr_operand = ExpandCharLiteralsInExpr(instr_operand);
-
-      // Expand local label references (.N or :N) anywhere in the operand
-      // expression to their scoped form (GLOBALNAME.N / GLOBALNAME:N).
-      //
-      // The old approach only handled the case where the ENTIRE operand (or
-      // the part before the comma) was a local label.  That missed compound
-      // expressions like:
-      //   sta .1+2    — self-modified absolute address  (X.PrintF.S pattern)
-      //   lda (.1),Y  — indirect indexed through local label address
-      //
-      // A local label reference is '.' or ':' followed by one or more digits,
-      // appearing at the START of the operand string or immediately after a
-      // non-identifier character (operator, paren, '#', etc.).
-      instr_operand = ExpandLocalLabelsInOperand(instr_operand);
-
-      // Instructions inside a .DUMMY section advance the virtual address (for
-      // symbol placement) but do NOT emit code bytes.  Only add the atom when
-      // we are in the real (non-dummy) section.
+  // Not a directive - define label and create label atom for
+  // instructions/macros
+  if (!label.empty()) {
+    if (IsLocalLabel(label)) {
+      local_labels_[label] = current_address_;
+      // Also add scoped version to global symbol table for branch resolution
+      std::string scoped = ScopedLocalLabelName(label);
+      auto expr = std::make_shared<LiteralExpr>(current_address_);
+      symbols.Define(scoped, SymbolType::Label, expr);
       if (!in_dummy_section_) {
-        auto instr_atom =
-            std::make_shared<InstructionAtom>(opcode_upper, instr_operand);
-        section.atoms.push_back(instr_atom);
+        auto label_atom =
+            std::make_shared<LabelAtom>(scoped, current_address_);
+        section.atoms.push_back(label_atom);
       }
+    } else {
+      // Normalize label to uppercase for case-insensitive SCMASM compatibility
+      std::string normalized_label = util::ToUpper(label);
+      auto expr = std::make_shared<LiteralExpr>(current_address_);
+      symbols.Define(normalized_label, SymbolType::Label, expr);
 
-      // Advance address by the instruction's estimated byte count.
-      // Using the CPU plugin's heuristic (operand-string analysis) so that
-      // current-address expressions like `.BS TARGET-*` compute correctly.
-      if (cpu_) {
-        size_t est =
-            cpu_->GetInstructionSize(opcode_upper, instr_operand);
-        // GetInstructionSize returns 3 for any symbol operand (it assumes
-        // absolute mode, since it has no access to the symbol table).  But
-        // many 6502 instructions have a 2-byte ZP form.  If the operand
-        // resolves to a ZP address ($00–$FF) right now, correct the estimate
-        // to 2.  This prevents false branch-relaxation: e.g. "dec pStack"
-        // (pStack=$DC) is 2 bytes, but GetInstructionSize returns 3.  With
-        // many PUSHA/PULLA macro calls between a branch and its target the
-        // cumulative overcount pushes the estimated distance past 127, causing
-        // the branch to be incorrectly relaxed (+3 bytes).
-        //
-        // Exclusions: JSR and JMP have no ZP form — keep them at 3.
-        if (est == 3 && opcode_upper != "JSR" && opcode_upper != "JMP") {
-          std::string eval_expr = instr_operand;
-          // Strip index suffix (,X or ,Y) so the base expression evaluates.
-          auto comma = eval_expr.rfind(',');
-          if (comma != std::string::npos)
-            eval_expr = Trim(eval_expr.substr(0, comma));
-          try {
-            uint32_t val = EvaluateExpression(eval_expr, symbols);
-            if (val <= 0xFF) {
-              est = 2;
-            }
-          } catch (const std::exception &e) {
-            (void)e; // Expression has a forward reference or is otherwise
-                     // unevaluable — keep the 3-byte estimate.
-          }
-        }
-        current_address_ += static_cast<uint32_t>(est);
-      } else {
-        current_address_ += 3; // conservative fallback when no CPU plugin set
+      // Create label atom for non-local labels (use normalized name)
+      if (!in_dummy_section_) {
+        auto label_atom =
+            std::make_shared<LabelAtom>(normalized_label, current_address_);
+        section.atoms.push_back(label_atom);
       }
+      last_global_label_ = normalized_label;
     }
+  }
+
+  // Try macro invocation first, then fall through to instruction handling
+  if (!TryHandleMacroLine(opcode_upper, operand, section, symbols)) {
+    HandleInstructionLine(opcode_upper, operand, section, symbols);
   }
 }
 

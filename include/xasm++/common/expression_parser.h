@@ -285,6 +285,46 @@ private:
   std::shared_ptr<Expression> ParsePrimary();
 
   // ========================================================================
+  // TryParse helpers for ParsePrimary
+  // ========================================================================
+
+  /**
+   * @brief Try to parse a parenthesized expression: '(' expr ')'
+   * @return Expression if matched, nullptr otherwise
+   */
+  std::shared_ptr<Expression> TryParseParenthesized();
+
+  /**
+   * @brief Try to parse a bracketed expression: '[' expr ']' (Z80/EDTASM)
+   * @return Expression if matched, nullptr otherwise
+   */
+  std::shared_ptr<Expression> TryParseBracketed();
+
+  /**
+   * @brief Try to parse a token using the custom number_parser_
+   * @return Expression if matched, nullptr otherwise
+   */
+  std::shared_ptr<Expression> TryParseCustomNumber();
+
+  /**
+   * @brief Try to parse '$' as current-location (not followed by hex digit)
+   * @return Expression if matched, nullptr otherwise
+   */
+  std::shared_ptr<Expression> TryParseDollarCurrentLocation();
+
+  /**
+   * @brief Try to parse a numeric literal (decimal, hex, binary)
+   * @return Expression if matched, nullptr otherwise
+   */
+  std::shared_ptr<Expression> TryParseNumberLiteral();
+
+  /**
+   * @brief Try to parse an identifier, symbol reference, or function call
+   * @return Expression if matched, nullptr otherwise
+   */
+  std::shared_ptr<Expression> TryParseIdentifierOrCall();
+
+  // ========================================================================
   // Helper methods
   // ========================================================================
 

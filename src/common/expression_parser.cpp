@@ -313,127 +313,136 @@ std::shared_ptr<Expression> ExpressionParser::ParseUnary() {
   return ParsePrimary();
 }
 
-std::shared_ptr<Expression> ExpressionParser::ParsePrimary() {
+// ============================================================================
+// TryParse helpers for ParsePrimary
+// ============================================================================
+
+std::shared_ptr<Expression> ExpressionParser::TryParseParenthesized() {
+  if (Peek() != '(') {
+    return nullptr;
+  }
+  Consume();
+  std::shared_ptr<Expression> expr = ParseLogicalOr();
   SkipWhitespace();
-
-  // Parenthesized expression
-  if (Peek() == '(') {
-    Consume();
-    std::shared_ptr<Expression> expr = ParseLogicalOr();
-    SkipWhitespace();
-    if (Peek() != ')') {
-      throw std::runtime_error("Expected closing parenthesis");
-    }
-    Consume();
-    return expr;
+  if (Peek() != ')') {
+    throw std::runtime_error("Expected closing parenthesis");
   }
+  Consume();
+  return expr;
+}
 
-  // Bracketed expression (Z80/EDTASM alternative to parentheses)
+std::shared_ptr<Expression> ExpressionParser::TryParseBracketed() {
   // ADR-005 V7: gated behind ParserFeatures.allow_bracket_grouping
-  if (features_.allow_bracket_grouping && Peek() == '[') {
-    Consume();
-    std::shared_ptr<Expression> expr = ParseLogicalOr();
-    SkipWhitespace();
-    if (Peek() != ']') {
-      throw std::runtime_error("Expected closing bracket");
-    }
-    Consume();
-    return expr;
+  if (!features_.allow_bracket_grouping || Peek() != '[') {
+    return nullptr;
   }
+  Consume();
+  std::shared_ptr<Expression> expr = ParseLogicalOr();
+  SkipWhitespace();
+  if (Peek() != ']') {
+    throw std::runtime_error("Expected closing bracket");
+  }
+  Consume();
+  return expr;
+}
 
-  // Try custom number parser first for syntax-specific formats
-  // This handles cases like "0FFH", "$ABCD", "%1010.0101", "'A", "\"A", "/A",
-  // etc.
-  if (number_parser_) {
-    char first_char = Peek();
-    size_t saved_pos = pos_;
+std::shared_ptr<Expression> ExpressionParser::TryParseCustomNumber() {
+  if (!number_parser_) {
+    return nullptr;
+  }
+  char first_char = Peek();
+  size_t saved_pos = pos_;
 
-    // Extract potential number/character constant token
-    std::string token;
-    bool is_binary = false;
+  // Extract potential number/character constant token
+  std::string token;
+  bool is_binary = false;
 
-    // Hexadecimal or binary prefix
-    if (first_char == '$' || first_char == '%') {
-      token += Consume();
-      is_binary = (first_char == '%');
+  // Hexadecimal or binary prefix
+  if (first_char == '$' || first_char == '%') {
+    token += Consume();
+    is_binary = (first_char == '%');
 
-      // Collect digits and allowed separators
-      while (pos_ < expr_.length()) {
-        char c = Peek();
-
-        if (std::isalnum(c) || c == '_' || (c == '.' && is_binary)) {
-          // Allow . separator in binary numbers only
-          token += Consume();
-        } else {
-          break;
-        }
+    // Collect digits and allowed separators
+    while (pos_ < expr_.length()) {
+      char c = Peek();
+      if (std::isalnum(c) || c == '_' || (c == '.' && is_binary)) {
+        // Allow . separator in binary numbers only
+        token += Consume();
+      } else {
+        break;
       }
     }
-    // Decimal number or suffix format
-    else if (std::isdigit(first_char)) {
-      while (pos_ < expr_.length()) {
-        char c = Peek();
-        if (std::isalnum(c) || c == '_') {
-          token += Consume();
-        } else {
-          break;
-        }
+  }
+  // Decimal number or suffix format
+  else if (std::isdigit(first_char)) {
+    while (pos_ < expr_.length()) {
+      char c = Peek();
+      if (std::isalnum(c) || c == '_') {
+        token += Consume();
+      } else {
+        break;
       }
     }
-    // Potential ASCII character constant (non-operator, non-paren,
-    // non-identifier start) Try if it's not an operator that should be handled
-    // elsewhere
-    else if (!std::isalnum(first_char) && first_char != '_' &&
-             first_char != '(') {
-      // Try treating as 2-char ASCII constant (delimiter + char)
-      token += Consume(); // delimiter
-      if (pos_ < expr_.length() && pos_ + 1 <= expr_.length()) {
-        // Check if next char could be part of character constant
-        char next = Peek();
-        if (std::isprint(next)) {
-          token += Consume(); // character
-        }
-      }
-    }
-
-    // Try parsing with custom parser if we extracted a token
-    if (!token.empty()) {
-      int64_t value = 0;
-      if (number_parser_->TryParse(token, value)) {
-        return std::make_shared<LiteralExpr>(value);
-      }
-
-      // Not a custom format, restore position and try standard formats
-      pos_ = saved_pos;
-
-      // Check if $ was followed by non-hex-digit - if so, it's current location
-      if (token == "$") {
-        Consume(); // consume the $
-        return std::make_shared<CurrentLocationExpr>();
+  }
+  // Potential ASCII character constant (non-operator, non-paren,
+  // non-identifier start) Try if it's not an operator that should be handled
+  // elsewhere
+  else if (!std::isalnum(first_char) && first_char != '_' &&
+           first_char != '(') {
+    // Try treating as 2-char ASCII constant (delimiter + char)
+    token += Consume(); // delimiter
+    if (pos_ < expr_.length() && pos_ + 1 <= expr_.length()) {
+      // Check if next char could be part of character constant
+      char next = Peek();
+      if (std::isprint(next)) {
+        token += Consume(); // character
       }
     }
   }
 
-  // Check if it's $ without a hex digit (current location operator)
-  if (Peek() == '$') {
-    size_t saved_pos = pos_;
-    Consume(); // consume $
-    if (!std::isxdigit(Peek())) {
-      // $ not followed by hex digit - current location operator
+  // Try parsing with custom parser if we extracted a token
+  if (!token.empty()) {
+    int64_t value = 0;
+    if (number_parser_->TryParse(token, value)) {
+      return std::make_shared<LiteralExpr>(value);
+    }
+
+    // Not a custom format, restore position and try standard formats
+    pos_ = saved_pos;
+
+    // Check if $ was followed by non-hex-digit - if so, it's current location
+    if (token == "$") {
+      Consume(); // consume the $
       return std::make_shared<CurrentLocationExpr>();
     }
-    // $ followed by hex digit - restore and parse as number
-    pos_ = saved_pos;
   }
 
-  // Check if it's a number or identifier
+  return nullptr;
+}
+
+std::shared_ptr<Expression> ExpressionParser::TryParseDollarCurrentLocation() {
+  if (Peek() != '$') {
+    return nullptr;
+  }
+  size_t saved_pos = pos_;
+  Consume(); // consume $
+  if (!std::isxdigit(Peek())) {
+    // $ not followed by hex digit - current location operator
+    return std::make_shared<CurrentLocationExpr>();
+  }
+  // $ followed by hex digit - restore and parse as number
+  pos_ = saved_pos;
+  return nullptr;
+}
+
+std::shared_ptr<Expression> ExpressionParser::TryParseNumberLiteral() {
+  // Check if it's a number
   if (std::isdigit(Peek()) || Peek() == '$' || Peek() == '%') {
-    // Number literal
     int64_t value = ParseNumber();
     return std::make_shared<LiteralExpr>(value);
   }
 
-  // Check for hex with 0x prefix
+  // Check for hex with 0x/0b prefix
   if (Peek() == '0' && pos_ + 1 < expr_.length() &&
       (expr_[pos_ + 1] == 'x' || expr_[pos_ + 1] == 'X' ||
        expr_[pos_ + 1] == 'b' || expr_[pos_ + 1] == 'B')) {
@@ -441,6 +450,10 @@ std::shared_ptr<Expression> ExpressionParser::ParsePrimary() {
     return std::make_shared<LiteralExpr>(value);
   }
 
+  return nullptr;
+}
+
+std::shared_ptr<Expression> ExpressionParser::TryParseIdentifierOrCall() {
   // Identifier (symbol or function)
   // ADR-005 V8: ']' prefix for Merlin ]variable labels is gated behind
   // ParserFeatures.allow_merlin_var_prefix.
@@ -448,50 +461,89 @@ std::shared_ptr<Expression> ExpressionParser::ParsePrimary() {
   // start character.  Suppress it here so '.' after a primary is handled by
   // ParseBitwiseOr() rather than greedily consumed into an identifier.
   bool allow_dot_ident_start = !features_.allow_merlin_bitwise_ops;
-  if (std::isalpha(Peek()) || Peek() == '_' ||
-      (allow_dot_ident_start && Peek() == '.') || Peek() == '$' ||
-      Peek() == '?' ||
-      (features_.allow_merlin_var_prefix && Peek() == ']')) {
-    std::string ident = ParseIdentifier();
+  if (!std::isalpha(Peek()) && Peek() != '_' &&
+      !(allow_dot_ident_start && Peek() == '.') && Peek() != '$' &&
+      Peek() != '?' &&
+      !(features_.allow_merlin_var_prefix && Peek() == ']')) {
+    return nullptr;
+  }
 
-    // Try parsing as number first (for RADIX mode where "FF" is a hex number)
-    if (number_parser_) {
-      int64_t value = 0;
-      if (number_parser_->TryParse(ident, value)) {
-        return std::make_shared<LiteralExpr>(value);
-      }
+  std::string ident = ParseIdentifier();
+
+  // Try parsing as number first (for RADIX mode where "FF" is a hex number)
+  if (number_parser_) {
+    int64_t value = 0;
+    if (number_parser_->TryParse(ident, value)) {
+      return std::make_shared<LiteralExpr>(value);
     }
+  }
 
-    // Check for function call
+  // Check for function call
+  SkipWhitespace();
+  if (Peek() == '(') {
+    Consume();
+    std::shared_ptr<Expression> arg = ParseLogicalOr();
     SkipWhitespace();
-    if (Peek() == '(') {
-      Consume();
-      std::shared_ptr<Expression> arg = ParseLogicalOr();
-      SkipWhitespace();
-      if (Peek() != ')') {
-        throw std::runtime_error(
-            "Expected closing parenthesis in function call");
-      }
-      Consume();
-
-      // Handle LOW and HIGH functions
-      std::string ident_upper = ident;
-      std::transform(ident_upper.begin(), ident_upper.end(),
-                     ident_upper.begin(), ::toupper);
-
-      if (ident_upper == directives::LOW_FUNC) { // NOLINT(bugprone-branch-clone)
-        return std::make_shared<UnaryOpExpr>(UnaryOp::LowByte, arg);
-      } else if (ident_upper == directives::HIGH_FUNC) {
-        return std::make_shared<UnaryOpExpr>(UnaryOp::HighByte, arg);
-      } else {
-        throw std::runtime_error("Unknown function: " + ident);
-      }
+    if (Peek() != ')') {
+      throw std::runtime_error("Expected closing parenthesis in function call");
     }
+    Consume();
 
-    // Symbol reference
-    // Note: symbols_ is used for validation, but SymbolExpr will look up at
-    // evaluation time
-    return std::make_shared<SymbolExpr>(ident);
+    // Handle LOW and HIGH functions
+    std::string ident_upper = ident;
+    std::transform(ident_upper.begin(), ident_upper.end(), ident_upper.begin(),
+                   ::toupper);
+
+    if (ident_upper == directives::LOW_FUNC) { // NOLINT(bugprone-branch-clone)
+      return std::make_shared<UnaryOpExpr>(UnaryOp::LowByte, arg);
+    } else if (ident_upper == directives::HIGH_FUNC) {
+      return std::make_shared<UnaryOpExpr>(UnaryOp::HighByte, arg);
+    } else {
+      throw std::runtime_error("Unknown function: " + ident);
+    }
+  }
+
+  // Symbol reference
+  // Note: symbols_ is used for validation, but SymbolExpr will look up at
+  // evaluation time
+  return std::make_shared<SymbolExpr>(ident);
+}
+
+// ============================================================================
+
+std::shared_ptr<Expression> ExpressionParser::ParsePrimary() {
+  SkipWhitespace();
+
+  // Parenthesized expression
+  if (auto expr = TryParseParenthesized()) {
+    return expr;
+  }
+
+  // Bracketed expression (Z80/EDTASM alternative to parentheses)
+  if (auto expr = TryParseBracketed()) {
+    return expr;
+  }
+
+  // Try custom number parser first for syntax-specific formats
+  // This handles cases like "0FFH", "$ABCD", "%1010.0101", "'A", "\"A", "/A",
+  // etc.
+  if (auto expr = TryParseCustomNumber()) {
+    return expr;
+  }
+
+  // Check if it's $ without a hex digit (current location operator)
+  if (auto expr = TryParseDollarCurrentLocation()) {
+    return expr;
+  }
+
+  // Check if it's a number literal
+  if (auto expr = TryParseNumberLiteral()) {
+    return expr;
+  }
+
+  // Identifier (symbol or function)
+  if (auto expr = TryParseIdentifierOrCall()) {
+    return expr;
   }
 
   // `*` as current address (Merlin, SCMASM, and many other assemblers)

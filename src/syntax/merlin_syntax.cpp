@@ -208,6 +208,111 @@ uint32_t MerlinSyntaxParser::ParseNumber(const std::string &str) {
   }
 }
 
+// ============================================================================
+// TryParse helpers for ParseExpression
+// ============================================================================
+
+std::shared_ptr<Expression>
+MerlinSyntaxParser::TryParseCharLiteral(const std::string &expr,
+                                        ConcreteSymbolTable &symbols) {
+  if (expr.empty() || (expr[0] != '"' && expr[0] != '\'')) {
+    return nullptr;
+  }
+  char quote = expr[0];
+  if (expr.length() == 1) {
+    // Just a lone quote (e.g. SPECIALK.S edge case) – treat as 0
+    return std::make_shared<LiteralExpr>(0);
+  }
+  // Find the closing quote
+  size_t close = expr.find(quote, 1);
+  if (close == std::string::npos) {
+    // Unclosed quote – return 0 gracefully (matches Merlin behaviour)
+    return std::make_shared<LiteralExpr>(0);
+  }
+  // Extract character between quotes and apply Apple II high-bit convention
+  std::string chars = expr.substr(1, close - 1);
+  int64_t char_val =
+      chars.empty() ? 0 : (static_cast<uint8_t>(chars[0]) | 0x80);
+  // Check for compound expression after the closing quote (e.g. "A"-CTRL)
+  std::string rest = Trim(expr.substr(close + 1));
+  if (rest.empty()) {
+    return std::make_shared<LiteralExpr>(char_val);
+  }
+  // Combine char literal value with the remaining expression via the
+  // operator that leads the rest string (e.g. "+1", "-CTRL").
+  if (!rest.empty() && (rest[0] == '+' || rest[0] == '-' || rest[0] == '*' ||
+                        rest[0] == '/')) {
+    char op = rest[0];
+    std::string rhs = Trim(rest.substr(1));
+    if (!rhs.empty()) {
+      auto left_expr = std::make_shared<LiteralExpr>(char_val);
+      auto right_expr = ParseExpression(rhs, symbols);
+      switch (op) {
+        case '+': // NOLINT(bugprone-branch-clone)
+          return std::make_shared<BinaryOpExpr>(BinaryOp::Add, left_expr,
+                                                right_expr);
+        case '-':
+          return std::make_shared<BinaryOpExpr>(BinaryOp::Subtract, left_expr,
+                                                right_expr);
+        case '*':
+          return std::make_shared<BinaryOpExpr>(BinaryOp::Multiply, left_expr,
+                                                right_expr);
+        case '/':
+          return std::make_shared<BinaryOpExpr>(BinaryOp::Divide, left_expr,
+                                                right_expr);
+        default:
+          break;
+      }
+    }
+  }
+  // No recognised compound form – return the character value alone
+  return std::make_shared<LiteralExpr>(char_val);
+}
+
+std::shared_ptr<Expression>
+MerlinSyntaxParser::TryParseLowByteOperator(const std::string &expr,
+                                            ConcreteSymbolTable &symbols) {
+  if (expr.empty() || (expr[0] != '<' && expr[0] != '#')) {
+    return nullptr;
+  }
+  if (expr.length() < 2) {
+    throw std::runtime_error(
+        FormatError("Low byte operator (</#) requires an operand"));
+  }
+  std::string operand = Trim(expr.substr(1));
+  if (operand.empty()) {
+    throw std::runtime_error(
+        FormatError("Low byte operator (</#) has empty operand"));
+  }
+  // Recursively parse the operand (might be expression like SHIFT0-$80)
+  auto operand_expr = ParseExpression(operand, symbols);
+  int64_t value = operand_expr->Evaluate(symbols);
+  return std::make_shared<LiteralExpr>(value & 0xFF); // Low byte
+}
+
+std::shared_ptr<Expression>
+MerlinSyntaxParser::TryParseHighByteOperator(const std::string &expr,
+                                             ConcreteSymbolTable &symbols) {
+  if (expr.empty() || expr[0] != '>') {
+    return nullptr;
+  }
+  if (expr.length() < 2) {
+    throw std::runtime_error(
+        FormatError("High byte operator (>) requires an operand"));
+  }
+  std::string operand = Trim(expr.substr(1));
+  if (operand.empty()) {
+    throw std::runtime_error(
+        FormatError("High byte operator (>) has empty operand"));
+  }
+  // Recursively parse the operand (might be expression like SHIFT0-$80)
+  auto operand_expr = ParseExpression(operand, symbols);
+  int64_t value = operand_expr->Evaluate(symbols);
+  return std::make_shared<LiteralExpr>((value >> 8) & 0xFF); // High byte
+}
+
+// ============================================================================
+
 // Parse expression - delegates to ExpressionParser for standard operations
 // while preserving Merlin-specific features: character literals, low/high byte
 std::shared_ptr<Expression>
@@ -249,95 +354,17 @@ MerlinSyntaxParser::ParseExpression(const std::string &str,
   // Merlin-Specific Features (handle before delegating to ExpressionParser)
   // ========================================================================
 
-  // Check for character literal: "x" or 'x'
-  // Supports standalone form ("A") and compound form ("A"-CTRL, "A"+1, etc.)
-  // Apple II Merlin convention: character literals set the high bit ($80).
-  // e.g. EQU "A" → $C1,  EQU "r"-CTRL → $F2-CTRL
-  if (!expr.empty() && (expr[0] == '"' || expr[0] == '\'')) {
-    char quote = expr[0];
-    if (expr.length() == 1) {
-      // Just a lone quote (e.g. SPECIALK.S edge case) – treat as 0
-      return std::make_shared<LiteralExpr>(0);
-    }
-    // Find the closing quote
-    size_t close = expr.find(quote, 1);
-    if (close == std::string::npos) {
-      // Unclosed quote – return 0 gracefully (matches Merlin behaviour)
-      return std::make_shared<LiteralExpr>(0);
-    }
-    // Extract character between quotes and apply Apple II high-bit convention
-    std::string chars = expr.substr(1, close - 1);
-    int64_t char_val =
-        chars.empty() ? 0 : (static_cast<uint8_t>(chars[0]) | 0x80);
-    // Check for compound expression after the closing quote (e.g. "A"-CTRL)
-    std::string rest = Trim(expr.substr(close + 1));
-    if (rest.empty()) {
-      return std::make_shared<LiteralExpr>(char_val);
-    }
-    // Combine char literal value with the remaining expression via the
-    // operator that leads the rest string (e.g. "+1", "-CTRL").
-    if (!rest.empty() && (rest[0] == '+' || rest[0] == '-' ||
-                          rest[0] == '*' || rest[0] == '/')) {
-      char op = rest[0];
-      std::string rhs = Trim(rest.substr(1));
-      if (!rhs.empty()) {
-        auto left_expr  = std::make_shared<LiteralExpr>(char_val);
-        auto right_expr = ParseExpression(rhs, symbols);
-        switch (op) {
-          case '+': // NOLINT(bugprone-branch-clone)
-            return std::make_shared<BinaryOpExpr>(BinaryOp::Add, left_expr,
-                                                  right_expr);
-          case '-':
-            return std::make_shared<BinaryOpExpr>(BinaryOp::Subtract, left_expr,
-                                                  right_expr);
-          case '*':
-            return std::make_shared<BinaryOpExpr>(BinaryOp::Multiply, left_expr,
-                                                  right_expr);
-          case '/':
-            return std::make_shared<BinaryOpExpr>(BinaryOp::Divide, left_expr,
-                                                  right_expr);
-          default:
-            break;
-        }
-      }
-    }
-    // No recognised compound form – return the character value alone
-    return std::make_shared<LiteralExpr>(char_val);
+  // Merlin-Specific Features (handle before delegating to ExpressionParser)
+  if (auto result = TryParseCharLiteral(expr, symbols)) {
+    return result;
+  }
+  if (auto result = TryParseLowByteOperator(expr, symbols)) {
+    return result;
+  }
+  if (auto result = TryParseHighByteOperator(expr, symbols)) {
+    return result;
   }
 
-  // Check for low byte operator (< or #)
-  if (!expr.empty() && (expr[0] == '<' || expr[0] == '#')) {
-    if (expr.length() < 2) {
-      throw std::runtime_error(
-          FormatError("Low byte operator (</#) requires an operand"));
-    }
-    std::string operand = Trim(expr.substr(1));
-    if (operand.empty()) {
-      throw std::runtime_error(
-          FormatError("Low byte operator (</#) has empty operand"));
-    }
-    // Recursively parse the operand (might be expression like SHIFT0-$80)
-    auto operand_expr = ParseExpression(operand, symbols);
-    int64_t value = operand_expr->Evaluate(symbols);
-    return std::make_shared<LiteralExpr>(value & 0xFF); // Low byte
-  }
-
-  // Check for high byte operator (>)
-  if (!expr.empty() && expr[0] == '>') {
-    if (expr.length() < 2) {
-      throw std::runtime_error(
-          FormatError("High byte operator (>) requires an operand"));
-    }
-    std::string operand = Trim(expr.substr(1));
-    if (operand.empty()) {
-      throw std::runtime_error(
-          FormatError("High byte operator (>) has empty operand"));
-    }
-    // Recursively parse the operand (might be expression like SHIFT0-$80)
-    auto operand_expr = ParseExpression(operand, symbols);
-    int64_t value = operand_expr->Evaluate(symbols);
-    return std::make_shared<LiteralExpr>((value >> 8) & 0xFF); // High byte
-  }
 
   // ========================================================================
   // Delegate to Shared ExpressionParser
@@ -1221,6 +1248,162 @@ void MerlinSyntaxParser::HandleLup(const std::string &operand) {
 }
 
 // ============================================================================
+// TryParse helpers for ParseLine
+// ============================================================================
+
+bool MerlinSyntaxParser::TryHandleDirectiveLine(
+    const std::string &directive, const std::string &label,
+    const std::string &operands, Section &section,
+    ConcreteSymbolTable &symbols) {
+  DirectiveContext ctx;
+  ctx.section = &section;
+  ctx.symbols = &symbols;
+  ctx.current_address = &current_address_;
+  ctx.parser_state = this;
+  ctx.current_file = current_file_;
+  ctx.current_line = current_line_;
+
+  // Scope the label and operands before dispatching so directive handlers
+  // define label atoms under the correct scoped name (e.g. "tone:pitch" not
+  // just ":pitch"), and operand references like ":loop" are expanded to their
+  // scoped names (e.g. "alertstand:loop").
+  std::string scoped_label = ScopeLocalLabel(label);
+  std::string scoped_operands = ScopeLocalLabelsInOperand(operands);
+  if (!DispatchDirective(directive, scoped_label, scoped_operands, ctx)) {
+    return false;
+  }
+  // Directive was handled by registry.
+  // Update global label scope from the RAW (un-scoped) label so that
+  // subsequent ':local' labels are correctly qualified.  Only non-local
+  // labels (those that don't start with ':') update the scope.
+  if (!label.empty() && label[0] != ':' &&
+      (label[0] != ']' || current_scope_.global_label.empty())) {
+    current_scope_.global_label = label;
+    current_scope_.local_labels.clear();
+  }
+  return true;
+}
+
+bool MerlinSyntaxParser::TryHandleMacroLine(const std::string &directive,
+                                            const std::string &label,
+                                            const std::string &operands,
+                                            Section &section,
+                                            ConcreteSymbolTable &symbols) {
+  std::string upper_directive = ToUpper(directive);
+  if (!macros_.contains(upper_directive)) {
+    return false;
+  }
+  // Create label atom first if label present
+  if (!label.empty()) {
+    uint32_t label_addr = in_dum_block_ ? dum_address_ : current_address_;
+    std::string scoped_lbl = ScopeLocalLabel(label);
+    symbols.Define(scoped_lbl, SymbolType::Label,
+                   std::make_shared<LiteralExpr>(label_addr));
+    if (!in_dum_block_) {
+      section.atoms.push_back(
+          std::make_shared<LabelAtom>(scoped_lbl, label_addr));
+    }
+    if (label[0] != ':' &&
+        (label[0] != ']' || current_scope_.global_label.empty())) {
+      current_scope_.global_label = label;
+      current_scope_.local_labels.clear();
+    }
+  }
+  // Expand macro
+  DirectiveContext ctx;
+  ctx.section = &section;
+  ctx.symbols = &symbols;
+  ctx.current_address = &current_address_;
+  ctx.parser_state = this;
+  ctx.current_file = current_file_;
+  ctx.current_line = current_line_;
+  ctx.operand = operands;
+  ctx.mnemonic = directive;
+  ExpandMacro(ctx, section, symbols);
+  return true;
+}
+
+void MerlinSyntaxParser::HandleInstructionLine(const std::string &directive,
+                                               const std::string &label,
+                                               std::string operands,
+                                               Section &section,
+                                               ConcreteSymbolTable &symbols) {
+  // Create label atom first if label present
+  if (!label.empty()) {
+    uint32_t label_addr = in_dum_block_ ? dum_address_ : current_address_;
+    std::string scoped_label = ScopeLocalLabel(label);
+
+    // ]variable code labels (e.g. "]rts  rts") are redefined across
+    // subroutines.  Give each definition a unique name (]rts_1, ]rts_2, …) so
+    // that multi-pass assembly resolves references to the *nearby* definition
+    // rather than always using the last global one.  Only label-on-instruction
+    // definitions get unique names; EQU-style ]var = VALUE assignments keep
+    // their original name because they act as mutable numeric variables.
+    if (!label.empty() && label[0] == ']' &&
+        label.find(':') == std::string::npos) {
+      int seq = ++var_label_seq_[label]; // increment and capture new seq# // NOLINT(cppcoreguidelines-init-variables)
+      scoped_label = label + "_" + std::to_string(seq);
+    }
+
+    symbols.Define(scoped_label, SymbolType::Label,
+                   std::make_shared<LiteralExpr>(label_addr));
+    if (!in_dum_block_) {
+      section.atoms.push_back(
+          std::make_shared<LabelAtom>(scoped_label, label_addr));
+    }
+    if (label[0] != ':' &&
+        (label[0] != ']' || current_scope_.global_label.empty())) {
+      // True global labels (no ':' or ']' prefix) always update scope.
+      // ]variable labels are mutable variables, NOT scope anchors — EXCEPT at
+      // the start of the file before any true global label exists.  In that
+      // case they must anchor scope so :local labels around them can resolve.
+      current_scope_.global_label = label;
+      current_scope_.local_labels.clear();
+    }
+  }
+  // Translate any ':word' local-label references to the scoped name, then
+  // expand ]variable references to their current unique-instance names, then
+  // strip Merlin inline string comments (e.g. "#99 \"stabbed\"" → "#99"),
+  // then expand Merlin char literals ("X"/'X') to their Apple II high-bit hex
+  // values so the shared ParseExpression never sees Merlin char-literal syntax.
+  operands = ScopeLocalLabelsInOperand(operands);
+  operands = ExpandVarLabelsInOperand(operands);
+  // V1: Strip Merlin inline comment from instruction operand.
+  // In Merlin, any whitespace-separated trailing text is a comment — it need
+  // not start with ';' or a quote.  e.g.:
+  //   "#99 \"stabbed\""  → "#99"   (quoted string comment)
+  //   "#-5 impaled"      → "#-5"   (bare word comment)
+  // Only strip when the operand (after skipping a leading '#') does NOT start
+  // with a quote (which would be a char literal like "#\"A\"").
+  {
+    std::string stripped = operands;
+    // Skip leading '#' or '<' prefix (immediate / low-byte operators)
+    size_t offset = 0;
+    if (!stripped.empty() && (stripped[0] == '#' || stripped[0] == '<')) {
+      offset = 1;
+    }
+    // If the expression itself starts with a quote, leave it alone (char
+    // literal)
+    if (offset < stripped.size() && stripped[offset] != '"' &&
+        stripped[offset] != '\'') {
+      for (size_t i = offset; i < stripped.size(); ++i) {
+        if (stripped[i] == ' ' || stripped[i] == '\t') {
+          // Any space/tab after the expression = start of comment field
+          stripped = stripped.substr(0, offset) +
+                     Trim(stripped.substr(offset, i - offset));
+          break;
+        }
+      }
+    }
+    operands = stripped;
+  }
+  operands = ExpandMerlinCharLiterals(operands);
+  section.atoms.push_back(
+      std::make_shared<InstructionAtom>(directive, operands));
+  current_address_ += 1; // Placeholder size
+}
+
+// ============================================================================
 // Line Parsing
 // ============================================================================
 
@@ -1444,136 +1627,17 @@ void MerlinSyntaxParser::ParseLine(const std::string &line, Section &section,
     operands = "";
   }
 
-  // Handle directives using DirectiveRegistry pattern
-  // Build DirectiveContext for the handler
-  DirectiveContext ctx;
-  ctx.section = &section;
-  ctx.symbols = &symbols;
-  ctx.current_address = &current_address_;
-  ctx.parser_state = this; // For accessing Merlin-specific state if needed
-  ctx.current_file = current_file_;
-  ctx.current_line = current_line_;
-
-  // Scope the label and operands before dispatching so directive handlers
-  // define label atoms under the correct scoped name (e.g. "tone:pitch" not
-  // just ":pitch"), and operand references like ":loop" are expanded to their
-  // scoped names (e.g. "alertstand:loop").
-  std::string scoped_label_for_directive = ScopeLocalLabel(label);
-  std::string scoped_operands_for_directive = ScopeLocalLabelsInOperand(operands);
-  if (DispatchDirective(directive, scoped_label_for_directive,
-                        scoped_operands_for_directive, ctx)) {
-    // Directive was handled by registry.
-    // Update global label scope from the RAW (un-scoped) label so that
-    // subsequent ':local' labels are correctly qualified.  Only non-local
-    // labels (those that don't start with ':') update the scope.
-    if (!label.empty() && label[0] != ':' &&
-        (label[0] != ']' || current_scope_.global_label.empty())) {
-      current_scope_.global_label = label;
-      current_scope_.local_labels.clear();
-    }
+  // Dispatch to directive, macro, or instruction handler.
+  // TryHandleDirectiveLine and TryHandleMacroLine preserve the original
+  // if-else ordering: directives checked first, then macros, then instructions.
+  if (TryHandleDirectiveLine(directive, label, operands, section, symbols)) {
     return;
   }
-
-  // Not a directive - check if it's a macro invocation
-  std::string upper_directive = ToUpper(directive);
-  if (macros_.contains(upper_directive)) {
-    // Create label atom first if label present
-    if (!label.empty()) {
-      uint32_t label_addr = in_dum_block_ ? dum_address_ : current_address_;
-      std::string scoped_label = ScopeLocalLabel(label);
-      symbols.Define(scoped_label, SymbolType::Label,
-                     std::make_shared<LiteralExpr>(label_addr));
-      if (!in_dum_block_) {
-        section.atoms.push_back(
-            std::make_shared<LabelAtom>(scoped_label, label_addr));
-      }
-      if (label[0] != ':' &&
-          (label[0] != ']' || current_scope_.global_label.empty())) {
-        current_scope_.global_label = label;
-        current_scope_.local_labels.clear();
-      }
-    }
-    // Expand macro
-    ctx.operand = operands;
-    ctx.mnemonic = directive;
-    ExpandMacro(ctx, section, symbols);
+  if (TryHandleMacroLine(directive, label, operands, section, symbols)) {
     return;
   }
-
-  // Assume it's an instruction
-  // Create label atom first if label present
-  if (!label.empty()) {
-    uint32_t label_addr = in_dum_block_ ? dum_address_ : current_address_;
-    std::string scoped_label = ScopeLocalLabel(label);
-
-    // ]variable code labels (e.g. "]rts  rts") are redefined across
-    // subroutines.  Give each definition a unique name (]rts_1, ]rts_2, …) so
-    // that multi-pass assembly resolves references to the *nearby* definition
-    // rather than always using the last global one.  Only label-on-instruction
-    // definitions get unique names; EQU-style ]var = VALUE assignments keep
-    // their original name because they act as mutable numeric variables.
-    if (!label.empty() && label[0] == ']' && label.find(':') == std::string::npos) {
-      int seq = ++var_label_seq_[label]; // increment and capture new seq# // NOLINT(cppcoreguidelines-init-variables)
-      scoped_label = label + "_" + std::to_string(seq);
-    }
-
-    symbols.Define(scoped_label, SymbolType::Label,
-                   std::make_shared<LiteralExpr>(label_addr));
-    if (!in_dum_block_) {
-      section.atoms.push_back(
-          std::make_shared<LabelAtom>(scoped_label, label_addr));
-    }
-    if (label[0] != ':' &&
-        (label[0] != ']' || current_scope_.global_label.empty())) {
-      // True global labels (no ':' or ']' prefix) always update scope.
-      // ]variable labels are mutable variables, NOT scope anchors — EXCEPT at
-      // the start of the file before any true global label exists.  In that
-      // case they must anchor scope so :local labels around them can resolve.
-      current_scope_.global_label = label;
-      current_scope_.local_labels.clear();
-    }
-  }
-  // Translate any ':word' local-label references to the scoped name, then
-  // expand ]variable references to their current unique-instance names, then
-  // strip Merlin inline string comments (e.g. "#99 \"stabbed\"" → "#99"),
-  // then expand Merlin char literals ("X"/'X') to their Apple II high-bit hex
-  // values so the shared ParseExpression never sees Merlin char-literal syntax.
-  operands = ScopeLocalLabelsInOperand(operands);
-  operands = ExpandVarLabelsInOperand(operands);
-  // V1: Strip Merlin inline comment from instruction operand.
-  // In Merlin, any whitespace-separated trailing text is a comment — it need
-  // not start with ';' or a quote.  e.g.:
-  //   "#99 \"stabbed\""  → "#99"   (quoted string comment)
-  //   "#-5 impaled"      → "#-5"   (bare word comment)
-  // Only strip when the operand (after skipping a leading '#') does NOT start
-  // with a quote (which would be a char literal like "#\"A\"").
-  {
-    std::string stripped = operands;
-    // Skip leading '#' or '<' prefix (immediate / low-byte operators)
-    size_t offset = 0;
-    if (!stripped.empty() && (stripped[0] == '#' || stripped[0] == '<')) {
-      offset = 1;
-    }
-    // If the expression itself starts with a quote, leave it alone (char literal)
-    if (offset < stripped.size() && stripped[offset] != '"' &&
-        stripped[offset] != '\'') {
-      for (size_t i = offset; i < stripped.size(); ++i) {
-        if (stripped[i] == ' ' || stripped[i] == '\t') {
-          // Any space/tab after the expression = start of comment field
-          stripped = stripped.substr(0, offset) +
-                     Trim(stripped.substr(offset, i - offset));
-          break;
-        }
-      }
-    }
-    operands = stripped;
-  }
-  operands = ExpandMerlinCharLiterals(operands);
-  section.atoms.push_back(
-      std::make_shared<InstructionAtom>(directive, operands));
-  current_address_ += 1; // Placeholder size
+  HandleInstructionLine(directive, label, operands, section, symbols);
 }
-
 // ============================================================================
 // Main Parse Function
 // ============================================================================
