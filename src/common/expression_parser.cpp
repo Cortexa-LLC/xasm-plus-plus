@@ -14,8 +14,9 @@ namespace xasm {
 ExpressionParser::ExpressionParser(const SymbolTable *symbols,
                                    const INumberParser *number_parser,
                                    ParserFeatures features)
-    : symbols_(symbols), number_parser_(number_parser),
-      features_(features) {}
+    : symbols_(symbols), number_parser_(number_parser), features_(features) {
+  InitPrefixTable();
+}
 
 std::shared_ptr<Expression> ExpressionParser::Parse(const std::string &str) {
   expr_ = str;
@@ -435,24 +436,6 @@ std::shared_ptr<Expression> ExpressionParser::TryParseDollarCurrentLocation() {
   return nullptr;
 }
 
-std::shared_ptr<Expression> ExpressionParser::TryParseNumberLiteral() {
-  // Check if it's a number
-  if (std::isdigit(Peek()) || Peek() == '$' || Peek() == '%') {
-    int64_t value = ParseNumber();
-    return std::make_shared<LiteralExpr>(value);
-  }
-
-  // Check for hex with 0x/0b prefix
-  if (Peek() == '0' && pos_ + 1 < expr_.length() &&
-      (expr_[pos_ + 1] == 'x' || expr_[pos_ + 1] == 'X' ||
-       expr_[pos_ + 1] == 'b' || expr_[pos_ + 1] == 'B')) {
-    int64_t value = ParseNumber();
-    return std::make_shared<LiteralExpr>(value);
-  }
-
-  return nullptr;
-}
-
 std::shared_ptr<Expression> ExpressionParser::TryParseIdentifierOrCall() {
   // Identifier (symbol or function)
   // ADR-005 V8: ']' prefix for Merlin ]variable labels is gated behind
@@ -510,58 +493,184 @@ std::shared_ptr<Expression> ExpressionParser::TryParseIdentifierOrCall() {
 }
 
 // ============================================================================
+// Prefix dispatch table — InitPrefixTable and per-radix helpers
+// ============================================================================
+
+void ExpressionParser::InitPrefixTable() {
+  // Parenthesized expression
+  prefix_table_['('] = [this]() { return TryParseParenthesized(); };
+
+  // Bracketed expression (Z80/EDTASM)
+  prefix_table_['['] = [this]() { return TryParseBracketed(); };
+
+  // '*' — current-location counter
+  prefix_table_['*'] = [this]() -> std::shared_ptr<Expression> {
+    Consume();
+    return std::make_shared<CurrentLocationExpr>();
+  };
+
+  // '$' — current-location OR hex literal (TryParseDollarCurrentLocation
+  // returns nullptr when followed by a hex digit, so fall through to hex)
+  prefix_table_['$'] = [this]() -> std::shared_ptr<Expression> {
+    if (auto e = TryParseDollarCurrentLocation()) {
+      return e;
+    }
+    return std::make_shared<LiteralExpr>(ParseDollarHex());
+  };
+
+  // '%' — binary literal
+  prefix_table_['%'] = [this]() -> std::shared_ptr<Expression> {
+    Consume(); // consume '%'
+    return std::make_shared<LiteralExpr>(ParsePercentBinary());
+  };
+
+  // '@' — octal literal (some syntaxes)
+  prefix_table_['@'] = [this]() -> std::shared_ptr<Expression> {
+    Consume(); // consume '@'
+    return std::make_shared<LiteralExpr>(ParseOctalDigits());
+  };
+
+  // Digits — decimal, 0x-hex, or 0b-binary
+  auto digit_fn = [this]() -> std::shared_ptr<Expression> {
+    if (Peek() == '0' && pos_ + 1 < expr_.length()) {
+      char next = expr_[pos_ + 1];
+      if (next == 'x' || next == 'X') {
+        Consume(); // '0'
+        Consume(); // 'x'
+        return std::make_shared<LiteralExpr>(Parse0xHex());
+      }
+      if (next == 'b' || next == 'B') {
+        Consume(); // '0'
+        Consume(); // 'b'
+        return std::make_shared<LiteralExpr>(Parse0bBinary());
+      }
+    }
+    return std::make_shared<LiteralExpr>(ParseDecimalDigits());
+  };
+  for (char d = '0'; d <= '9'; ++d) {
+    prefix_table_[d] = digit_fn;
+  }
+}
+
+// --- Per-radix number helpers -----------------------------------------------
+
+int64_t ExpressionParser::ParseDollarHex() {
+  // '$' is still in stream — consume it
+  Consume();
+  if (!std::isxdigit(Peek())) {
+    throw std::runtime_error("Expected hexadecimal digit after $");
+  }
+  int64_t value = 0;
+  while (std::isxdigit(Peek())) {
+    char c = Consume();
+    int digit = (c >= '0' && c <= '9') ? (c - '0')
+                : (c >= 'A' && c <= 'F') ? (c - 'A' + 10)
+                                          : (c - 'a' + 10);
+    value = (value * 16) + digit;
+  }
+  return value;
+}
+
+int64_t ExpressionParser::ParsePercentBinary() {
+  // '%' already consumed by caller
+  if (Peek() != '0' && Peek() != '1') {
+    throw std::runtime_error("Invalid binary number: expected 0 or 1 after %");
+  }
+  int64_t value = 0;
+  while (Peek() == '0' || Peek() == '1' || Peek() == '.') {
+    char ch = Consume();
+    if (ch != '.') {
+      value = (value * 2) + (ch - '0');
+    }
+  }
+  if (std::isdigit(Peek())) {
+    throw std::runtime_error("Invalid binary digit '" + std::string(1, Peek()) +
+                             "' in binary literal");
+  }
+  return value;
+}
+
+int64_t ExpressionParser::Parse0xHex() {
+  // '0x' already consumed by caller
+  if (!std::isxdigit(Peek())) {
+    throw std::runtime_error("Expected hexadecimal digit after 0x");
+  }
+  int64_t value = 0;
+  while (std::isxdigit(Peek())) {
+    char c = Consume();
+    int digit = (c >= '0' && c <= '9') ? (c - '0')
+                : (c >= 'A' && c <= 'F') ? (c - 'A' + 10)
+                                          : (c - 'a' + 10);
+    value = (value * 16) + digit;
+  }
+  return value;
+}
+
+int64_t ExpressionParser::Parse0bBinary() {
+  // '0b' already consumed by caller
+  if (Peek() != '0' && Peek() != '1') {
+    throw std::runtime_error(
+        "Invalid binary number: expected 0 or 1 after 0b");
+  }
+  int64_t value = 0;
+  while (Peek() == '0' || Peek() == '1') {
+    value = (value * 2) + (Consume() - '0');
+  }
+  return value;
+}
+
+int64_t ExpressionParser::ParseOctalDigits() {
+  // '@' already consumed by caller
+  if (Peek() < '0' || Peek() > '7') {
+    throw std::runtime_error("Expected octal digit after @");
+  }
+  int64_t value = 0;
+  while (Peek() >= '0' && Peek() <= '7') {
+    value = (value * 8) + (Consume() - '0');
+  }
+  return value;
+}
+
+int64_t ExpressionParser::ParseDecimalDigits() {
+  // First char must be a digit (not yet consumed)
+  if (!std::isdigit(Peek())) {
+    throw std::runtime_error("Expected decimal digit");
+  }
+  int64_t value = 0;
+  while (std::isdigit(Peek())) {
+    value = (value * 10) + (Consume() - '0');
+  }
+  return value;
+}
+
+// ============================================================================
 
 std::shared_ptr<Expression> ExpressionParser::ParsePrimary() {
   SkipWhitespace();
 
-  // Parenthesized expression
-  if (auto expr = TryParseParenthesized()) {
-    return expr;
-  }
-
-  // Bracketed expression (Z80/EDTASM alternative to parentheses)
-  if (auto expr = TryParseBracketed()) {
-    return expr;
-  }
-
   // Try custom number parser first for syntax-specific formats
-  // This handles cases like "0FFH", "$ABCD", "%1010.0101", "'A", "\"A", "/A",
-  // etc.
+  // (handles "0FFH", "'A", "\"A", "/A", etc.)
   if (auto expr = TryParseCustomNumber()) {
     return expr;
   }
 
-  // Check if it's $ without a hex digit (current location operator)
-  if (auto expr = TryParseDollarCurrentLocation()) {
-    return expr;
+  // Dispatch on first character via prefix table
+  auto it = prefix_table_.find(Peek());
+  if (it != prefix_table_.end()) {
+    return it->second();
   }
 
-  // Check if it's a number literal
-  if (auto expr = TryParseNumberLiteral()) {
-    return expr;
-  }
-
-  // Identifier (symbol or function)
+  // Identifier, symbol, or function call
   if (auto expr = TryParseIdentifierOrCall()) {
     return expr;
-  }
-
-  // `*` as current address (Merlin, SCMASM, and many other assemblers)
-  // In expression context (ParsePrimary), `*` is always current location.
-  // Binary multiply is handled in ParseMulDiv between two primaries.
-  if (Peek() == '*') {
-    Consume();
-    return std::make_shared<CurrentLocationExpr>();
-  }
-
-  // Unexpected character
-  if (pos_ < expr_.length()) {
-    throw std::runtime_error("Unexpected character: " + std::string(1, Peek()));
   }
 
   // Silence unused warning (symbols_ is passed for future use)
   (void)symbols_;
 
+  if (pos_ < expr_.length()) {
+    throw std::runtime_error("Unexpected character: " + std::string(1, Peek()));
+  }
   throw std::runtime_error("Expected expression");
 }
 
@@ -600,110 +709,6 @@ bool ExpressionParser::Match(const std::string &str) {
   }
 
   return false;
-}
-
-int64_t ExpressionParser::ParseNumber() {
-  SkipWhitespace();
-
-  // Hexadecimal with $ prefix
-  if (Peek() == '$') {
-    Consume();
-    int64_t value = 0;
-    if (!std::isxdigit(Peek())) {
-      throw std::runtime_error("Expected hexadecimal digit after $");
-    }
-    while (std::isxdigit(Peek())) {
-      char c = Consume();
-      int digit = 0;
-      if (c >= '0' && c <= '9') {
-        digit = c - '0';
-      } else if (c >= 'A' && c <= 'F') {
-        digit = c - 'A' + 10;
-      } else if (c >= 'a' && c <= 'f') {
-        digit = c - 'a' + 10;
-      } else {
-        break;
-      }
-      value = (value * 16) + digit;
-    }
-    return value;
-  }
-
-  // Binary with % prefix
-  if (Peek() == '%') {
-    Consume();
-    int64_t value = 0;
-    if (Peek() != '0' && Peek() != '1') {
-      throw std::runtime_error(
-          "Invalid binary number: expected 0 or 1 after %");
-    }
-    while (Peek() == '0' || Peek() == '1' || Peek() == '.') {
-      char ch = Consume();
-      if (ch != '.') {
-        value = (value * 2) + (ch - '0');
-      }
-      // '.' is silently skipped as a visual digit separator (e.g. %0000.0000)
-    }
-    // After valid 0/1 digits, reject stray decimal digits (e.g. %1012)
-    if (std::isdigit(Peek())) {
-      throw std::runtime_error(
-          "Invalid binary digit '" + std::string(1, Peek()) +
-          "' in binary literal");
-    }
-    return value;
-  }
-
-  // Hexadecimal with 0x prefix
-  if (Peek() == '0' && pos_ + 1 < expr_.length() &&
-      (expr_[pos_ + 1] == 'x' || expr_[pos_ + 1] == 'X')) {
-    Consume(); // '0'
-    Consume(); // 'x' or 'X'
-    int64_t value = 0;
-    if (!std::isxdigit(Peek())) {
-      throw std::runtime_error("Expected hexadecimal digit after 0x");
-    }
-    while (std::isxdigit(Peek())) {
-      char c = Consume();
-      int digit = 0;
-      if (c >= '0' && c <= '9') {
-        digit = c - '0';
-      } else if (c >= 'A' && c <= 'F') {
-        digit = c - 'A' + 10;
-      } else if (c >= 'a' && c <= 'f') {
-        digit = c - 'a' + 10;
-      } else {
-        break;
-      }
-      value = (value * 16) + digit;
-    }
-    return value;
-  }
-
-  // Binary with 0b prefix
-  if (Peek() == '0' && pos_ + 1 < expr_.length() &&
-      (expr_[pos_ + 1] == 'b' || expr_[pos_ + 1] == 'B')) {
-    Consume(); // '0'
-    Consume(); // 'b' or 'B'
-    int64_t value = 0;
-    if (Peek() != '0' && Peek() != '1') {
-      throw std::runtime_error(
-          "Invalid binary number: expected 0 or 1 after 0b");
-    }
-    while (Peek() == '0' || Peek() == '1') {
-      value = (value * 2) + (Consume() - '0');
-    }
-    return value;
-  }
-
-  // Decimal
-  if (!std::isdigit(Peek())) {
-    throw std::runtime_error("Expected number");
-  }
-  int64_t value = 0;
-  while (std::isdigit(Peek())) {
-    value = (value * 10) + (Consume() - '0');
-  }
-  return value;
 }
 
 std::string ExpressionParser::ParseIdentifier() {

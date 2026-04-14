@@ -14,8 +14,10 @@
 
 #include "xasm++/expression.h"
 #include <cstddef>
+#include <functional>
 #include <memory>
 #include <string>
+#include <unordered_map>
 
 namespace xasm {
 
@@ -214,6 +216,18 @@ private:
   std::string expr_ = {};              ///< Current expression being parsed
   size_t pos_ = 0;                     ///< Current position in expression
 
+  /// Function type for prefix-dispatch table entries
+  using PrefixParseFn = std::function<std::shared_ptr<Expression>()>;
+
+  /// Dispatch table: maps first character to parse function
+  std::unordered_map<char, PrefixParseFn> prefix_table_;
+
+  /**
+   * @brief Populate prefix_table_ with all prefix parse functions.
+   * Called once from the constructor.
+   */
+  void InitPrefixTable();
+
   // ========================================================================
   // Recursive descent parsing methods (precedence order: low to high)
   // ========================================================================
@@ -313,12 +327,6 @@ private:
   std::shared_ptr<Expression> TryParseDollarCurrentLocation();
 
   /**
-   * @brief Try to parse a numeric literal (decimal, hex, binary)
-   * @return Expression if matched, nullptr otherwise
-   */
-  std::shared_ptr<Expression> TryParseNumberLiteral();
-
-  /**
    * @brief Try to parse an identifier, symbol reference, or function call
    * @return Expression if matched, nullptr otherwise
    */
@@ -353,11 +361,40 @@ private:
   bool Match(const std::string &str);
 
   /**
-   * @brief Parse a number literal (decimal, hex, binary)
-   * @return Parsed number value
-   * @throws std::runtime_error if invalid number format
+   * @brief Parse hexadecimal digits after '$' prefix (already consumed).
+   * @return Parsed hex value
    */
-  int64_t ParseNumber();
+  int64_t ParseDollarHex();
+
+  /**
+   * @brief Parse binary digits after '%' prefix (already consumed).
+   * @return Parsed binary value
+   */
+  int64_t ParsePercentBinary();
+
+  /**
+   * @brief Parse hexadecimal digits after '0x'/'0X' prefix (already consumed).
+   * @return Parsed hex value
+   */
+  int64_t Parse0xHex();
+
+  /**
+   * @brief Parse binary digits after '0b'/'0B' prefix (already consumed).
+   * @return Parsed binary value
+   */
+  int64_t Parse0bBinary();
+
+  /**
+   * @brief Parse octal digits after '@' prefix (already consumed).
+   * @return Parsed octal value
+   */
+  int64_t ParseOctalDigits();
+
+  /**
+   * @brief Parse a decimal integer literal at current position.
+   * @return Parsed decimal value
+   */
+  int64_t ParseDecimalDigits();
 
   /**
    * @brief Parse an identifier (symbol or function name)
