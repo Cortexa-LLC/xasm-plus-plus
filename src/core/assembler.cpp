@@ -531,6 +531,50 @@ bool Assembler::HandleDataAtom(const std::shared_ptr<Atom> &atom,
 // advance address counters and continue), or false when standard encoding
 // should be used instead.
 // ---------------------------------------------------------------------------
+// ResolveBranchOperand — format a branch target operand as "$XXXX" hex string.
+// Pass 1 always returns current VA (start short; let passes 2+ expand only when
+// necessary).  Pass 2+ resolves via ExpressionParser so SYMBOL, SYMBOL+N, and
+// arbitrary expressions are all handled without a hand-rolled lookup loop.
+static std::string ResolveBranchOperand(const std::string &trimmed,
+                                        uint32_t virtual_address,
+                                        ConcreteSymbolTable &symbols,
+                                        ParserFeatures features,
+                                        int pass_number) {
+  auto hex_va = [&]() {
+    std::ostringstream oss;
+    oss << "$" << std::hex << virtual_address;
+    return oss.str();
+  };
+
+  if (trimmed.find(',') != std::string::npos) {
+    return trimmed; // multi-operand (MVN/MVP): pass as-is
+  }
+  if (trimmed == "*") {
+    return hex_va(); // branch-to-self: current VA
+  }
+  if (pass_number <= 1) {
+    return hex_va(); // pass 1: always short to avoid spurious expansions
+  }
+  // Try ExpressionParser first (handles SYMBOL, SYMBOL+N, and expressions).
+  // Some forms (e.g. SCMASM colon-labels like ":2") cannot be parsed by
+  // ExpressionParser, so fall back to direct ConcreteSymbolTable::Lookup
+  // on any parse/evaluate failure, then to current VA (stay short).
+  try {
+    auto expr = ExpressionParser(&symbols, nullptr, features).Parse(trimmed);
+    std::ostringstream oss;
+    oss << "$" << std::hex << (static_cast<uint32_t>(expr->Evaluate(symbols)) & 0xFFFF);
+    return oss.str();
+  } catch (const std::exception &) {
+    int64_t sym_val = 0;
+    if (symbols.Lookup(trimmed, sym_val)) {
+      std::ostringstream oss;
+      oss << "$" << std::hex << (static_cast<uint32_t>(sym_val) & 0xFFFF);
+      return oss.str();
+    }
+    return hex_va();
+  }
+}
+
 bool Assembler::TrySpecialEncodeInstruction(InstructionAtom &inst,
                                             uint32_t current_address,
                                             uint32_t virtual_address,
@@ -538,77 +582,18 @@ bool Assembler::TrySpecialEncodeInstruction(InstructionAtom &inst,
                                             AssemblerResult &result,
                                             int pass_number) {
   const std::string &mnemonic = inst.mnemonic;
-  const std::string &operand  = inst.operand;
 
   if (!cpu_->RequiresSpecialEncoding(mnemonic)) {
-    return false; // caller should use standard encoding
+    return false;
   }
 
   try {
-    // Resolve labels in operand before passing to CPU plugin.
-    // Branch instructions need a target address, not a label name.
-    std::string resolved_operand = operand;
-    std::string trimmed = Trim(operand);
-
-    if (trimmed.find(',') != std::string::npos) {
-      // Multi-operand instruction (MVN/MVP block move): pass as-is
-    } else if (trimmed == "*") {
-      // * means current PC address (branch to self).
-      // Use virtual_address so phased code uses the virtual PC.
-      std::ostringstream oss;
-      oss << "$" << std::hex << virtual_address;
-      resolved_operand = oss.str();
-    } else if (!trimmed.empty() && trimmed[0] != '$' &&
-               trimmed[0] != '#' && trimmed[0] != '(') {
-      // Try to resolve as a symbol.  ConcreteSymbolTable::Lookup handles
-      // SCMASM uppercase fallback internally (ADR-005 V1: migration complete).
-      int64_t symbol_value = 0;
-      int64_t expr_offset  = 0;
-      std::string lookup_name = trimmed;
-      if (!symbols.Lookup(lookup_name, symbol_value)) {
-        // Try SYMBOL+N or SYMBOL-N form (e.g. "LABEL+5").
-        lookup_name = "";
-        for (size_t i = 1; i < trimmed.size(); ++i) {
-          char c = trimmed[i];
-          if (c == '+' || c == '-') {
-            std::string sym_part = trimmed.substr(0, i);
-            std::string off_str  = trimmed.substr(i);
-            int64_t sym_val = 0;
-            if (symbols.Lookup(sym_part, sym_val)) {
-              try {
-                expr_offset = std::stoll(off_str, nullptr, 0);
-              } catch (...) {
-                expr_offset = 0;
-              }
-              symbol_value = sym_val;
-              lookup_name  = sym_part;
-              break;
-            }
-          }
-        }
-      }
-      if (!lookup_name.empty() && pass_number > 1) {
-        // Symbol resolved — use actual address (plus any expression offset).
-        // The CPU plugin (EncodeInstructionSpecial) emits SHORT (2 bytes) if in
-        // range, LONG (3 or 5 bytes) only when the target is genuinely outside
-        // ±127 bytes.  Multiple passes converge to the minimum expansion set.
-        std::ostringstream oss;
-        oss << "$" << std::hex << ((symbol_value + expr_offset) & 0xFFFF);
-        resolved_operand = oss.str();
-      } else {
-        // Pass 1: always assume SHORT (use current VA as target → offset = -2,
-        // always in range).  Stale parse-time addresses cause spurious long-branch
-        // expansions; starting all branches short in pass 1 lets passes 2+
-        // converge to the minimum expansion set.
-        std::ostringstream oss;
-        oss << "$" << std::hex << virtual_address;
-        resolved_operand = oss.str();
-      }
-    }
-
+    std::string trimmed = Trim(inst.operand);
+    std::string resolved = ResolveBranchOperand(
+        trimmed, virtual_address, symbols, expression_features_, pass_number);
     inst.encoded_bytes = cpu_->EncodeInstructionSpecial(
-        mnemonic, resolved_operand, static_cast<uint16_t>(virtual_address));
-    (void)current_address; // address counters updated by the caller
+        mnemonic, resolved, static_cast<uint16_t>(virtual_address));
+    (void)current_address;
     return true;
   } catch (const std::exception &e) {
     AssemblerError error;
@@ -616,7 +601,7 @@ bool Assembler::TrySpecialEncodeInstruction(InstructionAtom &inst,
     error.message  = "Special encoding failed for " + mnemonic + ": " + e.what();
     result.errors.push_back(error);
     result.success = false;
-    return true; // error reported; caller must not attempt standard encoding
+    return true;
   }
 }
 
@@ -668,48 +653,27 @@ uint16_t Assembler::ParseInstructionOperandValue(
     return 0;
   }
 
-  if (value_str[0] == '#') {
-    // Immediate: #$42 or #SYMBOL
-    std::string expr_str = value_str.substr(1);
-    try {
-      auto expr = ExpressionParser(&symbols, nullptr, expression_features_).Parse(expr_str);
-      return static_cast<uint16_t>(expr->Evaluate(symbols));
-    } catch (const UndefinedSymbolError &) {
-      return 0; // Forward reference — resolve next pass
-    }
-  }
-
-  if (value_str[0] == '$') {
-    // Absolute/Zero Page: $1234 or expression like $528+2
-    try {
-      auto expr = ExpressionParser(&symbols, nullptr, expression_features_).Parse(value_str);
-      return static_cast<uint16_t>(expr->Evaluate(symbols));
-    } catch (const UndefinedSymbolError &) {
-      return 0; // Forward reference — resolve next pass
-    }
-  }
-
-  if (value_str[0] == '/') {
-    // SCMASM high byte immediate: /expr (equivalent to #>expr)
-    std::string expr_str = value_str.substr(1);
-    try {
-      auto expr = ExpressionParser(&symbols, nullptr, expression_features_).Parse(expr_str);
-      int64_t expr_value = expr->Evaluate(symbols);
-      return static_cast<uint16_t>((static_cast<uint32_t>(expr_value) >> 8) & 0xFF);
-    } catch (const UndefinedSymbolError &) {
-      return 0; // Forward reference — resolve next pass
-    }
-  }
-
   if (value_str == "A") {
-    // Accumulator addressing mode — no operand value needed
-    return 0;
+    return 0; // Accumulator addressing mode — no operand value needed
   }
 
-  // Label reference or general expression (e.g. ZPPTR+1)
+  // All remaining forms (#immediate, $hex, /high-byte, label/expr) are
+  // handled by ExpressionParser.  Strip known prefix characters first,
+  // then evaluate; apply a right-shift for the SCMASM /expr high-byte form.
+  std::string expr_str = value_str;
+  int right_shift = 0;
+  if (!expr_str.empty() && expr_str[0] == '#') {
+    expr_str = expr_str.substr(1); // strip # — ExpressionParser handles the rest
+  } else if (!expr_str.empty() && expr_str[0] == '/') {
+    expr_str = expr_str.substr(1); // strip / — take bits [15:8] of result
+    right_shift = 8;
+  }
+  // $ and bare symbols are passed through unchanged; ExpressionParser handles both.
+
   try {
-    auto expr = ExpressionParser(&symbols, nullptr, expression_features_).Parse(value_str);
-    return static_cast<uint16_t>(expr->Evaluate(symbols));
+    auto expr = ExpressionParser(&symbols, nullptr, expression_features_).Parse(expr_str);
+    int64_t val = expr->Evaluate(symbols);
+    return static_cast<uint16_t>((static_cast<uint32_t>(val) >> right_shift) & 0xFFFF);
   } catch (const UndefinedSymbolError &) {
     return 0; // Forward reference — resolve next pass
   }
