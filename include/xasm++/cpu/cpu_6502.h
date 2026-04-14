@@ -14,8 +14,10 @@
 #include "xasm++/cpu/cpu_6502_branch_handler.h"
 #include "xasm++/cpu/cpu_plugin.h"
 #include <cstdint>
+#include <functional>
 #include <optional>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 namespace xasm {
@@ -617,6 +619,14 @@ public:
   /** @} */ // End of Branch Relaxation Methods
 
 private:
+  // Dispatch table type for EncodeInstruction
+  using EncFn =
+      std::function<std::vector<uint8_t>(const Cpu6502 *, uint32_t, AddressingMode)>;
+
+  // Static encoder dispatch table: mnemonic -> member-function wrapper
+  // Populated once; looked up in EncodeInstruction().
+  static const std::unordered_map<std::string, EncFn> &EncoderTable();
+
   // Opcode table structure for reducing duplication
   // Maps addressing modes to their corresponding opcodes for an instruction
   struct OpcodeTable {

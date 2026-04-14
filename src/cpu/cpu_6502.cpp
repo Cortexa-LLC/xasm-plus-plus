@@ -1979,6 +1979,127 @@ void Cpu6502::SetRelaxBranches(bool relax) { relax_branches_ = relax; }
 // ============================================================================
 
 /**
+ * @brief Static dispatch table: mnemonic -> encoder wrapper
+ *
+ * Each entry holds a callable that forwards (cpu_ptr, operand, mode) to the
+ * appropriate Encode* member function.  The table is built once on first call
+ * and then reused — O(1) dispatch replaces the original 89-branch if-chain.
+ */
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
+const std::unordered_map<std::string, Cpu6502::EncFn> &Cpu6502::EncoderTable() {
+  // clang-format off
+  static const std::unordered_map<std::string, EncFn> kTable = {
+      // Load / Store
+      {LDA, [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeLDA(op, m); }},
+      {LDX, [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeLDX(op, m); }},
+      {LDY, [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeLDY(op, m); }},
+      {STA, [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeSTA(op, m); }},
+      {STX, [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeSTX(op, m); }},
+      {STY, [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeSTY(op, m); }},
+      {STZ, [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeSTZ(op, m); }},
+      // Arithmetic
+      {ADC, [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeADC(op, m); }},
+      {SBC, [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeSBC(op, m); }},
+      {INC, [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeINC(op, m); }},
+      {DEC, [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeDEC(op, m); }},
+      {INX, [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeINX(); }},
+      {INY, [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeINY(); }},
+      {DEX, [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeDEX(); }},
+      {DEY, [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeDEY(); }},
+      // Logic
+      {AND, [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeAND(op, m); }},
+      {ORA, [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeORA(op, m); }},
+      {EOR, [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeEOR(op, m); }},
+      {BIT, [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeBIT(op, m); }},
+      // Compare
+      {CMP, [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeCMP(op, m); }},
+      {CPX, [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeCPX(op, m); }},
+      {CPY, [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeCPY(op, m); }},
+      // Branch (short — non-relaxed; relaxed branches go via EncodeInstructionSpecial)
+      {BEQ, [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeBEQ(op, m); }},
+      {BNE, [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeBNE(op, m); }},
+      {BCC, [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeBCC(op, m); }},
+      {BCS, [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeBCS(op, m); }},
+      {BMI, [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeBMI(op, m); }},
+      {BPL, [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeBPL(op, m); }},
+      {BVC, [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeBVC(op, m); }},
+      {BVS, [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeBVS(op, m); }},
+      {BRA, [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeBRA(op, m); }},
+      // Jump / Call / Return
+      {JMP, [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeJMP(op, m); }},
+      {JSR, [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeJSR(op, m); }},
+      {RTS, [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeRTS(); }},
+      {RTI, [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeRTI(); }},
+      // Stack
+      {PHA, [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodePHA(); }},
+      {PLA, [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodePLA(); }},
+      {PHP, [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodePHP(); }},
+      {PLP, [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodePLP(); }},
+      {PHX, [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodePHX(); }},
+      {PLX, [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodePLX(); }},
+      {PHY, [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodePHY(); }},
+      {PLY, [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodePLY(); }},
+      // Shift / Rotate
+      {ASL, [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeASL(op, m); }},
+      {LSR, [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeLSR(op, m); }},
+      {ROL, [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeROL(op, m); }},
+      {ROR, [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeROR(op, m); }},
+      // Flag manipulation
+      {CLC, [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeCLC(); }},
+      {SEC, [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeSEC(); }},
+      {CLD, [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeCLD(); }},
+      {SED, [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeSED(); }},
+      {CLI, [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeCLI(); }},
+      {SEI, [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeSEI(); }},
+      {CLV, [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeCLV(); }},
+      // Transfer
+      {TAX, [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeTAX(); }},
+      {TAY, [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeTAY(); }},
+      {TXA, [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeTXA(); }},
+      {TYA, [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeTYA(); }},
+      {TSX, [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeTSX(); }},
+      {TXS, [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeTXS(); }},
+      // Misc
+      {NOP, [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeNOP(); }},
+      {BRK, [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeBRK(); }},
+      // 65C02 bit-test
+      {TRB, [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeTRB(op, m); }},
+      {TSB, [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeTSB(op, m); }},
+      // 65816 bank / status
+      {PHB, [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodePHB(); }},
+      {PLB, [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodePLB(); }},
+      {PHK, [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodePHK(); }},
+      {PHD, [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodePHD(); }},
+      {PLD, [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodePLD(); }},
+      {TCD, [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeTCD(); }},
+      {TDC, [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeTDC(); }},
+      {TCS, [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeTCS(); }},
+      {TSC, [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeTSC(); }},
+      {TXY, [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeTXY(); }},
+      {TYX, [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeTYX(); }},
+      // 65816 long jump / call / return
+      {JML, [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeJML(op, m); }},
+      {JSL, [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeJSL(op, m); }},
+      {RTL, [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeRTL(); }},
+      // 65816 effective address push
+      {PEA, [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodePEA(op, m); }},
+      {PEI, [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodePEI(op, m); }},
+      {PER, [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodePER(op, m); }},
+      // 65816 misc
+      {XBA, [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeXBA(); }},
+      {XCE, [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeXCE(); }},
+      {SEP, [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeSEP(op, m); }},
+      {REP, [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeREP(op, m); }},
+      {COP, [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeCOP(op, m); }},
+      {WDM, [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeWDM(op, m); }},
+      {WAI, [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeWAI(); }},
+      {STP, [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeSTP(); }},
+  };
+  // clang-format on
+  return kTable;
+}
+
+/**
  * @brief Polymorphic instruction encoder - dispatches to specific Encode*
  * methods
  *
