@@ -286,6 +286,33 @@ private:
   bool HandleSpaceAtom(const std::shared_ptr<Atom> &atom,
                        EncodeAtomState &state);
 
+  // Private helpers split from HandleDataAtom
+  void EvaluateDataElement(const std::string &expr_str_raw,
+                           uint32_t virtual_address,
+                           ConcreteSymbolTable &symbols,
+                           DataAtom &data);
+
+  // Private helpers split from HandleInstructionAtom
+  /// Attempt special-encoding branch (returns true + populates inst on success,
+  /// or false when the caller should fall through to standard encoding).
+  bool TrySpecialEncodeInstruction(InstructionAtom &inst,
+                                   uint32_t current_address,
+                                   uint32_t virtual_address,
+                                   ConcreteSymbolTable &symbols,
+                                   AssemblerResult &result,
+                                   int pass_number);
+  /// Parse the operand string into a uint16_t value for standard encoding.
+  uint16_t ParseInstructionOperandValue(const std::string &operand,
+                                        uint32_t virtual_address,
+                                        ConcreteSymbolTable &symbols);
+
+  // Private helpers split from HandleSpaceAtom
+  /// Re-evaluate the PC-relative expression for a DS/BS directive and update
+  /// space->count / space->size in place.
+  void EvaluateSpaceExpression(SpaceAtom &space,
+                               uint32_t virtual_address,
+                               ConcreteSymbolTable &symbols);
+
   /**
    * @brief Check if instruction sizes have converged
    *
