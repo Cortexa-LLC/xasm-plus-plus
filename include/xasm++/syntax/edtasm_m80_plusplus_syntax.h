@@ -480,6 +480,19 @@ private:
   void ParseLine(const std::string &line, Section &section,
                  ConcreteSymbolTable &symbols);
 
+  // Returns true if the line was fully consumed by the capture-state handler
+  // (macro/repeat body capture), meaning ParseLine should return immediately.
+  bool HandleCapturingMode(const std::string &trimmed_line,
+                            bool is_endm, bool is_end);
+
+  // Build a DirectiveContext from the current parse state.
+  DirectiveContext MakeDirectiveContext(Section &section,
+                                        ConcreteSymbolTable &symbols,
+                                        const std::string &original_line,
+                                        const std::string &mnemonic,
+                                        const std::string &label,
+                                        const std::string &operand);
+
   // Label parsing
   std::string ParseLabel(const std::string &line, size_t &pos, Section &section,
                          ConcreteSymbolTable &symbols);

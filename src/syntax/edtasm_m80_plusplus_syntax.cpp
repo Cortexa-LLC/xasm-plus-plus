@@ -74,6 +74,49 @@ using xasm::directives::STAR_RADIX;
 // Z80NumberParser Implementation
 // ============================================================================
 
+namespace {
+
+// Parse a suffix-delimited literal using the provided per-character digit
+// decoder. Returns false if the token is too short, does not start with a
+// digit, or contains an invalid digit for the given radix.
+static bool ParseSuffixedLiteral(const std::string &token, int radix,
+                                  bool (*digit_fn)(char, int &),
+                                  int64_t &value) {
+  if (token.length() < 2 || !std::isdigit(token[0])) {
+    return false;
+  }
+  std::string digits = token.substr(0, token.length() - 1);
+  value = 0;
+  for (char c : digits) {
+    int d = 0;
+    if (!digit_fn(c, d)) {
+      return false;
+    }
+    value = (value * radix) + d;
+  }
+  return true;
+}
+
+// Returns true if all characters in token are valid for the given radix (no
+// suffix). Uses ParseHexDigit to convert, checking digit_value < radix.
+static bool ParseUnsuffixedLiteral(const std::string &token, int radix,
+                                    int64_t &value) {
+  value = 0;
+  for (char c : token) {
+    int digit = 0;
+    if (!ParseHexDigit(c, digit)) {
+      return false;
+    }
+    if (digit >= radix) {
+      return false;
+    }
+    value = (value * radix) + digit;
+  }
+  return true;
+}
+
+} // anonymous namespace (inner)
+
 bool Z80NumberParser::TryParse(const std::string &token, int64_t &value) const {
   if (token.empty()) {
     return false;
@@ -82,128 +125,35 @@ bool Z80NumberParser::TryParse(const std::string &token, int64_t &value) const {
   char suffix = token.back();
 
   // Hexadecimal with H suffix: 0FFH, 9FH, etc.
-  // Must start with digit to distinguish from labels
+  // Must start with digit to distinguish from labels.
   if (suffix == 'H' || suffix == 'h') {
-    if (token.length() < 2 || !std::isdigit(token[0])) {
-      return false;
-    }
-
+    // Extra validation: all non-suffix chars must be hex digits.
     std::string hex_part = token.substr(0, token.length() - 1);
-
-    // Validate all characters are hex digits
     for (char c : hex_part) {
       if (!std::isxdigit(c)) {
         return false;
       }
     }
-
-    // Convert to value using ParseHexDigit utility
-    value = 0;
-    for (char c : hex_part) {
-      int digit = 0;
-      if (!ParseHexDigit(c, digit)) {
-        return false; // Should not happen due to validation above
-      }
-      value = (value * RADIX_HEXADECIMAL) + digit;
-    }
-    return true;
+    return ParseSuffixedLiteral(token, RADIX_HEXADECIMAL, ParseHexDigit, value);
   }
 
   // Octal with O or Q suffix: 377O, 77Q, etc.
-  // Must start with digit to distinguish from labels
   if (suffix == 'O' || suffix == 'o' || suffix == 'Q' || suffix == 'q') {
-    if (token.length() < 2 || !std::isdigit(token[0])) {
-      return false;
-    }
-
-    std::string octal_part = token.substr(0, token.length() - 1);
-
-    // Validate all characters are octal digits (0-7) and convert to value
-    value = 0;
-    for (char c : octal_part) {
-      int digit = 0;
-      if (!ParseOctalDigit(c, digit)) {
-        return false;
-      }
-      value = (value * RADIX_OCTAL) + digit;
-    }
-    return true;
+    return ParseSuffixedLiteral(token, RADIX_OCTAL, ParseOctalDigit, value);
   }
 
   // Binary with B suffix: 11111111B, 10101010B, etc.
-  // Must start with digit to distinguish from labels
   if (suffix == 'B' || suffix == 'b') {
-    if (token.length() < 2 || !std::isdigit(token[0])) {
-      return false;
-    }
-
-    std::string binary_part = token.substr(0, token.length() - 1);
-
-    // Validate all characters are binary digits (0-1) and convert to value
-    value = 0;
-    for (char c : binary_part) {
-      int digit = 0;
-      if (!ParseBinaryDigit(c, digit)) {
-        return false;
-      }
-      value = (value * RADIX_BINARY) + digit;
-    }
-    return true;
+    return ParseSuffixedLiteral(token, RADIX_BINARY, ParseBinaryDigit, value);
   }
 
   // Decimal with D suffix: 255D, 42D, etc.
-  // Must start with digit to distinguish from labels
   if (suffix == 'D' || suffix == 'd') {
-    if (token.length() < 2 || !std::isdigit(token[0])) {
-      return false;
-    }
-
-    std::string decimal_part = token.substr(0, token.length() - 1);
-
-    // Validate all characters are decimal digits and convert to value
-    value = 0;
-    for (char c : decimal_part) {
-      int digit = 0;
-      if (!ParseDecimalDigit(c, digit)) {
-        return false;
-      }
-      value = (value * 10) + digit;
-    }
-    return true;
+    return ParseSuffixedLiteral(token, RADIX_DECIMAL, ParseDecimalDigit, value);
   }
 
-  // No explicit suffix - use current radix
-  // Check if ALL characters are valid digits for the current radix
-  for (char c : token) {
-    int digit_value = 0;
-    if (c >= '0' && c <= '9') {
-      digit_value = c - '0';
-    } else if (c >= 'A' && c <= 'F') {
-      digit_value = c - 'A' + 10;
-    } else if (c >= 'a' && c <= 'f') {
-      digit_value = c - 'a' + 10;
-    } else {
-      // Invalid character - not a number
-      return false;
-    }
-
-    if (digit_value >= radix_) {
-      // Character value exceeds radix - not valid in this radix
-      return false;
-    }
-  }
-
-  // All characters are valid for the radix - convert to value using
-  // ParseHexDigit
-  value = 0;
-  for (char c : token) {
-    int digit = 0;
-    if (!ParseHexDigit(c, digit)) {
-      return false; // Should not happen due to validation above
-    }
-    value = (value * radix_) + digit;
-  }
-  return true;
+  // No explicit suffix — use the current radix.
+  return ParseUnsuffixedLiteral(token, radix_, value);
 }
 
 // ============================================================================
@@ -354,6 +304,106 @@ std::string EdtasmM80PlusPlusSyntaxParser::Trim(const std::string &str) {
   return str.substr(first, last - first + 1);
 }
 
+// ---------------------------------------------------------------------------
+// MakeDirectiveContext — build a fully populated DirectiveContext from the
+// current parser state.  Eliminates the copy-paste block that appeared twice
+// in ParseLine.
+// ---------------------------------------------------------------------------
+DirectiveContext EdtasmM80PlusPlusSyntaxParser::MakeDirectiveContext(
+    Section &section, ConcreteSymbolTable &symbols,
+    const std::string &original_line, const std::string &mnemonic,
+    const std::string &label, const std::string &operand) {
+  DirectiveContext ctx;
+  ctx.section = &section;
+  ctx.symbols = &symbols;
+  ctx.current_address = &current_address_;
+  ctx.parser_state = this;
+  ctx.current_file = current_file_;
+  ctx.current_line = current_line_;
+  ctx.source_line = original_line;
+  ctx.mnemonic = mnemonic;
+  ctx.label = label;
+  ctx.operand = operand;
+  return ctx;
+}
+
+// ---------------------------------------------------------------------------
+// HandleCapturingMode — manage macro/repeat body capture.
+//
+// Called at the top of ParseLine when in_macro_definition_ or
+// in_repeat_block_ is active.  Returns true if the line was consumed (i.e.
+// ParseLine should return immediately after calling this), false when the
+// line should continue with normal processing (e.g. ENDM that closes the
+// outermost block).
+// ---------------------------------------------------------------------------
+bool EdtasmM80PlusPlusSyntaxParser::HandleCapturingMode(
+    const std::string &trimmed_line, bool is_endm, bool is_end) {
+  // Guard: only relevant when actually capturing.
+  if (!in_macro_definition_ && in_repeat_block_ == RepeatType::NONE) {
+    return false;
+  }
+  // Guard: LOCAL and END are never captured.
+  if (is_end) {
+    return false;
+  }
+
+  // Helper: returns true when the uppercased trimmed_line starts with any of
+  // the block-opening keywords that increment nesting depth.
+  auto is_nesting_opener = [&](const std::string &upper_line) {
+    static const std::string_view kOpeners[] = {MACRO, REPT, IRP, IRPC};
+    for (auto kw : kOpeners) {
+      std::string kw_space = std::string(kw) + " ";
+      std::string kw_tab   = std::string(kw) + "\t";
+      if (upper_line.starts_with(kw_space) ||
+          upper_line.starts_with(kw_tab)) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  std::string upper_line = trimmed_line;
+  std::transform(upper_line.begin(), upper_line.end(), upper_line.begin(),
+                 ::toupper);
+
+  if (in_macro_definition_) {
+    if (is_nesting_opener(upper_line)) {
+      macro_nesting_depth_++;
+      current_macro_.body.push_back(trimmed_line);
+      return true; // consumed
+    }
+    if (is_endm) {
+      if (macro_nesting_depth_ > 0) {
+        macro_nesting_depth_--;
+        current_macro_.body.push_back(trimmed_line);
+        return true; // consumed — nested ENDM
+      }
+      return false; // outermost ENDM: fall through to normal ENDM handler
+    }
+    // Regular body line.
+    current_macro_.body.push_back(trimmed_line);
+    return true; // consumed
+  }
+
+  // In repeat block.
+  if (is_nesting_opener(upper_line)) {
+    repeat_nesting_depth_++;
+    repeat_body_.push_back(trimmed_line);
+    return true; // consumed
+  }
+  if (is_endm) {
+    if (repeat_nesting_depth_ > 0) {
+      repeat_nesting_depth_--;
+      repeat_body_.push_back(trimmed_line);
+      return true; // consumed — nested ENDM
+    }
+    return false; // outermost ENDM: fall through to normal ENDM handler
+  }
+  // Regular repeat body line.
+  repeat_body_.push_back(trimmed_line);
+  return true; // consumed
+}
+
 void EdtasmM80PlusPlusSyntaxParser::ParseLine(const std::string &line,
                                               Section &section,
                                               ConcreteSymbolTable &symbols) {
@@ -410,78 +460,10 @@ void EdtasmM80PlusPlusSyntaxParser::ParseLine(const std::string &line,
     return;
   }
 
-  // END directive should always stop assembly, even in macro/repeat blocks
-  if (is_end && !in_macro_definition_ && in_repeat_block_ != RepeatType::NONE) {
-    // END encountered while in repeat block - process it to set
-    // end_directive_seen_ This allows unclosed repeat blocks before END (Don't
-    // return early - fall through to normal processing)
-  }
-
-  // If in macro definition or repeat block, capture lines (except END)
-  if ((in_macro_definition_ || in_repeat_block_ != RepeatType::NONE) &&
-      !is_local && !is_end) {
-    if (in_macro_definition_) {
-      // Check for nested MACRO/REPT/IRP/IRPC to track nesting
-      if (upper_line.starts_with(std::string(MACRO) + " ") ||
-          upper_line.starts_with(std::string(MACRO) + "\t") ||
-          upper_line.starts_with(std::string(REPT) + " ") ||
-          upper_line.starts_with(std::string(REPT) + "\t") ||
-          upper_line.starts_with(std::string(IRP) + " ") ||
-          upper_line.starts_with(std::string(IRP) + "\t") ||
-          upper_line.starts_with(std::string(IRPC) + " ") ||
-          upper_line.starts_with(std::string(IRPC) + "\t")) {
-        macro_nesting_depth_++;
-        current_macro_.body.push_back(trimmed_line);
-        return;
-      }
-
-      // Check for ENDM
-      if (is_endm) {
-        if (macro_nesting_depth_ > 0) {
-          // This ENDM closes a nested block - capture it
-          macro_nesting_depth_--;
-          current_macro_.body.push_back(trimmed_line);
-          return;
-        }
-        // else: nesting_depth == 0, so this ENDM ends the macro definition
-        // Fall through to process normally
-      } else {
-        // Regular line in macro body
-        current_macro_.body.push_back(trimmed_line);
-        return;
-      }
-    } else {
-      // In repeat block - track nesting depth for nested REPT/IRP/IRPC/MACRO
-      // blocks
-      if (upper_line.starts_with(std::string(MACRO) + " ") ||
-          upper_line.starts_with(std::string(MACRO) + "\t") ||
-          upper_line.starts_with(std::string(REPT) + " ") ||
-          upper_line.starts_with(std::string(REPT) + "\t") ||
-          upper_line.starts_with(std::string(IRP) + " ") ||
-          upper_line.starts_with(std::string(IRP) + "\t") ||
-          upper_line.starts_with(std::string(IRPC) + " ") ||
-          upper_line.starts_with(std::string(IRPC) + "\t")) {
-        repeat_nesting_depth_++;
-        repeat_body_.push_back(trimmed_line);
-        return;
-      }
-
-      // Check for ENDM
-      if (is_endm) {
-        if (repeat_nesting_depth_ > 0) {
-          // This ENDM closes a nested block - capture it
-          repeat_nesting_depth_--;
-          repeat_body_.push_back(trimmed_line);
-          return;
-        }
-        // else: nesting_depth == 0, so this ENDM ends the repeat block
-        // Fall through to process normally
-      } else {
-        // Regular line in repeat block
-        repeat_body_.push_back(trimmed_line);
-        return;
-      }
-    }
+  // Delegate to the capturing-mode handler.  Returns true when this line has
+  // been captured into the macro/repeat body and ParseLine should return.
+  if (HandleCapturingMode(trimmed_line, is_endm, is_end)) {
+    return;
   }
 
   size_t pos = 0;
@@ -581,17 +563,8 @@ void EdtasmM80PlusPlusSyntaxParser::ParseLine(const std::string &line,
   // (to maintain stack balance)
   if (is_conditional_directive) {
     if (directive_registry_.IsRegistered(upper_mnemonic)) {
-      DirectiveContext ctx;
-      ctx.section = &section;
-      ctx.symbols = &symbols;
-      ctx.current_address = &current_address_;
-      ctx.parser_state = this; // Pass parser for conditional stack access
-      ctx.current_file = current_file_;
-      ctx.current_line = current_line_;
-      ctx.source_line = original_line;
-      ctx.mnemonic = upper_mnemonic;
-      ctx.label = label;
-      ctx.operand = operand;
+      auto ctx = MakeDirectiveContext(section, symbols, original_line,
+                                      upper_mnemonic, label, operand);
       directive_registry_.Execute(ctx);
     }
     return;
@@ -604,17 +577,8 @@ void EdtasmM80PlusPlusSyntaxParser::ParseLine(const std::string &line,
 
   // Dispatch via directive registry
   if (directive_registry_.IsRegistered(upper_mnemonic)) {
-    DirectiveContext ctx;
-    ctx.section = &section;
-    ctx.symbols = &symbols;
-    ctx.current_address = &current_address_;
-    ctx.parser_state = this; // Pass parser state
-    ctx.current_file = current_file_;
-    ctx.current_line = current_line_;
-    ctx.source_line = original_line;
-    ctx.mnemonic = upper_mnemonic;
-    ctx.label = label;
-    ctx.operand = operand;
+    auto ctx = MakeDirectiveContext(section, symbols, original_line,
+                                    upper_mnemonic, label, operand);
     directive_registry_.Execute(ctx);
     return;
   }
