@@ -5,6 +5,21 @@
 
 ---
 
+## 🚫 ABSOLUTE PROHIBITION — READ FIRST
+
+**NEVER use the built-in `Agent` tool** (the one in your tool list that spawns a sub-agent inline).
+
+That tool bypasses the ai-pack agent server entirely. It is **FORBIDDEN** in this project.
+
+The ONLY way to spawn agents is via the **`agent` bash command**:
+```bash
+agent engineer <beads-id> --stream   # ✅ CORRECT
+```
+
+Using the `Agent(...)` tool call is ALWAYS wrong here, even if it seems convenient.
+
+---
+
 ## ⚠️ CRITICAL SESSION RULES (MANDATORY)
 
 ### 1. Orchestrator Role (DEFAULT)

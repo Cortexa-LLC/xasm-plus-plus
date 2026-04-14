@@ -8,6 +8,7 @@
  */
 
 #include "xasm++/syntax/scmasm_syntax.h"
+#include "xasm++/syntax/label_policy.h"
 #include "xasm++/atom.h"
 #include "xasm++/cpu/cpu_6502.h"
 #include "xasm++/cpu/cpu_constants.h"
@@ -796,83 +797,32 @@ bool ScmasmSyntaxParser::TryHandleDirectiveLine(
   }
 
   using namespace scmasm::directives;
-  bool is_control_flow = (opcode_upper == DO || opcode_upper == LU);
 
+  // Data-emitting directives need a LabelAtom for address tracking across
+  // passes. This ensures positional labels like "PAKME.CORE .DA CORE.P" and
+  // "CORE.B .PH K.HiMem" track the correct physical address after branch
+  // relaxation changes code sizes.
+  static const std::unordered_set<std::string_view> kDataEmittingDirectives = {
+      ".DA",  ".DB",  ".DFB", ".DW",  ".DS",  ".DC",  ".HB",  ".HX",
+      ".AS",  ".AT",  ".AZ",  ".CS",  ".CZ",  ".TF",  ".PS",  ".HS",
+      ".STR", ".BS",  ".BYT", ".WORD", ".PH",
+  };
   // .EQ and .SE define symbols via their directive handlers (HandleEq/HandleSe),
   // which evaluate the expression and store the result. Pre-defining the label
   // as Label(current_address_) here would corrupt their expression evaluation:
   // e.g. "PAKME.ID .SE PAKME.ID+2" would evaluate PAKME.ID as the current PC
   // (from the pre-definition) instead of the previous Set value, producing
   // wrong accumulated counters like PAKME.ID.
-  bool is_value_directive = (opcode_upper == ".EQ" || opcode_upper == ".SE");
-
-  if (!label.empty() && !is_control_flow && !is_value_directive) {
-    if (opcode_upper == ".OR") {
-      // Label before .OR - define it and create label atom at current address
-      if (IsLocalLabel(label)) {
-        local_labels_[label] = current_address_;
-        // Also add scoped version to global symbol table for branch resolution
-        std::string scoped = ScopedLocalLabelName(label);
-        auto expr = std::make_shared<LiteralExpr>(current_address_);
-        symbols.Define(scoped, SymbolType::Label, expr);
-        auto label_atom =
-            std::make_shared<LabelAtom>(scoped, current_address_);
-        section.atoms.push_back(label_atom);
-      } else {
-        // Normalize label to uppercase for case-insensitive SCMASM
-        // compatibility
-        std::string normalized_label = util::ToUpper(label);
-        auto expr = std::make_shared<LiteralExpr>(current_address_);
-        symbols.Define(normalized_label, SymbolType::Label, expr);
-
-        // Create label atom for non-local labels (use normalized name)
-        auto label_atom =
-            std::make_shared<LabelAtom>(normalized_label, current_address_);
-        section.atoms.push_back(label_atom);
-        last_global_label_ = normalized_label;
-      }
-    } else {
-      // Other directives: define the label.
-      // For data-emitting directives (DA, DB, BS, PH, etc.), also push a
-      // LabelAtom so ResolveSymbols updates the address each pass. This
-      // ensures positional labels like "PAKME.CORE .DA CORE.P" and
-      // "CORE.B .PH K.HiMem" track the correct physical address after branch
-      // relaxation changes code sizes.
-      static const std::unordered_set<std::string> kDataEmittingDirectives = {
-          ".DA",  ".DB",  ".DFB", ".DW",  ".DS",  ".DC",  ".HB",  ".HX",
-          ".AS",  ".AT",  ".AZ",  ".CS",  ".CZ",  ".TF",  ".PS",  ".HS",
-          ".STR", ".BS",  ".BYT", ".WORD", ".PH",
-      };
-      bool emit_label_atom =
-          kDataEmittingDirectives.contains(opcode_upper) &&
-          !in_dummy_section_;
-
-      if (IsLocalLabel(label)) {
-        local_labels_[label] = current_address_;
-        // Also add scoped version to global symbol table for branch resolution
-        std::string scoped = ScopedLocalLabelName(label);
-        auto expr = std::make_shared<LiteralExpr>(current_address_);
-        symbols.Define(scoped, SymbolType::Label, expr);
-        if (emit_label_atom) {
-          auto label_atom =
-              std::make_shared<LabelAtom>(scoped, current_address_);
-          section.atoms.push_back(label_atom);
-        }
-      } else {
-        // Normalize label to uppercase for case-insensitive SCMASM
-        // compatibility
-        std::string normalized_label = util::ToUpper(label);
-        auto expr = std::make_shared<LiteralExpr>(current_address_);
-        symbols.Define(normalized_label, SymbolType::Label, expr);
-        last_global_label_ = normalized_label;
-        if (emit_label_atom) {
-          auto label_atom =
-              std::make_shared<LabelAtom>(normalized_label, current_address_);
-          section.atoms.push_back(label_atom);
-        }
-      }
-    }
-  }
+  LabelPolicy policy =
+      ClassifyLabelPolicy(opcode_upper, !label.empty(), in_dummy_section_);
+  bool emit_atom =
+      kDataEmittingDirectives.contains(opcode_upper) && !in_dummy_section_;
+  auto scmasm_scope_fn = [this](const std::string &lbl) -> std::string {
+    return IsLocalLabel(lbl) ? ScopedLocalLabelName(lbl) : util::ToUpper(lbl);
+  };
+  DefineLabelForDirective(label, current_address_, policy, emit_atom, symbols,
+                          section, local_labels_, last_global_label_,
+                          scmasm_scope_fn, ScmasmSyntaxParser::IsLocalLabel);
 
   // Special validation for directives that require labels
   if ((opcode_upper == ".EQ" || opcode_upper == ".SE") && label.empty()) {
@@ -1211,26 +1161,13 @@ void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
     } else {
       // Define pending_label_ at the current address
       std::string pl = pending_label_;
-      if (IsLocalLabel(pl)) {
-        local_labels_[pl] = current_address_;
-        // Also add scoped version to global symbol table for branch resolution
-        std::string scoped = ScopedLocalLabelName(pl);
-        auto expr = std::make_shared<LiteralExpr>(current_address_);
-        symbols.Define(scoped, SymbolType::Label, expr);
-        if (!in_dummy_section_) {
-          auto atom = std::make_shared<LabelAtom>(scoped, current_address_);
-          section.atoms.push_back(atom);
-        }
-      } else {
-        std::string norm = util::ToUpper(pl);
-        auto expr = std::make_shared<LiteralExpr>(current_address_);
-        symbols.Define(norm, SymbolType::Label, expr);
-        if (!in_dummy_section_) {
-          auto atom = std::make_shared<LabelAtom>(norm, current_address_);
-          section.atoms.push_back(atom);
-        }
-        last_global_label_ = norm;
-      }
+      auto scmasm_scope_fn = [this](const std::string &lbl) -> std::string {
+        return IsLocalLabel(lbl) ? ScopedLocalLabelName(lbl) : util::ToUpper(lbl);
+      };
+      DefineLabelForDirective(pl, current_address_, LabelPolicy::AtPc,
+                              !in_dummy_section_, symbols, section, local_labels_,
+                              last_global_label_, scmasm_scope_fn,
+                              ScmasmSyntaxParser::IsLocalLabel);
     }
     pending_label_ = "";
   }
@@ -1242,33 +1179,15 @@ void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
   }
 
   // Not a directive - define label and create label atom for
-  // instructions/macros
-  if (!label.empty()) {
-    if (IsLocalLabel(label)) {
-      local_labels_[label] = current_address_;
-      // Also add scoped version to global symbol table for branch resolution
-      std::string scoped = ScopedLocalLabelName(label);
-      auto expr = std::make_shared<LiteralExpr>(current_address_);
-      symbols.Define(scoped, SymbolType::Label, expr);
-      if (!in_dummy_section_) {
-        auto label_atom =
-            std::make_shared<LabelAtom>(scoped, current_address_);
-        section.atoms.push_back(label_atom);
-      }
-    } else {
-      // Normalize label to uppercase for case-insensitive SCMASM compatibility
-      std::string normalized_label = util::ToUpper(label);
-      auto expr = std::make_shared<LiteralExpr>(current_address_);
-      symbols.Define(normalized_label, SymbolType::Label, expr);
-
-      // Create label atom for non-local labels (use normalized name)
-      if (!in_dummy_section_) {
-        auto label_atom =
-            std::make_shared<LabelAtom>(normalized_label, current_address_);
-        section.atoms.push_back(label_atom);
-      }
-      last_global_label_ = normalized_label;
-    }
+  // instructions/macros. Instructions always emit a LabelAtom.
+  {
+    auto scmasm_scope_fn = [this](const std::string &lbl) -> std::string {
+      return IsLocalLabel(lbl) ? ScopedLocalLabelName(lbl) : util::ToUpper(lbl);
+    };
+    DefineLabelForDirective(label, current_address_, LabelPolicy::AtPc,
+                            !in_dummy_section_, symbols, section, local_labels_,
+                            last_global_label_, scmasm_scope_fn,
+                            ScmasmSyntaxParser::IsLocalLabel);
   }
 
   // Try macro invocation first, then fall through to instruction handling

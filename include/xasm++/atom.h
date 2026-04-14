@@ -17,6 +17,8 @@
 #include <string>
 #include <vector>
 
+#include "xasm++/atom_visitor.h"
+
 namespace xasm {
 
 /**
@@ -105,6 +107,12 @@ public:
    * @brief Virtual destructor for polymorphic deletion
    */
   virtual ~Atom() = default;
+
+  /**
+   * @brief Accept a visitor (double dispatch).
+   * Each concrete subclass overrides this to call visitor.Visit(*this).
+   */
+  virtual void Accept(IAtomVisitor &visitor) = 0;
 };
 
 /**
@@ -134,6 +142,7 @@ public:
       : Atom(AtomType::Label), name(n), address(addr) {
     size = 0; // Labels don't take space
   }
+  void Accept(IAtomVisitor &v) override { v.Visit(*this); }
 };
 
 /**
@@ -167,6 +176,7 @@ public:
       : Atom(AtomType::Instruction), mnemonic(mnem), operand(oper) {
     // Size determined during encoding phase
   }
+  void Accept(IAtomVisitor &v) override { v.Visit(*this); }
 };
 
 /**
@@ -181,6 +191,7 @@ public:
   int mode; ///< 0=6502, 1=65C02, 2=65816
 
   explicit CpuModeAtom(int m) : Atom(AtomType::CpuMode), mode(m) {}
+  void Accept(IAtomVisitor &v) override { v.Visit(*this); }
 };
 
 /**
@@ -196,6 +207,7 @@ public:
   bool x_flag; ///< true = 8-bit index (X=1), false = 16-bit (X=0)
 
   MxAtom(bool m, bool x) : Atom(AtomType::MxState), m_flag(m), x_flag(x) {}
+  void Accept(IAtomVisitor &v) override { v.Visit(*this); }
 };
 
 /**
@@ -250,6 +262,7 @@ public:
       : Atom(AtomType::Data), data(d), data_size(DataSize::Byte) {
     size = data.size();
   }
+  void Accept(IAtomVisitor &v) override { v.Visit(*this); }
 };
 
 /**
@@ -285,6 +298,7 @@ public:
       : Atom(AtomType::Space), count(c), expression_str(std::move(expr)) {
     size = count;
   }
+  void Accept(IAtomVisitor &v) override { v.Visit(*this); }
 };
 
 /**
@@ -310,6 +324,7 @@ public:
   explicit AlignAtom(size_t align) : Atom(AtomType::Align), alignment(align) {
     // Size determined during layout phase
   }
+  void Accept(IAtomVisitor &v) override { v.Visit(*this); }
 };
 
 /**
@@ -334,6 +349,7 @@ public:
   explicit OrgAtom(uint32_t addr) : Atom(AtomType::Org), address(addr) {
     size = 0; // ORG doesn't generate bytes
   }
+  void Accept(IAtomVisitor &v) override { v.Visit(*this); }
 };
 
 /**
@@ -365,6 +381,7 @@ public:
       : Atom(AtomType::DummyOrg), address(addr) {
     size = 0; // DummyOrg doesn't generate bytes
   }
+  void Accept(IAtomVisitor &v) override { v.Visit(*this); }
 };
 
 /**
@@ -395,6 +412,7 @@ public:
       : Atom(AtomType::Phase), is_start(start), virtual_addr(virt) {
     size = 0; // Phase atoms don't generate bytes
   }
+  void Accept(IAtomVisitor &v) override { v.Visit(*this); }
 };
 
 /**
@@ -461,6 +479,7 @@ public:
       : Atom(AtomType::ListingControl), control_type(type) {
     size = 0; // Listing control doesn't generate bytes
   }
+  void Accept(IAtomVisitor &v) override { v.Visit(*this); }
 };
 
 /**
@@ -491,6 +510,7 @@ public:
       : Atom(AtomType::Equate), label_name(name), expression_str(expr) {
     size = 0; // Equate atoms don't generate bytes
   }
+  void Accept(IAtomVisitor &v) override { v.Visit(*this); }
 };
 
 } // namespace xasm

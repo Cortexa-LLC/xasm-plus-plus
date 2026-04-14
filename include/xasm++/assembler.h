@@ -28,6 +28,9 @@ class SymbolTable;
 class ConcreteSymbolTable;
 class Cpu6502;
 enum class AddressingMode : std::uint8_t;
+// Visitor pass classes (defined in assembler.cpp, declared here for friend).
+class EncodePass;
+class RefixupPass;
 
 /**
  * @brief Represents an error that occurred during assembly
@@ -310,12 +313,19 @@ private:
    */
   void RefixupDataAtoms(ConcreteSymbolTable &symbols, AssemblerResult &result);
 
+  /// Returns the expression parser features (used by visitor passes).
+  ParserFeatures GetExpressionFeatures() const { return expression_features_; }
+
   std::vector<Section> sections_;  ///< Sections to assemble
   CpuPlugin *cpu_ = nullptr;       ///< CPU plugin for instruction encoding
   SymbolTable *symbols_ = nullptr; ///< Symbol table for symbol resolution
   int max_passes_ = MAX_PASSES;    ///< Maximum assembly passes (default: MAX_PASSES)
   /// Expression parser features for instruction operand evaluation (ADR-005 V9)
   ParserFeatures expression_features_;
+
+  // Visitor pass classes need access to private Handle* methods and cpu_.
+  friend class EncodePass;
+  friend class RefixupPass;
 };
 
 } // namespace xasm

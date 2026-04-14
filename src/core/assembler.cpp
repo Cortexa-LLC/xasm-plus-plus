@@ -19,7 +19,212 @@ using xasm::util::Trim;
 
 // Note: ParseHex() consolidated to xasm::ParseHex (from parse_utils.h)
 
+// ---------------------------------------------------------------------------
+// Helper: replace unqualified '*' with current address string.
+// An asterisk is unqualified when it is NOT preceded by an identifier char
+// (alphanumeric, '.', '_', '?').  This mirrors the logic used in HandleDataAtom,
+// RefixupDataAtoms and HandleEquateAtom.
+// ---------------------------------------------------------------------------
+static void ReplaceStarWithAddress(std::string &expr_str,
+                                   const std::string &addr_str) {
+  size_t star_pos = 0;
+  while ((star_pos = expr_str.find('*', star_pos)) != std::string::npos) {
+    bool preceded_by_ident = false;
+    if (star_pos > 0) {
+      char prev = expr_str[star_pos - 1];
+      preceded_by_ident = std::isalnum(static_cast<unsigned char>(prev)) ||
+                          prev == '.' || prev == '_' || prev == '?';
+    }
+    if (preceded_by_ident) {
+      star_pos++;
+      continue;
+    }
+    expr_str.replace(star_pos, 1, addr_str);
+    star_pos += addr_str.length();
+  }
+}
 
+// ---------------------------------------------------------------------------
+// EncodePass — IAtomVisitor implementation for EncodeInstructions
+//
+// Replaces the switch/dynamic_pointer_cast dispatch chain.  Each Visit()
+// overload receives an already-typed atom reference, calls the matching
+// Assembler::Handle* helper, and sets wants_continue when the outer loop
+// should skip the current atom (equivalent to the old `continue`).
+// ---------------------------------------------------------------------------
+class EncodePass final : public IAtomVisitor {
+public:
+  Assembler &asm_;
+  Assembler::EncodeAtomState &state_;
+  bool wants_continue{false};
+  std::shared_ptr<Atom> current_atom_;
+
+  EncodePass(Assembler &a, Assembler::EncodeAtomState &st) : asm_(a), state_(st) {}
+
+  void Visit(PhaseAtom &) override {
+    wants_continue = asm_.HandlePhaseAtom(current_atom_, state_);
+  }
+  void Visit(OrgAtom &) override {
+    wants_continue = asm_.HandleOrgAtom(current_atom_, state_);
+  }
+  void Visit(EquateAtom &) override {
+    wants_continue = asm_.HandleEquateAtom(current_atom_, state_);
+  }
+  void Visit(DataAtom &) override {
+    asm_.HandleDataAtom(current_atom_, state_);
+  }
+  void Visit(InstructionAtom &) override {
+    asm_.HandleInstructionAtom(current_atom_, state_);
+  }
+  void Visit(SpaceAtom &) override {
+    asm_.HandleSpaceAtom(current_atom_, state_);
+  }
+  // Labels resolved in ResolveSymbols; no bytes emitted here.
+  void Visit(LabelAtom &) override {}
+  // DummyOrg: like Label, no bytes emitted during encode.
+  void Visit(DummyOrgAtom &) override {}
+  void Visit(CpuModeAtom &cm) override {
+    if (asm_.cpu_) {
+      asm_.cpu_->SetCpuModeFromAtom(cm.mode);
+    }
+  }
+  void Visit(MxAtom &mx) override {
+    if (asm_.cpu_) {
+      asm_.cpu_->SetMX(mx.m_flag, mx.x_flag);
+    }
+  }
+  // ListingControlAtom: no encoding action
+  void Visit(ListingControlAtom &) override {}
+  // AlignAtom: handled in ResolveSymbols, not EncodeInstructions
+  void Visit(AlignAtom &) override {}
+};
+
+// ---------------------------------------------------------------------------
+// RefixupPass — IAtomVisitor implementation for RefixupDataAtoms
+//
+// Replaces the switch/dynamic_pointer_cast dispatch chain in RefixupDataAtoms.
+// Holds the per-section mutable state; caller resets before each section.
+// ---------------------------------------------------------------------------
+class RefixupPass final : public IAtomVisitor {
+public:
+  Assembler &asm_;
+  ConcreteSymbolTable &symbols_;
+  AssemblerResult &result_;
+  uint32_t current_address{0};
+  uint32_t virtual_address{0};
+  uint32_t phase_real_start{0};
+  uint32_t phase_virtual_start{0};
+
+  RefixupPass(Assembler &a, ConcreteSymbolTable &sym, AssemblerResult &res)
+      : asm_(a), symbols_(sym), result_(res) {}
+
+  void Visit(PhaseAtom &ph) override {
+    if (ph.is_start) {
+      phase_real_start = current_address;
+      phase_virtual_start = ph.virtual_addr;
+      virtual_address = ph.virtual_addr;
+    } else {
+      uint32_t bytes_emitted = virtual_address - phase_virtual_start;
+      current_address = phase_real_start + bytes_emitted;
+      virtual_address = current_address;
+    }
+  }
+  void Visit(OrgAtom &org) override {
+    current_address = org.address;
+    virtual_address = org.address;
+  }
+  void Visit(DummyOrgAtom &) override {
+    // .OR inside .DUMMY/.ED: skip — do not move the real PC during refixup.
+  }
+  void Visit(CpuModeAtom &cm) override {
+    if (asm_.cpu_) {
+      asm_.cpu_->SetCpuModeFromAtom(cm.mode);
+    }
+  }
+  void Visit(MxAtom &mx) override {
+    if (asm_.cpu_) {
+      asm_.cpu_->SetMX(mx.m_flag, mx.x_flag);
+    }
+  }
+  void Visit(EquateAtom &eq) override {
+    std::string expr_str = eq.expression_str;
+    ReplaceStarWithAddress(expr_str, std::to_string(virtual_address));
+    try {
+      auto expr = ExpressionParser(&symbols_, nullptr,
+                                   asm_.expression_features_).Parse(expr_str);
+      int64_t value = expr->Evaluate(symbols_);
+      symbols_.Define(eq.label_name, SymbolType::Equate,
+                      std::make_shared<LiteralExpr>(
+                          static_cast<uint32_t>(value)));
+    } catch (const std::exception &) {
+      // Should be resolved by now; ignore.
+    }
+  }
+  void Visit(DataAtom &data) override {
+    if (!data.expressions.empty()) {
+      data.data.clear();
+      for (const auto &expr_str_raw : data.expressions) {
+        std::string expr_str = expr_str_raw;
+        ReplaceStarWithAddress(expr_str, std::to_string(virtual_address));
+        try {
+          auto expr = ExpressionParser(&symbols_, nullptr,
+                                       asm_.expression_features_).Parse(expr_str);
+          int64_t value = expr->Evaluate(symbols_);
+          if (data.data_size == DataSize::Byte) {
+            data.data.push_back(static_cast<uint8_t>(value & 0xFF));
+          } else if (data.data_size == DataSize::Long) {
+            auto word = static_cast<uint32_t>(value);
+            data.data.push_back(static_cast<uint8_t>(word & 0xFF));
+            data.data.push_back(static_cast<uint8_t>((word >> 8) & 0xFF));
+            data.data.push_back(static_cast<uint8_t>((word >> 16) & 0xFF));
+          } else {
+            auto word = static_cast<uint32_t>(value);
+            data.data.push_back(static_cast<uint8_t>(word & 0xFF));
+            data.data.push_back(static_cast<uint8_t>((word >> 8) & 0xFF));
+          }
+        } catch (const UndefinedSymbolError &e) {
+          AssemblerError err;
+          err.message = e.what();
+          result_.errors.push_back(err);
+          result_.success = false;
+          if (data.data_size == DataSize::Byte) {
+            data.data.push_back(0);
+          } else if (data.data_size == DataSize::Long) {
+            data.data.push_back(0);
+            data.data.push_back(0);
+            data.data.push_back(0);
+          } else {
+            data.data.push_back(0);
+            data.data.push_back(0);
+          }
+        }
+      }
+      data.size = data.data.size();
+    }
+    current_address += data.size;
+    virtual_address += data.size;
+  }
+  void Visit(InstructionAtom &inst) override {
+    // Do NOT re-encode; just advance address past the existing bytes.
+    current_address += inst.encoded_bytes.size();
+    virtual_address += inst.encoded_bytes.size();
+  }
+  void Visit(SpaceAtom &sp) override {
+    current_address += sp.size;
+    virtual_address += sp.size;
+  }
+  void Visit(AlignAtom &align) override {
+    uint32_t remainder = current_address % align.alignment;
+    if (remainder != 0) {
+      uint32_t padding = align.alignment - remainder;
+      current_address += padding;
+      virtual_address += padding;
+    }
+  }
+  // Label, ListingControl: no bytes, no address change.
+  void Visit(LabelAtom &) override {}
+  void Visit(ListingControlAtom &) override {}
+};
 
 Assembler::Assembler() = default;
 
@@ -87,54 +292,12 @@ std::vector<size_t> Assembler::EncodeInstructions(ConcreteSymbolTable &symbols,
                               result,
                               current_sizes,
                               pass_number};
-        switch (atom->type) {
-        case AtomType::Phase:
-          if (HandlePhaseAtom(atom, state))
-            continue;
-          break;
-        case AtomType::Org:
-          if (HandleOrgAtom(atom, state))
-            continue;
-          break;
-        case AtomType::DummyOrg:
-        case AtomType::Label:
-          // Labels resolved in ResolveSymbols; no bytes emitted here.
-          break;
-        case AtomType::CpuMode: {
-          // XC / XC OFF — replay CPU mode change so subsequent instructions
-          // are encoded with the correct feature set.
-          auto cm = std::dynamic_pointer_cast<CpuModeAtom>(atom);
-          if (cm && cpu_) {
-            cpu_->SetCpuModeFromAtom(cm->mode);
-          }
-        } break;
-        case AtomType::MxState: {
-          // MX directive — replay M/X flag state so subsequent instructions
-          // use the correct accumulator/index register widths.
-          auto mx = std::dynamic_pointer_cast<MxAtom>(atom);
-          if (mx && cpu_) {
-            cpu_->SetMX(mx->m_flag, mx->x_flag);
-          }
-        } break;
-        case AtomType::Equate:
-          if (HandleEquateAtom(atom, state))
-            continue;
-          break;
-        case AtomType::Data:
-          if (HandleDataAtom(atom, state))
-            continue;
-          break;
-        case AtomType::Instruction:
-          if (HandleInstructionAtom(atom, state))
-            continue;
-          break;
-        case AtomType::Space:
-          if (HandleSpaceAtom(atom, state))
-            continue;
-          break;
-        default:
-          break;
-        } // switch (atom->type)
+        EncodePass pass(*this, state);
+        pass.current_atom_ = atom;
+        atom->Accept(pass);
+        if (pass.wants_continue) {
+          continue;
+        }
       }
     }
   }
@@ -709,188 +872,14 @@ void Assembler::RefixupDataAtoms(ConcreteSymbolTable &symbols,
   }
 
   for (auto &section : sections_) {
-    uint32_t current_address = section.org;
-    uint32_t virtual_address = section.org;
-    uint32_t phase_real_start = 0;
-    uint32_t phase_virtual_start = 0;
+    RefixupPass pass(*this, symbols, result);
+    pass.current_address = section.org;
+    pass.virtual_address = section.org;
 
     for (auto &atom : section.atoms) {
       if (!atom)
         continue;
-
-      switch (atom->type) {
-      case AtomType::Phase: {
-        auto phase = std::dynamic_pointer_cast<PhaseAtom>(atom);
-        if (phase) {
-          if (phase->is_start) {
-            phase_real_start = current_address;
-            phase_virtual_start = phase->virtual_addr;
-            virtual_address = phase->virtual_addr;
-          } else {
-            uint32_t bytes_emitted = virtual_address - phase_virtual_start;
-            current_address = phase_real_start + bytes_emitted;
-            virtual_address = current_address;
-          }
-        }
-      } break;
-      case AtomType::Org: {
-        auto org = std::dynamic_pointer_cast<OrgAtom>(atom);
-        if (org) {
-          current_address = org->address;
-          virtual_address = org->address;
-        }
-      } break;
-      case AtomType::DummyOrg: {
-        // .OR inside .DUMMY/.ED: skip — do not move the real PC during
-        // instruction encoding.  Addresses were already resolved by
-        // ResolveSymbols().
-      } break;
-      case AtomType::CpuMode: {
-        // XC / XC OFF — replay CPU mode change.
-        auto cm = std::dynamic_pointer_cast<CpuModeAtom>(atom);
-        if (cm && cpu_) {
-          cpu_->SetCpuModeFromAtom(cm->mode);
-        }
-      } break;
-      case AtomType::MxState: {
-        // MX directive — replay M/X flag state.
-        auto mx = std::dynamic_pointer_cast<MxAtom>(atom);
-        if (mx && cpu_) {
-          cpu_->SetMX(mx->m_flag, mx->x_flag);
-        }
-      } break;
-      case AtomType::Equate: {
-        // Re-evaluate position-dependent equates (.EQ *) with the current
-        // virtual address so they track the correct value.
-        auto eq = std::dynamic_pointer_cast<EquateAtom>(atom);
-        if (eq) {
-          std::string expr_str = eq->expression_str;
-          std::string addr_str = std::to_string(virtual_address);
-          size_t star_pos = 0;
-          while ((star_pos = expr_str.find('*', star_pos)) !=
-                 std::string::npos) {
-            bool preceded_by_ident = false;
-            if (star_pos > 0) {
-              char prev = expr_str[star_pos - 1];
-              preceded_by_ident =
-                  std::isalnum(static_cast<unsigned char>(prev)) ||
-                  prev == '.' || prev == '_' || prev == '?';
-            }
-            if (preceded_by_ident) {
-              star_pos++;
-              continue;
-            }
-            expr_str.replace(star_pos, 1, addr_str);
-            star_pos += addr_str.length();
-          }
-          try {
-            std::shared_ptr<Expression> expr = ExpressionParser(&symbols, nullptr, expression_features_).Parse(expr_str);
-            int64_t value = expr->Evaluate(symbols);
-            symbols.Define(eq->label_name, SymbolType::Equate,
-                           std::make_shared<LiteralExpr>(
-                               static_cast<uint32_t>(value)));
-          } catch (const std::exception &e) {
-            (void)e; // Should be resolved by now; ignore.
-          }
-        }
-      } break;
-      case AtomType::Data: {
-        auto data = std::dynamic_pointer_cast<DataAtom>(atom);
-        if (data && !data->expressions.empty()) {
-          data->data.clear();
-          for (const auto &expr_str_raw : data->expressions) {
-            // Replace * with current virtual address (same as EquateAtom handling)
-            std::string expr_str = expr_str_raw;
-            {
-              std::string addr_str = std::to_string(virtual_address);
-              size_t star_pos = 0;
-              while ((star_pos = expr_str.find('*', star_pos)) !=
-                     std::string::npos) {
-                bool preceded_by_ident = false;
-                if (star_pos > 0) {
-                  char prev = expr_str[star_pos - 1];
-                  preceded_by_ident =
-                      std::isalnum(static_cast<unsigned char>(prev)) ||
-                      prev == '.' || prev == '_' || prev == '?';
-                }
-                if (preceded_by_ident) {
-                  star_pos++;
-                  continue;
-                }
-                expr_str.replace(star_pos, 1, addr_str);
-                star_pos += addr_str.length();
-              }
-            }
-            try {
-              std::shared_ptr<Expression> expr = ExpressionParser(&symbols, nullptr, expression_features_).Parse(expr_str);
-              int64_t value = expr->Evaluate(symbols);
-              if (data->data_size == DataSize::Byte) {
-                data->data.push_back(static_cast<uint8_t>(value & 0xFF));
-              } else if (data->data_size == DataSize::Long) {
-                auto word = static_cast<uint32_t>(value);
-                data->data.push_back(static_cast<uint8_t>(word & 0xFF));
-                data->data.push_back(
-                    static_cast<uint8_t>((word >> 8) & 0xFF));
-                data->data.push_back(
-                    static_cast<uint8_t>((word >> 16) & 0xFF));
-              } else {
-                auto word = static_cast<uint32_t>(value);
-                data->data.push_back(static_cast<uint8_t>(word & 0xFF));
-                data->data.push_back(
-                    static_cast<uint8_t>((word >> 8) & 0xFF));
-              }
-            } catch (const UndefinedSymbolError &e) {
-              // Still undefined after convergence — hard error.
-              AssemblerError err;
-              err.message = e.what();
-              result.errors.push_back(err);
-              result.success = false;
-              if (data->data_size == DataSize::Byte) {
-                data->data.push_back(0);
-              } else if (data->data_size == DataSize::Long) {
-                data->data.push_back(0);
-                data->data.push_back(0);
-                data->data.push_back(0);
-              } else {
-                data->data.push_back(0);
-                data->data.push_back(0);
-              }
-            }
-          }
-          data->size = data->data.size();
-        }
-        current_address += data->size;
-        virtual_address += data->size;
-      } break;
-      case AtomType::Instruction: {
-        // Do NOT re-encode.  Just advance address past the existing bytes.
-        auto inst = std::dynamic_pointer_cast<InstructionAtom>(atom);
-        if (inst) {
-          current_address += inst->encoded_bytes.size();
-          virtual_address += inst->encoded_bytes.size();
-        }
-      } break;
-      case AtomType::Space: {
-        auto space = std::dynamic_pointer_cast<SpaceAtom>(atom);
-        if (space) {
-          current_address += space->size;
-          virtual_address += space->size;
-        }
-      } break;
-      case AtomType::Align: {
-        auto align = std::dynamic_pointer_cast<AlignAtom>(atom);
-        if (align) {
-          uint32_t remainder = current_address % align->alignment;
-          if (remainder != 0) {
-            uint32_t padding = align->alignment - remainder;
-            current_address += padding;
-            virtual_address += padding;
-          }
-        }
-      } break;
-      // Label, ListingControl: no bytes, no address change.
-      default: break;
-    } // switch (atom->type)
+      atom->Accept(pass);
     } // for (auto &atom : section.atoms)
   } // for (auto &section : sections_)
 }

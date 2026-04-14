@@ -2,6 +2,7 @@
 // Phases 1-3: Foundation, Local Labels, DUM Blocks
 
 #include "xasm++/syntax/merlin_syntax.h"
+#include "xasm++/syntax/label_policy.h"
 #include "xasm++/common/expression_parser.h"
 #include "xasm++/cpu/cpu_6502.h"
 #include "xasm++/directives/directive_constants.h"
@@ -1296,18 +1297,21 @@ bool MerlinSyntaxParser::TryHandleMacroLine(const std::string &directive,
   // Create label atom first if label present
   if (!label.empty()) {
     uint32_t label_addr = in_dum_block_ ? dum_address_ : current_address_;
-    std::string scoped_lbl = ScopeLocalLabel(label);
-    symbols.Define(scoped_lbl, SymbolType::Label,
-                   std::make_shared<LiteralExpr>(label_addr));
-    if (!in_dum_block_) {
-      section.atoms.push_back(
-          std::make_shared<LabelAtom>(scoped_lbl, label_addr));
-    }
-    if (label[0] != ':' &&
-        (label[0] != ']' || current_scope_.global_label.empty())) {
-      current_scope_.global_label = label;
+    auto merlin_scope_fn = [this](const std::string &lbl) -> std::string {
+      return ScopeLocalLabel(lbl);
+    };
+    auto merlin_is_local_fn = [this](const std::string &lbl) -> bool {
+      return !lbl.empty() &&
+             (lbl[0] == ':' ||
+              (lbl[0] == ']' && !current_scope_.global_label.empty()));
+    };
+    auto merlin_on_global_update = [this]() {
       current_scope_.local_labels.clear();
-    }
+    };
+    DefineLabelForDirective(
+        label, label_addr, LabelPolicy::AtPc, !in_dum_block_, symbols, section,
+        current_scope_.local_labels, current_scope_.global_label,
+        merlin_scope_fn, merlin_is_local_fn, merlin_on_global_update);
   }
   // Expand macro
   DirectiveContext ctx;
@@ -1331,35 +1335,37 @@ void MerlinSyntaxParser::HandleInstructionLine(const std::string &directive,
   // Create label atom first if label present
   if (!label.empty()) {
     uint32_t label_addr = in_dum_block_ ? dum_address_ : current_address_;
-    std::string scoped_label = ScopeLocalLabel(label);
-
+    // scope_fn handles both local-label scoping and ]variable sequencing.
     // ]variable code labels (e.g. "]rts  rts") are redefined across
     // subroutines.  Give each definition a unique name (]rts_1, ]rts_2, …) so
     // that multi-pass assembly resolves references to the *nearby* definition
     // rather than always using the last global one.  Only label-on-instruction
     // definitions get unique names; EQU-style ]var = VALUE assignments keep
     // their original name because they act as mutable numeric variables.
-    if (!label.empty() && label[0] == ']' &&
-        label.find(':') == std::string::npos) {
-      int seq = ++var_label_seq_[label]; // increment and capture new seq# // NOLINT(cppcoreguidelines-init-variables)
-      scoped_label = label + "_" + std::to_string(seq);
-    }
-
-    symbols.Define(scoped_label, SymbolType::Label,
-                   std::make_shared<LiteralExpr>(label_addr));
-    if (!in_dum_block_) {
-      section.atoms.push_back(
-          std::make_shared<LabelAtom>(scoped_label, label_addr));
-    }
-    if (label[0] != ':' &&
-        (label[0] != ']' || current_scope_.global_label.empty())) {
-      // True global labels (no ':' or ']' prefix) always update scope.
-      // ]variable labels are mutable variables, NOT scope anchors — EXCEPT at
-      // the start of the file before any true global label exists.  In that
-      // case they must anchor scope so :local labels around them can resolve.
-      current_scope_.global_label = label;
+    auto merlin_scope_fn = [this](const std::string &lbl) -> std::string {
+      std::string scoped = ScopeLocalLabel(lbl);
+      if (!lbl.empty() && lbl[0] == ']' && lbl.find(':') == std::string::npos) {
+        int seq = ++var_label_seq_[lbl]; // NOLINT(cppcoreguidelines-init-variables)
+        scoped = lbl + "_" + std::to_string(seq);
+      }
+      return scoped;
+    };
+    auto merlin_is_local_fn = [this](const std::string &lbl) -> bool {
+      return !lbl.empty() &&
+             (lbl[0] == ':' ||
+              (lbl[0] == ']' && !current_scope_.global_label.empty()));
+    };
+    // True global labels (no ':' or ']' prefix) always update scope.
+    // ]variable labels are mutable variables, NOT scope anchors — EXCEPT at
+    // the start of the file before any true global label exists.  In that
+    // case they must anchor scope so :local labels around them can resolve.
+    auto merlin_on_global_update = [this]() {
       current_scope_.local_labels.clear();
-    }
+    };
+    DefineLabelForDirective(
+        label, label_addr, LabelPolicy::AtPc, !in_dum_block_, symbols, section,
+        current_scope_.local_labels, current_scope_.global_label,
+        merlin_scope_fn, merlin_is_local_fn, merlin_on_global_update);
   }
   // Translate any ':word' local-label references to the scoped name, then
   // expand ]variable references to their current unique-instance names, then

@@ -155,12 +155,7 @@ void EdtasmSyntaxParser::ParseLine(const std::string &line, Section &section,
   std::string processed = StripComments(line);
   processed = Trim(processed);
 
-  if (processed.empty()) {
-    return;
-  }
-
-  // Check if this is a comment line
-  if (IsCommentLine(processed)) {
+  if (processed.empty() || IsCommentLine(processed)) {
     return;
   }
 
@@ -169,31 +164,16 @@ void EdtasmSyntaxParser::ParseLine(const std::string &line, Section &section,
   std::string opcode;
   std::string operands;
 
-  // Check if line starts with whitespace (no label)
-  if (line.empty() || std::isspace(static_cast<unsigned char>(line[0]))) {
-    // No label, find opcode
-    size_t opcode_start = processed.find_first_not_of(" \t");
-    if (opcode_start == std::string::npos) {
-      return;
-    }
+  bool has_label =
+      !line.empty() && !std::isspace(static_cast<unsigned char>(line[0]));
 
-    size_t opcode_end = processed.find_first_of(" \t", opcode_start);
-    if (opcode_end == std::string::npos) {
-      opcode = processed.substr(opcode_start);
-    } else {
-      opcode = processed.substr(opcode_start, opcode_end - opcode_start);
-      operands = Trim(processed.substr(opcode_end));
-    }
-  } else {
-    // Has label, extract it
+  if (has_label) {
     size_t label_end = processed.find_first_of(" \t");
     if (label_end == std::string::npos) {
-      // Label only, no opcode
-      label = processed;
+      label = processed; // label-only line
     } else {
       label = processed.substr(0, label_end);
       std::string rest = Trim(processed.substr(label_end));
-
       size_t opcode_end = rest.find_first_of(" \t");
       if (opcode_end == std::string::npos) {
         opcode = rest;
@@ -201,6 +181,19 @@ void EdtasmSyntaxParser::ParseLine(const std::string &line, Section &section,
         opcode = rest.substr(0, opcode_end);
         operands = Trim(rest.substr(opcode_end));
       }
+    }
+  } else {
+    // No label — skip leading whitespace, then extract opcode
+    size_t opcode_start = processed.find_first_not_of(" \t");
+    if (opcode_start == std::string::npos) {
+      return;
+    }
+    size_t opcode_end = processed.find_first_of(" \t", opcode_start);
+    if (opcode_end == std::string::npos) {
+      opcode = processed.substr(opcode_start);
+    } else {
+      opcode = processed.substr(opcode_start, opcode_end - opcode_start);
+      operands = Trim(processed.substr(opcode_end));
     }
   }
 
@@ -224,9 +217,9 @@ void EdtasmSyntaxParser::ParseLine(const std::string &line, Section &section,
        opcode_upper == directives::FCC || opcode_upper == directives::RMB ||
        opcode_upper == directives::SETDP);
 
-  // Create label atom for non-EQU/SET directives and instructions
+  // Create label atom for non-EQU/SET directives and instructions.
   // EQU and SET handle their labels internally (they don't create address
-  // labels)
+  // labels).
   if (!label.empty() && opcode_upper != directives::EQU &&
       opcode_upper != directives::SET) {
     symbols.Define(label, SymbolType::Label,
@@ -240,7 +233,7 @@ void EdtasmSyntaxParser::ParseLine(const std::string &line, Section &section,
     return;
   }
 
-  // Otherwise, it's an instruction
+  // Otherwise, it's an instruction.
   section.atoms.push_back(
       std::make_shared<InstructionAtom>(opcode_upper, operands));
   current_address_ += 1; // Placeholder (actual size determined during encoding)

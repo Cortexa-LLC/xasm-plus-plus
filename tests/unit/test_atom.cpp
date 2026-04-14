@@ -18,9 +18,9 @@ TEST(AtomTest, AtomTypeEnum) {
   EXPECT_EQ(type, AtomType::Data);
 }
 
-// Test base Atom class
+// Test base Atom class (via concrete LabelAtom since Atom is now abstract)
 TEST(AtomTest, BaseAtomCreation) {
-  Atom atom(AtomType::Label);
+  LabelAtom atom("test", 0);
   EXPECT_EQ(atom.type, AtomType::Label);
   EXPECT_EQ(atom.size, 0U);
   EXPECT_EQ(atom.last_size, 0U);

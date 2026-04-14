@@ -707,24 +707,66 @@ void HandleMacroDirective(DirectiveContext &ctx) {
 }
 
 // ENDM - End macro/repeat block
+// ---------------------------------------------------------------------------
+// ExpandRepeatBlock — invoked by HandleEndmDirective when ENDM closes a
+// REPT/IRP/IRPC block.  Clears parser repeat-state first (to prevent
+// re-capture of expanded lines), then expands.
+// ---------------------------------------------------------------------------
+static void ExpandRepeatBlock(EdtasmM80PlusPlusSyntaxParser *parser,
+                               EdtasmM80PlusPlusSyntaxParser::RepeatType repeat_type,
+                               const std::vector<std::string> &repeat_body,
+                               int rept_count,
+                               const std::string &repeat_param,
+                               const std::vector<std::string> &repeat_values,
+                               Section &section,
+                               ConcreteSymbolTable &symbols) {
+  if (repeat_type == EdtasmM80PlusPlusSyntaxParser::RepeatType::REPT) {
+    for (int i = 0; i < rept_count; ++i) {
+      if (parser->exitm_triggered_) {
+        break;
+      }
+      parser->ExpandAndParseLines(repeat_body, section, symbols);
+    }
+    return;
+  }
+
+  // IRP / IRPC: iterate over value list
+  for (const auto &value : repeat_values) {
+    if (parser->exitm_triggered_) {
+      break;
+    }
+    std::vector<std::string> expanded_lines;
+    expanded_lines.reserve(repeat_body.size());
+    for (const auto &line : repeat_body) {
+      std::vector<std::string> param_names = {repeat_param};
+      std::vector<std::string> param_values = {value};
+      expanded_lines.push_back(
+          parser->SubstituteMacroParameters(line, param_names, param_values));
+    }
+    parser->ExpandAndParseLines(expanded_lines, section, symbols);
+  }
+}
+
 void HandleEndmDirective(DirectiveContext &ctx) {
   auto *parser = static_cast<EdtasmM80PlusPlusSyntaxParser *>(ctx.parser_state);
 
-  // Check if we're in a macro definition or repeat block
   if (parser->in_macro_definition_) {
-    // Store the completed macro
+    // Store the completed macro and end capture.
     parser->macros_[parser->current_macro_.name] = parser->current_macro_;
     parser->in_macro_definition_ = false;
-  } else if (parser->in_repeat_block_ !=
-             EdtasmM80PlusPlusSyntaxParser::RepeatType::NONE) {
-    // Save repeat state before clearing it
-    auto repeat_type = parser->in_repeat_block_;
-    auto repeat_body = parser->repeat_body_; // Copy the body
-    auto rept_count = parser->rept_count_;
-    auto repeat_param = parser->repeat_param_;
+    return;
+  }
+
+  if (parser->in_repeat_block_ !=
+      EdtasmM80PlusPlusSyntaxParser::RepeatType::NONE) {
+    // Snapshot the repeat state before clearing it to prevent re-capture.
+    auto repeat_type   = parser->in_repeat_block_;
+    auto repeat_body   = parser->repeat_body_;
+    auto rept_count    = parser->rept_count_;
+    auto repeat_param  = parser->repeat_param_;
     auto repeat_values = parser->repeat_values_;
 
-    // Clear repeat state BEFORE expanding to prevent re-capture
+    // Clear repeat state BEFORE expanding.
     parser->in_repeat_block_ = EdtasmM80PlusPlusSyntaxParser::RepeatType::NONE;
     parser->repeat_body_.clear();
     parser->rept_count_ = 0;
@@ -733,37 +775,12 @@ void HandleEndmDirective(DirectiveContext &ctx) {
     parser->repeat_nesting_depth_ = 0;
     parser->exitm_triggered_ = false;
 
-    // Now expand the saved body
-    if (repeat_type == EdtasmM80PlusPlusSyntaxParser::RepeatType::REPT) {
-      // REPT: repeat body N times
-      for (int i = 0; i < rept_count; ++i) {
-        if (parser->exitm_triggered_) {
-          break;
-        }
-        parser->ExpandAndParseLines(repeat_body, *ctx.section, *ctx.symbols);
-      }
-    } else if (repeat_type == EdtasmM80PlusPlusSyntaxParser::RepeatType::IRP ||
-               repeat_type == EdtasmM80PlusPlusSyntaxParser::RepeatType::IRPC) {
-      // IRP/IRPC: iterate over values
-      for (const auto &value : repeat_values) {
-        if (parser->exitm_triggered_) {
-          break;
-        }
-        // Substitute parameter in each line
-        std::vector<std::string> expanded_lines;
-        for (const auto &line : repeat_body) {
-          std::vector<std::string> param_names = {repeat_param};
-          std::vector<std::string> param_values = {value};
-          std::string expanded = parser->SubstituteMacroParameters(
-              line, param_names, param_values);
-          expanded_lines.push_back(expanded);
-        }
-        parser->ExpandAndParseLines(expanded_lines, *ctx.section, *ctx.symbols);
-      }
-    }
-  } else {
-    throw std::runtime_error("ENDM without matching MACRO/REPT/IRP/IRPC");
+    ExpandRepeatBlock(parser, repeat_type, repeat_body, rept_count,
+                      repeat_param, repeat_values, *ctx.section, *ctx.symbols);
+    return;
   }
+
+  throw std::runtime_error("ENDM without matching MACRO/REPT/IRP/IRPC");
 }
 
 // LOCAL - Define local symbol in macro
