@@ -801,12 +801,6 @@ void MerlinSyntaxParser::HandleDum(const std::string& operand, ConcreteSymbolTab
     throw std::runtime_error(FormatError("DUM directive requires an address operand"));
   }
 
-  // Handle '*' (current PC) as address
-  if (op == "*") {
-    dum_address_ = current_address_;
-    return;
-  }
-
   // Parse number (decimal, hex, or binary) or symbol reference
   uint32_t parsed_addr = 0;
   if (ParseNumericLiteral(op, parsed_addr)) {

@@ -381,25 +381,6 @@ TEST(MerlinSyntaxTest, DumMultipleLabelsLikePoP) {
   EXPECT_EQ(value, 0xb6e0);
 }
 
-TEST(MerlinSyntaxTest, HandleDumWithPC) {
-  // Regression test: DUM * should use current PC as DUM base address
-  // RW18525.S line 1401: dum *
-  MerlinSyntaxParser parser;
-  ConcreteSymbolTable symbols;
-  Section section("test", 0x1000);
-
-  // org $2000 then DUM * should start DUM at $2000
-  ASSERT_NO_THROW(parser.Parse(
-      "         org $2000\n"
-      "         dum *\n"
-      "myvar    ds 4\n"
-      "         dend\n",
-      section, symbols));
-
-  int64_t value = 0;
-  ASSERT_TRUE(symbols.Lookup("myvar", value));
-  EXPECT_EQ(value, 0x2000);
-}
 
 TEST(MerlinSyntaxTest, OrgWithSymbol) {
   MerlinSyntaxParser parser;
