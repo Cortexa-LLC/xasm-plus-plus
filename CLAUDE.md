@@ -20,6 +20,13 @@ Using the `Agent(...)` tool call is ALWAYS wrong here, even if it seems convenie
 
 ---
 
+## ABSOLUTE PROHIBITION
+
+**NOLINT, NOSONAR, and any suppression comments are FORBIDDEN.**
+Every finding MUST be fixed in code. Suppression is never an acceptable resolution.
+
+---
+
 ## ⚠️ CRITICAL SESSION RULES (MANDATORY)
 
 ### 1. Orchestrator Role (DEFAULT)
