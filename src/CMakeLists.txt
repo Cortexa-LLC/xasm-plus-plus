@@ -78,7 +78,6 @@ add_library(xasm_output STATIC
   output/binary_output.cpp
   output/listing_output.cpp
   output/symbol_output.cpp
-  output/output_writer.cpp
   output/intel_hex_writer.cpp
   output/srec_writer.cpp
   # Future output plugins:
