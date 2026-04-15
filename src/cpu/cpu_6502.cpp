@@ -1233,7 +1233,9 @@ size_t Cpu6502::GetInstructionSize(const std::string& mnemonic,
 
   // Local trim helper (avoids dependency on util header here)
   auto to_upper = [](std::string s) -> std::string {
-    for (char& c : s) c = static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
+    for (char& c : s) {
+      c = static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
+    }
     return s;
   };
 
@@ -2102,8 +2104,9 @@ std::vector<uint8_t> Cpu6502::EncodeInstruction(const std::string& mnemonic, uin
 
   // Helper to parse hex value
   auto parse_hex = [](const std::string& s) -> uint32_t {
-    if (s.empty() || s[0] != '$')
+    if (s.empty() || s[0] != '$') {
       return 0;
+    }
     return std::stoul(s.substr(1), nullptr, Opcodes::RADIX_HEXADECIMAL);
   };
 
@@ -2303,8 +2306,9 @@ std::vector<uint8_t> Cpu6502::EncodeInstructionSpecial(const std::string& mnemon
 
   // Helper to parse hex value
   auto parse_hex = [](const std::string& s) -> uint32_t {
-    if (s.empty() || s[0] != '$')
+    if (s.empty() || s[0] != '$') {
       cpu::ThrowExpectedHexValue();
+    }
     return std::stoul(s.substr(1), nullptr, Opcodes::RADIX_HEXADECIMAL);
   };
 

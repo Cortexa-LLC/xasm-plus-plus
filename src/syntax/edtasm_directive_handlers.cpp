@@ -131,8 +131,9 @@ void HandleDbDirective(DirectiveContext& ctx) {
   std::vector<uint8_t> immediate_bytes;
 
   for (const std::string& token : tokens) {
-    if (token.empty())
+    if (token.empty()) {
       continue;
+    }
 
     // Check for string literal
     if (token.size() >= 2 && (token[0] == '\'' || token[0] == '"')) {
@@ -186,8 +187,9 @@ void HandleDwDirective(DirectiveContext& ctx) {
   std::vector<std::string> expressions;
 
   for (const std::string& token : tokens) {
-    if (token.empty())
+    if (token.empty()) {
       continue;
+    }
 
     expressions.push_back(token);
     (*ctx.current_address) += 2;

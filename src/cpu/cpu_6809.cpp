@@ -278,11 +278,13 @@ static std::vector<uint8_t> EncodeMemInstr(const InstrOpcodes& entry, uint32_t o
                                            AddressingMode6809 mode) {
   // Helper: build {[prefix,] opcode, imm8}
   auto make_imm8 = [&](uint8_t opcode) -> std::vector<uint8_t> {
-    if (opcode == NO_OP)
+    if (opcode == NO_OP) {
       return {};
+    }
     std::vector<uint8_t> r;
-    if (entry.prefix)
+    if (entry.prefix) {
       r.push_back(entry.prefix);
+    }
     r.push_back(opcode);
     r.push_back(static_cast<uint8_t>(operand & 0xFF));
     return r;
@@ -290,11 +292,13 @@ static std::vector<uint8_t> EncodeMemInstr(const InstrOpcodes& entry, uint32_t o
 
   // Helper: build {[prefix,] opcode, hi, lo}  (big-endian 16-bit operand)
   auto make_imm16 = [&](uint8_t opcode) -> std::vector<uint8_t> {
-    if (opcode == NO_OP)
+    if (opcode == NO_OP) {
       return {};
+    }
     std::vector<uint8_t> r;
-    if (entry.prefix)
+    if (entry.prefix) {
       r.push_back(entry.prefix);
+    }
     r.push_back(opcode);
     auto v = encoding::ToBigEndian16(static_cast<uint16_t>(operand));
     r.insert(r.end(), v.begin(), v.end());
@@ -339,8 +343,9 @@ static std::vector<uint8_t> EncodeMemInstr(const InstrOpcodes& entry, uint32_t o
         return {};
       }
       std::vector<uint8_t> result;
-      if (entry.prefix)
+      if (entry.prefix) {
         result.push_back(entry.prefix);
+      }
       result.push_back(entry.idx);
       auto postbyte = BuildIndexedPostByte(mode, static_cast<int32_t>(operand), 0);
       result.insert(result.end(), postbyte.begin(), postbyte.end());

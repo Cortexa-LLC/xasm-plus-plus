@@ -842,8 +842,9 @@ void Assembler::RefixupDataAtoms(ConcreteSymbolTable& symbols, AssemblerResult& 
     pass.virtual_address = section.org;
 
     for (auto& atom : section.atoms) {
-      if (!atom)
+      if (!atom) {
         continue;
+      }
       atom->Accept(pass);
     }  // for (auto &atom : section.atoms)
   }  // for (auto &section : sections_)
