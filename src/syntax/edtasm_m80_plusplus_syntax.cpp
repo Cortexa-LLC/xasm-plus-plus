@@ -20,6 +20,8 @@
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
+#include <unordered_map>
+#include <unordered_set>
 
 namespace xasm {
 
@@ -404,164 +406,194 @@ bool EdtasmM80PlusPlusSyntaxParser::HandleCapturingMode(
   return true; // consumed
 }
 
+// ============================================================================
+// ParseLine helpers
+// ============================================================================
+
+// Forward declaration (defined below, before ParseLine).
+static bool IsLabelBindingDirective(const std::string &upper_second);
+
+// Skip whitespace from pos, then scan a non-space token.
+// Returns the token; advances pos past it.
+static std::string ScanToken(const std::string &line, size_t &pos) {
+  while (pos < line.size() && std::isspace(static_cast<unsigned char>(line[pos]))) { pos++; }
+  size_t start = pos;
+  while (pos < line.size() && !std::isspace(static_cast<unsigned char>(line[pos]))) { pos++; }
+  return (start < line.size()) ? line.substr(start, pos - start) : std::string{};
+}
+
+// Convert string to uppercase in-place.
+static std::string ToUpper(std::string s) {
+  std::transform(s.begin(), s.end(), s.begin(), ::toupper);
+  return s;
+}
+
+bool EdtasmM80PlusPlusSyntaxParser::IsConditionalDirective(
+    const std::string &upper_mnemonic) {
+  static const std::unordered_set<std::string> kConditionalDirectives = {
+      IF,    IFDEF, IFNDEF, IFEQ,  IFNE, IFLT, IFGT, IFLE, IFGE,
+      IF1,   IF2,   IFB,    IFNB,  IFIDN, IFDIF, ELSE, ENDIF,
+  };
+  return kConditionalDirectives.count(upper_mnemonic) > 0;
+}
+
+void EdtasmM80PlusPlusSyntaxParser::RegisterMacroLocals(
+    const std::string &operand) {
+  std::istringstream iss(operand);
+  std::string symbol;
+  while (std::getline(iss, symbol, ',')) {
+    symbol = Trim(symbol);
+    if (!symbol.empty()) {
+      current_macro_.locals.push_back(symbol);
+    }
+  }
+}
+
+// Scan @p line for up to three logical components: label, mnemonic, operand.
+// On return @p upper_mnemonic is the uppercase mnemonic (empty if label-only).
+void EdtasmM80PlusPlusSyntaxParser::ParseTokens(
+    const std::string &line, std::string &upper_mnemonic,
+    std::string &label, std::string &operand,
+    Section &section, ConcreteSymbolTable &symbols) {
+  size_t pos = 0;
+  label = ParseLabel(line, pos, section, symbols);
+
+  const std::string mnemonic = ScanToken(line, pos);
+  if (mnemonic.empty()) { upper_mnemonic.clear(); return; }
+  upper_mnemonic = ToUpper(mnemonic);
+
+  size_t second_start = pos;
+  const std::string upper_second = ToUpper(ScanToken(line, pos));
+
+  if (label.empty() && IsLabelBindingDirective(upper_second)) {
+    label = mnemonic;
+    upper_mnemonic = upper_second;
+  } else {
+    pos = second_start;
+  }
+
+  operand = (pos < line.size()) ? Trim(line.substr(pos)) : std::string{};
+}
+
+void EdtasmM80PlusPlusSyntaxParser::ExpandMacroCall(
+    const MacroDefinition &macro, const std::string &operand,
+    Section &section, ConcreteSymbolTable &symbols) {
+  // Parse comma-separated arguments
+  std::vector<std::string> args;
+  std::string trimmed_operand = Trim(operand);
+  if (!trimmed_operand.empty()) {
+    std::string remaining = trimmed_operand;
+    size_t comma_pos = 0;
+    while ((comma_pos = remaining.find(',')) != std::string::npos) {
+      args.push_back(Trim(remaining.substr(0, comma_pos)));
+      remaining = remaining.substr(comma_pos + 1);
+    }
+    args.push_back(Trim(remaining));
+  }
+
+  if (args.size() != macro.params.size()) {
+    throw std::runtime_error("Macro " + macro.name + " expects " +
+                             std::to_string(macro.params.size()) +
+                             " parameters, got " +
+                             std::to_string(args.size()));
+  }
+
+  // Expand macro body with parameter substitution and LOCAL label uniquification
+  int unique_id = next_macro_unique_id_++;
+  macro_local_labels_.clear();
+  for (const auto &local_label : macro.locals) {
+    macro_local_labels_.insert(local_label + "_" + std::to_string(unique_id));
+  }
+
+  std::vector<std::string> expanded_lines;
+  for (const auto &body_line : macro.body) {
+    std::string expanded =
+        SubstituteMacroParameters(body_line, macro.params, args);
+    expanded = MakeLocalLabelUnique(expanded, macro.locals, unique_id);
+    expanded_lines.push_back(expanded);
+  }
+
+  ExpandAndParseLines(expanded_lines, section, symbols);
+  macro_local_labels_.clear();
+}
+
+// Returns true when the given (already-uppercased, trimmed) line equals
+// @p keyword or starts with keyword followed by whitespace.
+static bool LineIsKeyword(const std::string &upper_line,
+                          const std::string &keyword) {
+  return upper_line == keyword ||
+         upper_line.starts_with(keyword + " ") ||
+         upper_line.starts_with(keyword + "\t");
+}
+
+// Returns true when the first non-whitespace token in @p upper_line is the
+// LOCAL directive keyword.
+static bool LineStartsWithLocal(const std::string &upper_line) {
+  size_t pos = upper_line.find_first_not_of(" \t");
+  if (pos == std::string::npos) {
+    return false;
+  }
+  const std::string rest = upper_line.substr(pos);
+  return rest.starts_with(std::string(LOCAL) + " ") ||
+         rest.starts_with(std::string(LOCAL) + "\t");
+}
+
+// Returns the substring after the LOCAL keyword (the operand), trimmed.
+static std::string ExtractLocalOperand(const std::string &upper_line) {
+  size_t pos = upper_line.find_first_not_of(" \t");
+  const std::string rest =
+      (pos == std::string::npos) ? upper_line : upper_line.substr(pos);
+  // Skip LOCAL keyword
+  std::string after = rest.substr(std::strlen(LOCAL));
+  // ltrim
+  size_t start = after.find_first_not_of(" \t");
+  if (start == std::string::npos) { return ""; }
+  // rtrim
+  size_t end = after.find_last_not_of(" \t");
+  return after.substr(start, end - start + 1);
+}
+
+// Returns the uppercase label binding directive if present, otherwise empty.
+// Also advances `pos` past the operand start.
+static bool IsLabelBindingDirective(const std::string &upper_second) {
+  static const std::unordered_set<std::string> kLabelBinders = {
+      EQU, EQUALS, SET, DEFL, MACRO,
+  };
+  return kLabelBinders.count(upper_second) > 0;
+}
+
 void EdtasmM80PlusPlusSyntaxParser::ParseLine(const std::string &line,
                                               Section &section,
                                               ConcreteSymbolTable &symbols) {
-  // Store original line for listing output (before comment stripping)
   const std::string &original_line = line;
 
-  // Check if we're capturing a macro/repeat block
-  // First check if this line is ENDM (to end capture) or END (to stop assembly)
-  std::string trimmed_line = Trim(line);
+  const std::string trimmed_line = Trim(line);
   std::string upper_line = trimmed_line;
   std::transform(upper_line.begin(), upper_line.end(), upper_line.begin(),
                  ::toupper);
 
-  bool is_endm = (upper_line == ENDM ||
-                  upper_line.starts_with(std::string(ENDM) + " ") ||
-                  upper_line.starts_with(std::string(ENDM) + "\t"));
+  const bool is_endm = LineIsKeyword(upper_line, ENDM);
+  const bool is_end  = LineIsKeyword(upper_line, END);
 
-  bool is_end =
-      (upper_line == END || upper_line.starts_with(std::string(END) + " ") ||
-       upper_line.starts_with(std::string(END) + "\t"));
-
-  // Check if this is a LOCAL directive (should be processed immediately in
-  // macro definition)
-  std::string trimmed_upper = upper_line;
-  size_t first_non_space = trimmed_upper.find_first_not_of(" \t");
-  if (first_non_space != std::string::npos) {
-    trimmed_upper = trimmed_upper.substr(first_non_space);
-  }
-  bool is_local = (trimmed_upper.starts_with(std::string(LOCAL) + " ") ||
-                   trimmed_upper.starts_with(std::string(LOCAL) + "\t"));
-
-  if (trimmed_line.find(LOCAL) != std::string::npos) {
-  }
-
-  // If this is a LOCAL directive in a macro definition, process it now
-  if (in_macro_definition_ && is_local) {
-    // Extract local symbol names from the operand
-    std::string operand =
-        trimmed_upper.substr(std::strlen(LOCAL)); // Skip LOCAL
-    operand = Trim(operand);
-
-    // Parse comma-separated list of symbols
-    std::vector<std::string> local_symbols;
-    std::istringstream iss(operand);
-    std::string symbol;
-    while (std::getline(iss, symbol, ',')) {
-      symbol = Trim(symbol);
-      if (!symbol.empty()) {
-        current_macro_.locals.push_back(symbol);
-      }
-    }
-
-    // Don't add LOCAL directive to macro body
+  // LOCAL inside a macro definition — process immediately (not captured).
+  if (in_macro_definition_ && LineStartsWithLocal(upper_line)) {
+    RegisterMacroLocals(ExtractLocalOperand(upper_line));
     return;
   }
 
-  // Delegate to the capturing-mode handler.  Returns true when this line has
-  // been captured into the macro/repeat body and ParseLine should return.
   if (HandleCapturingMode(trimmed_line, is_endm, is_end)) {
     return;
   }
 
-  size_t pos = 0;
-
-  // Check for label (ends with : or ::)
-  std::string label = ParseLabel(line, pos, section, symbols);
-
-  // Skip whitespace after label
-  while (pos < line.size() && std::isspace(line[pos])) {
-    pos++;
-  }
-
-  // Get mnemonic/directive
-  size_t start = pos;
-  while (pos < line.size() && !std::isspace(line[pos])) {
-    pos++;
-  }
-
-  if (start >= line.size()) {
-    // Line with only a label
-    return;
-  }
-
-  std::string mnemonic = line.substr(start, pos - start);
-
-  // Convert to uppercase for case-insensitive matching
-  std::string upper_mnemonic = mnemonic;
-  std::transform(upper_mnemonic.begin(), upper_mnemonic.end(),
-                 upper_mnemonic.begin(), ::toupper);
-
-  // Skip whitespace after mnemonic
-  while (pos < line.size() && std::isspace(line[pos])) {
-    pos++;
-  }
-
-  // Get next token to check if mnemonic is actually a label for EQU/=/SET
-  std::string second_token;
-  size_t second_start = pos;
-  while (pos < line.size() && !std::isspace(line[pos])) {
-    pos++;
-  }
-  if (second_start < line.size()) {
-    second_token = line.substr(second_start, pos - second_start);
-  }
-
-  // Convert second token to uppercase
-  std::string upper_second = second_token;
-  std::transform(upper_second.begin(), upper_second.end(), upper_second.begin(),
-                 ::toupper);
-
-  // Check if this is label-without-colon syntax (LABEL EQU/=/SET/MACRO value)
-  if (label.empty() &&
-      (upper_second == EQU || upper_second == EQUALS || upper_second == SET ||
-       upper_second == DEFL || upper_second == MACRO)) {
-    // First token is the label, second is the directive
-    label = mnemonic;
-    upper_mnemonic = upper_second;
-
-    // Skip whitespace after directive
-    while (pos < line.size() && std::isspace(line[pos])) {
-      pos++;
-    }
-  } else {
-    // Reset pos to after first token for normal processing
-    pos = second_start;
-  }
-
-  // Get operand (rest of line)
+  std::string upper_mnemonic;
+  std::string label;
   std::string operand;
-  if (pos < line.size()) {
-    operand = Trim(line.substr(pos));
-  }
+  ParseTokens(line, upper_mnemonic, label, operand, section, symbols);
 
-  // Conditional assembly directives must always be processed
-  // (to maintain stack integrity), but other directives honor the stack
-  bool is_conditional_directive =
-      (upper_mnemonic == IF || upper_mnemonic == IFDEF ||
-       upper_mnemonic == IFNDEF || upper_mnemonic == IFEQ ||
-       upper_mnemonic == IFNE || upper_mnemonic == IFLT ||
-       upper_mnemonic == IFGT || upper_mnemonic == IFLE ||
-       upper_mnemonic == IFGE || upper_mnemonic == IF1 ||
-       upper_mnemonic == IF2 || upper_mnemonic == IFB ||
-       upper_mnemonic == IFNB || upper_mnemonic == IFIDN ||
-       upper_mnemonic == IFDIF || upper_mnemonic == ELSE ||
-       upper_mnemonic == ENDIF);
+  if (upper_mnemonic.empty()) { return; } // label-only line
 
-  // Check if we should emit code based on conditional stack
-  bool should_emit = true;
-  for (const auto &block : conditional_stack_) {
-    if (!block.should_emit) {
-      should_emit = false;
-      break;
-    }
-  }
-
-  // Process conditional directives even when not emitting
-  // (to maintain stack balance)
-  if (is_conditional_directive) {
+  // Conditional directives are always dispatched (maintain stack balance).
+  if (IsConditionalDirective(upper_mnemonic)) {
     if (directive_registry_.IsRegistered(upper_mnemonic)) {
       auto ctx = MakeDirectiveContext(section, symbols, original_line,
                                       upper_mnemonic, label, operand);
@@ -570,12 +602,8 @@ void EdtasmM80PlusPlusSyntaxParser::ParseLine(const std::string &line,
     return;
   }
 
-  // Skip non-conditional directives when not emitting
-  if (!should_emit) {
-    return;
-  }
+  if (ShouldSuppressEmission()) { return; }
 
-  // Dispatch via directive registry
   if (directive_registry_.IsRegistered(upper_mnemonic)) {
     auto ctx = MakeDirectiveContext(section, symbols, original_line,
                                     upper_mnemonic, label, operand);
@@ -583,215 +611,266 @@ void EdtasmM80PlusPlusSyntaxParser::ParseLine(const std::string &line,
     return;
   }
 
-  // Check if it's a macro invocation
   if (macros_.contains(upper_mnemonic)) {
-    const MacroDefinition &macro = macros_[upper_mnemonic];
-
-    // Parse arguments
-    std::vector<std::string> args;
-    std::string trimmed_operand = Trim(operand);
-    if (!trimmed_operand.empty()) {
-      std::string remaining = trimmed_operand;
-      size_t comma_pos = 0;
-      while ((comma_pos = remaining.find(',')) != std::string::npos) {
-        std::string arg = Trim(remaining.substr(0, comma_pos));
-        args.push_back(arg);
-        remaining = remaining.substr(comma_pos + 1);
-      }
-      // Last argument
-      args.push_back(Trim(remaining));
-    }
-
-    // Check parameter count
-    if (args.size() != macro.params.size()) {
-      throw std::runtime_error("Macro " + macro.name + " expects " +
-                               std::to_string(macro.params.size()) +
-                               " parameters, got " +
-                               std::to_string(args.size()));
-    }
-
-    // Expand macro body with parameter substitution
-    std::vector<std::string> expanded_lines;
-    int unique_id = next_macro_unique_id_++;
-
-    // Build set of unique LOCAL label names to suppress atom creation
-    macro_local_labels_.clear();
-    for (const auto &local_label : macro.locals) {
-      std::string unique_label = local_label + "_" + std::to_string(unique_id);
-      macro_local_labels_.insert(unique_label);
-    }
-
-    for (const auto &body_line : macro.body) {
-      std::string expanded =
-          SubstituteMacroParameters(body_line, macro.params, args);
-      // Handle LOCAL labels
-      expanded = MakeLocalLabelUnique(expanded, macro.locals, unique_id);
-      expanded_lines.push_back(expanded);
-    }
-
-    // Parse expanded lines
-    ExpandAndParseLines(expanded_lines, section, symbols);
-
-    // Clear LOCAL labels after macro expansion
-    macro_local_labels_.clear();
+    ExpandMacroCall(macros_[upper_mnemonic], operand, section, symbols);
     return;
   }
 
-  // Assume it's a CPU instruction - create InstructionAtom
-  // CPU plugin will later encode it (Phase 9+)
+  // Emit CPU instruction atom (encoding deferred to CPU plugin, Phase 9+).
   auto inst_atom = std::make_shared<InstructionAtom>(upper_mnemonic, operand);
   inst_atom->location = SourceLocation(current_file_, current_line_, 1);
   inst_atom->source_line = original_line;
   section.atoms.push_back(inst_atom);
 
-  // Estimate instruction size based on mnemonic and operand
-  // This is a heuristic until CPU plugin provides exact encoding (Phase 9+)
-  {
-    DirectiveContext size_ctx;
-    size_ctx.mnemonic = upper_mnemonic;
-    size_ctx.operand = operand;
-    uint32_t estimated_size = EstimateZ80InstructionSize(size_ctx);
-    current_address_ += estimated_size;
+  DirectiveContext size_ctx;
+  size_ctx.mnemonic = upper_mnemonic;
+  size_ctx.operand = operand;
+  current_address_ += EstimateZ80InstructionSize(size_ctx);
+}
+
+// ============================================================================
+// Instruction Size Estimation Helpers
+// ============================================================================
+
+/**
+ * @brief Estimate size of IX/IY-indexed instructions.
+ *
+ * All IX/IY instructions carry a DD/FD prefix.  When the operand also
+ * contains an indirect-addressing bracket '(' the prefix is followed by
+ * the opcode AND a displacement byte, optionally with a 16-bit immediate.
+ */
+uint32_t EdtasmM80PlusPlusSyntaxParser::EstimateIndexedInsnSize(
+    const std::string &operand) {
+  if (operand.find('(') == std::string::npos) {
+    return INSTRUCTION_SIZE_TWO_BYTES; // prefix + opcode, no displacement
   }
+  // (IX+d) — with displacement; if also a comma operand, add immediate byte
+  return (operand.find(',') != std::string::npos) ? 4
+                                                   : INSTRUCTION_SIZE_THREE_BYTES;
+}
+
+/**
+ * @brief Estimate size of 16-bit immediate operand instructions.
+ *
+ * Returns 3 if the operand contains a hex literal with more than 2 digits
+ * (i.e. a value that cannot fit in 8 bits), otherwise returns 0 (unknown).
+ */
+static uint32_t EstimateImmediate16BitSize(const std::string &operand) {
+  size_t dollar = operand.find('$');
+  if (dollar == std::string::npos) {
+    return 0;
+  }
+  size_t hex_start = dollar + 1;
+  size_t hex_end = hex_start;
+  while (hex_end < operand.size() && std::isxdigit(operand[hex_end])) {
+    ++hex_end;
+  }
+  return (hex_end - hex_start > 2) ? INSTRUCTION_SIZE_THREE_BYTES : 0;
+}
+
+// Returns true when the operand contains an I- or R-register reference
+// typical of ED-prefixed LD instructions (LD I,A / LD A,I etc.).
+static bool HasIRRegisterOperand(const std::string &operand) {
+  return operand.find("I,") != std::string::npos ||
+         operand.find("R,") != std::string::npos ||
+         operand.find(",I") != std::string::npos ||
+         operand.find(",R") != std::string::npos;
+}
+
+// Returns true when the operand references an index register (IX or IY).
+static bool HasIndexRegisterOperand(const std::string &operand) {
+  return operand.find("IX") != std::string::npos ||
+         operand.find("IY") != std::string::npos;
 }
 
 uint32_t EdtasmM80PlusPlusSyntaxParser::EstimateZ80InstructionSize(
     const DirectiveContext &ctx) {
   const std::string &mnemonic = ctx.mnemonic;
   const std::string &operand = ctx.operand;
-  // Heuristic Z80 instruction size estimation
-  // Actual encoding will be done by CPU plugin (Phase 9+)
 
-  // Extended instructions (ED prefix) - typically 2+ bytes
-  if (mnemonic.starts_with("LD") && (operand.find("I,") != std::string::npos ||
-                                   operand.find("R,") != std::string::npos ||
-                                   operand.find(",I") != std::string::npos ||
-                                   operand.find(",R") != std::string::npos)) {
-    return INSTRUCTION_SIZE_TWO_BYTES; // ED-prefixed LD I/R instructions
-  }
-
-  // Index register instructions (DD/FD prefix)
-  if (operand.find("IX") != std::string::npos ||
-      operand.find("IY") != std::string::npos) {
-    // With displacement: prefix + opcode + displacement
-    if (operand.find('(') != std::string::npos) {
-      return operand.find(',') != std::string::npos
-                 ? 4
-                 : INSTRUCTION_SIZE_THREE_BYTES; // With or without immediate
-    }
-    return INSTRUCTION_SIZE_TWO_BYTES; // Without displacement
-  }
-
-  // Immediate 16-bit operands (e.g., LD HL,nnnn)
-  if (operand.find(',') != std::string::npos &&
-      (operand.find('$') != std::string::npos ||
-       operand.find('0') != std::string::npos)) {
-    std::string trimmed_op = Trim(operand);
-    // Check if likely 16-bit value (hex with 3+ digits, or decimal > 255)
-    if (trimmed_op.find('$') != std::string::npos) {
-      size_t hex_start = trimmed_op.find('$') + 1;
-      size_t hex_end = hex_start;
-      while (hex_end < trimmed_op.size() &&
-             std::isxdigit(trimmed_op[hex_end])) {
-        hex_end++;
-      }
-      if (hex_end - hex_start > 2) {
-        return INSTRUCTION_SIZE_THREE_BYTES; // opcode + 16-bit immediate
-      }
-    }
-  }
-
-  // Immediate 8-bit operands (e.g., LD A,n)
-  if (operand.find(',') != std::string::npos) {
-    return INSTRUCTION_SIZE_TWO_BYTES; // opcode + byte operand (default for immediate data)
-  }
-
-  // Relative jumps (JR, DJNZ) - opcode + displacement
-  if (mnemonic == JR || mnemonic == DJNZ) {
+  // ED-prefixed LD I/R instructions (2 bytes)
+  if (mnemonic.starts_with("LD") && HasIRRegisterOperand(operand)) {
     return INSTRUCTION_SIZE_TWO_BYTES;
   }
 
-  // Absolute jumps/calls - opcode + 16-bit address
-  if (mnemonic == JP || mnemonic == CALL) {
-    return INSTRUCTION_SIZE_THREE_BYTES;
+  // DD/FD-prefixed IX/IY instructions
+  if (HasIndexRegisterOperand(operand)) {
+    return EstimateIndexedInsnSize(operand);
   }
 
-  // RST instructions - single byte
-  if (mnemonic == RST) {
-    return INSTRUCTION_SIZE_SINGLE_BYTE;
+  // 16-bit immediate: opcode + 16-bit value = 3 bytes
+  if (operand.find(',') != std::string::npos &&
+      operand.find('$') != std::string::npos) {
+    uint32_t size = EstimateImmediate16BitSize(Trim(operand));
+    if (size > 0) { return size; }
   }
 
-  // Default: assume single-byte instruction (register-only, implicit, etc.)
+  // Generic comma operand → opcode + 8-bit immediate = 2 bytes
+  if (operand.find(',') != std::string::npos) {
+    return INSTRUCTION_SIZE_TWO_BYTES;
+  }
+
+  // Relative jumps / absolute jumps+calls / RST → per-mnemonic sizing
+  static const std::unordered_map<std::string, uint32_t> kMnemonicSizes = {
+      {std::string(JR),   INSTRUCTION_SIZE_TWO_BYTES},
+      {std::string(DJNZ), INSTRUCTION_SIZE_TWO_BYTES},
+      {std::string(JP),   INSTRUCTION_SIZE_THREE_BYTES},
+      {std::string(CALL), INSTRUCTION_SIZE_THREE_BYTES},
+      {std::string(RST),  INSTRUCTION_SIZE_SINGLE_BYTE},
+  };
+  auto it = kMnemonicSizes.find(mnemonic);
+  if (it != kMnemonicSizes.end()) { return it->second; }
+
   return INSTRUCTION_SIZE_SINGLE_BYTE;
+}
+
+// Returns true when @p c is a valid assembler label identifier character.
+static bool IsLabelChar(char c) {
+  return std::isalnum(static_cast<unsigned char>(c)) ||
+         c == '_' || c == '$' || c == '.' || c == '?';
+}
+
+// Returns true when all characters in @p s are valid label characters.
+static bool IsValidLabel(const std::string &s) {
+  for (char c : s) {
+    if (!IsLabelChar(c)) { return false; }
+  }
+  return true;
+}
+
+// Returns true when the label's first character indicates a local scope label
+// (starts with '.', '$', or '?').
+static bool IsLocalScopeLabel(const std::string &label) {
+  return label[0] == '.' || label[0] == '$' || label[0] == '?';
 }
 
 std::string
 EdtasmM80PlusPlusSyntaxParser::ParseLabel(const std::string &line, size_t &pos,
                                           Section &section,
                                           ConcreteSymbolTable &symbols) {
-  // Check if line starts with a label (identifier followed by : or ::)
   size_t colon_pos = line.find(':');
   if (colon_pos == std::string::npos || colon_pos == 0) {
-    return ""; // No label
+    return "";
   }
 
-  // Extract potential label
-  std::string potential_label = Trim(line.substr(0, colon_pos));
-
-  // Check if it's all identifier characters (no spaces)
-  bool is_label = true;
-  for (char c : potential_label) {
-    if (!std::isalnum(c) && c != '_' && c != '$' && c != '.' && c != '?') {
-      is_label = false;
-      break;
-    }
-  }
-
-  if (!is_label) {
+  const std::string potential_label = Trim(line.substr(0, colon_pos));
+  if (!IsValidLabel(potential_label)) {
     return "";
   }
 
   // Determine if public label (::) or private (:)
-  bool is_public = false;
-  if (colon_pos + 1 < line.size() && line[colon_pos + 1] == ':') {
-    pos = colon_pos + 2; // Skip ::
-    is_public = true;
-  } else {
-    pos = colon_pos + 1; // Skip :
-  }
+  const bool is_public =
+      (colon_pos + 1 < line.size() && line[colon_pos + 1] == ':');
+  pos = colon_pos + (is_public ? 2 : 1);
 
-  // Define symbol first
   symbols.DefineLabel(potential_label, current_address_);
 
-  // Mark as public (exported) if double colon was used
   if (is_public) {
     Symbol *symbol = symbols.GetSymbol(potential_label);
-    if (symbol != nullptr) {
-      symbol->is_exported = true;
-    }
+    if (symbol != nullptr) { symbol->is_exported = true; }
   }
 
-  // Create label atom ONLY if not a macro LOCAL label
-  // Macro LOCAL labels should not create atoms (only used for references)
   if (!macro_local_labels_.contains(potential_label)) {
     auto label_atom =
         std::make_shared<LabelAtom>(potential_label, current_address_);
     label_atom->location = SourceLocation(current_file_, current_line_, 1);
-    label_atom->source_line = line; // Store original line
+    label_atom->source_line = line;
     section.atoms.push_back(label_atom);
   }
 
-  // Update scope if it's a global label (not starting with . $ ?)
-  if (potential_label[0] != '.' && potential_label[0] != '$' && // NOLINT(bugprone-branch-clone)
-      potential_label[0] != '?') {
+  if (IsLocalScopeLabel(potential_label)) {
+    current_scope_.local_labels[potential_label] = current_address_;
+  } else {
     current_scope_.global_label = potential_label;
     current_scope_.local_labels.clear();
-  } else {
-    // Local label - add to current scope
-    current_scope_.local_labels[potential_label] = current_address_;
   }
 
   return potential_label;
+}
+
+// ============================================================================
+// Number Parsing Helpers
+// ============================================================================
+
+/**
+ * @brief Parse a hex number literal, throwing on failure.
+ *
+ * Accepts a string that has already been prefixed with '$' for ParseHexSafe.
+ */
+static uint32_t ParseHexOrThrow(const std::string &hex_str) {
+  bool success = false;
+  std::string error_msg;
+  uint32_t result = ParseHexSafe(hex_str, success, error_msg);
+  if (!success) {
+    throw std::invalid_argument(error_msg);
+  }
+  return result;
+}
+
+/**
+ * @brief Parse hex formats: $FF, 0xFF, 0FFH.
+ *
+ * Returns the parsed value.  The caller must ensure @p trimmed starts with
+ * HEX_PREFIX_DOLLAR, "0x"/"0X", or ends with 'H'/'h'.
+ */
+uint32_t EdtasmM80PlusPlusSyntaxParser::ParseHexVariant(
+    const std::string &trimmed) const {
+  if (trimmed[0] == HEX_PREFIX_DOLLAR) {
+    return ParseHexOrThrow(trimmed);
+  }
+  if (trimmed.size() >= 2 && trimmed[0] == '0' &&
+      (trimmed[1] == HEX_PREFIX_0X || trimmed[1] == 'X')) {
+    return ParseHexOrThrow("$" + trimmed.substr(2));
+  }
+  // H/h suffix
+  return ParseHexOrThrow("$" + trimmed.substr(0, trimmed.size() - 1));
+}
+
+/**
+ * @brief Parse numeric literals with an explicit base suffix (B/O/Q/D).
+ *
+ * Returns true and sets @p result on success; returns false if @p trimmed
+ * does not carry a recognised suffix.
+ */
+static bool TryParseSuffixed(const std::string &trimmed, uint32_t &result) {
+  if (trimmed.size() < 2) {
+    return false;
+  }
+  const char suffix = static_cast<char>(std::toupper(trimmed.back()));
+  const std::string body = trimmed.substr(0, trimmed.size() - 1);
+  if (suffix == 'B') {
+    result = static_cast<uint32_t>(ParseBinary(body));
+    return true;
+  }
+  if (suffix == 'O' || suffix == 'Q') {
+    result = static_cast<uint32_t>(ParseOctal(body));
+    return true;
+  }
+  if (suffix == 'D') {
+    result = static_cast<uint32_t>(ParseDecimal(body));
+    return true;
+  }
+  return false;
+}
+
+/**
+ * @brief Parse a number using the currently active radix.
+ */
+uint32_t EdtasmM80PlusPlusSyntaxParser::ParseByCurrentRadix(
+    const std::string &trimmed) const {
+  if (current_radix_ == RADIX_BINARY) {
+    return static_cast<uint32_t>(ParseBinary(trimmed));
+  }
+  if (current_radix_ == RADIX_OCTAL) {
+    return static_cast<uint32_t>(ParseOctal(trimmed));
+  }
+  if (current_radix_ == RADIX_DECIMAL) {
+    return static_cast<uint32_t>(ParseDecimal(trimmed));
+  }
+  if (current_radix_ == RADIX_HEXADECIMAL) {
+    return ParseHexOrThrow("$" + trimmed);
+  }
+  return static_cast<uint32_t>(std::stoul(trimmed, nullptr, current_radix_));
 }
 
 uint32_t EdtasmM80PlusPlusSyntaxParser::ParseNumber(const std::string &str) const {
@@ -800,81 +879,24 @@ uint32_t EdtasmM80PlusPlusSyntaxParser::ParseNumber(const std::string &str) cons
     return 0;
   }
 
-  // Explicit format overrides radix
-  // Hex: $FF, 0xFF, 0FFH
-  if (trimmed[0] == HEX_PREFIX_DOLLAR) {
-    bool success = false;
-    std::string error_msg;
-    uint32_t result = ParseHexSafe(trimmed, success, error_msg);
-    if (!success) {
-      throw std::invalid_argument(error_msg);
-    }
-    return result;
-  } else if (trimmed.size() >= 2 && trimmed[0] == '0' &&
-             (trimmed[1] == HEX_PREFIX_0X || trimmed[1] == 'X')) {
-    // 0xFF format - ParseHex expects just hex digits, so add $ prefix
-    std::string hex_str = "$" + trimmed.substr(2);
-    bool success = false;
-    std::string error_msg;
-    uint32_t result = ParseHexSafe(hex_str, success, error_msg);
-    if (!success) {
-      throw std::invalid_argument(error_msg);
-    }
-    return result;
-  } else if (trimmed.size() >= 2 &&
-             (trimmed.back() == 'H' || trimmed.back() == 'h')) {
-    // 0FFH format - ParseHex expects $ prefix
-    std::string hex_str = "$" + trimmed.substr(0, trimmed.size() - 1);
-    bool success = false;
-    std::string error_msg;
-    uint32_t result = ParseHexSafe(hex_str, success, error_msg);
-    if (!success) {
-      throw std::invalid_argument(error_msg);
-    }
+  // Explicit hex prefixes/suffixes override the active radix
+  const char last = static_cast<char>(std::toupper(trimmed.back()));
+  const bool is_hex = (trimmed[0] == HEX_PREFIX_DOLLAR) ||
+                      (trimmed.size() >= 2 && trimmed[0] == '0' &&
+                       (trimmed[1] == HEX_PREFIX_0X || trimmed[1] == 'X')) ||
+                      (trimmed.size() >= 2 && last == 'H');
+  if (is_hex) {
+    return ParseHexVariant(trimmed);
+  }
+
+  // Other explicit suffixes (B, O, Q, D)
+  uint32_t result = 0;
+  if (TryParseSuffixed(trimmed, result)) {
     return result;
   }
-  // Binary: 11110000B
-  else if (trimmed.size() >= 2 &&
-           (trimmed.back() == 'B' || trimmed.back() == 'b')) { // NOLINT(bugprone-branch-clone)
-    return static_cast<uint32_t>(
-        ParseBinary(trimmed.substr(0, trimmed.size() - 1)));
-  }
-  // Octal: 377O, 377Q
-  else if (trimmed.size() >= 2 &&
-           (trimmed.back() == 'O' || trimmed.back() == 'o' ||
-            trimmed.back() == 'Q' || trimmed.back() == 'q')) {
-    return static_cast<uint32_t>(
-        ParseOctal(trimmed.substr(0, trimmed.size() - 1)));
-  }
-  // Decimal with D suffix: 255D
-  else if (trimmed.size() >= 2 &&
-           (trimmed.back() == 'D' || trimmed.back() == 'd')) {
-    return static_cast<uint32_t>(
-        ParseDecimal(trimmed.substr(0, trimmed.size() - 1)));
-  }
-  // No explicit format - use current radix
-  else {
-    // Use appropriate parser based on current radix
-    if (current_radix_ == RADIX_BINARY) { // NOLINT(bugprone-branch-clone)
-      return static_cast<uint32_t>(ParseBinary(trimmed));
-    } else if (current_radix_ == RADIX_OCTAL) {
-      return static_cast<uint32_t>(ParseOctal(trimmed));
-    } else if (current_radix_ == RADIX_DECIMAL) {
-      return static_cast<uint32_t>(ParseDecimal(trimmed));
-    } else if (current_radix_ == RADIX_HEXADECIMAL) {
-      std::string hex_str = "$" + trimmed;
-      bool success = false;
-      std::string error_msg;
-      uint32_t result = ParseHexSafe(hex_str, success, error_msg);
-      if (!success) {
-        throw std::invalid_argument(error_msg);
-      }
-      return result;
-    } else {
-      // Fallback for other radixes (2-16) - use std::stoul
-      return std::stoul(trimmed, nullptr, current_radix_);
-    }
-  }
+
+  // No explicit format — use the current radix
+  return ParseByCurrentRadix(trimmed);
 }
 
 std::shared_ptr<Expression>
@@ -997,54 +1019,50 @@ std::string EdtasmM80PlusPlusSyntaxParser::SubstituteMacroParameters(
  *
  * Appends unique ID to labels declared as LOCAL.
  */
+// Returns true when the next character after the end of a found token is not
+// a word character (i.e. the occurrence is a complete word/reference).
+static bool IsBoundaryChar(char c) {
+  return !std::isalnum(static_cast<unsigned char>(c)) &&
+         c != '_' && c != '$' && c != '.' && c != '?' && c != ':';
+}
+
+// Replace whole-word occurrences of @p label in @p text with @p replacement.
+static std::string ReplaceWholeWord(const std::string &text,
+                                    const std::string &label,
+                                    const std::string &replacement) {
+  std::string result = text;
+  size_t pos = 0;
+  while ((pos = result.find(label, pos)) != std::string::npos) {
+    const bool prev_ok = (pos == 0) || IsBoundaryChar(result[pos - 1]);
+    const bool next_ok = (pos + label.size() >= result.size()) ||
+                         IsBoundaryChar(result[pos + label.size()]);
+    if (prev_ok && next_ok) {
+      result.replace(pos, label.size(), replacement);
+      pos += replacement.size();
+    } else {
+      pos += label.size();
+    }
+  }
+  return result;
+}
+
 std::string EdtasmM80PlusPlusSyntaxParser::MakeLocalLabelUnique(
     const std::string &line, const std::vector<std::string> &local_labels,
     int unique_id) {
   std::string result = line;
 
   for (const auto &label : local_labels) {
-    // Find label references (with or without colon)
-    std::string unique_label = label + "_" + std::to_string(unique_id);
+    const std::string unique_label = label + "_" + std::to_string(unique_id);
 
-    // Replace label: with unique_label:
+    // First: replace "label:" occurrences (definition sites)
     size_t pos = 0;
     while ((pos = result.find(label + ":", pos)) != std::string::npos) {
       result.replace(pos, label.size(), unique_label);
       pos += unique_label.size() + 1;
     }
 
-    // Replace standalone label references
-    // Check word boundaries considering Z80 identifier characters
-    pos = 0;
-    while ((pos = result.find(label, pos)) != std::string::npos) {
-      // Check if it's a standalone reference (not part of another identifier)
-      bool is_standalone = true;
-
-      // Check character before label (if any)
-      if (pos > 0) {
-        char prev = result[pos - 1];
-        if (std::isalnum(prev) || prev == '_' || prev == '$' || prev == '.' ||
-            prev == '?') {
-          is_standalone = false;
-        }
-      }
-
-      // Check character after label (if any)
-      if (pos + label.size() < result.size()) {
-        char next = result[pos + label.size()];
-        if (std::isalnum(next) || next == '_' || next == '$' || next == '.' ||
-            next == '?' || next == ':') {
-          is_standalone = false;
-        }
-      }
-
-      if (is_standalone) {
-        result.replace(pos, label.size(), unique_label);
-        pos += unique_label.size();
-      } else {
-        pos += label.size();
-      }
-    }
+    // Then: replace standalone references (not followed by ':')
+    result = ReplaceWholeWord(result, label, unique_label);
   }
 
   return result;

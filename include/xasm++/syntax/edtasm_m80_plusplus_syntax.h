@@ -497,11 +497,23 @@ private:
   std::string ParseLabel(const std::string &line, size_t &pos, Section &section,
                          ConcreteSymbolTable &symbols);
 
+  // ParseLine helpers — each handles one phase of dispatch
+  static bool IsConditionalDirective(const std::string &upper_mnemonic);
+  void RegisterMacroLocals(const std::string &operand);
+  void ParseTokens(const std::string &line, std::string &upper_mnemonic,
+                   std::string &label, std::string &operand,
+                   Section &section, ConcreteSymbolTable &symbols);
+  void ExpandMacroCall(const MacroDefinition &macro, const std::string &operand,
+                       Section &section, ConcreteSymbolTable &symbols);
+
   // Instruction size estimation
   static uint32_t EstimateZ80InstructionSize(const DirectiveContext &ctx);
+  static uint32_t EstimateIndexedInsnSize(const std::string &operand);
 
   // Expression/number parsing
   uint32_t ParseNumber(const std::string &str) const;
+  uint32_t ParseHexVariant(const std::string &trimmed) const;
+  uint32_t ParseByCurrentRadix(const std::string &trimmed) const;
 
   // Error formatting with source location
   std::string FormatError(const std::string &message) const;

@@ -403,6 +403,59 @@ struct DaToken {
   bool comment_ended{false}; ///< True when an inline comment stopped scanning
 };
 
+// ============================================================================
+// TokenizeDaOperand helpers
+// ============================================================================
+
+/// Advances @p pos past a $$"..." or $$'...' literal.
+/// Returns true and updates @p pos if a match was found; otherwise no-op.
+bool TrySkipDollarDollarLiteral(const std::string &s, size_t &pos) {
+  if (pos + 2 < s.length() && s[pos] == '$' && s[pos + 1] == '$' &&
+      (s[pos + 2] == '"' || s[pos + 2] == '\'')) {
+    char delim = s[pos + 2];
+    pos += 3;
+    while (pos < s.length() && s[pos] != delim) {
+      ++pos;
+    }
+    if (pos < s.length()) {
+      ++pos; // skip closing delimiter
+    }
+    return true;
+  }
+  return false;
+}
+
+/// Advances @p pos past a "X" or 'X' single-character quoted literal.
+/// Returns true and updates @p pos if a match was found; otherwise no-op.
+bool TrySkipSingleCharLiteral(const std::string &s, size_t &pos) {
+  if (pos + 2 < s.length() && (s[pos] == '"' || s[pos] == '\'') &&
+      s[pos + 2] == s[pos]) {
+    pos += 3; // opening-delim + char-content + closing-delim
+    return true;
+  }
+  return false;
+}
+
+/// Returns the position of the first unquoted space or tab in @p token,
+/// or std::string::npos if none found.
+size_t FindUnquotedWhitespace(const std::string &token) {
+  size_t j = 0;
+  while (j < token.size()) {
+    char ch = token[j];
+    // Skip single-char quoted literals so spaces inside them are ignored
+    if ((ch == '"' || ch == '\'') && j + 2 < token.size() &&
+        token[j + 2] == ch) {
+      j += 3;
+      continue;
+    }
+    if (ch == ' ' || ch == '\t') {
+      return j;
+    }
+    ++j;
+  }
+  return std::string::npos;
+}
+
 /**
  * @brief Extract all .DA tokens from the operand string.
  *
@@ -422,57 +475,17 @@ std::vector<DaToken> TokenizeDaOperand(const std::string &src) {
   size_t pos = 0;
 
   while (pos <= trimmed.length()) {
-    // Skip over $$"..." or $$'...' string literals (commas inside are not
-    // separators and must not be treated as .DA list delimiters).
-    if (pos + 2 < trimmed.length() && trimmed[pos] == '$' &&
-        trimmed[pos + 1] == '$' &&
-        (trimmed[pos + 2] == '"' || trimmed[pos + 2] == '\'')) {
-      char delim = trimmed[pos + 2];
-      pos += 3; // Skip $$"
-      while (pos < trimmed.length() && trimmed[pos] != delim) {
-        ++pos;
-      }
-      if (pos < trimmed.length()) {
-        ++pos; // Skip closing delimiter
-      }
+    // Skip quoted literals so commas/spaces inside them are not separators.
+    if (TrySkipDollarDollarLiteral(trimmed, pos)) {
       continue;
     }
-
-    // Skip over single-character quoted literals ("X" or 'X'), including the
-    // case where the character is whitespace (e.g. #" " or #' ').
-    // Without this skip, the comma-scanner would mistake the space inside #" "
-    // for an inline-comment start and truncate the token prematurely.
-    if (pos + 2 < trimmed.length() &&
-        (trimmed[pos] == '"' || trimmed[pos] == '\'') &&
-        trimmed[pos + 2] == trimmed[pos]) {
-      pos += 3; // Skip: opening-delim + char-content + closing-delim
+    if (TrySkipSingleCharLiteral(trimmed, pos)) {
       continue;
     }
 
     if (pos == trimmed.length() || trimmed[pos] == ',') {
       std::string token = trimmed.substr(start, pos - start);
-
-      // Scan char-by-char for unquoted whitespace so that spaces inside
-      // single-char quoted literals (e.g. #" " or #' ') do not falsely
-      // trigger the inline-comment heuristic.
-      size_t ws_pos = std::string::npos;
-      {
-        size_t j = 0;
-        while (j < token.size()) {
-          char ch = token[j];
-          // Skip single-char quoted literals ("X" or 'X')
-          if ((ch == '"' || ch == '\'') && j + 2 < token.size() &&
-              token[j + 2] == ch) {
-            j += 3;
-            continue;
-          }
-          if (ch == ' ' || ch == '\t') {
-            ws_pos = j;
-            break;
-          }
-          ++j;
-        }
-      }
+      size_t ws_pos = FindUnquotedWhitespace(token);
 
       if (ws_pos != std::string::npos) {
         // Everything from ws_pos onward belongs to the inline comment.
@@ -511,150 +524,131 @@ std::vector<DaToken> TokenizeDaOperand(const std::string &src) {
  *   >expr → 32-bit little-endian (4 bytes)
  *   expr  → 16-bit default   (2 bytes, little-endian)
  */
-void ProcessDaExpression(const std::string &raw_expr,
-                         const DirectiveContext &context,
-                         std::vector<std::string> &byte_expressions,
-                         std::vector<uint8_t> &data) {
-  // Strip inline comment and leading/trailing whitespace.
-  // Scan char-by-char so that whitespace inside single-char quoted literals
-  // (e.g. #" " or #' ') does not falsely trigger the comment heuristic.
-  std::string trimmed_expr = Trim(raw_expr);
-  {
-    size_t j = 0;
-    while (j < trimmed_expr.size()) {
-      char ch = trimmed_expr[j];
-      // Skip single-char quoted literals ("X" or 'X')
-      if ((ch == '"' || ch == '\'') && j + 2 < trimmed_expr.size() &&
-          trimmed_expr[j + 2] == ch) {
-        j += 3;
-        continue;
-      }
-      if (ch == ' ' || ch == '\t') {
-        trimmed_expr = trimmed_expr.substr(0, j);
-        break;
-      }
-      ++j;
+
+/// Strip trailing inline comment from a .DA token expression.
+/// Scans char-by-char to avoid treating spaces inside quoted literals as
+/// comment starts (e.g. the space in #" " must not trigger truncation).
+std::string StripTrailingComment(const std::string &expr) {
+  std::string result = Trim(expr);
+  size_t j = 0;
+  while (j < result.size()) {
+    char ch = result[j];
+    // Skip single-char quoted literals ("X" or 'X')
+    if ((ch == '"' || ch == '\'') && j + 2 < result.size() &&
+        result[j + 2] == ch) {
+      j += 3;
+      continue;
     }
-    trimmed_expr = Trim(trimmed_expr);
-  }
-
-  if (trimmed_expr.empty()) {
-    return;
-  }
-
-  // Handle $$"..." string literals (Apple II encoded strings in .DA).
-  // Delimiter < 0x27 → clear high bit; delimiter >= 0x27 → set high bit.
-  if (trimmed_expr.size() >= 3 && trimmed_expr[0] == '$' &&
-      trimmed_expr[1] == '$') {
-    char delim = trimmed_expr[2];
-    std::string str_content = trimmed_expr.substr(3);
-    if (!str_content.empty() && str_content.back() == delim) {
-      str_content.pop_back();
+    if (ch == ' ' || ch == '\t') {
+      result = result.substr(0, j);
+      break;
     }
-    for (char c : str_content) {
-      uint8_t byte = static_cast<uint8_t>(c);
-      if (delim >= HIGH_BIT_DELIMITER_THRESHOLD) {
-        byte |= HIGH_BIT_MASK;
-      } else {
-        byte &= LOW_7_BITS_MASK;
-      }
-      data.push_back(byte);
-      byte_expressions.push_back(std::to_string(byte));
-    }
-    return;
+    ++j;
   }
+  return Trim(result);
+}
 
-  // Expand character literals BEFORE checking prefix so that #'N' becomes
-  // #$4E before the '#' is stripped.
-  ValidateParser(context.parser_state);
-  trimmed_expr = ScmasmSyntaxParser::ExpandCharLiteralsInExpr(trimmed_expr);
-
-  char prefix = trimmed_expr[0];
-  std::string base_expr;
-
-  if (prefix == '#') {
-    // SCMASM # (low byte) → generic < (low byte).
-    // Parenthesise so that compound expressions like #CS.END-CS.START evaluate
-    // as <(CS.END-CS.START), not (<CS.END)-CS.START.
-    base_expr = Trim(trimmed_expr.substr(1));
-    byte_expressions.push_back("<(" + base_expr + ")");
-    try {
-      uint32_t num =
-          EvaluateExpression(base_expr, *context.symbols, context.parser_state);
-      data.push_back(static_cast<uint8_t>(num & BYTE_MASK));
-    } catch (...) {
-      data.push_back(0); // Forward reference placeholder
-    }
-    return;
+/// Emit bytes for a $$"..." Apple II encoded string in a .DA operand.
+void EmitDollarDollarString(const std::string &trimmed_expr,
+                            std::vector<std::string> &byte_expressions,
+                            std::vector<uint8_t> &data) {
+  char delim = trimmed_expr[2];
+  std::string str_content = trimmed_expr.substr(3);
+  if (!str_content.empty() && str_content.back() == delim) {
+    str_content.pop_back();
   }
-
-  if (prefix == '/') {
-    // SCMASM / (high byte) → generic > (high byte).
-    base_expr = Trim(trimmed_expr.substr(1));
-    byte_expressions.push_back(">(" + base_expr + ")");
-    try {
-      uint32_t num =
-          EvaluateExpression(base_expr, *context.symbols, context.parser_state);
-      data.push_back(
-          static_cast<uint8_t>((num >> BYTE_1_SHIFT) & BYTE_MASK));
-    } catch (...) {
-      data.push_back(0);
+  for (char c : str_content) {
+    uint8_t byte = static_cast<uint8_t>(c);
+    if (delim >= HIGH_BIT_DELIMITER_THRESHOLD) {
+      byte |= HIGH_BIT_MASK;
+    } else {
+      byte &= LOW_7_BITS_MASK;
     }
-    return;
+    data.push_back(byte);
+    byte_expressions.push_back(std::to_string(byte));
   }
+}
 
-  if (prefix == '<') {
-    // SCMASM < (24-bit) → 3 bytes (little-endian).
-    base_expr = Trim(trimmed_expr.substr(1));
-    byte_expressions.push_back("<(" + base_expr + ")");          // Byte 0 (bits 0-7)
-    byte_expressions.push_back(">(" + base_expr + ")");          // Byte 1 (bits 8-15)
-    byte_expressions.push_back("<((" + base_expr + ")/65536)");  // Byte 2 (bits 16-23)
-    try {
-      uint32_t num =
-          EvaluateExpression(base_expr, *context.symbols, context.parser_state);
-      data.push_back(static_cast<uint8_t>(num & BYTE_MASK));
-      data.push_back(static_cast<uint8_t>((num >> BYTE_1_SHIFT) & BYTE_MASK));
-      data.push_back(static_cast<uint8_t>((num >> BYTE_2_SHIFT) & BYTE_MASK));
-    } catch (...) {
-      data.push_back(0);
-      data.push_back(0);
-      data.push_back(0);
-    }
-    return;
+/// Emit 1 low byte for .DA #expr.
+void EmitDaLowByte(const std::string &base_expr, const DirectiveContext &context,
+                   std::vector<std::string> &byte_expressions,
+                   std::vector<uint8_t> &data) {
+  byte_expressions.push_back("<(" + base_expr + ")");
+  try {
+    uint32_t num =
+        EvaluateExpression(base_expr, *context.symbols, context.parser_state);
+    data.push_back(static_cast<uint8_t>(num & BYTE_MASK));
+  } catch (...) {
+    data.push_back(0);
   }
+}
 
-  if (prefix == '>') {
-    // SCMASM > (32-bit) → 4 bytes (little-endian).
-    base_expr = Trim(trimmed_expr.substr(1));
-    byte_expressions.push_back("<(" + base_expr + ")");             // Byte 0 (bits 0-7)
-    byte_expressions.push_back(">(" + base_expr + ")");             // Byte 1 (bits 8-15)
-    byte_expressions.push_back("<((" + base_expr + ")/65536)");     // Byte 2 (bits 16-23)
-    byte_expressions.push_back("<((" + base_expr + ")/16777216)");  // Byte 3 (bits 24-31)
-    try {
-      uint32_t num =
-          EvaluateExpression(base_expr, *context.symbols, context.parser_state);
-      data.push_back(static_cast<uint8_t>(num & constants::BYTE_MASK));
-      data.push_back(static_cast<uint8_t>((num >> constants::BYTE_1_SHIFT) &
-                                          constants::BYTE_MASK));
-      data.push_back(static_cast<uint8_t>((num >> constants::BYTE_2_SHIFT) &
-                                          constants::BYTE_MASK));
-      data.push_back(static_cast<uint8_t>((num >> constants::BYTE_3_SHIFT) &
-                                          constants::BYTE_MASK));
-    } catch (...) {
-      data.push_back(0);
-      data.push_back(0);
-      data.push_back(0);
-      data.push_back(0);
-    }
-    return;
+/// Emit 1 high byte for .DA /expr.
+void EmitDaHighByte(const std::string &base_expr, const DirectiveContext &context,
+                    std::vector<std::string> &byte_expressions,
+                    std::vector<uint8_t> &data) {
+  byte_expressions.push_back(">(" + base_expr + ")");
+  try {
+    uint32_t num =
+        EvaluateExpression(base_expr, *context.symbols, context.parser_state);
+    data.push_back(static_cast<uint8_t>((num >> BYTE_1_SHIFT) & BYTE_MASK));
+  } catch (...) {
+    data.push_back(0);
   }
+}
 
-  // Default: 16-bit word (no prefix) → 2 bytes (little-endian).
-  // Parenthesise so that compound expressions like CS.END-CS.START evaluate as
-  // <(CS.END-CS.START) and >(CS.END-CS.START), not (<CS.END)-CS.START.
-  base_expr = trimmed_expr;
-  byte_expressions.push_back("<(" + base_expr + ")"); // Low byte
-  byte_expressions.push_back(">(" + base_expr + ")"); // High byte
+/// Emit 3 bytes (little-endian 24-bit) for .DA <expr.
+void EmitDa24Bit(const std::string &base_expr, const DirectiveContext &context,
+                 std::vector<std::string> &byte_expressions,
+                 std::vector<uint8_t> &data) {
+  byte_expressions.push_back("<(" + base_expr + ")");
+  byte_expressions.push_back(">(" + base_expr + ")");
+  byte_expressions.push_back("<((" + base_expr + ")/65536)");
+  try {
+    uint32_t num =
+        EvaluateExpression(base_expr, *context.symbols, context.parser_state);
+    data.push_back(static_cast<uint8_t>(num & BYTE_MASK));
+    data.push_back(static_cast<uint8_t>((num >> BYTE_1_SHIFT) & BYTE_MASK));
+    data.push_back(static_cast<uint8_t>((num >> BYTE_2_SHIFT) & BYTE_MASK));
+  } catch (...) {
+    data.push_back(0);
+    data.push_back(0);
+    data.push_back(0);
+  }
+}
+
+/// Emit 4 bytes (little-endian 32-bit) for .DA >expr.
+void EmitDa32Bit(const std::string &base_expr, const DirectiveContext &context,
+                 std::vector<std::string> &byte_expressions,
+                 std::vector<uint8_t> &data) {
+  byte_expressions.push_back("<(" + base_expr + ")");
+  byte_expressions.push_back(">(" + base_expr + ")");
+  byte_expressions.push_back("<((" + base_expr + ")/65536)");
+  byte_expressions.push_back("<((" + base_expr + ")/16777216)");
+  try {
+    uint32_t num =
+        EvaluateExpression(base_expr, *context.symbols, context.parser_state);
+    data.push_back(static_cast<uint8_t>(num & constants::BYTE_MASK));
+    data.push_back(static_cast<uint8_t>((num >> constants::BYTE_1_SHIFT) &
+                                        constants::BYTE_MASK));
+    data.push_back(static_cast<uint8_t>((num >> constants::BYTE_2_SHIFT) &
+                                        constants::BYTE_MASK));
+    data.push_back(static_cast<uint8_t>((num >> constants::BYTE_3_SHIFT) &
+                                        constants::BYTE_MASK));
+  } catch (...) {
+    data.push_back(0);
+    data.push_back(0);
+    data.push_back(0);
+    data.push_back(0);
+  }
+}
+
+/// Emit 2 bytes (little-endian 16-bit) for .DA expr (no prefix).
+void EmitDa16Bit(const std::string &base_expr, const DirectiveContext &context,
+                 std::vector<std::string> &byte_expressions,
+                 std::vector<uint8_t> &data) {
+  byte_expressions.push_back("<(" + base_expr + ")");
+  byte_expressions.push_back(">(" + base_expr + ")");
   try {
     uint32_t num =
         EvaluateExpression(base_expr, *context.symbols, context.parser_state);
@@ -663,6 +657,49 @@ void ProcessDaExpression(const std::string &raw_expr,
   } catch (...) {
     data.push_back(0);
     data.push_back(0);
+  }
+}
+
+void ProcessDaExpression(const std::string &raw_expr,
+                         const DirectiveContext &context,
+                         std::vector<std::string> &byte_expressions,
+                         std::vector<uint8_t> &data) {
+  std::string trimmed_expr = StripTrailingComment(raw_expr);
+
+  if (trimmed_expr.empty()) {
+    return;
+  }
+
+  // Handle $$"..." Apple II encoded strings in .DA.
+  // Delimiter < 0x27 → clear high bit; delimiter >= 0x27 → set high bit.
+  if (trimmed_expr.size() >= 3 && trimmed_expr[0] == '$' &&
+      trimmed_expr[1] == '$') {
+    EmitDollarDollarString(trimmed_expr, byte_expressions, data);
+    return;
+  }
+
+  // Expand character literals BEFORE checking prefix so that #'N' becomes
+  // #$4E before the '#' is stripped.
+  ValidateParser(context.parser_state);
+  trimmed_expr = ScmasmSyntaxParser::ExpandCharLiteralsInExpr(trimmed_expr);
+
+  // Dispatch by prefix character to the appropriate emit helper.
+  // Each helper appends the correct number of byte placeholders and data bytes.
+  char prefix = trimmed_expr[0];
+  std::string base_expr = Trim(trimmed_expr.substr(1));
+
+  if (prefix == '#') {
+    EmitDaLowByte(base_expr, context, byte_expressions, data);
+  } else if (prefix == '/') {
+    EmitDaHighByte(base_expr, context, byte_expressions, data);
+  } else if (prefix == '<') {
+    EmitDa24Bit(base_expr, context, byte_expressions, data);
+  } else if (prefix == '>') {
+    EmitDa32Bit(base_expr, context, byte_expressions, data);
+  } else {
+    // Default: 16-bit word (no recognised prefix) → 2 bytes (little-endian).
+    // Use the full expression unchanged (prefix is part of the expression).
+    EmitDa16Bit(trimmed_expr, context, byte_expressions, data);
   }
 }
 
@@ -705,112 +742,138 @@ void HandleDa(DirectiveContext &context) {
   }
 }
 
+// ============================================================================
+// HandleHs helpers
+// ============================================================================
+
+namespace {
+
+/// Remove dot separators from a .HS operand string.
+/// Dots are purely visual nibble-separators in SCMASM .HS syntax.
+std::string RemoveHsDots(const std::string &s) {
+  std::string result;
+  result.reserve(s.size());
+  for (char ch : s) {
+    if (ch != '.') {
+      result += ch;
+    }
+  }
+  return result;
+}
+
+/// Result of scanning one whitespace run in a .HS operand.
+enum class HsWhitespaceAction { kContinue, kStop, kEndOfString };
+
+/// Skip whitespace at position @p i in @p s.
+/// Returns the action the caller should take:
+///   kStop         – 2+ tabs after data → treat rest as comment, stop
+///   kEndOfString  – reached end of string
+///   kContinue     – safe to process next word
+HsWhitespaceAction SkipHsWhitespace(const std::string &s, size_t &i,
+                                    bool has_data) {
+  size_t tabs = 0;
+  while (i < s.length() && std::isspace(s[i])) {
+    if (s[i] == '\t') {
+      ++tabs;
+    }
+    ++i;
+  }
+  if (i >= s.length()) {
+    return HsWhitespaceAction::kEndOfString;
+  }
+  if (has_data && tabs >= 2) {
+    return HsWhitespaceAction::kStop;
+  }
+  return HsWhitespaceAction::kContinue;
+}
+
+/// Result of processing one hex word in a .HS operand.
+enum class HsWordResult { kAppended, kOddBeforeData, kStop };
+
+/// Process one hex word starting at @p word_start in @p s ending at @p i.
+/// Appends valid even-length hex words to @p hex_digits.
+/// Returns a result code indicating whether to continue, stop, or flag error.
+HsWordResult ProcessHsWord(const std::string &s, size_t word_start, size_t i,
+                            std::string &hex_digits) {
+  std::string word = s.substr(word_start, i - word_start);
+
+  bool all_hex = true;
+  for (char c : word) {
+    if (!std::isxdigit(static_cast<unsigned char>(c))) {
+      all_hex = false;
+      break;
+    }
+  }
+
+  if (all_hex && (word.length() % 2 == 0)) {
+    hex_digits += word;
+    return HsWordResult::kAppended;
+  }
+  if (all_hex && (word.length() % 2 != 0)) {
+    if (hex_digits.empty()) {
+      return HsWordResult::kOddBeforeData;
+    }
+    return HsWordResult::kStop; // odd-length hex after valid data → comment
+  }
+  return HsWordResult::kStop; // non-hex word → inline comment
+}
+
+/// Extract valid hex digits from a normalised (dots removed) .HS operand.
+/// Sets @p odd_hex_before_data to true if a malformed odd-length hex word
+/// appears before any valid data.
+std::string ExtractHsHexDigits(const std::string &normalised,
+                                bool &odd_hex_before_data) {
+  std::string hex_digits;
+  odd_hex_before_data = false;
+  size_t i = 0;
+  while (i < normalised.length()) {
+    HsWhitespaceAction action =
+        SkipHsWhitespace(normalised, i, !hex_digits.empty());
+    if (action == HsWhitespaceAction::kEndOfString) {
+      break;
+    }
+    if (action == HsWhitespaceAction::kStop) {
+      break;
+    }
+
+    size_t word_start = i;
+    while (i < normalised.length() && !std::isspace(normalised[i])) {
+      ++i;
+    }
+
+    if (i > word_start) {
+      HsWordResult result = ProcessHsWord(normalised, word_start, i, hex_digits);
+      if (result == HsWordResult::kOddBeforeData) {
+        odd_hex_before_data = true;
+        break;
+      }
+      if (result == HsWordResult::kStop) {
+        break;
+      }
+    }
+  }
+  return hex_digits;
+}
+
+} // anonymous namespace
+
 void HandleHs(DirectiveContext &context) {
   const std::string &operand = context.operand;
   (void)context.label; // Label handled separately
 
   std::vector<uint8_t> data;
-  std::string trimmed = Trim(operand);
+  std::string normalised = RemoveHsDots(Trim(operand));
 
-  // SCMASM uses dot ('.') as a hex-nibble separator in .HS operands.
-  // The dot is purely visual punctuation; each dot-separated character is
-  // treated as one hex nibble.  Every two nibbles form one output byte:
-  //
-  //   .HS 01.38.b0.03   -> nibbles 0,1,3,8,B,0,0,3 -> bytes 01 38 B0 03
-  //   .HS 1.2.2.1       -> nibbles 1,2,2,1         -> bytes 12 21
-  //   .HS 1.2.2.1.2.2.2.2.1.2.1.1.B.B.B.3          -> bytes 12 21 22 22 ...
-  //
-  // The space-separated form works the same way (no dots):
-  //   .HS 01 38 B0 03   -> bytes 01 38 B0 03
-  //
-  // Normalise: remove all dots so that the nibble sequence is continuous.
-  {
-    std::string normalised;
-    normalised.reserve(trimmed.size());
-    for (char ch : trimmed) {
-      if (ch != '.') {
-        normalised += ch;
-      }
-    }
-    trimmed = std::move(normalised);
-  }
+  bool odd_hex_before_data = false;
+  std::string hex_digits = ExtractHsHexDigits(normalised, odd_hex_before_data);
 
-  // Extract hex digits, stopping at first WORD containing non-hex character
-  // This allows inline comments without semicolons, like .EQ directive
-  // Examples:
-  //   .HS 01 02 03        -> 3 bytes (spaces between hex OK)
-  //   .HS 01.38.b0.03     -> 4 bytes (dots removed above)
-  //   .HS DEADBEEF foo    -> 4 bytes (text after hex ignored)
-  //   .HS AB CD EFG       -> 2 bytes (stops at word "EFG" containing 'G')
-  std::string hex_digits;
-  bool odd_hex_before_data = false; // tracks ".HS 012"-style errors
-  size_t i = 0;
-  while (i < trimmed.length()) {
-    // Skip whitespace.
-    // In SCMASM 3-column format, 2+ tabs within the operand field indicate
-    // a visual-alignment comment.  Stop parsing if we see 2+ consecutive
-    // tabs between hex words (e.g. ".HS 7E\t\t\t7EFF03" — only "7E" is data,
-    // "7EFF03" is a comment).
-    size_t tabs_skipped = 0;
-    while (i < trimmed.length() && std::isspace(trimmed[i])) {
-      if (trimmed[i] == '\t') {
-        ++tabs_skipped;
-      }
-      i++;
-    }
-    // If we've already collected some hex data and we skipped 2+ tabs,
-    // treat the rest as a comment and stop.
-    if (!hex_digits.empty() && tabs_skipped >= 2) {
-      break;
-    }
-
-    // Find end of current word
-    size_t word_start = i;
-    while (i < trimmed.length() && !std::isspace(trimmed[i])) {
-      i++;
-    }
-
-    if (i > word_start) {
-      std::string word = trimmed.substr(word_start, i - word_start);
-
-      // Check if ALL characters in word are hex digits
-      bool all_hex = true;
-      for (char c : word) {
-        if (!std::isxdigit(static_cast<unsigned char>(c))) {
-          all_hex = false;
-          break;
-        }
-      }
-
-      if (all_hex && (word.length() % 2 == 0)) {
-        // Even-length all-hex word — valid byte data
-        hex_digits += word;
-      } else if (all_hex && (word.length() % 2 != 0)) {
-        // Odd-length all-hex word (e.g. "BCC", "JSR", "012")
-        if (hex_digits.empty()) {
-          // No preceding data: this is malformed, not a comment
-          odd_hex_before_data = true;
-        }
-        // Either way, stop — if after valid data it's an inline comment
-        break;
-      } else {
-        // Non-hex word — inline comment, stop
-        break;
-      }
-    }
-  }
-
-  // Error if odd hex digits appeared before any valid data (e.g. ".HS 012")
   if (odd_hex_before_data) {
     ThrowFormattedError(".HS requires even number of hex digits", context);
   }
-
-  // Must have even number of digits (catches concatenation edge cases)
   if (hex_digits.length() % constants::HEX_DIGITS_PER_BYTE != 0) {
     ThrowFormattedError(".HS requires even number of hex digits", context);
   }
 
-  // Convert pairs to bytes using ParseHex utility
   for (size_t i = 0; i < hex_digits.length();
        i += constants::HEX_DIGITS_PER_BYTE) {
     std::string byte_str =
@@ -824,7 +887,6 @@ void HandleHs(DirectiveContext &context) {
     data.push_back(static_cast<uint8_t>(byte_val));
   }
 
-  // In dummy sections (.DUMMY/.ED), advance address only — no bytes emitted
   ValidateParser(context.parser_state);
   auto *hs_parser = static_cast<ScmasmSyntaxParser *>(context.parser_state);
   if (hs_parser->InDummySection()) {
@@ -834,8 +896,6 @@ void HandleHs(DirectiveContext &context) {
 
   auto atom = std::make_shared<DataAtom>(data);
   context.section->atoms.push_back(atom);
-
-  // Update address counter
   *context.current_address += data.size();
 }
 
