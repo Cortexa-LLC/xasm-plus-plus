@@ -82,7 +82,7 @@ std::shared_ptr<Expression> ExpressionParser::ParseComparison() {
   while (true) {
     SkipWhitespace();
     // Check for two-character operators first
-    if (Match("==")) { // NOLINT(bugprone-branch-clone)
+    if (Match("==")) {
       std::shared_ptr<Expression> right = ParseBitwiseOr();
       left = std::make_shared<BinaryOpExpr>(BinaryOp::Equal, left, right);
     } else if (Match("!=")) {
@@ -96,7 +96,7 @@ std::shared_ptr<Expression> ExpressionParser::ParseComparison() {
       left =
           std::make_shared<BinaryOpExpr>(BinaryOp::GreaterOrEqual, left, right);
     } else if (Peek() == '<' && pos_ + 1 < expr_.length() &&
-               expr_[pos_ + 1] != '<') { // NOLINT(bugprone-branch-clone)
+               expr_[pos_ + 1] != '<') {
       // Single '<' (not '<<' shift operator)
       Consume();
       std::shared_ptr<Expression> right = ParseBitwiseOr();
@@ -122,7 +122,7 @@ std::shared_ptr<Expression> ExpressionParser::ParseBitwiseOr() {
     SkipWhitespace();
     char c = Peek();
     // Check for single '|' (not '||')
-    if (c == '|' && pos_ + 1 < expr_.length() && expr_[pos_ + 1] != '|') { // NOLINT(bugprone-branch-clone)
+    if (c == '|' && pos_ + 1 < expr_.length() && expr_[pos_ + 1] != '|') {
       Consume();
       std::shared_ptr<Expression> right = ParseBitwiseXor();
       left = std::make_shared<BinaryOpExpr>(BinaryOp::BitwiseOr, left, right);
@@ -187,7 +187,7 @@ std::shared_ptr<Expression> ExpressionParser::ParseShift() {
 
   while (true) {
     SkipWhitespace();
-    if (Match("<<")) { // NOLINT(bugprone-branch-clone)
+    if (Match("<<")) {
       std::shared_ptr<Expression> right = ParseAddSub();
       left = std::make_shared<BinaryOpExpr>(BinaryOp::ShiftLeft, left, right);
     } else if (Match(">>")) {
@@ -207,7 +207,7 @@ std::shared_ptr<Expression> ExpressionParser::ParseAddSub() {
   while (true) {
     SkipWhitespace();
     char c = Peek();
-    if (c == '+') { // NOLINT(bugprone-branch-clone)
+    if (c == '+') {
       Consume();
       std::shared_ptr<Expression> right = ParseMulDiv();
       left = std::make_shared<BinaryOpExpr>(BinaryOp::Add, left, right);
@@ -231,7 +231,7 @@ std::shared_ptr<Expression> ExpressionParser::ParseMulDiv() {
   while (true) {
     SkipWhitespace();
     char c = Peek();
-    if (c == '*') { // NOLINT(bugprone-branch-clone)
+    if (c == '*') {
       Consume();
       std::shared_ptr<Expression> right = ParseUnary();
       left = std::make_shared<BinaryOpExpr>(BinaryOp::Multiply, left, right);
@@ -477,7 +477,7 @@ std::shared_ptr<Expression> ExpressionParser::TryParseIdentifierOrCall() {
     std::transform(ident_upper.begin(), ident_upper.end(), ident_upper.begin(),
                    ::toupper);
 
-    if (ident_upper == directives::LOW_FUNC) { // NOLINT(bugprone-branch-clone)
+    if (ident_upper == directives::LOW_FUNC) {
       return std::make_shared<UnaryOpExpr>(UnaryOp::LowByte, arg);
     } else if (ident_upper == directives::HIGH_FUNC) {
       return std::make_shared<UnaryOpExpr>(UnaryOp::HighByte, arg);

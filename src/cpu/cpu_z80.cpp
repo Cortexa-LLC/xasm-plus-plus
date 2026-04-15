@@ -30,7 +30,7 @@ CpuZ80::EncodeInstruction(const std::string &mnemonic, uint32_t operand, // NOLI
   std::string trimmed = util::Trim(operand_str);
 
   switch (mn) {
-    case Z80Mnemonic::NOP: // NOLINT(bugprone-branch-clone)
+    case Z80Mnemonic::NOP:
       return EncodeNOP();
 
     case Z80Mnemonic::RET:
@@ -71,7 +71,7 @@ CpuZ80::EncodeInstruction(const std::string &mnemonic, uint32_t operand, // NOLI
       // SUB n (immediate subtract from A)
       return EncodeSUB_n(static_cast<uint8_t>(operand));
 
-    case Z80Mnemonic::INC: // NOLINT(bugprone-branch-clone)
+    case Z80Mnemonic::INC:
       if (trimmed == "A") {
         return EncodeINC_A();
       }
@@ -89,7 +89,7 @@ CpuZ80::EncodeInstruction(const std::string &mnemonic, uint32_t operand, // NOLI
       }
       return {};
 
-    case Z80Mnemonic::JP: // NOLINT(bugprone-branch-clone)
+    case Z80Mnemonic::JP:
       // Simple absolute address (no condition)
       return EncodeJP_nn(static_cast<uint16_t>(operand));
 
@@ -98,7 +98,7 @@ CpuZ80::EncodeInstruction(const std::string &mnemonic, uint32_t operand, // NOLI
       return EncodeJR_e(static_cast<int8_t>(operand));
 
     // All other Z80 mnemonics — not yet implemented
-    case Z80Mnemonic::ADC: // NOLINT(bugprone-branch-clone)
+    case Z80Mnemonic::ADC:
     case Z80Mnemonic::SBC:
     case Z80Mnemonic::AND:
     case Z80Mnemonic::OR:

@@ -1076,7 +1076,7 @@ std::string ApplyInbPathMappings(const std::string &filename,
   }
 
   std::filesystem::path actual_base(longest_match_value);
-  if (suffix.empty()) { // NOLINT(bugprone-branch-clone)
+  if (suffix.empty()) {
     return actual_base.string();
   }
   return (actual_base / suffix).string();
@@ -1322,7 +1322,7 @@ uint8_t ParseEscapeSequence(const char *&s) {
   s++; // Skip backslash
 
   switch (*s) {
-  case 'a': // NOLINT(bugprone-branch-clone)
+  case 'a':
     s++;
     return constants::ascii::BELL;
   case 'b':

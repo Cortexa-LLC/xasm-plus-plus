@@ -124,7 +124,7 @@ void SimpleSyntaxParser::Parse(const std::string &source, Section &section,
       size_t space_pos = line.find(' ');
       std::string mnemonic, operands;
 
-      if (space_pos != std::string::npos) { // NOLINT(bugprone-branch-clone)
+      if (space_pos != std::string::npos) {
         mnemonic = ToUpper(util::Trim(line.substr(0, space_pos)));
         operands = util::Trim(line.substr(space_pos + 1));
       } else {

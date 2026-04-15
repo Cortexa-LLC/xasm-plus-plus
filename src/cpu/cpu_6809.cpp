@@ -198,7 +198,7 @@ BuildIndexedPostByte(AddressingMode6809 mode, int32_t offset, // NOLINT(bugprone
     result.insert(result.end(), ob.begin(), ob.end());
     break;
   }
-  case AddressingMode6809::IndexedAccumA: // NOLINT(bugprone-branch-clone)
+  case AddressingMode6809::IndexedAccumA:
     result.push_back(0x86 | reg_bits);
     break;
   case AddressingMode6809::IndexedAccumB:
@@ -230,7 +230,7 @@ BuildIndexedPostByte(AddressingMode6809 mode, int32_t offset, // NOLINT(bugprone
     break;
   }
   case AddressingMode6809::IndexedIndirect: {
-    if (offset == 0) { // NOLINT(bugprone-branch-clone)
+    if (offset == 0) {
       result.push_back(0x94 | reg_bits);
     } else if (offset >= -128 && offset <= 127) {
       result.push_back(0x98 | reg_bits);
@@ -300,7 +300,7 @@ EncodeMemInstr(const InstrOpcodes &entry, uint32_t operand,
 
   switch (mode) {
   // ---------------------------------------------------------
-  case AddressingMode6809::Immediate8: // NOLINT(bugprone-branch-clone)
+  case AddressingMode6809::Immediate8:
     return make_imm8(entry.imm);
 
   case AddressingMode6809::Immediate16:
@@ -933,7 +933,7 @@ Cpu6809::EncodeInstruction(const std::string &mnemonic, uint32_t operand, // NOL
 
   switch (mn) {
     // ── Inherent (no-operand) ───────────────────────────────────────────────
-    case M6809Mnemonic::NOP:  return EncodeNOP(); // NOLINT(bugprone-branch-clone)
+    case M6809Mnemonic::NOP:  return EncodeNOP();
     case M6809Mnemonic::RTS:  return EncodeRTS();
     case M6809Mnemonic::CLRA: return EncodeCLRA();
     case M6809Mnemonic::CLRB: return EncodeCLRB();
@@ -980,7 +980,7 @@ Cpu6809::EncodeInstruction(const std::string &mnemonic, uint32_t operand, // NOL
     case M6809Mnemonic::BRN: return {}; // BRN (Branch Never) - no-op
 
     // ── Long branches ───────────────────────────────────────────────────────
-    case M6809Mnemonic::LBRA: return EncodeLBRA(kOff16); // NOLINT(bugprone-branch-clone)
+    case M6809Mnemonic::LBRA: return EncodeLBRA(kOff16);
     case M6809Mnemonic::LBSR: return EncodeLBSR(kOff16);
     case M6809Mnemonic::LBRN: return EncodeLBRN(kOff16);
     case M6809Mnemonic::LBHI: return EncodeLBHI(kOff16);
@@ -1013,7 +1013,7 @@ Cpu6809::EncodeInstruction(const std::string &mnemonic, uint32_t operand, // NOL
     }
 
     // ── Stack operations ────────────────────────────────────────────────────
-    case M6809Mnemonic::PSHS: return EncodePSHS(static_cast<uint8_t>(operand & 0xFF)); // NOLINT(bugprone-branch-clone)
+    case M6809Mnemonic::PSHS: return EncodePSHS(static_cast<uint8_t>(operand & 0xFF));
     case M6809Mnemonic::PULS: return EncodePULS(static_cast<uint8_t>(operand & 0xFF));
     case M6809Mnemonic::PSHU: return EncodePSHU(static_cast<uint8_t>(operand & 0xFF));
     case M6809Mnemonic::PULU: return EncodePULU(static_cast<uint8_t>(operand & 0xFF));

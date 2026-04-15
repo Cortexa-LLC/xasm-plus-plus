@@ -449,7 +449,7 @@ void FlexAsmSyntax::ParseLine(const std::string &line, Section &section,
       std::string rest = Trim(trimmed.substr(space_pos));
 
       space_pos = rest.find_first_of(" \t");
-      if (space_pos != std::string::npos) { // NOLINT(bugprone-branch-clone)
+      if (space_pos != std::string::npos) {
         opcode = rest.substr(0, space_pos);
         operands = Trim(rest.substr(space_pos));
       } else {
@@ -463,7 +463,7 @@ void FlexAsmSyntax::ParseLine(const std::string &line, Section &section,
     // No label, starts with whitespace
     std::string rest = Trim(trimmed);
     size_t space_pos = rest.find_first_of(" \t");
-    if (space_pos != std::string::npos) { // NOLINT(bugprone-branch-clone)
+    if (space_pos != std::string::npos) {
       opcode = rest.substr(0, space_pos);
       operands = Trim(rest.substr(space_pos));
     } else {

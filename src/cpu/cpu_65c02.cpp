@@ -58,7 +58,7 @@ std::vector<uint8_t> Cpu6502::EncodeSTZ(uint16_t operand,
   std::vector<uint8_t> bytes;
 
   switch (mode) {
-  case AddressingMode::ZeroPage: // NOLINT(bugprone-branch-clone)
+  case AddressingMode::ZeroPage:
     bytes.push_back(0x64); // STZ zp
     bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
     break;
@@ -102,7 +102,7 @@ std::vector<uint8_t> Cpu6502::EncodeTRB(uint16_t operand,
   std::vector<uint8_t> bytes;
 
   switch (mode) {
-  case AddressingMode::ZeroPage: // NOLINT(bugprone-branch-clone)
+  case AddressingMode::ZeroPage:
     bytes.push_back(0x14); // TRB zp
     bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
     break;
@@ -131,7 +131,7 @@ std::vector<uint8_t> Cpu6502::EncodeTSB(uint16_t operand,
   std::vector<uint8_t> bytes;
 
   switch (mode) {
-  case AddressingMode::ZeroPage: // NOLINT(bugprone-branch-clone)
+  case AddressingMode::ZeroPage:
     bytes.push_back(0x04); // TSB zp
     bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
     break;

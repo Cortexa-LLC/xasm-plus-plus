@@ -200,7 +200,7 @@ SRecordWriter::ExtractBytes(const Section &section) {
 
 size_t SRecordWriter::GetAddressSize(int format) {
   switch (format) {
-  case output_format::srec::RECORD_TYPE_HEADER: // NOLINT(bugprone-branch-clone)
+  case output_format::srec::RECORD_TYPE_HEADER:
   case output_format::srec::RECORD_TYPE_DATA_16BIT:
   case output_format::srec::RECORD_TYPE_COUNT_16BIT:
   case output_format::srec::RECORD_TYPE_TERM_16BIT:

@@ -37,7 +37,7 @@ std::vector<uint8_t> Cpu6502::EncodeWithTable(const OpcodeTable &table,
 
   // Map addressing mode to opcode from table
   switch (mode) {
-  case AddressingMode::Immediate: // NOLINT(bugprone-branch-clone)
+  case AddressingMode::Immediate:
     opcode = table.immediate;
     break;
 
@@ -85,7 +85,7 @@ std::vector<uint8_t> Cpu6502::EncodeWithTable(const OpcodeTable &table,
     opcode = table.relative;
     break;
 
-  case AddressingMode::IndirectZeroPage: // NOLINT(bugprone-branch-clone)
+  case AddressingMode::IndirectZeroPage:
     // Only available in 65C02 and later
     if (cpu_mode_ != CpuMode::Cpu6502) {
       opcode = table.indirect_zero_page;
@@ -99,7 +99,7 @@ std::vector<uint8_t> Cpu6502::EncodeWithTable(const OpcodeTable &table,
     }
     break;
 
-  case AddressingMode::AbsoluteLong: // NOLINT(bugprone-branch-clone)
+  case AddressingMode::AbsoluteLong:
     // Only available in 65816
     if (cpu_mode_ == CpuMode::Cpu65816) {
       opcode = table.absolute_long;
@@ -189,7 +189,7 @@ std::vector<uint8_t> Cpu6502::EncodeWithTable(const OpcodeTable &table,
       }
       break;
     }
-    case AddressingMode::ZeroPage: // NOLINT(bugprone-branch-clone)
+    case AddressingMode::ZeroPage:
     case AddressingMode::ZeroPageX:
     case AddressingMode::ZeroPageY:
     case AddressingMode::IndirectX:
@@ -978,7 +978,7 @@ std::vector<uint8_t> Cpu6502::EncodeBIT(uint16_t operand,
   std::vector<uint8_t> bytes;
 
   switch (mode) {
-  case AddressingMode::ZeroPage: // NOLINT(bugprone-branch-clone)
+  case AddressingMode::ZeroPage:
     bytes.push_back(Opcodes::BIT_ZP);
     bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
     break;
@@ -994,7 +994,7 @@ std::vector<uint8_t> Cpu6502::EncodeBIT(uint16_t operand,
   case AddressingMode::AbsoluteX:
     // These modes only available in 65C02+
     if (cpu_mode_ != CpuMode::Cpu6502) {
-      if (mode == AddressingMode::Immediate) { // NOLINT(bugprone-branch-clone)
+      if (mode == AddressingMode::Immediate) {
         bytes.push_back(Opcodes::BIT_IMM);
         bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
       } else if (mode == AddressingMode::ZeroPageX) {
