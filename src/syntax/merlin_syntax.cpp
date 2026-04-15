@@ -746,15 +746,33 @@ void MerlinSyntaxParser::HandleDS(const std::string& operand, Section& section,
   // Supports: DS 100        (literal)
   //           DS COUNT      (symbol)
   //           DS *+10       (program counter arithmetic)
+  //           DS 64,$00     (count, fill byte)
 
-  std::string op = SubstitutePCInDSOperand(Trim(operand));
+  std::string full_op = Trim(operand);
+  uint8_t fill_byte = 0;
+
+  // '\' alone in operand position is a Merlin comment/continuation token (ds 0)
+  if (full_op == "\\") {
+    full_op = "";
+  }
+
+  // Check for two-argument form: DS count,fill
+  auto comma = full_op.find(',');
+  if (comma != std::string::npos) {
+    std::string fill_str = Trim(full_op.substr(comma + 1));
+    full_op = full_op.substr(0, comma);
+    uint32_t fill_val = ResolveDSCount(fill_str, symbols);
+    fill_byte = static_cast<uint8_t>(fill_val & 0xFF);
+  }
+
+  std::string op = SubstitutePCInDSOperand(full_op);
   uint32_t count = ResolveDSCount(op, symbols);
 
   // DUM blocks: advance address without emitting bytes
   if (!in_dum_block_) {
     // If the original operand contains '*' (PC-relative), store the raw
     // expression so the assembler can re-evaluate it each pass.
-    std::string raw = Trim(operand);
+    std::string raw = Trim(full_op);
     bool has_star = false;
     for (size_t i = 0; i < raw.size(); ++i) {
       if (raw[i] == '*' && IsPC(raw, i)) {
@@ -762,11 +780,10 @@ void MerlinSyntaxParser::HandleDS(const std::string& operand, Section& section,
         break;
       }
     }
-    if (has_star) {
-      section.atoms.push_back(std::make_shared<SpaceAtom>(count, raw));
-    } else {
-      section.atoms.push_back(std::make_shared<SpaceAtom>(count));
-    }
+    auto space = has_star ? std::make_shared<SpaceAtom>(count, raw)
+                          : std::make_shared<SpaceAtom>(count);
+    space->fill = fill_byte;
+    section.atoms.push_back(space);
     current_address_ += count;
   } else {
     dum_address_ += count;
@@ -782,6 +799,12 @@ void MerlinSyntaxParser::HandleDum(const std::string& operand, ConcreteSymbolTab
   // Check if operand is empty
   if (op.empty()) {
     throw std::runtime_error(FormatError("DUM directive requires an address operand"));
+  }
+
+  // Handle '*' (current PC) as address
+  if (op == "*") {
+    dum_address_ = current_address_;
+    return;
   }
 
   // Parse number (decimal, hex, or binary) or symbol reference

@@ -381,6 +381,26 @@ TEST(MerlinSyntaxTest, DumMultipleLabelsLikePoP) {
   EXPECT_EQ(value, 0xb6e0);
 }
 
+TEST(MerlinSyntaxTest, HandleDumWithPC) {
+  // Regression test: DUM * should use current PC as DUM base address
+  // RW18525.S line 1401: dum *
+  MerlinSyntaxParser parser;
+  ConcreteSymbolTable symbols;
+  Section section("test", 0x1000);
+
+  // org $2000 then DUM * should start DUM at $2000
+  ASSERT_NO_THROW(parser.Parse(
+      "         org $2000\n"
+      "         dum *\n"
+      "myvar    ds 4\n"
+      "         dend\n",
+      section, symbols));
+
+  int64_t value = 0;
+  ASSERT_TRUE(symbols.Lookup("myvar", value));
+  EXPECT_EQ(value, 0x2000);
+}
+
 TEST(MerlinSyntaxTest, OrgWithSymbol) {
   MerlinSyntaxParser parser;
   ConcreteSymbolTable symbols;
@@ -1443,6 +1463,53 @@ TEST(MerlinSyntaxTest, HandleDsWithProgramCounter) {
   auto space_atom = std::dynamic_pointer_cast<SpaceAtom>(section.atoms[0]);
   ASSERT_NE(space_atom, nullptr);
   EXPECT_EQ(space_atom->size, 0UL);
+}
+
+TEST(MerlinSyntaxTest, HandleDsTwoArgForm) {
+  // Regression test: ds count,fill (two-argument Merlin DS form)
+  // RW18525.S line 1394: ds 64,$00
+  MerlinSyntaxParser parser;
+  ConcreteSymbolTable symbols;
+  Section section("test", 0);
+
+  ASSERT_NO_THROW(parser.Parse("         ds 64,$00", section, symbols))
+      << "DS count,fill two-argument form must not throw";
+
+  ASSERT_EQ(section.atoms.size(), 1UL);
+  auto space_atom = std::dynamic_pointer_cast<SpaceAtom>(section.atoms[0]);
+  ASSERT_NE(space_atom, nullptr);
+  EXPECT_EQ(space_atom->count, 64UL);
+  EXPECT_EQ(space_atom->fill, 0x00);
+}
+
+TEST(MerlinSyntaxTest, HandleDsBackslashOperand) {
+  // Regression test: ds \ (backslash-as-comment, RW18525.S line 1402)
+  // In Merlin, '\' alone as an operand is a comment/continuation token = ds 0
+  MerlinSyntaxParser parser;
+  ConcreteSymbolTable symbols;
+  Section section("test", 0);
+
+  ASSERT_NO_THROW(parser.Parse("         ds \\", section, symbols))
+      << "DS with backslash-only operand must not throw";
+
+  ASSERT_EQ(section.atoms.size(), 1UL);
+  auto space_atom = std::dynamic_pointer_cast<SpaceAtom>(section.atoms[0]);
+  ASSERT_NE(space_atom, nullptr);
+  EXPECT_EQ(space_atom->count, 0UL);
+}
+
+TEST(MerlinSyntaxTest, HandleDsTwoArgFormNonZeroFill) {
+  MerlinSyntaxParser parser;
+  ConcreteSymbolTable symbols;
+  Section section("test", 0);
+
+  ASSERT_NO_THROW(parser.Parse("         DS 8,$FF", section, symbols));
+
+  ASSERT_EQ(section.atoms.size(), 1UL);
+  auto space_atom = std::dynamic_pointer_cast<SpaceAtom>(section.atoms[0]);
+  ASSERT_NE(space_atom, nullptr);
+  EXPECT_EQ(space_atom->count, 8UL);
+  EXPECT_EQ(space_atom->fill, 0xFF);
 }
 
 TEST(MerlinSyntaxTest, TrimEmptyString) {

@@ -280,6 +280,7 @@ class DataAtom : public Atom {
 class SpaceAtom : public Atom {
  public:
   size_t count{0};               ///< Number of bytes to reserve
+  uint8_t fill{0};               ///< Fill byte (default 0x00)
   std::string expression_str{};  ///< Raw expression (contains '*') for re-evaluation each pass
 
   /**
@@ -287,6 +288,15 @@ class SpaceAtom : public Atom {
    * @param c Number of bytes to reserve
    */
   explicit SpaceAtom(size_t c) : Atom(AtomType::Space), count(c) { size = count; }
+
+  /**
+   * @brief Construct a space atom with a fixed count and fill byte
+   * @param c Number of bytes to reserve
+   * @param fill_byte Value to fill each byte with
+   */
+  SpaceAtom(size_t c, uint8_t fill_byte) : Atom(AtomType::Space), count(c), fill(fill_byte) {
+    size = count;
+  }
 
   /**
    * @brief Construct a space atom with a PC-relative expression

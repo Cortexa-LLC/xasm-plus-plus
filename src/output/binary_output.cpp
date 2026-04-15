@@ -77,9 +77,9 @@ static void WriteAtom(std::ofstream& out, const std::shared_ptr<Atom>& atom, siz
     case AtomType::Space: {
       auto space_atom = std::dynamic_pointer_cast<SpaceAtom>(atom);
       if (space_atom) {
-        std::vector<uint8_t> zeros(space_atom->count, output_format::binary::ZERO_BYTE);
-        out.write(reinterpret_cast<const char*>(zeros.data()),
-                  static_cast<std::streamsize>(zeros.size()));
+        std::vector<uint8_t> fill_buf(space_atom->count, space_atom->fill);
+        out.write(reinterpret_cast<const char*>(fill_buf.data()),
+                  static_cast<std::streamsize>(fill_buf.size()));
         position += space_atom->count;
       }
       break;
