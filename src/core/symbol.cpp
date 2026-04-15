@@ -1,4 +1,7 @@
-// Symbol implementation
+/**
+ * @file symbol.cpp
+ * @brief Symbol implementation
+ */
 
 #include "xasm++/symbol.h"
 #include <algorithm>

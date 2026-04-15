@@ -1,5 +1,9 @@
-// Atom implementation
-// Most functionality is in the header (inline)
+/**
+ * @file atom.cpp
+ * @brief Atom implementation
+ *
+ * Most functionality is in the header (inline).
+ */
 
 #include "xasm++/atom.h"
 

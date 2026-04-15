@@ -1,4 +1,7 @@
-// 6502 CPU implementation - Core 6502 opcodes
+/**
+ * @file cpu_6502.cpp
+ * @brief 6502 CPU implementation - Core 6502 opcodes
+ */
 
 #include "xasm++/cpu/cpu_6502.h"
 #include "xasm++/cpu/cpu_error_utils.h"

@@ -1,5 +1,9 @@
-// Z80 Opcode Constants
-// Replaces magic numbers with descriptive named constants
+/**
+ * @file opcodes_z80.h
+ * @brief Z80 opcode constants
+ *
+ * Replaces magic numbers with descriptive named constants.
+ */
 
 #pragma once
 

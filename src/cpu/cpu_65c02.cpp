@@ -1,4 +1,7 @@
-// 6502 CPU implementation - 65C02 extensions
+/**
+ * @file cpu_65c02.cpp
+ * @brief 65C02 CPU extensions for the 6502 implementation
+ */
 
 #include "xasm++/cpu/cpu_6502.h"
 

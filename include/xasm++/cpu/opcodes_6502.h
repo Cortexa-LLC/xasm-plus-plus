@@ -1,5 +1,9 @@
-// 6502/65C02/65816 Opcode Constants
-// Replaces magic numbers with descriptive named constants
+/**
+ * @file opcodes_6502.h
+ * @brief 6502/65C02/65816 opcode constants
+ *
+ * Replaces magic numbers with descriptive named constants.
+ */
 
 #pragma once
 

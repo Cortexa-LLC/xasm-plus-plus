@@ -1,3 +1,8 @@
+/**
+ * @file string_utils.h
+ * @brief String utility functions for xasm++
+ */
+
 #ifndef XASM_UTIL_STRING_UTILS_H
 #define XASM_UTIL_STRING_UTILS_H
 

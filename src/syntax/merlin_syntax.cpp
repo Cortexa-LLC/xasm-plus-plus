@@ -1,5 +1,9 @@
-// MerlinSyntax - Merlin assembly syntax parser implementation
-// Phases 1-3: Foundation, Local Labels, DUM Blocks
+/**
+ * @file merlin_syntax.cpp
+ * @brief Merlin assembly syntax parser implementation
+ *
+ * Phases 1-3: Foundation, Local Labels, DUM Blocks
+ */
 
 #include "xasm++/syntax/merlin_syntax.h"
 #include "xasm++/syntax/label_policy.h"

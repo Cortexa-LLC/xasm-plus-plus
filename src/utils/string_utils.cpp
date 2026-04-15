@@ -1,3 +1,8 @@
+/**
+ * @file string_utils.cpp
+ * @brief String utility function implementations for xasm++
+ */
+
 #include "xasm++/util/string_utils.h"
 #include <algorithm>
 #include <cctype>

@@ -1,5 +1,9 @@
-// Parse utility functions
-// Extracted from assembler.cpp for testability and reusability
+/**
+ * @file parse_utils.h
+ * @brief Parse utility functions
+ *
+ * Extracted from assembler.cpp for testability and reusability.
+ */
 
 #pragma once
 

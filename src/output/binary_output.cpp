@@ -1,5 +1,9 @@
-// BinaryOutput - Binary output plugin implementation
-// Phase 1: Minimal Viable Assembler - Binary Output Plugin
+/**
+ * @file binary_output.cpp
+ * @brief Binary output plugin implementation
+ *
+ * Phase 1: Minimal Viable Assembler - Binary Output Plugin
+ */
 
 #include "xasm++/output/binary_output.h"
 #include "xasm++/output/output_format_constants.h"

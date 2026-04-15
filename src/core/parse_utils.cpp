@@ -1,5 +1,9 @@
-// Parse utility implementations
-// Implements [C1] fix: Safe ParseHex with validation and error handling
+/**
+ * @file parse_utils.cpp
+ * @brief Parse utility implementations
+ *
+ * Implements [C1] fix: Safe ParseHex with validation and error handling.
+ */
 
 #include "xasm++/parse_utils.h"
 #include <algorithm>

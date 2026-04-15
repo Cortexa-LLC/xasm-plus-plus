@@ -1,5 +1,9 @@
-// xasm++ - Cross-platform assembler
-// Phase 1: Minimal Viable Assembler - Command-Line Interface
+/**
+ * @file main.cpp
+ * @brief xasm++ - Cross-platform assembler entry point
+ *
+ * Phase 1: Minimal Viable Assembler - Command-Line Interface
+ */
 
 #include "CLI/CLI.hpp"
 #include "xasm++/assembler.h"

@@ -1,4 +1,7 @@
-// Assembler implementation
+/**
+ * @file assembler.cpp
+ * @brief Assembler implementation
+ */
 
 #include "xasm++/assembler.h"
 #include "xasm++/common/expression_parser.h"

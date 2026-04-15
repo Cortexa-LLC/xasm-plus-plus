@@ -1,5 +1,9 @@
-// EdtasmSyntax - EDTASM+ assembly syntax parser for TRS-80 Color Computer
-// Supports standard 6809 directives and syntax
+/**
+ * @file edtasm_syntax.cpp
+ * @brief EDTASM+ assembly syntax parser for TRS-80 Color Computer
+ *
+ * Supports standard 6809 directives and syntax.
+ */
 
 #include "xasm++/syntax/edtasm_syntax.h"
 #include "xasm++/directives/directive_constants.h"

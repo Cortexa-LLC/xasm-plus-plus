@@ -1,5 +1,9 @@
-// SimpleSyntax - Simple assembly syntax parser implementation
-// Phase 1: Minimal Viable Assembler - SimpleSyntax Plugin
+/**
+ * @file simple_syntax.cpp
+ * @brief Simple assembly syntax parser implementation
+ *
+ * Phase 1: Minimal Viable Assembler - SimpleSyntax Plugin
+ */
 
 #include "xasm++/syntax/simple_syntax.h"
 #include "xasm++/directives/directive_constants.h"

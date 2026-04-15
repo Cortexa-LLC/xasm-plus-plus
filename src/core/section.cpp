@@ -1,5 +1,9 @@
-// Section implementation
-// Most functionality is in the header (inline)
+/**
+ * @file section.cpp
+ * @brief Section implementation
+ *
+ * Most functionality is in the header (inline).
+ */
 
 #include "xasm++/section.h"
 

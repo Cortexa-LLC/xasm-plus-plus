@@ -1,10 +1,14 @@
-// Motorola 6809 Opcode Constants
-// Replaces magic numbers with descriptive named constants
-//
-// The 6809 uses a 3-page opcode space:
-// - Page 1: Standard opcodes (direct encoding)
-// - Page 2: Extended opcodes (prefix $10)
-// - Page 3: Extended opcodes (prefix $11)
+/**
+ * @file opcodes_6809.h
+ * @brief Motorola 6809 opcode constants
+ *
+ * Replaces magic numbers with descriptive named constants.
+ *
+ * The 6809 uses a 3-page opcode space:
+ * - Page 1: Standard opcodes (direct encoding)
+ * - Page 2: Extended opcodes (prefix $10)
+ * - Page 3: Extended opcodes (prefix $11)
+ */
 
 #pragma once
 

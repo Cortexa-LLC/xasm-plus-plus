@@ -1,5 +1,9 @@
-// Expression implementation
-// Most functionality is in the header (inline)
+/**
+ * @file expression.cpp
+ * @brief Expression implementation
+ *
+ * Most functionality is in the header (inline).
+ */
 
 #include "xasm++/expression.h"
 

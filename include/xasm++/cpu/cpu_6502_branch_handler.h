@@ -1,6 +1,10 @@
-// 6502 Branch Relaxation Handler
-// Extracted from Cpu6502 Large class refactoring - improving SRP compliance
-// (M6.1)
+/**
+ * @file cpu_6502_branch_handler.h
+ * @brief 6502 Branch Relaxation Handler
+ *
+ * Extracted from Cpu6502 large class refactoring - improving SRP compliance
+ * (M6.1)
+ */
 
 #pragma once
 

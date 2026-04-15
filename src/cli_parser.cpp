@@ -1,5 +1,9 @@
-// CLI argument parser
-// Phase 1: Minimal Viable Assembler - Command-Line Interface
+/**
+ * @file cli_parser.cpp
+ * @brief CLI argument parser
+ *
+ * Phase 1: Minimal Viable Assembler - Command-Line Interface
+ */
 
 #include "CLI/CLI.hpp"
 #include "xasm++/assembler.h"
