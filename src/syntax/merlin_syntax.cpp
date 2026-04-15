@@ -6,12 +6,7 @@
  */
 
 #include "xasm++/syntax/merlin_syntax.h"
-#include "xasm++/syntax/label_policy.h"
-#include "xasm++/common/expression_parser.h"
-#include "xasm++/cpu/cpu_6502.h"
-#include "xasm++/directives/directive_constants.h"
-#include "xasm++/directives/merlin_directive_handlers.h"
-#include "xasm++/util/string_utils.h"
+
 #include <algorithm>
 #include <cctype>
 #include <cstdlib>
@@ -20,6 +15,13 @@
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
+
+#include "xasm++/common/expression_parser.h"
+#include "xasm++/cpu/cpu_6502.h"
+#include "xasm++/directives/directive_constants.h"
+#include "xasm++/directives/merlin_directive_handlers.h"
+#include "xasm++/syntax/label_policy.h"
+#include "xasm++/util/string_utils.h"
 
 namespace xasm {
 
@@ -38,7 +40,7 @@ constexpr int RADIX_HEXADECIMAL = 16;
 // or plain decimal digits).  Returns true if the string was a numeric literal
 // and sets *out_value; returns false if the string looks like a symbol name.
 // Throws std::runtime_error on malformed input (e.g. "$" with no hex digits).
-bool ParseNumericLiteral(const std::string &op, uint32_t &out_value) {
+bool ParseNumericLiteral(const std::string& op, uint32_t& out_value) {
   if (op.empty()) {
     return false;
   }
@@ -60,14 +62,14 @@ bool ParseNumericLiteral(const std::string &op, uint32_t &out_value) {
 // Platform-aware temp directory helper
 std::string GetTempDir() {
 #ifdef _WIN32
-  const char *temp = std::getenv("TEMP");
+  const char* temp = std::getenv("TEMP");
   if (!temp)
     temp = std::getenv("TMP");
   if (!temp)
     temp = "C:\\Windows\\Temp";
   std::string temp_str(temp);
   // Normalize to forward slashes for consistency
-  for (char &c : temp_str) {
+  for (char& c : temp_str) {
     if (c == '\\')
       c = '/';
   }
@@ -77,15 +79,19 @@ std::string GetTempDir() {
 #endif
 }
 
-} // anonymous namespace
+}  // anonymous namespace
 
 // ============================================================================
 // Constructor
 // ============================================================================
 
-MerlinSyntaxParser::MerlinSyntaxParser() { InitializeDirectiveRegistry(); }
+MerlinSyntaxParser::MerlinSyntaxParser() {
+  InitializeDirectiveRegistry();
+}
 
-void MerlinSyntaxParser::SetCpu(Cpu6502 *cpu) { cpu_ = cpu; }
+void MerlinSyntaxParser::SetCpu(Cpu6502* cpu) {
+  cpu_ = cpu;
+}
 
 // ============================================================================
 // Directive Registry
@@ -96,7 +102,7 @@ void MerlinSyntaxParser::InitializeDirectiveRegistry() {
   directive_registry_[ORG] = merlin::HandleOrg;
   directive_registry_[EQU] = merlin::HandleEqu;
   directive_registry_[DB] = merlin::HandleDb;
-  directive_registry_[DFB] = merlin::HandleDb; // Alias
+  directive_registry_[DFB] = merlin::HandleDb;  // Alias
   directive_registry_[DW] = merlin::HandleDw;
   directive_registry_[HEX] = merlin::HandleHex;
   directive_registry_[DS] = merlin::HandleDs;
@@ -126,10 +132,8 @@ void MerlinSyntaxParser::InitializeDirectiveRegistry() {
   directive_registry_[LUP] = merlin::HandleLup;
 }
 
-bool MerlinSyntaxParser::DispatchDirective(const std::string &directive,
-                                           const std::string &label,
-                                           const std::string &operand,
-                                           DirectiveContext &context) {
+bool MerlinSyntaxParser::DispatchDirective(const std::string& directive, const std::string& label,
+                                           const std::string& operand, DirectiveContext& context) {
   auto it = directive_registry_.find(directive);
   if (it != directive_registry_.end()) {
     // Found directive - invoke handler
@@ -139,7 +143,7 @@ bool MerlinSyntaxParser::DispatchDirective(const std::string &directive,
     it->second(context);
     return true;
   }
-  return false; // Unknown directive
+  return false;  // Unknown directive
 }
 
 // ============================================================================
@@ -147,7 +151,7 @@ bool MerlinSyntaxParser::DispatchDirective(const std::string &directive,
 // ============================================================================
 
 // Strip comments: * in column 1 or ; anywhere
-std::string MerlinSyntaxParser::StripComments(const std::string &line) {
+std::string MerlinSyntaxParser::StripComments(const std::string& line) {
   // Empty line
   if (line.empty()) {
     return "";
@@ -174,7 +178,7 @@ std::string MerlinSyntaxParser::StripComments(const std::string &line) {
 }
 
 // Format error message with source location
-std::string MerlinSyntaxParser::FormatError(const std::string &message) const {
+std::string MerlinSyntaxParser::FormatError(const std::string& message) const {
   std::ostringstream oss;
   oss << current_file_ << ":" << current_line_ << ": error: " << message;
   return oss.str();
@@ -183,23 +187,19 @@ std::string MerlinSyntaxParser::FormatError(const std::string &message) const {
 /// Strip Merlin-style inline comment from an instruction operand.
 /// In Merlin, any whitespace-separated trailing text is a comment (no ';'
 /// needed). Quoted string char literals (e.g. "#\"A\"") are not stripped.
-std::string MerlinSyntaxParser::StripMerlinInlineComment(
-    const std::string &operands) {
+std::string MerlinSyntaxParser::StripMerlinInlineComment(const std::string& operands) {
   // Skip leading '#' or '<' prefix operators
   size_t offset = 0;
-  if (!operands.empty() &&
-      (operands[0] == '#' || operands[0] == '<')) {
+  if (!operands.empty() && (operands[0] == '#' || operands[0] == '<')) {
     offset = 1;
   }
   // If expression itself starts with a quote, leave alone (char literal)
-  if (offset < operands.size() &&
-      (operands[offset] == '"' || operands[offset] == '\'')) {
+  if (offset < operands.size() && (operands[offset] == '"' || operands[offset] == '\'')) {
     return operands;
   }
   for (size_t i = offset; i < operands.size(); ++i) {
     if (operands[i] == ' ' || operands[i] == '\t') {
-      return operands.substr(0, offset) +
-             Trim(operands.substr(offset, i - offset));
+      return operands.substr(0, offset) + Trim(operands.substr(offset, i - offset));
     }
   }
   return operands;
@@ -211,7 +211,7 @@ std::string MerlinSyntaxParser::StripMerlinInlineComment(
 
 // Parse number in various formats: $hex, %binary, decimal
 // NOTE: Kept for HandleOrg compatibility - will refactor in future phase
-uint32_t MerlinSyntaxParser::ParseNumber(const std::string &str) {
+uint32_t MerlinSyntaxParser::ParseNumber(const std::string& str) {
   if (str.empty()) {
     return 0;
   }
@@ -232,7 +232,7 @@ uint32_t MerlinSyntaxParser::ParseNumber(const std::string &str) {
   try {
     auto expr = parser.Parse(clean_str);
     return static_cast<uint32_t>(expr->Evaluate(empty_symbols));
-  } catch (const std::runtime_error &e) {
+  } catch (const std::runtime_error& e) {
     // Re-throw with Merlin formatting
     throw std::runtime_error(FormatError(e.what()));
   }
@@ -242,23 +242,21 @@ uint32_t MerlinSyntaxParser::ParseNumber(const std::string &str) {
 // TryParse helpers for ParseExpression
 // ============================================================================
 
-std::shared_ptr<Expression>
-MerlinSyntaxParser::TryParseCharLiteral(const std::string &expr,
-                                        ConcreteSymbolTable &symbols) {
+std::shared_ptr<Expression> MerlinSyntaxParser::TryParseCharLiteral(const std::string& expr,
+                                                                    ConcreteSymbolTable& symbols) {
   if (expr.empty() || (expr[0] != '"' && expr[0] != '\'')) {
     return nullptr;
   }
   char quote = expr[0];
   if (expr.length() == 1) {
-    return std::make_shared<LiteralExpr>(0); // lone quote — treat as 0
+    return std::make_shared<LiteralExpr>(0);  // lone quote — treat as 0
   }
   size_t close = expr.find(quote, 1);
   if (close == std::string::npos) {
-    return std::make_shared<LiteralExpr>(0); // unclosed quote — Merlin compat
+    return std::make_shared<LiteralExpr>(0);  // unclosed quote — Merlin compat
   }
   std::string chars = expr.substr(1, close - 1);
-  int64_t char_val =
-      chars.empty() ? 0 : (static_cast<uint8_t>(chars[0]) | 0x80);
+  int64_t char_val = chars.empty() ? 0 : (static_cast<uint8_t>(chars[0]) | 0x80);
   std::string rest = Trim(expr.substr(close + 1));
   if (rest.empty()) {
     return std::make_shared<LiteralExpr>(char_val);
@@ -267,87 +265,80 @@ MerlinSyntaxParser::TryParseCharLiteral(const std::string &expr,
 }
 
 /// Build a compound expression from a char literal value and trailing "+N", "-X" etc.
-std::shared_ptr<Expression>
-MerlinSyntaxParser::CompoundCharExpr(int64_t char_val, const std::string &rest,
-                                     ConcreteSymbolTable &symbols) {
-  if (rest.empty() || (rest[0] != '+' && rest[0] != '-' &&
-                       rest[0] != '*' && rest[0] != '/')) {
+std::shared_ptr<Expression> MerlinSyntaxParser::CompoundCharExpr(int64_t char_val,
+                                                                 const std::string& rest,
+                                                                 ConcreteSymbolTable& symbols) {
+  if (rest.empty() || (rest[0] != '+' && rest[0] != '-' && rest[0] != '*' && rest[0] != '/')) {
     return std::make_shared<LiteralExpr>(char_val);
   }
   std::string rhs = Trim(rest.substr(1));
   if (rhs.empty()) {
     return std::make_shared<LiteralExpr>(char_val);
   }
-  auto left_expr  = std::make_shared<LiteralExpr>(char_val);
+  auto left_expr = std::make_shared<LiteralExpr>(char_val);
   auto right_expr = ParseExpression(rhs, symbols);
   return MakeBinaryExpr(rest[0], left_expr, right_expr);
 }
 
 /// Build a BinaryOpExpr from a char operator; returns left if op unrecognised.
-std::shared_ptr<Expression>
-MerlinSyntaxParser::MakeBinaryExpr(
-    char op,
-    std::shared_ptr<Expression> left_expr,
-    std::shared_ptr<Expression> right_expr) {
+std::shared_ptr<Expression> MerlinSyntaxParser::MakeBinaryExpr(
+    char op, std::shared_ptr<Expression> left_expr, std::shared_ptr<Expression> right_expr) {
   switch (op) {
-    case '+': return std::make_shared<BinaryOpExpr>(BinaryOp::Add,      left_expr, right_expr);
-    case '-': return std::make_shared<BinaryOpExpr>(BinaryOp::Subtract, left_expr, right_expr);
-    case '*': return std::make_shared<BinaryOpExpr>(BinaryOp::Multiply, left_expr, right_expr);
-    case '/': return std::make_shared<BinaryOpExpr>(BinaryOp::Divide,   left_expr, right_expr);
-    default:  return left_expr;
+    case '+':
+      return std::make_shared<BinaryOpExpr>(BinaryOp::Add, left_expr, right_expr);
+    case '-':
+      return std::make_shared<BinaryOpExpr>(BinaryOp::Subtract, left_expr, right_expr);
+    case '*':
+      return std::make_shared<BinaryOpExpr>(BinaryOp::Multiply, left_expr, right_expr);
+    case '/':
+      return std::make_shared<BinaryOpExpr>(BinaryOp::Divide, left_expr, right_expr);
+    default:
+      return left_expr;
   }
 }
 
-std::shared_ptr<Expression>
-MerlinSyntaxParser::TryParseLowByteOperator(const std::string &expr,
-                                            ConcreteSymbolTable &symbols) {
+std::shared_ptr<Expression> MerlinSyntaxParser::TryParseLowByteOperator(
+    const std::string& expr, ConcreteSymbolTable& symbols) {
   if (expr.empty() || (expr[0] != '<' && expr[0] != '#')) {
     return nullptr;
   }
   if (expr.length() < 2) {
-    throw std::runtime_error(
-        FormatError("Low byte operator (</#) requires an operand"));
+    throw std::runtime_error(FormatError("Low byte operator (</#) requires an operand"));
   }
   std::string operand = Trim(expr.substr(1));
   if (operand.empty()) {
-    throw std::runtime_error(
-        FormatError("Low byte operator (</#) has empty operand"));
+    throw std::runtime_error(FormatError("Low byte operator (</#) has empty operand"));
   }
   // Recursively parse the operand (might be expression like SHIFT0-$80)
   auto operand_expr = ParseExpression(operand, symbols);
   int64_t value = operand_expr->Evaluate(symbols);
-  return std::make_shared<LiteralExpr>(value & 0xFF); // Low byte
+  return std::make_shared<LiteralExpr>(value & 0xFF);  // Low byte
 }
 
-std::shared_ptr<Expression>
-MerlinSyntaxParser::TryParseHighByteOperator(const std::string &expr,
-                                             ConcreteSymbolTable &symbols) {
+std::shared_ptr<Expression> MerlinSyntaxParser::TryParseHighByteOperator(
+    const std::string& expr, ConcreteSymbolTable& symbols) {
   if (expr.empty() || expr[0] != '>') {
     return nullptr;
   }
   if (expr.length() < 2) {
-    throw std::runtime_error(
-        FormatError("High byte operator (>) requires an operand"));
+    throw std::runtime_error(FormatError("High byte operator (>) requires an operand"));
   }
   std::string operand = Trim(expr.substr(1));
   if (operand.empty()) {
-    throw std::runtime_error(
-        FormatError("High byte operator (>) has empty operand"));
+    throw std::runtime_error(FormatError("High byte operator (>) has empty operand"));
   }
   // Recursively parse the operand (might be expression like SHIFT0-$80)
   auto operand_expr = ParseExpression(operand, symbols);
   int64_t value = operand_expr->Evaluate(symbols);
-  return std::make_shared<LiteralExpr>((value >> 8) & 0xFF); // High byte
+  return std::make_shared<LiteralExpr>((value >> 8) & 0xFF);  // High byte
 }
 
 // ============================================================================
 
 // Parse expression - delegates to ExpressionParser for standard operations
 // while preserving Merlin-specific features: character literals, low/high byte
-std::shared_ptr<Expression>
-MerlinSyntaxParser::ParseExpression(const std::string &str,
-                                    ConcreteSymbolTable &symbols) {
-
+std::shared_ptr<Expression> MerlinSyntaxParser::ParseExpression(const std::string& str,
+                                                                ConcreteSymbolTable& symbols) {
   std::string expr = StripMerlinExprComment(Trim(str));
 
   // Merlin-specific prefix operators: character literals, low/high byte
@@ -365,8 +356,7 @@ MerlinSyntaxParser::ParseExpression(const std::string &str,
     return std::make_shared<LiteralExpr>(0);
   }
   if (expr == "$") {
-    throw std::runtime_error(
-        FormatError("Invalid hex number: '$' (no digits after $)"));
+    throw std::runtime_error(FormatError("Invalid hex number: '$' (no digits after $)"));
   }
 
   // Trailing operator: strip and re-parse (e.g. "X+" → X+0 = X)
@@ -382,7 +372,7 @@ MerlinSyntaxParser::ParseExpression(const std::string &str,
   ExpressionParser parser(&symbols, nullptr, ParserFeatures::ForMerlin());
   try {
     return parser.Parse(expr);
-  } catch (const std::runtime_error &e) {
+  } catch (const std::runtime_error& e) {
     throw std::runtime_error(FormatError(e.what()));
   }
 }
@@ -390,7 +380,7 @@ MerlinSyntaxParser::ParseExpression(const std::string &str,
 /// Strip trailing whitespace-delimited inline comment from a Merlin expression.
 /// Leaves quoted strings (char literals) untouched.
 // static
-std::string MerlinSyntaxParser::StripMerlinExprComment(const std::string &expr) {
+std::string MerlinSyntaxParser::StripMerlinExprComment(const std::string& expr) {
   if (expr.empty() || expr[0] == '"' || expr[0] == '\'') {
     return expr;
   }
@@ -401,14 +391,11 @@ std::string MerlinSyntaxParser::StripMerlinExprComment(const std::string &expr) 
       break;
     }
   }
-  return (first_space != std::string::npos) ? Trim(expr.substr(0, first_space))
-                                             : expr;
+  return (first_space != std::string::npos) ? Trim(expr.substr(0, first_space)) : expr;
 }
 
-std::string
-MerlinSyntaxParser::ScopeLocalLabel(const std::string &label) const {
-  if (!label.empty() && label[0] == ':' &&
-      !current_scope_.global_label.empty()) {
+std::string MerlinSyntaxParser::ScopeLocalLabel(const std::string& label) const {
+  if (!label.empty() && label[0] == ':' && !current_scope_.global_label.empty()) {
     return current_scope_.global_label + label;
   }
   return label;
@@ -420,15 +407,14 @@ MerlinSyntaxParser::ScopeLocalLabel(const std::string &label) const {
 
 /// Returns the position in 'line' where ]var substitution should begin.
 /// Skips the label column (and '=' sign) for assignment lines starting with ']'.
-static size_t ComputeSubstStartPos(const std::string &line) {
+static size_t ComputeSubstStartPos(const std::string& line) {
   if (line.empty() || line[0] != ']') {
     return 0;
   }
   // Find end of leading ]label token
   size_t label_end = 1;
   while (label_end < line.size() &&
-         (std::isalnum(static_cast<unsigned char>(line[label_end])) ||
-          line[label_end] == '_')) {
+         (std::isalnum(static_cast<unsigned char>(line[label_end])) || line[label_end] == '_')) {
     ++label_end;
   }
   // Skip optional whitespace then '=' if present (assignment form)
@@ -437,33 +423,29 @@ static size_t ComputeSubstStartPos(const std::string &line) {
     ++pos;
   }
   if (pos < line.size() && line[pos] == '=') {
-    return pos + 1; // start after '='
+    return pos + 1;  // start after '='
   }
-  return label_end; // directive form — skip only the label
+  return label_end;  // directive form — skip only the label
 }
 
 /// Copy a quoted string from line[i] into result; return index after close quote.
-static size_t CopyQuotedString(const std::string &line, size_t i,
-                               std::string &result) {
+static size_t CopyQuotedString(const std::string& line, size_t i, std::string& result) {
   char quote = line[i];
   result += line[i++];
   while (i < line.size() && line[i] != quote) {
     result += line[i++];
   }
   if (i < line.size()) {
-    result += line[i++]; // closing quote
+    result += line[i++];  // closing quote
   }
   return i;
 }
 
 /// Substitute a ]var token starting at line[i] into result; return updated i.
-static size_t SubstituteVarToken(const std::string &line, size_t i,
-                                 const ConcreteSymbolTable &symbols,
-                                 std::string &result) {
+static size_t SubstituteVarToken(const std::string& line, size_t i,
+                                 const ConcreteSymbolTable& symbols, std::string& result) {
   size_t tok_start = i++;
-  while (i < line.size() &&
-         (std::isalnum(static_cast<unsigned char>(line[i])) ||
-          line[i] == '_')) {
+  while (i < line.size() && (std::isalnum(static_cast<unsigned char>(line[i])) || line[i] == '_')) {
     ++i;
   }
   std::string var_name = line.substr(tok_start, i - tok_start);
@@ -476,9 +458,8 @@ static size_t SubstituteVarToken(const std::string &line, size_t i,
   return i;
 }
 
-std::string
-MerlinSyntaxParser::SubstituteMerlinVars(const std::string &line,
-                                         const ConcreteSymbolTable &symbols) {
+std::string MerlinSyntaxParser::SubstituteMerlinVars(const std::string& line,
+                                                     const ConcreteSymbolTable& symbols) {
   // Fast path: no ] in line
   if (line.find(']') == std::string::npos) {
     return line;
@@ -506,8 +487,7 @@ MerlinSyntaxParser::SubstituteMerlinVars(const std::string &line,
   return result;
 }
 
-std::string
-MerlinSyntaxParser::ScopeLocalLabelsInOperand(const std::string &operand) const {
+std::string MerlinSyntaxParser::ScopeLocalLabelsInOperand(const std::string& operand) const {
   if (current_scope_.global_label.empty() || operand.empty()) {
     return operand;
   }
@@ -519,10 +499,9 @@ MerlinSyntaxParser::ScopeLocalLabelsInOperand(const std::string &operand) const 
     if (StartsLocalLabelRef(operand, i)) {
       result += current_scope_.global_label;
       result += ':';
-      ++i; // skip the ':'
+      ++i;  // skip the ':'
       while (i < operand.size() &&
-             (std::isalnum(static_cast<unsigned char>(operand[i])) ||
-              operand[i] == '_')) {
+             (std::isalnum(static_cast<unsigned char>(operand[i])) || operand[i] == '_')) {
         result += operand[i++];
       }
     } else {
@@ -535,19 +514,17 @@ MerlinSyntaxParser::ScopeLocalLabelsInOperand(const std::string &operand) const 
 
 /// Return true if operand[i] begins a ':local' label reference.
 // static
-bool MerlinSyntaxParser::StartsLocalLabelRef(const std::string &operand,
-                                              size_t i) {
+bool MerlinSyntaxParser::StartsLocalLabelRef(const std::string& operand, size_t i) {
   if (operand[i] != ':') {
     return false;
   }
   // Must be at start of a word (position 0 or after a non-ident char)
-  bool at_word_start = (i == 0) ||
-      (!std::isalnum(static_cast<unsigned char>(operand[i - 1])) &&
-       operand[i - 1] != '_');
+  bool at_word_start = (i == 0) || (!std::isalnum(static_cast<unsigned char>(operand[i - 1])) &&
+                                    operand[i - 1] != '_');
   // Must be followed by an identifier char
-  bool valid_next = (i + 1 < operand.size() &&
-      (std::isalnum(static_cast<unsigned char>(operand[i + 1])) ||
-       operand[i + 1] == '_'));
+  bool valid_next =
+      (i + 1 < operand.size() &&
+       (std::isalnum(static_cast<unsigned char>(operand[i + 1])) || operand[i + 1] == '_'));
   return at_word_start && valid_next;
 }
 
@@ -562,11 +539,9 @@ bool MerlinSyntaxParser::StartsLocalLabelRef(const std::string &operand,
 // one printable character).  Compound forms like "A"+1 work correctly
 // because only the "A" token is replaced; the +1 is left for the generic
 // expression evaluator.
-std::string
-MerlinSyntaxParser::ExpandMerlinCharLiterals(const std::string &operand) {
+std::string MerlinSyntaxParser::ExpandMerlinCharLiterals(const std::string& operand) {
   // Fast path: no quote character → nothing to expand
-  if (operand.find('"') == std::string::npos &&
-      operand.find('\'') == std::string::npos) {
+  if (operand.find('"') == std::string::npos && operand.find('\'') == std::string::npos) {
     return operand;
   }
 
@@ -579,18 +554,17 @@ MerlinSyntaxParser::ExpandMerlinCharLiterals(const std::string &operand) {
     if (c == '"' || c == '\'') {
       // Potential char literal: quote followed by exactly one printable char
       // followed by the same closing quote.
-      if (i + 2 < operand.size() &&
-          std::isprint(static_cast<unsigned char>(operand[i + 1])) &&
+      if (i + 2 < operand.size() && std::isprint(static_cast<unsigned char>(operand[i + 1])) &&
           operand[i + 2] == c) {
         // Replace "X" or 'X' with $XX (Apple II high-bit value)
         uint8_t val = static_cast<uint8_t>(operand[i + 1]) | 0x80;
         // Format as $XX
         // Format as $XX using stream formatting instead of snprintf
         std::ostringstream oss;
-        oss << '$' << std::hex << std::uppercase << std::setw(2)
-            << std::setfill('0') << static_cast<unsigned>(val);
+        oss << '$' << std::hex << std::uppercase << std::setw(2) << std::setfill('0')
+            << static_cast<unsigned>(val);
         result += oss.str();
-        i += 3; // skip quote, char, closing quote
+        i += 3;  // skip quote, char, closing quote
         continue;
       }
     }
@@ -600,8 +574,7 @@ MerlinSyntaxParser::ExpandMerlinCharLiterals(const std::string &operand) {
   return result;
 }
 
-std::string
-MerlinSyntaxParser::ExpandVarLabelsInOperand(const std::string &operand) const {
+std::string MerlinSyntaxParser::ExpandVarLabelsInOperand(const std::string& operand) const {
   if (operand.find(']') == std::string::npos) {
     return operand;
   }
@@ -622,13 +595,11 @@ MerlinSyntaxParser::ExpandVarLabelsInOperand(const std::string &operand) const {
 
 /// Expand a single ]var token starting at operand[i] into result.
 /// Returns the updated index after the token.
-size_t MerlinSyntaxParser::AppendExpandedVarLabel(const std::string &operand,
-                                                   size_t i,
-                                                   std::string &result) const {
+size_t MerlinSyntaxParser::AppendExpandedVarLabel(const std::string& operand, size_t i,
+                                                  std::string& result) const {
   size_t tok_start = i++;
   while (i < operand.size() &&
-         (std::isalnum(static_cast<unsigned char>(operand[i])) ||
-          operand[i] == '_')) {
+         (std::isalnum(static_cast<unsigned char>(operand[i])) || operand[i] == '_')) {
     ++i;
   }
   std::string var_name = operand.substr(tok_start, i - tok_start);
@@ -650,9 +621,8 @@ size_t MerlinSyntaxParser::AppendExpandedVarLabel(const std::string &operand,
 // Label Parsing
 // ============================================================================
 
-std::string MerlinSyntaxParser::ParseLabel(const std::string &line, size_t &pos,
-                                           Section & /*section*/,
-                                           ConcreteSymbolTable & /*symbols*/) {
+std::string MerlinSyntaxParser::ParseLabel(const std::string& line, size_t& pos,
+                                           Section& /*section*/, ConcreteSymbolTable& /*symbols*/) {
   // Merlin labels can be:
   // 1. Global label: START (starts in column 1-9, no special prefix)
   // 2. :Local label: :LOOP (prefixed with :, scoped to last global)
@@ -681,10 +651,9 @@ std::string MerlinSyntaxParser::ParseLabel(const std::string &line, size_t &pos,
 // Directive Handlers
 // ============================================================================
 
-void MerlinSyntaxParser::HandleEqu(const DirectiveContext &ctx,
-                                   ConcreteSymbolTable &symbols) {
-  const std::string &label = ctx.label;
-  const std::string &operand = ctx.operand;
+void MerlinSyntaxParser::HandleEqu(const DirectiveContext& ctx, ConcreteSymbolTable& symbols) {
+  const std::string& label = ctx.label;
+  const std::string& operand = ctx.operand;
   // EQU directive - define symbolic constant (no code generated)
   auto expr = ParseExpression(operand, symbols);
   // Eagerly evaluate to a literal when possible to prevent circular
@@ -692,9 +661,8 @@ void MerlinSyntaxParser::HandleEqu(const DirectiveContext &ctx,
   // is still used when the expression references undefined forward symbols.
   try {
     int64_t val = expr->Evaluate(symbols);
-    symbols.Define(label, SymbolType::Label,
-                   std::make_shared<LiteralExpr>(val));
-  } catch (const std::exception &) {
+    symbols.Define(label, SymbolType::Label, std::make_shared<LiteralExpr>(val));
+  } catch (const std::exception&) {
     // Cannot evaluate yet (forward reference) — store deferred expression
     symbols.Define(label, SymbolType::Label, expr);
   }
@@ -703,8 +671,7 @@ void MerlinSyntaxParser::HandleEqu(const DirectiveContext &ctx,
   // ExpandVarLabelsInOperand uses the plain name (e.g. ]XH) instead of the
   // uniqued code-label form (]XH_1).  Only insert if not already tracked as
   // a code label (seq > 0).
-  if (!label.empty() && label[0] == ']' &&
-      !var_label_seq_.contains(label)) {
+  if (!label.empty() && label[0] == ']' && !var_label_seq_.contains(label)) {
     var_label_seq_[label] = 0;
   }
 }
@@ -714,24 +681,21 @@ void MerlinSyntaxParser::HandleEqu(const DirectiveContext &ctx,
 // ============================================================================
 
 /// Returns true if '*' at position pos in str is a program counter (not mult).
-static bool IsPC(const std::string &str, size_t pos) {
-  bool before = (pos > 0 && (std::isalnum(static_cast<unsigned char>(str[pos - 1]))
-                              || str[pos - 1] == ')'));
-  bool after  = (pos + 1 < str.size() &&
-                 (std::isalnum(static_cast<unsigned char>(str[pos + 1]))
-                  || str[pos + 1] == '(' || str[pos + 1] == '$'
-                  || str[pos + 1] == '%'));
+static bool IsPC(const std::string& str, size_t pos) {
+  bool before =
+      (pos > 0 && (std::isalnum(static_cast<unsigned char>(str[pos - 1])) || str[pos - 1] == ')'));
+  bool after =
+      (pos + 1 < str.size() && (std::isalnum(static_cast<unsigned char>(str[pos + 1])) ||
+                                str[pos + 1] == '(' || str[pos + 1] == '$' || str[pos + 1] == '%'));
   return !(before && after);
 }
 
-std::string MerlinSyntaxParser::SubstitutePCInDSOperand(
-    const std::string &op) const {
+std::string MerlinSyntaxParser::SubstitutePCInDSOperand(const std::string& op) const {
   if (op.find('*') == std::string::npos) {
     return op;
   }
   std::ostringstream hex_stream;
-  hex_stream << "$" << std::hex
-             << (in_dum_block_ ? dum_address_ : current_address_);
+  hex_stream << "$" << std::hex << (in_dum_block_ ? dum_address_ : current_address_);
   std::string pc_hex = hex_stream.str();
   std::string result = op;
   size_t pos = 0;
@@ -746,8 +710,7 @@ std::string MerlinSyntaxParser::SubstitutePCInDSOperand(
   return result;
 }
 
-uint32_t MerlinSyntaxParser::ResolveDSCount(
-    const std::string &op, ConcreteSymbolTable &symbols) {
+uint32_t MerlinSyntaxParser::ResolveDSCount(const std::string& op, ConcreteSymbolTable& symbols) {
   if (op.empty()) {
     return 0;
   }
@@ -755,11 +718,11 @@ uint32_t MerlinSyntaxParser::ResolveDSCount(
   try {
     int64_t value = expr->Evaluate(symbols);
     if (value < 0) {
-      throw std::runtime_error(FormatError(
-          "DS: Negative count not allowed: " + std::to_string(value)));
+      throw std::runtime_error(
+          FormatError("DS: Negative count not allowed: " + std::to_string(value)));
     }
     return static_cast<uint32_t>(value);
-  } catch (const std::runtime_error &e) {
+  } catch (const std::runtime_error& e) {
     // Re-throw with location if not already formatted
     std::string msg = e.what();
     size_t first_colon = msg.find(':');
@@ -768,7 +731,7 @@ uint32_t MerlinSyntaxParser::ResolveDSCount(
       if (second_colon != std::string::npos && second_colon > first_colon + 1) {
         for (size_t i = first_colon + 1; i < second_colon; ++i) {
           if (std::isdigit(static_cast<unsigned char>(msg[i]))) {
-            throw; // already has location
+            throw;  // already has location
           }
         }
       }
@@ -777,8 +740,8 @@ uint32_t MerlinSyntaxParser::ResolveDSCount(
   }
 }
 
-void MerlinSyntaxParser::HandleDS(const std::string &operand, Section &section,
-                                  ConcreteSymbolTable &symbols) {
+void MerlinSyntaxParser::HandleDS(const std::string& operand, Section& section,
+                                  ConcreteSymbolTable& symbols) {
   // DS directive - define space (reserve bytes)
   // Supports: DS 100        (literal)
   //           DS COUNT      (symbol)
@@ -810,8 +773,7 @@ void MerlinSyntaxParser::HandleDS(const std::string &operand, Section &section,
   }
 }
 
-void MerlinSyntaxParser::HandleDum(const std::string &operand,
-                                   ConcreteSymbolTable &symbols) {
+void MerlinSyntaxParser::HandleDum(const std::string& operand, ConcreteSymbolTable& symbols) {
   // DUM (Dummy section) - start variable definition block
   in_dum_block_ = true;
 
@@ -819,8 +781,7 @@ void MerlinSyntaxParser::HandleDum(const std::string &operand,
 
   // Check if operand is empty
   if (op.empty()) {
-    throw std::runtime_error(
-        FormatError("DUM directive requires an address operand"));
+    throw std::runtime_error(FormatError("DUM directive requires an address operand"));
   }
 
   // Parse number (decimal, hex, or binary) or symbol reference
@@ -834,8 +795,7 @@ void MerlinSyntaxParser::HandleDum(const std::string &operand,
       dum_address_ = static_cast<uint32_t>(value);
     } else {
       // Symbol not found - ERROR instead of silently using 0
-      throw std::runtime_error(
-          FormatError("DUM directive: symbol '" + op + "' not defined"));
+      throw std::runtime_error(FormatError("DUM directive: symbol '" + op + "' not defined"));
     }
   }
 }
@@ -845,8 +805,8 @@ void MerlinSyntaxParser::HandleDend() {
   in_dum_block_ = false;
 }
 
-void MerlinSyntaxParser::HandlePut(const std::string &operand, Section &section,
-                                   ConcreteSymbolTable &symbols) {
+void MerlinSyntaxParser::HandlePut(const std::string& operand, Section& section,
+                                   ConcreteSymbolTable& symbols) {
   // PUT filename - include another source file
   std::string filename = Trim(operand);
 
@@ -856,10 +816,9 @@ void MerlinSyntaxParser::HandlePut(const std::string &operand, Section &section,
   }
 
   // Check for circular includes
-  for (const auto &included_file : include_stack_) {
+  for (const auto& included_file : include_stack_) {
     if (included_file == filename) {
-      throw std::runtime_error(
-          FormatError("Circular include detected: " + filename));
+      throw std::runtime_error(FormatError("Circular include detected: " + filename));
     }
   }
 
@@ -877,7 +836,7 @@ void MerlinSyntaxParser::HandlePut(const std::string &operand, Section &section,
   }
 
   if (!file.is_open()) {
-    include_stack_.pop_back(); // Remove from stack on error
+    include_stack_.pop_back();  // Remove from stack on error
     throw std::runtime_error(FormatError("Cannot open file: " + Trim(operand)));
   }
 
@@ -891,8 +850,7 @@ void MerlinSyntaxParser::HandlePut(const std::string &operand, Section &section,
   include_stack_.pop_back();
 }
 
-void MerlinSyntaxParser::HandleDo(const std::string &operand,
-                                  ConcreteSymbolTable &symbols) {
+void MerlinSyntaxParser::HandleDo(const std::string& operand, ConcreteSymbolTable& symbols) {
   // DO directive - begin conditional assembly block
   // Evaluate operand expression: non-zero = true, zero = false
 
@@ -920,7 +878,7 @@ void MerlinSyntaxParser::HandleElse() {
   // ELSE directive - toggle conditional assembly state
   try {
     conditional_.BeginElse();
-  } catch (const std::runtime_error &e) {
+  } catch (const std::runtime_error& e) {
     // Re-throw with location information and Merlin-specific terminology
     std::string msg = e.what();
     // Replace "IF" with "DO" for Merlin syntax
@@ -940,7 +898,7 @@ void MerlinSyntaxParser::HandleFin() {
   }
   try {
     conditional_.EndIf();
-  } catch (const std::runtime_error &e) {
+  } catch (const std::runtime_error& e) {
     // Re-throw with location information and Merlin-specific terminology
     std::string msg = e.what();
     // Replace "ENDIF" with "FIN" and "IF" with "DO" for Merlin syntax
@@ -969,14 +927,13 @@ void MerlinSyntaxParser::HandleEnd() {
 // because they are tightly coupled to parser state (macros_, current_macro_,
 // in_macro_definition_) and require complex interaction with macro expansion.
 
-void MerlinSyntaxParser::HandlePMC(const std::string &operand) {
+void MerlinSyntaxParser::HandlePMC(const std::string& operand) {
   // PMC - Start macro definition
   if (in_macro_definition_) {
-    throw std::runtime_error(
-        FormatError("Nested macro definitions not allowed"));
+    throw std::runtime_error(FormatError("Nested macro definitions not allowed"));
   }
   in_macro_definition_ = true;
-  current_macro_.name = ToUpper(Trim(operand)); // Normalize macro name
+  current_macro_.name = ToUpper(Trim(operand));  // Normalize macro name
   current_macro_.body.clear();
   current_macro_.param_count = 0;
 }
@@ -1001,7 +958,7 @@ void MerlinSyntaxParser::HandleMacroEnd() {
 
 /// Parse macro invocation operand string into a list of parameter strings.
 /// Semicolon-separated (MAC style) or comma-separated.
-static std::vector<std::string> ParseMacroParams(const std::string &operand) {
+static std::vector<std::string> ParseMacroParams(const std::string& operand) {
   if (operand.empty()) {
     return {};
   }
@@ -1031,15 +988,14 @@ static std::vector<std::string> ParseMacroParams(const std::string &operand) {
   return params;
 }
 
-void MerlinSyntaxParser::ExpandMacro(const DirectiveContext &ctx,
-                                     Section &section,
-                                     ConcreteSymbolTable &symbols) {
-  const std::string &macro_name = ctx.mnemonic;
-  const std::string &operand = ctx.operand;
+void MerlinSyntaxParser::ExpandMacro(const DirectiveContext& ctx, Section& section,
+                                     ConcreteSymbolTable& symbols) {
+  const std::string& macro_name = ctx.mnemonic;
+  const std::string& operand = ctx.operand;
 
   if (macro_expansion_depth_ >= 100) {
-    throw std::runtime_error(FormatError(
-        "Macro expansion depth limit exceeded (possible recursion)"));
+    throw std::runtime_error(
+        FormatError("Macro expansion depth limit exceeded (possible recursion)"));
   }
 
   std::string upper_name = ToUpper(macro_name);
@@ -1048,18 +1004,18 @@ void MerlinSyntaxParser::ExpandMacro(const DirectiveContext &ctx,
     throw std::runtime_error(FormatError("Undefined macro: " + macro_name));
   }
 
-  const MacroDefinition &macro = it->second;
+  const MacroDefinition& macro = it->second;
   std::vector<std::string> params = ParseMacroParams(operand);
 
   macro_expansion_depth_++;
-  for (const auto &line : macro.body) {
+  for (const auto& line : macro.body) {
     ParseLine(SubstituteParameters(line, params), section, symbols);
   }
   macro_expansion_depth_--;
 }
 
-std::string MerlinSyntaxParser::SubstituteParameters(
-    const std::string &line, const std::vector<std::string> &params) {
+std::string MerlinSyntaxParser::SubstituteParameters(const std::string& line,
+                                                     const std::vector<std::string>& params) {
   // Replace ]1, ]2, etc. with actual parameters
   std::string result;
 
@@ -1069,7 +1025,7 @@ std::string MerlinSyntaxParser::SubstituteParameters(
       if (param_num > 0 && static_cast<size_t>(param_num) <= params.size()) {
         // Valid parameter reference - substitute
         result += params[param_num - 1];
-        i++; // Skip the digit
+        i++;  // Skip the digit
       } else {
         // Invalid parameter number - leave as is
         result += line[i];
@@ -1082,7 +1038,7 @@ std::string MerlinSyntaxParser::SubstituteParameters(
   return result;
 }
 
-void MerlinSyntaxParser::HandleXc(const std::string &operand) {
+void MerlinSyntaxParser::HandleXc(const std::string& operand) {
   // XC [ON|OFF] - Toggle 65C02/65816 CPU instruction set
   //
   // Merlin XC semantics:
@@ -1109,12 +1065,11 @@ void MerlinSyntaxParser::HandleXc(const std::string &operand) {
     // Disable extended mode (back to 6502)
     cpu_->SetCpuMode(CpuMode::Cpu6502);
   } else {
-    throw std::runtime_error(
-        FormatError("XC: invalid operand (expected ON or OFF)"));
+    throw std::runtime_error(FormatError("XC: invalid operand (expected ON or OFF)"));
   }
 }
 
-void MerlinSyntaxParser::HandleMx(const std::string &operand) {
+void MerlinSyntaxParser::HandleMx(const std::string& operand) {
   // MX mode - Set 65816 accumulator and index register widths
   // This is a directive only - tracks state but doesn't change CPU encoding
 
@@ -1128,29 +1083,26 @@ void MerlinSyntaxParser::HandleMx(const std::string &operand) {
   // Check for binary format %00-%11 (bit pattern: M-bit, X-bit)
   if (op[0] == '%') {
     std::string binary = op.substr(1);
-    if (binary.length() == 2 &&
-        (binary[0] == '0' || binary[0] == '1') &&
+    if (binary.length() == 2 && (binary[0] == '0' || binary[0] == '1') &&
         (binary[1] == '0' || binary[1] == '1')) {
       mode = ((binary[0] - '0') * 2) + (binary[1] - '0');
     } else {
-      throw std::runtime_error(
-          FormatError("MX directive expects binary %00-%11 or decimal 0-3"));
+      throw std::runtime_error(FormatError("MX directive expects binary %00-%11 or decimal 0-3"));
     }
   }
   // Check for decimal format 0-3
   else if (op.length() == 1 && op[0] >= '0' && op[0] <= '3') {
     mode = op[0] - '0';
   } else {
-    throw std::runtime_error(
-        FormatError("MX directive expects binary %00-%11 or decimal 0-3"));
+    throw std::runtime_error(FormatError("MX directive expects binary %00-%11 or decimal 0-3"));
   }
 
   // Mode validated - in full implementation, would affect 65816 encoding
   // For now, just validate and accept
-  (void)mode; // Suppress unused variable warning
+  (void)mode;  // Suppress unused variable warning
 }
 
-void MerlinSyntaxParser::HandleLup(const std::string &operand) {
+void MerlinSyntaxParser::HandleLup(const std::string& operand) {
   // LUP count - Loop directive (repeat following code count times)
   // Syntax: LUP count
   //         <lines>
@@ -1167,30 +1119,28 @@ void MerlinSyntaxParser::HandleLup(const std::string &operand) {
   try {
     count = static_cast<int>(ParseNumber(count_str));
   } catch (...) {
-    throw std::runtime_error(
-        FormatError("LUP count must be a number: " + count_str));
+    throw std::runtime_error(FormatError("LUP count must be a number: " + count_str));
   }
 
   if (count < 0) {
-    throw std::runtime_error(
-        FormatError("LUP count cannot be negative: " + count_str));
+    throw std::runtime_error(FormatError("LUP count cannot be negative: " + count_str));
   }
 
   // Start capturing LUP block
   in_lup_block_ = true;
   lup_count_ = count;
   lup_body_.clear();
-  lup_nesting_depth_ = 0; // Track nesting for nested LUP blocks
+  lup_nesting_depth_ = 0;  // Track nesting for nested LUP blocks
 }
 
 // ============================================================================
 // TryParse helpers for ParseLine
 // ============================================================================
 
-bool MerlinSyntaxParser::TryHandleDirectiveLine(
-    const std::string &directive, const std::string &label,
-    const std::string &operands, Section &section,
-    ConcreteSymbolTable &symbols) {
+bool MerlinSyntaxParser::TryHandleDirectiveLine(const std::string& directive,
+                                                const std::string& label,
+                                                const std::string& operands, Section& section,
+                                                ConcreteSymbolTable& symbols) {
   DirectiveContext ctx;
   ctx.section = &section;
   ctx.symbols = &symbols;
@@ -1220,11 +1170,9 @@ bool MerlinSyntaxParser::TryHandleDirectiveLine(
   return true;
 }
 
-bool MerlinSyntaxParser::TryHandleMacroLine(const std::string &directive,
-                                            const std::string &label,
-                                            const std::string &operands,
-                                            Section &section,
-                                            ConcreteSymbolTable &symbols) {
+bool MerlinSyntaxParser::TryHandleMacroLine(const std::string& directive, const std::string& label,
+                                            const std::string& operands, Section& section,
+                                            ConcreteSymbolTable& symbols) {
   std::string upper_directive = ToUpper(directive);
   if (!macros_.contains(upper_directive)) {
     return false;
@@ -1232,21 +1180,17 @@ bool MerlinSyntaxParser::TryHandleMacroLine(const std::string &directive,
   // Create label atom first if label present
   if (!label.empty()) {
     uint32_t label_addr = in_dum_block_ ? dum_address_ : current_address_;
-    auto merlin_scope_fn = [this](const std::string &lbl) -> std::string {
+    auto merlin_scope_fn = [this](const std::string& lbl) -> std::string {
       return ScopeLocalLabel(lbl);
     };
-    auto merlin_is_local_fn = [this](const std::string &lbl) -> bool {
+    auto merlin_is_local_fn = [this](const std::string& lbl) -> bool {
       return !lbl.empty() &&
-             (lbl[0] == ':' ||
-              (lbl[0] == ']' && !current_scope_.global_label.empty()));
+             (lbl[0] == ':' || (lbl[0] == ']' && !current_scope_.global_label.empty()));
     };
-    auto merlin_on_global_update = [this]() {
-      current_scope_.local_labels.clear();
-    };
-    DefineLabelForDirective(
-        label, label_addr, LabelPolicy::AtPc, !in_dum_block_, symbols, section,
-        current_scope_.local_labels, current_scope_.global_label,
-        merlin_scope_fn, merlin_is_local_fn, merlin_on_global_update);
+    auto merlin_on_global_update = [this]() { current_scope_.local_labels.clear(); };
+    DefineLabelForDirective(label, label_addr, LabelPolicy::AtPc, !in_dum_block_, symbols, section,
+                            current_scope_.local_labels, current_scope_.global_label,
+                            merlin_scope_fn, merlin_is_local_fn, merlin_on_global_update);
   }
   // Expand macro
   DirectiveContext ctx;
@@ -1262,11 +1206,9 @@ bool MerlinSyntaxParser::TryHandleMacroLine(const std::string &directive,
   return true;
 }
 
-void MerlinSyntaxParser::HandleInstructionLine(const std::string &directive,
-                                               const std::string &label,
-                                               std::string operands,
-                                               Section &section,
-                                               ConcreteSymbolTable &symbols) {
+void MerlinSyntaxParser::HandleInstructionLine(const std::string& directive,
+                                               const std::string& label, std::string operands,
+                                               Section& section, ConcreteSymbolTable& symbols) {
   // Create label atom first if label present
   if (!label.empty()) {
     uint32_t label_addr = in_dum_block_ ? dum_address_ : current_address_;
@@ -1277,29 +1219,26 @@ void MerlinSyntaxParser::HandleInstructionLine(const std::string &directive,
     // rather than always using the last global one.  Only label-on-instruction
     // definitions get unique names; EQU-style ]var = VALUE assignments keep
     // their original name because they act as mutable numeric variables.
-    auto merlin_scope_fn = [this](const std::string &lbl) -> std::string {
+    auto merlin_scope_fn = [this](const std::string& lbl) -> std::string {
       std::string scoped = ScopeLocalLabel(lbl);
       if (!lbl.empty() && lbl[0] == ']' && lbl.find(':') == std::string::npos) {
-        int seq = ++var_label_seq_[lbl];        scoped = lbl + "_" + std::to_string(seq);
+        int seq = ++var_label_seq_[lbl];
+        scoped = lbl + "_" + std::to_string(seq);
       }
       return scoped;
     };
-    auto merlin_is_local_fn = [this](const std::string &lbl) -> bool {
+    auto merlin_is_local_fn = [this](const std::string& lbl) -> bool {
       return !lbl.empty() &&
-             (lbl[0] == ':' ||
-              (lbl[0] == ']' && !current_scope_.global_label.empty()));
+             (lbl[0] == ':' || (lbl[0] == ']' && !current_scope_.global_label.empty()));
     };
     // True global labels (no ':' or ']' prefix) always update scope.
     // ]variable labels are mutable variables, NOT scope anchors — EXCEPT at
     // the start of the file before any true global label exists.  In that
     // case they must anchor scope so :local labels around them can resolve.
-    auto merlin_on_global_update = [this]() {
-      current_scope_.local_labels.clear();
-    };
-    DefineLabelForDirective(
-        label, label_addr, LabelPolicy::AtPc, !in_dum_block_, symbols, section,
-        current_scope_.local_labels, current_scope_.global_label,
-        merlin_scope_fn, merlin_is_local_fn, merlin_on_global_update);
+    auto merlin_on_global_update = [this]() { current_scope_.local_labels.clear(); };
+    DefineLabelForDirective(label, label_addr, LabelPolicy::AtPc, !in_dum_block_, symbols, section,
+                            current_scope_.local_labels, current_scope_.global_label,
+                            merlin_scope_fn, merlin_is_local_fn, merlin_on_global_update);
   }
   // Translate any ':word' local-label references to the scoped name, then
   // expand ]variable references to their current unique-instance names, then
@@ -1310,17 +1249,16 @@ void MerlinSyntaxParser::HandleInstructionLine(const std::string &directive,
   operands = ExpandVarLabelsInOperand(operands);
   operands = StripMerlinInlineComment(operands);
   operands = ExpandMerlinCharLiterals(operands);
-  section.atoms.push_back(
-      std::make_shared<InstructionAtom>(directive, operands));
-  current_address_ += 1; // Placeholder size
+  section.atoms.push_back(std::make_shared<InstructionAtom>(directive, operands));
+  current_address_ += 1;  // Placeholder size
 }
 
 // ============================================================================
 // ParseLine Sub-Handlers (extracted helpers to reduce cognitive complexity)
 // ============================================================================
 
-bool MerlinSyntaxParser::HandleMacroCaptureState(
-    const std::string &code_line, const std::string &upper_trimmed) {
+bool MerlinSyntaxParser::HandleMacroCaptureState(const std::string& code_line,
+                                                 const std::string& upper_trimmed) {
   if (!in_macro_definition_) {
     return false;
   }
@@ -1336,17 +1274,16 @@ bool MerlinSyntaxParser::HandleMacroCaptureState(
   return true;
 }
 
-bool MerlinSyntaxParser::HandleLupCaptureState(
-    const std::string &code_line, const std::string &upper_trimmed,
-    Section &section, ConcreteSymbolTable &symbols) {
+bool MerlinSyntaxParser::HandleLupCaptureState(const std::string& code_line,
+                                               const std::string& upper_trimmed, Section& section,
+                                               ConcreteSymbolTable& symbols) {
   if (!in_lup_block_) {
     return false;
   }
   if (upper_trimmed != "--^") {
     // Check if this line starts a nested LUP block
     std::string lup_directive = std::string(directives::LUP) + " ";
-    if (upper_trimmed.starts_with(lup_directive) ||
-        upper_trimmed == directives::LUP) {
+    if (upper_trimmed.starts_with(lup_directive) || upper_trimmed == directives::LUP) {
       lup_nesting_depth_++;
     }
     lup_body_.push_back(code_line);
@@ -1366,7 +1303,7 @@ bool MerlinSyntaxParser::HandleLupCaptureState(
   lup_count_ = 0;
   lup_nesting_depth_ = 0;
   for (int i = 0; i < count; ++i) {
-    for (const auto &lup_line : body_copy) {
+    for (const auto& lup_line : body_copy) {
       std::string expanded = SubstituteMerlinVars(lup_line, symbols);
       ParseLine(expanded, section, symbols);
     }
@@ -1374,12 +1311,11 @@ bool MerlinSyntaxParser::HandleLupCaptureState(
   return true;
 }
 
-bool MerlinSyntaxParser::HandleConditionalDirective(
-    const std::string &trimmed, const std::string &upper_trimmed,
-    ConcreteSymbolTable &symbols) {
+bool MerlinSyntaxParser::HandleConditionalDirective(const std::string& trimmed,
+                                                    const std::string& upper_trimmed,
+                                                    ConcreteSymbolTable& symbols) {
   std::string do_directive = std::string(directives::DO) + " ";
-  if (upper_trimmed.starts_with(do_directive) ||
-      upper_trimmed == directives::DO) {
+  if (upper_trimmed.starts_with(do_directive) || upper_trimmed == directives::DO) {
     std::string operand = trimmed.length() > 3 ? Trim(trimmed.substr(3)) : "0";
     HandleDo(operand, symbols);
     return true;
@@ -1395,11 +1331,10 @@ bool MerlinSyntaxParser::HandleConditionalDirective(
   return false;
 }
 
-bool MerlinSyntaxParser::HandleLabelOnlyLine(const std::string &label,
-                                              Section &section,
-                                              ConcreteSymbolTable &symbols) {
+bool MerlinSyntaxParser::HandleLabelOnlyLine(const std::string& label, Section& section,
+                                             ConcreteSymbolTable& symbols) {
   if (label.empty()) {
-    return true; // empty label on label-only line — nothing to do
+    return true;  // empty label on label-only line — nothing to do
   }
   uint32_t label_addr = in_dum_block_ ? dum_address_ : current_address_;
   std::string scoped_label = ScopeLocalLabel(label);
@@ -1407,17 +1342,15 @@ bool MerlinSyntaxParser::HandleLabelOnlyLine(const std::string &label,
   // instruction-carrying ]var labels) so ExpandVarLabelsInOperand resolves
   // nearby references to the correct definition instance.
   if (label[0] == ']' && label.find(':') == std::string::npos) {
-    int seq = ++var_label_seq_[label];    scoped_label = label + "_" + std::to_string(seq);
+    int seq = ++var_label_seq_[label];
+    scoped_label = label + "_" + std::to_string(seq);
   }
-  symbols.Define(scoped_label, SymbolType::Label,
-                 std::make_shared<LiteralExpr>(label_addr));
+  symbols.Define(scoped_label, SymbolType::Label, std::make_shared<LiteralExpr>(label_addr));
   if (!in_dum_block_) {
-    section.atoms.push_back(
-        std::make_shared<LabelAtom>(scoped_label, label_addr));
+    section.atoms.push_back(std::make_shared<LabelAtom>(scoped_label, label_addr));
   }
   // Only true global labels update the scope
-  if (label[0] != ':' &&
-      (label[0] != ']' || current_scope_.global_label.empty())) {
+  if (label[0] != ':' && (label[0] != ']' || current_scope_.global_label.empty())) {
     current_scope_.global_label = label;
     current_scope_.local_labels.clear();
   }
@@ -1425,7 +1358,7 @@ bool MerlinSyntaxParser::HandleLabelOnlyLine(const std::string &label,
 }
 
 // static
-bool MerlinSyntaxParser::EquateNeedsReeval(const std::string &value) {
+bool MerlinSyntaxParser::EquateNeedsReeval(const std::string& value) {
   for (size_t i = 0; i < value.size(); ++i) {
     char c = value[i];
     if (c == '*' && IsPC(value, i)) {
@@ -1433,8 +1366,7 @@ bool MerlinSyntaxParser::EquateNeedsReeval(const std::string &value) {
     }
     if (c == '$') {
       // Skip hex literal digits
-      while (i + 1 < value.size() &&
-             std::isxdigit(static_cast<unsigned char>(value[i + 1]))) {
+      while (i + 1 < value.size() && std::isxdigit(static_cast<unsigned char>(value[i + 1]))) {
         ++i;
       }
       continue;
@@ -1446,10 +1378,9 @@ bool MerlinSyntaxParser::EquateNeedsReeval(const std::string &value) {
   return false;
 }
 
-bool MerlinSyntaxParser::HandleEquateLine(const std::string &label,
-                                           const std::string &code_line,
-                                           size_t equals_pos, Section &section,
-                                           ConcreteSymbolTable &symbols) {
+bool MerlinSyntaxParser::HandleEquateLine(const std::string& label, const std::string& code_line,
+                                          size_t equals_pos, Section& section,
+                                          ConcreteSymbolTable& symbols) {
   if (equals_pos == std::string::npos || label.empty()) {
     return false;
   }
@@ -1472,8 +1403,8 @@ bool MerlinSyntaxParser::HandleEquateLine(const std::string &label,
 // Line Parsing
 // ============================================================================
 
-void MerlinSyntaxParser::ParseLine(const std::string &line, Section &section,
-                                   ConcreteSymbolTable &symbols) {
+void MerlinSyntaxParser::ParseLine(const std::string& line, Section& section,
+                                   ConcreteSymbolTable& symbols) {
   // If END directive seen, ignore all subsequent lines
   if (end_directive_seen_) {
     return;
@@ -1551,12 +1482,13 @@ void MerlinSyntaxParser::ParseLine(const std::string &line, Section &section,
   }
   HandleInstructionLine(directive, label, operands, section, symbols);
 }
+
 // ============================================================================
 // Main Parse Function
 // ============================================================================
 
-void MerlinSyntaxParser::Parse(const std::string &source, Section &section,
-                               ConcreteSymbolTable &symbols) {
+void MerlinSyntaxParser::Parse(const std::string& source, Section& section,
+                               ConcreteSymbolTable& symbols) {
   if (source.empty()) {
     return;
   }
@@ -1568,10 +1500,10 @@ void MerlinSyntaxParser::Parse(const std::string &source, Section &section,
   current_scope_.global_label.clear();
   current_scope_.local_labels.clear();
   variable_labels_.clear();
-  current_line_ = 0; // Reset line counter
+  current_line_ = 0;  // Reset line counter
   in_macro_definition_ = false;
   macro_expansion_depth_ = 0;
-  macros_.clear(); // Clear macros from previous parse
+  macros_.clear();  // Clear macros from previous parse
   in_lup_block_ = false;
   lup_body_.clear();
   lup_count_ = 0;
@@ -1582,20 +1514,18 @@ void MerlinSyntaxParser::Parse(const std::string &source, Section &section,
   std::string line;
 
   while (std::getline(iss, line)) {
-    current_line_++; // Increment line counter for each line
+    current_line_++;  // Increment line counter for each line
     ParseLine(line, section, symbols);
   }
 
   // Validate that all DO blocks are closed (Phase 4: use shared component)
   if (!conditional_.IsBalanced()) {
-    throw std::runtime_error(
-        FormatError("Unmatched DO directive (missing FIN)"));
+    throw std::runtime_error(FormatError("Unmatched DO directive (missing FIN)"));
   }
 
   // Validate that macro definitions are closed
   if (in_macro_definition_) {
-    throw std::runtime_error(
-        FormatError("Unclosed macro definition (missing <<<)"));
+    throw std::runtime_error(FormatError("Unclosed macro definition (missing <<<)"));
   }
 
   // Validate that LUP blocks are closed
@@ -1604,4 +1534,4 @@ void MerlinSyntaxParser::Parse(const std::string &source, Section &section,
   }
 }
 
-} // namespace xasm
+}  // namespace xasm

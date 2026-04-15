@@ -82,30 +82,28 @@ std::vector<uint8_t> Cpu6502::EncodeTSC() const {
 // ============================================================================
 
 // JML - Jump Long (65816)
-std::vector<uint8_t> Cpu6502::EncodeJML(uint32_t operand,
-                                        AddressingMode mode) const {
+std::vector<uint8_t> Cpu6502::EncodeJML(uint32_t operand, AddressingMode mode) const {
   std::vector<uint8_t> bytes;
 
   if (mode == AddressingMode::AbsoluteLong) {
-    bytes.push_back(0x5C);                                        // JML opcode
-    bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
-    bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // Middle byte
-    bytes.push_back(static_cast<uint8_t>((operand >> 16) & 0xFF)); // Bank byte
+    bytes.push_back(0x5C);                                          // JML opcode
+    bytes.push_back(static_cast<uint8_t>(operand & 0xFF));          // Low byte
+    bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF));   // Middle byte
+    bytes.push_back(static_cast<uint8_t>((operand >> 16) & 0xFF));  // Bank byte
   }
 
   return bytes;
 }
 
 // JSL - Jump Subroutine Long (65816)
-std::vector<uint8_t> Cpu6502::EncodeJSL(uint32_t operand,
-                                        AddressingMode mode) const {
+std::vector<uint8_t> Cpu6502::EncodeJSL(uint32_t operand, AddressingMode mode) const {
   std::vector<uint8_t> bytes;
 
   if (mode == AddressingMode::AbsoluteLong) {
-    bytes.push_back(0x22);                                        // JSL opcode
-    bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
-    bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // Middle byte
-    bytes.push_back(static_cast<uint8_t>((operand >> 16) & 0xFF)); // Bank byte
+    bytes.push_back(0x22);                                          // JSL opcode
+    bytes.push_back(static_cast<uint8_t>(operand & 0xFF));          // Low byte
+    bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF));   // Middle byte
+    bytes.push_back(static_cast<uint8_t>((operand >> 16) & 0xFF));  // Bank byte
   }
 
   return bytes;
@@ -121,8 +119,7 @@ std::vector<uint8_t> Cpu6502::EncodeRTL() const {
 // ============================================================================
 
 // PEA - Push Effective Address (65816)
-std::vector<uint8_t> Cpu6502::EncodePEA(uint16_t operand,
-                                        AddressingMode mode) const {
+std::vector<uint8_t> Cpu6502::EncodePEA(uint16_t operand, AddressingMode mode) const {
   if (!IsCpu65816()) {
     return {};
   }
@@ -130,17 +127,16 @@ std::vector<uint8_t> Cpu6502::EncodePEA(uint16_t operand,
   std::vector<uint8_t> bytes;
 
   if (mode == AddressingMode::Absolute) {
-    bytes.push_back(0xF4);                                        // PEA opcode
-    bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
-    bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
+    bytes.push_back(0xF4);                                         // PEA opcode
+    bytes.push_back(static_cast<uint8_t>(operand & 0xFF));         // Low byte
+    bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF));  // High byte
   }
 
   return bytes;
 }
 
 // PEI - Push Effective Indirect Address (65816)
-std::vector<uint8_t> Cpu6502::EncodePEI(uint8_t operand,
-                                        AddressingMode mode) const {
+std::vector<uint8_t> Cpu6502::EncodePEI(uint8_t operand, AddressingMode mode) const {
   if (!IsCpu65816()) {
     return {};
   }
@@ -148,16 +144,15 @@ std::vector<uint8_t> Cpu6502::EncodePEI(uint8_t operand,
   std::vector<uint8_t> bytes;
 
   if (mode == AddressingMode::ZeroPage) {
-    bytes.push_back(0xD4);    // PEI opcode
-    bytes.push_back(operand); // Zero page address
+    bytes.push_back(0xD4);     // PEI opcode
+    bytes.push_back(operand);  // Zero page address
   }
 
   return bytes;
 }
 
 // PER - Push Effective PC Relative Address (65816)
-std::vector<uint8_t> Cpu6502::EncodePER(uint16_t operand,
-                                        AddressingMode mode) const {
+std::vector<uint8_t> Cpu6502::EncodePER(uint16_t operand, AddressingMode mode) const {
   if (!IsCpu65816()) {
     return {};
   }
@@ -165,23 +160,21 @@ std::vector<uint8_t> Cpu6502::EncodePER(uint16_t operand,
   std::vector<uint8_t> bytes;
 
   if (mode == AddressingMode::Relative) {
-    bytes.push_back(0x62);                                        // PER opcode
-    bytes.push_back(static_cast<uint8_t>(operand & 0xFF));        // Low byte
-    bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF)); // High byte
+    bytes.push_back(0x62);                                         // PER opcode
+    bytes.push_back(static_cast<uint8_t>(operand & 0xFF));         // Low byte
+    bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF));  // High byte
   }
 
   return bytes;
 }
 
 // MVN - Block Move Negative (65816)
-std::vector<uint8_t> Cpu6502::EncodeMVN(uint8_t srcbank,
-                                        uint8_t destbank) const {
+std::vector<uint8_t> Cpu6502::EncodeMVN(uint8_t srcbank, uint8_t destbank) const {
   return {0x54, srcbank, destbank};
 }
 
 // MVP - Block Move Positive (65816)
-std::vector<uint8_t> Cpu6502::EncodeMVP(uint8_t srcbank,
-                                        uint8_t destbank) const {
+std::vector<uint8_t> Cpu6502::EncodeMVP(uint8_t srcbank, uint8_t destbank) const {
   if (!IsCpu65816()) {
     return {};
   }
@@ -189,8 +182,7 @@ std::vector<uint8_t> Cpu6502::EncodeMVP(uint8_t srcbank,
 }
 
 // COP - Coprocessor (65816)
-std::vector<uint8_t> Cpu6502::EncodeCOP(uint8_t operand,
-                                        AddressingMode mode) const {
+std::vector<uint8_t> Cpu6502::EncodeCOP(uint8_t operand, AddressingMode mode) const {
   if (!IsCpu65816()) {
     return {};
   }
@@ -198,16 +190,15 @@ std::vector<uint8_t> Cpu6502::EncodeCOP(uint8_t operand,
   std::vector<uint8_t> bytes;
 
   if (mode == AddressingMode::Immediate) {
-    bytes.push_back(0x02);    // COP opcode
-    bytes.push_back(operand); // Signature byte
+    bytes.push_back(0x02);     // COP opcode
+    bytes.push_back(operand);  // Signature byte
   }
 
   return bytes;
 }
 
 // WDM - Reserved (65816)
-std::vector<uint8_t> Cpu6502::EncodeWDM(uint8_t operand,
-                                        AddressingMode mode) const {
+std::vector<uint8_t> Cpu6502::EncodeWDM(uint8_t operand, AddressingMode mode) const {
   if (!IsCpu65816()) {
     return {};
   }
@@ -215,8 +206,8 @@ std::vector<uint8_t> Cpu6502::EncodeWDM(uint8_t operand,
   std::vector<uint8_t> bytes;
 
   if (mode == AddressingMode::Immediate) {
-    bytes.push_back(0x42);    // WDM opcode
-    bytes.push_back(operand); // Reserved byte
+    bytes.push_back(0x42);     // WDM opcode
+    bytes.push_back(operand);  // Reserved byte
   }
 
   return bytes;
@@ -227,4 +218,4 @@ std::vector<uint8_t> Cpu6502::EncodeXBA() const {
   return {0xEB};
 }
 
-} // namespace xasm
+}  // namespace xasm

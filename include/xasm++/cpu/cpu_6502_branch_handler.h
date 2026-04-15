@@ -17,8 +17,8 @@ namespace xasm {
  * @brief Source and destination addresses for a branch instruction
  */
 struct BranchTarget {
-  uint16_t current_addr; ///< Address where branch instruction will be located
-  uint16_t target_addr;  ///< Target address to branch to
+  uint16_t current_addr;  ///< Address where branch instruction will be located
+  uint16_t target_addr;   ///< Target address to branch to
 };
 
 /**
@@ -35,7 +35,7 @@ struct BranchTarget {
  *   JMP far_label (absolute jump to target)
  */
 class Cpu6502BranchHandler {
-public:
+ public:
   Cpu6502BranchHandler() = default;
 
   /**
@@ -86,4 +86,4 @@ public:
                                                          BranchTarget target);
 };
 
-} // namespace xasm
+}  // namespace xasm

@@ -12,14 +12,13 @@
 #pragma once
 
 #include <cstdint>
-
 #include <map>
 #include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
-#include "xasm++/atom.h" // For SourceLocation
+#include "xasm++/atom.h"  // For SourceLocation
 #include "xasm++/expression.h"
 
 namespace xasm {
@@ -34,10 +33,10 @@ class Section;
  * definition, redefinition, and relocation.
  */
 enum class SymbolType : std::uint8_t {
-  Label,  ///< Address label (e.g., "start:") - cannot be redefined
-  Equate, ///< EQU constant (e.g., "SCREEN = $400") - cannot be redefined
-  Set,    ///< SET variable (e.g., "counter .set 0") - can be redefined
-          // Macro will be added in later phases
+  Label,   ///< Address label (e.g., "start:") - cannot be redefined
+  Equate,  ///< EQU constant (e.g., "SCREEN = $400") - cannot be redefined
+  Set,     ///< SET variable (e.g., "counter .set 0") - can be redefined
+           // Macro will be added in later phases
 };
 
 /**
@@ -55,14 +54,14 @@ enum class SymbolType : std::uint8_t {
  * @endcode
  */
 class Symbol {
-public:
+ public:
   std::string name{};                   ///< Symbol name
   SymbolType type{SymbolType::Label};   ///< Symbol type (label, equate, set)
   std::shared_ptr<Expression> value{};  ///< Symbol value (expression tree)
-  Section *section{nullptr}; ///< Section where defined (nullptr for absolute symbols)
-  bool is_exported = false; ///< True if exported to other modules
-  bool is_imported = false; ///< True if imported from another module
-  SourceLocation definition; ///< Source location where defined
+  Section* section{nullptr};            ///< Section where defined (nullptr for absolute symbols)
+  bool is_exported = false;             ///< True if exported to other modules
+  bool is_imported = false;             ///< True if imported from another module
+  SourceLocation definition;            ///< Source location where defined
 
   /**
    * @brief Default constructor
@@ -78,7 +77,7 @@ public:
    * @param t Symbol type
    * @param val Symbol value (expression tree)
    */
-  Symbol(const std::string &n, SymbolType t, std::shared_ptr<Expression> val)
+  Symbol(const std::string& n, SymbolType t, std::shared_ptr<Expression> val)
       : name(n), type(t), value(val) {}
 };
 
@@ -109,7 +108,7 @@ public:
  * @endcode
  */
 class ConcreteSymbolTable : public SymbolTable {
-public:
+ public:
   /**
    * @brief Default constructor - creates an empty symbol table
    */
@@ -146,9 +145,7 @@ public:
    *
    * @param enabled true to enable the fallback (SCMASM mode), false to disable
    */
-  void SetDottedNamespaceFallback(bool enabled) {
-    dotted_namespace_fallback_ = enabled;
-  }
+  void SetDottedNamespaceFallback(bool enabled) { dotted_namespace_fallback_ = enabled; }
 
   /**
    * @brief Define a new symbol
@@ -161,8 +158,7 @@ public:
    * @param type Symbol type (Label, Equate, or Set)
    * @param value Symbol value (expression tree)
    */
-  void Define(const std::string &name, SymbolType type,
-              std::shared_ptr<Expression> value);
+  void Define(const std::string& name, SymbolType type, std::shared_ptr<Expression> value);
 
   /**
    * @brief Define a label with a numeric value (convenience method)
@@ -173,7 +169,7 @@ public:
    * @param name Label name
    * @param value Numeric value for the label
    */
-  void DefineLabel(const std::string &name, int64_t value);
+  void DefineLabel(const std::string& name, int64_t value);
 
   /**
    * @brief Look up a symbol value
@@ -185,7 +181,7 @@ public:
    * @param value Output parameter - receives the symbol's value if found
    * @return true if symbol was found and evaluated, false otherwise
    */
-  bool Lookup(const std::string &name, int64_t &value) const override;
+  bool Lookup(const std::string& name, int64_t& value) const override;
 
   /**
    * @brief Get a symbol by name (const version)
@@ -196,7 +192,7 @@ public:
    * @param name Symbol name to look up
    * @return Pointer to symbol if found, nullptr otherwise
    */
-  const Symbol *GetSymbol(const std::string &name) const;
+  const Symbol* GetSymbol(const std::string& name) const;
 
   /**
    * @brief Get a symbol by name (mutable version)
@@ -206,7 +202,7 @@ public:
    * @param name Symbol name to look up
    * @return Pointer to symbol if found, nullptr otherwise
    */
-  Symbol *GetSymbol(const std::string &name);
+  Symbol* GetSymbol(const std::string& name);
 
   /**
    * @brief Check if a symbol is defined
@@ -214,7 +210,7 @@ public:
    * @param name Symbol name to check
    * @return true if symbol exists in the table, false otherwise
    */
-  bool IsDefined(const std::string &name) const;
+  bool IsDefined(const std::string& name) const;
 
   /**
    * @brief Get all symbols in the table
@@ -223,7 +219,7 @@ public:
    *
    * @return Const reference to the symbol map
    */
-  const std::unordered_map<std::string, Symbol> &GetAllSymbols() const;
+  const std::unordered_map<std::string, Symbol>& GetAllSymbols() const;
 
   /**
    * @brief Get all symbol names
@@ -263,11 +259,11 @@ public:
    */
   void SetCurrentLocation(int64_t location);
 
-private:
-  std::unordered_map<std::string, Symbol> symbols_{}; ///< Internal symbol storage
-  int64_t current_location_ = 0; ///< Current assembly address for $ operator
-  bool uppercase_fallback_ = false; ///< SCMASM: retry lookup with UPPERCASE name
-  bool dotted_namespace_fallback_ = false; ///< SCMASM: strip leading X. and retry
+ private:
+  std::unordered_map<std::string, Symbol> symbols_{};  ///< Internal symbol storage
+  int64_t current_location_ = 0;                       ///< Current assembly address for $ operator
+  bool uppercase_fallback_ = false;                    ///< SCMASM: retry lookup with UPPERCASE name
+  bool dotted_namespace_fallback_ = false;             ///< SCMASM: strip leading X. and retry
 };
 
-} // namespace xasm
+}  // namespace xasm

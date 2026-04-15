@@ -15,13 +15,13 @@
 
 #pragma once
 
-#include "xasm++/output/output_writer.h"
-#include "xasm++/section.h"
-
 #include <cstdint>
 #include <ostream>
 #include <string>
 #include <vector>
+
+#include "xasm++/output/output_writer.h"
+#include "xasm++/section.h"
 
 namespace xasm {
 
@@ -74,7 +74,7 @@ namespace xasm {
  * - Load command: `LOADM "filename"` then `EXEC &HXXXX`
  */
 class CocoLoadmWriter : public OutputWriter {
-public:
+ public:
   /**
    * @brief Construct CoCo LOADM writer with default settings
    */
@@ -94,8 +94,7 @@ public:
    * @param output Output stream to write binary data to
    * @throws std::runtime_error if writing fails
    */
-  void Write(const std::vector<Section> &sections,
-             std::ostream &output) override;
+  void Write(const std::vector<Section>& sections, std::ostream& output) override;
 
   /**
    * @brief Get file extension for CoCo DOS format
@@ -119,9 +118,9 @@ public:
    */
   void SetEntryPoint(uint64_t address);
 
-private:
-  bool has_entry_point_ = false;      ///< Whether entry point is specified
-  uint64_t entry_point_addr_ = 0; ///< Entry point address
+ private:
+  bool has_entry_point_ = false;   ///< Whether entry point is specified
+  uint64_t entry_point_addr_ = 0;  ///< Entry point address
 
   /**
    * @brief Write preamble block
@@ -130,8 +129,7 @@ private:
    * @param first_address Address of first data block (0 if none)
    * @param total_length Total length of all data (0 if none)
    */
-  static void WritePreamble(std::ostream &output, uint64_t first_address,
-                     size_t total_length);
+  static void WritePreamble(std::ostream& output, uint64_t first_address, size_t total_length);
 
   /**
    * @brief Write a data block
@@ -140,15 +138,15 @@ private:
    * @param address Load address
    * @param data Data bytes
    */
-  static void WriteDataBlock(std::ostream &output, uint64_t address,
-                      const std::vector<uint8_t> &data);
+  static void WriteDataBlock(std::ostream& output, uint64_t address,
+                             const std::vector<uint8_t>& data);
 
   /**
    * @brief Write postamble block
    *
    * @param output Output stream
    */
-  void WritePostamble(std::ostream &output) const;
+  void WritePostamble(std::ostream& output) const;
 
   /**
    * @brief Write 16-bit value in big-endian format
@@ -156,7 +154,7 @@ private:
    * @param output Output stream
    * @param value 16-bit value to write
    */
-  static void WriteBE16(std::ostream &output, uint16_t value);
+  static void WriteBE16(std::ostream& output, uint16_t value);
 
   /**
    * @brief Extract bytes from atoms for writing
@@ -167,7 +165,7 @@ private:
    * @param section Section to extract bytes from
    * @return Vector of (address, byte) pairs
    */
-  static std::vector<std::pair<uint64_t, uint8_t>> ExtractBytes(const Section &section);
+  static std::vector<std::pair<uint64_t, uint8_t>> ExtractBytes(const Section& section);
 };
 
-} // namespace xasm
+}  // namespace xasm

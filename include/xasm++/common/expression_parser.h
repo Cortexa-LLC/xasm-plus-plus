@@ -12,12 +12,13 @@
 
 #pragma once
 
-#include "xasm++/expression.h"
 #include <cstddef>
 #include <functional>
 #include <memory>
 #include <string>
 #include <unordered_map>
+
+#include "xasm++/expression.h"
 
 namespace xasm {
 
@@ -125,7 +126,7 @@ struct ParserFeatures {
  * @endcode
  */
 class INumberParser {
-public:
+ public:
   /**
    * @brief Virtual destructor
    */
@@ -141,7 +142,7 @@ public:
    * @note If TryParse returns false, ExpressionParser will fall back to
    *       standard number formats ($FF, 0xFF, %10101010, etc.)
    */
-  virtual bool TryParse(const std::string &token, int64_t &value) const = 0;
+  virtual bool TryParse(const std::string& token, int64_t& value) const = 0;
 };
 
 /**
@@ -185,7 +186,7 @@ public:
  * Not thread-safe. Each thread should have its own ExpressionParser instance.
  */
 class ExpressionParser {
-public:
+ public:
   /**
    * @brief Construct an expression parser with a symbol table
    *
@@ -196,8 +197,8 @@ public:
    *                      supported. Must remain valid for lifetime of parser.
    * @param features Optional dialect feature flags (defaults to no extensions).
    */
-  explicit ExpressionParser(const SymbolTable *symbols,
-                            const INumberParser *number_parser = nullptr,
+  explicit ExpressionParser(const SymbolTable* symbols,
+                            const INumberParser* number_parser = nullptr,
                             ParserFeatures features = {});
 
   /**
@@ -207,14 +208,14 @@ public:
    * @return Parsed expression tree (never null)
    * @throws std::runtime_error if expression has invalid syntax
    */
-  std::shared_ptr<Expression> Parse(const std::string &str);
+  std::shared_ptr<Expression> Parse(const std::string& str);
 
-private:
-  const SymbolTable *symbols_;         ///< Symbol table for symbol resolution
-  const INumberParser *number_parser_; ///< Optional custom number parser
-  ParserFeatures features_;            ///< Dialect feature flags
-  std::string expr_ = {};              ///< Current expression being parsed
-  size_t pos_ = 0;                     ///< Current position in expression
+ private:
+  const SymbolTable* symbols_;          ///< Symbol table for symbol resolution
+  const INumberParser* number_parser_;  ///< Optional custom number parser
+  ParserFeatures features_;             ///< Dialect feature flags
+  std::string expr_ = {};               ///< Current expression being parsed
+  size_t pos_ = 0;                      ///< Current position in expression
 
   /// Function type for prefix-dispatch table entries
   using PrefixParseFn = std::function<std::shared_ptr<Expression>()>;
@@ -358,7 +359,7 @@ private:
    * @param str String to match
    * @return true if match and consume, false otherwise
    */
-  bool Match(const std::string &str);
+  bool Match(const std::string& str);
 
   /**
    * @brief Parse hexadecimal digits after '$' prefix (already consumed).
@@ -403,4 +404,4 @@ private:
   std::string ParseIdentifier();
 };
 
-} // namespace xasm
+}  // namespace xasm

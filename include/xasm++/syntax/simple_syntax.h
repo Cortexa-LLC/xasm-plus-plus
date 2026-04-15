@@ -10,10 +10,11 @@
 
 #pragma once
 
+#include <string>
+
 #include "xasm++/section.h"
 #include "xasm++/symbol.h"
 #include "xasm++/syntax/directive_registry.h"
-#include <string>
 
 namespace xasm {
 
@@ -54,7 +55,7 @@ namespace xasm {
  * @endcode
  */
 class SimpleSyntaxParser {
-public:
+ public:
   /**
    * @brief Default constructor
    *
@@ -76,10 +77,9 @@ public:
    * @throws std::runtime_error on parse errors (syntax errors, invalid
    * directives, etc.)
    */
-  void Parse(const std::string &source, Section &section,
-             ConcreteSymbolTable &symbols);
+  void Parse(const std::string& source, Section& section, ConcreteSymbolTable& symbols);
 
-private:
+ private:
   /**
    * @brief Initialize directive handlers
    *
@@ -91,4 +91,4 @@ private:
   DirectiveRegistry directive_registry_;
 };
 
-} // namespace xasm
+}  // namespace xasm

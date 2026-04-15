@@ -39,8 +39,8 @@ class RefixupPass;
  * occurred for better debugging and user feedback.
  */
 struct AssemblerError {
-  std::string message{};     ///< Human-readable error description
-  SourceLocation location; ///< Source file location of the error
+  std::string message{};    ///< Human-readable error description
+  SourceLocation location;  ///< Source file location of the error
 };
 
 /**
@@ -50,9 +50,9 @@ struct AssemblerError {
  * errors that occurred during assembly.
  */
 struct AssemblerResult {
-  bool success = true;                ///< True if assembly succeeded
-  unsigned int pass_count = 0;        ///< Number of passes performed
-  std::vector<AssemblerError> errors{}; ///< List of errors (if any)
+  bool success = true;                   ///< True if assembly succeeded
+  unsigned int pass_count = 0;           ///< Number of passes performed
+  std::vector<AssemblerError> errors{};  ///< List of errors (if any)
 };
 
 /**
@@ -93,12 +93,12 @@ struct AssemblerResult {
  * @brief Instruction sizes from two consecutive passes for convergence checking
  */
 struct ConvergenceSizes {
-  const std::vector<size_t> &previous; ///< Instruction sizes from the previous pass
-  const std::vector<size_t> &current;  ///< Instruction sizes from the current pass
+  const std::vector<size_t>& previous;  ///< Instruction sizes from the previous pass
+  const std::vector<size_t>& current;   ///< Instruction sizes from the current pass
 };
 
 class Assembler {
-public:
+ public:
   /// Maximum number of passes in fast phase before switching to slower
   /// convergence checking
   static constexpr int FAST_PHASE_LIMIT = 50;
@@ -128,7 +128,7 @@ public:
    *
    * @note The assembler does not take ownership of the CPU plugin
    */
-  void SetCpuPlugin(CpuPlugin *cpu);
+  void SetCpuPlugin(CpuPlugin* cpu);
 
   /**
    * @brief Set the symbol table for symbol resolution
@@ -141,7 +141,7 @@ public:
    *
    * @note The assembler does not take ownership of the symbol table
    */
-  void SetSymbolTable(SymbolTable *symbols);
+  void SetSymbolTable(SymbolTable* symbols);
 
   /**
    * @brief Add a section to assemble
@@ -151,7 +151,7 @@ public:
    *
    * @param section Section to add (copied internally)
    */
-  void AddSection(const Section &section);
+  void AddSection(const Section& section);
 
   /**
    * @brief Get the number of sections added
@@ -170,7 +170,7 @@ public:
    *
    * @note Should only be called after Assemble() has been called
    */
-  const std::vector<Section> &GetSections() const;
+  const std::vector<Section>& GetSections() const;
 
   /**
    * @brief Reset the assembler state
@@ -226,7 +226,7 @@ public:
    */
   AssemblerResult Assemble();
 
-private:
+ private:
   // CPU plugin polymorphism - instruction encoding delegated to
   // CpuPlugin::EncodeInstruction()
 
@@ -242,9 +242,9 @@ private:
    * @param org_address Current origin address
    * @param result Result object to append errors to
    */
-  static void ResolveSymbols(std::vector<std::shared_ptr<Atom>> &atoms,
-                      ConcreteSymbolTable &symbols, uint32_t org_address,
-                      AssemblerResult &result);
+  static void ResolveSymbols(std::vector<std::shared_ptr<Atom>>& atoms,
+                             ConcreteSymbolTable& symbols, uint32_t org_address,
+                             AssemblerResult& result);
 
   /**
    * @brief Encode all instructions in a single pass
@@ -256,62 +256,48 @@ private:
    * @param result Result object to append errors to
    * @return Vector of instruction sizes (one per instruction atom)
    */
-  std::vector<size_t> EncodeInstructions(ConcreteSymbolTable &symbols,
-                                         AssemblerResult &result,
+  std::vector<size_t> EncodeInstructions(ConcreteSymbolTable& symbols, AssemblerResult& result,
                                          int pass_number = 2);
 
   /// Mutable per-section state threaded through per-atom handlers.
   struct EncodeAtomState {
-    uint32_t &current_address;
-    uint32_t &virtual_address;
-    uint32_t &phase_real_start;
-    uint32_t &phase_virtual_start;
-    ConcreteSymbolTable &symbols;
-    AssemblerResult &result;
-    std::vector<size_t> &current_sizes;
+    uint32_t& current_address;
+    uint32_t& virtual_address;
+    uint32_t& phase_real_start;
+    uint32_t& phase_virtual_start;
+    ConcreteSymbolTable& symbols;
+    AssemblerResult& result;
+    std::vector<size_t>& current_sizes;
     int pass_number;
   };
 
   /// Returns true when the caller should `continue` to the next atom.
-  bool HandlePhaseAtom(const std::shared_ptr<Atom> &atom,
-                       EncodeAtomState &state);
-  bool HandleOrgAtom(const std::shared_ptr<Atom> &atom,
-                     EncodeAtomState &state);
-  bool HandleEquateAtom(const std::shared_ptr<Atom> &atom,
-                        EncodeAtomState &state);
-  bool HandleDataAtom(const std::shared_ptr<Atom> &atom,
-                      EncodeAtomState &state);
-  bool HandleInstructionAtom(const std::shared_ptr<Atom> &atom,
-                             EncodeAtomState &state);
-  bool HandleSpaceAtom(const std::shared_ptr<Atom> &atom,
-                       EncodeAtomState &state);
+  bool HandlePhaseAtom(const std::shared_ptr<Atom>& atom, EncodeAtomState& state);
+  bool HandleOrgAtom(const std::shared_ptr<Atom>& atom, EncodeAtomState& state);
+  bool HandleEquateAtom(const std::shared_ptr<Atom>& atom, EncodeAtomState& state);
+  bool HandleDataAtom(const std::shared_ptr<Atom>& atom, EncodeAtomState& state);
+  bool HandleInstructionAtom(const std::shared_ptr<Atom>& atom, EncodeAtomState& state);
+  bool HandleSpaceAtom(const std::shared_ptr<Atom>& atom, EncodeAtomState& state);
 
   // Private helpers split from HandleDataAtom
-  void EvaluateDataElement(const std::string &expr_str_raw,
-                           uint32_t virtual_address,
-                           ConcreteSymbolTable &symbols,
-                           DataAtom &data);
+  void EvaluateDataElement(const std::string& expr_str_raw, uint32_t virtual_address,
+                           ConcreteSymbolTable& symbols, DataAtom& data);
 
   // Private helpers split from HandleInstructionAtom
   /// Attempt special-encoding branch (returns true + populates inst on success,
   /// or false when the caller should fall through to standard encoding).
-  bool TrySpecialEncodeInstruction(InstructionAtom &inst,
-                                   uint32_t current_address,
-                                   uint32_t virtual_address,
-                                   ConcreteSymbolTable &symbols,
-                                   AssemblerResult &result,
-                                   int pass_number);
+  bool TrySpecialEncodeInstruction(InstructionAtom& inst, uint32_t current_address,
+                                   uint32_t virtual_address, ConcreteSymbolTable& symbols,
+                                   AssemblerResult& result, int pass_number);
   /// Parse the operand string into a uint16_t value for standard encoding.
-  uint16_t ParseInstructionOperandValue(const std::string &operand,
-                                        uint32_t virtual_address,
-                                        ConcreteSymbolTable &symbols);
+  uint16_t ParseInstructionOperandValue(const std::string& operand, uint32_t virtual_address,
+                                        ConcreteSymbolTable& symbols);
 
   // Private helpers split from HandleSpaceAtom
   /// Re-evaluate the PC-relative expression for a DS/BS directive and update
   /// space->count / space->size in place.
-  void EvaluateSpaceExpression(SpaceAtom &space,
-                               uint32_t virtual_address,
-                               ConcreteSymbolTable &symbols);
+  void EvaluateSpaceExpression(SpaceAtom& space, uint32_t virtual_address,
+                               ConcreteSymbolTable& symbols);
 
   /**
    * @brief Check if instruction sizes have converged
@@ -338,15 +324,15 @@ private:
    * @param symbols Converged symbol table with final values
    * @param result Result object to append errors to
    */
-  void RefixupDataAtoms(ConcreteSymbolTable &symbols, AssemblerResult &result);
+  void RefixupDataAtoms(ConcreteSymbolTable& symbols, AssemblerResult& result);
 
   /// Returns the expression parser features (used by visitor passes).
   ParserFeatures GetExpressionFeatures() const { return expression_features_; }
 
-  std::vector<Section> sections_;  ///< Sections to assemble
-  CpuPlugin *cpu_ = nullptr;       ///< CPU plugin for instruction encoding
-  SymbolTable *symbols_ = nullptr; ///< Symbol table for symbol resolution
-  int max_passes_ = MAX_PASSES;    ///< Maximum assembly passes (default: MAX_PASSES)
+  std::vector<Section> sections_;   ///< Sections to assemble
+  CpuPlugin* cpu_ = nullptr;        ///< CPU plugin for instruction encoding
+  SymbolTable* symbols_ = nullptr;  ///< Symbol table for symbol resolution
+  int max_passes_ = MAX_PASSES;     ///< Maximum assembly passes (default: MAX_PASSES)
   /// Expression parser features for instruction operand evaluation (ADR-005 V9)
   ParserFeatures expression_features_;
 
@@ -355,4 +341,4 @@ private:
   friend class RefixupPass;
 };
 
-} // namespace xasm
+}  // namespace xasm

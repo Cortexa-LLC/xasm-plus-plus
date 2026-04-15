@@ -10,9 +10,10 @@
 
 #pragma once
 
-#include "xasm++/output/output_plugin.h"
 #include <string>
 #include <vector>
+
+#include "xasm++/output/output_plugin.h"
 
 namespace xasm {
 
@@ -48,7 +49,7 @@ class SymbolTable;
  * The format matches ca65 and Merlin assembler conventions.
  */
 class ListingOutput : public OutputPlugin {
-public:
+ public:
   /**
    * @brief Default constructor
    */
@@ -78,9 +79,8 @@ public:
    *
    * @throws std::runtime_error if file cannot be written
    */
-  void WriteOutput(const std::string &filename,
-                   const std::vector<Section *> &sections,
-                   const SymbolTable &symbols) override;
+  void WriteOutput(const std::string& filename, const std::vector<Section*>& sections,
+                   const SymbolTable& symbols) override;
 };
 
-} // namespace xasm
+}  // namespace xasm

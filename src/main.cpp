@@ -5,6 +5,14 @@
  * Phase 1: Minimal Viable Assembler - Command-Line Interface
  */
 
+#include <filesystem>
+#include <fstream>
+#include <iostream>
+#include <map>
+#include <optional>
+#include <sstream>
+#include <unordered_map>
+
 #include "CLI/CLI.hpp"
 #include "xasm++/assembler.h"
 #include "xasm++/cli/command_line_options.h"
@@ -25,26 +33,18 @@
 #include "xasm++/syntax/scmasm_syntax.h"
 #include "xasm++/syntax/simple_syntax.h"
 #include "xasm++/version.h"
-#include <filesystem>
-#include <fstream>
-#include <iostream>
-#include <map>
-#include <optional>
-#include <sstream>
-#include <unordered_map>
 
 // Forward declaration (implemented in cli_parser.cpp)
 namespace xasm {
-CommandLineOptions ParseCommandLine(int argc, char **argv);
-} // namespace xasm
+CommandLineOptions ParseCommandLine(int argc, char** argv);
+}  // namespace xasm
 
 using namespace xasm;
 
 // ---------------------------------------------------------------------------
 // Helper: resolve --color flag to formatter enum
 // ---------------------------------------------------------------------------
-static ErrorFormatter::ColorMode
-ResolveColorMode(const std::string &color_flag) {
+static ErrorFormatter::ColorMode ResolveColorMode(const std::string& color_flag) {
   if (color_flag == "always") {
     return ErrorFormatter::ColorMode::Enabled;
   }
@@ -57,15 +57,13 @@ ResolveColorMode(const std::string &color_flag) {
 // ---------------------------------------------------------------------------
 // Helper: inject -D/--define symbols into the symbol table
 // ---------------------------------------------------------------------------
-static void ApplyPreDefinitions(const std::vector<std::string> &defines,
-                                ConcreteSymbolTable &symbols) {
-  for (const auto &def : defines) {
+static void ApplyPreDefinitions(const std::vector<std::string>& defines,
+                                ConcreteSymbolTable& symbols) {
+  for (const auto& def : defines) {
     auto eq_pos = def.find('=');
-    std::string name =
-        (eq_pos != std::string::npos) ? def.substr(0, eq_pos) : def;
-    int64_t value = (eq_pos != std::string::npos)
-                        ? std::stoll(def.substr(eq_pos + 1), nullptr, 0)
-                        : 1;
+    std::string name = (eq_pos != std::string::npos) ? def.substr(0, eq_pos) : def;
+    int64_t value =
+        (eq_pos != std::string::npos) ? std::stoll(def.substr(eq_pos + 1), nullptr, 0) : 1;
     symbols.DefineLabel(name, value);
   }
 }
@@ -74,8 +72,8 @@ static void ApplyPreDefinitions(const std::vector<std::string> &defines,
 // Helper: select and wire up the CPU plugin.
 // Returns nullptr on unknown CPU (caller should print error and exit).
 // ---------------------------------------------------------------------------
-static CpuPlugin *SelectCpu(const std::string &cpu_name, Cpu6502 &cpu6502,
-                             Cpu6809 &cpu6809, CpuZ80 &cpu_z80) {
+static CpuPlugin* SelectCpu(const std::string& cpu_name, Cpu6502& cpu6502, Cpu6809& cpu6809,
+                            CpuZ80& cpu_z80) {
   static const std::unordered_map<std::string, CpuMode> k6502Modes = {
       {cpu::CPU_6502, CpuMode::Cpu6502},
       {cpu::CPU_65C02, CpuMode::Cpu65C02},
@@ -101,17 +99,15 @@ static CpuPlugin *SelectCpu(const std::string &cpu_name, Cpu6502 &cpu6502,
 // Helper: run the Merlin-specific parse step.
 // Returns false when the CPU/syntax combination is invalid.
 // ---------------------------------------------------------------------------
-static bool RunMerlinParse(const CommandLineOptions &opts,
-                           std::optional<std::array<uint16_t, 4>> &rw18_header,
-                           const std::string &source, Section &section,
-                           ConcreteSymbolTable &symbols, Cpu6502 &cpu6502) {
+static bool RunMerlinParse(const CommandLineOptions& opts,
+                           std::optional<std::array<uint16_t, 4>>& rw18_header,
+                           const std::string& source, Section& section,
+                           ConcreteSymbolTable& symbols, Cpu6502& cpu6502) {
   if (opts.cpu == cpu::CPU_6809 || opts.cpu == cpu::CPU_Z80) {
     std::cerr << "Error: Merlin syntax is only compatible with 6502 "
                  "family CPUs\n";
-    std::cerr << "For " << cpu::CPU_6809
-              << ", use --syntax edtasm or --syntax scmasm\n";
-    std::cerr << "For " << cpu::CPU_Z80
-              << ", use --syntax edtasm_m80_plusplus\n";
+    std::cerr << "For " << cpu::CPU_6809 << ", use --syntax edtasm or --syntax scmasm\n";
+    std::cerr << "For " << cpu::CPU_Z80 << ", use --syntax edtasm_m80_plusplus\n";
     return false;
   }
   MerlinSyntaxParser parser;
@@ -130,9 +126,8 @@ static bool RunMerlinParse(const CommandLineOptions &opts,
 // Helper: run the EDTASM-M80++ parse step.
 // Returns false when the CPU is wrong.
 // ---------------------------------------------------------------------------
-static bool RunEdtasmM80Parse(const std::string &cpu_name,
-                               const std::string &source, Section &section,
-                               ConcreteSymbolTable &symbols, CpuZ80 &cpu_z80) {
+static bool RunEdtasmM80Parse(const std::string& cpu_name, const std::string& source,
+                              Section& section, ConcreteSymbolTable& symbols, CpuZ80& cpu_z80) {
   if (cpu_name != cpu::CPU_Z80) {
     std::cerr << "Error: EDTASM-M80++ syntax requires --cpu z80\n";
     return false;
@@ -147,9 +142,9 @@ static bool RunEdtasmM80Parse(const std::string &cpu_name,
 // Helper: build path-mapping map from CLI strings ("virtual=actual").
 // Returns false and prints error on malformed entry.
 // ---------------------------------------------------------------------------
-static bool BuildPathMap(const std::vector<std::string> &mappings,
-                         std::map<std::string, std::string> &path_map) {
-  for (const auto &mapping : mappings) {
+static bool BuildPathMap(const std::vector<std::string>& mappings,
+                         std::map<std::string, std::string>& path_map) {
+  for (const auto& mapping : mappings) {
     size_t eq_pos = mapping.find('=');
     if (eq_pos == std::string::npos) {
       std::cerr << "Error: Invalid path mapping format: " << mapping
@@ -165,9 +160,8 @@ static bool BuildPathMap(const std::vector<std::string> &mappings,
 // Helper: run the SCMASM parse step (6502 or 6809).
 // Returns false on invalid path-mapping syntax.
 // ---------------------------------------------------------------------------
-static bool RunScmasmParse(CommandLineOptions &opts, const std::string &source,
-                            Section &section, ConcreteSymbolTable &symbols,
-                            CpuPlugin *cpu) {
+static bool RunScmasmParse(CommandLineOptions& opts, const std::string& source, Section& section,
+                           ConcreteSymbolTable& symbols, CpuPlugin* cpu) {
   ScmasmSyntaxParser parser;
   parser.SetCpu(cpu);
   if (!opts.include.empty()) {
@@ -192,10 +186,9 @@ static bool RunScmasmParse(CommandLineOptions &opts, const std::string &source,
 // Helper: dispatch source through the appropriate syntax parser.
 // Returns false on any configuration error.
 // ---------------------------------------------------------------------------
-static bool ParseSource(CommandLineOptions &opts, const std::string &source,
-                        Section &section, ConcreteSymbolTable &symbols,
-                        CpuPlugin *cpu, Cpu6502 &cpu6502, CpuZ80 &cpu_z80,
-                        std::optional<std::array<uint16_t, 4>> &rw18_header) {
+static bool ParseSource(CommandLineOptions& opts, const std::string& source, Section& section,
+                        ConcreteSymbolTable& symbols, CpuPlugin* cpu, Cpu6502& cpu6502,
+                        CpuZ80& cpu_z80, std::optional<std::array<uint16_t, 4>>& rw18_header) {
   if (opts.syntax == "merlin") {
     return RunMerlinParse(opts, rw18_header, source, section, symbols, cpu6502);
   }
@@ -220,49 +213,47 @@ static bool ParseSource(CommandLineOptions &opts, const std::string &source,
 // Helper: write the main binary/ihex/srec output file.
 // Returns 1 on I/O error, 0 on success.
 // ---------------------------------------------------------------------------
-static int WriteMainOutput(const CommandLineOptions &opts,
-                            const std::vector<Section *> &sections,
-                            const ConcreteSymbolTable &symbols,
-                            const std::optional<std::array<uint16_t, 4>>
-                                &rw18_header) {
+static int WriteMainOutput(const CommandLineOptions& opts, const std::vector<Section*>& sections,
+                           const ConcreteSymbolTable& symbols,
+                           const std::optional<std::array<uint16_t, 4>>& rw18_header) {
   switch (opts.format) {
-  case OutputFormat::IntelHex: {
-    IntelHexWriter ihex_writer;
-    std::ofstream ihex_out(opts.output);
-    if (!ihex_out) {
-      std::cerr << "Error: Cannot open output file: " << opts.output << "\n";
-      return 1;
+    case OutputFormat::IntelHex: {
+      IntelHexWriter ihex_writer;
+      std::ofstream ihex_out(opts.output);
+      if (!ihex_out) {
+        std::cerr << "Error: Cannot open output file: " << opts.output << "\n";
+        return 1;
+      }
+      std::vector<Section> sec_copies;
+      sec_copies.reserve(sections.size());
+      for (const auto* sp : sections) {
+        sec_copies.push_back(*sp);
+      }
+      ihex_writer.Write(sec_copies, ihex_out);
+      break;
     }
-    std::vector<Section> sec_copies;
-    sec_copies.reserve(sections.size());
-    for (const auto *sp : sections) {
-      sec_copies.push_back(*sp);
+    case OutputFormat::SRecord: {
+      SRecordWriter srec_writer;
+      std::ofstream srec_out(opts.output);
+      if (!srec_out) {
+        std::cerr << "Error: Cannot open output file: " << opts.output << "\n";
+        return 1;
+      }
+      std::vector<Section> sec_copies;
+      sec_copies.reserve(sections.size());
+      for (const auto* sp : sections) {
+        sec_copies.push_back(*sp);
+      }
+      srec_writer.Write(sec_copies, srec_out);
+      break;
     }
-    ihex_writer.Write(sec_copies, ihex_out);
-    break;
-  }
-  case OutputFormat::SRecord: {
-    SRecordWriter srec_writer;
-    std::ofstream srec_out(opts.output);
-    if (!srec_out) {
-      std::cerr << "Error: Cannot open output file: " << opts.output << "\n";
-      return 1;
+    default: {
+      // Default: binary format
+      const std::array<uint16_t, 4>* rw18_ptr =
+          rw18_header.has_value() ? &rw18_header.value() : nullptr;
+      BinaryOutput::WriteOutputWithRw18(opts.output, sections, symbols, rw18_ptr);
+      break;
     }
-    std::vector<Section> sec_copies;
-    sec_copies.reserve(sections.size());
-    for (const auto *sp : sections) {
-      sec_copies.push_back(*sp);
-    }
-    srec_writer.Write(sec_copies, srec_out);
-    break;
-  }
-  default: {
-    // Default: binary format
-    const std::array<uint16_t, 4> *rw18_ptr =
-        rw18_header.has_value() ? &rw18_header.value() : nullptr;
-    BinaryOutput::WriteOutputWithRw18(opts.output, sections, symbols, rw18_ptr);
-    break;
-  }
   }
   return 0;
 }
@@ -270,9 +261,9 @@ static int WriteMainOutput(const CommandLineOptions &opts,
 // ---------------------------------------------------------------------------
 // Helper: write all auxiliary output files (listing, symbol table, label map).
 // ---------------------------------------------------------------------------
-static void WriteAuxOutputFiles(const CommandLineOptions &opts,
-                                 const std::vector<Section *> &sections,
-                                 const ConcreteSymbolTable &symbols) {
+static void WriteAuxOutputFiles(const CommandLineOptions& opts,
+                                const std::vector<Section*>& sections,
+                                const ConcreteSymbolTable& symbols) {
   if (!opts.listing_file.empty()) {
     ListingOutput listing;
     try {
@@ -280,9 +271,8 @@ static void WriteAuxOutputFiles(const CommandLineOptions &opts,
       if (!opts.quiet) {
         std::cout << "Listing file generated: " << opts.listing_file << "\n";
       }
-    } catch (const std::exception &e) {
-      std::cerr << "Warning: Failed to generate listing file: " << e.what()
-                << "\n";
+    } catch (const std::exception& e) {
+      std::cerr << "Warning: Failed to generate listing file: " << e.what() << "\n";
     }
   }
 
@@ -293,9 +283,8 @@ static void WriteAuxOutputFiles(const CommandLineOptions &opts,
       if (!opts.quiet) {
         std::cout << "Symbol table generated: " << opts.symbol_file << "\n";
       }
-    } catch (const std::exception &e) {
-      std::cerr << "Warning: Failed to generate symbol table: " << e.what()
-                << "\n";
+    } catch (const std::exception& e) {
+      std::cerr << "Warning: Failed to generate symbol table: " << e.what() << "\n";
     }
   }
 
@@ -306,9 +295,8 @@ static void WriteAuxOutputFiles(const CommandLineOptions &opts,
       if (!opts.quiet) {
         std::cout << "Label map generated: " << opts.label_map << "\n";
       }
-    } catch (const std::exception &e) {
-      std::cerr << "Warning: Failed to generate label map: " << e.what()
-                << "\n";
+    } catch (const std::exception& e) {
+      std::cerr << "Warning: Failed to generate label map: " << e.what() << "\n";
     }
   }
 }
@@ -316,7 +304,7 @@ static void WriteAuxOutputFiles(const CommandLineOptions &opts,
 // ---------------------------------------------------------------------------
 // Main entry point
 // ---------------------------------------------------------------------------
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   try {
     CommandLineOptions opts = ParseCommandLine(argc, argv);
 
@@ -356,12 +344,12 @@ int main(int argc, char **argv) {
     Cpu6502 cpu6502;
     Cpu6809 cpu6809;
     CpuZ80 cpu_z80;
-    CpuPlugin *cpu = SelectCpu(opts.cpu, cpu6502, cpu6809, cpu_z80);
+    CpuPlugin* cpu = SelectCpu(opts.cpu, cpu6502, cpu6809, cpu_z80);
     if (cpu == nullptr) {
       std::cerr << "Error: Unknown CPU type: " << opts.cpu << "\n";
-      std::cerr << "Supported: " << cpu::CPU_6502 << ", " << cpu::CPU_65C02
-                << ", " << cpu::CPU_65C02_ROCK << ", " << cpu::CPU_65816
-                << ", " << cpu::CPU_6809 << ", " << cpu::CPU_Z80 << "\n";
+      std::cerr << "Supported: " << cpu::CPU_6502 << ", " << cpu::CPU_65C02 << ", "
+                << cpu::CPU_65C02_ROCK << ", " << cpu::CPU_65816 << ", " << cpu::CPU_6809 << ", "
+                << cpu::CPU_Z80 << "\n";
       return 1;
     }
 
@@ -369,8 +357,7 @@ int main(int argc, char **argv) {
     cpu6502.SetRelaxBranches(opts.relax_branches);
 
     // Step 3: Parse source (change to source dir for PUT/include resolution)
-    std::filesystem::path input_path =
-        std::filesystem::absolute(opts.input_file);
+    std::filesystem::path input_path = std::filesystem::absolute(opts.input_file);
     std::filesystem::path source_dir = input_path.parent_path();
     std::filesystem::path original_dir = std::filesystem::current_path();
     std::optional<std::array<uint16_t, 4>> rw18_header_args;
@@ -379,17 +366,16 @@ int main(int argc, char **argv) {
       if (!source_dir.empty()) {
         std::filesystem::current_path(source_dir);
       }
-      if (!ParseSource(opts, source, section, symbols, cpu, cpu6502, cpu_z80,
-                       rw18_header_args)) {
+      if (!ParseSource(opts, source, section, symbols, cpu, cpu6502, cpu_z80, rw18_header_args)) {
         std::filesystem::current_path(original_dir);
         return 1;
       }
       std::filesystem::current_path(original_dir);
-    } catch (const std::runtime_error &e) {
+    } catch (const std::runtime_error& e) {
       std::filesystem::current_path(original_dir);
       std::cerr << "Parse error: " << e.what() << "\n";
       return 1;
-    } catch (const std::invalid_argument &e) {
+    } catch (const std::invalid_argument& e) {
       std::filesystem::current_path(original_dir);
       std::cerr << "Invalid syntax: " << e.what() << "\n";
       return 1;
@@ -398,8 +384,7 @@ int main(int argc, char **argv) {
     // Step 4: Create assembler (CPU already created in Step 2)
     Assembler assembler;
     assembler.SetCpuPlugin(cpu);
-    assembler.SetSymbolTable(
-        &symbols); // CRITICAL: Link symbol table to assembler
+    assembler.SetSymbolTable(&symbols);  // CRITICAL: Link symbol table to assembler
     assembler.AddSection(section);
 
     assembler.SetMaxPasses(opts.max_passes);
@@ -412,23 +397,23 @@ int main(int argc, char **argv) {
     AssemblerResult result = assembler.Assemble();
 
     if (!result.success) {
-      for (const auto &error : result.errors) {
+      for (const auto& error : result.errors) {
         std::cout << error_formatter.FormatError(error, &symbols) << "\n";
       }
       return 1;
     }
 
     // Step 5: Write output file based on --format
-    std::vector<Section *> sections = {&section};
+    std::vector<Section*> sections = {&section};
     try {
       int rc = WriteMainOutput(opts, sections, symbols, rw18_header_args);
       if (rc != 0) {
         return rc;
       }
-    } catch (const std::filesystem::filesystem_error &e) {
+    } catch (const std::filesystem::filesystem_error& e) {
       std::cerr << "File I/O error: " << e.what() << "\n";
       return 1;
-    } catch (const std::runtime_error &e) {
+    } catch (const std::runtime_error& e) {
       std::cerr << "Output error: " << e.what() << "\n";
       return 1;
     }
@@ -444,24 +429,23 @@ int main(int argc, char **argv) {
     WriteAuxOutputFiles(opts, sections, symbols);
 
     return 0;
-  } catch (const CLI::ParseError &e) {
+  } catch (const CLI::ParseError& e) {
     std::cerr << "Command-line error: " << e.what() << "\n";
     return 1;
-  } catch (const std::bad_alloc &e) {
+  } catch (const std::bad_alloc& e) {
     std::cerr << "Out of memory: " << e.what() << "\n";
     return 1;
-  } catch (const std::ios_base::failure &e) {
+  } catch (const std::ios_base::failure& e) {
     std::cerr << "I/O error: " << e.what() << "\n";
     return 1;
-  } catch (const std::runtime_error &e) {
+  } catch (const std::runtime_error& e) {
     std::cerr << "Runtime error: " << e.what() << "\n";
     return 1;
-  } catch (const std::logic_error &e) {
+  } catch (const std::logic_error& e) {
     std::cerr << "Logic error: " << e.what() << "\n";
     std::cerr << "This is likely an unhandled std::invalid_argument from "
                  "stoul/stoi conversion.\n";
-    std::cerr
-        << "Please report this bug with the source file that caused it.\n";
+    std::cerr << "Please report this bug with the source file that caused it.\n";
     return 1;
   }
 }

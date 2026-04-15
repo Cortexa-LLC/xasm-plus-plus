@@ -39,11 +39,12 @@
 
 #pragma once
 
-#include "xasm++/syntax/directive_registry.h"
-#include "xasm++/util/string_utils.h"
 #include <sstream>
 #include <stdexcept>
 #include <string>
+
+#include "xasm++/syntax/directive_registry.h"
+#include "xasm++/util/string_utils.h"
 
 namespace xasm::directive_utils {
 
@@ -70,8 +71,7 @@ namespace xasm::directive_utils {
  * @param context Directive execution context (contains file/line info)
  * @return Formatted error message with location context
  */
-inline std::string FormatError(const std::string &message,
-                               const DirectiveContext &context) {
+inline std::string FormatError(const std::string& message, const DirectiveContext& context) {
   std::ostringstream oss;
 
   // Add file:line prefix if available
@@ -102,9 +102,8 @@ inline std::string FormatError(const std::string &message,
  * @param context Directive execution context (for error formatting)
  * @throws std::runtime_error if operand is empty or whitespace-only
  */
-inline void RequireOperand(const std::string &operand,
-                           const std::string &directive_name,
-                           const DirectiveContext &context) {
+inline void RequireOperand(const std::string& operand, const std::string& directive_name,
+                           const DirectiveContext& context) {
   // Trim and check if empty
   std::string trimmed = util::Trim(operand);
   if (trimmed.empty()) {
@@ -130,7 +129,7 @@ inline void RequireOperand(const std::string &operand,
  * @param parser_state Parser state pointer to validate
  * @throws std::runtime_error if parser_state is null
  */
-inline void ValidateParser(const void *parser_state) {
+inline void ValidateParser(const void* parser_state) {
   if (!parser_state) {
     throw std::runtime_error("Internal error: parser_state is null");
   }
@@ -154,9 +153,8 @@ inline void ValidateParser(const void *parser_state) {
  * @param context Directive execution context (for error formatting)
  * @throws std::runtime_error if value is empty
  */
-inline void RequireNonEmpty(const std::string &value,
-                            const std::string &description,
-                            const DirectiveContext &context) {
+inline void RequireNonEmpty(const std::string& value, const std::string& description,
+                            const DirectiveContext& context) {
   if (value.empty()) {
     std::string message = description + " cannot be empty";
     throw std::runtime_error(FormatError(message, context));
@@ -178,9 +176,9 @@ inline void RequireNonEmpty(const std::string &value,
  * @param context Directive execution context (for error formatting)
  * @throws std::runtime_error with formatted message
  */
-[[noreturn]] inline void ThrowFormattedError(const std::string &message,
-                                             const DirectiveContext &context) {
+[[noreturn]] inline void ThrowFormattedError(const std::string& message,
+                                             const DirectiveContext& context) {
   throw std::runtime_error(FormatError(message, context));
 }
 
-} // namespace xasm::directive_utils
+}  // namespace xasm::directive_utils

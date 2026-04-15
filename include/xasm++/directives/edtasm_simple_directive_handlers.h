@@ -29,7 +29,7 @@ namespace edtasm {
  * @param operand Operand field (address expression)
  * @param context Directive execution context
  */
-void HandleOrg(DirectiveContext &context);
+void HandleOrg(DirectiveContext& context);
 
 /**
  * @brief Handle END directive - End assembly
@@ -38,7 +38,7 @@ void HandleOrg(DirectiveContext &context);
  * @param operand Operand field (optional entry point)
  * @param context Directive execution context
  */
-void HandleEnd(DirectiveContext &context);
+void HandleEnd(DirectiveContext& context);
 
 /**
  * @brief Handle EQU directive - Define constant symbol
@@ -47,7 +47,7 @@ void HandleEnd(DirectiveContext &context);
  * @param operand Operand field (value expression)
  * @param context Directive execution context
  */
-void HandleEqu(DirectiveContext &context);
+void HandleEqu(DirectiveContext& context);
 
 /**
  * @brief Handle SET directive - Define variable symbol (redefinable)
@@ -56,7 +56,7 @@ void HandleEqu(DirectiveContext &context);
  * @param operand Operand field (value expression)
  * @param context Directive execution context
  */
-void HandleSet(DirectiveContext &context);
+void HandleSet(DirectiveContext& context);
 
 /**
  * @brief Handle FCB directive - Form Constant Byte
@@ -65,7 +65,7 @@ void HandleSet(DirectiveContext &context);
  * @param operand Operand field (comma-separated byte values)
  * @param context Directive execution context
  */
-void HandleFcb(DirectiveContext &context);
+void HandleFcb(DirectiveContext& context);
 
 /**
  * @brief Handle FDB directive - Form Double Byte (16-bit, big-endian)
@@ -74,7 +74,7 @@ void HandleFcb(DirectiveContext &context);
  * @param operand Operand field (comma-separated word values)
  * @param context Directive execution context
  */
-void HandleFdb(DirectiveContext &context);
+void HandleFdb(DirectiveContext& context);
 
 /**
  * @brief Handle FCC directive - Form Constant Characters (flexible delimiter)
@@ -83,7 +83,7 @@ void HandleFdb(DirectiveContext &context);
  * @param operand Operand field (delimited string)
  * @param context Directive execution context
  */
-void HandleFcc(DirectiveContext &context);
+void HandleFcc(DirectiveContext& context);
 
 /**
  * @brief Handle RMB directive - Reserve Memory Bytes
@@ -92,7 +92,7 @@ void HandleFcc(DirectiveContext &context);
  * @param operand Operand field (number of bytes to reserve)
  * @param context Directive execution context
  */
-void HandleRmb(DirectiveContext &context);
+void HandleRmb(DirectiveContext& context);
 
 /**
  * @brief Handle SETDP directive - Set Direct Page (assembler directive only)
@@ -101,7 +101,7 @@ void HandleRmb(DirectiveContext &context);
  * @param operand Operand field (direct page value)
  * @param context Directive execution context
  */
-void HandleSetdp(DirectiveContext &context);
+void HandleSetdp(DirectiveContext& context);
 
-} // namespace edtasm
-} // namespace xasm
+}  // namespace edtasm
+}  // namespace xasm

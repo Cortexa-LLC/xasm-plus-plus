@@ -9,9 +9,11 @@
  */
 
 #include "xasm++/syntax/label_policy.h"
+
+#include <unordered_set>
+
 #include "xasm++/atom.h"
 #include "xasm++/expression.h"
-#include <unordered_set>
 
 namespace xasm {
 
@@ -37,7 +39,7 @@ LabelPolicy ClassifyLabelPolicy(std::string_view opcode_upper, bool has_label,
   if (opcode_upper == ".OR") {
     return LabelPolicy::AtAddress;
   }
-  (void)in_dummy_section; // caller passes correct address; policy is AtPc
+  (void)in_dummy_section;  // caller passes correct address; policy is AtPc
   return LabelPolicy::AtPc;
 }
 
@@ -45,14 +47,13 @@ LabelPolicy ClassifyLabelPolicy(std::string_view opcode_upper, bool has_label,
 // DefineLabelForDirective — CC <= 8
 // ---------------------------------------------------------------------------
 
-void DefineLabelForDirective(
-    const std::string &label, uint32_t address, LabelPolicy policy,
-    bool emit_atom, ConcreteSymbolTable &symbols, Section &section,
-    std::unordered_map<std::string, uint32_t> &local_labels,
-    std::string &last_global_label,
-    const std::function<std::string(const std::string &)> &scope_fn,
-    const std::function<bool(const std::string &)> &is_local_fn,
-    const std::function<void()> &on_global_update) {
+void DefineLabelForDirective(const std::string& label, uint32_t address, LabelPolicy policy,
+                             bool emit_atom, ConcreteSymbolTable& symbols, Section& section,
+                             std::unordered_map<std::string, uint32_t>& local_labels,
+                             std::string& last_global_label,
+                             const std::function<std::string(const std::string&)>& scope_fn,
+                             const std::function<bool(const std::string&)>& is_local_fn,
+                             const std::function<void()>& on_global_update) {
   if (policy == LabelPolicy::Skip || policy == LabelPolicy::Defer) {
     return;
   }
@@ -85,4 +86,4 @@ void DefineLabelForDirective(
   }
 }
 
-} // namespace xasm
+}  // namespace xasm

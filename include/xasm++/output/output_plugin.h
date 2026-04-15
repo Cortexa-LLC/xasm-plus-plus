@@ -51,7 +51,7 @@ class SymbolTable;
  * @endcode
  */
 class OutputPlugin {
-public:
+ public:
   /**
    * @brief Virtual destructor for polymorphic deletion
    */
@@ -91,9 +91,8 @@ public:
    *
    * @note Sections must be fully assembled before calling this method
    */
-  virtual void WriteOutput(const std::string &filename,
-                           const std::vector<Section *> &sections,
-                           const SymbolTable &symbols) = 0;
+  virtual void WriteOutput(const std::string& filename, const std::vector<Section*>& sections,
+                           const SymbolTable& symbols) = 0;
 };
 
-} // namespace xasm
+}  // namespace xasm

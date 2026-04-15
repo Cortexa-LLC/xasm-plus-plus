@@ -19,7 +19,7 @@ void SegmentManager::SwitchToSegment(SegmentType type) {
   }
 }
 
-void SegmentManager::SwitchToCommon(const std::string &name) {
+void SegmentManager::SwitchToCommon(const std::string& name) {
   current_segment_ = SegmentType::Common;
   current_common_name_ = name;
 
@@ -31,11 +31,11 @@ void SegmentManager::SwitchToCommon(const std::string &name) {
 
 void SegmentManager::SetOrigin(uint64_t address) {
   if (current_segment_ == SegmentType::Common) {
-    SegmentState &state = common_blocks_[current_common_name_];
+    SegmentState& state = common_blocks_[current_common_name_];
     state.address = address;
     state.has_origin = true;
   } else {
-    SegmentState &state = segments_[current_segment_];
+    SegmentState& state = segments_[current_segment_];
     state.address = address;
     state.has_origin = true;
   }
@@ -85,4 +85,4 @@ void SegmentManager::Reset() {
   segments_[SegmentType::Absolute] = SegmentState{};
 }
 
-} // namespace xasm
+}  // namespace xasm

@@ -26,11 +26,10 @@ namespace xasm {
  * Contains all information needed to define and expand a macro.
  */
 struct MacroDefinition {
-  std::string name{}; ///< Macro name
-  std::vector<std::string>
-      parameters{};                ///< Parameter names (max 8 per FLEX spec)
-  std::vector<std::string> body{}; ///< Macro body lines
-  int definition_line{0};          ///< Line number where defined
+  std::string name{};                     ///< Macro name
+  std::vector<std::string> parameters{};  ///< Parameter names (max 8 per FLEX spec)
+  std::vector<std::string> body{};        ///< Macro body lines
+  int definition_line{0};                 ///< Line number where defined
 };
 
 /**
@@ -65,7 +64,7 @@ struct MacroDefinition {
  * @endcode
  */
 class MacroProcessor {
-public:
+ public:
   /**
    * @brief Default constructor
    */
@@ -84,9 +83,8 @@ public:
    * @note If a macro with the same name exists, it will be replaced
    * @note Parameter names are case-sensitive in the body
    */
-  void DefineMacro(const std::string &name,
-                   const std::vector<std::string> &parameters,
-                   const std::vector<std::string> &body);
+  void DefineMacro(const std::string& name, const std::vector<std::string>& parameters,
+                   const std::vector<std::string>& body);
 
   /**
    * @brief Check if a macro is defined
@@ -94,7 +92,7 @@ public:
    * @param name Macro name (case-insensitive)
    * @return true if macro exists
    */
-  bool IsMacro(const std::string &name) const;
+  bool IsMacro(const std::string& name) const;
 
   /**
    * @brief Get a macro definition
@@ -102,7 +100,7 @@ public:
    * @param name Macro name (case-insensitive)
    * @return Pointer to macro definition, or nullptr if not found
    */
-  const MacroDefinition *GetMacro(const std::string &name) const;
+  const MacroDefinition* GetMacro(const std::string& name) const;
 
   /**
    * @brief Clear all macro definitions
@@ -126,18 +124,17 @@ public:
    * @note Missing arguments are substituted with empty strings
    * @note Each expansion gets a unique ID for local label uniquification
    */
-  std::vector<std::string>
-  ExpandMacro(const std::string &name,
-              const std::vector<std::string> &arguments);
+  std::vector<std::string> ExpandMacro(const std::string& name,
+                                       const std::vector<std::string>& arguments);
 
-private:
+ private:
   /**
    * @brief Convert string to uppercase
    *
    * @param str String to convert
    * @return Uppercase string
    */
-  static std::string ToUpper(const std::string &str);
+  static std::string ToUpper(const std::string& str);
 
   /**
    * @brief Substitute parameters in a macro line
@@ -150,9 +147,8 @@ private:
    * @param arguments Argument values
    * @return Line with parameters substituted
    */
-  static std::string SubstituteParameters(const std::string &line,
-                                   const MacroDefinition &macro,
-                                   const std::vector<std::string> &arguments);
+  static std::string SubstituteParameters(const std::string& line, const MacroDefinition& macro,
+                                          const std::vector<std::string>& arguments);
 
   /**
    * @brief Make local label unique for this expansion
@@ -164,10 +160,10 @@ private:
    * @param expansion_id Unique expansion ID
    * @return Unique label name
    */
-  static std::string MakeLocalLabelUnique(const std::string &label, int expansion_id);
+  static std::string MakeLocalLabelUnique(const std::string& label, int expansion_id);
 
-  std::unordered_map<std::string, MacroDefinition> macros_{}; ///< Defined macros
-  int expansion_counter_ = 0; ///< Unique ID for macro expansions
+  std::unordered_map<std::string, MacroDefinition> macros_{};  ///< Defined macros
+  int expansion_counter_ = 0;                                  ///< Unique ID for macro expansions
 };
 
-} // namespace xasm
+}  // namespace xasm

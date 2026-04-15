@@ -6,6 +6,7 @@
  */
 
 #include "xasm++/parse_utils.h"
+
 #include <algorithm>
 #include <cctype>
 #include <sstream>
@@ -13,7 +14,7 @@
 
 namespace xasm {
 
-uint32_t ParseHex(const std::string &str) {
+uint32_t ParseHex(const std::string& str) {
   if (str.empty()) {
     throw std::invalid_argument("Empty string cannot be parsed as hex");
   }
@@ -42,22 +43,20 @@ uint32_t ParseHex(const std::string &str) {
     }
     // Throw on invalid hex digit
     if (!std::isxdigit(static_cast<unsigned char>(c))) {
-      throw std::invalid_argument("Invalid hex digit '" + std::string(1, c) +
-                                  "' in hex string: '" + str + "'");
+      throw std::invalid_argument("Invalid hex digit '" + std::string(1, c) + "' in hex string: '" +
+                                  str + "'");
     }
   }
   hex_str = hex_str.substr(0, hex_end);
 
   try {
     return std::stoul(hex_str, nullptr, 16);
-  } catch (const std::exception &e) {
-    throw std::runtime_error("Failed to parse hex string '" + str +
-                             "': " + e.what());
+  } catch (const std::exception& e) {
+    throw std::runtime_error("Failed to parse hex string '" + str + "': " + e.what());
   }
 }
 
-uint32_t ParseHexSafe(const std::string &str, bool &success,
-                      std::string &error_msg) {
+uint32_t ParseHexSafe(const std::string& str, bool& success, std::string& error_msg) {
   // Initialize outputs
   success = false;
   error_msg = "";
@@ -96,8 +95,7 @@ uint32_t ParseHexSafe(const std::string &str, bool &success,
   // Validation 5: Check length doesn't exceed uint32_t (8 hex digits max)
   if (hex_part.length() > 8) {
     std::ostringstream oss;
-    oss << "ParseHex: Value too large (max 8 hex digits, got "
-        << hex_part.length() << ")";
+    oss << "ParseHex: Value too large (max 8 hex digits, got " << hex_part.length() << ")";
     error_msg = oss.str();
     return 0;
   }
@@ -108,12 +106,12 @@ uint32_t ParseHexSafe(const std::string &str, bool &success,
     auto value = static_cast<uint32_t>(std::stoul(hex_part, nullptr, 16));
     success = true;
     return value;
-  } catch (const std::invalid_argument &e) {
+  } catch (const std::invalid_argument& e) {
     std::ostringstream oss;
     oss << "ParseHex: Invalid hex format in '" << str << "': " << e.what();
     error_msg = oss.str();
     return 0;
-  } catch (const std::out_of_range &e) {
+  } catch (const std::out_of_range& e) {
     std::ostringstream oss;
     oss << "ParseHex: Value out of range in '" << str << "': " << e.what();
     error_msg = oss.str();
@@ -121,7 +119,7 @@ uint32_t ParseHexSafe(const std::string &str, bool &success,
   }
 }
 
-uint64_t ParseBinary(const std::string &str) {
+uint64_t ParseBinary(const std::string& str) {
   if (str.empty()) {
     throw std::invalid_argument("Empty string cannot be parsed as binary");
   }
@@ -129,7 +127,7 @@ uint64_t ParseBinary(const std::string &str) {
   uint64_t value = 0;
   for (char c : str) {
     if (c == '.') {
-      continue; // Visual separator (e.g., %0000.0000)
+      continue;  // Visual separator (e.g., %0000.0000)
     }
     if (c != '0' && c != '1') {
       throw std::invalid_argument("Invalid binary digit '" + std::string(1, c) +
@@ -141,7 +139,7 @@ uint64_t ParseBinary(const std::string &str) {
   return value;
 }
 
-uint64_t ParseDecimal(const std::string &str) {
+uint64_t ParseDecimal(const std::string& str) {
   if (str.empty()) {
     throw std::invalid_argument("Empty string cannot be parsed as decimal");
   }
@@ -149,9 +147,8 @@ uint64_t ParseDecimal(const std::string &str) {
   uint64_t value = 0;
   for (char c : str) {
     if (c < '0' || c > '9') {
-      throw std::invalid_argument("Invalid decimal digit '" +
-                                  std::string(1, c) + "' in decimal string: '" +
-                                  str + "'");
+      throw std::invalid_argument("Invalid decimal digit '" + std::string(1, c) +
+                                  "' in decimal string: '" + str + "'");
     }
     value = (value * 10) + (c - '0');
   }
@@ -159,7 +156,7 @@ uint64_t ParseDecimal(const std::string &str) {
   return value;
 }
 
-uint64_t ParseOctal(const std::string &str) {
+uint64_t ParseOctal(const std::string& str) {
   if (str.empty()) {
     throw std::invalid_argument("Empty string cannot be parsed as octal");
   }
@@ -176,7 +173,7 @@ uint64_t ParseOctal(const std::string &str) {
   return value;
 }
 
-bool ParseBinaryDigit(char c, int &digit) {
+bool ParseBinaryDigit(char c, int& digit) {
   if (c == '0' || c == '1') {
     digit = c - '0';
     return true;
@@ -184,7 +181,7 @@ bool ParseBinaryDigit(char c, int &digit) {
   return false;
 }
 
-bool ParseDecimalDigit(char c, int &digit) {
+bool ParseDecimalDigit(char c, int& digit) {
   if (c >= '0' && c <= '9') {
     digit = c - '0';
     return true;
@@ -192,7 +189,7 @@ bool ParseDecimalDigit(char c, int &digit) {
   return false;
 }
 
-bool ParseOctalDigit(char c, int &digit) {
+bool ParseOctalDigit(char c, int& digit) {
   if (c >= '0' && c <= '7') {
     digit = c - '0';
     return true;
@@ -200,7 +197,7 @@ bool ParseOctalDigit(char c, int &digit) {
   return false;
 }
 
-bool ParseHexDigit(char c, int &digit) {
+bool ParseHexDigit(char c, int& digit) {
   if (c >= '0' && c <= '9') {
     digit = c - '0';
     return true;
@@ -218,4 +215,4 @@ bool ParseHexDigit(char c, int &digit) {
 // (xasm::util::Trim) This avoids conflicts with static Trim implementations in
 // other modules
 
-} // namespace xasm
+}  // namespace xasm

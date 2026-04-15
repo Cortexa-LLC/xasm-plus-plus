@@ -11,16 +11,17 @@
 
 #pragma once
 
-#include "xasm++/common/conditional_assembler.h"
-#include "xasm++/expression.h"
-#include "xasm++/section.h"
-#include "xasm++/symbol.h"
-#include "xasm++/syntax/directive_registry.h"
 #include <functional>
 #include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
+
+#include "xasm++/common/conditional_assembler.h"
+#include "xasm++/expression.h"
+#include "xasm++/section.h"
+#include "xasm++/symbol.h"
+#include "xasm++/syntax/directive_registry.h"
 
 namespace xasm {
 
@@ -29,37 +30,37 @@ struct DirectiveContext;
 
 // Forward declare merlin namespace and directive handlers
 namespace merlin {
-void HandleOrg(xasm::DirectiveContext &);
-void HandleEqu(xasm::DirectiveContext &);
-void HandleDb(xasm::DirectiveContext &);
-void HandleDw(xasm::DirectiveContext &);
-void HandleHex(xasm::DirectiveContext &);
-void HandleDs(xasm::DirectiveContext &);
-void HandleDum(xasm::DirectiveContext &);
-void HandleDend(xasm::DirectiveContext &);
-void HandlePut(xasm::DirectiveContext &);
-void HandleDo(xasm::DirectiveContext &);
-void HandleElse(xasm::DirectiveContext &);
-void HandleFin(xasm::DirectiveContext &);
-void HandleLst(xasm::DirectiveContext &);
-void HandleLstdo(xasm::DirectiveContext &);
-void HandleTr(xasm::DirectiveContext &);
-void HandleAsc(xasm::DirectiveContext &);
-void HandleDci(xasm::DirectiveContext &);
-void HandleInv(xasm::DirectiveContext &);
-void HandleFls(xasm::DirectiveContext &);
-void HandleDa(xasm::DirectiveContext &);
-void HandlePmc(xasm::DirectiveContext &);
-void HandleEom(xasm::DirectiveContext &);
-void HandleMac(xasm::DirectiveContext &);
-void HandleUsr(xasm::DirectiveContext &);
-void HandleEnd(xasm::DirectiveContext &);
-void HandleSav(xasm::DirectiveContext &);
-void HandleXc(xasm::DirectiveContext &);
-void HandleMx(xasm::DirectiveContext &);
-void HandleRev(xasm::DirectiveContext &);
-void HandleLup(xasm::DirectiveContext &);
-} // namespace merlin
+void HandleOrg(xasm::DirectiveContext&);
+void HandleEqu(xasm::DirectiveContext&);
+void HandleDb(xasm::DirectiveContext&);
+void HandleDw(xasm::DirectiveContext&);
+void HandleHex(xasm::DirectiveContext&);
+void HandleDs(xasm::DirectiveContext&);
+void HandleDum(xasm::DirectiveContext&);
+void HandleDend(xasm::DirectiveContext&);
+void HandlePut(xasm::DirectiveContext&);
+void HandleDo(xasm::DirectiveContext&);
+void HandleElse(xasm::DirectiveContext&);
+void HandleFin(xasm::DirectiveContext&);
+void HandleLst(xasm::DirectiveContext&);
+void HandleLstdo(xasm::DirectiveContext&);
+void HandleTr(xasm::DirectiveContext&);
+void HandleAsc(xasm::DirectiveContext&);
+void HandleDci(xasm::DirectiveContext&);
+void HandleInv(xasm::DirectiveContext&);
+void HandleFls(xasm::DirectiveContext&);
+void HandleDa(xasm::DirectiveContext&);
+void HandlePmc(xasm::DirectiveContext&);
+void HandleEom(xasm::DirectiveContext&);
+void HandleMac(xasm::DirectiveContext&);
+void HandleUsr(xasm::DirectiveContext&);
+void HandleEnd(xasm::DirectiveContext&);
+void HandleSav(xasm::DirectiveContext&);
+void HandleXc(xasm::DirectiveContext&);
+void HandleMx(xasm::DirectiveContext&);
+void HandleRev(xasm::DirectiveContext&);
+void HandleLup(xasm::DirectiveContext&);
+}  // namespace merlin
 
 // Forward declarations
 class Cpu6502;
@@ -142,49 +143,48 @@ class Cpu6502;
  * @endcode
  */
 class MerlinSyntaxParser {
-public:
+ public:
   // Friend declarations for extracted directive handlers (xasm::merlin
   // namespace)
-  friend void xasm::merlin::HandleOrg(DirectiveContext &);
-  friend void xasm::merlin::HandleEqu(DirectiveContext &);
-  friend void xasm::merlin::HandleDb(DirectiveContext &);
-  friend void xasm::merlin::HandleDw(DirectiveContext &);
-  friend void xasm::merlin::HandleHex(DirectiveContext &);
-  friend void xasm::merlin::HandleDs(DirectiveContext &);
-  friend void xasm::merlin::HandleDum(DirectiveContext &);
-  friend void xasm::merlin::HandleDend(DirectiveContext &);
-  friend void xasm::merlin::HandlePut(DirectiveContext &);
-  friend void xasm::merlin::HandleDo(DirectiveContext &);
-  friend void xasm::merlin::HandleElse(DirectiveContext &);
-  friend void xasm::merlin::HandleFin(DirectiveContext &);
-  friend void xasm::merlin::HandleLst(DirectiveContext &);
-  friend void xasm::merlin::HandleLstdo(DirectiveContext &);
-  friend void xasm::merlin::HandleTr(DirectiveContext &);
-  friend void xasm::merlin::HandleAsc(DirectiveContext &);
-  friend void xasm::merlin::HandleDci(DirectiveContext &);
-  friend void xasm::merlin::HandleInv(DirectiveContext &);
-  friend void xasm::merlin::HandleFls(DirectiveContext &);
-  friend void xasm::merlin::HandleDa(DirectiveContext &);
-  friend void xasm::merlin::HandlePmc(DirectiveContext &);
-  friend void xasm::merlin::HandleEom(DirectiveContext &);
-  friend void xasm::merlin::HandleMac(DirectiveContext &);
-  friend void xasm::merlin::HandleUsr(DirectiveContext &);
-  friend void xasm::merlin::HandleEnd(DirectiveContext &);
-  friend void xasm::merlin::HandleSav(DirectiveContext &);
-  friend void xasm::merlin::HandleXc(DirectiveContext &);
-  friend void xasm::merlin::HandleMx(DirectiveContext &);
-  friend void xasm::merlin::HandleRev(DirectiveContext &);
-  friend void xasm::merlin::HandleLup(DirectiveContext &);
+  friend void xasm::merlin::HandleOrg(DirectiveContext&);
+  friend void xasm::merlin::HandleEqu(DirectiveContext&);
+  friend void xasm::merlin::HandleDb(DirectiveContext&);
+  friend void xasm::merlin::HandleDw(DirectiveContext&);
+  friend void xasm::merlin::HandleHex(DirectiveContext&);
+  friend void xasm::merlin::HandleDs(DirectiveContext&);
+  friend void xasm::merlin::HandleDum(DirectiveContext&);
+  friend void xasm::merlin::HandleDend(DirectiveContext&);
+  friend void xasm::merlin::HandlePut(DirectiveContext&);
+  friend void xasm::merlin::HandleDo(DirectiveContext&);
+  friend void xasm::merlin::HandleElse(DirectiveContext&);
+  friend void xasm::merlin::HandleFin(DirectiveContext&);
+  friend void xasm::merlin::HandleLst(DirectiveContext&);
+  friend void xasm::merlin::HandleLstdo(DirectiveContext&);
+  friend void xasm::merlin::HandleTr(DirectiveContext&);
+  friend void xasm::merlin::HandleAsc(DirectiveContext&);
+  friend void xasm::merlin::HandleDci(DirectiveContext&);
+  friend void xasm::merlin::HandleInv(DirectiveContext&);
+  friend void xasm::merlin::HandleFls(DirectiveContext&);
+  friend void xasm::merlin::HandleDa(DirectiveContext&);
+  friend void xasm::merlin::HandlePmc(DirectiveContext&);
+  friend void xasm::merlin::HandleEom(DirectiveContext&);
+  friend void xasm::merlin::HandleMac(DirectiveContext&);
+  friend void xasm::merlin::HandleUsr(DirectiveContext&);
+  friend void xasm::merlin::HandleEnd(DirectiveContext&);
+  friend void xasm::merlin::HandleSav(DirectiveContext&);
+  friend void xasm::merlin::HandleXc(DirectiveContext&);
+  friend void xasm::merlin::HandleMx(DirectiveContext&);
+  friend void xasm::merlin::HandleRev(DirectiveContext&);
+  friend void xasm::merlin::HandleLup(DirectiveContext&);
 
   // Legacy friend declarations (to be migrated/removed)
-  friend void RegisterMerlinDirectiveHandlers(DirectiveRegistry &registry,
-                                              MerlinSyntaxParser *parser);
-  friend void HandleEndDirective(bool &end_directive_seen);
-  friend void HandleXcDirective(const std::string &operand, Cpu6502 *cpu);
-  friend void HandleDumDirective(const std::string &operand,
-                                 ConcreteSymbolTable &symbols,
-                                 bool &in_dum_block, uint32_t &dum_address);
-  friend void HandleDendDirective(bool &in_dum_block);
+  friend void RegisterMerlinDirectiveHandlers(DirectiveRegistry& registry,
+                                              MerlinSyntaxParser* parser);
+  friend void HandleEndDirective(bool& end_directive_seen);
+  friend void HandleXcDirective(const std::string& operand, Cpu6502* cpu);
+  friend void HandleDumDirective(const std::string& operand, ConcreteSymbolTable& symbols,
+                                 bool& in_dum_block, uint32_t& dum_address);
+  friend void HandleDendDirective(bool& in_dum_block);
 
   /**
    * @brief Constructor - initializes parser state
@@ -196,8 +196,9 @@ public:
    *
    * @param cpu Pointer to CPU plugin (must remain valid during parsing)
    */
-  void SetCpu(Cpu6502 *cpu);
-  Cpu6502 *GetCpu() const { return cpu_; }
+  void SetCpu(Cpu6502* cpu);
+
+  Cpu6502* GetCpu() const { return cpu_; }
 
   /**
    * @brief Parse Merlin assembly source into atoms and symbols
@@ -212,13 +213,15 @@ public:
    * @throws std::runtime_error on parse errors (syntax errors, undefined
    * labels, etc.)
    */
-  void Parse(const std::string &source, Section &section,
-             ConcreteSymbolTable &symbols);
+  void Parse(const std::string& source, Section& section, ConcreteSymbolTable& symbols);
 
   // Accessor methods for directive handlers
   uint32_t GetCurrentAddress() const { return current_address_; }
+
   uint32_t GetDumAddress() const { return dum_address_; }
+
   bool IsInDumBlock() const { return in_dum_block_; }
+
   bool IsInMacroDefinition() const { return in_macro_definition_; }
 
   /**
@@ -229,23 +232,23 @@ public:
    * Only applies to labels starting with ']' and containing no ':'.
    * Returns the unchanged label for non-]var names.
    */
-  std::string UniqueVarLabel(const std::string &label) {
-    if (!label.empty() && label[0] == ']' &&
-        label.find(':') == std::string::npos) {
+  std::string UniqueVarLabel(const std::string& label) {
+    if (!label.empty() && label[0] == ']' && label.find(':') == std::string::npos) {
       int seq = 0;
       seq = ++var_label_seq_[label];
       return label + "_" + std::to_string(seq);
     }
     return label;
   }
-  bool MacroExists(const std::string &name) const {
-    return macros_.find(name) != macros_.end();
-  }
-  void SetGlobalLabel(const std::string &label) {
+
+  bool MacroExists(const std::string& name) const { return macros_.find(name) != macros_.end(); }
+
+  void SetGlobalLabel(const std::string& label) {
     current_scope_.global_label = label;
     current_scope_.local_labels.clear();
   }
-  void StartMacroDefinition(const std::string &name) {
+
+  void StartMacroDefinition(const std::string& name) {
     in_macro_definition_ = true;
     current_macro_.name = name;
     current_macro_.body.clear();
@@ -259,30 +262,28 @@ public:
    * @param symbols Symbol table for resolving symbol references
    * @return Parsed expression (may throw on invalid syntax)
    */
-  std::shared_ptr<Expression> ParseExpression(const std::string &str,
-                                              ConcreteSymbolTable &symbols);
+  std::shared_ptr<Expression> ParseExpression(const std::string& str, ConcreteSymbolTable& symbols);
 
   /**
    * @brief Try to parse a Merlin character literal ("x" or 'x')
    * @return Expression if matched, nullptr otherwise
    */
-  std::shared_ptr<Expression> TryParseCharLiteral(const std::string &expr,
-                                                  ConcreteSymbolTable &symbols);
+  std::shared_ptr<Expression> TryParseCharLiteral(const std::string& expr,
+                                                  ConcreteSymbolTable& symbols);
 
   /**
    * @brief Try to parse a low-byte operator expression (< or #)
    * @return Expression if matched, nullptr otherwise
    */
-  std::shared_ptr<Expression>
-  TryParseLowByteOperator(const std::string &expr, ConcreteSymbolTable &symbols);
+  std::shared_ptr<Expression> TryParseLowByteOperator(const std::string& expr,
+                                                      ConcreteSymbolTable& symbols);
 
   /**
    * @brief Try to parse a high-byte operator expression (>)
    * @return Expression if matched, nullptr otherwise
    */
-  std::shared_ptr<Expression>
-  TryParseHighByteOperator(const std::string &expr,
-                           ConcreteSymbolTable &symbols);
+  std::shared_ptr<Expression> TryParseHighByteOperator(const std::string& expr,
+                                                       ConcreteSymbolTable& symbols);
 
   /**
    * @brief Parse a numeric literal
@@ -290,7 +291,7 @@ public:
    * @param str Numeric string (hex, decimal, binary, octal)
    * @return Parsed numeric value
    */
-  uint32_t ParseNumber(const std::string &str);
+  uint32_t ParseNumber(const std::string& str);
 
   /**
    * @brief Enable/disable RW18 output mode
@@ -333,19 +334,18 @@ public:
     has_usr_args_ = true;
   }
 
-private:
+ private:
   /**
    * @brief Label scope for managing :LOCAL labels
    *
    * Local labels are scoped to the most recent global label.
    */
   struct LabelScope {
-    std::string global_label = {};    ///< The global label this scope belongs to
-    std::unordered_map<std::string, uint32_t>
-        local_labels = {}; ///< :label -> address
+    std::string global_label = {};  ///< The global label this scope belongs to
+    std::unordered_map<std::string, uint32_t> local_labels = {};  ///< :label -> address
   };
 
-  LabelScope current_scope_; ///< Current label scope (for :LOCAL labels)
+  LabelScope current_scope_;  ///< Current label scope (for :LOCAL labels)
 
   /**
    * @brief Macro definition
@@ -353,28 +353,27 @@ private:
    * Stores a macro body for later expansion via MAC directive.
    */
   struct MacroDefinition {
-    std::string name = {};           ///< Macro name
-    std::vector<std::string> body = {}; ///< Lines of macro body (unexpanded)
-    int param_count = 0;             ///< Number of parameters used (]1, ]2, etc.)
+    std::string name = {};               ///< Macro name
+    std::vector<std::string> body = {};  ///< Lines of macro body (unexpanded)
+    int param_count = 0;                 ///< Number of parameters used (]1, ]2, etc.)
   };
 
   // Macro state
-  bool in_macro_definition_ = false;      ///< True if defining a macro
-  MacroDefinition current_macro_; ///< Current macro being defined
-  std::unordered_map<std::string, MacroDefinition> macros_ = {}; ///< Defined macros
-  int macro_expansion_depth_ = 0; ///< Prevent infinite recursion
+  bool in_macro_definition_ = false;                              ///< True if defining a macro
+  MacroDefinition current_macro_;                                 ///< Current macro being defined
+  std::unordered_map<std::string, MacroDefinition> macros_ = {};  ///< Defined macros
+  int macro_expansion_depth_ = 0;                                 ///< Prevent infinite recursion
 
   // LUP (loop/repeat) block state
-  bool in_lup_block_ = false;                 ///< True if currently inside a LUP block
-  int lup_count_ = 0;                     ///< Number of times to repeat LUP block
-  std::vector<std::string> lup_body_ = {}; ///< Lines captured in LUP block
-  int lup_nesting_depth_ = 0;             ///< Track nested LUP blocks
+  bool in_lup_block_ = false;               ///< True if currently inside a LUP block
+  int lup_count_ = 0;                       ///< Number of times to repeat LUP block
+  std::vector<std::string> lup_body_ = {};  ///< Lines captured in LUP block
+  int lup_nesting_depth_ = 0;               ///< Track nested LUP blocks
 
   // DUM block state
-  bool in_dum_block_ = false;    ///< True if currently inside a DUM block
-  uint32_t dum_address_ = 0; ///< Current address within DUM block
-  std::unordered_map<std::string, uint32_t>
-      variable_labels_ = {}; ///< ]variable -> offset
+  bool in_dum_block_ = false;  ///< True if currently inside a DUM block
+  uint32_t dum_address_ = 0;   ///< Current address within DUM block
+  std::unordered_map<std::string, uint32_t> variable_labels_ = {};  ///< ]variable -> offset
 
   /// Tracks the current instance number for each ]variable code label.
   /// Each time "]var INSTR" (label on instruction) is defined, its counter
@@ -382,24 +381,23 @@ private:
   /// (e.g., ]rts_1, ]rts_2, ...) rather than all resolving to the last global
   /// definition of ]rts. This fixes multi-pass assembly of Merlin ]variables
   /// that are redefined across subroutines (like "]rts  rts").
-  std::unordered_map<std::string, int> var_label_seq_ = {}; ///< ]varname -> seq#
+  std::unordered_map<std::string, int> var_label_seq_ = {};  ///< ]varname -> seq#
 
-  uint32_t current_address_ = 0; ///< Current address (for tracking label addresses)
+  uint32_t current_address_ = 0;     ///< Current address (for tracking label addresses)
   bool end_directive_seen_ = false;  ///< True if END directive has been processed
 
-  std::vector<std::string>
-      include_stack_ = {}; ///< Include file tracking (for circular detection)
+  std::vector<std::string> include_stack_ = {};  ///< Include file tracking (for circular detection)
 
   // Source location tracking (for error reporting)
-  std::string current_file_ = "<stdin>"; ///< Current source filename
-  int current_line_ = 0;         ///< Current line number
+  std::string current_file_ = "<stdin>";  ///< Current source filename
+  int current_line_ = 0;                  ///< Current line number
 
-  Cpu6502 *cpu_ = nullptr; ///< CPU plugin for mode switching (XC directive)
+  Cpu6502* cpu_ = nullptr;  ///< CPU plugin for mode switching (XC directive)
 
   // RW18 output format state (Merlin/Prince of Persia compatibility)
-  bool rw18_mode_ = false;                ///< True if --rw18 flag enabled
-  bool has_usr_args_ = false;             ///< True if USR directive captured
-  std::array<uint16_t, 4> usr_args_{};    ///< USR directive arguments
+  bool rw18_mode_ = false;              ///< True if --rw18 flag enabled
+  bool has_usr_args_ = false;           ///< True if USR directive captured
+  std::array<uint16_t, 4> usr_args_{};  ///< USR directive arguments
 
   /**
    * @brief Conditional assembly manager (Phase 4: shared component)
@@ -407,7 +405,7 @@ private:
    * Replaces local ConditionalBlock struct and conditional_stack_
    * with shared ConditionalAssembler component.
    */
-  ConditionalAssembler conditional_; ///< Shared conditional assembly logic
+  ConditionalAssembler conditional_;  ///< Shared conditional assembly logic
 
   /**
    * @brief Directive handler function type (NEW signature using
@@ -418,8 +416,7 @@ private:
    *
    * Updated to use DirectiveContext pattern for better extensibility.
    */
-  using DirectiveHandler =
-      std::function<void(DirectiveContext &context)>;
+  using DirectiveHandler = std::function<void(DirectiveContext& context)>;
 
   /**
    * @brief Directive registry mapping directive names to handlers
@@ -444,12 +441,11 @@ private:
    * @param symbols Symbol table
    * @return true if directive was handled, false if unknown directive
    */
-  bool DispatchDirective(const std::string &directive, const std::string &label,
-                         const std::string &operand, DirectiveContext &context);
-
+  bool DispatchDirective(const std::string& directive, const std::string& label,
+                         const std::string& operand, DirectiveContext& context);
 
   // Parsing helpers
-  static std::string StripComments(const std::string &line);
+  static std::string StripComments(const std::string& line);
 
   /**
    * @brief Scope a Merlin local label to the current global label
@@ -458,7 +454,7 @@ private:
    * For example, ":rts" in ADDSOUND scope becomes "ADDSOUND:rts".
    * Non-local labels (and labels with no current scope) are returned unchanged.
    */
-  std::string ScopeLocalLabel(const std::string &label) const;
+  std::string ScopeLocalLabel(const std::string& label) const;
 
   /**
    * @brief Translate any ':word' local label references in an operand string
@@ -467,7 +463,7 @@ private:
    * character or at string start) with the current-scope-qualified name.
    * For example, ":rts" in ADDSOUND scope becomes "ADDSOUND:rts".
    */
-  std::string ScopeLocalLabelsInOperand(const std::string &operand) const;
+  std::string ScopeLocalLabelsInOperand(const std::string& operand) const;
 
   /**
    * @brief Expand ]variable references in an operand to their current
@@ -482,7 +478,7 @@ private:
    * Example: "]rts" → "]rts_3" when var_label_seq_["]rts"] == 3
    * Also handles "]rts:local" → "]rts_3:local" for scoped locals.
    */
-  std::string ExpandVarLabelsInOperand(const std::string &operand) const;
+  std::string ExpandVarLabelsInOperand(const std::string& operand) const;
 
   /**
    * @brief Expand Merlin character literals in an instruction operand
@@ -497,7 +493,7 @@ private:
    *   "#\"A\"+1"   → "#$C1+1"
    *   "'r'-CTRL"   → "$F2-CTRL"
    */
-  static std::string ExpandMerlinCharLiterals(const std::string &operand);
+  static std::string ExpandMerlinCharLiterals(const std::string& operand);
 
   /**
    * @brief Substitute ]variable references in a line with their current values
@@ -510,144 +506,123 @@ private:
    * Scans the line for ]identifier tokens and replaces each with the decimal
    * representation of its current value from the symbol table.
    */
-  static std::string SubstituteMerlinVars(const std::string &line,
-                                   const ConcreteSymbolTable &symbols);
+  static std::string SubstituteMerlinVars(const std::string& line,
+                                          const ConcreteSymbolTable& symbols);
 
-  void ParseLine(const std::string &line, Section &section,
-                 ConcreteSymbolTable &symbols);
+  void ParseLine(const std::string& line, Section& section, ConcreteSymbolTable& symbols);
 
   /**
    * @brief Try to handle a Merlin directive line via DispatchDirective
    * @return true if handled
    */
-  bool TryHandleDirectiveLine(const std::string &directive,
-                              const std::string &label,
-                              const std::string &operands,
-                              Section &section,
-                              ConcreteSymbolTable &symbols);
+  bool TryHandleDirectiveLine(const std::string& directive, const std::string& label,
+                              const std::string& operands, Section& section,
+                              ConcreteSymbolTable& symbols);
 
   /**
    * @brief Try to handle a macro invocation line
    * @return true if handled (throws if invocation fails)
    */
-  bool TryHandleMacroLine(const std::string &directive,
-                          const std::string &label,
-                          const std::string &operands,
-                          Section &section,
-                          ConcreteSymbolTable &symbols);
+  bool TryHandleMacroLine(const std::string& directive, const std::string& label,
+                          const std::string& operands, Section& section,
+                          ConcreteSymbolTable& symbols);
 
   /**
    * @brief Handle an assembly instruction line
    */
-  void HandleInstructionLine(const std::string &directive,
-                             const std::string &label,
-                             std::string operands,
-                             Section &section,
-                             ConcreteSymbolTable &symbols);
+  void HandleInstructionLine(const std::string& directive, const std::string& label,
+                             std::string operands, Section& section, ConcreteSymbolTable& symbols);
 
   // Label parsing
-  static std::string ParseLabel(const std::string &line, size_t &pos, Section &section,
-                         ConcreteSymbolTable &symbols);
+  static std::string ParseLabel(const std::string& line, size_t& pos, Section& section,
+                                ConcreteSymbolTable& symbols);
 
   // Directive handlers
-  void HandleEqu(const DirectiveContext &ctx, ConcreteSymbolTable &symbols);
-  void HandleHex(const std::string &operand, Section &section);
-  void HandleDS(const std::string &operand, Section &section,
-                ConcreteSymbolTable &symbols);
-  void HandleDum(const std::string &operand, ConcreteSymbolTable &symbols);
+  void HandleEqu(const DirectiveContext& ctx, ConcreteSymbolTable& symbols);
+  void HandleHex(const std::string& operand, Section& section);
+  void HandleDS(const std::string& operand, Section& section, ConcreteSymbolTable& symbols);
+  void HandleDum(const std::string& operand, ConcreteSymbolTable& symbols);
   void HandleDend();
-  void HandlePut(const std::string &operand, Section &section,
-                 ConcreteSymbolTable &symbols);
-  void HandleLst(const std::string &operand);
+  void HandlePut(const std::string& operand, Section& section, ConcreteSymbolTable& symbols);
+  void HandleLst(const std::string& operand);
   void HandleLstdo();
-  void HandleTr(const std::string &operand);
-  void HandleAsc(const std::string &operand, Section &section);
-  void HandleDA(const std::string &operand, Section &section,
-                ConcreteSymbolTable &symbols);
-  void HandleDCI(const std::string &operand, Section &section);
-  void HandleINV(const std::string &operand, Section &section);
-  void HandleFLS(const std::string &operand, Section &section);
-  void HandleDo(const std::string &operand, ConcreteSymbolTable &symbols);
+  void HandleTr(const std::string& operand);
+  void HandleAsc(const std::string& operand, Section& section);
+  void HandleDA(const std::string& operand, Section& section, ConcreteSymbolTable& symbols);
+  void HandleDCI(const std::string& operand, Section& section);
+  void HandleINV(const std::string& operand, Section& section);
+  void HandleFLS(const std::string& operand, Section& section);
+  void HandleDo(const std::string& operand, ConcreteSymbolTable& symbols);
   void HandleElse();
   void HandleFin();
   void HandleEnd();
-  void HandleSav(const std::string &operand);
-  void HandleXc(const std::string &operand);
-  void HandleMx(const std::string &operand);
-  void HandleRev(const std::string &operand,
-                 Section &section, ConcreteSymbolTable &symbols);
-  void HandleLup(const std::string &operand);
+  void HandleSav(const std::string& operand);
+  void HandleXc(const std::string& operand);
+  void HandleMx(const std::string& operand);
+  void HandleRev(const std::string& operand, Section& section, ConcreteSymbolTable& symbols);
+  void HandleLup(const std::string& operand);
 
   // Macro directives
-  void HandlePMC(const std::string &operand);
+  void HandlePMC(const std::string& operand);
   void HandleEOM();
-  void HandleMacroEnd(); // End macro definition (<<<)
-  void ExpandMacro(const DirectiveContext &ctx,
-                   Section &section, ConcreteSymbolTable &symbols);
+  void HandleMacroEnd();  // End macro definition (<<<)
+  void ExpandMacro(const DirectiveContext& ctx, Section& section, ConcreteSymbolTable& symbols);
 
   // Macro helpers
-  static std::string SubstituteParameters(const std::string &line,
-                                   const std::vector<std::string> &params);
+  static std::string SubstituteParameters(const std::string& line,
+                                          const std::vector<std::string>& params);
 
   // ParseLine sub-handlers (extracted to reduce cognitive complexity)
   /// Handle line capture during macro definition; returns true if consumed.
-  bool HandleMacroCaptureState(const std::string &code_line,
-                               const std::string &upper_trimmed);
+  bool HandleMacroCaptureState(const std::string& code_line, const std::string& upper_trimmed);
   /// Handle line capture during LUP block; returns true if consumed.
-  bool HandleLupCaptureState(const std::string &code_line,
-                             const std::string &upper_trimmed,
-                             Section &section, ConcreteSymbolTable &symbols);
+  bool HandleLupCaptureState(const std::string& code_line, const std::string& upper_trimmed,
+                             Section& section, ConcreteSymbolTable& symbols);
   /// Handle DO/ELSE/FIN directives; returns true if consumed.
-  bool HandleConditionalDirective(const std::string &trimmed,
-                                  const std::string &upper_trimmed,
-                                  ConcreteSymbolTable &symbols);
+  bool HandleConditionalDirective(const std::string& trimmed, const std::string& upper_trimmed,
+                                  ConcreteSymbolTable& symbols);
   /// Handle label-only line (pos >= code_line.length()); returns true.
-  bool HandleLabelOnlyLine(const std::string &label, Section &section,
-                           ConcreteSymbolTable &symbols);
+  bool HandleLabelOnlyLine(const std::string& label, Section& section,
+                           ConcreteSymbolTable& symbols);
   /// Return true if an equate RHS value needs deferred re-evaluation.
-  static bool EquateNeedsReeval(const std::string &value);
+  static bool EquateNeedsReeval(const std::string& value);
   /// Handle "LABEL = VALUE" equate syntax; returns true if consumed.
-  bool HandleEquateLine(const std::string &label, const std::string &code_line,
-                        size_t equals_pos, Section &section,
-                        ConcreteSymbolTable &symbols);
+  bool HandleEquateLine(const std::string& label, const std::string& code_line, size_t equals_pos,
+                        Section& section, ConcreteSymbolTable& symbols);
 
   // HandleDS sub-helpers
   /// Substitute standalone '*' (program counter) in a DS operand string.
-  std::string SubstitutePCInDSOperand(const std::string &op) const;
+  std::string SubstitutePCInDSOperand(const std::string& op) const;
   /// Resolve a DS operand to a byte count (numeric literal, symbol, or *+N).
-  uint32_t ResolveDSCount(const std::string &op,
-                          ConcreteSymbolTable &symbols);
+  uint32_t ResolveDSCount(const std::string& op, ConcreteSymbolTable& symbols);
 
   // ParseExpression sub-helpers
   /// Parse a high-byte ('>') prefix expression.
-  std::shared_ptr<Expression>
-  ParseHighByteExpr(const std::string &expr, ConcreteSymbolTable &symbols);
+  std::shared_ptr<Expression> ParseHighByteExpr(const std::string& expr,
+                                                ConcreteSymbolTable& symbols);
   /// Parse a low-byte ('<') prefix expression.
-  std::shared_ptr<Expression>
-  ParseLowByteExpr(const std::string &expr, ConcreteSymbolTable &symbols);
+  std::shared_ptr<Expression> ParseLowByteExpr(const std::string& expr,
+                                               ConcreteSymbolTable& symbols);
   /// Build a compound char+operator expression from char value and trailing rest.
-  std::shared_ptr<Expression>
-  CompoundCharExpr(int64_t char_val, const std::string &rest,
-                   ConcreteSymbolTable &symbols);
+  std::shared_ptr<Expression> CompoundCharExpr(int64_t char_val, const std::string& rest,
+                                               ConcreteSymbolTable& symbols);
   /// Build a binary expression from a single-char arithmetic operator.
-  static std::shared_ptr<Expression>
-  MakeBinaryExpr(char op, std::shared_ptr<Expression> lhs,
-                 std::shared_ptr<Expression> rhs);
+  static std::shared_ptr<Expression> MakeBinaryExpr(char op, std::shared_ptr<Expression> lhs,
+                                                    std::shared_ptr<Expression> rhs);
 
   /// Expand a ]var token into result; returns updated parse index.
-  size_t AppendExpandedVarLabel(const std::string &operand, size_t i,
-                                std::string &result) const;
+  size_t AppendExpandedVarLabel(const std::string& operand, size_t i, std::string& result) const;
   /// Return true if operand[i] begins a ':local' label reference.
-  static bool StartsLocalLabelRef(const std::string &operand, size_t i);
+  static bool StartsLocalLabelRef(const std::string& operand, size_t i);
 
   // Error formatting with source location
-  std::string FormatError(const std::string &message) const;
+  std::string FormatError(const std::string& message) const;
 
   // Strip Merlin-style inline comment from instruction operand.
-  static std::string StripMerlinInlineComment(const std::string &operands);
+  static std::string StripMerlinInlineComment(const std::string& operands);
 
   // Strip trailing whitespace-delimited inline comment from an expression.
-  static std::string StripMerlinExprComment(const std::string &expr);
+  static std::string StripMerlinExprComment(const std::string& expr);
 };
 
-} // namespace xasm
+}  // namespace xasm

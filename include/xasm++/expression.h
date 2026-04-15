@@ -28,9 +28,10 @@ class SymbolTable;
  * references without accidentally swallowing syntax errors.
  */
 class UndefinedSymbolError : public std::runtime_error {
-public:
-  explicit UndefinedSymbolError(const std::string &sym)
+ public:
+  explicit UndefinedSymbolError(const std::string& sym)
       : std::runtime_error("Undefined symbol: " + sym), symbol(sym) {}
+
   std::string symbol{};
 };
 
@@ -41,24 +42,24 @@ public:
  * More operators will be added in future phases.
  */
 enum class BinaryOp : std::uint8_t {
-  Add,            ///< Addition: a + b
-  Subtract,       ///< Subtraction: a - b
-  Multiply,       ///< Multiplication: a * b
-  Divide,         ///< Division: a / b
-  Modulo,         ///< Modulo: a % b
-  BitwiseAnd,     ///< Bitwise AND: a & b
-  BitwiseOr,      ///< Bitwise OR: a | b
-  BitwiseXor,     ///< Bitwise XOR: a ^ b
-  ShiftLeft,      ///< Shift left: a << b
-  ShiftRight,     ///< Shift right: a >> b
-  LogicalOr,      ///< Logical OR: a || b
-  LogicalAnd,     ///< Logical AND: a && b
-  Equal,          ///< Equal: a == b
-  NotEqual,       ///< Not equal: a != b
-  LessThan,       ///< Less than: a < b
-  LessOrEqual,    ///< Less or equal: a <= b
-  GreaterThan,    ///< Greater than: a > b
-  GreaterOrEqual, ///< Greater or equal: a >= b
+  Add,             ///< Addition: a + b
+  Subtract,        ///< Subtraction: a - b
+  Multiply,        ///< Multiplication: a * b
+  Divide,          ///< Division: a / b
+  Modulo,          ///< Modulo: a % b
+  BitwiseAnd,      ///< Bitwise AND: a & b
+  BitwiseOr,       ///< Bitwise OR: a | b
+  BitwiseXor,      ///< Bitwise XOR: a ^ b
+  ShiftLeft,       ///< Shift left: a << b
+  ShiftRight,      ///< Shift right: a >> b
+  LogicalOr,       ///< Logical OR: a || b
+  LogicalAnd,      ///< Logical AND: a && b
+  Equal,           ///< Equal: a == b
+  NotEqual,        ///< Not equal: a != b
+  LessThan,        ///< Less than: a < b
+  LessOrEqual,     ///< Less or equal: a <= b
+  GreaterThan,     ///< Greater than: a > b
+  GreaterOrEqual,  ///< Greater or equal: a >= b
 };
 
 /**
@@ -68,12 +69,12 @@ enum class BinaryOp : std::uint8_t {
  * More operators will be added in future phases.
  */
 enum class UnaryOp : std::uint8_t {
-  Negate,     ///< Negation: -a
-  BitwiseNot, ///< Bitwise NOT: ~a
-  LogicalNot, ///< Logical NOT: !a
-  LowByte,    ///< Low byte extraction: <a
-  HighByte,   ///< High byte extraction: >a
-  BankByte,   ///< Bank byte extraction: ^a (bits 16-23, Merlin/SCMASM)
+  Negate,      ///< Negation: -a
+  BitwiseNot,  ///< Bitwise NOT: ~a
+  LogicalNot,  ///< Logical NOT: !a
+  LowByte,     ///< Low byte extraction: <a
+  HighByte,    ///< High byte extraction: >a
+  BankByte,    ///< Bank byte extraction: ^a (bits 16-23, Merlin/SCMASM)
 };
 
 /**
@@ -97,7 +98,7 @@ enum class UnaryOp : std::uint8_t {
  * @endcode
  */
 class Expression {
-public:
+ public:
   /**
    * @brief Virtual destructor for polymorphic deletion
    */
@@ -114,7 +115,7 @@ public:
    * @throws std::runtime_error if expression references undefined symbols
    *         or performs invalid operations (e.g., division by zero)
    */
-  virtual int64_t Evaluate(const SymbolTable &symbols) const = 0;
+  virtual int64_t Evaluate(const SymbolTable& symbols) const = 0;
 
   /**
    * @brief Check if the expression is constant
@@ -146,7 +147,7 @@ public:
  * during assembly, in test code, etc.).
  */
 class SymbolTable {
-public:
+ public:
   /**
    * @brief Virtual destructor
    */
@@ -159,7 +160,7 @@ public:
    * @param value Output parameter - receives the symbol's value if found
    * @return true if symbol was found, false otherwise
    */
-  virtual bool Lookup(const std::string &name, int64_t &value) const = 0;
+  virtual bool Lookup(const std::string& name, int64_t& value) const = 0;
 
   /**
    * @brief Get the current assembly location counter
@@ -185,7 +186,7 @@ public:
  * @endcode
  */
 class LiteralExpr : public Expression {
-public:
+ public:
   /**
    * @brief Construct a literal expression
    * @param val Constant numeric value
@@ -197,9 +198,7 @@ public:
    * @param symbols Symbol table (unused)
    * @return The constant value
    */
-  int64_t Evaluate(const SymbolTable & /*symbols*/) const override {
-    return value;
-  }
+  int64_t Evaluate(const SymbolTable& /*symbols*/) const override { return value; }
 
   /**
    * @brief Check if constant - always returns true
@@ -219,8 +218,8 @@ public:
    */
   int64_t GetValue() const { return value; }
 
-private:
-  int64_t value{0}; ///< The constant value
+ private:
+  int64_t value{0};  ///< The constant value
 };
 
 /**
@@ -237,12 +236,12 @@ private:
  * @endcode
  */
 class SymbolExpr : public Expression {
-public:
+ public:
   /**
    * @brief Construct a symbol expression
    * @param sym Symbol name to reference
    */
-  explicit SymbolExpr(const std::string &sym) : symbol(sym) {}
+  explicit SymbolExpr(const std::string& sym) : symbol(sym) {}
 
   /**
    * @brief Evaluate - looks up the symbol in the symbol table
@@ -251,7 +250,7 @@ public:
    * @return The symbol's current value
    * @throws std::runtime_error if symbol is not defined
    */
-  int64_t Evaluate(const SymbolTable &symbols) const override {
+  int64_t Evaluate(const SymbolTable& symbols) const override {
     int64_t value = 0;
     if (!symbols.Lookup(symbol, value)) {
       throw UndefinedSymbolError(symbol);
@@ -264,7 +263,7 @@ public:
    * @return false (symbol references are never constant)
    */
   bool IsConstant() const override {
-    return false; // Symbol reference is not constant
+    return false;  // Symbol reference is not constant
   }
 
   /**
@@ -272,17 +271,17 @@ public:
    * @return true (symbol references are typically relocatable)
    */
   bool IsRelocatable() const override {
-    return true; // Symbol references are relocatable
+    return true;  // Symbol references are relocatable
   }
 
   /**
    * @brief Get the symbol name
    * @return The referenced symbol name
    */
-  const std::string &GetSymbol() const { return symbol; }
+  const std::string& GetSymbol() const { return symbol; }
 
-private:
-  std::string symbol{}; ///< The symbol name
+ private:
+  std::string symbol{};  ///< The symbol name
 };
 
 /**
@@ -300,7 +299,7 @@ private:
  * @endcode
  */
 class CurrentLocationExpr : public Expression {
-public:
+ public:
   /**
    * @brief Construct a current location expression
    */
@@ -312,7 +311,7 @@ public:
    * @param symbols Symbol table providing current location
    * @return The current assembly address
    */
-  int64_t Evaluate(const SymbolTable &symbols) const override {
+  int64_t Evaluate(const SymbolTable& symbols) const override {
     return symbols.GetCurrentLocation();
   }
 
@@ -345,7 +344,7 @@ public:
  * @endcode
  */
 class BinaryOpExpr : public Expression {
-public:
+ public:
   /**
    * @brief Construct a binary operation expression
    *
@@ -353,8 +352,7 @@ public:
    * @param left Left operand expression
    * @param right Right operand expression
    */
-  BinaryOpExpr(BinaryOp op, std::shared_ptr<Expression> left,
-               std::shared_ptr<Expression> right)
+  BinaryOpExpr(BinaryOp op, std::shared_ptr<Expression> left, std::shared_ptr<Expression> right)
       : operation(op), left(left), right(right) {}
 
   /**
@@ -366,57 +364,57 @@ public:
    * @return Result of applying the operator to the operands
    * @throws std::runtime_error if division by zero or unknown operator
    */
-  int64_t Evaluate(const SymbolTable &symbols) const override {
+  int64_t Evaluate(const SymbolTable& symbols) const override {
     int64_t lval = 0;
     lval = left->Evaluate(symbols);
     int64_t rval = 0;
     rval = right->Evaluate(symbols);
 
     switch (operation) {
-    case BinaryOp::Add:
-      return lval + rval;
-    case BinaryOp::Subtract:
-      return lval - rval;
-    case BinaryOp::Multiply:
-      return lval * rval;
-    case BinaryOp::Divide:
-      if (rval == 0) {
-        throw std::runtime_error("Division by zero");
-      }
-      return lval / rval;
-    case BinaryOp::Modulo:
-      if (rval == 0) {
-        throw std::runtime_error("Modulo by zero");
-      }
-      return lval % rval;
-    case BinaryOp::BitwiseAnd:
-      return lval & rval;
-    case BinaryOp::BitwiseOr:
-      return lval | rval;
-    case BinaryOp::BitwiseXor:
-      return lval ^ rval;
-    case BinaryOp::ShiftLeft:
-      return lval << rval;
-    case BinaryOp::ShiftRight:
-      return lval >> rval;
-    case BinaryOp::LogicalOr:
-      return lval || rval;
-    case BinaryOp::LogicalAnd:
-      return lval && rval;
-    case BinaryOp::Equal:
-      return lval == rval;
-    case BinaryOp::NotEqual:
-      return lval != rval;
-    case BinaryOp::LessThan:
-      return lval < rval;
-    case BinaryOp::LessOrEqual:
-      return lval <= rval;
-    case BinaryOp::GreaterThan:
-      return lval > rval;
-    case BinaryOp::GreaterOrEqual:
-      return lval >= rval;
-    default:
-      throw std::runtime_error("Unknown binary operator");
+      case BinaryOp::Add:
+        return lval + rval;
+      case BinaryOp::Subtract:
+        return lval - rval;
+      case BinaryOp::Multiply:
+        return lval * rval;
+      case BinaryOp::Divide:
+        if (rval == 0) {
+          throw std::runtime_error("Division by zero");
+        }
+        return lval / rval;
+      case BinaryOp::Modulo:
+        if (rval == 0) {
+          throw std::runtime_error("Modulo by zero");
+        }
+        return lval % rval;
+      case BinaryOp::BitwiseAnd:
+        return lval & rval;
+      case BinaryOp::BitwiseOr:
+        return lval | rval;
+      case BinaryOp::BitwiseXor:
+        return lval ^ rval;
+      case BinaryOp::ShiftLeft:
+        return lval << rval;
+      case BinaryOp::ShiftRight:
+        return lval >> rval;
+      case BinaryOp::LogicalOr:
+        return lval || rval;
+      case BinaryOp::LogicalAnd:
+        return lval && rval;
+      case BinaryOp::Equal:
+        return lval == rval;
+      case BinaryOp::NotEqual:
+        return lval != rval;
+      case BinaryOp::LessThan:
+        return lval < rval;
+      case BinaryOp::LessOrEqual:
+        return lval <= rval;
+      case BinaryOp::GreaterThan:
+        return lval > rval;
+      case BinaryOp::GreaterOrEqual:
+        return lval >= rval;
+      default:
+        throw std::runtime_error("Unknown binary operator");
     }
   }
 
@@ -424,17 +422,13 @@ public:
    * @brief Check if constant
    * @return true only if both operands are constant
    */
-  bool IsConstant() const override {
-    return left->IsConstant() && right->IsConstant();
-  }
+  bool IsConstant() const override { return left->IsConstant() && right->IsConstant(); }
 
   /**
    * @brief Check if relocatable
    * @return true if either operand is relocatable
    */
-  bool IsRelocatable() const override {
-    return left->IsRelocatable() || right->IsRelocatable();
-  }
+  bool IsRelocatable() const override { return left->IsRelocatable() || right->IsRelocatable(); }
 
   /**
    * @brief Get the operator
@@ -446,18 +440,18 @@ public:
    * @brief Get the left operand
    * @return Shared pointer to left operand expression
    */
-  const std::shared_ptr<Expression> &GetLeft() const { return left; }
+  const std::shared_ptr<Expression>& GetLeft() const { return left; }
 
   /**
    * @brief Get the right operand
    * @return Shared pointer to right operand expression
    */
-  const std::shared_ptr<Expression> &GetRight() const { return right; }
+  const std::shared_ptr<Expression>& GetRight() const { return right; }
 
-private:
-  BinaryOp operation;                ///< The binary operator
-  std::shared_ptr<Expression> left{};  ///< Left operand
-  std::shared_ptr<Expression> right{}; ///< Right operand
+ private:
+  BinaryOp operation;                   ///< The binary operator
+  std::shared_ptr<Expression> left{};   ///< Left operand
+  std::shared_ptr<Expression> right{};  ///< Right operand
 };
 
 /**
@@ -475,15 +469,14 @@ private:
  * @endcode
  */
 class UnaryOpExpr : public Expression {
-public:
+ public:
   /**
    * @brief Construct a unary operation expression
    *
    * @param op Unary operator to apply
    * @param operand Operand expression
    */
-  UnaryOpExpr(UnaryOp op, std::shared_ptr<Expression> operand)
-      : operation(op), expr(operand) {}
+  UnaryOpExpr(UnaryOp op, std::shared_ptr<Expression> operand) : operation(op), expr(operand) {}
 
   /**
    * @brief Evaluate the unary operation
@@ -494,25 +487,25 @@ public:
    * @return Result of applying the operator to the operand
    * @throws std::runtime_error if unknown operator
    */
-  int64_t Evaluate(const SymbolTable &symbols) const override {
+  int64_t Evaluate(const SymbolTable& symbols) const override {
     int64_t val = 0;
     val = expr->Evaluate(symbols);
 
     switch (operation) {
-    case UnaryOp::Negate:
-      return -val;
-    case UnaryOp::BitwiseNot:
-      return ~val;
-    case UnaryOp::LogicalNot:
-      return !val;
-    case UnaryOp::LowByte:
-      return val & 0xFF;
-    case UnaryOp::HighByte:
-      return (val >> 8) & 0xFF;
-    case UnaryOp::BankByte:
-      return (val >> 16) & 0xFF;
-    default:
-      throw std::runtime_error("Unknown unary operator");
+      case UnaryOp::Negate:
+        return -val;
+      case UnaryOp::BitwiseNot:
+        return ~val;
+      case UnaryOp::LogicalNot:
+        return !val;
+      case UnaryOp::LowByte:
+        return val & 0xFF;
+      case UnaryOp::HighByte:
+        return (val >> 8) & 0xFF;
+      case UnaryOp::BankByte:
+        return (val >> 16) & 0xFF;
+      default:
+        throw std::runtime_error("Unknown unary operator");
     }
   }
 
@@ -538,11 +531,11 @@ public:
    * @brief Get the operand
    * @return Shared pointer to operand expression
    */
-  const std::shared_ptr<Expression> &GetOperand() const { return expr; }
+  const std::shared_ptr<Expression>& GetOperand() const { return expr; }
 
-private:
-  UnaryOp operation;                ///< The unary operator
-  std::shared_ptr<Expression> expr{}; ///< The operand
+ private:
+  UnaryOp operation;                   ///< The unary operator
+  std::shared_ptr<Expression> expr{};  ///< The operand
 };
 
-} // namespace xasm
+}  // namespace xasm

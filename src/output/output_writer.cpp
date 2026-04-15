@@ -17,4 +17,4 @@ namespace xasm {
 // This file exists for future common utilities (e.g., checksum helpers,
 // address range validation, etc.)
 
-} // namespace xasm
+}  // namespace xasm

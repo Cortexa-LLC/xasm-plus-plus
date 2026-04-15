@@ -14,14 +14,14 @@
 
 #pragma once
 
-#include "xasm++/output/output_format_constants.h"
-#include "xasm++/output/output_writer.h"
-#include "xasm++/section.h"
-
 #include <cstdint>
 #include <ostream>
 #include <string>
 #include <vector>
+
+#include "xasm++/output/output_format_constants.h"
+#include "xasm++/output/output_writer.h"
+#include "xasm++/section.h"
 
 namespace xasm {
 
@@ -70,7 +70,7 @@ namespace xasm {
  * @endcode
  */
 class SRecordWriter : public OutputWriter {
-public:
+ public:
   /**
    * @brief Construct S-Record writer with default settings
    *
@@ -94,8 +94,7 @@ public:
    * @param output Output stream to write formatted data to
    * @throws std::runtime_error if writing fails
    */
-  void Write(const std::vector<Section> &sections,
-             std::ostream &output) override;
+  void Write(const std::vector<Section>& sections, std::ostream& output) override;
 
   /**
    * @brief Get file extension for S-Record format
@@ -120,8 +119,10 @@ public:
    */
   void SetBytesPerLine(size_t bytes);
 
-private:
-  size_t bytes_per_line_ = output_format::SREC_DEFAULT_BYTES_PER_LINE; ///< Number of data bytes per record (default: 32)
+ private:
+  size_t bytes_per_line_ =
+      output_format::SREC_DEFAULT_BYTES_PER_LINE;  ///< Number of data bytes per record (default:
+                                                   ///< 32)
 
   /**
    * @brief Determine which S-Record format to use based on max address
@@ -139,8 +140,8 @@ private:
    * @param address Address field
    * @param data Data bytes (may be empty)
    */
-  static void WriteRecord(std::ostream &output, int record_type, uint64_t address,
-                   const std::vector<uint8_t> &data);
+  static void WriteRecord(std::ostream& output, int record_type, uint64_t address,
+                          const std::vector<uint8_t>& data);
 
   /**
    * @brief Calculate S-Record checksum
@@ -153,8 +154,8 @@ private:
    * @param data Data bytes
    * @return Calculated checksum (8-bit)
    */
-  static uint8_t CalculateChecksum(uint8_t byte_count, uint64_t address,
-                            size_t addr_size, const std::vector<uint8_t> &data);
+  static uint8_t CalculateChecksum(uint8_t byte_count, uint64_t address, size_t addr_size,
+                                   const std::vector<uint8_t>& data);
 
   /**
    * @brief Write header record (S0)
@@ -162,7 +163,7 @@ private:
    * @param output Output stream
    * @param module_name Optional module name/metadata
    */
-  static void WriteHeader(std::ostream &output, const std::string &module_name = "");
+  static void WriteHeader(std::ostream& output, const std::string& module_name = "");
 
   /**
    * @brief Write terminator record (S7/S8/S9)
@@ -171,8 +172,7 @@ private:
    * @param format Format type (1=S9, 2=S8, 3=S7)
    * @param start_address Optional start/entry address (default: 0)
    */
-  static void WriteTerminator(std::ostream &output, int format,
-                       uint64_t start_address = 0);
+  static void WriteTerminator(std::ostream& output, int format, uint64_t start_address = 0);
 
   /**
    * @brief Write optional count record (S5/S6)
@@ -181,7 +181,7 @@ private:
    * @param record_count Number of data records written
    * @param format Format type (1=S5, 2=S6, 3=S6)
    */
-  static void WriteCountRecord(std::ostream &output, size_t record_count, int format);
+  static void WriteCountRecord(std::ostream& output, size_t record_count, int format);
 
   /**
    * @brief Extract bytes from atoms for writing
@@ -191,7 +191,7 @@ private:
    * @param section Section to extract bytes from
    * @return Vector of (address, byte) pairs
    */
-  static std::vector<std::pair<uint64_t, uint8_t>> ExtractBytes(const Section &section);
+  static std::vector<std::pair<uint64_t, uint8_t>> ExtractBytes(const Section& section);
 
   /**
    * @brief Get address size in bytes for format type
@@ -202,4 +202,4 @@ private:
   static size_t GetAddressSize(int format);
 };
 
-} // namespace xasm
+}  // namespace xasm

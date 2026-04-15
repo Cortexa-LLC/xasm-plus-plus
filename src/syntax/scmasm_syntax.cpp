@@ -8,16 +8,7 @@
  */
 
 #include "xasm++/syntax/scmasm_syntax.h"
-#include "xasm++/syntax/label_policy.h"
-#include "xasm++/atom.h"
-#include "xasm++/cpu/cpu_6502.h"
-#include "xasm++/cpu/cpu_constants.h"
-#include "xasm++/cpu/cpu_plugin.h"
-#include "xasm++/directives/scmasm_constants.h"
-#include "xasm++/directives/scmasm_directive_constants.h"
-#include "xasm++/directives/scmasm_directive_handlers.h"
-#include "xasm++/syntax/scmasm_expression_utils.h"
-#include "xasm++/util/string_utils.h" // For ToUpper
+
 #include <algorithm>
 #include <cctype>
 #include <filesystem>
@@ -25,6 +16,17 @@
 #include <sstream>
 #include <stdexcept>
 #include <unordered_set>
+
+#include "xasm++/atom.h"
+#include "xasm++/cpu/cpu_6502.h"
+#include "xasm++/cpu/cpu_constants.h"
+#include "xasm++/cpu/cpu_plugin.h"
+#include "xasm++/directives/scmasm_constants.h"
+#include "xasm++/directives/scmasm_directive_constants.h"
+#include "xasm++/directives/scmasm_directive_handlers.h"
+#include "xasm++/syntax/label_policy.h"
+#include "xasm++/syntax/scmasm_expression_utils.h"
+#include "xasm++/util/string_utils.h"  // For ToUpper
 
 namespace xasm {
 
@@ -50,7 +52,7 @@ constexpr int RADIX_HEXADECIMAL = 16;
 // ---------------------------------------------------------------------------
 // Advances i past a hex literal (digits only). Returns false if no hex digits.
 // Pre: s[i-1] == '$' and i is positioned at the first potential hex digit.
-static bool ScanHexLiteralDigits(const std::string &s, size_t &i) {
+static bool ScanHexLiteralDigits(const std::string& s, size_t& i) {
   bool any_digit = false;
   while (i < s.size() && std::isxdigit(static_cast<unsigned char>(s[i]))) {
     any_digit = true;
@@ -61,7 +63,7 @@ static bool ScanHexLiteralDigits(const std::string &s, size_t &i) {
 
 // Advances i past a binary literal (0/1/. digits). Returns false if no digits.
 // Pre: s[i-1] == '%' and i is positioned at the first potential bit char.
-static bool ScanBinaryLiteralDigits(const std::string &s, size_t &i) {
+static bool ScanBinaryLiteralDigits(const std::string& s, size_t& i) {
   bool any_bit = false;
   while (i < s.size() && (s[i] == '0' || s[i] == '1' || s[i] == '.')) {
     any_bit = true;
@@ -71,17 +73,17 @@ static bool ScanBinaryLiteralDigits(const std::string &s, size_t &i) {
 }
 
 // Advances i past consecutive decimal digit characters.
-static void ScanDecimalDigits(const std::string &s, size_t &i) {
+static void ScanDecimalDigits(const std::string& s, size_t& i) {
   while (i < s.size() && std::isdigit(static_cast<unsigned char>(s[i]))) {
     ++i;
   }
 }
 
-bool IsEqOperandSafe(const std::string &operand) {
+bool IsEqOperandSafe(const std::string& operand) {
   // Trim leading/trailing whitespace
   size_t start = operand.find_first_not_of(" \t");
   if (start == std::string::npos) {
-    return false; // empty operand — treat as unsafe
+    return false;  // empty operand — treat as unsafe
   }
   size_t end = operand.find_last_not_of(" \t");
   std::string s = operand.substr(start, end - start + 1);
@@ -93,16 +95,16 @@ bool IsEqOperandSafe(const std::string &operand) {
 
     if (c == '$') {
       if (i >= s.size() || !ScanHexLiteralDigits(s, i)) {
-        return false; // bare '$' or invalid hex
+        return false;  // bare '$' or invalid hex
       }
     } else if (c == '%') {
       if (i >= s.size() || !ScanBinaryLiteralDigits(s, i)) {
-        return false; // bare '%' or invalid binary
+        return false;  // bare '%' or invalid binary
       }
     } else if (std::isdigit(static_cast<unsigned char>(c))) {
       ScanDecimalDigits(s, i);
     } else if (std::isalpha(static_cast<unsigned char>(c)) || c == '_') {
-      return false; // unquoted symbol reference → unsafe
+      return false;  // unquoted symbol reference → unsafe
     }
     // Operators, parens, '#', ',', '*', '+', '-', '/', whitespace: safe
   }
@@ -110,7 +112,7 @@ bool IsEqOperandSafe(const std::string &operand) {
   return true;
 }
 
-} // anonymous namespace
+}  // anonymous namespace
 
 // ============================================================================
 // SCMASMNumberParser Implementation
@@ -118,7 +120,7 @@ bool IsEqOperandSafe(const std::string &operand) {
 
 // Tries to parse a hexadecimal literal (token starting with '$').
 // Returns false if the format is invalid.
-static bool TryParseHex(const std::string &token, int64_t &value) {
+static bool TryParseHex(const std::string& token, int64_t& value) {
   if (token.length() < 2) {
     return false;
   }
@@ -138,7 +140,7 @@ static bool TryParseHex(const std::string &token, int64_t &value) {
 
 // Tries to parse a binary literal (token starting with '%').
 // Returns false if the format is invalid.
-static bool TryParseBinary(const std::string &token, int64_t &value) {
+static bool TryParseBinary(const std::string& token, int64_t& value) {
   if (token.length() < 2) {
     return false;
   }
@@ -162,7 +164,7 @@ static bool TryParseBinary(const std::string &token, int64_t &value) {
 
 // Tries to parse an ASCII character constant (delimiter + char, length==2).
 // Returns false if not a char constant format.
-static bool TryParseCharLiteral(const std::string &token, int64_t &value) {
+static bool TryParseCharLiteral(const std::string& token, int64_t& value) {
   if (std::isalnum(static_cast<unsigned char>(token[0])) || token.length() != 2) {
     return false;
   }
@@ -179,7 +181,7 @@ static bool TryParseCharLiteral(const std::string &token, int64_t &value) {
 
 // Tries to parse a decimal literal (all digits).
 // Returns false if any non-digit character is present.
-static bool TryParseDecimal(const std::string &token, int64_t &value) {
+static bool TryParseDecimal(const std::string& token, int64_t& value) {
   if (!std::isdigit(static_cast<unsigned char>(token[0]))) {
     return false;
   }
@@ -196,8 +198,7 @@ static bool TryParseDecimal(const std::string &token, int64_t &value) {
   }
 }
 
-bool SCMASMNumberParser::TryParse(const std::string &token,
-                                  int64_t &value) const {
+bool SCMASMNumberParser::TryParse(const std::string& token, int64_t& value) const {
   if (token.empty()) {
     return false;
   }
@@ -217,7 +218,9 @@ bool SCMASMNumberParser::TryParse(const std::string &token,
 // Constructor
 // ============================================================================
 
-ScmasmSyntaxParser::ScmasmSyntaxParser() { InitializeDirectiveRegistry(); }
+ScmasmSyntaxParser::ScmasmSyntaxParser() {
+  InitializeDirectiveRegistry();
+}
 
 void ScmasmSyntaxParser::InitializeDirectiveRegistry() {
   // Phase 6c.2: Use extracted free functions with directive name constants
@@ -243,7 +246,7 @@ void ScmasmSyntaxParser::InitializeDirectiveRegistry() {
 
   // .DA / .DFB - Define byte(s)
   directive_registry_[DA] = scmasm::HandleDa;
-  directive_registry_[DFB] = scmasm::HandleDa; // Alias
+  directive_registry_[DFB] = scmasm::HandleDa;  // Alias
 
   // .HS - Hex string
   directive_registry_[HS] = scmasm::HandleHs;
@@ -256,26 +259,26 @@ void ScmasmSyntaxParser::InitializeDirectiveRegistry() {
 
   // .ENDM / .EM - End macro definition
   directive_registry_[ENDM] = scmasm::HandleEndm;
-  directive_registry_[EM] = scmasm::HandleEndm; // Alias
+  directive_registry_[EM] = scmasm::HandleEndm;  // Alias
 
   // P0 Priority Directives (A2oSX Critical)
-  directive_registry_[PS] = scmasm::HandlePs;       // Pascal string
-  directive_registry_[INB] = scmasm::HandleInb;     // Include source file
-  directive_registry_[INCLUDE] = scmasm::HandleInb; // Alias: .INCLUDE = .INB
-  directive_registry_[LIST] = scmasm::HandleList;   // Listing control
-  directive_registry_[DUMMY] = scmasm::HandleDummy; // Dummy section
-  directive_registry_[ED] = scmasm::HandleEd;       // End dummy section
-  directive_registry_[OP] = scmasm::HandleOp;       // CPU operation mode
+  directive_registry_[PS] = scmasm::HandlePs;        // Pascal string
+  directive_registry_[INB] = scmasm::HandleInb;      // Include source file
+  directive_registry_[INCLUDE] = scmasm::HandleInb;  // Alias: .INCLUDE = .INB
+  directive_registry_[LIST] = scmasm::HandleList;    // Listing control
+  directive_registry_[DUMMY] = scmasm::HandleDummy;  // Dummy section
+  directive_registry_[ED] = scmasm::HandleEd;        // End dummy section
+  directive_registry_[OP] = scmasm::HandleOp;        // CPU operation mode
 
   // Phase 3: 100% Coverage Directives
-  directive_registry_[CS] = scmasm::HandleCs; // C-string with escapes
-  directive_registry_[CZ] = scmasm::HandleCz; // C-string zero-terminated
-  directive_registry_[TF] = scmasm::HandleTf; // Text file/title metadata
-  directive_registry_[EP] = scmasm::HandleEp; // Entry point / end phase
-  directive_registry_[PH] = scmasm::HandlePh; // Phase assembly
-  directive_registry_[HX] = scmasm::HandleHx; // Hex nibble storage
-  directive_registry_[TA] = scmasm::HandleTa; // Target address (no-op)
-  directive_registry_[AC] = scmasm::HandleAc; // ASCII with prefix
+  directive_registry_[CS] = scmasm::HandleCs;  // C-string with escapes
+  directive_registry_[CZ] = scmasm::HandleCz;  // C-string zero-terminated
+  directive_registry_[TF] = scmasm::HandleTf;  // Text file/title metadata
+  directive_registry_[EP] = scmasm::HandleEp;  // Entry point / end phase
+  directive_registry_[PH] = scmasm::HandlePh;  // Phase assembly
+  directive_registry_[HX] = scmasm::HandleHx;  // Hex nibble storage
+  directive_registry_[TA] = scmasm::HandleTa;  // Target address (no-op)
+  directive_registry_[AC] = scmasm::HandleAc;  // ASCII with prefix
 
   // Note: Control flow directives (.DO, .ELSE, .FIN, .LU, .ENDU) are NOT
   // registered here because they require special handling in ParseLine with
@@ -287,9 +290,11 @@ void ScmasmSyntaxParser::InitializeDirectiveRegistry() {
 // CPU Plugin Configuration
 // ============================================================================
 
-void ScmasmSyntaxParser::SetCpu(CpuPlugin *cpu) { cpu_ = cpu; }
+void ScmasmSyntaxParser::SetCpu(CpuPlugin* cpu) {
+  cpu_ = cpu;
+}
 
-void ScmasmSyntaxParser::SetCpu(const std::string &cpu_name) {
+void ScmasmSyntaxParser::SetCpu(const std::string& cpu_name) {
   // Allocate a Cpu6502 instance owned by this parser.
   // The pointer is stored in owned_cpu_ so that it outlives this function
   // and is freed when the parser is destroyed.  Previously cpu6502 was a
@@ -314,22 +319,19 @@ void ScmasmSyntaxParser::SetCpu(const std::string &cpu_name) {
   cpu_ = owned_cpu_.get();
 }
 
-void ScmasmSyntaxParser::SetIncludePaths(
-    const std::vector<std::string> &paths) {
+void ScmasmSyntaxParser::SetIncludePaths(const std::vector<std::string>& paths) {
   include_paths_ = paths;
 }
 
-void ScmasmSyntaxParser::SetPathMappings(
-    const std::map<std::string, std::string> &mappings) {
+void ScmasmSyntaxParser::SetPathMappings(const std::map<std::string, std::string>& mappings) {
   path_mappings_.clear();
 
   // Normalize all path mapping keys to use forward slashes for cross-platform
   // compatibility
-  for (const auto &[virtual_path, actual_path] : mappings) {
+  for (const auto& [virtual_path, actual_path] : mappings) {
     // Manually replace backslashes with forward slashes
     std::string normalized_virtual = virtual_path;
-    std::replace(normalized_virtual.begin(), normalized_virtual.end(), '\\',
-                 '/');
+    std::replace(normalized_virtual.begin(), normalized_virtual.end(), '\\', '/');
 
     path_mappings_[normalized_virtual] = actual_path;
   }
@@ -339,8 +341,8 @@ void ScmasmSyntaxParser::SetPathMappings(
 // Main Parse Function
 // ============================================================================
 
-void ScmasmSyntaxParser::Parse(const std::string &source, Section &section,
-                               ConcreteSymbolTable &symbols) {
+void ScmasmSyntaxParser::Parse(const std::string& source, Section& section,
+                               ConcreteSymbolTable& symbols) {
   // SCMASM normalises all symbols to UPPERCASE at definition time.  Enable the
   // uppercase-fallback mode in the symbol table so that mixed-case references
   // (e.g. "TmpPtr2") resolve to their normalised UPPERCASE counterparts.
@@ -374,27 +376,24 @@ void ScmasmSyntaxParser::Parse(const std::string &source, Section &section,
 
   // Check for unclosed macro definition
   if (in_macro_definition_) {
-    throw std::runtime_error("Unclosed macro definition: " +
-                             current_macro_name_);
+    throw std::runtime_error("Unclosed macro definition: " + current_macro_name_);
   }
 }
 
 // Strips trailing whitespace characters from a line.
-static std::string StripTrailingWhitespace(const std::string &line) {
+static std::string StripTrailingWhitespace(const std::string& line) {
   size_t end = line.size();
-  while (end > 0 && (line[end - 1] == ' ' || line[end - 1] == '\t' ||
-                     line[end - 1] == '\r' || line[end - 1] == '\n')) {
+  while (end > 0 && (line[end - 1] == ' ' || line[end - 1] == '\t' || line[end - 1] == '\r' ||
+                     line[end - 1] == '\n')) {
     --end;
   }
   return line.substr(0, end);
 }
 
 // Process a single raw source line. Increments line_idx only for macro lines.
-void ScmasmSyntaxParser::ProcessOneLine(const std::string &raw,
-                                        Section &section,
-                                        ConcreteSymbolTable &symbols,
-                                        const std::vector<std::string> &lines,
-                                        size_t &line_idx) {
+void ScmasmSyntaxParser::ProcessOneLine(const std::string& raw, Section& section,
+                                        ConcreteSymbolTable& symbols,
+                                        const std::vector<std::string>& lines, size_t& line_idx) {
   std::string line = StripLineNumber(raw);
   line = StripComments(line);
   line = StripEditorCommands(line);
@@ -412,28 +411,25 @@ void ScmasmSyntaxParser::ProcessOneLine(const std::string &raw,
 
   try {
     ParseLine(line, section, symbols, lines, line_idx);
-  } catch (const std::exception &e) {
+  } catch (const std::exception& e) {
     throw std::runtime_error(FormatError(e.what()));
   }
 }
 
 // Handles a line received while inside a .MA/.ENDM block.
-void ScmasmSyntaxParser::HandleMacroBodyLine(const std::string &line,
-                                             size_t &line_idx) {
+void ScmasmSyntaxParser::HandleMacroBodyLine(const std::string& line, size_t& line_idx) {
   std::string upper_line = Trim(line);
-  std::transform(upper_line.begin(), upper_line.end(), upper_line.begin(),
-                 ::toupper);
+  std::transform(upper_line.begin(), upper_line.end(), upper_line.begin(), ::toupper);
   if (upper_line.starts_with(".EM") || upper_line.starts_with(".ENDM")) {
     HandleEm();
     return;
   }
   current_macro_body_.push_back(line);
-  (void)line_idx; // line_idx still incremented by the outer loop
+  (void)line_idx;  // line_idx still incremented by the outer loop
 }
 
 // Flushes any pending label accumulated at end-of-file.
-void ScmasmSyntaxParser::FlushPendingLabel(Section &section,
-                                           ConcreteSymbolTable &symbols) {
+void ScmasmSyntaxParser::FlushPendingLabel(Section& section, ConcreteSymbolTable& symbols) {
   if (pending_label_.empty()) {
     return;
   }
@@ -464,7 +460,7 @@ void ScmasmSyntaxParser::FlushPendingLabel(Section &section,
 // Helper Functions
 // ============================================================================
 
-std::string ScmasmSyntaxParser::StripLineNumber(const std::string &line) {
+std::string ScmasmSyntaxParser::StripLineNumber(const std::string& line) {
   // SCMASM allows optional line numbers (0-65535) at start
   // Format: [0-9]+ followed by whitespace
 
@@ -516,23 +512,22 @@ std::string ScmasmSyntaxParser::StripLineNumber(const std::string &line) {
 
 // Returns label length (>= 1) or 0 if label chars are invalid.
 // Scans from line[1] (after the leading '*').
-static size_t ScanPrivateLabelLength(const std::string &line) {
+static size_t ScanPrivateLabelLength(const std::string& line) {
   size_t pos = 1;
   while (pos < line.size() && line[pos] != ' ' && line[pos] != '\t') {
     char c = line[pos];
     if (!std::isalnum(static_cast<unsigned char>(c)) && c != '.' && c != '_') {
-      return 0; // invalid char
+      return 0;  // invalid char
     }
     ++pos;
   }
-  return pos - 1; // number of label chars scanned
+  return pos - 1;  // number of label chars scanned
 }
 
 // Scan the opcode token starting after label_end whitespace.
 // Returns the uppercased opcode token, or "" if absent / not a dot-directive.
-static std::string ExtractOpcodeFromStarLine(const std::string &line,
-                                              size_t label_end) {
-  size_t op = label_end + 1; // skip leading '*'
+static std::string ExtractOpcodeFromStarLine(const std::string& line, size_t label_end) {
+  size_t op = label_end + 1;  // skip leading '*'
   while (op < line.size() && (line[op] == ' ' || line[op] == '\t')) {
     ++op;
   }
@@ -544,15 +539,14 @@ static std::string ExtractOpcodeFromStarLine(const std::string &line,
     ++end;
   }
   std::string tok = line.substr(op, end - op);
-  for (char &ch : tok) {
+  for (char& ch : tok) {
     ch = static_cast<char>(std::toupper(static_cast<unsigned char>(ch)));
   }
   return tok;
 }
 
 // Extract operand string (after opcode whitespace) trimmed of trailing ; comment.
-static std::string ExtractOperandFromStarLine(const std::string &line,
-                                               size_t label_end) {
+static std::string ExtractOperandFromStarLine(const std::string& line, size_t label_end) {
   size_t op = label_end + 1;
   while (op < line.size() && (line[op] == ' ' || line[op] == '\t')) {
     ++op;
@@ -572,14 +566,13 @@ static std::string ExtractOperandFromStarLine(const std::string &line,
   return operand;
 }
 
-bool ScmasmSyntaxParser::TryHandlePrivateLabelEq(const std::string &line,
-                                                 std::string &result) {
+bool ScmasmSyntaxParser::TryHandlePrivateLabelEq(const std::string& line, std::string& result) {
   size_t label_len = ScanPrivateLabelLength(line);
   if (label_len == 0) {
     result = "";
     return true;
   }
-  size_t label_end = label_len; // position past the last label char
+  size_t label_end = label_len;  // position past the last label char
 
   std::string opcode = ExtractOpcodeFromStarLine(line, label_end);
   if (opcode != ".EQ" && opcode != ".SE") {
@@ -598,9 +591,8 @@ bool ScmasmSyntaxParser::TryHandlePrivateLabelEq(const std::string &line,
   return true;
 }
 
-bool ScmasmSyntaxParser::TryHandleAsteriskLine(const std::string &line,
-                                               size_t first_non_space,
-                                               std::string &result) {
+bool ScmasmSyntaxParser::TryHandleAsteriskLine(const std::string& line, size_t first_non_space,
+                                               std::string& result) {
   if (first_non_space == std::string::npos || line[first_non_space] != '*') {
     return false;
   }
@@ -608,7 +600,7 @@ bool ScmasmSyntaxParser::TryHandleAsteriskLine(const std::string &line,
       std::isalpha(static_cast<unsigned char>(line[1]))) {
     return TryHandlePrivateLabelEq(line, result);
   }
-  result = ""; // Entire line is comment
+  result = "";  // Entire line is comment
   return true;
 }
 
@@ -616,7 +608,7 @@ bool ScmasmSyntaxParser::TryHandleAsteriskLine(const std::string &line,
 
 // Finds the position of a semicolon comment delimiter outside quoted strings.
 // Returns std::string::npos if no semicolon comment found.
-static size_t FindSemicolonComment(const std::string &line) {
+static size_t FindSemicolonComment(const std::string& line) {
   bool in_string = false;
   char string_delim = 0;
   for (size_t i = 0; i < line.length(); ++i) {
@@ -636,7 +628,7 @@ static size_t FindSemicolonComment(const std::string &line) {
   return std::string::npos;
 }
 
-std::string ScmasmSyntaxParser::StripComments(const std::string &line) {
+std::string ScmasmSyntaxParser::StripComments(const std::string& line) {
   // Two comment styles:
   // 1. * in column 1 (full-line comment)
   // 2. ; anywhere outside a string literal (rest of line is comment)
@@ -670,33 +662,33 @@ std::string ScmasmSyntaxParser::StripComments(const std::string &line) {
 
 // Returns true if a rest-of-line operand looks like an assembly operand
 // (rather than a file path), meaning the LOAD/SAVE command should not be stripped.
-static bool LooksLikeAsmOperand(const std::string &rest_of_line) {
+static bool LooksLikeAsmOperand(const std::string& rest_of_line) {
   if (rest_of_line.empty()) {
     return false;
   }
   char first_char = rest_of_line[0];
-  return first_char == '#' || first_char == '$' || first_char == '(' ||
-         first_char == '[' || first_char == '<' || first_char == '>';
+  return first_char == '#' || first_char == '$' || first_char == '(' || first_char == '[' ||
+         first_char == '<' || first_char == '>';
 }
 
 // Returns true if rest_of_line looks like a file path (contains slash/backslash).
-static bool LooksLikeFilePath(const std::string &rest_of_line) {
+static bool LooksLikeFilePath(const std::string& rest_of_line) {
   return rest_of_line.find('/') != std::string::npos ||
          rest_of_line.find('\\') != std::string::npos;
 }
 
-std::string ScmasmSyntaxParser::StripEditorCommands(const std::string &line) {
+std::string ScmasmSyntaxParser::StripEditorCommands(const std::string& line) {
   // Apple II line editor commands that should be ignored during assembly
   // Format: command at start of line (case-insensitive), optionally followed by
   // arguments
-  static const std::unordered_set<std::string> EDITOR_COMMANDS = {
-      "NEW", "AUTO", "MAN", "SAVE", "LOAD", "ASM", "DELETE", "LIST"};
+  static const std::unordered_set<std::string> EDITOR_COMMANDS = {"NEW",  "AUTO", "MAN",    "SAVE",
+                                                                  "LOAD", "ASM",  "DELETE", "LIST"};
 
   // Find first non-whitespace/control character
   // Include backspace (\b) which appears before MAN in some files
   size_t first_non_space = line.find_first_not_of(" \t\r\n\b");
   if (first_non_space == std::string::npos) {
-    return line; // Empty line
+    return line;  // Empty line
   }
 
   // Build uppercased first token
@@ -704,9 +696,8 @@ std::string ScmasmSyntaxParser::StripEditorCommands(const std::string &line) {
   while (token_end < line.length() && !std::isspace(line[token_end])) {
     token_end++;
   }
-  std::string upper_token =
-      line.substr(first_non_space, token_end - first_non_space);
-  for (char &c : upper_token) {
+  std::string upper_token = line.substr(first_non_space, token_end - first_non_space);
+  for (char& c : upper_token) {
     c = static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
   }
 
@@ -716,31 +707,30 @@ std::string ScmasmSyntaxParser::StripEditorCommands(const std::string &line) {
 
   // For LOAD/SAVE, only strip when operand looks like a file path.
   if (upper_token == "LOAD" || upper_token == "SAVE") {
-    std::string rest =
-        (token_end < line.length()) ? Trim(line.substr(token_end)) : "";
+    std::string rest = (token_end < line.length()) ? Trim(line.substr(token_end)) : "";
     if (!rest.empty() && LooksLikeAsmOperand(rest)) {
-      return line; // Assembly operand — don't strip
+      return line;  // Assembly operand — don't strip
     }
     return rest.empty() || LooksLikeFilePath(rest) ? "" : line;
   }
 
-  return ""; // All other editor commands — always strip
+  return "";  // All other editor commands — always strip
 }
 
 // Strip trailing whitespace only, preserving leading whitespace.
 // Used when preparing lines for ParseLine so that the original column
 // positions are preserved (leading whitespace distinguishes column-0 labels
 // from mnemonic-column opcodes).
-static std::string TrimRight(const std::string &str) {
+static std::string TrimRight(const std::string& str) {
   size_t end = str.size();
-  while (end > 0 && (str[end - 1] == ' ' || str[end - 1] == '\t' ||
-                     str[end - 1] == '\r' || str[end - 1] == '\n')) {
+  while (end > 0 && (str[end - 1] == ' ' || str[end - 1] == '\t' || str[end - 1] == '\r' ||
+                     str[end - 1] == '\n')) {
     --end;
   }
   return str.substr(0, end);
 }
 
-std::string ScmasmSyntaxParser::Trim(const std::string &str) {
+std::string ScmasmSyntaxParser::Trim(const std::string& str) {
   size_t start = str.find_first_not_of(" \t\r\n");
   if (start == std::string::npos) {
     return "";
@@ -748,8 +738,7 @@ std::string ScmasmSyntaxParser::Trim(const std::string &str) {
 
   // Strip leading non-printable non-tab control chars (Apple II editor
   // artifacts like \x01 SOH that sometimes precede instruction lines).
-  while (start < str.length() && (unsigned char)str[start] < 0x20 &&
-         str[start] != '\t') {
+  while (start < str.length() && (unsigned char)str[start] < 0x20 && str[start] != '\t') {
     start++;
   }
   if (start >= str.length()) {
@@ -760,7 +749,7 @@ std::string ScmasmSyntaxParser::Trim(const std::string &str) {
   return str.substr(start, end - start + 1);
 }
 
-std::string ScmasmSyntaxParser::FormatError(const std::string &message) const {
+std::string ScmasmSyntaxParser::FormatError(const std::string& message) const {
   std::ostringstream oss;
   oss << current_file_ << ":" << current_line_ << ": " << message;
   return oss.str();
@@ -776,12 +765,11 @@ std::string ScmasmSyntaxParser::FormatError(const std::string &message) const {
 
 // Build a DirectiveContext from parser state for a registry dispatch.
 static DirectiveContext MakeDirectiveContext(
-    ScmasmSyntaxParser *parser_state, Section *section,
-    ConcreteSymbolTable *symbols, uint32_t *current_address,
-    const std::string &current_file, int current_line,
-    const std::vector<std::string> *include_paths,
-    const std::map<std::string, std::string> *path_mappings,
-    const std::string &label, const std::string &operand) {
+    ScmasmSyntaxParser* parser_state, Section* section, ConcreteSymbolTable* symbols,
+    uint32_t* current_address, const std::string& current_file, int current_line,
+    const std::vector<std::string>* include_paths,
+    const std::map<std::string, std::string>* path_mappings, const std::string& label,
+    const std::string& operand) {
   DirectiveContext ctx;
   ctx.section = section;
   ctx.symbols = symbols;
@@ -798,17 +786,19 @@ static DirectiveContext MakeDirectiveContext(
 
 // Returns true if opcode is a control-flow directive that must not appear
 // without a matching opening directive (mismatched ELSE/FIN/ENDU).
-static bool IsMismatchedControlFlow(const std::string &opcode) {
+static bool IsMismatchedControlFlow(const std::string& opcode) {
   using namespace scmasm::directives;
   return opcode == ELSE || opcode == FIN || opcode == ENDU;
 }
 
 // Dispatch control-flow directives that are not in the registry.
 // Returns true if handled, false if the opcode is not a control-flow directive.
-bool ScmasmSyntaxParser::TryDispatchControlFlow(
-    const std::string &opcode_upper, const std::string &operand,
-    const std::string &label, Section &section, ConcreteSymbolTable &symbols,
-    const std::vector<std::string> &source, size_t &line_idx) {
+bool ScmasmSyntaxParser::TryDispatchControlFlow(const std::string& opcode_upper,
+                                                const std::string& operand,
+                                                const std::string& label, Section& section,
+                                                ConcreteSymbolTable& symbols,
+                                                const std::vector<std::string>& source,
+                                                size_t& line_idx) {
   using namespace scmasm::directives;
   if (opcode_upper == DO) {
     std::string do_operand = operand;
@@ -836,35 +826,34 @@ bool ScmasmSyntaxParser::TryDispatchControlFlow(
 }
 
 // Set of data-emitting directives that need a LabelAtom for address tracking.
-static const std::unordered_set<std::string_view> &DataEmittingDirectives() {
+static const std::unordered_set<std::string_view>& DataEmittingDirectives() {
   static const std::unordered_set<std::string_view> kSet = {
-      ".DA",  ".DB",  ".DFB", ".DW",  ".DS",  ".DC",  ".HB",  ".HX",
-      ".AS",  ".AT",  ".AZ",  ".CS",  ".CZ",  ".TF",  ".PS",  ".HS",
-      ".STR", ".BS",  ".BYT", ".WORD", ".PH",
+      ".DA", ".DB", ".DFB", ".DW", ".DS", ".DC",  ".HB", ".HX",  ".AS",   ".AT", ".AZ",
+      ".CS", ".CZ", ".TF",  ".PS", ".HS", ".STR", ".BS", ".BYT", ".WORD", ".PH",
   };
   return kSet;
 }
 
 // Define the label for a directive, using scmasm namespace scoping rules.
-void ScmasmSyntaxParser::DefineLabelForDirectiveSCMASM(
-    const std::string &opcode_upper, const std::string &label,
-    Section &section, ConcreteSymbolTable &symbols) {
-  auto scmasm_scope_fn = [this](const std::string &lbl) -> std::string {
+void ScmasmSyntaxParser::DefineLabelForDirectiveSCMASM(const std::string& opcode_upper,
+                                                       const std::string& label, Section& section,
+                                                       ConcreteSymbolTable& symbols) {
+  auto scmasm_scope_fn = [this](const std::string& lbl) -> std::string {
     return IsLocalLabel(lbl) ? ScopedLocalLabelName(lbl) : util::ToUpper(lbl);
   };
-  LabelPolicy policy =
-      ClassifyLabelPolicy(opcode_upper, !label.empty(), in_dummy_section_);
-  bool emit_atom =
-      DataEmittingDirectives().contains(opcode_upper) && !in_dummy_section_;
-  DefineLabelForDirective(label, current_address_, policy, emit_atom, symbols,
-                          section, local_labels_, last_global_label_,
-                          scmasm_scope_fn, ScmasmSyntaxParser::IsLocalLabel);
+  LabelPolicy policy = ClassifyLabelPolicy(opcode_upper, !label.empty(), in_dummy_section_);
+  bool emit_atom = DataEmittingDirectives().contains(opcode_upper) && !in_dummy_section_;
+  DefineLabelForDirective(label, current_address_, policy, emit_atom, symbols, section,
+                          local_labels_, last_global_label_, scmasm_scope_fn,
+                          ScmasmSyntaxParser::IsLocalLabel);
 }
 
-bool ScmasmSyntaxParser::TryHandleDirectiveLine(
-    const std::string &opcode_upper, const std::string &operand,
-    const std::string &label, Section &section, ConcreteSymbolTable &symbols,
-    const std::vector<std::string> &source, size_t &line_idx) {
+bool ScmasmSyntaxParser::TryHandleDirectiveLine(const std::string& opcode_upper,
+                                                const std::string& operand,
+                                                const std::string& label, Section& section,
+                                                ConcreteSymbolTable& symbols,
+                                                const std::vector<std::string>& source,
+                                                size_t& line_idx) {
   if (opcode_upper.empty() || opcode_upper[0] != '.') {
     return false;
   }
@@ -876,8 +865,7 @@ bool ScmasmSyntaxParser::TryHandleDirectiveLine(
     throw std::runtime_error(opcode_upper + " requires a label");
   }
 
-  if (TryDispatchControlFlow(opcode_upper, operand, label, section, symbols,
-                             source, line_idx)) {
+  if (TryDispatchControlFlow(opcode_upper, operand, label, section, symbols, source, line_idx)) {
     return true;
   }
 
@@ -887,30 +875,28 @@ bool ScmasmSyntaxParser::TryHandleDirectiveLine(
     throw std::runtime_error("Unknown directive: " + opcode_upper);
   }
   std::string directive_operand = ExpandLocalLabelsInOperand(operand);
-  DirectiveContext context = MakeDirectiveContext(
-      this, &section, &symbols, &current_address_, current_file_,
-      current_line_, &include_paths_, &path_mappings_, label,
-      directive_operand);
+  DirectiveContext context = MakeDirectiveContext(this, &section, &symbols, &current_address_,
+                                                  current_file_, current_line_, &include_paths_,
+                                                  &path_mappings_, label, directive_operand);
   it->second(context);
   return true;
 }
 
 // Parse comma-separated macro arguments from operand string.
 // Arguments stop at whitespace unless followed by a comma (SCMASM convention).
-static std::vector<std::string> ParseMacroArgs(const std::string &operand) {
+static std::vector<std::string> ParseMacroArgs(const std::string& operand) {
   std::vector<std::string> params;
   size_t pos = 0;
   while (pos < operand.length()) {
-    while (pos < operand.length() &&
-           (operand[pos] == ' ' || operand[pos] == '\t')) {
+    while (pos < operand.length() && (operand[pos] == ' ' || operand[pos] == '\t')) {
       ++pos;
     }
     if (pos >= operand.length()) {
       break;
     }
     size_t arg_start = pos;
-    while (pos < operand.length() && operand[pos] != ' ' &&
-           operand[pos] != '\t' && operand[pos] != ',') {
+    while (pos < operand.length() && operand[pos] != ' ' && operand[pos] != '\t' &&
+           operand[pos] != ',') {
       ++pos;
     }
     std::string param = operand.substr(arg_start, pos - arg_start);
@@ -918,18 +904,17 @@ static std::vector<std::string> ParseMacroArgs(const std::string &operand) {
       params.push_back(param);
     }
     if (pos < operand.length() && operand[pos] == ',') {
-      ++pos; // comma → another argument follows
+      ++pos;  // comma → another argument follows
     } else {
-      break; // whitespace/end → rest is inline comment
+      break;  // whitespace/end → rest is inline comment
     }
   }
   return params;
 }
 
-bool ScmasmSyntaxParser::TryHandleMacroLine(const std::string &opcode_upper,
-                                            const std::string &operand,
-                                            Section &section,
-                                            ConcreteSymbolTable &symbols) {
+bool ScmasmSyntaxParser::TryHandleMacroLine(const std::string& opcode_upper,
+                                            const std::string& operand, Section& section,
+                                            ConcreteSymbolTable& symbols) {
   // SCMASM uses >MacroName syntax for invocation; bare name also allowed.
   std::string macro_lookup_name = opcode_upper;
   if (!opcode_upper.empty() && opcode_upper[0] == '>') {
@@ -952,7 +937,7 @@ bool ScmasmSyntaxParser::TryHandleMacroLine(const std::string &opcode_upper,
 
 // Strip inline assembler comments: everything after the first whitespace that
 // is outside a quoted string ('x' / "x").  Modifies operand in-place.
-static void StripInlineComment(std::string &operand) {
+static void StripInlineComment(std::string& operand) {
   bool in_quote = false;
   char quote_ch = 0;
   for (size_t k = 0; k < operand.size(); ++k) {
@@ -972,9 +957,8 @@ static void StripInlineComment(std::string &operand) {
 }
 
 // Estimate instruction size, applying ZP correction when symbol is known.
-static size_t EstimateInstrSize(const std::string &opcode,
-                                const std::string &operand, CpuPlugin *cpu,
-                                ConcreteSymbolTable &symbols) {
+static size_t EstimateInstrSize(const std::string& opcode, const std::string& operand,
+                                CpuPlugin* cpu, ConcreteSymbolTable& symbols) {
   size_t est = cpu->GetInstructionSize(opcode, operand);
   if (est == 3) {
     try {
@@ -989,10 +973,9 @@ static size_t EstimateInstrSize(const std::string &opcode,
   return est;
 }
 
-void ScmasmSyntaxParser::HandleInstructionLine(const std::string &opcode_upper,
-                                               const std::string &operand,
-                                               Section &section,
-                                               ConcreteSymbolTable &symbols) {
+void ScmasmSyntaxParser::HandleInstructionLine(const std::string& opcode_upper,
+                                               const std::string& operand, Section& section,
+                                               ConcreteSymbolTable& symbols) {
   std::string instr_operand = operand;
   StripInlineComment(instr_operand);
 
@@ -1000,14 +983,12 @@ void ScmasmSyntaxParser::HandleInstructionLine(const std::string &opcode_upper,
   instr_operand = ExpandLocalLabelsInOperand(instr_operand);
 
   if (!in_dummy_section_) {
-    auto instr_atom =
-        std::make_shared<InstructionAtom>(opcode_upper, instr_operand);
+    auto instr_atom = std::make_shared<InstructionAtom>(opcode_upper, instr_operand);
     section.atoms.push_back(instr_atom);
   }
 
   if (cpu_) {
-    current_address_ += EstimateInstrSize(opcode_upper, instr_operand, cpu_,
-                                          symbols);
+    current_address_ += EstimateInstrSize(opcode_upper, instr_operand, cpu_, symbols);
   }
 }
 
@@ -1015,8 +996,8 @@ void ScmasmSyntaxParser::HandleInstructionLine(const std::string &opcode_upper,
 // ParseLine helpers
 // ============================================================================
 
-void ScmasmSyntaxParser::FlushPendingLabelAsAddress(
-    Section &section, ConcreteSymbolTable &symbols) {
+void ScmasmSyntaxParser::FlushPendingLabelAsAddress(Section& section,
+                                                    ConcreteSymbolTable& symbols) {
   if (pending_label_.empty()) {
     return;
   }
@@ -1045,10 +1026,9 @@ void ScmasmSyntaxParser::FlushPendingLabelAsAddress(
 
 // ============================================================================
 
-void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
-                                   ConcreteSymbolTable &symbols,
-                                   const std::vector<std::string> &source,
-                                   size_t &line_idx) {
+void ScmasmSyntaxParser::ParseLine(const std::string& line, Section& section,
+                                   ConcreteSymbolTable& symbols,
+                                   const std::vector<std::string>& source, size_t& line_idx) {
   size_t pos = 0;
 
   // Parse label (if present)
@@ -1068,7 +1048,7 @@ void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
       // Flush any previous pending label first (consecutive label-only lines
       // all share the same address as whatever instruction follows).
       FlushPendingLabelAsAddress(section, symbols);
-      pending_label_ = label; // defer; don't define yet
+      pending_label_ = label;  // defer; don't define yet
     }
     return;
   }
@@ -1100,26 +1080,23 @@ void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
 
   // Convert opcode to uppercase for comparison
   std::string opcode_upper = opcode;
-  std::transform(opcode_upper.begin(), opcode_upper.end(), opcode_upper.begin(),
-                 ::toupper);
+  std::transform(opcode_upper.begin(), opcode_upper.end(), opcode_upper.begin(), ::toupper);
 
   // Resolve pending label from previous label-only line.
   ResolvePendingLabel(opcode_upper, label, section, symbols);
 
   // Handle directives (must start with .)
-  if (TryHandleDirectiveLine(opcode_upper, operand, label, section, symbols,
-                             source, line_idx)) {
+  if (TryHandleDirectiveLine(opcode_upper, operand, label, section, symbols, source, line_idx)) {
     return;
   }
 
   // Not a directive — define label and create label atom for instructions/macros.
   {
-    auto scmasm_scope_fn = [this](const std::string &lbl) -> std::string {
+    auto scmasm_scope_fn = [this](const std::string& lbl) -> std::string {
       return IsLocalLabel(lbl) ? ScopedLocalLabelName(lbl) : util::ToUpper(lbl);
     };
-    DefineLabelForDirective(label, current_address_, LabelPolicy::AtPc,
-                            !in_dummy_section_, symbols, section, local_labels_,
-                            last_global_label_, scmasm_scope_fn,
+    DefineLabelForDirective(label, current_address_, LabelPolicy::AtPc, !in_dummy_section_, symbols,
+                            section, local_labels_, last_global_label_, scmasm_scope_fn,
                             ScmasmSyntaxParser::IsLocalLabel);
   }
 
@@ -1129,25 +1106,21 @@ void ScmasmSyntaxParser::ParseLine(const std::string &line, Section &section,
   }
 }
 
-void ScmasmSyntaxParser::ResolvePendingLabel(const std::string &opcode_upper,
-                                             std::string &label,
-                                             Section &section,
-                                             ConcreteSymbolTable &symbols) {
+void ScmasmSyntaxParser::ResolvePendingLabel(const std::string& opcode_upper, std::string& label,
+                                             Section& section, ConcreteSymbolTable& symbols) {
   if (pending_label_.empty()) {
     return;
   }
-  bool used_for_eq = (label.empty() &&
-                      (opcode_upper == ".EQ" || opcode_upper == ".SE"));
+  bool used_for_eq = (label.empty() && (opcode_upper == ".EQ" || opcode_upper == ".SE"));
   if (used_for_eq) {
     label = pending_label_;
   } else {
     std::string pl = pending_label_;
-    auto scmasm_scope_fn = [this](const std::string &lbl) -> std::string {
+    auto scmasm_scope_fn = [this](const std::string& lbl) -> std::string {
       return IsLocalLabel(lbl) ? ScopedLocalLabelName(lbl) : util::ToUpper(lbl);
     };
-    DefineLabelForDirective(pl, current_address_, LabelPolicy::AtPc,
-                            !in_dummy_section_, symbols, section, local_labels_,
-                            last_global_label_, scmasm_scope_fn,
+    DefineLabelForDirective(pl, current_address_, LabelPolicy::AtPc, !in_dummy_section_, symbols,
+                            section, local_labels_, last_global_label_, scmasm_scope_fn,
                             ScmasmSyntaxParser::IsLocalLabel);
   }
   pending_label_ = "";
@@ -1158,13 +1131,11 @@ void ScmasmSyntaxParser::ResolvePendingLabel(const std::string &opcode_upper,
 // ============================================================================
 
 // Advance pos past leading whitespace and Apple II control chars (0x01-0x1F).
-void ScmasmSyntaxParser::SkipToLabelStart(const std::string &line,
-                                          size_t &pos) {
+void ScmasmSyntaxParser::SkipToLabelStart(const std::string& line, size_t& pos) {
   while (pos < line.length() && std::isspace(line[pos])) {
     pos++;
   }
-  while (pos < line.length() && (unsigned char)line[pos] < 0x20 &&
-         line[pos] != '\t') {
+  while (pos < line.length() && (unsigned char)line[pos] < 0x20 && line[pos] != '\t') {
     pos++;
   }
 }
@@ -1172,8 +1143,7 @@ void ScmasmSyntaxParser::SkipToLabelStart(const std::string &line,
 // Scan the label body starting at pos. Handles optional '&' prefix.
 // Returns the label token (excluding '&'); advances pos past it.
 // Returns "" and resets pos if label is syntactically invalid.
-std::string ScmasmSyntaxParser::ScanLabelToken(const std::string &line,
-                                               size_t &pos) {
+std::string ScmasmSyntaxParser::ScanLabelToken(const std::string& line, size_t& pos) {
   const size_t label_start = pos;
   bool had_ampersand = (line[pos] == '&');
   if (had_ampersand) {
@@ -1183,8 +1153,8 @@ std::string ScmasmSyntaxParser::ScanLabelToken(const std::string &line,
       return "";
     }
   }
-  while (pos < line.length() && (std::isalnum(line[pos]) || line[pos] == '_' ||
-                                 line[pos] == '.' || line[pos] == ':')) {
+  while (pos < line.length() &&
+         (std::isalnum(line[pos]) || line[pos] == '_' || line[pos] == '.' || line[pos] == ':')) {
     pos++;
   }
   size_t name_start = had_ampersand ? label_start + 1 : label_start;
@@ -1192,7 +1162,7 @@ std::string ScmasmSyntaxParser::ScanLabelToken(const std::string &line,
 }
 
 // Returns true if a label token at a non-zero column is actually an opcode/macro.
-bool ScmasmSyntaxParser::IsOpcodeOrMacro(const std::string &label_upper) const {
+bool ScmasmSyntaxParser::IsOpcodeOrMacro(const std::string& label_upper) const {
   if (macros_.contains(label_upper)) {
     return true;
   }
@@ -1206,14 +1176,14 @@ bool ScmasmSyntaxParser::IsOpcodeOrMacro(const std::string &label_upper) const {
 // Returns true if ch is a valid first character for a SCMASM label.
 // Valid start chars: letter, '.', ':', '_', '&' (macro-label prefix).
 static bool IsValidLabelStartChar(char ch) {
-  return std::isalpha(static_cast<unsigned char>(ch)) || ch == '.' ||
-         ch == ':' || ch == '_' || ch == '&';
+  return std::isalpha(static_cast<unsigned char>(ch)) || ch == '.' || ch == ':' || ch == '_' ||
+         ch == '&';
 }
 
 // Returns true if a dot/colon-prefixed token contains alpha chars after the
 // prefix — meaning it is a directive token, not a local numeric label.
 // Local labels (e.g. ".0", ".99") contain only digits after the prefix.
-static bool IsDirectiveNotLocalLabel(const std::string &label) {
+static bool IsDirectiveNotLocalLabel(const std::string& label) {
   if (label.length() < 2 || (label[0] != '.' && label[0] != ':')) {
     return false;
   }
@@ -1225,9 +1195,8 @@ static bool IsDirectiveNotLocalLabel(const std::string &label) {
   return false;
 }
 
-std::string ScmasmSyntaxParser::ParseLabel(const std::string &line, size_t &pos,
-                                           Section & /*section*/,
-                                           ConcreteSymbolTable & /*symbols*/) {
+std::string ScmasmSyntaxParser::ParseLabel(const std::string& line, size_t& pos,
+                                           Section& /*section*/, ConcreteSymbolTable& /*symbols*/) {
   SkipToLabelStart(line, pos);
 
   // Labels must start with letter, ., :, _, or & (SCMASM & macro-label prefix)
@@ -1251,8 +1220,7 @@ std::string ScmasmSyntaxParser::ParseLabel(const std::string &line, size_t &pos,
   // opcode/macro names when the token is in the mnemonic column.
   if (label_start > 0) {
     std::string label_upper = label;
-    std::transform(label_upper.begin(), label_upper.end(), label_upper.begin(),
-                   ::toupper);
+    std::transform(label_upper.begin(), label_upper.end(), label_upper.begin(), ::toupper);
     if (IsOpcodeOrMacro(label_upper)) {
       pos = label_start;
       return "";
@@ -1272,8 +1240,8 @@ std::string ScmasmSyntaxParser::ParseLabel(const std::string &line, size_t &pos,
 // Directive Handlers
 // ============================================================================
 
-void ScmasmSyntaxParser::HandleOr(const std::string &operand, Section &section,
-                                  ConcreteSymbolTable &symbols) {
+void ScmasmSyntaxParser::HandleOr(const std::string& operand, Section& section,
+                                  ConcreteSymbolTable& symbols) {
   if (operand.empty()) {
     throw std::runtime_error(".OR requires an address");
   }
@@ -1289,10 +1257,9 @@ void ScmasmSyntaxParser::HandleOr(const std::string &operand, Section &section,
   current_address_ = address;
 }
 
-void ScmasmSyntaxParser::HandleEq(const DirectiveContext &ctx,
-                                  ConcreteSymbolTable &symbols) {
-  const std::string &label = ctx.label;
-  const std::string &operand = ctx.operand;
+void ScmasmSyntaxParser::HandleEq(const DirectiveContext& ctx, ConcreteSymbolTable& symbols) {
+  const std::string& label = ctx.label;
+  const std::string& operand = ctx.operand;
   if (operand.empty()) {
     throw std::runtime_error(".EQ requires a value");
   }
@@ -1305,10 +1272,9 @@ void ScmasmSyntaxParser::HandleEq(const DirectiveContext &ctx,
   symbols.Define(label, SymbolType::Equate, expr);
 }
 
-void ScmasmSyntaxParser::HandleSe(const DirectiveContext &ctx,
-                                  ConcreteSymbolTable &symbols) {
-  const std::string &label = ctx.label;
-  const std::string &operand = ctx.operand;
+void ScmasmSyntaxParser::HandleSe(const DirectiveContext& ctx, ConcreteSymbolTable& symbols) {
+  const std::string& label = ctx.label;
+  const std::string& operand = ctx.operand;
   if (operand.empty()) {
     throw std::runtime_error(".SE requires a value");
   }
@@ -1334,38 +1300,33 @@ void ScmasmSyntaxParser::HandleSe(const DirectiveContext &ctx,
 // Number Parsing helpers (one per format, CC ≤ 10 each)
 // ============================================================================
 
-uint32_t ScmasmSyntaxParser::ParseHexNumber(const std::string &trimmed) {
+uint32_t ScmasmSyntaxParser::ParseHexNumber(const std::string& trimmed) {
   // trimmed starts with '$'
   std::string hex = trimmed.substr(1);
   if (hex.empty()) {
-    throw std::runtime_error("Invalid hex number (no digits after $): " +
-                             trimmed);
+    throw std::runtime_error("Invalid hex number (no digits after $): " + trimmed);
   }
   for (char c : hex) {
     if (!std::isxdigit(static_cast<unsigned char>(c))) {
-      throw std::runtime_error("Invalid hex digit '" + std::string(1, c) +
-                               "' in: " + trimmed);
+      throw std::runtime_error("Invalid hex digit '" + std::string(1, c) + "' in: " + trimmed);
     }
   }
   try {
     return std::stoul(hex, nullptr, RADIX_HEXADECIMAL);
-  } catch (const std::exception &e) {
-    throw std::runtime_error("Failed to parse hex number '" + trimmed +
-                             "': " + e.what());
+  } catch (const std::exception& e) {
+    throw std::runtime_error("Failed to parse hex number '" + trimmed + "': " + e.what());
   }
 }
 
-uint32_t ScmasmSyntaxParser::ParseBinaryNumber(const std::string &trimmed) {
+uint32_t ScmasmSyntaxParser::ParseBinaryNumber(const std::string& trimmed) {
   // trimmed starts with '%'
   std::string binary = trimmed.substr(1);
   if (binary.empty()) {
-    throw std::runtime_error("Invalid binary number (no digits after %): " +
-                             trimmed);
+    throw std::runtime_error("Invalid binary number (no digits after %): " + trimmed);
   }
   for (char c : binary) {
     if (c != '0' && c != '1' && c != '.') {
-      throw std::runtime_error("Invalid binary digit '" + std::string(1, c) +
-                               "' in: " + trimmed);
+      throw std::runtime_error("Invalid binary digit '" + std::string(1, c) + "' in: " + trimmed);
     }
   }
   binary.erase(std::remove(binary.begin(), binary.end(), '.'), binary.end());
@@ -1374,34 +1335,31 @@ uint32_t ScmasmSyntaxParser::ParseBinaryNumber(const std::string &trimmed) {
   }
   try {
     return std::stoul(binary, nullptr, RADIX_BINARY);
-  } catch (const std::exception &e) {
-    throw std::runtime_error("Failed to parse binary number '" + trimmed +
-                             "': " + e.what());
+  } catch (const std::exception& e) {
+    throw std::runtime_error("Failed to parse binary number '" + trimmed + "': " + e.what());
   }
 }
 
-uint32_t ScmasmSyntaxParser::ParseCharConstant(const std::string &trimmed) {
+uint32_t ScmasmSyntaxParser::ParseCharConstant(const std::string& trimmed) {
   // Exactly 2 chars: delimiter + ASCII char
   char delimiter = trimmed[0];
   char c = trimmed[1];
   return ApplyHighBitRule({c, delimiter});
 }
 
-uint32_t ScmasmSyntaxParser::ParseDecimalNumber(const std::string &trimmed) {
+uint32_t ScmasmSyntaxParser::ParseDecimalNumber(const std::string& trimmed) {
   if (!std::isdigit(static_cast<unsigned char>(trimmed[0]))) {
     throw std::runtime_error("Not a valid number: " + trimmed);
   }
   for (char c : trimmed) {
     if (!std::isdigit(static_cast<unsigned char>(c))) {
-      throw std::runtime_error("Invalid decimal digit '" + std::string(1, c) +
-                               "' in: " + trimmed);
+      throw std::runtime_error("Invalid decimal digit '" + std::string(1, c) + "' in: " + trimmed);
     }
   }
   try {
     return std::stoul(trimmed, nullptr, RADIX_DECIMAL);
-  } catch (const std::exception &e) {
-    throw std::runtime_error("Failed to parse decimal number '" + trimmed +
-                             "': " + e.what());
+  } catch (const std::exception& e) {
+    throw std::runtime_error("Failed to parse decimal number '" + trimmed + "': " + e.what());
   }
 }
 
@@ -1409,7 +1367,7 @@ uint32_t ScmasmSyntaxParser::ParseDecimalNumber(const std::string &trimmed) {
 // Number Parsing — dispatch wrapper
 // ============================================================================
 
-uint32_t ScmasmSyntaxParser::ParseNumber(const std::string &str) {
+uint32_t ScmasmSyntaxParser::ParseNumber(const std::string& str) {
   std::string trimmed = Trim(str);
   if (trimmed.empty()) {
     throw std::runtime_error("Empty number string");
@@ -1421,15 +1379,13 @@ uint32_t ScmasmSyntaxParser::ParseNumber(const std::string &str) {
     return ParseBinaryNumber(trimmed);
   }
   // ASCII char constant: non-digit + exactly one char
-  if (!std::isdigit(static_cast<unsigned char>(trimmed[0])) &&
-      trimmed.length() == 2) {
+  if (!std::isdigit(static_cast<unsigned char>(trimmed[0])) && trimmed.length() == 2) {
     return ParseCharConstant(trimmed);
   }
   return ParseDecimalNumber(trimmed);
 }
 
-const std::string &ScmasmSyntaxParser::LocalLabelScope(
-    const std::string &label) const {
+const std::string& ScmasmSyntaxParser::LocalLabelScope(const std::string& label) const {
   // ':N' labels inside macros use the per-invocation scope so that multiple
   // expansions of the same macro under the same global label get unique names.
   if (!label.empty() && label[0] == ':' && macro_invocation_depth_ > 0) {
@@ -1438,8 +1394,7 @@ const std::string &ScmasmSyntaxParser::LocalLabelScope(
   return last_global_label_;
 }
 
-std::string ScmasmSyntaxParser::ScopedLocalLabelName(
-    const std::string &label) const {
+std::string ScmasmSyntaxParser::ScopedLocalLabelName(const std::string& label) const {
   // Build the fully-scoped internal name for a local label.
   //
   // For '.N' dot-prefix labels: insert '@' between the global scope and the
@@ -1453,14 +1408,14 @@ std::string ScmasmSyntaxParser::ScopedLocalLabelName(
   // For ':N' colon labels: the per-invocation macro scope already uniquifies
   // them, so no extra separator is needed (using ':' as-is is safe because ':N'
   // names cannot be mistaken for a user-defined global sub-label).
-  const std::string &scope = LocalLabelScope(label);
+  const std::string& scope = LocalLabelScope(label);
   if (!scope.empty() && !label.empty() && label[0] == '.') {
     return scope + "@" + label;
   }
   return scope + label;
 }
 
-bool ScmasmSyntaxParser::IsLocalLabel(const std::string &label) {
+bool ScmasmSyntaxParser::IsLocalLabel(const std::string& label) {
   // Local labels are . or : followed by one or more digits
   // Examples: .0-.9 (single digit), .10, .70, .81, .98, .99 (multi-digit)
   if (label.length() >= 2 && (label[0] == '.' || label[0] == ':')) {
@@ -1477,17 +1432,16 @@ bool ScmasmSyntaxParser::IsLocalLabel(const std::string &label) {
 // Replace bare '*' (current-address) tokens in expr_str with replacement.
 // '*' preceded by an identifier character is treated as multiplication and
 // left alone.
-static std::string SubstituteCurrentAddress(const std::string &expr_str,
-                                             const std::string &replacement) {
+static std::string SubstituteCurrentAddress(const std::string& expr_str,
+                                            const std::string& replacement) {
   std::string out = expr_str;
   size_t pos = 0;
   while ((pos = out.find('*', pos)) != std::string::npos) {
     bool preceded_by_ident = false;
     if (pos > 0) {
       char prev = out[pos - 1];
-      preceded_by_ident = std::isalnum(static_cast<unsigned char>(prev)) ||
-                          prev == '.' || prev == '_' || prev == '?' ||
-                          prev == '$';
+      preceded_by_ident = std::isalnum(static_cast<unsigned char>(prev)) || prev == '.' ||
+                          prev == '_' || prev == '?' || prev == '$';
     }
     if (preceded_by_ident) {
       ++pos;
@@ -1499,8 +1453,8 @@ static std::string SubstituteCurrentAddress(const std::string &expr_str,
   return out;
 }
 
-uint32_t ScmasmSyntaxParser::EvaluateExpression(const std::string &str,
-                                                ConcreteSymbolTable &symbols) {
+uint32_t ScmasmSyntaxParser::EvaluateExpression(const std::string& str,
+                                                ConcreteSymbolTable& symbols) {
   std::string trimmed = Trim(str);
 
   // Pre-expand char literals before the '*' substitution loop.
@@ -1530,13 +1484,15 @@ uint32_t ScmasmSyntaxParser::EvaluateExpression(const std::string &str,
     if (trimmed[0] == '%' && trimmed.find('.') != std::string::npos) {
       try {
         return ParseNumber(trimmed);
-      } catch (...) {}
+      } catch (...) {
+      }
     }
-    if (trimmed.length() == 2 && !std::isalnum(trimmed[0]) &&
-        trimmed[0] != '$' && trimmed[0] != '%') {
+    if (trimmed.length() == 2 && !std::isalnum(trimmed[0]) && trimmed[0] != '$' &&
+        trimmed[0] != '%') {
       try {
         return ParseNumber(trimmed);
-      } catch (...) {}
+      } catch (...) {
+      }
     }
   }
 
@@ -1565,15 +1521,13 @@ uint8_t ScmasmSyntaxParser::ApplyHighBitRule(HighBitChars hbc) {
 // Expand one local-label reference starting at operand[k].
 // Returns the expanded text and advances k past the reference.
 // Returns "" (without advancing k) if not a local-label reference.
-static std::string TryExpandLocalRef(const std::string &operand, size_t &k,
-                                     const std::string &scope_fn_result_dot,
-                                     const std::string &scope_fn_result_colon) {
+static std::string TryExpandLocalRef(const std::string& operand, size_t& k,
+                                     const std::string& scope_fn_result_dot,
+                                     const std::string& scope_fn_result_colon) {
   char c = operand[k];
-  bool at_word_start =
-      (k == 0) || (!std::isalnum((unsigned char)operand[k - 1]) &&
-                   operand[k - 1] != '_' && operand[k - 1] != '.');
-  if (!at_word_start || k + 1 >= operand.size() ||
-      !std::isdigit((unsigned char)operand[k + 1])) {
+  bool at_word_start = (k == 0) || (!std::isalnum((unsigned char)operand[k - 1]) &&
+                                    operand[k - 1] != '_' && operand[k - 1] != '.');
+  if (!at_word_start || k + 1 >= operand.size() || !std::isdigit((unsigned char)operand[k + 1])) {
     return "";
   }
   // Consume label like ".10" or ":5"
@@ -1582,8 +1536,7 @@ static std::string TryExpandLocalRef(const std::string &operand, size_t &k,
   while (kk < operand.size() && std::isdigit((unsigned char)operand[kk])) {
     ref_label += operand[kk++];
   }
-  const std::string &scope_result =
-      (c == '.') ? scope_fn_result_dot : scope_fn_result_colon;
+  const std::string& scope_result = (c == '.') ? scope_fn_result_dot : scope_fn_result_colon;
   std::string out = scope_result;
   if (c == '.') {
     out += '@';
@@ -1596,8 +1549,7 @@ static std::string TryExpandLocalRef(const std::string &operand, size_t &k,
   return out;
 }
 
-std::string ScmasmSyntaxParser::ExpandLocalLabelsInOperand(
-    const std::string &operand) const {
+std::string ScmasmSyntaxParser::ExpandLocalLabelsInOperand(const std::string& operand) const {
   if (operand.empty()) {
     return operand;
   }
@@ -1638,19 +1590,17 @@ std::string ScmasmSyntaxParser::ExpandLocalLabelsInOperand(
 // Return true when character at s[i] appears in a context that could be a
 // SCMASM character literal (preceded by arithmetic op/# or at position 0 with
 // matching closing delimiter).
-static bool IsCharLiteralContext(const std::string &s, size_t i) {
+static bool IsCharLiteralContext(const std::string& s, size_t i) {
   if (i > 0) {
     char prev = s[i - 1];
-    return (prev == '#' || prev == '+' || prev == '-' || prev == '*' ||
-            prev == '/' || prev == '^' || prev == '(' || prev == '<' ||
-            prev == '>');
+    return (prev == '#' || prev == '+' || prev == '-' || prev == '*' || prev == '/' ||
+            prev == '^' || prev == '(' || prev == '<' || prev == '>');
   }
   // Position 0: only when both delimiters present (e.g., '*' or ' ').
   return (i + 2 < s.size() && s[i + 2] == s[i]);
 }
 
-std::string ScmasmSyntaxParser::ExpandCharLiteralsInExpr(
-    const std::string &s) {
+std::string ScmasmSyntaxParser::ExpandCharLiteralsInExpr(const std::string& s) {
   // Replace SCMASM character literals ("X", 'X', "X", 'X) with their
   // numeric hex equivalents so that the generic ParseExpression engine can
   // evaluate expressions like #"0"+1 or #'A'.
@@ -1660,8 +1610,7 @@ std::string ScmasmSyntaxParser::ExpandCharLiteralsInExpr(
   while (i < s.size()) {
     char c = s[i];
     bool is_quote = (c == '"' || c == '\'');
-    if (is_quote && i + 1 < s.size() &&
-        std::isprint(static_cast<unsigned char>(s[i + 1])) &&
+    if (is_quote && i + 1 < s.size() && std::isprint(static_cast<unsigned char>(s[i + 1])) &&
         IsCharLiteralContext(s, i)) {
       char delim = c;
       char ch = s[i + 1];
@@ -1679,9 +1628,8 @@ std::string ScmasmSyntaxParser::ExpandCharLiteralsInExpr(
   return result;
 }
 
-std::shared_ptr<Expression>
-ScmasmSyntaxParser::ParseExpression(const std::string &str,
-                                    ConcreteSymbolTable &symbols) {
+std::shared_ptr<Expression> ScmasmSyntaxParser::ParseExpression(const std::string& str,
+                                                                ConcreteSymbolTable& symbols) {
   // Phase 2: Use shared ExpressionParser with SCMASM number parser
   // Normalize expression to uppercase for case-insensitive symbol lookup
   std::string normalized_expr = util::ToUpper(str);
@@ -1705,8 +1653,7 @@ ScmasmSyntaxParser::ParseExpression(const std::string &str,
 // Phase 2: String & Data Directives Implementation
 // ============================================================================
 
-char ScmasmSyntaxParser::ParseString(const std::string &operand,
-                                     std::vector<uint8_t> &result) {
+char ScmasmSyntaxParser::ParseString(const std::string& operand, std::vector<uint8_t>& result) {
   result.clear();
 
   std::string trimmed = Trim(operand);
@@ -1733,8 +1680,8 @@ char ScmasmSyntaxParser::ParseString(const std::string &operand,
   return delimiter;
 }
 
-void ScmasmSyntaxParser::HandleAs(const std::string &operand, Section &section,
-                                  ConcreteSymbolTable & /*symbols*/) {
+void ScmasmSyntaxParser::HandleAs(const std::string& operand, Section& section,
+                                  ConcreteSymbolTable& /*symbols*/) {
   std::vector<uint8_t> data;
   ParseString(operand, data);
 
@@ -1742,8 +1689,8 @@ void ScmasmSyntaxParser::HandleAs(const std::string &operand, Section &section,
   section.atoms.push_back(atom);
 }
 
-void ScmasmSyntaxParser::HandleAt(const std::string &operand, Section &section,
-                                  ConcreteSymbolTable & /*symbols*/) {
+void ScmasmSyntaxParser::HandleAt(const std::string& operand, Section& section,
+                                  ConcreteSymbolTable& /*symbols*/) {
   std::vector<uint8_t> data;
   ParseString(operand, data);
 
@@ -1756,8 +1703,8 @@ void ScmasmSyntaxParser::HandleAt(const std::string &operand, Section &section,
   section.atoms.push_back(atom);
 }
 
-void ScmasmSyntaxParser::HandleAz(const std::string &operand, Section &section,
-                                  ConcreteSymbolTable & /*symbols*/) {
+void ScmasmSyntaxParser::HandleAz(const std::string& operand, Section& section,
+                                  ConcreteSymbolTable& /*symbols*/) {
   // SCMASM prefix modifiers before the opening delimiter:
   //   -"text"  set high bit on ALL bytes (Apple II normal-video encoding)
   // Strip the prefix and set flag for post-processing.
@@ -1772,7 +1719,7 @@ void ScmasmSyntaxParser::HandleAz(const std::string &operand, Section &section,
   ParseString(trimmed_op, data);
 
   if (high_bit_all) {
-    for (auto &b : data) {
+    for (auto& b : data) {
       b |= 0x80;
     }
   }
@@ -1785,9 +1732,8 @@ void ScmasmSyntaxParser::HandleAz(const std::string &operand, Section &section,
 }
 
 // Emit bytes for a single .DA value token according to its prefix character.
-void ScmasmSyntaxParser::EmitDaValue(const std::string &value_trimmed,
-                                     std::vector<uint8_t> &data,
-                                     ConcreteSymbolTable &symbols) {
+void ScmasmSyntaxParser::EmitDaValue(const std::string& value_trimmed, std::vector<uint8_t>& data,
+                                     ConcreteSymbolTable& symbols) {
   char prefix = value_trimmed[0];
   if (prefix == '#') {
     // 8-bit: low byte only
@@ -1818,8 +1764,8 @@ void ScmasmSyntaxParser::EmitDaValue(const std::string &value_trimmed,
   }
 }
 
-void ScmasmSyntaxParser::HandleDa(const std::string &operand, Section &section,
-                                  ConcreteSymbolTable &symbols) {
+void ScmasmSyntaxParser::HandleDa(const std::string& operand, Section& section,
+                                  ConcreteSymbolTable& symbols) {
   std::vector<uint8_t> data;
 
   // Split comma-separated operand into individual value tokens.
@@ -1844,7 +1790,7 @@ void ScmasmSyntaxParser::HandleDa(const std::string &operand, Section &section,
     ++pos;
   }
 
-  for (const auto &val : values) {
+  for (const auto& val : values) {
     std::string value_trimmed = Trim(val);
     if (value_trimmed.empty()) {
       continue;
@@ -1859,8 +1805,8 @@ void ScmasmSyntaxParser::HandleDa(const std::string &operand, Section &section,
   current_address_ += data.size();
 }
 
-void ScmasmSyntaxParser::HandleHs(const std::string &operand, Section &section,
-                                  ConcreteSymbolTable & /*symbols*/) {
+void ScmasmSyntaxParser::HandleHs(const std::string& operand, Section& section,
+                                  ConcreteSymbolTable& /*symbols*/) {
   std::vector<uint8_t> data;
 
   std::string trimmed = Trim(operand);
@@ -1870,8 +1816,7 @@ void ScmasmSyntaxParser::HandleHs(const std::string &operand, Section &section,
   for (char c : trimmed) {
     if (!std::isspace(c)) {
       if (!std::isxdigit(c)) {
-        throw std::runtime_error("Invalid hex digit in .HS: " +
-                                 std::string(1, c));
+        throw std::runtime_error("Invalid hex digit in .HS: " + std::string(1, c));
       }
       hex_digits += c;
     }
@@ -1885,8 +1830,7 @@ void ScmasmSyntaxParser::HandleHs(const std::string &operand, Section &section,
   // Convert pairs to bytes
   for (size_t i = 0; i < hex_digits.length(); i += 2) {
     std::string byte_str = hex_digits.substr(i, 2);
-    auto byte =
-        static_cast<uint8_t>(std::stoi(byte_str, nullptr, RADIX_HEXADECIMAL));
+    auto byte = static_cast<uint8_t>(std::stoi(byte_str, nullptr, RADIX_HEXADECIMAL));
     data.push_back(byte);
   }
 
@@ -1894,8 +1838,8 @@ void ScmasmSyntaxParser::HandleHs(const std::string &operand, Section &section,
   section.atoms.push_back(atom);
 }
 
-void ScmasmSyntaxParser::HandleBs(const std::string &operand, Section &section,
-                                  ConcreteSymbolTable &symbols) {
+void ScmasmSyntaxParser::HandleBs(const std::string& operand, Section& section,
+                                  ConcreteSymbolTable& symbols) {
   // .BS (Block Storage) - Reserve N bytes of space
   // SCMASM syntax: .BS count
   // Where count is a decimal or hex number ($hex, %binary)
@@ -1929,9 +1873,9 @@ void ScmasmSyntaxParser::HandleBs(const std::string &operand, Section &section,
 // Phase 3: Macros, Conditionals, Local Labels, Loops
 // ============================================================================
 
-void ScmasmSyntaxParser::HandleMa(const DirectiveContext &ctx) {
-  const std::string &label = ctx.label;
-  const std::string &operand = ctx.operand;
+void ScmasmSyntaxParser::HandleMa(const DirectiveContext& ctx) {
+  const std::string& label = ctx.label;
+  const std::string& operand = ctx.operand;
   // Macro name can come from label or operand
   std::string macro_name;
   if (!label.empty()) {
@@ -1943,8 +1887,7 @@ void ScmasmSyntaxParser::HandleMa(const DirectiveContext &ctx) {
   }
 
   // Normalize macro name to uppercase for case-insensitive lookup
-  std::transform(macro_name.begin(), macro_name.end(), macro_name.begin(),
-                 ::toupper);
+  std::transform(macro_name.begin(), macro_name.end(), macro_name.begin(), ::toupper);
 
   // Start macro definition
   in_macro_definition_ = true;
@@ -1970,21 +1913,21 @@ void ScmasmSyntaxParser::HandleEm() {
   current_macro_body_.clear();
 }
 
-std::string ScmasmSyntaxParser::GetCurrentFile() const { return current_file_; }
+std::string ScmasmSyntaxParser::GetCurrentFile() const {
+  return current_file_;
+}
 
-void ScmasmSyntaxParser::SetCurrentFile(const std::string &file) {
+void ScmasmSyntaxParser::SetCurrentFile(const std::string& file) {
   current_file_ = file;
 }
 
-void ScmasmSyntaxParser::InvokeMacro(const std::string &name,
-                                     const std::vector<std::string> &params,
-                                     Section &section,
-                                     ConcreteSymbolTable &symbols) {
+void ScmasmSyntaxParser::InvokeMacro(const std::string& name,
+                                     const std::vector<std::string>& params, Section& section,
+                                     ConcreteSymbolTable& symbols) {
   // Check for infinite recursion
   if (macro_invocation_depth_ >= MAX_MACRO_NESTING_DEPTH) {
     throw std::runtime_error("Macro nesting too deep (max " +
-                             std::to_string(MAX_MACRO_NESTING_DEPTH) +
-                             " levels)");
+                             std::to_string(MAX_MACRO_NESTING_DEPTH) + " levels)");
   }
 
   // Find macro
@@ -1993,11 +1936,11 @@ void ScmasmSyntaxParser::InvokeMacro(const std::string &name,
     throw std::runtime_error("Undefined macro: " + name);
   }
 
-  const MacroDef &macro = it->second;
+  const MacroDef& macro = it->second;
 
   // Expand macro body - substitute parameters first
   std::vector<std::string> expanded_lines;
-  for (const auto &line : macro.lines) {
+  for (const auto& line : macro.lines) {
     std::string expanded = SubstituteParameters(line, params);
     expanded_lines.push_back(expanded);
   }
@@ -2015,13 +1958,11 @@ void ScmasmSyntaxParser::InvokeMacro(const std::string &name,
   size_t line_idx = 0;
   while (line_idx < expanded_lines.size()) {
     try {
-      ParseLine(expanded_lines[line_idx], section, symbols, expanded_lines,
-                line_idx);
-    } catch (const std::exception &e) {
+      ParseLine(expanded_lines[line_idx], section, symbols, expanded_lines, line_idx);
+    } catch (const std::exception& e) {
       macro_invocation_depth_--;
       current_macro_label_scope_ = saved_macro_scope;
-      throw std::runtime_error(std::string("In macro ") + name + ": " +
-                               e.what());
+      throw std::runtime_error(std::string("In macro ") + name + ": " + e.what());
     }
     line_idx++;
   }
@@ -2032,9 +1973,8 @@ void ScmasmSyntaxParser::InvokeMacro(const std::string &name,
 
 // Try to substitute "]N" or "]#" parameter references.
 // Returns chars consumed (0 = not a substitution), appends to result.
-static size_t TrySubstituteSquare(const std::string &line, size_t pos,
-                                   const std::vector<std::string> &params,
-                                   std::string &result) {
+static size_t TrySubstituteSquare(const std::string& line, size_t pos,
+                                  const std::vector<std::string>& params, std::string& result) {
   if (line[pos] != ']' || pos + 1 >= line.length()) {
     return 0;
   }
@@ -2055,9 +1995,8 @@ static size_t TrySubstituteSquare(const std::string &line, size_t pos,
 
 // Try to substitute "\N" parameter references (0-based).
 // Returns chars consumed (0 = not a substitution), appends to result.
-static size_t TrySubstituteBackslash(const std::string &line, size_t pos,
-                                      const std::vector<std::string> &params,
-                                      std::string &result) {
+static size_t TrySubstituteBackslash(const std::string& line, size_t pos,
+                                     const std::vector<std::string>& params, std::string& result) {
   if (line[pos] != '\\' || pos + 1 >= line.length()) {
     return 0;
   }
@@ -2072,8 +2011,8 @@ static size_t TrySubstituteBackslash(const std::string &line, size_t pos,
   return 0;
 }
 
-std::string ScmasmSyntaxParser::SubstituteParameters(
-    const std::string &line, const std::vector<std::string> &params) {
+std::string ScmasmSyntaxParser::SubstituteParameters(const std::string& line,
+                                                     const std::vector<std::string>& params) {
   std::string result;
   size_t pos = 0;
 
@@ -2099,7 +2038,7 @@ std::string ScmasmSyntaxParser::SubstituteParameters(
 // Extract the opcode token from a (pre-trimmed) source line.
 // Returns the uppercased opcode (the 2nd whitespace-delimited token, since the
 // first may be a label).
-static std::string ExtractUpperOpcode(const std::string &ln) {
+static std::string ExtractUpperOpcode(const std::string& ln) {
   size_t pos = 0;
   // Skip possible label token
   while (pos < ln.length() && !std::isspace(ln[pos])) {
@@ -2118,7 +2057,7 @@ static std::string ExtractUpperOpcode(const std::string &ln) {
 }
 
 // Extract the uppercased first token from ln.
-static std::string ExtractFirstToken(const std::string &ln) {
+static std::string ExtractFirstToken(const std::string& ln) {
   size_t end = ln.find(' ');
   std::string tok = (end == std::string::npos) ? ln : ln.substr(0, end);
   std::transform(tok.begin(), tok.end(), tok.begin(), ::toupper);
@@ -2126,7 +2065,7 @@ static std::string ExtractFirstToken(const std::string &ln) {
 }
 
 ScmasmSyntaxParser::DoBlockBounds ScmasmSyntaxParser::FindDoBlockBounds(
-    const std::vector<std::string> &source, size_t start_idx) {
+    const std::vector<std::string>& source, size_t start_idx) {
   DoBlockBounds bounds{std::string::npos, std::string::npos};
   int nesting = 1;
 
@@ -2137,7 +2076,7 @@ ScmasmSyntaxParser::DoBlockBounds ScmasmSyntaxParser::FindDoBlockBounds(
     }
 
     std::string first_tok = ExtractFirstToken(ln);
-    std::string directive  = ExtractUpperOpcode(ln);
+    std::string directive = ExtractUpperOpcode(ln);
 
     using namespace scmasm::directives;
     if (first_tok == DO || directive == DO) {
@@ -2155,9 +2094,9 @@ ScmasmSyntaxParser::DoBlockBounds ScmasmSyntaxParser::FindDoBlockBounds(
   return bounds;
 }
 
-void ScmasmSyntaxParser::EmitDoLabel(const std::string &label, uint32_t addr,
-                                     size_t atom_insert_pos, Section &section,
-                                     ConcreteSymbolTable &symbols) {
+void ScmasmSyntaxParser::EmitDoLabel(const std::string& label, uint32_t addr,
+                                     size_t atom_insert_pos, Section& section,
+                                     ConcreteSymbolTable& symbols) {
   if (label.empty()) {
     return;
   }
@@ -2178,9 +2117,9 @@ void ScmasmSyntaxParser::EmitDoLabel(const std::string &label, uint32_t addr,
   }
 }
 
-void ScmasmSyntaxParser::DefineBoundaryLabel(
-    const std::vector<std::string> &source, size_t boundary_idx,
-    Section &section, ConcreteSymbolTable &symbols) {
+void ScmasmSyntaxParser::DefineBoundaryLabel(const std::vector<std::string>& source,
+                                             size_t boundary_idx, Section& section,
+                                             ConcreteSymbolTable& symbols) {
   if (boundary_idx >= source.size()) {
     return;
   }
@@ -2220,13 +2159,11 @@ void ScmasmSyntaxParser::DefineBoundaryLabel(
   }
 }
 
-void ScmasmSyntaxParser::HandleDo(const DirectiveContext &ctx,
-                                  Section &section,
-                                  ConcreteSymbolTable &symbols,
-                                  const std::vector<std::string> &source,
-                                  size_t &line_idx) {
-  const std::string &label = ctx.label;
-  const std::string &operand = ctx.operand;
+void ScmasmSyntaxParser::HandleDo(const DirectiveContext& ctx, Section& section,
+                                  ConcreteSymbolTable& symbols,
+                                  const std::vector<std::string>& source, size_t& line_idx) {
+  const std::string& label = ctx.label;
+  const std::string& operand = ctx.operand;
   if (operand.empty()) {
     throw std::runtime_error(".DO requires an expression");
   }
@@ -2295,8 +2232,8 @@ void ScmasmSyntaxParser::HandleDo(const DirectiveContext &ctx,
   line_idx = fin_line;
 }
 
-size_t ScmasmSyntaxParser::FindEnduBounds(
-    const std::vector<std::string> &source, size_t start_idx) const {
+size_t ScmasmSyntaxParser::FindEnduBounds(const std::vector<std::string>& source,
+                                          size_t start_idx) const {
   using namespace scmasm::directives;
   int nesting = 1;
   for (size_t i = start_idx + 1; i < source.size(); ++i) {
@@ -2313,37 +2250,32 @@ size_t ScmasmSyntaxParser::FindEnduBounds(
 }
 
 // Define label (local or global) at start_address; insert LabelAtom at pos.
-static void DefineLuLabel(
-    const std::string &label, uint32_t start_address,
-    size_t label_atom_position, Section &section, ConcreteSymbolTable &symbols,
-    std::unordered_map<std::string, uint32_t> &local_labels,
-    std::string &last_global,
-    bool is_local_fn(const std::string &),
-    const std::function<std::string(const std::string &)> &scope_fn) {
+static void DefineLuLabel(const std::string& label, uint32_t start_address,
+                          size_t label_atom_position, Section& section,
+                          ConcreteSymbolTable& symbols,
+                          std::unordered_map<std::string, uint32_t>& local_labels,
+                          std::string& last_global, bool is_local_fn(const std::string&),
+                          const std::function<std::string(const std::string&)>& scope_fn) {
   if (is_local_fn(label)) {
     local_labels[label] = start_address;
     std::string scoped = scope_fn(label);
-    symbols.Define(scoped, SymbolType::Label,
-                   std::make_shared<LiteralExpr>(start_address));
+    symbols.Define(scoped, SymbolType::Label, std::make_shared<LiteralExpr>(start_address));
     auto atom = std::make_shared<LabelAtom>(scoped, start_address);
     section.atoms.insert(section.atoms.begin() + label_atom_position, atom);
   } else {
     std::string norm = util::ToUpper(label);
-    symbols.Define(norm, SymbolType::Label,
-                   std::make_shared<LiteralExpr>(start_address));
+    symbols.Define(norm, SymbolType::Label, std::make_shared<LiteralExpr>(start_address));
     auto atom = std::make_shared<LabelAtom>(norm, start_address);
     section.atoms.insert(section.atoms.begin() + label_atom_position, atom);
     last_global = norm;
   }
 }
 
-void ScmasmSyntaxParser::HandleLu(const DirectiveContext &ctx,
-                                  Section &section,
-                                  ConcreteSymbolTable &symbols,
-                                  const std::vector<std::string> &source,
-                                  size_t &line_idx) {
-  const std::string &label = ctx.label;
-  const std::string &operand = ctx.operand;
+void ScmasmSyntaxParser::HandleLu(const DirectiveContext& ctx, Section& section,
+                                  ConcreteSymbolTable& symbols,
+                                  const std::vector<std::string>& source, size_t& line_idx) {
+  const std::string& label = ctx.label;
+  const std::string& operand = ctx.operand;
   if (operand.empty()) {
     throw std::runtime_error(".LU requires an expression");
   }
@@ -2376,12 +2308,9 @@ void ScmasmSyntaxParser::HandleLu(const DirectiveContext &ctx,
   }
 
   if (!label.empty()) {
-    DefineLuLabel(label, start_address, label_atom_position, section, symbols,
-                  local_labels_, last_global_label_,
-                  ScmasmSyntaxParser::IsLocalLabel,
-                  [this](const std::string &lbl) {
-                    return ScopedLocalLabelName(lbl);
-                  });
+    DefineLuLabel(label, start_address, label_atom_position, section, symbols, local_labels_,
+                  last_global_label_, ScmasmSyntaxParser::IsLocalLabel,
+                  [this](const std::string& lbl) { return ScopedLocalLabelName(lbl); });
   }
 
   line_idx = endu_line;
@@ -2391,7 +2320,9 @@ void ScmasmSyntaxParser::HandleLu(const DirectiveContext &ctx,
 // Dummy Section Management
 // ============================================================================
 
-bool ScmasmSyntaxParser::InDummySection() const { return in_dummy_section_; }
+bool ScmasmSyntaxParser::InDummySection() const {
+  return in_dummy_section_;
+}
 
 void ScmasmSyntaxParser::StartDummySection(uint32_t current_address) {
   dummy_saved_address_ = current_address;
@@ -2403,7 +2334,9 @@ uint32_t ScmasmSyntaxParser::EndDummySection() {
   return dummy_saved_address_;
 }
 
-bool ScmasmSyntaxParser::InPhase() const { return in_phase_; }
+bool ScmasmSyntaxParser::InPhase() const {
+  return in_phase_;
+}
 
 void ScmasmSyntaxParser::StartPhase(PhaseAddresses addrs) {
   phase_real_addr_ = addrs.real_addr;
@@ -2434,10 +2367,9 @@ uint32_t ScmasmSyntaxParser::GetPhaseRealAddress() const {
   return phase_real_addr_;
 }
 
-uint32_t
-ScmasmSyntaxParser::GetCurrentRealAddress(uint32_t current_virtual) const {
+uint32_t ScmasmSyntaxParser::GetCurrentRealAddress(uint32_t current_virtual) const {
   if (!in_phase_) {
-    return current_virtual; // Not in phase, virtual == real
+    return current_virtual;  // Not in phase, virtual == real
   }
 
   // Calculate bytes emitted during phase
@@ -2451,4 +2383,4 @@ ScmasmSyntaxParser::GetCurrentRealAddress(uint32_t current_virtual) const {
 // Directive Registry
 // ============================================================================
 
-} // namespace xasm
+}  // namespace xasm

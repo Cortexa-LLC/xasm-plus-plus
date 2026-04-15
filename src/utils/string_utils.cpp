@@ -4,17 +4,17 @@
  */
 
 #include "xasm++/util/string_utils.h"
+
 #include <algorithm>
 #include <cctype>
 #include <stdexcept>
 
-
 namespace xasm::util {
 
-std::string Trim(const std::string &str) {
+std::string Trim(const std::string& str) {
   std::string result;
   for (char c : str) {
-    if (c != '\r') { // Remove carriage return characters
+    if (c != '\r') {  // Remove carriage return characters
       result += c;
     }
   }
@@ -26,7 +26,7 @@ std::string Trim(const std::string &str) {
   return result.substr(start, end - start + 1);
 }
 
-std::string ToUpper(const std::string &str) {
+std::string ToUpper(const std::string& str) {
   std::string result = str;
   std::transform(result.begin(), result.end(), result.begin(),
                  [](unsigned char c) { return std::toupper(c); });
@@ -36,5 +36,4 @@ std::string ToUpper(const std::string &str) {
 // ParseHex moved to src/core/parse_utils.cpp for consolidation
 // See: .ai/tasks/2026-01-31_refactor-number-parsing/
 
-} // namespace xasm::util
-
+}  // namespace xasm::util

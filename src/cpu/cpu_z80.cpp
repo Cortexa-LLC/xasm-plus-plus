@@ -8,9 +8,11 @@
  */
 
 #include "xasm++/cpu/cpu_z80.h"
+
+#include <algorithm>
+
 #include "xasm++/cpu/opcodes_z80.h"
 #include "xasm++/util/string_utils.h"
-#include <algorithm>
 
 namespace xasm {
 
@@ -20,9 +22,8 @@ namespace Opcodes = Z80Opcodes;
 // CpuPlugin Interface Implementation
 // ============================================================================
 
-std::vector<uint8_t>
-CpuZ80::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
-                          const std::string &operand_str) const {
+std::vector<uint8_t> CpuZ80::EncodeInstruction(const std::string& mnemonic, uint32_t operand,
+                                               const std::string& operand_str) const {
   // ── Parse mnemonic string to enum (single map lookup) ───────────────────
   const Z80Mnemonic mn = ParseZ80Mnemonic(mnemonic);
 
@@ -106,28 +107,53 @@ CpuZ80::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
     case Z80Mnemonic::BIT:
     case Z80Mnemonic::SET:
     case Z80Mnemonic::RES:
-    case Z80Mnemonic::RL: case Z80Mnemonic::RLA:
-    case Z80Mnemonic::RLC: case Z80Mnemonic::RLCA:
-    case Z80Mnemonic::RR: case Z80Mnemonic::RRA:
-    case Z80Mnemonic::RRC: case Z80Mnemonic::RRCA:
-    case Z80Mnemonic::SLA: case Z80Mnemonic::SRA: case Z80Mnemonic::SRL:
-    case Z80Mnemonic::CALL: case Z80Mnemonic::RETI: case Z80Mnemonic::RETN:
-    case Z80Mnemonic::RST: case Z80Mnemonic::DJNZ:
-    case Z80Mnemonic::LDI: case Z80Mnemonic::LDIR:
-    case Z80Mnemonic::LDD: case Z80Mnemonic::LDDR:
-    case Z80Mnemonic::CPI: case Z80Mnemonic::CPIR:
-    case Z80Mnemonic::CPD: case Z80Mnemonic::CPDR:
-    case Z80Mnemonic::INI: case Z80Mnemonic::INIR:
-    case Z80Mnemonic::IND: case Z80Mnemonic::INDR:
-    case Z80Mnemonic::OUTI: case Z80Mnemonic::OTIR:
-    case Z80Mnemonic::OUTD: case Z80Mnemonic::OTDR:
-    case Z80Mnemonic::IN: case Z80Mnemonic::OUT:
-    case Z80Mnemonic::EX: case Z80Mnemonic::EXX:
+    case Z80Mnemonic::RL:
+    case Z80Mnemonic::RLA:
+    case Z80Mnemonic::RLC:
+    case Z80Mnemonic::RLCA:
+    case Z80Mnemonic::RR:
+    case Z80Mnemonic::RRA:
+    case Z80Mnemonic::RRC:
+    case Z80Mnemonic::RRCA:
+    case Z80Mnemonic::SLA:
+    case Z80Mnemonic::SRA:
+    case Z80Mnemonic::SRL:
+    case Z80Mnemonic::CALL:
+    case Z80Mnemonic::RETI:
+    case Z80Mnemonic::RETN:
+    case Z80Mnemonic::RST:
+    case Z80Mnemonic::DJNZ:
+    case Z80Mnemonic::LDI:
+    case Z80Mnemonic::LDIR:
+    case Z80Mnemonic::LDD:
+    case Z80Mnemonic::LDDR:
+    case Z80Mnemonic::CPI:
+    case Z80Mnemonic::CPIR:
+    case Z80Mnemonic::CPD:
+    case Z80Mnemonic::CPDR:
+    case Z80Mnemonic::INI:
+    case Z80Mnemonic::INIR:
+    case Z80Mnemonic::IND:
+    case Z80Mnemonic::INDR:
+    case Z80Mnemonic::OUTI:
+    case Z80Mnemonic::OTIR:
+    case Z80Mnemonic::OUTD:
+    case Z80Mnemonic::OTDR:
+    case Z80Mnemonic::IN:
+    case Z80Mnemonic::OUT:
+    case Z80Mnemonic::EX:
+    case Z80Mnemonic::EXX:
     case Z80Mnemonic::HALT:
-    case Z80Mnemonic::CCF: case Z80Mnemonic::SCF:
-    case Z80Mnemonic::CPL: case Z80Mnemonic::NEG: case Z80Mnemonic::DAA:
-    case Z80Mnemonic::DI: case Z80Mnemonic::EI: case Z80Mnemonic::IM:
-    case Z80Mnemonic::PUSH: case Z80Mnemonic::POP:
+    case Z80Mnemonic::CCF:
+    case Z80Mnemonic::SCF:
+    case Z80Mnemonic::CPL:
+    case Z80Mnemonic::NEG:
+    case Z80Mnemonic::DAA:
+    case Z80Mnemonic::DI:
+    case Z80Mnemonic::EI:
+    case Z80Mnemonic::IM:
+    case Z80Mnemonic::PUSH:
+    case Z80Mnemonic::POP:
       return {};
 
     case Z80Mnemonic::Unknown:
@@ -142,8 +168,8 @@ CpuZ80::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
 // ============================================================================
 
 std::vector<uint8_t> CpuZ80::ToLittleEndian(uint16_t value) {
-  return {static_cast<uint8_t>(value & 0xFF),         // Low byte
-          static_cast<uint8_t>((value >> 8) & 0xFF)}; // High byte
+  return {static_cast<uint8_t>(value & 0xFF),          // Low byte
+          static_cast<uint8_t>((value >> 8) & 0xFF)};  // High byte
 }
 
 // ============================================================================
@@ -260,15 +286,21 @@ std::vector<uint8_t> CpuZ80::EncodeSUB_n(uint8_t value) {
   return {Opcodes::SUB_n, value};
 }
 
-std::vector<uint8_t> CpuZ80::EncodeINC_A() { return {Opcodes::INC_A}; }
+std::vector<uint8_t> CpuZ80::EncodeINC_A() {
+  return {Opcodes::INC_A};
+}
 
-std::vector<uint8_t> CpuZ80::EncodeDEC_A() { return {Opcodes::DEC_A}; }
+std::vector<uint8_t> CpuZ80::EncodeDEC_A() {
+  return {Opcodes::DEC_A};
+}
 
 // ============================================================================
 // Control Flow Instructions
 // ============================================================================
 
-std::vector<uint8_t> CpuZ80::EncodeNOP() { return {Opcodes::NOP}; }
+std::vector<uint8_t> CpuZ80::EncodeNOP() {
+  return {Opcodes::NOP};
+}
 
 std::vector<uint8_t> CpuZ80::EncodeJP_nn(uint16_t address) {
   std::vector<uint8_t> result = {Opcodes::JP_nn};
@@ -277,7 +309,9 @@ std::vector<uint8_t> CpuZ80::EncodeJP_nn(uint16_t address) {
   return result;
 }
 
-std::vector<uint8_t> CpuZ80::EncodeRET() { return {Opcodes::RET}; }
+std::vector<uint8_t> CpuZ80::EncodeRET() {
+  return {Opcodes::RET};
+}
 
 // ============================================================================
 // Stack Operations
@@ -287,7 +321,9 @@ std::vector<uint8_t> CpuZ80::EncodePUSH_BC() {
   return {Opcodes::PUSH_BC};
 }
 
-std::vector<uint8_t> CpuZ80::EncodePOP_BC() { return {Opcodes::POP_BC}; }
+std::vector<uint8_t> CpuZ80::EncodePOP_BC() {
+  return {Opcodes::POP_BC};
+}
 
 // ============================================================================
 // Bit Operations (CB Prefix)
@@ -320,8 +356,7 @@ std::vector<uint8_t> CpuZ80::EncodeLD_IX_nn(uint16_t value) {
 }
 
 std::vector<uint8_t> CpuZ80::EncodeLD_A_IX_d(int8_t displacement) {
-  return {Opcodes::DD_PREFIX, Opcodes::DD::LD_A_IX_d,
-          static_cast<uint8_t>(displacement)};
+  return {Opcodes::DD_PREFIX, Opcodes::DD::LD_A_IX_d, static_cast<uint8_t>(displacement)};
 }
 
 // ============================================================================
@@ -336,21 +371,28 @@ std::vector<uint8_t> CpuZ80::EncodeLD_IY_nn(uint16_t value) {
 }
 
 std::vector<uint8_t> CpuZ80::EncodeLD_A_IY_d(int8_t displacement) {
-  return {Opcodes::FD_PREFIX, Opcodes::FD::LD_A_IY_d,
-          static_cast<uint8_t>(displacement)};
+  return {Opcodes::FD_PREFIX, Opcodes::FD::LD_A_IY_d, static_cast<uint8_t>(displacement)};
 }
 
 // ============================================================================
 // Register-to-Register Load Instructions
 // ============================================================================
 
-std::vector<uint8_t> CpuZ80::EncodeLD_A_B() { return {Opcodes::LD_A_B}; }
+std::vector<uint8_t> CpuZ80::EncodeLD_A_B() {
+  return {Opcodes::LD_A_B};
+}
 
-std::vector<uint8_t> CpuZ80::EncodeLD_A_C() { return {Opcodes::LD_A_C}; }
+std::vector<uint8_t> CpuZ80::EncodeLD_A_C() {
+  return {Opcodes::LD_A_C};
+}
 
-std::vector<uint8_t> CpuZ80::EncodeLD_B_A() { return {Opcodes::LD_B_A}; }
+std::vector<uint8_t> CpuZ80::EncodeLD_B_A() {
+  return {Opcodes::LD_B_A};
+}
 
-std::vector<uint8_t> CpuZ80::EncodeLD_C_A() { return {Opcodes::LD_C_A}; }
+std::vector<uint8_t> CpuZ80::EncodeLD_C_A() {
+  return {Opcodes::LD_C_A};
+}
 
 // ============================================================================
 // Additional Arithmetic Instructions
@@ -384,7 +426,9 @@ std::vector<uint8_t> CpuZ80::EncodeXOR_n(uint8_t value) {
   return {Opcodes::XOR_n, value};
 }
 
-std::vector<uint8_t> CpuZ80::EncodeXOR_A() { return {Opcodes::XOR_A}; }
+std::vector<uint8_t> CpuZ80::EncodeXOR_A() {
+  return {Opcodes::XOR_A};
+}
 
 // ============================================================================
 // Branch Instructions
@@ -440,13 +484,21 @@ std::vector<uint8_t> CpuZ80::EncodeLD_HL_A() {
 // Rotate and Shift Instructions
 // ============================================================================
 
-std::vector<uint8_t> CpuZ80::EncodeRLCA() { return {Opcodes::RLCA}; }
+std::vector<uint8_t> CpuZ80::EncodeRLCA() {
+  return {Opcodes::RLCA};
+}
 
-std::vector<uint8_t> CpuZ80::EncodeRRCA() { return {Opcodes::RRCA}; }
+std::vector<uint8_t> CpuZ80::EncodeRRCA() {
+  return {Opcodes::RRCA};
+}
 
-std::vector<uint8_t> CpuZ80::EncodeRLA() { return {Opcodes::RLA}; }
+std::vector<uint8_t> CpuZ80::EncodeRLA() {
+  return {Opcodes::RLA};
+}
 
-std::vector<uint8_t> CpuZ80::EncodeRRA() { return {Opcodes::RRA}; }
+std::vector<uint8_t> CpuZ80::EncodeRRA() {
+  return {Opcodes::RRA};
+}
 
 std::vector<uint8_t> CpuZ80::EncodeRLD() {
   return {Opcodes::ED_PREFIX, Opcodes::ED::RLD};
@@ -572,11 +624,17 @@ std::vector<uint8_t> CpuZ80::EncodePUSH_AF() {
   return {Opcodes::PUSH_AF};
 }
 
-std::vector<uint8_t> CpuZ80::EncodePOP_DE() { return {Opcodes::POP_DE}; }
+std::vector<uint8_t> CpuZ80::EncodePOP_DE() {
+  return {Opcodes::POP_DE};
+}
 
-std::vector<uint8_t> CpuZ80::EncodePOP_HL() { return {Opcodes::POP_HL}; }
+std::vector<uint8_t> CpuZ80::EncodePOP_HL() {
+  return {Opcodes::POP_HL};
+}
 
-std::vector<uint8_t> CpuZ80::EncodePOP_AF() { return {Opcodes::POP_AF}; }
+std::vector<uint8_t> CpuZ80::EncodePOP_AF() {
+  return {Opcodes::POP_AF};
+}
 
 // ============================================================================
 // Conditional Call and Return Instructions
@@ -596,9 +654,13 @@ std::vector<uint8_t> CpuZ80::EncodeCALL_NZ_nn(uint16_t address) {
   return result;
 }
 
-std::vector<uint8_t> CpuZ80::EncodeRET_Z() { return {Opcodes::RET_Z}; }
+std::vector<uint8_t> CpuZ80::EncodeRET_Z() {
+  return {Opcodes::RET_Z};
+}
 
-std::vector<uint8_t> CpuZ80::EncodeRET_NZ() { return {Opcodes::RET_NZ}; }
+std::vector<uint8_t> CpuZ80::EncodeRET_NZ() {
+  return {Opcodes::RET_NZ};
+}
 
 // ============================================================================
 // CpuPlugin Interface Implementation - HasOpcode()
@@ -610,7 +672,7 @@ std::vector<uint8_t> CpuZ80::EncodeRET_NZ() { return {Opcodes::RET_NZ}; }
  * @param mnemonic Instruction mnemonic (e.g., "LD", "ADD", "JP")
  * @return true if mnemonic is a valid opcode, false otherwise
  */
-bool CpuZ80::HasOpcode(const std::string &mnemonic) const {
+bool CpuZ80::HasOpcode(const std::string& mnemonic) const {
   // Convert to uppercase for case-insensitive comparison
   std::string upper = mnemonic;
   std::transform(upper.begin(), upper.end(), upper.begin(), ::toupper);
@@ -619,4 +681,4 @@ bool CpuZ80::HasOpcode(const std::string &mnemonic) const {
   return ParseZ80Mnemonic(upper) != Z80Mnemonic::Unknown;
 }
 
-} // namespace xasm
+}  // namespace xasm

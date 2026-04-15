@@ -25,7 +25,7 @@ namespace xasm::scmasm {
  * @param expr Expression string to normalize
  * @return Expression with identifiers uppercased
  */
-std::string NormalizeExpression(const std::string &expr);
+std::string NormalizeExpression(const std::string& expr);
 
 /**
  * @brief Canonicalise SCMASM high-byte prefix operator: '/' -> '>'
@@ -47,7 +47,7 @@ std::string NormalizeExpression(const std::string &expr);
  * @param expr Expression string (should already be uppercased)
  * @return Expression with prefix '/' replaced by '>'
  */
-std::string CanonicalizeSlashHighByte(const std::string &expr);
+std::string CanonicalizeSlashHighByte(const std::string& expr);
 
 /**
  * @brief Canonicalise SCMASM single '=' equality operator: '=' -> '=='
@@ -69,6 +69,6 @@ std::string CanonicalizeSlashHighByte(const std::string &expr);
  * @param expr Expression string (should already be uppercased)
  * @return Expression with standalone '=' replaced by '=='
  */
-std::string CanonicalizeEqualityOperator(const std::string &expr);
+std::string CanonicalizeEqualityOperator(const std::string& expr);
 
-} // namespace xasm::scmasm
+}  // namespace xasm::scmasm

@@ -6,23 +6,27 @@
  */
 
 #include "xasm++/syntax/edtasm_syntax.h"
-#include "xasm++/directives/directive_constants.h"
-#include "xasm++/directives/edtasm_simple_directive_handlers.h"
-#include "xasm++/parse_utils.h"
+
 #include <algorithm>
 #include <cctype>
 #include <sstream>
 #include <stdexcept>
 
+#include "xasm++/directives/directive_constants.h"
+#include "xasm++/directives/edtasm_simple_directive_handlers.h"
+#include "xasm++/parse_utils.h"
+
 namespace xasm {
 
-namespace {} // anonymous namespace
+namespace {}  // anonymous namespace
 
 // ===========================================================================
 // Constructor
 // ===========================================================================
 
-EdtasmSyntaxParser::EdtasmSyntaxParser() { InitializeDirectiveRegistry(); }
+EdtasmSyntaxParser::EdtasmSyntaxParser() {
+  InitializeDirectiveRegistry();
+}
 
 // ===========================================================================
 // Directive Registration
@@ -48,7 +52,7 @@ void EdtasmSyntaxParser::InitializeDirectiveRegistry() {
 // ===========================================================================
 
 // Helper: Trim whitespace from both ends
-std::string EdtasmSyntaxParser::Trim(const std::string &str) {
+std::string EdtasmSyntaxParser::Trim(const std::string& str) {
   size_t start = str.find_first_not_of(" \t");
   if (start == std::string::npos) {
     return "";
@@ -58,7 +62,7 @@ std::string EdtasmSyntaxParser::Trim(const std::string &str) {
 }
 
 // Helper: Convert to uppercase
-std::string EdtasmSyntaxParser::ToUpper(const std::string &str) {
+std::string EdtasmSyntaxParser::ToUpper(const std::string& str) {
   std::string result = str;
   std::transform(result.begin(), result.end(), result.begin(),
                  [](unsigned char c) { return std::toupper(c); });
@@ -66,7 +70,7 @@ std::string EdtasmSyntaxParser::ToUpper(const std::string &str) {
 }
 
 // Helper: Strip comments (semicolon to end of line)
-std::string EdtasmSyntaxParser::StripComments(const std::string &str) {
+std::string EdtasmSyntaxParser::StripComments(const std::string& str) {
   size_t comment_pos = str.find(';');
   if (comment_pos != std::string::npos) {
     return str.substr(0, comment_pos);
@@ -75,13 +79,13 @@ std::string EdtasmSyntaxParser::StripComments(const std::string &str) {
 }
 
 // Helper: Check if line is a comment line (starts with *)
-bool EdtasmSyntaxParser::IsCommentLine(const std::string &line) {
+bool EdtasmSyntaxParser::IsCommentLine(const std::string& line) {
   std::string trimmed = Trim(line);
   return !trimmed.empty() && trimmed[0] == '*';
 }
 
 // Helper: Parse numeric value (supports $hex, %binary, 'char', decimal)
-uint32_t EdtasmSyntaxParser::ParseNumber(const std::string &str) {
+uint32_t EdtasmSyntaxParser::ParseNumber(const std::string& str) {
   std::string trimmed = Trim(str);
 
   if (trimmed.empty()) {
@@ -115,7 +119,7 @@ uint32_t EdtasmSyntaxParser::ParseNumber(const std::string &str) {
   // Decimal (default)
   try {
     return static_cast<uint32_t>(xasm::ParseDecimal(trimmed));
-  } catch (const std::exception &e) {
+  } catch (const std::exception& e) {
     throw std::runtime_error("Invalid decimal number: " + trimmed);
   }
 }
@@ -125,11 +129,9 @@ uint32_t EdtasmSyntaxParser::ParseNumber(const std::string &str) {
 // ===========================================================================
 
 // Parse directive using registry pattern (O(1) lookup)
-void EdtasmSyntaxParser::ParseDirective(const std::string &directive,
-                                        const std::string &operands,
-                                        const std::string &label,
-                                        Section &section,
-                                        ConcreteSymbolTable &symbols) {
+void EdtasmSyntaxParser::ParseDirective(const std::string& directive, const std::string& operands,
+                                        const std::string& label, Section& section,
+                                        ConcreteSymbolTable& symbols) {
   std::string dir_upper = ToUpper(directive);
 
   // Lookup directive handler in registry
@@ -153,8 +155,8 @@ void EdtasmSyntaxParser::ParseDirective(const std::string &directive,
 }
 
 // Parse a single line
-void EdtasmSyntaxParser::ParseLine(const std::string &line, Section &section,
-                                   ConcreteSymbolTable &symbols) {
+void EdtasmSyntaxParser::ParseLine(const std::string& line, Section& section,
+                                   ConcreteSymbolTable& symbols) {
   // Strip comments first
   std::string processed = StripComments(line);
   processed = Trim(processed);
@@ -168,13 +170,12 @@ void EdtasmSyntaxParser::ParseLine(const std::string &line, Section &section,
   std::string opcode;
   std::string operands;
 
-  bool has_label =
-      !line.empty() && !std::isspace(static_cast<unsigned char>(line[0]));
+  bool has_label = !line.empty() && !std::isspace(static_cast<unsigned char>(line[0]));
 
   if (has_label) {
     size_t label_end = processed.find_first_of(" \t");
     if (label_end == std::string::npos) {
-      label = processed; // label-only line
+      label = processed;  // label-only line
     } else {
       label = processed.substr(0, label_end);
       std::string rest = Trim(processed.substr(label_end));
@@ -204,32 +205,26 @@ void EdtasmSyntaxParser::ParseLine(const std::string &line, Section &section,
   if (opcode.empty()) {
     // Label-only line
     if (!label.empty()) {
-      symbols.Define(label, SymbolType::Label,
-                     std::make_shared<LiteralExpr>(current_address_));
-      section.atoms.push_back(
-          std::make_shared<LabelAtom>(label, current_address_));
+      symbols.Define(label, SymbolType::Label, std::make_shared<LiteralExpr>(current_address_));
+      section.atoms.push_back(std::make_shared<LabelAtom>(label, current_address_));
     }
     return;
   }
 
   // Check if opcode is a directive
   std::string opcode_upper = ToUpper(opcode);
-  bool is_directive =
-      (opcode_upper == directives::ORG || opcode_upper == directives::END ||
-       opcode_upper == directives::EQU || opcode_upper == directives::SET ||
-       opcode_upper == directives::FCB || opcode_upper == directives::FDB ||
-       opcode_upper == directives::FCC || opcode_upper == directives::RMB ||
-       opcode_upper == directives::SETDP);
+  bool is_directive = (opcode_upper == directives::ORG || opcode_upper == directives::END ||
+                       opcode_upper == directives::EQU || opcode_upper == directives::SET ||
+                       opcode_upper == directives::FCB || opcode_upper == directives::FDB ||
+                       opcode_upper == directives::FCC || opcode_upper == directives::RMB ||
+                       opcode_upper == directives::SETDP);
 
   // Create label atom for non-EQU/SET directives and instructions.
   // EQU and SET handle their labels internally (they don't create address
   // labels).
-  if (!label.empty() && opcode_upper != directives::EQU &&
-      opcode_upper != directives::SET) {
-    symbols.Define(label, SymbolType::Label,
-                   std::make_shared<LiteralExpr>(current_address_));
-    section.atoms.push_back(
-        std::make_shared<LabelAtom>(label, current_address_));
+  if (!label.empty() && opcode_upper != directives::EQU && opcode_upper != directives::SET) {
+    symbols.Define(label, SymbolType::Label, std::make_shared<LiteralExpr>(current_address_));
+    section.atoms.push_back(std::make_shared<LabelAtom>(label, current_address_));
   }
 
   if (is_directive) {
@@ -238,14 +233,13 @@ void EdtasmSyntaxParser::ParseLine(const std::string &line, Section &section,
   }
 
   // Otherwise, it's an instruction.
-  section.atoms.push_back(
-      std::make_shared<InstructionAtom>(opcode_upper, operands));
-  current_address_ += 1; // Placeholder (actual size determined during encoding)
+  section.atoms.push_back(std::make_shared<InstructionAtom>(opcode_upper, operands));
+  current_address_ += 1;  // Placeholder (actual size determined during encoding)
 }
 
 // Main parse function
-void EdtasmSyntaxParser::Parse(const std::string &source, Section &section,
-                               ConcreteSymbolTable &symbols) {
+void EdtasmSyntaxParser::Parse(const std::string& source, Section& section,
+                               ConcreteSymbolTable& symbols) {
   if (source.empty()) {
     return;
   }
@@ -263,4 +257,4 @@ void EdtasmSyntaxParser::Parse(const std::string &source, Section &section,
   }
 }
 
-} // namespace xasm
+}  // namespace xasm

@@ -40,7 +40,7 @@ namespace xasm {
  * @endcode
  */
 class OutputWriter {
-public:
+ public:
   /**
    * @brief Virtual destructor for polymorphic deletion
    */
@@ -56,8 +56,7 @@ public:
    * @param output Output stream to write formatted data to
    * @throws std::runtime_error if writing fails or data is invalid
    */
-  virtual void Write(const std::vector<Section> &sections,
-                     std::ostream &output) = 0;
+  virtual void Write(const std::vector<Section>& sections, std::ostream& output) = 0;
 
   /**
    * @brief Get the file extension for this output format
@@ -78,4 +77,4 @@ public:
   virtual std::string GetFormatName() const = 0;
 };
 
-} // namespace xasm
+}  // namespace xasm

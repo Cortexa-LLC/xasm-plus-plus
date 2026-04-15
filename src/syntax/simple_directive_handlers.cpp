@@ -7,15 +7,17 @@
  */
 
 #include "xasm++/directives/simple_directive_handlers.h"
-#include "xasm++/atom.h"
-#include "xasm++/parse_utils.h"
-#include "xasm++/section.h"
-#include "xasm++/util/string_utils.h"
+
 #include <algorithm>
 #include <cctype>
 #include <sstream>
 #include <stdexcept>
 #include <vector>
+
+#include "xasm++/atom.h"
+#include "xasm++/parse_utils.h"
+#include "xasm++/section.h"
+#include "xasm++/util/string_utils.h"
 
 namespace xasm::simple {
 
@@ -27,16 +29,16 @@ namespace xasm::simple {
 // Directive Handlers
 // ============================================================================
 
-void HandleOrg(DirectiveContext &context) {
-  const std::string &operand = context.operand;
+void HandleOrg(DirectiveContext& context) {
+  const std::string& operand = context.operand;
   // ORG directive - set assembly origin address
   uint32_t address = ParseHex(operand);
   context.section->atoms.push_back(std::make_shared<OrgAtom>(address));
   *context.current_address = address;
 }
 
-void HandleDb(DirectiveContext &context) {
-  const std::string &operand = context.operand;
+void HandleDb(DirectiveContext& context) {
+  const std::string& operand = context.operand;
   // DB directive - define byte(s)
   std::vector<uint8_t> bytes;
   std::istringstream ops(operand);
@@ -53,8 +55,8 @@ void HandleDb(DirectiveContext &context) {
   *context.current_address += bytes.size();
 }
 
-void HandleDw(DirectiveContext &context) {
-  const std::string &operand = context.operand;
+void HandleDw(DirectiveContext& context) {
+  const std::string& operand = context.operand;
   // DW directive - define word(s) in little-endian format
   std::vector<uint8_t> bytes;
   std::istringstream ops(operand);
@@ -64,8 +66,8 @@ void HandleDw(DirectiveContext &context) {
     value = util::Trim(value);
     if (!value.empty()) {
       uint32_t word = ParseHex(value);
-      bytes.push_back(static_cast<uint8_t>(word & 0xFF));        // Low byte
-      bytes.push_back(static_cast<uint8_t>((word >> 8) & 0xFF)); // High byte
+      bytes.push_back(static_cast<uint8_t>(word & 0xFF));         // Low byte
+      bytes.push_back(static_cast<uint8_t>((word >> 8) & 0xFF));  // High byte
     }
   }
 
@@ -73,4 +75,4 @@ void HandleDw(DirectiveContext &context) {
   *context.current_address += bytes.size();
 }
 
-} // namespace xasm::simple
+}  // namespace xasm::simple

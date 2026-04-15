@@ -11,14 +11,15 @@
 
 #pragma once
 
-#include "xasm++/cpu/cpu_6502_branch_handler.h"
-#include "xasm++/cpu/cpu_plugin.h"
 #include <cstdint>
 #include <functional>
 #include <optional>
 #include <string>
 #include <unordered_map>
 #include <vector>
+
+#include "xasm++/cpu/cpu_6502_branch_handler.h"
+#include "xasm++/cpu/cpu_plugin.h"
 
 namespace xasm {
 
@@ -34,35 +35,35 @@ namespace xasm {
  * capabilities with 24-bit addressing and stack-relative modes.
  */
 enum class AddressingMode : std::uint8_t {
-  Implied,     ///< No operand (e.g., RTS, NOP)
-  Accumulator, ///< Operate on accumulator (e.g., ASL A)
-  Immediate,   ///< Immediate value (e.g., LDA #$42)
-  ZeroPage,    ///< Zero page address (e.g., LDA $80)
-  ZeroPageX,   ///< Zero page indexed by X (e.g., LDA $80,X)
-  ZeroPageY,   ///< Zero page indexed by Y (e.g., LDX $80,Y)
-  Absolute,    ///< Absolute 16-bit address (e.g., LDA $1234)
-  AbsoluteX,   ///< Absolute indexed by X (e.g., LDA $1234,X)
-  AbsoluteY,   ///< Absolute indexed by Y (e.g., LDA $1234,Y)
-  Indirect,    ///< Indirect jump (e.g., JMP ($1234))
-  IndirectX,   ///< Indirect indexed by X (e.g., LDA ($80,X))
-  IndirectY,   ///< Indirect indexed by Y (e.g., LDA ($80),Y)
-  Relative,    ///< Relative branch (e.g., BEQ label)
+  Implied,      ///< No operand (e.g., RTS, NOP)
+  Accumulator,  ///< Operate on accumulator (e.g., ASL A)
+  Immediate,    ///< Immediate value (e.g., LDA #$42)
+  ZeroPage,     ///< Zero page address (e.g., LDA $80)
+  ZeroPageX,    ///< Zero page indexed by X (e.g., LDA $80,X)
+  ZeroPageY,    ///< Zero page indexed by Y (e.g., LDX $80,Y)
+  Absolute,     ///< Absolute 16-bit address (e.g., LDA $1234)
+  AbsoluteX,    ///< Absolute indexed by X (e.g., LDA $1234,X)
+  AbsoluteY,    ///< Absolute indexed by Y (e.g., LDA $1234,Y)
+  Indirect,     ///< Indirect jump (e.g., JMP ($1234))
+  IndirectX,    ///< Indirect indexed by X (e.g., LDA ($80,X))
+  IndirectY,    ///< Indirect indexed by Y (e.g., LDA ($80),Y)
+  Relative,     ///< Relative branch (e.g., BEQ label)
 
   // 65C02 Enhanced Addressing Modes
-  IndirectZeroPage,        ///< Indirect zero page - 65C02+ (e.g., LDA ($80))
-  AbsoluteIndexedIndirect, ///< Absolute indexed indirect - 65C02+ (e.g., JMP
-                           ///< ($1234,X))
+  IndirectZeroPage,         ///< Indirect zero page - 65C02+ (e.g., LDA ($80))
+  AbsoluteIndexedIndirect,  ///< Absolute indexed indirect - 65C02+ (e.g., JMP
+                            ///< ($1234,X))
 
   // 65816 Long Addressing Modes (24-bit)
-  AbsoluteLong,         ///< 24-bit absolute - 65816 only (e.g., LDA $123456)
-  IndirectLong,         ///< 24-bit indirect - 65816 only (e.g., LDA [$80])
-  IndirectLongIndexedY, ///< 24-bit indirect indexed - 65816 only (e.g., LDA
-                        ///< [$80],Y)
+  AbsoluteLong,          ///< 24-bit absolute - 65816 only (e.g., LDA $123456)
+  IndirectLong,          ///< 24-bit indirect - 65816 only (e.g., LDA [$80])
+  IndirectLongIndexedY,  ///< 24-bit indirect indexed - 65816 only (e.g., LDA
+                         ///< [$80],Y)
 
   // 65816 Stack Relative Addressing
-  StackRelative, ///< Stack relative - 65816 only (e.g., LDA $03,S)
-  StackRelativeIndirectIndexedY, ///< Stack relative indirect indexed - 65816
-                                 ///< only
+  StackRelative,                  ///< Stack relative - 65816 only (e.g., LDA $03,S)
+  StackRelativeIndirectIndexedY,  ///< Stack relative indirect indexed - 65816
+                                  ///< only
 };
 
 /**
@@ -73,10 +74,10 @@ enum class AddressingMode : std::uint8_t {
  * and generate correct opcodes.
  */
 enum class CpuMode : std::uint8_t {
-  Cpu6502,      ///< Original 6502 (default)
-  Cpu65C02,     ///< 65C02 with enhanced opcodes
-  Cpu65C02Rock, ///< 65C02 with Rockwell extensions (BBR, BBS, etc.)
-  Cpu65816      ///< 65816 with 16-bit support and enhanced addressing
+  Cpu6502,       ///< Original 6502 (default)
+  Cpu65C02,      ///< 65C02 with enhanced opcodes
+  Cpu65C02Rock,  ///< 65C02 with Rockwell extensions (BBR, BBS, etc.)
+  Cpu65816       ///< 65816 with 16-bit support and enhanced addressing
 };
 
 /**
@@ -113,7 +114,7 @@ enum class CpuMode : std::uint8_t {
  * @endcode
  */
 class Cpu6502 : public CpuPlugin {
-public:
+ public:
   /**
    * @brief Default constructor - initializes to 6502 mode
    */
@@ -126,10 +127,12 @@ public:
 
   // CpuPlugin interface implementation
   std::string GetCpuFamily() const override { return "6502"; }
+
   std::vector<std::string> GetSupportedVariants() const override {
     return {"6502", "65c02", "65c02rock", "65816"};
   }
-  bool HasOpcode(const std::string &mnemonic) const override;
+
+  bool HasOpcode(const std::string& mnemonic) const override;
 
   /**
    * @brief Get the CPU plugin name
@@ -138,21 +141,19 @@ public:
   static std::string GetName() { return "6502"; }
 
   // CpuPlugin instruction encoding interface
-  std::vector<uint8_t>
-  EncodeInstruction(const std::string &mnemonic, uint32_t operand,
-                    const std::string &operand_str) const override;
+  std::vector<uint8_t> EncodeInstruction(const std::string& mnemonic, uint32_t operand,
+                                         const std::string& operand_str) const override;
 
   // CpuPlugin instruction size estimation (first-pass address tracking)
-  size_t GetInstructionSize(const std::string &mnemonic,
-                            const std::string &operand_str) const override;
+  size_t GetInstructionSize(const std::string& mnemonic,
+                            const std::string& operand_str) const override;
 
   // CpuPlugin special encoding interface (for branch relaxation and multi-byte
   // instructions)
-  bool RequiresSpecialEncoding(const std::string &mnemonic) const override;
-  std::vector<uint8_t>
-  EncodeInstructionSpecial(const std::string &mnemonic,
-                           const std::string &operand,
-                           uint16_t current_address) const override;
+  bool RequiresSpecialEncoding(const std::string& mnemonic) const override;
+  std::vector<uint8_t> EncodeInstructionSpecial(const std::string& mnemonic,
+                                                const std::string& operand,
+                                                uint16_t current_address) const override;
 
   /**
    * @brief Set the CPU mode
@@ -322,189 +323,143 @@ public:
   static std::vector<uint8_t> EncodePLP();
 
   // Phase 2.5 - Group 2: 65C02 Stack operations
-  std::vector<uint8_t> EncodePHX() const; // Push X (65C02+)
-  std::vector<uint8_t> EncodePLX() const; // Pull X (65C02+)
-  std::vector<uint8_t> EncodePHY() const; // Push Y (65C02+)
-  std::vector<uint8_t> EncodePLY() const; // Pull Y (65C02+)
+  std::vector<uint8_t> EncodePHX() const;  // Push X (65C02+)
+  std::vector<uint8_t> EncodePLX() const;  // Pull X (65C02+)
+  std::vector<uint8_t> EncodePHY() const;  // Push Y (65C02+)
+  std::vector<uint8_t> EncodePLY() const;  // Pull Y (65C02+)
 
   // Phase 2.5 - Group 3: 65C02 Store Zero
-  std::vector<uint8_t>
-  EncodeSTZ(uint16_t operand, AddressingMode mode) const; // Store Zero (65C02+)
+  std::vector<uint8_t> EncodeSTZ(uint16_t operand,
+                                 AddressingMode mode) const;  // Store Zero (65C02+)
 
   // Phase 2.5 - Group 4: 65C02 Bit Test
-  std::vector<uint8_t>
-  EncodeTRB(uint16_t operand,
-            AddressingMode mode) const; // Test and Reset Bits (65C02+)
-  std::vector<uint8_t>
-  EncodeTSB(uint16_t operand,
-            AddressingMode mode) const; // Test and Set Bits (65C02+)
+  std::vector<uint8_t> EncodeTRB(uint16_t operand,
+                                 AddressingMode mode) const;  // Test and Reset Bits (65C02+)
+  std::vector<uint8_t> EncodeTSB(uint16_t operand,
+                                 AddressingMode mode) const;  // Test and Set Bits (65C02+)
 
   // Phase 2.5 - Group 5: 65C02 Branch Always
-  std::vector<uint8_t>
-  EncodeBRA(uint16_t operand,
-            AddressingMode mode) const; // Branch Always (65C02+)
+  std::vector<uint8_t> EncodeBRA(uint16_t operand,
+                                 AddressingMode mode) const;  // Branch Always (65C02+)
 
   // Phase 2.6: 65C02 Rockwell Extensions - Processor Control
-  std::vector<uint8_t>
-  EncodeWAI() const; // Wait for Interrupt (65C02 Rockwell+)
-  std::vector<uint8_t> EncodeSTP() const; // Stop Processor (65C02 Rockwell+)
+  std::vector<uint8_t> EncodeWAI() const;  // Wait for Interrupt (65C02 Rockwell+)
+  std::vector<uint8_t> EncodeSTP() const;  // Stop Processor (65C02 Rockwell+)
 
   // Phase 2.6: 65C02 Rockwell Extensions - Reset Memory Bit
-  std::vector<uint8_t>
-  EncodeRMB0(uint8_t operand,
-             AddressingMode mode) const; // Reset Bit 0 (65C02 Rockwell+)
-  std::vector<uint8_t>
-  EncodeRMB1(uint8_t operand,
-             AddressingMode mode) const; // Reset Bit 1 (65C02 Rockwell+)
-  std::vector<uint8_t>
-  EncodeRMB2(uint8_t operand,
-             AddressingMode mode) const; // Reset Bit 2 (65C02 Rockwell+)
-  std::vector<uint8_t>
-  EncodeRMB3(uint8_t operand,
-             AddressingMode mode) const; // Reset Bit 3 (65C02 Rockwell+)
-  std::vector<uint8_t>
-  EncodeRMB4(uint8_t operand,
-             AddressingMode mode) const; // Reset Bit 4 (65C02 Rockwell+)
-  std::vector<uint8_t>
-  EncodeRMB5(uint8_t operand,
-             AddressingMode mode) const; // Reset Bit 5 (65C02 Rockwell+)
-  std::vector<uint8_t>
-  EncodeRMB6(uint8_t operand,
-             AddressingMode mode) const; // Reset Bit 6 (65C02 Rockwell+)
-  std::vector<uint8_t>
-  EncodeRMB7(uint8_t operand,
-             AddressingMode mode) const; // Reset Bit 7 (65C02 Rockwell+)
+  std::vector<uint8_t> EncodeRMB0(uint8_t operand,
+                                  AddressingMode mode) const;  // Reset Bit 0 (65C02 Rockwell+)
+  std::vector<uint8_t> EncodeRMB1(uint8_t operand,
+                                  AddressingMode mode) const;  // Reset Bit 1 (65C02 Rockwell+)
+  std::vector<uint8_t> EncodeRMB2(uint8_t operand,
+                                  AddressingMode mode) const;  // Reset Bit 2 (65C02 Rockwell+)
+  std::vector<uint8_t> EncodeRMB3(uint8_t operand,
+                                  AddressingMode mode) const;  // Reset Bit 3 (65C02 Rockwell+)
+  std::vector<uint8_t> EncodeRMB4(uint8_t operand,
+                                  AddressingMode mode) const;  // Reset Bit 4 (65C02 Rockwell+)
+  std::vector<uint8_t> EncodeRMB5(uint8_t operand,
+                                  AddressingMode mode) const;  // Reset Bit 5 (65C02 Rockwell+)
+  std::vector<uint8_t> EncodeRMB6(uint8_t operand,
+                                  AddressingMode mode) const;  // Reset Bit 6 (65C02 Rockwell+)
+  std::vector<uint8_t> EncodeRMB7(uint8_t operand,
+                                  AddressingMode mode) const;  // Reset Bit 7 (65C02 Rockwell+)
 
   // Phase 2.6: 65C02 Rockwell Extensions - Set Memory Bit
-  std::vector<uint8_t>
-  EncodeSMB0(uint8_t operand,
-             AddressingMode mode) const; // Set Bit 0 (65C02 Rockwell+)
-  std::vector<uint8_t>
-  EncodeSMB1(uint8_t operand,
-             AddressingMode mode) const; // Set Bit 1 (65C02 Rockwell+)
-  std::vector<uint8_t>
-  EncodeSMB2(uint8_t operand,
-             AddressingMode mode) const; // Set Bit 2 (65C02 Rockwell+)
-  std::vector<uint8_t>
-  EncodeSMB3(uint8_t operand,
-             AddressingMode mode) const; // Set Bit 3 (65C02 Rockwell+)
-  std::vector<uint8_t>
-  EncodeSMB4(uint8_t operand,
-             AddressingMode mode) const; // Set Bit 4 (65C02 Rockwell+)
-  std::vector<uint8_t>
-  EncodeSMB5(uint8_t operand,
-             AddressingMode mode) const; // Set Bit 5 (65C02 Rockwell+)
-  std::vector<uint8_t>
-  EncodeSMB6(uint8_t operand,
-             AddressingMode mode) const; // Set Bit 6 (65C02 Rockwell+)
-  std::vector<uint8_t>
-  EncodeSMB7(uint8_t operand,
-             AddressingMode mode) const; // Set Bit 7 (65C02 Rockwell+)
+  std::vector<uint8_t> EncodeSMB0(uint8_t operand,
+                                  AddressingMode mode) const;  // Set Bit 0 (65C02 Rockwell+)
+  std::vector<uint8_t> EncodeSMB1(uint8_t operand,
+                                  AddressingMode mode) const;  // Set Bit 1 (65C02 Rockwell+)
+  std::vector<uint8_t> EncodeSMB2(uint8_t operand,
+                                  AddressingMode mode) const;  // Set Bit 2 (65C02 Rockwell+)
+  std::vector<uint8_t> EncodeSMB3(uint8_t operand,
+                                  AddressingMode mode) const;  // Set Bit 3 (65C02 Rockwell+)
+  std::vector<uint8_t> EncodeSMB4(uint8_t operand,
+                                  AddressingMode mode) const;  // Set Bit 4 (65C02 Rockwell+)
+  std::vector<uint8_t> EncodeSMB5(uint8_t operand,
+                                  AddressingMode mode) const;  // Set Bit 5 (65C02 Rockwell+)
+  std::vector<uint8_t> EncodeSMB6(uint8_t operand,
+                                  AddressingMode mode) const;  // Set Bit 6 (65C02 Rockwell+)
+  std::vector<uint8_t> EncodeSMB7(uint8_t operand,
+                                  AddressingMode mode) const;  // Set Bit 7 (65C02 Rockwell+)
 
   // Phase 2.6: 65C02 Rockwell Extensions - Branch on Bit Reset
-  std::vector<uint8_t>
-  EncodeBBR0(uint8_t zp_addr,
-             uint8_t offset) const; // Branch if Bit 0 Reset (65C02 Rockwell+)
-  std::vector<uint8_t>
-  EncodeBBR1(uint8_t zp_addr,
-             uint8_t offset) const; // Branch if Bit 1 Reset (65C02 Rockwell+)
-  std::vector<uint8_t>
-  EncodeBBR2(uint8_t zp_addr,
-             uint8_t offset) const; // Branch if Bit 2 Reset (65C02 Rockwell+)
-  std::vector<uint8_t>
-  EncodeBBR3(uint8_t zp_addr,
-             uint8_t offset) const; // Branch if Bit 3 Reset (65C02 Rockwell+)
-  std::vector<uint8_t>
-  EncodeBBR4(uint8_t zp_addr,
-             uint8_t offset) const; // Branch if Bit 4 Reset (65C02 Rockwell+)
-  std::vector<uint8_t>
-  EncodeBBR5(uint8_t zp_addr,
-             uint8_t offset) const; // Branch if Bit 5 Reset (65C02 Rockwell+)
-  std::vector<uint8_t>
-  EncodeBBR6(uint8_t zp_addr,
-             uint8_t offset) const; // Branch if Bit 6 Reset (65C02 Rockwell+)
-  std::vector<uint8_t>
-  EncodeBBR7(uint8_t zp_addr,
-             uint8_t offset) const; // Branch if Bit 7 Reset (65C02 Rockwell+)
+  std::vector<uint8_t> EncodeBBR0(uint8_t zp_addr,
+                                  uint8_t offset) const;  // Branch if Bit 0 Reset (65C02 Rockwell+)
+  std::vector<uint8_t> EncodeBBR1(uint8_t zp_addr,
+                                  uint8_t offset) const;  // Branch if Bit 1 Reset (65C02 Rockwell+)
+  std::vector<uint8_t> EncodeBBR2(uint8_t zp_addr,
+                                  uint8_t offset) const;  // Branch if Bit 2 Reset (65C02 Rockwell+)
+  std::vector<uint8_t> EncodeBBR3(uint8_t zp_addr,
+                                  uint8_t offset) const;  // Branch if Bit 3 Reset (65C02 Rockwell+)
+  std::vector<uint8_t> EncodeBBR4(uint8_t zp_addr,
+                                  uint8_t offset) const;  // Branch if Bit 4 Reset (65C02 Rockwell+)
+  std::vector<uint8_t> EncodeBBR5(uint8_t zp_addr,
+                                  uint8_t offset) const;  // Branch if Bit 5 Reset (65C02 Rockwell+)
+  std::vector<uint8_t> EncodeBBR6(uint8_t zp_addr,
+                                  uint8_t offset) const;  // Branch if Bit 6 Reset (65C02 Rockwell+)
+  std::vector<uint8_t> EncodeBBR7(uint8_t zp_addr,
+                                  uint8_t offset) const;  // Branch if Bit 7 Reset (65C02 Rockwell+)
 
   // Phase 2.6: 65C02 Rockwell Extensions - Branch on Bit Set
-  std::vector<uint8_t>
-  EncodeBBS0(uint8_t zp_addr,
-             uint8_t offset) const; // Branch if Bit 0 Set (65C02 Rockwell+)
-  std::vector<uint8_t>
-  EncodeBBS1(uint8_t zp_addr,
-             uint8_t offset) const; // Branch if Bit 1 Set (65C02 Rockwell+)
-  std::vector<uint8_t>
-  EncodeBBS2(uint8_t zp_addr,
-             uint8_t offset) const; // Branch if Bit 2 Set (65C02 Rockwell+)
-  std::vector<uint8_t>
-  EncodeBBS3(uint8_t zp_addr,
-             uint8_t offset) const; // Branch if Bit 3 Set (65C02 Rockwell+)
-  std::vector<uint8_t>
-  EncodeBBS4(uint8_t zp_addr,
-             uint8_t offset) const; // Branch if Bit 4 Set (65C02 Rockwell+)
-  std::vector<uint8_t>
-  EncodeBBS5(uint8_t zp_addr,
-             uint8_t offset) const; // Branch if Bit 5 Set (65C02 Rockwell+)
-  std::vector<uint8_t>
-  EncodeBBS6(uint8_t zp_addr,
-             uint8_t offset) const; // Branch if Bit 6 Set (65C02 Rockwell+)
-  std::vector<uint8_t>
-  EncodeBBS7(uint8_t zp_addr,
-             uint8_t offset) const; // Branch if Bit 7 Set (65C02 Rockwell+)
+  std::vector<uint8_t> EncodeBBS0(uint8_t zp_addr,
+                                  uint8_t offset) const;  // Branch if Bit 0 Set (65C02 Rockwell+)
+  std::vector<uint8_t> EncodeBBS1(uint8_t zp_addr,
+                                  uint8_t offset) const;  // Branch if Bit 1 Set (65C02 Rockwell+)
+  std::vector<uint8_t> EncodeBBS2(uint8_t zp_addr,
+                                  uint8_t offset) const;  // Branch if Bit 2 Set (65C02 Rockwell+)
+  std::vector<uint8_t> EncodeBBS3(uint8_t zp_addr,
+                                  uint8_t offset) const;  // Branch if Bit 3 Set (65C02 Rockwell+)
+  std::vector<uint8_t> EncodeBBS4(uint8_t zp_addr,
+                                  uint8_t offset) const;  // Branch if Bit 4 Set (65C02 Rockwell+)
+  std::vector<uint8_t> EncodeBBS5(uint8_t zp_addr,
+                                  uint8_t offset) const;  // Branch if Bit 5 Set (65C02 Rockwell+)
+  std::vector<uint8_t> EncodeBBS6(uint8_t zp_addr,
+                                  uint8_t offset) const;  // Branch if Bit 6 Set (65C02 Rockwell+)
+  std::vector<uint8_t> EncodeBBS7(uint8_t zp_addr,
+                                  uint8_t offset) const;  // Branch if Bit 7 Set (65C02 Rockwell+)
 
   // Phase 2.5 - Group 11: 65816 Bank Operations
-  std::vector<uint8_t> EncodePHB() const; // Push Data Bank Register (65816)
-  std::vector<uint8_t> EncodePLB() const; // Pull Data Bank Register (65816)
-  std::vector<uint8_t> EncodePHK() const; // Push Program Bank Register (65816)
-  std::vector<uint8_t> EncodePHD() const; // Push Direct Page Register (65816)
-  std::vector<uint8_t> EncodePLD() const; // Pull Direct Page Register (65816)
+  std::vector<uint8_t> EncodePHB() const;  // Push Data Bank Register (65816)
+  std::vector<uint8_t> EncodePLB() const;  // Pull Data Bank Register (65816)
+  std::vector<uint8_t> EncodePHK() const;  // Push Program Bank Register (65816)
+  std::vector<uint8_t> EncodePHD() const;  // Push Direct Page Register (65816)
+  std::vector<uint8_t> EncodePLD() const;  // Pull Direct Page Register (65816)
 
   // Phase 2.5 - Group 12: 65816 Transfer Operations
-  std::vector<uint8_t> EncodeTCD() const; // Transfer C to Direct Page (65816)
-  std::vector<uint8_t> EncodeTDC() const; // Transfer Direct Page to C (65816)
-  std::vector<uint8_t> EncodeTCS() const; // Transfer C to Stack Pointer (65816)
-  std::vector<uint8_t> EncodeTSC() const; // Transfer Stack Pointer to C (65816)
-  static std::vector<uint8_t> EncodeTXY(); // Transfer X to Y (65816)
-  static std::vector<uint8_t> EncodeTYX(); // Transfer Y to X (65816)
+  std::vector<uint8_t> EncodeTCD() const;   // Transfer C to Direct Page (65816)
+  std::vector<uint8_t> EncodeTDC() const;   // Transfer Direct Page to C (65816)
+  std::vector<uint8_t> EncodeTCS() const;   // Transfer C to Stack Pointer (65816)
+  std::vector<uint8_t> EncodeTSC() const;   // Transfer Stack Pointer to C (65816)
+  static std::vector<uint8_t> EncodeTXY();  // Transfer X to Y (65816)
+  static std::vector<uint8_t> EncodeTYX();  // Transfer Y to X (65816)
 
   // Phase 2.5 - Group 13: 65816 Long Jumps
-  std::vector<uint8_t>
-  EncodeJML(uint32_t operand, AddressingMode mode) const; // Jump Long (65816)
-  std::vector<uint8_t>
-  EncodeJSL(uint32_t operand,
-            AddressingMode mode) const;   // Jump Subroutine Long (65816)
-  std::vector<uint8_t> EncodeRTL() const; // Return from Subroutine Long (65816)
+  std::vector<uint8_t> EncodeJML(uint32_t operand, AddressingMode mode) const;  // Jump Long (65816)
+  std::vector<uint8_t> EncodeJSL(uint32_t operand,
+                                 AddressingMode mode) const;  // Jump Subroutine Long (65816)
+  std::vector<uint8_t> EncodeRTL() const;                     // Return from Subroutine Long (65816)
 
   // Phase 2.5 - Group 14: 65816 Miscellaneous Opcodes
-  std::vector<uint8_t>
-  EncodePEA(uint16_t operand,
-            AddressingMode mode) const; // Push Effective Address (65816)
-  std::vector<uint8_t>
-  EncodePEI(uint8_t operand,
-            AddressingMode mode) const; // Push Effective Indirect (65816)
-  std::vector<uint8_t>
-  EncodePER(uint16_t operand,
-            AddressingMode mode) const; // Push Effective PC Relative (65816)
-  std::vector<uint8_t>
-  EncodeMVN(uint8_t srcbank,
-            uint8_t destbank) const; // Block Move Negative (65816)
-  std::vector<uint8_t>
-  EncodeMVP(uint8_t srcbank,
-            uint8_t destbank) const; // Block Move Positive (65816)
-  std::vector<uint8_t>
-  EncodeCOP(uint8_t operand, AddressingMode mode) const; // Coprocessor (65816)
+  std::vector<uint8_t> EncodePEA(uint16_t operand,
+                                 AddressingMode mode) const;  // Push Effective Address (65816)
+  std::vector<uint8_t> EncodePEI(uint8_t operand,
+                                 AddressingMode mode) const;  // Push Effective Indirect (65816)
+  std::vector<uint8_t> EncodePER(uint16_t operand,
+                                 AddressingMode mode) const;  // Push Effective PC Relative (65816)
+  std::vector<uint8_t> EncodeMVN(uint8_t srcbank,
+                                 uint8_t destbank) const;  // Block Move Negative (65816)
+  std::vector<uint8_t> EncodeMVP(uint8_t srcbank,
+                                 uint8_t destbank) const;  // Block Move Positive (65816)
+  std::vector<uint8_t> EncodeCOP(uint8_t operand,
+                                 AddressingMode mode) const;  // Coprocessor (65816)
   std::vector<uint8_t> EncodeWDM(uint8_t operand,
-                                 AddressingMode mode) const; // Reserved (65816)
-  std::vector<uint8_t> EncodeXBA() const; // Exchange B and A (65816)
-  std::vector<uint8_t>
-  EncodeXCE() const; // Exchange Carry and Emulation (65816)
-  std::vector<uint8_t>
-  EncodeSEP(uint16_t value,
-            AddressingMode mode) const; // Set Processor Status Bits (65816)
-  std::vector<uint8_t>
-  EncodeREP(uint16_t value,
-            AddressingMode mode) const; // Reset Processor Status Bits (65816)
+                                 AddressingMode mode) const;  // Reserved (65816)
+  std::vector<uint8_t> EncodeXBA() const;                     // Exchange B and A (65816)
+  std::vector<uint8_t> EncodeXCE() const;  // Exchange Carry and Emulation (65816)
+  std::vector<uint8_t> EncodeSEP(uint16_t value,
+                                 AddressingMode mode) const;  // Set Processor Status Bits (65816)
+  std::vector<uint8_t> EncodeREP(uint16_t value,
+                                 AddressingMode mode) const;  // Reset Processor Status Bits (65816)
 
   // Phase 2.2: Subroutine
   std::vector<uint8_t> EncodeJSR(uint16_t operand, AddressingMode mode) const;
@@ -542,7 +497,7 @@ public:
   static std::vector<uint8_t> EncodeTXA();
   static std::vector<uint8_t> EncodeTYA();
 
-  /** @} */ // End of Instruction Encoding Methods
+  /** @} */  // End of Instruction Encoding Methods
 
   /**
    * @brief Calculate the size of an encoded instruction
@@ -613,19 +568,17 @@ public:
    * @param target Branch source and destination addresses
    * @return Vector of encoded bytes for the relaxed sequence (5 bytes)
    */
-  std::vector<uint8_t> EncodeBranchWithRelaxation(uint8_t branch_opcode,
-                                                  BranchTarget target) const;
+  std::vector<uint8_t> EncodeBranchWithRelaxation(uint8_t branch_opcode, BranchTarget target) const;
 
-  /** @} */ // End of Branch Relaxation Methods
+  /** @} */  // End of Branch Relaxation Methods
 
-private:
+ private:
   // Dispatch table type for EncodeInstruction
-  using EncFn =
-      std::function<std::vector<uint8_t>(const Cpu6502 *, uint32_t, AddressingMode)>;
+  using EncFn = std::function<std::vector<uint8_t>(const Cpu6502*, uint32_t, AddressingMode)>;
 
   // Static encoder dispatch table: mnemonic -> member-function wrapper
   // Populated once; looked up in EncodeInstruction().
-  static const std::unordered_map<std::string, EncFn> &EncoderTable();
+  static const std::unordered_map<std::string, EncFn>& EncoderTable();
 
   // Opcode table structure for reducing duplication
   // Maps addressing modes to their corresponding opcodes for an instruction
@@ -642,13 +595,13 @@ private:
     std::optional<uint8_t> indirect_y{};
     std::optional<uint8_t> accumulator{};
     std::optional<uint8_t> relative{};
-    std::optional<uint8_t> indirect_zero_page{};                // 65C02+
-    std::optional<uint8_t> absolute_indexed_indirect{};         // 65C02+
-    std::optional<uint8_t> absolute_long{};                     // 65816
-    std::optional<uint8_t> indirect_long{};                     // 65816
-    std::optional<uint8_t> indirect_long_indexed_y{};           // 65816
-    std::optional<uint8_t> stack_relative{};                    // 65816
-    std::optional<uint8_t> stack_relative_indirect_indexed_y{}; // 65816
+    std::optional<uint8_t> indirect_zero_page{};                 // 65C02+
+    std::optional<uint8_t> absolute_indexed_indirect{};          // 65C02+
+    std::optional<uint8_t> absolute_long{};                      // 65816
+    std::optional<uint8_t> indirect_long{};                      // 65816
+    std::optional<uint8_t> indirect_long_indexed_y{};            // 65816
+    std::optional<uint8_t> stack_relative{};                     // 65816
+    std::optional<uint8_t> stack_relative_indirect_indexed_y{};  // 65816
   };
 
   /// @brief Controls immediate operand width for 65816 MX-flag-sensitive instructions
@@ -660,8 +613,7 @@ private:
 
   // Generic encoding function using opcode table
   // Eliminates duplication across 50+ Encode methods
-  std::vector<uint8_t> EncodeWithTable(const OpcodeTable &table,
-                                       uint32_t operand,
+  std::vector<uint8_t> EncodeWithTable(const OpcodeTable& table, uint32_t operand,
                                        AddressingMode mode,
                                        ImmWidth imm_width = ImmWidth::Byte) const;
 
@@ -669,15 +621,15 @@ private:
   // Used as a guard at the top of every 65816-only Encode* method.
   bool IsCpu65816() const { return cpu_mode_ == CpuMode::Cpu65816; }
 
-private:
+ private:
   // Phase 2.5: CPU mode state
-  CpuMode cpu_mode_ = CpuMode::Cpu6502; // Default to 6502
+  CpuMode cpu_mode_ = CpuMode::Cpu6502;  // Default to 6502
 
   // Phase 2.5 - Group 8: 65816 MX state (register width control)
   // m flag: false = 16-bit accumulator, true = 8-bit accumulator
   // x flag: false = 16-bit index registers, true = 8-bit index registers
-  mutable bool m_flag_ = true; // Default: 8-bit accumulator (emulation mode)
-  mutable bool x_flag_ = true; // Default: 8-bit index registers (emulation mode)
+  mutable bool m_flag_ = true;  // Default: 8-bit accumulator (emulation mode)
+  mutable bool x_flag_ = true;  // Default: 8-bit index registers (emulation mode)
 
   // Branch relaxation: false = error on out-of-range (default, matches original
   // assembler behavior). true = expand to B!cc+3/JMP sequence.
@@ -688,4 +640,4 @@ private:
   Cpu6502BranchHandler branch_handler_;
 };
 
-} // namespace xasm
+}  // namespace xasm

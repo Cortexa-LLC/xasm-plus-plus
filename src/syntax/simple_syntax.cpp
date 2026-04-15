@@ -6,19 +6,21 @@
  */
 
 #include "xasm++/syntax/simple_syntax.h"
-#include "xasm++/directives/directive_constants.h"
-#include "xasm++/directives/simple_directive_handlers.h"
-#include "xasm++/parse_utils.h"
-#include "xasm++/util/string_utils.h"
+
 #include <algorithm>
 #include <cctype>
 #include <sstream>
 #include <vector>
 
+#include "xasm++/directives/directive_constants.h"
+#include "xasm++/directives/simple_directive_handlers.h"
+#include "xasm++/parse_utils.h"
+#include "xasm++/util/string_utils.h"
+
 namespace xasm {
 
 // Helper: Convert to uppercase
-static std::string ToUpper(const std::string &str) {
+static std::string ToUpper(const std::string& str) {
   std::string result = str;
   std::transform(result.begin(), result.end(), result.begin(),
                  [](unsigned char c) { return std::toupper(c); });
@@ -26,7 +28,7 @@ static std::string ToUpper(const std::string &str) {
 }
 
 // Helper: Strip comments (semicolon to end of line)
-static std::string StripComments(const std::string &str) {
+static std::string StripComments(const std::string& str) {
   size_t comment_pos = str.find(';');
   if (comment_pos != std::string::npos) {
     return str.substr(0, comment_pos);
@@ -39,7 +41,9 @@ static bool IsIdentifierStart(char c) {
   return std::isalpha(static_cast<unsigned char>(c)) || c == '_';
 }
 
-SimpleSyntaxParser::SimpleSyntaxParser() { InitializeDirectives(); }
+SimpleSyntaxParser::SimpleSyntaxParser() {
+  InitializeDirectives();
+}
 
 void SimpleSyntaxParser::InitializeDirectives() {
   using namespace directives;
@@ -54,8 +58,8 @@ void SimpleSyntaxParser::InitializeDirectives() {
   directive_registry_.Register(DW, simple::HandleDw);
 }
 
-void SimpleSyntaxParser::Parse(const std::string &source, Section &section,
-                               ConcreteSymbolTable &symbols) {
+void SimpleSyntaxParser::Parse(const std::string& source, Section& section,
+                               ConcreteSymbolTable& symbols) {
   if (source.empty()) {
     return;
   }
@@ -86,14 +90,13 @@ void SimpleSyntaxParser::Parse(const std::string &source, Section &section,
                        std::make_shared<LiteralExpr>(current_address));
 
         // Create LabelAtom
-        section.atoms.push_back(
-            std::make_shared<LabelAtom>(label_name, current_address));
+        section.atoms.push_back(std::make_shared<LabelAtom>(label_name, current_address));
 
         // Continue parsing rest of line (if any)
         if (colon_pos + 1 < line.length()) {
           line = util::Trim(line.substr(colon_pos + 1));
         } else {
-          continue; // Label only, no instruction
+          continue;  // Label only, no instruction
         }
       }
     }
@@ -136,12 +139,11 @@ void SimpleSyntaxParser::Parse(const std::string &source, Section &section,
         operands = "";
       }
 
-      section.atoms.push_back(
-          std::make_shared<InstructionAtom>(mnemonic, operands));
+      section.atoms.push_back(std::make_shared<InstructionAtom>(mnemonic, operands));
       // Size will be determined during encoding phase
-      current_address += 1; // Placeholder (actual size determined later)
+      current_address += 1;  // Placeholder (actual size determined later)
     }
   }
 }
 
-} // namespace xasm
+}  // namespace xasm

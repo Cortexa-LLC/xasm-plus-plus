@@ -12,15 +12,15 @@
 #pragma once
 
 #include <cstdint>
-
-#include "xasm++/common/macro_processor.h"
-#include "xasm++/section.h"
-#include "xasm++/symbol.h"
 #include <memory>
 #include <stack>
 #include <string>
 #include <unordered_map>
 #include <vector>
+
+#include "xasm++/common/macro_processor.h"
+#include "xasm++/section.h"
+#include "xasm++/symbol.h"
 
 namespace xasm {
 
@@ -85,7 +85,7 @@ namespace xasm {
  * @endcode
  */
 class FlexAsmSyntax {
-public:
+ public:
   /**
    * @brief Default constructor
    */
@@ -105,10 +105,9 @@ public:
    * @throws std::runtime_error on parse errors (syntax errors, invalid
    * directives, etc.)
    */
-  void Parse(const std::string &source, Section &section,
-             ConcreteSymbolTable &symbols);
+  void Parse(const std::string& source, Section& section, ConcreteSymbolTable& symbols);
 
-protected:
+ protected:
   // ========== Macro Processor Methods (Protected for Testing) ==========
 
   /**
@@ -119,9 +118,8 @@ protected:
    * @param arguments Argument values
    * @return Line with parameters substituted
    */
-  static std::string SubstituteParameters(const std::string &line,
-                                   const MacroDefinition &macro,
-                                   const std::vector<std::string> &arguments);
+  static std::string SubstituteParameters(const std::string& line, const MacroDefinition& macro,
+                                          const std::vector<std::string>& arguments);
 
   /**
    * @brief Make local label unique for this expansion
@@ -130,7 +128,7 @@ protected:
    * @param expansion_id Unique expansion ID
    * @return Unique label name
    */
-  static std::string MakeLocalLabelUnique(const std::string &label, int expansion_id);
+  static std::string MakeLocalLabelUnique(const std::string& label, int expansion_id);
 
   /**
    * @brief Expand macro with arguments
@@ -139,9 +137,8 @@ protected:
    * @param arguments Argument values
    * @return Expanded source lines
    */
-  std::vector<std::string>
-  ExpandMacro(const std::string &name,
-              const std::vector<std::string> &arguments);
+  std::vector<std::string> ExpandMacro(const std::string& name,
+                                       const std::vector<std::string>& arguments);
 
   /**
    * @brief Check if macro is defined
@@ -149,45 +146,45 @@ protected:
    * @param name Macro name
    * @return true if macro exists
    */
-  bool IsMacroDefined(const std::string &name) const;
+  bool IsMacroDefined(const std::string& name) const;
 
   // ========== Macro Processor State (Protected for Testing) ==========
 
-  std::unordered_map<std::string, MacroDefinition> macros_; ///< Defined macros
-  int expansion_counter_ = 0; ///< Unique ID for macro expansions
+  std::unordered_map<std::string, MacroDefinition> macros_;  ///< Defined macros
+  int expansion_counter_ = 0;                                ///< Unique ID for macro expansions
 
-private:
+ private:
   /**
    * @brief Parser mode state machine
    */
   enum class ParserMode : std::uint8_t {
-    Normal,             ///< Normal parsing
-    InMacroDefinition,  ///< Collecting macro definition
-    InRepeatBlock,      ///< Collecting repeat block
-    SkippingConditional ///< Skipping conditional block (IFC false)
+    Normal,              ///< Normal parsing
+    InMacroDefinition,   ///< Collecting macro definition
+    InRepeatBlock,       ///< Collecting repeat block
+    SkippingConditional  ///< Skipping conditional block (IFC false)
   };
 
-  ParserMode mode_ = ParserMode::Normal; ///< Current parser mode
-  uint32_t current_address_ = 0;         ///< Current assembly address
-  uint32_t current_line_ = 0;            ///< Current line number
-  uint8_t direct_page_ = 0;              ///< Current direct page value
-  std::string title_;                    ///< Program title (NAM/TTL)
-  std::string subtitle_;                 ///< Program subtitle (STTL)
+  ParserMode mode_ = ParserMode::Normal;  ///< Current parser mode
+  uint32_t current_address_ = 0;          ///< Current assembly address
+  uint32_t current_line_ = 0;             ///< Current line number
+  uint8_t direct_page_ = 0;               ///< Current direct page value
+  std::string title_;                     ///< Program title (NAM/TTL)
+  std::string subtitle_;                  ///< Program subtitle (STTL)
 
   // Macro processor state (macros_ and expansion_counter_ moved to protected)
-  MacroDefinition current_macro_;  ///< Macro being defined
-  MacroProcessor macro_processor_; ///< Macro processor instance
+  MacroDefinition current_macro_;   ///< Macro being defined
+  MacroProcessor macro_processor_;  ///< Macro processor instance
 
   // Conditional assembly state
-  std::stack<bool> conditional_stack_; ///< Condition evaluation stack
-  ConcreteSymbolTable *current_symbols_ =
-      nullptr; ///< Symbol table for current parse
+  std::stack<bool> conditional_stack_;              ///< Condition evaluation stack
+  ConcreteSymbolTable* current_symbols_ = nullptr;  ///< Symbol table for current parse
 
   // Repeat block state
   struct RepeatBlock {
     int count;
     std::vector<std::string> lines;
   };
+
   std::stack<RepeatBlock> repeat_stack_;
 
   /**
@@ -197,8 +194,7 @@ private:
    * @param section Section to add atoms to
    * @param symbols Symbol table for definitions
    */
-  void ParseLine(const std::string &line, Section &section,
-                 ConcreteSymbolTable &symbols);
+  void ParseLine(const std::string& line, Section& section, ConcreteSymbolTable& symbols);
 
   /**
    * @brief Parse directive (ORG, END, EQU, SET, FCB, FDB, FCC, RMB, SETDP,
@@ -210,9 +206,8 @@ private:
    * @param section Section to add atoms to
    * @param symbols Symbol table
    */
-  void ParseDirective(const std::string &directive, const std::string &operands,
-                      const std::string &label, Section &section,
-                      ConcreteSymbolTable &symbols);
+  void ParseDirective(const std::string& directive, const std::string& operands,
+                      const std::string& label, Section& section, ConcreteSymbolTable& symbols);
 
   /**
    * @brief Parse numeric value (supports $hex, %binary, 'char', decimal)
@@ -221,7 +216,7 @@ private:
    * @return Parsed numeric value
    * @throws std::runtime_error on invalid format
    */
-  static uint32_t ParseNumber(const std::string &str);
+  static uint32_t ParseNumber(const std::string& str);
 
   /**
    * @brief Strip comments from line
@@ -229,7 +224,7 @@ private:
    * @param line Line to process
    * @return Line without comments
    */
-  static std::string StripComments(const std::string &line);
+  static std::string StripComments(const std::string& line);
 
   /**
    * @brief Trim whitespace from both ends
@@ -237,7 +232,7 @@ private:
    * @param str String to trim
    * @return Trimmed string
    */
-  static std::string Trim(const std::string &str);
+  static std::string Trim(const std::string& str);
 
   /**
    * @brief Convert string to uppercase
@@ -245,7 +240,7 @@ private:
    * @param str String to convert
    * @return Uppercase string
    */
-  static std::string ToUpper(const std::string &str);
+  static std::string ToUpper(const std::string& str);
 
   /**
    * @brief Check if line is a comment line (starts with *)
@@ -253,7 +248,7 @@ private:
    * @param line Line to check
    * @return true if comment line
    */
-  static bool IsCommentLine(const std::string &line);
+  static bool IsCommentLine(const std::string& line);
 
   // ========== Macro Processor Methods ==========
 
@@ -263,7 +258,7 @@ private:
    * @param name Name to check
    * @return true if macro is defined
    */
-  bool IsMacro(const std::string &name) const;
+  bool IsMacro(const std::string& name) const;
 
   // ========== Conditional Assembly Methods ==========
 
@@ -273,7 +268,7 @@ private:
    * @param condition Condition string
    * @return true if condition is true
    */
-  bool EvaluateCondition(const std::string &condition);
+  bool EvaluateCondition(const std::string& condition);
 
   /**
    * @brief Check if we should assemble current line
@@ -283,4 +278,4 @@ private:
   bool ShouldAssemble() const;
 };
 
-} // namespace xasm
+}  // namespace xasm

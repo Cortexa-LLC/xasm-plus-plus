@@ -11,12 +11,6 @@
 
 #pragma once
 
-#include "xasm++/common/expression_parser.h"
-#include "xasm++/cpu/cpu_6502.h"
-#include "xasm++/expression.h"
-#include "xasm++/section.h"
-#include "xasm++/symbol.h"
-#include "xasm++/syntax/directive_registry.h"
 #include <functional>
 #include <map>
 #include <memory>
@@ -24,10 +18,16 @@
 #include <unordered_map>
 #include <vector>
 
+#include "xasm++/common/expression_parser.h"
+#include "xasm++/cpu/cpu_6502.h"
+#include "xasm++/expression.h"
+#include "xasm++/section.h"
+#include "xasm++/symbol.h"
+#include "xasm++/syntax/directive_registry.h"
+
 namespace xasm {
 
 // Forward declaration
-
 
 /**
  * @brief SCMASM-specific number parser
@@ -39,7 +39,7 @@ namespace xasm {
  * - Character constants with high-bit rule ('A, "A, etc.)
  */
 class SCMASMNumberParser : public INumberParser {
-public:
+ public:
   /**
    * @brief Attempt to parse an SCMASM-specific number format
    *
@@ -47,7 +47,7 @@ public:
    * @param value Output parameter - receives the parsed value
    * @return true if successfully parsed, false otherwise
    */
-  bool TryParse(const std::string &token, int64_t &value) const override;
+  bool TryParse(const std::string& token, int64_t& value) const override;
 };
 
 /**
@@ -119,18 +119,18 @@ public:
 
 /// @brief Helper struct for ApplyHighBitRule - groups adjacent char parameters
 struct HighBitChars {
-  char input;     ///< Input character
-  char delimiter; ///< Delimiter character (controls high-bit rule)
+  char input;      ///< Input character
+  char delimiter;  ///< Delimiter character (controls high-bit rule)
 };
 
 /// @brief Helper struct for StartPhase - groups adjacent address parameters
 struct PhaseAddresses {
-  uint32_t real_addr;    ///< Real (physical) address
-  uint32_t virtual_addr; ///< Virtual address
+  uint32_t real_addr;     ///< Real (physical) address
+  uint32_t virtual_addr;  ///< Virtual address
 };
 
 class ScmasmSyntaxParser {
-public:
+ public:
   /**
    * @brief Constructor - initializes parser state
    */
@@ -141,7 +141,7 @@ public:
    *
    * @param cpu Pointer to CPU plugin (must remain valid during parsing)
    */
-  void SetCpu(CpuPlugin *cpu);
+  void SetCpu(CpuPlugin* cpu);
 
   /**
    * @brief Set CPU plugin by name for opcode validation
@@ -149,14 +149,14 @@ public:
    * @param cpu_name CPU name string (e.g., "6502", "65C02", "65816")
    * @throws std::runtime_error if invalid CPU name
    */
-  void SetCpu(const std::string &cpu_name);
+  void SetCpu(const std::string& cpu_name);
 
   /**
    * @brief Set include search paths for .INB directive
    *
    * @param paths Vector of directory paths to search for included files
    */
-  void SetIncludePaths(const std::vector<std::string> &paths);
+  void SetIncludePaths(const std::vector<std::string>& paths);
 
   /**
    * @brief Set path mappings for .INB directive
@@ -169,7 +169,7 @@ public:
    *
    * @param mappings Map of virtual paths to actual paths
    */
-  void SetPathMappings(const std::map<std::string, std::string> &mappings);
+  void SetPathMappings(const std::map<std::string, std::string>& mappings);
 
   /**
    * @brief Return output path set by a .TF directive during parsing.
@@ -177,12 +177,12 @@ public:
    * Returns empty string if no .TF was encountered (caller should use the
    * -o/output value in that case).
    */
-  const std::string &GetTfOutput() const { return tf_output_; }
+  const std::string& GetTfOutput() const { return tf_output_; }
 
   /**
    * @brief Set the .TF output path (called by HandleTf directive handler).
    */
-  void SetTfOutput(const std::string &path) { tf_output_ = path; }
+  void SetTfOutput(const std::string& path) { tf_output_ = path; }
 
   /**
    * @brief Parse SCMASM assembly source into atoms and symbols
@@ -197,8 +197,7 @@ public:
    * @throws std::runtime_error on parse errors (syntax errors, undefined
    * labels, etc.)
    */
-  void Parse(const std::string &source, Section &section,
-             ConcreteSymbolTable &symbols);
+  void Parse(const std::string& source, Section& section, ConcreteSymbolTable& symbols);
 
   // Phase 6c.2: Public methods for handler access
   // These are called by extracted directive handlers
@@ -214,8 +213,7 @@ public:
    * @return Evaluated value
    * @throws std::runtime_error on undefined symbols or invalid expressions
    */
-  uint32_t EvaluateExpression(const std::string &str,
-                              ConcreteSymbolTable &symbols);
+  uint32_t EvaluateExpression(const std::string& str, ConcreteSymbolTable& symbols);
 
   /**
    * @brief Parse .MA directive (macro definition start)
@@ -226,7 +224,7 @@ public:
    * @param label Optional label before directive
    * @param operand Macro name (if not in label)
    */
-  void HandleMa(const DirectiveContext &ctx);
+  void HandleMa(const DirectiveContext& ctx);
 
   /**
    * @brief Parse .EM directive (end macro definition)
@@ -251,7 +249,7 @@ public:
    *
    * @param file New source file path
    */
-  void SetCurrentFile(const std::string &file);
+  void SetCurrentFile(const std::string& file);
 
   /**
    * @brief Check if parser is in dummy section mode
@@ -353,7 +351,7 @@ public:
    * Exposed publicly so directive handlers (e.g. HandleEq) can use it when
    * processing ':N .EQ *' patterns inside macros.
    */
-  const std::string &LocalLabelScope(const std::string &label) const;
+  const std::string& LocalLabelScope(const std::string& label) const;
 
   /**
    * @brief Returns the full scoped name for a local label definition or
@@ -370,7 +368,7 @@ public:
    * Exposed publicly so directive handlers (e.g. HandleEq) can use it
    * consistently.
    */
-  std::string ScopedLocalLabelName(const std::string &label) const;
+  std::string ScopedLocalLabelName(const std::string& label) const;
 
   /**
    * @brief Expand character literals in an expression string to hex values.
@@ -389,7 +387,7 @@ public:
    * @param s Expression string that may contain character literals
    * @return Expression string with character literals replaced by $XX hex tokens
    */
-  static std::string ExpandCharLiteralsInExpr(const std::string &s) ;
+  static std::string ExpandCharLiteralsInExpr(const std::string& s);
 
   /**
    * @brief Expand local label references (.N / :N) in an operand string to
@@ -397,58 +395,53 @@ public:
    * instruction operands and directive operands so that forward/backward local
    * label references resolve correctly in multi-pass assembly.
    */
-  std::string ExpandLocalLabelsInOperand(const std::string &operand) const;
+  std::string ExpandLocalLabelsInOperand(const std::string& operand) const;
 
-private:
+ private:
   // Directive handler function signature (DirectiveContext pattern)
-  using DirectiveHandler =
-      std::function<void(DirectiveContext &context)>;
+  using DirectiveHandler = std::function<void(DirectiveContext& context)>;
 
   // Macro definition structure
   struct MacroDef {
     std::string name;
-    std::vector<std::string> lines; ///< Macro body lines
+    std::vector<std::string> lines;  ///< Macro body lines
   };
 
   // Macro nesting limit (prevent infinite recursion)
   static constexpr int MAX_MACRO_NESTING_DEPTH = 63;
 
   // Current state
-  uint32_t current_address_ = 0; ///< Current assembly address
-  std::string current_file_ = "<source>"; ///< Current source filename
-  int current_line_ = 0;         ///< Current line number (for errors)
+  uint32_t current_address_ = 0;           ///< Current assembly address
+  std::string current_file_ = "<source>";  ///< Current source filename
+  int current_line_ = 0;                   ///< Current line number (for errors)
 
   // CPU plugin for opcode validation
-  CpuPlugin *cpu_ = nullptr; ///< CPU plugin for opcode validation (nullable)
+  CpuPlugin* cpu_ = nullptr;  ///< CPU plugin for opcode validation (nullable)
   // Owned CPU object when .OP directive overrides the external CPU plugin.
   // Must outlive cpu_ — SetCpu(string) stores the address of this member.
-  std::unique_ptr<Cpu6502> owned_cpu_ = nullptr; ///< CPU owned by parser (via .OP directive)
+  std::unique_ptr<Cpu6502> owned_cpu_ = nullptr;  ///< CPU owned by parser (via .OP directive)
 
   // Include search paths
-  std::vector<std::string>
-      include_paths_ = {}; ///< Directories to search for .INB files
+  std::vector<std::string> include_paths_ = {};  ///< Directories to search for .INB files
 
   // Path mappings for virtual path substitution
-  std::map<std::string, std::string>
-      path_mappings_ = {}; ///< Virtual→actual path mappings for .INB
+  std::map<std::string, std::string> path_mappings_ =
+      {};  ///< Virtual→actual path mappings for .INB
 
   // .TF target output path (overrides -o default when set)
-  std::string tf_output_ = {}; ///< Output path set by .TF directive (empty = not set)
+  std::string tf_output_ = {};  ///< Output path set by .TF directive (empty = not set)
 
   // Symbol tracking for .SE (redefinable)
-  std::unordered_map<std::string, bool>
-      variable_symbols_ = {}; ///< Track .SE symbols
+  std::unordered_map<std::string, bool> variable_symbols_ = {};  ///< Track .SE symbols
 
   // Phase 3: Macros, Conditionals, Local Labels, Loops
-  std::unordered_map<std::string, MacroDef> macros_ = {}; ///< Defined macros
-  std::unordered_map<std::string, uint32_t>
-      local_labels_ = {};               ///< Local labels (.0-.9)
-  bool in_macro_definition_ = false;       ///< Currently defining a macro
-  std::string current_macro_name_ = {}; ///< Name of macro being defined
-  std::vector<std::string>
-      current_macro_body_ = {};     ///< Lines of macro being defined
-  int macro_invocation_depth_ = 0;   ///< Nesting depth for macro invocations
-  int macro_invocation_counter_ = 0; ///< Monotonic counter, unique per invocation
+  std::unordered_map<std::string, MacroDef> macros_ = {};        ///< Defined macros
+  std::unordered_map<std::string, uint32_t> local_labels_ = {};  ///< Local labels (.0-.9)
+  bool in_macro_definition_ = false;                             ///< Currently defining a macro
+  std::string current_macro_name_ = {};                          ///< Name of macro being defined
+  std::vector<std::string> current_macro_body_ = {};             ///< Lines of macro being defined
+  int macro_invocation_depth_ = 0;    ///< Nesting depth for macro invocations
+  int macro_invocation_counter_ = 0;  ///< Monotonic counter, unique per invocation
   /// Per-invocation scope prefix for ':N' macro-local labels.
   /// Empty when not inside any macro.  Set to a unique string each time a
   /// macro is invoked so that :1 labels in different expansions of the same
@@ -456,27 +449,27 @@ private:
   std::string current_macro_label_scope_ = {};
 
   // Pending label: a label-only line may be associated with the next .EQ/.SE
-  std::string pending_label_ = {}; ///< Label deferred from previous label-only line
+  std::string pending_label_ = {};  ///< Label deferred from previous label-only line
 
   // Local label scoping: track the most recent global (non-local) label so
   // that local labels like .8 are stored as "GLOBALNAME.8" in the symbol
   // table and can be resolved by the assembler during branch encoding.
-  std::string last_global_label_ = {}; ///< Most recent global label (scope for local labels)
+  std::string last_global_label_ = {};  ///< Most recent global label (scope for local labels)
 
   // Dummy section support (structure definitions)
-  bool in_dummy_section_ = false;          ///< Currently in dummy section (.DUMMY active)
-  uint32_t dummy_saved_address_ = 0;   ///< Main PC saved at .DUMMY entry, restored at .ED
+  bool in_dummy_section_ = false;     ///< Currently in dummy section (.DUMMY active)
+  uint32_t dummy_saved_address_ = 0;  ///< Main PC saved at .DUMMY entry, restored at .ED
 
   // Phase assembly support (.PH/.EP)
-  bool in_phase_ = false;               ///< Currently in phase assembly
-  uint32_t phase_virtual_addr_ = 0; ///< Virtual address for phase
-  uint32_t phase_real_addr_ = 0;    ///< Real address where code is stored
+  bool in_phase_ = false;            ///< Currently in phase assembly
+  uint32_t phase_virtual_addr_ = 0;  ///< Virtual address for phase
+  uint32_t phase_real_addr_ = 0;     ///< Real address where code is stored
 
   // Directive registry
   std::unordered_map<std::string, DirectiveHandler> directive_registry_ = {};
 
   // Expression and number parsing (Phase 2 integration)
-  SCMASMNumberParser scmasm_number_parser_; ///< SCMASM-specific number parser
+  SCMASMNumberParser scmasm_number_parser_;  ///< SCMASM-specific number parser
 
   /**
    * @brief Initialize directive registry with all supported directives
@@ -495,7 +488,7 @@ private:
    * @param line Input line
    * @return Line with line number removed
    */
-  static std::string StripLineNumber(const std::string &line);
+  static std::string StripLineNumber(const std::string& line);
 
   /**
    * @brief Strip comments from line
@@ -505,7 +498,7 @@ private:
    * @param line Input line
    * @return Line with comments removed
    */
-  static std::string StripComments(const std::string &line);
+  static std::string StripComments(const std::string& line);
 
   /**
    * @brief Handle a line starting with '*' (either private label or comment)
@@ -514,9 +507,8 @@ private:
    * @param result Output: the processed line (or empty for comment)
    * @return true if the '*' was recognized and result was set; false otherwise
    */
-  static bool TryHandleAsteriskLine(const std::string &line,
-                                    size_t first_non_space,
-                                    std::string &result);
+  static bool TryHandleAsteriskLine(const std::string& line, size_t first_non_space,
+                                    std::string& result);
 
   /**
    * @brief Strip Apple II editor commands from line
@@ -528,7 +520,7 @@ private:
    * @param line Input line
    * @return Empty string if line is an editor command, original line otherwise
    */
-  static std::string StripEditorCommands(const std::string &line);
+  static std::string StripEditorCommands(const std::string& line);
 
   /**
    * @brief Parse a single line of source
@@ -539,62 +531,51 @@ private:
    * @param source All source lines (for multi-line directives)
    * @param line_idx Current line index (updated by multi-line directives)
    */
-  void ParseLine(const std::string &line, Section &section,
-                 ConcreteSymbolTable &symbols,
-                 const std::vector<std::string> &source, size_t &line_idx);
+  void ParseLine(const std::string& line, Section& section, ConcreteSymbolTable& symbols,
+                 const std::vector<std::string>& source, size_t& line_idx);
 
   /// Process one raw source line (strip/filter, delegate to ParseLine).
-  void ProcessOneLine(const std::string &raw, Section &section,
-                      ConcreteSymbolTable &symbols,
-                      const std::vector<std::string> &lines,
-                      size_t &line_idx);
+  void ProcessOneLine(const std::string& raw, Section& section, ConcreteSymbolTable& symbols,
+                      const std::vector<std::string>& lines, size_t& line_idx);
 
   /// Handle a line received while collecting a macro body.
-  void HandleMacroBodyLine(const std::string &line, size_t &line_idx);
+  void HandleMacroBodyLine(const std::string& line, size_t& line_idx);
 
   /// Flush any pending label at end-of-file.
-  void FlushPendingLabel(Section &section, ConcreteSymbolTable &symbols);
+  void FlushPendingLabel(Section& section, ConcreteSymbolTable& symbols);
 
   /**
    * @brief Try to handle a directive line (opcode starts with '.')
    * @return true if handled
    */
-  bool TryHandleDirectiveLine(const std::string &opcode_upper,
-                              const std::string &operand,
-                              const std::string &label, Section &section,
-                              ConcreteSymbolTable &symbols,
-                              const std::vector<std::string> &source,
-                              size_t &line_idx);
+  bool TryHandleDirectiveLine(const std::string& opcode_upper, const std::string& operand,
+                              const std::string& label, Section& section,
+                              ConcreteSymbolTable& symbols, const std::vector<std::string>& source,
+                              size_t& line_idx);
 
   /// Define label for a directive using SCMASM namespace scoping rules.
-  void DefineLabelForDirectiveSCMASM(const std::string &opcode_upper,
-                                     const std::string &label,
-                                     Section &section,
-                                     ConcreteSymbolTable &symbols);
+  void DefineLabelForDirectiveSCMASM(const std::string& opcode_upper, const std::string& label,
+                                     Section& section, ConcreteSymbolTable& symbols);
 
   /// Dispatch control-flow directives (.DO, .LU, .ELSE, .FIN, .ENDU).
   /// @return true if the directive was handled; false if not a control-flow directive.
-  bool TryDispatchControlFlow(const std::string &opcode_upper,
-                              const std::string &operand,
-                              const std::string &label, Section &section,
-                              ConcreteSymbolTable &symbols,
-                              const std::vector<std::string> &source,
-                              size_t &line_idx);
+  bool TryDispatchControlFlow(const std::string& opcode_upper, const std::string& operand,
+                              const std::string& label, Section& section,
+                              ConcreteSymbolTable& symbols, const std::vector<std::string>& source,
+                              size_t& line_idx);
 
   /**
    * @brief Try to handle a macro invocation (opcode starts with '>')
    * @return true if handled (throws if macro not found but > prefix used)
    */
-  bool TryHandleMacroLine(const std::string &opcode_upper,
-                          const std::string &operand, Section &section,
-                          ConcreteSymbolTable &symbols);
+  bool TryHandleMacroLine(const std::string& opcode_upper, const std::string& operand,
+                          Section& section, ConcreteSymbolTable& symbols);
 
   /**
    * @brief Handle an assembly instruction line (6502 etc.)
    */
-  void HandleInstructionLine(const std::string &opcode_upper,
-                             const std::string &operand, Section &section,
-                             ConcreteSymbolTable &symbols);
+  void HandleInstructionLine(const std::string& opcode_upper, const std::string& operand,
+                             Section& section, ConcreteSymbolTable& symbols);
 
   /**
    * @brief Parse label at start of line
@@ -605,8 +586,8 @@ private:
    * @param symbols Symbol table
    * @return Label name (empty if none)
    */
-  std::string ParseLabel(const std::string &line, size_t &pos, Section &section,
-                         ConcreteSymbolTable &symbols);
+  std::string ParseLabel(const std::string& line, size_t& pos, Section& section,
+                         ConcreteSymbolTable& symbols);
 
   /**
    * @brief Parse .OR directive (set origin)
@@ -615,8 +596,7 @@ private:
    * @param section Section to add org atom
    * @param symbols Symbol table for expression evaluation
    */
-  void HandleOr(const std::string &operand, Section &section,
-                ConcreteSymbolTable &symbols);
+  void HandleOr(const std::string& operand, Section& section, ConcreteSymbolTable& symbols);
 
   /**
    * @brief Parse .EQ directive (define constant)
@@ -625,7 +605,7 @@ private:
    * @param operand Expression to evaluate
    * @param symbols Symbol table to add symbol
    */
-  void HandleEq(const DirectiveContext &ctx, ConcreteSymbolTable &symbols);
+  void HandleEq(const DirectiveContext& ctx, ConcreteSymbolTable& symbols);
 
   /**
    * @brief Parse .SE directive (set variable)
@@ -636,7 +616,7 @@ private:
    * @param operand Expression to evaluate
    * @param symbols Symbol table to add/update symbol
    */
-  void HandleSe(const DirectiveContext &ctx, ConcreteSymbolTable &symbols);
+  void HandleSe(const DirectiveContext& ctx, ConcreteSymbolTable& symbols);
 
   /**
    * @brief Parse .AS directive (ASCII string)
@@ -647,8 +627,7 @@ private:
    * @param section Section to add data atom
    * @param symbols Symbol table for expression evaluation
    */
-  void HandleAs(const std::string &operand, Section &section,
-                ConcreteSymbolTable &symbols);
+  void HandleAs(const std::string& operand, Section& section, ConcreteSymbolTable& symbols);
 
   /**
    * @brief Parse .AT directive (ASCII text with high bit on last char)
@@ -659,8 +638,7 @@ private:
    * @param section Section to add data atom
    * @param symbols Symbol table for expression evaluation
    */
-  void HandleAt(const std::string &operand, Section &section,
-                ConcreteSymbolTable &symbols);
+  void HandleAt(const std::string& operand, Section& section, ConcreteSymbolTable& symbols);
 
   /**
    * @brief Parse .AZ directive (ASCII zero-terminated)
@@ -671,8 +649,7 @@ private:
    * @param section Section to add data atom
    * @param symbols Symbol table for expression evaluation
    */
-  void HandleAz(const std::string &operand, Section &section,
-                ConcreteSymbolTable &symbols);
+  void HandleAz(const std::string& operand, Section& section, ConcreteSymbolTable& symbols);
 
   /**
    * @brief Parse .DA directive (define address/data)
@@ -683,11 +660,10 @@ private:
    * @param section Section to add data atom
    * @param symbols Symbol table for expression evaluation
    */
-  void HandleDa(const std::string &operand, Section &section,
-                ConcreteSymbolTable &symbols);
+  void HandleDa(const std::string& operand, Section& section, ConcreteSymbolTable& symbols);
 
-  void EmitDaValue(const std::string &value_trimmed, std::vector<uint8_t> &data,
-                   ConcreteSymbolTable &symbols);
+  void EmitDaValue(const std::string& value_trimmed, std::vector<uint8_t>& data,
+                   ConcreteSymbolTable& symbols);
 
   /**
    * @brief Parse .HS directive (hex string)
@@ -698,8 +674,7 @@ private:
    * @param section Section to add data atom
    * @param symbols Symbol table for expression evaluation
    */
-  static void HandleHs(const std::string &operand, Section &section,
-                ConcreteSymbolTable &symbols);
+  static void HandleHs(const std::string& operand, Section& section, ConcreteSymbolTable& symbols);
 
   /**
    * @brief Parse .BS directive (bit string)
@@ -710,8 +685,7 @@ private:
    * @param section Section to add data atom
    * @param symbols Symbol table for expression evaluation
    */
-  void HandleBs(const std::string &operand, Section &section,
-                ConcreteSymbolTable &symbols);
+  void HandleBs(const std::string& operand, Section& section, ConcreteSymbolTable& symbols);
 
   /**
    * @brief Invoke a macro by name
@@ -723,9 +697,8 @@ private:
    * @param section Section to add atoms to
    * @param symbols Symbol table
    */
-  void InvokeMacro(const std::string &name,
-                   const std::vector<std::string> &params, Section &section,
-                   ConcreteSymbolTable &symbols);
+  void InvokeMacro(const std::string& name, const std::vector<std::string>& params,
+                   Section& section, ConcreteSymbolTable& symbols);
 
   /**
    * @brief Parse .DO directive (conditional assembly)
@@ -738,9 +711,8 @@ private:
    * @param source Remaining source lines
    * @param line_idx Current line index (updated)
    */
-  void HandleDo(const DirectiveContext &ctx,
-                Section &section, ConcreteSymbolTable &symbols,
-                const std::vector<std::string> &source, size_t &line_idx);
+  void HandleDo(const DirectiveContext& ctx, Section& section, ConcreteSymbolTable& symbols,
+                const std::vector<std::string>& source, size_t& line_idx);
 
   /**
    * @brief Parse .LU directive (loop start)
@@ -753,9 +725,8 @@ private:
    * @param source Remaining source lines
    * @param line_idx Current line index (updated)
    */
-  void HandleLu(const DirectiveContext &ctx,
-                Section &section, ConcreteSymbolTable &symbols,
-                const std::vector<std::string> &source, size_t &line_idx);
+  void HandleLu(const DirectiveContext& ctx, Section& section, ConcreteSymbolTable& symbols,
+                const std::vector<std::string>& source, size_t& line_idx);
 
   /**
    * @brief Substitute macro parameters in line
@@ -766,8 +737,8 @@ private:
    * @param params Parameter values
    * @return Line with parameters substituted
    */
-  static std::string SubstituteParameters(const std::string &line,
-                                   const std::vector<std::string> &params);
+  static std::string SubstituteParameters(const std::string& line,
+                                          const std::vector<std::string>& params);
 
   /**
    * @brief Parse number in any format
@@ -782,7 +753,7 @@ private:
    * @return Parsed number value
    * @throws std::runtime_error on invalid format
    */
-  static uint32_t ParseNumber(const std::string &str);
+  static uint32_t ParseNumber(const std::string& str);
 
   /**
    * @brief Parse expression
@@ -791,8 +762,7 @@ private:
    * @param symbols Symbol table for lookups
    * @return Expression object
    */
-  std::shared_ptr<Expression> ParseExpression(const std::string &str,
-                                              ConcreteSymbolTable &symbols);
+  std::shared_ptr<Expression> ParseExpression(const std::string& str, ConcreteSymbolTable& symbols);
 
   /**
    * @brief Apply high-bit rule based on delimiter ASCII value
@@ -815,7 +785,7 @@ private:
    * @param result Output vector of bytes
    * @return Delimiter character used
    */
-  static char ParseString(const std::string &operand, std::vector<uint8_t> &result);
+  static char ParseString(const std::string& operand, std::vector<uint8_t>& result);
 
   /**
    * @brief Check if label is a local label (.0-.9)
@@ -823,7 +793,7 @@ private:
    * @param label Label to check
    * @return true if local label, false otherwise
    */
-  static bool IsLocalLabel(const std::string &label);
+  static bool IsLocalLabel(const std::string& label);
 
   /**
    * @brief Trim whitespace from both ends
@@ -831,7 +801,7 @@ private:
    * @param str Input string
    * @return Trimmed string
    */
-  static std::string Trim(const std::string &str);
+  static std::string Trim(const std::string& str);
 
   /**
    * @brief Format error message with source location
@@ -839,7 +809,7 @@ private:
    * @param message Error message
    * @return Formatted error string
    */
-  std::string FormatError(const std::string &message) const;
+  std::string FormatError(const std::string& message) const;
 
   // -------------------------------------------------------------------------
   // Complexity-reduction helpers (extracted from high-CC functions)
@@ -847,105 +817,97 @@ private:
 
   /** Bounds of a .DO/.LU conditional block. */
   struct DoBlockBounds {
-    size_t else_line; ///< index of .ELSE line, or npos if none
-    size_t fin_line;  ///< index of the matching .FIN line
+    size_t else_line;  ///< index of .ELSE line, or npos if none
+    size_t fin_line;   ///< index of the matching .FIN line
   };
 
   /**
    * @brief Scan source for the matching .FIN (and optional .ELSE) of a
    *        .DO or .LU block starting at start_idx+1.
    */
-  static DoBlockBounds FindDoBlockBounds(
-      const std::vector<std::string> &source, size_t start_idx);
+  static DoBlockBounds FindDoBlockBounds(const std::vector<std::string>& source, size_t start_idx);
 
   /**
    * @brief Emit a label atom (local or global) at addr, inserting into the
    *        atoms vector at atom_insert_pos.
    */
-  void EmitDoLabel(const std::string &label, uint32_t addr,
-                   size_t atom_insert_pos, Section &section,
-                   ConcreteSymbolTable &symbols);
+  void EmitDoLabel(const std::string& label, uint32_t addr, size_t atom_insert_pos,
+                   Section& section, ConcreteSymbolTable& symbols);
 
   /**
    * @brief Flush pending_label_ as an address-label at current_address_.
    *        Used when pending_label_ precedes a non-.EQ/.SE opcode.
    */
-  void FlushPendingLabelAsAddress(Section &section,
-                                  ConcreteSymbolTable &symbols);
+  void FlushPendingLabelAsAddress(Section& section, ConcreteSymbolTable& symbols);
 
   /**
    * @brief Check for *LABEL .EQ / *LABEL .SE private-label pattern and
    *        strip the leading '*', returning the remainder in result.
    * @return true if line is a private-label line (result set), false otherwise.
    */
-  static bool TryHandlePrivateLabelEq(const std::string &line,
-                                      std::string &result);
+  static bool TryHandlePrivateLabelEq(const std::string& line, std::string& result);
 
   /**
    * @brief Advance pos past leading whitespace and Apple II control chars.
    */
-  static void SkipToLabelStart(const std::string &line, size_t &pos);
+  static void SkipToLabelStart(const std::string& line, size_t& pos);
 
   /**
    * @brief Scan the label body starting at pos and return the label token.
    *        pos is left pointing to the first character after the label.
    */
-  static std::string ScanLabelToken(const std::string &line, size_t &pos);
+  static std::string ScanLabelToken(const std::string& line, size_t& pos);
 
   /**
    * @brief Find matching .ENDU line index (handles nesting).
    * @return Line index or std::string::npos if not found.
    */
-  size_t FindEnduBounds(const std::vector<std::string> &source,
-                         size_t start_idx) const;
+  size_t FindEnduBounds(const std::vector<std::string>& source, size_t start_idx) const;
 
   /**
    * @brief Define any label on a .ELSE or .FIN boundary line at current addr.
    */
-  void DefineBoundaryLabel(const std::vector<std::string> &source,
-                           size_t boundary_idx, Section &section,
-                           ConcreteSymbolTable &symbols);
+  void DefineBoundaryLabel(const std::vector<std::string>& source, size_t boundary_idx,
+                           Section& section, ConcreteSymbolTable& symbols);
 
   // -------------------------------------------------------------------------
   // ParseNumber helpers (one per number format)
   // -------------------------------------------------------------------------
-  static uint32_t ParseHexNumber(const std::string &trimmed);
-  static uint32_t ParseBinaryNumber(const std::string &trimmed);
-  static uint32_t ParseCharConstant(const std::string &trimmed);
-  static uint32_t ParseDecimalNumber(const std::string &trimmed);
+  static uint32_t ParseHexNumber(const std::string& trimmed);
+  static uint32_t ParseBinaryNumber(const std::string& trimmed);
+  static uint32_t ParseCharConstant(const std::string& trimmed);
+  static uint32_t ParseDecimalNumber(const std::string& trimmed);
 
   // -------------------------------------------------------------------------
   // TryHandlePrivateLabelEq helpers
   // -------------------------------------------------------------------------
   /** Scan *LABEL token; return label (without '*') or "" if invalid chars. */
-  static std::string ScanPrivateLabelToken(const std::string &line);
+  static std::string ScanPrivateLabelToken(const std::string& line);
   /** Find directive opcode in a *LABEL <directive> line; return "" if absent. */
-  static std::string ExtractDirectiveFromStarLine(const std::string &line,
-                                                   size_t label_end);
+  static std::string ExtractDirectiveFromStarLine(const std::string& line, size_t label_end);
 
   // -------------------------------------------------------------------------
   // StripEditorCommands helpers
   // -------------------------------------------------------------------------
   /** Return true if token (already uppercased) is a known editor command. */
-  static bool IsEditorCommand(const std::string &token_upper);
+  static bool IsEditorCommand(const std::string& token_upper);
   /** Build and return the uppercased first token starting at pos. */
-  static std::string BuildCommandToken(const std::string &line, size_t pos);
+  static std::string BuildCommandToken(const std::string& line, size_t pos);
 
   // -------------------------------------------------------------------------
   // ParseLabel helpers
   // -------------------------------------------------------------------------
   /** Return true if label_upper is a known opcode, macro, or pseudo-op. */
-  bool IsOpcodeOrMacro(const std::string &label_upper) const;
+  bool IsOpcodeOrMacro(const std::string& label_upper) const;
   /** Classify and return the label type: local (.N / :N), private, global. */
-  static std::string ClassifyAndReturnLabel(const std::string &raw,
-                                             bool is_private);
+  static std::string ClassifyAndReturnLabel(const std::string& raw, bool is_private);
 
   // -------------------------------------------------------------------------
   // ParseLine helpers
   // -------------------------------------------------------------------------
   /** Resolve pending_label_ when current opcode is known. */
-  void ResolvePendingLabel(const std::string &opcode_upper, std::string &label,
-                           Section &section, ConcreteSymbolTable &symbols);
+  void ResolvePendingLabel(const std::string& opcode_upper, std::string& label, Section& section,
+                           ConcreteSymbolTable& symbols);
 };
 
-} // namespace xasm
+}  // namespace xasm

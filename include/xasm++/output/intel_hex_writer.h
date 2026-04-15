@@ -13,14 +13,14 @@
 
 #pragma once
 
-#include "xasm++/output/output_format_constants.h"
-#include "xasm++/output/output_writer.h"
-#include "xasm++/section.h"
-
 #include <cstdint>
 #include <ostream>
 #include <string>
 #include <vector>
+
+#include "xasm++/output/output_format_constants.h"
+#include "xasm++/output/output_writer.h"
+#include "xasm++/section.h"
 
 namespace xasm {
 
@@ -60,7 +60,7 @@ namespace xasm {
  * @endcode
  */
 class IntelHexWriter : public OutputWriter {
-public:
+ public:
   /**
    * @brief Construct Intel HEX writer with default settings
    *
@@ -82,8 +82,7 @@ public:
    * @param output Output stream to write formatted data to
    * @throws std::runtime_error if writing fails
    */
-  void Write(const std::vector<Section> &sections,
-             std::ostream &output) override;
+  void Write(const std::vector<Section>& sections, std::ostream& output) override;
 
   /**
    * @brief Get file extension for Intel HEX format
@@ -108,8 +107,10 @@ public:
    */
   void SetBytesPerLine(size_t bytes);
 
-private:
-  size_t bytes_per_line_ = output_format::INTEL_HEX_DEFAULT_BYTES_PER_LINE; ///< Number of data bytes per record (default: 16)
+ private:
+  size_t bytes_per_line_ =
+      output_format::INTEL_HEX_DEFAULT_BYTES_PER_LINE;  ///< Number of data bytes per record
+                                                        ///< (default: 16)
 
   /**
    * @brief Write a single Intel HEX record
@@ -120,8 +121,8 @@ private:
    * @param record_type Record type (00, 01, 04, etc.)
    * @param data Data bytes (may be empty)
    */
-  static void WriteRecord(std::ostream &output, uint8_t byte_count, uint16_t address,
-                   uint8_t record_type, const std::vector<uint8_t> &data);
+  static void WriteRecord(std::ostream& output, uint8_t byte_count, uint16_t address,
+                          uint8_t record_type, const std::vector<uint8_t>& data);
 
   /**
    * @brief Calculate Intel HEX checksum
@@ -135,9 +136,8 @@ private:
    * @param data Data bytes
    * @return Calculated checksum (8-bit)
    */
-  static uint8_t CalculateChecksum(uint8_t byte_count, uint16_t address,
-                            uint8_t record_type,
-                            const std::vector<uint8_t> &data);
+  static uint8_t CalculateChecksum(uint8_t byte_count, uint16_t address, uint8_t record_type,
+                                   const std::vector<uint8_t>& data);
 
   /**
    * @brief Write extended linear address record (type 04)
@@ -147,14 +147,14 @@ private:
    * @param output Output stream
    * @param upper_address Upper 16 bits of 32-bit address
    */
-  static void WriteExtendedLinearAddress(std::ostream &output, uint16_t upper_address);
+  static void WriteExtendedLinearAddress(std::ostream& output, uint16_t upper_address);
 
   /**
    * @brief Write EOF record (type 01)
    *
    * @param output Output stream
    */
-  static void WriteEOF(std::ostream &output);
+  static void WriteEOF(std::ostream& output);
 
   /**
    * @brief Extract bytes from atoms for writing
@@ -164,7 +164,7 @@ private:
    * @param section Section to extract bytes from
    * @return Vector of (address, byte) pairs
    */
-  static std::vector<std::pair<uint64_t, uint8_t>> ExtractBytes(const Section &section);
+  static std::vector<std::pair<uint64_t, uint8_t>> ExtractBytes(const Section& section);
 };
 
-} // namespace xasm
+}  // namespace xasm

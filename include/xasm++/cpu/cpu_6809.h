@@ -16,11 +16,12 @@
 
 #pragma once
 
-#include "xasm++/cpu/cpu_plugin.h"
 #include <cstdint>
 #include <optional>
 #include <string>
 #include <vector>
+
+#include "xasm++/cpu/cpu_plugin.h"
 
 namespace xasm {
 
@@ -31,32 +32,32 @@ namespace xasm {
  * making it one of the most flexible 8-bit CPUs.
  */
 enum class AddressingMode6809 : std::uint8_t {
-  Inherent,    ///< No operand (e.g., NOP, CLRA, RTS)
-  Immediate8,  ///< 8-bit immediate value (e.g., LDA #$42)
-  Immediate16, ///< 16-bit immediate value (e.g., LDD #$1234)
-  Direct,      ///< Direct page address (e.g., LDA <$80)
-  Extended,    ///< 16-bit absolute address (e.g., LDA $1234)
+  Inherent,     ///< No operand (e.g., NOP, CLRA, RTS)
+  Immediate8,   ///< 8-bit immediate value (e.g., LDA #$42)
+  Immediate16,  ///< 16-bit immediate value (e.g., LDD #$1234)
+  Direct,       ///< Direct page address (e.g., LDA <$80)
+  Extended,     ///< 16-bit absolute address (e.g., LDA $1234)
 
   // Indexed modes (16 sub-modes encoded in post-byte)
-  IndexedZeroOffset,       ///< Zero offset (e.g., ,X ,Y ,U ,S)
-  Indexed5BitOffset,       ///< 5-bit constant offset (-16 to +15)
-  Indexed8BitOffset,       ///< 8-bit constant offset (-128 to +127)
-  Indexed16BitOffset,      ///< 16-bit constant offset (-32768 to +32767)
-  IndexedAccumA,           ///< A accumulator offset (e.g., A,X)
-  IndexedAccumB,           ///< B accumulator offset (e.g., B,Y)
-  IndexedAccumD,           ///< D accumulator offset (e.g., D,U)
-  IndexedAutoInc1,         ///< Auto-increment by 1 (e.g., ,X+)
-  IndexedAutoInc2,         ///< Auto-increment by 2 (e.g., ,X++)
-  IndexedAutoDec1,         ///< Auto-decrement by 1 (e.g., ,-X)
-  IndexedAutoDec2,         ///< Auto-decrement by 2 (e.g., ,--X)
-  IndexedPCRelative8,      ///< 8-bit PC relative (e.g., n,PCR)
-  IndexedPCRelative16,     ///< 16-bit PC relative (e.g., label,PCR)
-  IndexedIndirect,         ///< Indirect indexed (e.g., [,X] [10,Y])
-  IndexedExtendedIndirect, ///< Extended indirect (e.g., [$1234])
+  IndexedZeroOffset,        ///< Zero offset (e.g., ,X ,Y ,U ,S)
+  Indexed5BitOffset,        ///< 5-bit constant offset (-16 to +15)
+  Indexed8BitOffset,        ///< 8-bit constant offset (-128 to +127)
+  Indexed16BitOffset,       ///< 16-bit constant offset (-32768 to +32767)
+  IndexedAccumA,            ///< A accumulator offset (e.g., A,X)
+  IndexedAccumB,            ///< B accumulator offset (e.g., B,Y)
+  IndexedAccumD,            ///< D accumulator offset (e.g., D,U)
+  IndexedAutoInc1,          ///< Auto-increment by 1 (e.g., ,X+)
+  IndexedAutoInc2,          ///< Auto-increment by 2 (e.g., ,X++)
+  IndexedAutoDec1,          ///< Auto-decrement by 1 (e.g., ,-X)
+  IndexedAutoDec2,          ///< Auto-decrement by 2 (e.g., ,--X)
+  IndexedPCRelative8,       ///< 8-bit PC relative (e.g., n,PCR)
+  IndexedPCRelative16,      ///< 16-bit PC relative (e.g., label,PCR)
+  IndexedIndirect,          ///< Indirect indexed (e.g., [,X] [10,Y])
+  IndexedExtendedIndirect,  ///< Extended indirect (e.g., [$1234])
 
   // Relative modes (branches only)
-  Relative8,  ///< 8-bit relative (-128 to +127 bytes)
-  Relative16, ///< 16-bit relative (-32768 to +32767 bytes)
+  Relative8,   ///< 8-bit relative (-128 to +127 bytes)
+  Relative16,  ///< 16-bit relative (-32768 to +32767 bytes)
 };
 
 /**
@@ -93,7 +94,7 @@ enum class AddressingMode6809 : std::uint8_t {
  * @endcode
  */
 class Cpu6809 : public CpuPlugin {
-public:
+ public:
   /**
    * @brief Default constructor - initializes to 6809 mode
    */
@@ -106,10 +107,10 @@ public:
 
   // CpuPlugin interface implementation
   std::string GetCpuFamily() const override { return "6809"; }
-  std::vector<std::string> GetSupportedVariants() const override {
-    return {"6809"};
-  }
-  bool HasOpcode(const std::string &mnemonic) const override;
+
+  std::vector<std::string> GetSupportedVariants() const override { return {"6809"}; }
+
+  bool HasOpcode(const std::string& mnemonic) const override;
 
   /**
    * @brief Get the CPU plugin name
@@ -118,9 +119,8 @@ public:
   static std::string GetName() { return "6809"; }
 
   // CpuPlugin instruction encoding interface
-  std::vector<uint8_t>
-  EncodeInstruction(const std::string &mnemonic, uint32_t operand,
-                    const std::string &operand_str) const override;
+  std::vector<uint8_t> EncodeInstruction(const std::string& mnemonic, uint32_t operand,
+                                         const std::string& operand_str) const override;
 
   /**
    * @brief Set the direct page register
@@ -161,8 +161,7 @@ public:
    * @par Supported Modes
    * Immediate8, Direct, Extended, all Indexed modes
    */
-  static std::vector<uint8_t> EncodeLDA(uint32_t operand,
-                                 AddressingMode6809 mode);
+  static std::vector<uint8_t> EncodeLDA(uint32_t operand, AddressingMode6809 mode);
 
   /**
    * @brief Encode LDB (Load Accumulator B) instruction
@@ -171,8 +170,7 @@ public:
    * @param mode Addressing mode
    * @return Vector of encoded bytes
    */
-  static std::vector<uint8_t> EncodeLDB(uint32_t operand,
-                                 AddressingMode6809 mode);
+  static std::vector<uint8_t> EncodeLDB(uint32_t operand, AddressingMode6809 mode);
 
   /**
    * @brief Encode LDD (Load Accumulator D) instruction
@@ -185,8 +183,7 @@ public:
    *
    * @note Uses big-endian byte order: LDD #$1234 loads A=$12, B=$34
    */
-  static std::vector<uint8_t> EncodeLDD(uint32_t operand,
-                                 AddressingMode6809 mode);
+  static std::vector<uint8_t> EncodeLDD(uint32_t operand, AddressingMode6809 mode);
 
   /**
    * @brief Encode STA (Store Accumulator A) instruction
@@ -197,8 +194,7 @@ public:
    *
    * @note STA does not support Immediate mode
    */
-  static std::vector<uint8_t> EncodeSTA(uint32_t operand,
-                                 AddressingMode6809 mode);
+  static std::vector<uint8_t> EncodeSTA(uint32_t operand, AddressingMode6809 mode);
 
   /**
    * @brief Encode STB (Store Accumulator B) instruction
@@ -207,8 +203,7 @@ public:
    * @param mode Addressing mode
    * @return Vector of encoded bytes
    */
-  static std::vector<uint8_t> EncodeSTB(uint32_t operand,
-                                 AddressingMode6809 mode);
+  static std::vector<uint8_t> EncodeSTB(uint32_t operand, AddressingMode6809 mode);
 
   /**
    * @brief Encode STD (Store Accumulator D) instruction
@@ -219,8 +214,7 @@ public:
    *
    * @note Uses big-endian byte order: stores A (high byte) first
    */
-  static std::vector<uint8_t> EncodeSTD(uint32_t operand,
-                                 AddressingMode6809 mode);
+  static std::vector<uint8_t> EncodeSTD(uint32_t operand, AddressingMode6809 mode);
 
   /**
    * @brief Encode LDX (Load Index Register X) instruction
@@ -231,8 +225,7 @@ public:
    *
    * @note Uses big-endian byte order for 16-bit values
    */
-  static std::vector<uint8_t> EncodeLDX(uint32_t operand,
-                                 AddressingMode6809 mode);
+  static std::vector<uint8_t> EncodeLDX(uint32_t operand, AddressingMode6809 mode);
 
   /**
    * @brief Encode LDY (Load Index Register Y) instruction
@@ -243,8 +236,7 @@ public:
    *
    * @note Uses page 2 prefix ($10), big-endian byte order
    */
-  static std::vector<uint8_t> EncodeLDY(uint32_t operand,
-                                 AddressingMode6809 mode);
+  static std::vector<uint8_t> EncodeLDY(uint32_t operand, AddressingMode6809 mode);
 
   /**
    * @brief Encode STX (Store Index Register X) instruction
@@ -253,8 +245,7 @@ public:
    * @param mode Addressing mode
    * @return Vector of encoded bytes
    */
-  static std::vector<uint8_t> EncodeSTX(uint32_t operand,
-                                 AddressingMode6809 mode);
+  static std::vector<uint8_t> EncodeSTX(uint32_t operand, AddressingMode6809 mode);
 
   /**
    * @brief Encode STY (Store Index Register Y) instruction
@@ -265,10 +256,9 @@ public:
    *
    * @note Uses page 2 prefix ($10)
    */
-  static std::vector<uint8_t> EncodeSTY(uint32_t operand,
-                                 AddressingMode6809 mode);
+  static std::vector<uint8_t> EncodeSTY(uint32_t operand, AddressingMode6809 mode);
 
-  /** @} */ // End of Data Movement Instructions
+  /** @} */  // End of Data Movement Instructions
 
   /**
    * @defgroup arithmetic Arithmetic Instructions
@@ -282,8 +272,7 @@ public:
    * @param mode Addressing mode
    * @return Vector of encoded bytes
    */
-  static std::vector<uint8_t> EncodeADDA(uint32_t operand,
-                                  AddressingMode6809 mode);
+  static std::vector<uint8_t> EncodeADDA(uint32_t operand, AddressingMode6809 mode);
 
   /**
    * @brief Encode ADDB (Add to Accumulator B) instruction
@@ -292,8 +281,7 @@ public:
    * @param mode Addressing mode
    * @return Vector of encoded bytes
    */
-  static std::vector<uint8_t> EncodeADDB(uint32_t operand,
-                                  AddressingMode6809 mode);
+  static std::vector<uint8_t> EncodeADDB(uint32_t operand, AddressingMode6809 mode);
 
   /**
    * @brief Encode SUBA (Subtract from Accumulator A) instruction
@@ -302,8 +290,7 @@ public:
    * @param mode Addressing mode
    * @return Vector of encoded bytes
    */
-  static std::vector<uint8_t> EncodeSUBA(uint32_t operand,
-                                  AddressingMode6809 mode);
+  static std::vector<uint8_t> EncodeSUBA(uint32_t operand, AddressingMode6809 mode);
 
   /**
    * @brief Encode SUBB (Subtract from Accumulator B) instruction
@@ -312,8 +299,7 @@ public:
    * @param mode Addressing mode
    * @return Vector of encoded bytes
    */
-  static std::vector<uint8_t> EncodeSUBB(uint32_t operand,
-                                  AddressingMode6809 mode);
+  static std::vector<uint8_t> EncodeSUBB(uint32_t operand, AddressingMode6809 mode);
 
   /**
    * @brief Encode CMPA (Compare A with memory) instruction
@@ -322,8 +308,7 @@ public:
    * @param mode Addressing mode
    * @return Vector of encoded bytes
    */
-  static std::vector<uint8_t> EncodeCMPA(uint32_t operand,
-                                  AddressingMode6809 mode);
+  static std::vector<uint8_t> EncodeCMPA(uint32_t operand, AddressingMode6809 mode);
 
   /**
    * @brief Encode CMPB (Compare B with memory) instruction
@@ -332,8 +317,7 @@ public:
    * @param mode Addressing mode
    * @return Vector of encoded bytes
    */
-  static std::vector<uint8_t> EncodeCMPB(uint32_t operand,
-                                  AddressingMode6809 mode);
+  static std::vector<uint8_t> EncodeCMPB(uint32_t operand, AddressingMode6809 mode);
 
   /**
    * @brief Encode CMPX (Compare X with memory) instruction
@@ -342,8 +326,7 @@ public:
    * @param mode Addressing mode
    * @return Vector of encoded bytes
    */
-  static std::vector<uint8_t> EncodeCMPX(uint32_t operand,
-                                  AddressingMode6809 mode);
+  static std::vector<uint8_t> EncodeCMPX(uint32_t operand, AddressingMode6809 mode);
 
   /**
    * @brief Encode CMPY (Compare Y with memory) instruction
@@ -354,10 +337,9 @@ public:
    *
    * @note Uses page 2 prefix ($10)
    */
-  static std::vector<uint8_t> EncodeCMPY(uint32_t operand,
-                                  AddressingMode6809 mode);
+  static std::vector<uint8_t> EncodeCMPY(uint32_t operand, AddressingMode6809 mode);
 
-  /** @} */ // End of Arithmetic Instructions
+  /** @} */  // End of Arithmetic Instructions
 
   /**
    * @defgroup logical Logical Operations
@@ -371,8 +353,7 @@ public:
    * @param mode Addressing mode
    * @return Vector of encoded bytes
    */
-  static std::vector<uint8_t> EncodeANDA(uint32_t operand,
-                                  AddressingMode6809 mode);
+  static std::vector<uint8_t> EncodeANDA(uint32_t operand, AddressingMode6809 mode);
 
   /**
    * @brief Encode ANDB (AND B with memory) instruction
@@ -381,8 +362,7 @@ public:
    * @param mode Addressing mode
    * @return Vector of encoded bytes
    */
-  static std::vector<uint8_t> EncodeANDB(uint32_t operand,
-                                  AddressingMode6809 mode);
+  static std::vector<uint8_t> EncodeANDB(uint32_t operand, AddressingMode6809 mode);
 
   /**
    * @brief Encode ORA (OR A with memory) instruction
@@ -391,8 +371,7 @@ public:
    * @param mode Addressing mode
    * @return Vector of encoded bytes
    */
-  static std::vector<uint8_t> EncodeORA(uint32_t operand,
-                                 AddressingMode6809 mode);
+  static std::vector<uint8_t> EncodeORA(uint32_t operand, AddressingMode6809 mode);
 
   /**
    * @brief Encode ORB (OR B with memory) instruction
@@ -401,8 +380,7 @@ public:
    * @param mode Addressing mode
    * @return Vector of encoded bytes
    */
-  static std::vector<uint8_t> EncodeORB(uint32_t operand,
-                                 AddressingMode6809 mode);
+  static std::vector<uint8_t> EncodeORB(uint32_t operand, AddressingMode6809 mode);
 
   /**
    * @brief Encode EORA (Exclusive OR A with memory) instruction
@@ -411,8 +389,7 @@ public:
    * @param mode Addressing mode
    * @return Vector of encoded bytes
    */
-  static std::vector<uint8_t> EncodeEORA(uint32_t operand,
-                                  AddressingMode6809 mode);
+  static std::vector<uint8_t> EncodeEORA(uint32_t operand, AddressingMode6809 mode);
 
   /**
    * @brief Encode EORB (Exclusive OR B with memory) instruction
@@ -421,10 +398,9 @@ public:
    * @param mode Addressing mode
    * @return Vector of encoded bytes
    */
-  static std::vector<uint8_t> EncodeEORB(uint32_t operand,
-                                  AddressingMode6809 mode);
+  static std::vector<uint8_t> EncodeEORB(uint32_t operand, AddressingMode6809 mode);
 
-  /** @} */ // End of Logical Operations
+  /** @} */  // End of Logical Operations
 
   /**
    * @defgroup control Control Flow Instructions
@@ -438,8 +414,7 @@ public:
    * @param mode Addressing mode
    * @return Vector of encoded bytes
    */
-  static std::vector<uint8_t> EncodeJSR(uint32_t operand,
-                                 AddressingMode6809 mode);
+  static std::vector<uint8_t> EncodeJSR(uint32_t operand, AddressingMode6809 mode);
 
   /**
    * @brief Encode JMP (Jump) instruction
@@ -448,8 +423,7 @@ public:
    * @param mode Addressing mode
    * @return Vector of encoded bytes
    */
-  static std::vector<uint8_t> EncodeJMP(uint32_t operand,
-                                 AddressingMode6809 mode);
+  static std::vector<uint8_t> EncodeJMP(uint32_t operand, AddressingMode6809 mode);
 
   /**
    * @brief Encode LEAX (Load Effective Address into X) instruction
@@ -458,8 +432,7 @@ public:
    * @param mode Addressing mode
    * @return Vector of encoded bytes
    */
-  static std::vector<uint8_t> EncodeLEAX(uint32_t operand,
-                                  AddressingMode6809 mode);
+  static std::vector<uint8_t> EncodeLEAX(uint32_t operand, AddressingMode6809 mode);
 
   /**
    * @brief Encode LEAY (Load Effective Address into Y) instruction
@@ -468,8 +441,7 @@ public:
    * @param mode Addressing mode
    * @return Vector of encoded bytes
    */
-  static std::vector<uint8_t> EncodeLEAY(uint32_t operand,
-                                  AddressingMode6809 mode);
+  static std::vector<uint8_t> EncodeLEAY(uint32_t operand, AddressingMode6809 mode);
 
   /**
    * @brief Encode LEAS (Load Effective Address into S) instruction
@@ -478,8 +450,7 @@ public:
    * @param mode Addressing mode
    * @return Vector of encoded bytes
    */
-  std::vector<uint8_t> EncodeLEAS(uint32_t operand,
-                                  AddressingMode6809 mode) const;
+  std::vector<uint8_t> EncodeLEAS(uint32_t operand, AddressingMode6809 mode) const;
 
   /**
    * @brief Encode LEAU (Load Effective Address into U) instruction
@@ -488,10 +459,9 @@ public:
    * @param mode Addressing mode
    * @return Vector of encoded bytes
    */
-  std::vector<uint8_t> EncodeLEAU(uint32_t operand,
-                                  AddressingMode6809 mode) const;
+  std::vector<uint8_t> EncodeLEAU(uint32_t operand, AddressingMode6809 mode) const;
 
-  /** @} */ // End of Control Flow Instructions
+  /** @} */  // End of Control Flow Instructions
 
   /**
    * @defgroup branch Branch Instructions
@@ -779,7 +749,7 @@ public:
    */
   static std::vector<uint8_t> EncodeLBLE(int16_t offset);
 
-  /** @} */ // End of Branch Instructions
+  /** @} */  // End of Branch Instructions
 
   /**
    * @defgroup stack Stack Operations
@@ -830,7 +800,7 @@ public:
    */
   static std::vector<uint8_t> EncodePULU(uint8_t mask);
 
-  /** @} */ // End of Stack Operations
+  /** @} */  // End of Stack Operations
 
   /**
    * @defgroup transfer Register Transfer and Exchange
@@ -869,7 +839,7 @@ public:
    */
   static std::vector<uint8_t> EncodeEXG(uint8_t reg1, uint8_t reg2);
 
-  /** @} */ // End of Register Transfer and Exchange
+  /** @} */  // End of Register Transfer and Exchange
 
   /**
    * @name Inherent Instructions
@@ -901,32 +871,32 @@ public:
   static std::vector<uint8_t> EncodeCLRB();
 
   // Shift and Rotate Instructions
-  static std::vector<uint8_t> EncodeASLA(); ///< Arithmetic Shift Left A
-  static std::vector<uint8_t> EncodeASLB(); ///< Arithmetic Shift Left B
-  static std::vector<uint8_t> EncodeASRA(); ///< Arithmetic Shift Right A
-  static std::vector<uint8_t> EncodeASRB(); ///< Arithmetic Shift Right B
-  static std::vector<uint8_t> EncodeLSRA(); ///< Logical Shift Right A
-  static std::vector<uint8_t> EncodeLSRB(); ///< Logical Shift Right B
-  static std::vector<uint8_t> EncodeROLA(); ///< Rotate Left A through Carry
-  static std::vector<uint8_t> EncodeROLB(); ///< Rotate Left B through Carry
-  static std::vector<uint8_t> EncodeRORA(); ///< Rotate Right A through Carry
-  static std::vector<uint8_t> EncodeRORB(); ///< Rotate Right B through Carry
+  static std::vector<uint8_t> EncodeASLA();  ///< Arithmetic Shift Left A
+  static std::vector<uint8_t> EncodeASLB();  ///< Arithmetic Shift Left B
+  static std::vector<uint8_t> EncodeASRA();  ///< Arithmetic Shift Right A
+  static std::vector<uint8_t> EncodeASRB();  ///< Arithmetic Shift Right B
+  static std::vector<uint8_t> EncodeLSRA();  ///< Logical Shift Right A
+  static std::vector<uint8_t> EncodeLSRB();  ///< Logical Shift Right B
+  static std::vector<uint8_t> EncodeROLA();  ///< Rotate Left A through Carry
+  static std::vector<uint8_t> EncodeROLB();  ///< Rotate Left B through Carry
+  static std::vector<uint8_t> EncodeRORA();  ///< Rotate Right A through Carry
+  static std::vector<uint8_t> EncodeRORB();  ///< Rotate Right B through Carry
 
   // Increment/Decrement Instructions
-  static std::vector<uint8_t> EncodeINCA(); ///< Increment A
-  static std::vector<uint8_t> EncodeINCB(); ///< Increment B
-  static std::vector<uint8_t> EncodeDECA(); ///< Decrement A
-  static std::vector<uint8_t> EncodeDECB(); ///< Decrement B
+  static std::vector<uint8_t> EncodeINCA();  ///< Increment A
+  static std::vector<uint8_t> EncodeINCB();  ///< Increment B
+  static std::vector<uint8_t> EncodeDECA();  ///< Decrement A
+  static std::vector<uint8_t> EncodeDECB();  ///< Decrement B
 
   // Test/Compare/Negate Instructions
-  static std::vector<uint8_t> EncodeTSTA(); ///< Test A (set flags)
-  static std::vector<uint8_t> EncodeTSTB(); ///< Test B (set flags)
-  static std::vector<uint8_t> EncodeCOMA(); ///< Complement A (one's complement)
-  static std::vector<uint8_t> EncodeCOMB(); ///< Complement B (one's complement)
-  static std::vector<uint8_t> EncodeNEGA(); ///< Negate A (two's complement)
-  static std::vector<uint8_t> EncodeNEGB(); ///< Negate B (two's complement)
+  static std::vector<uint8_t> EncodeTSTA();  ///< Test A (set flags)
+  static std::vector<uint8_t> EncodeTSTB();  ///< Test B (set flags)
+  static std::vector<uint8_t> EncodeCOMA();  ///< Complement A (one's complement)
+  static std::vector<uint8_t> EncodeCOMB();  ///< Complement B (one's complement)
+  static std::vector<uint8_t> EncodeNEGA();  ///< Negate A (two's complement)
+  static std::vector<uint8_t> EncodeNEGB();  ///< Negate B (two's complement)
 
-  /** @} */ // End of Inherent Instructions
+  /** @} */  // End of Inherent Instructions
 
   /**
    * @defgroup bitops Bit Test Operations
@@ -940,8 +910,7 @@ public:
    * @param mode Addressing mode
    * @return Vector of encoded bytes
    */
-  static std::vector<uint8_t> EncodeBITA(uint32_t operand,
-                                  AddressingMode6809 mode);
+  static std::vector<uint8_t> EncodeBITA(uint32_t operand, AddressingMode6809 mode);
 
   /**
    * @brief Encode BITB (Bit Test B with memory) instruction
@@ -950,10 +919,9 @@ public:
    * @param mode Addressing mode
    * @return Vector of encoded bytes
    */
-  static std::vector<uint8_t> EncodeBITB(uint32_t operand,
-                                  AddressingMode6809 mode);
+  static std::vector<uint8_t> EncodeBITB(uint32_t operand, AddressingMode6809 mode);
 
-  /** @} */ // End of Bit Test Operations
+  /** @} */  // End of Bit Test Operations
 
   /**
    * @brief Calculate the size of an encoded instruction
@@ -972,7 +940,7 @@ public:
    */
   static size_t CalculateInstructionSize(AddressingMode6809 mode);
 
-private:
+ private:
   /**
    * @brief Encode indexed addressing post-byte
    *
@@ -986,11 +954,11 @@ private:
    *
    * @note This is a complex encoding - see 6809-ARCHITECTURE.md for details
    */
-  static std::vector<uint8_t> EncodeIndexedPostByte(AddressingMode6809 mode,
-                                             int32_t offset, uint8_t reg);
+  static std::vector<uint8_t> EncodeIndexedPostByte(AddressingMode6809 mode, int32_t offset,
+                                                    uint8_t reg);
 
-private:
-  uint8_t direct_page_ = 0x00; ///< Direct page register (default $00)
+ private:
+  uint8_t direct_page_ = 0x00;  ///< Direct page register (default $00)
 };
 
-} // namespace xasm
+}  // namespace xasm

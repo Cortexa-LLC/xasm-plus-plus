@@ -13,11 +13,12 @@
 #ifndef XASMPP_SYNTAX_LABEL_POLICY_H
 #define XASMPP_SYNTAX_LABEL_POLICY_H
 
-#include "xasm++/section.h"
-#include "xasm++/symbol.h"
 #include <functional>
 #include <string>
 #include <unordered_map>
+
+#include "xasm++/section.h"
+#include "xasm++/symbol.h"
 
 namespace xasm {
 
@@ -71,15 +72,14 @@ LabelPolicy ClassifyLabelPolicy(std::string_view opcode_upper, bool has_label,
  *                          parsers that need additional state changes (e.g.
  *                          clearing local-label caches).  May be nullptr/empty.
  */
-void DefineLabelForDirective(
-    const std::string &label, uint32_t address, LabelPolicy policy,
-    bool emit_atom, ConcreteSymbolTable &symbols, Section &section,
-    std::unordered_map<std::string, uint32_t> &local_labels,
-    std::string &last_global_label,
-    const std::function<std::string(const std::string &)> &scope_fn,
-    const std::function<bool(const std::string &)> &is_local_fn,
-    const std::function<void()> &on_global_update = {});
+void DefineLabelForDirective(const std::string& label, uint32_t address, LabelPolicy policy,
+                             bool emit_atom, ConcreteSymbolTable& symbols, Section& section,
+                             std::unordered_map<std::string, uint32_t>& local_labels,
+                             std::string& last_global_label,
+                             const std::function<std::string(const std::string&)>& scope_fn,
+                             const std::function<bool(const std::string&)>& is_local_fn,
+                             const std::function<void()>& on_global_update = {});
 
-} // namespace xasm
+}  // namespace xasm
 
-#endif // XASMPP_SYNTAX_LABEL_POLICY_H
+#endif  // XASMPP_SYNTAX_LABEL_POLICY_H

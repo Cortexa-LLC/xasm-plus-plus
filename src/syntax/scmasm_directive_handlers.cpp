@@ -7,17 +7,7 @@
  */
 
 #include "xasm++/directives/scmasm_directive_handlers.h"
-#include "xasm++/atom.h"
-#include "xasm++/common/expression_parser.h"
-#include "xasm++/directives/directive_error_utils.h"
-#include "xasm++/directives/scmasm_constants.h"
-#include "xasm++/directives/scmasm_directive_constants.h"
-#include "xasm++/expression.h"
-#include "xasm++/parse_utils.h" // For radix parsing utilities
-#include "xasm++/section.h"
-#include "xasm++/symbol.h"
-#include "xasm++/syntax/scmasm_syntax.h"
-#include "xasm++/util/string_utils.h" // For ToUpper
+
 #include <algorithm>
 #include <cctype>
 #include <filesystem>
@@ -25,6 +15,18 @@
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
+
+#include "xasm++/atom.h"
+#include "xasm++/common/expression_parser.h"
+#include "xasm++/directives/directive_error_utils.h"
+#include "xasm++/directives/scmasm_constants.h"
+#include "xasm++/directives/scmasm_directive_constants.h"
+#include "xasm++/expression.h"
+#include "xasm++/parse_utils.h"  // For radix parsing utilities
+#include "xasm++/section.h"
+#include "xasm++/symbol.h"
+#include "xasm++/syntax/scmasm_syntax.h"
+#include "xasm++/util/string_utils.h"  // For ToUpper
 
 namespace xasm::scmasm {
 
@@ -41,7 +43,7 @@ using namespace constants;
 /**
  * @brief Trim whitespace from both ends of string
  */
-std::string Trim(const std::string &str) {
+std::string Trim(const std::string& str) {
   size_t start = str.find_first_not_of(" \t\r\n");
   if (start == std::string::npos) {
     return "";
@@ -49,7 +51,6 @@ std::string Trim(const std::string &str) {
   size_t end = str.find_last_not_of(" \t\r\n");
   return str.substr(start, end - start + 1);
 }
-
 
 /**
  * @brief Parse string with delimiter semantics
@@ -65,7 +66,7 @@ std::string Trim(const std::string &str) {
  * @return Delimiter character used
  * @throws std::runtime_error if string is malformed
  */
-char ParseString(const std::string &operand, std::vector<uint8_t> &result) {
+char ParseString(const std::string& operand, std::vector<uint8_t>& result) {
   result.clear();
 
   std::string trimmed = Trim(operand);
@@ -106,8 +107,7 @@ uint8_t ApplyInvertedHighBitRule(HighBitChars hbc) {
 }
 
 // Parse string with INVERTED high-bit rule (for .PS)
-char ParseStringInverted(const std::string &operand,
-                         std::vector<uint8_t> &result) {
+char ParseStringInverted(const std::string& operand, std::vector<uint8_t>& result) {
   result.clear();
 
   std::string trimmed = Trim(operand);
@@ -141,12 +141,12 @@ char ParseStringInverted(const std::string &operand,
  * @return Evaluated value
  * @throws std::runtime_error on evaluation failure
  */
-uint32_t EvaluateExpression(const std::string &str,
-                            ConcreteSymbolTable &symbols, void *parser_state) {
+uint32_t EvaluateExpression(const std::string& str, ConcreteSymbolTable& symbols,
+                            void* parser_state) {
   // For now, delegate to the parser's method (via context)
   // In future refactoring, expression evaluation could be fully standalone
   ValidateParser(parser_state);
-  auto *parser = static_cast<ScmasmSyntaxParser *>(parser_state);
+  auto* parser = static_cast<ScmasmSyntaxParser*>(parser_state);
 
   // Use parser's EvaluateExpression method
   // Note: This creates a temporary coupling that could be eliminated
@@ -154,15 +154,15 @@ uint32_t EvaluateExpression(const std::string &str,
   return parser->EvaluateExpression(str, symbols);
 }
 
-} // anonymous namespace
+}  // anonymous namespace
 
 // ============================================================================
 // Directive Handlers
 // ============================================================================
 
-void HandleOr(DirectiveContext &context) {
-  const std::string &operand = context.operand;
-  (void)context.label; // Label handled separately before dispatch
+void HandleOr(DirectiveContext& context) {
+  const std::string& operand = context.operand;
+  (void)context.label;  // Label handled separately before dispatch
 
   RequireOperand(operand, ".OR", context);
 
@@ -175,8 +175,7 @@ void HandleOr(DirectiveContext &context) {
   }
 
   // Evaluate address expression
-  uint32_t address =
-      EvaluateExpression(addr_expr, *context.symbols, context.parser_state);
+  uint32_t address = EvaluateExpression(addr_expr, *context.symbols, context.parser_state);
 
   // Inside a .DUMMY/.ED block, .OR repositions the dummy-section PC so that
   // labels defined there get the correct zero-page (or other) address.
@@ -185,7 +184,7 @@ void HandleOr(DirectiveContext &context) {
   // binary output) silently skips it and leaves the real program counter alone.
   // Outside a dummy section, .OR emits a normal OrgAtom that moves the real PC.
   ValidateParser(context.parser_state);
-  auto *parser = static_cast<ScmasmSyntaxParser *>(context.parser_state);
+  auto* parser = static_cast<ScmasmSyntaxParser*>(context.parser_state);
   if (parser->InDummySection()) {
     auto dummy_org_atom = std::make_shared<DummyOrgAtom>(address);
     context.section->atoms.push_back(dummy_org_atom);
@@ -198,8 +197,8 @@ void HandleOr(DirectiveContext &context) {
   *context.current_address = address;
 }
 
-void HandleEq(DirectiveContext &context) {
-  const std::string &operand = context.operand;
+void HandleEq(DirectiveContext& context) {
+  const std::string& operand = context.operand;
   RequireOperand(operand, ".EQ", context);
 
   // Trim operand to remove CRLF line endings and whitespace
@@ -214,7 +213,7 @@ void HandleEq(DirectiveContext &context) {
       char ch = value_expr[j];
       // Skip over 'X', 'X', "X", "X" quoted char literals
       if ((ch == '\'' || ch == '"') && j + 1 < value_expr.size()) {
-        j += 2; // delimiter + char
+        j += 2;  // delimiter + char
         // Consume optional matching closing delimiter
         if (j < value_expr.size() && value_expr[j] == ch) {
           j++;
@@ -239,7 +238,7 @@ void HandleEq(DirectiveContext &context) {
   // EquateAtom re-evaluates the correct scoped symbol across multi-pass runs.
   if (context.parser_state && !context.label.empty() &&
       (context.label[0] == ':' || context.label[0] == '.')) {
-    auto *eq_parser = static_cast<ScmasmSyntaxParser *>(context.parser_state);
+    auto* eq_parser = static_cast<ScmasmSyntaxParser*>(context.parser_state);
     norm_label = eq_parser->ScopedLocalLabelName(norm_label);
   }
 
@@ -253,7 +252,7 @@ void HandleEq(DirectiveContext &context) {
   bool needs_reassembly_eval = false;
   try {
     value = EvaluateExpression(value_expr, *context.symbols, context.parser_state);
-  } catch (const std::exception &) {
+  } catch (const std::exception&) {
     // Undefined symbol or other evaluation error — use 0 and defer to assembly
     value = 0;
     needs_reassembly_eval = true;
@@ -271,7 +270,7 @@ void HandleEq(DirectiveContext &context) {
   // EXCEPTION for case 1: inside a .DUMMY section, '*' refers to the
   // dummy-section's ZP address counter which is fixed, so no EquateAtom needed.
   bool in_dummy = context.parser_state &&
-      static_cast<ScmasmSyntaxParser *>(context.parser_state)->InDummySection();
+                  static_cast<ScmasmSyntaxParser*>(context.parser_state)->InDummySection();
   bool has_star = value_expr.find('*') != std::string::npos;
   if ((has_star && !in_dummy) || needs_reassembly_eval) {
     auto eq_atom = std::make_shared<EquateAtom>(norm_label, value_expr);
@@ -279,8 +278,8 @@ void HandleEq(DirectiveContext &context) {
   }
 }
 
-void HandleSe(DirectiveContext &context) {
-  const std::string &operand = context.operand;
+void HandleSe(DirectiveContext& context) {
+  const std::string& operand = context.operand;
   RequireOperand(operand, ".SE", context);
 
   // Strip inline comment: anything after first whitespace is ignored.
@@ -291,8 +290,7 @@ void HandleSe(DirectiveContext &context) {
   }
 
   // Evaluate value expression
-  uint32_t value =
-      EvaluateExpression(val_expr, *context.symbols, context.parser_state);
+  uint32_t value = EvaluateExpression(val_expr, *context.symbols, context.parser_state);
 
   // .SE creates Set type (redefinable)
   // Normalize label to uppercase for case-insensitive SCMASM compatibility
@@ -300,9 +298,9 @@ void HandleSe(DirectiveContext &context) {
   context.symbols->Define(util::ToUpper(context.label), SymbolType::Set, expr);
 }
 
-void HandleAs(DirectiveContext &context) {
-  const std::string &operand = context.operand;
-  (void)context.label; // Label handled separately
+void HandleAs(DirectiveContext& context) {
+  const std::string& operand = context.operand;
+  (void)context.label;  // Label handled separately
 
   RequireOperand(operand, ".AS", context);
 
@@ -330,9 +328,9 @@ void HandleAs(DirectiveContext &context) {
   *context.current_address += data.size();
 }
 
-void HandleAt(DirectiveContext &context) {
-  const std::string &operand = context.operand;
-  (void)context.label; // Label handled separately
+void HandleAt(DirectiveContext& context) {
+  const std::string& operand = context.operand;
+  (void)context.label;  // Label handled separately
 
   RequireOperand(operand, ".AT", context);
 
@@ -351,9 +349,9 @@ void HandleAt(DirectiveContext &context) {
   *context.current_address += data.size();
 }
 
-void HandleAz(DirectiveContext &context) {
-  const std::string &operand = context.operand;
-  (void)context.label; // Label handled separately
+void HandleAz(DirectiveContext& context) {
+  const std::string& operand = context.operand;
+  (void)context.label;  // Label handled separately
 
   RequireOperand(operand, ".AZ", context);
 
@@ -371,7 +369,7 @@ void HandleAz(DirectiveContext &context) {
   ParseString(trimmed_op, data);
 
   if (high_bit_all) {
-    for (auto &b : data) {
+    for (auto& b : data) {
       b |= constants::HIGH_BIT_MASK;
     }
   }
@@ -399,8 +397,8 @@ namespace {
  * inline comment was encountered (comment_ended == true).
  */
 struct DaToken {
-  std::string expr;          ///< Trimmed expression (empty when comment_ended)
-  bool comment_ended{false}; ///< True when an inline comment stopped scanning
+  std::string expr;           ///< Trimmed expression (empty when comment_ended)
+  bool comment_ended{false};  ///< True when an inline comment stopped scanning
 };
 
 // ============================================================================
@@ -409,7 +407,7 @@ struct DaToken {
 
 /// Advances @p pos past a $$"..." or $$'...' literal.
 /// Returns true and updates @p pos if a match was found; otherwise no-op.
-bool TrySkipDollarDollarLiteral(const std::string &s, size_t &pos) {
+bool TrySkipDollarDollarLiteral(const std::string& s, size_t& pos) {
   if (pos + 2 < s.length() && s[pos] == '$' && s[pos + 1] == '$' &&
       (s[pos + 2] == '"' || s[pos + 2] == '\'')) {
     char delim = s[pos + 2];
@@ -418,7 +416,7 @@ bool TrySkipDollarDollarLiteral(const std::string &s, size_t &pos) {
       ++pos;
     }
     if (pos < s.length()) {
-      ++pos; // skip closing delimiter
+      ++pos;  // skip closing delimiter
     }
     return true;
   }
@@ -427,10 +425,9 @@ bool TrySkipDollarDollarLiteral(const std::string &s, size_t &pos) {
 
 /// Advances @p pos past a "X" or 'X' single-character quoted literal.
 /// Returns true and updates @p pos if a match was found; otherwise no-op.
-bool TrySkipSingleCharLiteral(const std::string &s, size_t &pos) {
-  if (pos + 2 < s.length() && (s[pos] == '"' || s[pos] == '\'') &&
-      s[pos + 2] == s[pos]) {
-    pos += 3; // opening-delim + char-content + closing-delim
+bool TrySkipSingleCharLiteral(const std::string& s, size_t& pos) {
+  if (pos + 2 < s.length() && (s[pos] == '"' || s[pos] == '\'') && s[pos + 2] == s[pos]) {
+    pos += 3;  // opening-delim + char-content + closing-delim
     return true;
   }
   return false;
@@ -438,13 +435,12 @@ bool TrySkipSingleCharLiteral(const std::string &s, size_t &pos) {
 
 /// Returns the position of the first unquoted space or tab in @p token,
 /// or std::string::npos if none found.
-size_t FindUnquotedWhitespace(const std::string &token) {
+size_t FindUnquotedWhitespace(const std::string& token) {
   size_t j = 0;
   while (j < token.size()) {
     char ch = token[j];
     // Skip single-char quoted literals so spaces inside them are ignored
-    if ((ch == '"' || ch == '\'') && j + 2 < token.size() &&
-        token[j + 2] == ch) {
+    if ((ch == '"' || ch == '\'') && j + 2 < token.size() && token[j + 2] == ch) {
       j += 3;
       continue;
     }
@@ -468,7 +464,7 @@ size_t FindUnquotedWhitespace(const std::string &token) {
  * Returns the list of tokens in order; if an inline comment was detected the
  * final DaToken has comment_ended == true and an empty expr.
  */
-std::vector<DaToken> TokenizeDaOperand(const std::string &src) {
+std::vector<DaToken> TokenizeDaOperand(const std::string& src) {
   std::string trimmed = Trim(src);
   std::vector<DaToken> tokens;
   size_t start = 0;
@@ -493,7 +489,7 @@ std::vector<DaToken> TokenizeDaOperand(const std::string &src) {
         if (!expr.empty()) {
           tokens.push_back({expr, false});
         }
-        tokens.push_back({"", true}); // sentinel: inline comment found
+        tokens.push_back({"", true});  // sentinel: inline comment found
         return tokens;
       }
 
@@ -528,14 +524,13 @@ std::vector<DaToken> TokenizeDaOperand(const std::string &src) {
 /// Strip trailing inline comment from a .DA token expression.
 /// Scans char-by-char to avoid treating spaces inside quoted literals as
 /// comment starts (e.g. the space in #" " must not trigger truncation).
-std::string StripTrailingComment(const std::string &expr) {
+std::string StripTrailingComment(const std::string& expr) {
   std::string result = Trim(expr);
   size_t j = 0;
   while (j < result.size()) {
     char ch = result[j];
     // Skip single-char quoted literals ("X" or 'X')
-    if ((ch == '"' || ch == '\'') && j + 2 < result.size() &&
-        result[j + 2] == ch) {
+    if ((ch == '"' || ch == '\'') && j + 2 < result.size() && result[j + 2] == ch) {
       j += 3;
       continue;
     }
@@ -549,9 +544,9 @@ std::string StripTrailingComment(const std::string &expr) {
 }
 
 /// Emit bytes for a $$"..." Apple II encoded string in a .DA operand.
-void EmitDollarDollarString(const std::string &trimmed_expr,
-                            std::vector<std::string> &byte_expressions,
-                            std::vector<uint8_t> &data) {
+void EmitDollarDollarString(const std::string& trimmed_expr,
+                            std::vector<std::string>& byte_expressions,
+                            std::vector<uint8_t>& data) {
   char delim = trimmed_expr[2];
   std::string str_content = trimmed_expr.substr(3);
   if (!str_content.empty() && str_content.back() == delim) {
@@ -570,13 +565,11 @@ void EmitDollarDollarString(const std::string &trimmed_expr,
 }
 
 /// Emit 1 low byte for .DA #expr.
-void EmitDaLowByte(const std::string &base_expr, const DirectiveContext &context,
-                   std::vector<std::string> &byte_expressions,
-                   std::vector<uint8_t> &data) {
+void EmitDaLowByte(const std::string& base_expr, const DirectiveContext& context,
+                   std::vector<std::string>& byte_expressions, std::vector<uint8_t>& data) {
   byte_expressions.push_back("<(" + base_expr + ")");
   try {
-    uint32_t num =
-        EvaluateExpression(base_expr, *context.symbols, context.parser_state);
+    uint32_t num = EvaluateExpression(base_expr, *context.symbols, context.parser_state);
     data.push_back(static_cast<uint8_t>(num & BYTE_MASK));
   } catch (...) {
     data.push_back(0);
@@ -584,13 +577,11 @@ void EmitDaLowByte(const std::string &base_expr, const DirectiveContext &context
 }
 
 /// Emit 1 high byte for .DA /expr.
-void EmitDaHighByte(const std::string &base_expr, const DirectiveContext &context,
-                    std::vector<std::string> &byte_expressions,
-                    std::vector<uint8_t> &data) {
+void EmitDaHighByte(const std::string& base_expr, const DirectiveContext& context,
+                    std::vector<std::string>& byte_expressions, std::vector<uint8_t>& data) {
   byte_expressions.push_back(">(" + base_expr + ")");
   try {
-    uint32_t num =
-        EvaluateExpression(base_expr, *context.symbols, context.parser_state);
+    uint32_t num = EvaluateExpression(base_expr, *context.symbols, context.parser_state);
     data.push_back(static_cast<uint8_t>((num >> BYTE_1_SHIFT) & BYTE_MASK));
   } catch (...) {
     data.push_back(0);
@@ -598,15 +589,13 @@ void EmitDaHighByte(const std::string &base_expr, const DirectiveContext &contex
 }
 
 /// Emit 3 bytes (little-endian 24-bit) for .DA <expr.
-void EmitDa24Bit(const std::string &base_expr, const DirectiveContext &context,
-                 std::vector<std::string> &byte_expressions,
-                 std::vector<uint8_t> &data) {
+void EmitDa24Bit(const std::string& base_expr, const DirectiveContext& context,
+                 std::vector<std::string>& byte_expressions, std::vector<uint8_t>& data) {
   byte_expressions.push_back("<(" + base_expr + ")");
   byte_expressions.push_back(">(" + base_expr + ")");
   byte_expressions.push_back("<((" + base_expr + ")/65536)");
   try {
-    uint32_t num =
-        EvaluateExpression(base_expr, *context.symbols, context.parser_state);
+    uint32_t num = EvaluateExpression(base_expr, *context.symbols, context.parser_state);
     data.push_back(static_cast<uint8_t>(num & BYTE_MASK));
     data.push_back(static_cast<uint8_t>((num >> BYTE_1_SHIFT) & BYTE_MASK));
     data.push_back(static_cast<uint8_t>((num >> BYTE_2_SHIFT) & BYTE_MASK));
@@ -618,23 +607,18 @@ void EmitDa24Bit(const std::string &base_expr, const DirectiveContext &context,
 }
 
 /// Emit 4 bytes (little-endian 32-bit) for .DA >expr.
-void EmitDa32Bit(const std::string &base_expr, const DirectiveContext &context,
-                 std::vector<std::string> &byte_expressions,
-                 std::vector<uint8_t> &data) {
+void EmitDa32Bit(const std::string& base_expr, const DirectiveContext& context,
+                 std::vector<std::string>& byte_expressions, std::vector<uint8_t>& data) {
   byte_expressions.push_back("<(" + base_expr + ")");
   byte_expressions.push_back(">(" + base_expr + ")");
   byte_expressions.push_back("<((" + base_expr + ")/65536)");
   byte_expressions.push_back("<((" + base_expr + ")/16777216)");
   try {
-    uint32_t num =
-        EvaluateExpression(base_expr, *context.symbols, context.parser_state);
+    uint32_t num = EvaluateExpression(base_expr, *context.symbols, context.parser_state);
     data.push_back(static_cast<uint8_t>(num & constants::BYTE_MASK));
-    data.push_back(static_cast<uint8_t>((num >> constants::BYTE_1_SHIFT) &
-                                        constants::BYTE_MASK));
-    data.push_back(static_cast<uint8_t>((num >> constants::BYTE_2_SHIFT) &
-                                        constants::BYTE_MASK));
-    data.push_back(static_cast<uint8_t>((num >> constants::BYTE_3_SHIFT) &
-                                        constants::BYTE_MASK));
+    data.push_back(static_cast<uint8_t>((num >> constants::BYTE_1_SHIFT) & constants::BYTE_MASK));
+    data.push_back(static_cast<uint8_t>((num >> constants::BYTE_2_SHIFT) & constants::BYTE_MASK));
+    data.push_back(static_cast<uint8_t>((num >> constants::BYTE_3_SHIFT) & constants::BYTE_MASK));
   } catch (...) {
     data.push_back(0);
     data.push_back(0);
@@ -644,14 +628,12 @@ void EmitDa32Bit(const std::string &base_expr, const DirectiveContext &context,
 }
 
 /// Emit 2 bytes (little-endian 16-bit) for .DA expr (no prefix).
-void EmitDa16Bit(const std::string &base_expr, const DirectiveContext &context,
-                 std::vector<std::string> &byte_expressions,
-                 std::vector<uint8_t> &data) {
+void EmitDa16Bit(const std::string& base_expr, const DirectiveContext& context,
+                 std::vector<std::string>& byte_expressions, std::vector<uint8_t>& data) {
   byte_expressions.push_back("<(" + base_expr + ")");
   byte_expressions.push_back(">(" + base_expr + ")");
   try {
-    uint32_t num =
-        EvaluateExpression(base_expr, *context.symbols, context.parser_state);
+    uint32_t num = EvaluateExpression(base_expr, *context.symbols, context.parser_state);
     data.push_back(static_cast<uint8_t>(num & BYTE_MASK));
     data.push_back(static_cast<uint8_t>((num >> BYTE_1_SHIFT) & BYTE_MASK));
   } catch (...) {
@@ -660,10 +642,8 @@ void EmitDa16Bit(const std::string &base_expr, const DirectiveContext &context,
   }
 }
 
-void ProcessDaExpression(const std::string &raw_expr,
-                         const DirectiveContext &context,
-                         std::vector<std::string> &byte_expressions,
-                         std::vector<uint8_t> &data) {
+void ProcessDaExpression(const std::string& raw_expr, const DirectiveContext& context,
+                         std::vector<std::string>& byte_expressions, std::vector<uint8_t>& data) {
   std::string trimmed_expr = StripTrailingComment(raw_expr);
 
   if (trimmed_expr.empty()) {
@@ -672,8 +652,7 @@ void ProcessDaExpression(const std::string &raw_expr,
 
   // Handle $$"..." Apple II encoded strings in .DA.
   // Delimiter < 0x27 → clear high bit; delimiter >= 0x27 → set high bit.
-  if (trimmed_expr.size() >= 3 && trimmed_expr[0] == '$' &&
-      trimmed_expr[1] == '$') {
+  if (trimmed_expr.size() >= 3 && trimmed_expr[0] == '$' && trimmed_expr[1] == '$') {
     EmitDollarDollarString(trimmed_expr, byte_expressions, data);
     return;
   }
@@ -703,15 +682,15 @@ void ProcessDaExpression(const std::string &raw_expr,
   }
 }
 
-} // anonymous namespace
+}  // anonymous namespace
 
 // ============================================================================
 // HandleDa
 // ============================================================================
 
-void HandleDa(DirectiveContext &context) {
-  const std::string &operand = context.operand;
-  (void)context.label; // Label handled separately
+void HandleDa(DirectiveContext& context) {
+  const std::string& operand = context.operand;
+  (void)context.label;  // Label handled separately
 
   // In SCMASM, .DA operands are comma-separated, but each operand may be
   // followed by whitespace-delimited comment text on the same line. A comment
@@ -726,7 +705,7 @@ void HandleDa(DirectiveContext &context) {
   std::vector<std::string> byte_expressions;
   std::vector<uint8_t> data;
 
-  for (const auto &tok : TokenizeDaOperand(operand)) {
+  for (const auto& tok : TokenizeDaOperand(operand)) {
     if (tok.comment_ended) {
       break;
     }
@@ -750,7 +729,7 @@ namespace {
 
 /// Remove dot separators from a .HS operand string.
 /// Dots are purely visual nibble-separators in SCMASM .HS syntax.
-std::string RemoveHsDots(const std::string &s) {
+std::string RemoveHsDots(const std::string& s) {
   std::string result;
   result.reserve(s.size());
   for (char ch : s) {
@@ -769,8 +748,7 @@ enum class HsWhitespaceAction { kContinue, kStop, kEndOfString };
 ///   kStop         – 2+ tabs after data → treat rest as comment, stop
 ///   kEndOfString  – reached end of string
 ///   kContinue     – safe to process next word
-HsWhitespaceAction SkipHsWhitespace(const std::string &s, size_t &i,
-                                    bool has_data) {
+HsWhitespaceAction SkipHsWhitespace(const std::string& s, size_t& i, bool has_data) {
   size_t tabs = 0;
   while (i < s.length() && std::isspace(s[i])) {
     if (s[i] == '\t') {
@@ -793,8 +771,8 @@ enum class HsWordResult { kAppended, kOddBeforeData, kStop };
 /// Process one hex word starting at @p word_start in @p s ending at @p i.
 /// Appends valid even-length hex words to @p hex_digits.
 /// Returns a result code indicating whether to continue, stop, or flag error.
-HsWordResult ProcessHsWord(const std::string &s, size_t word_start, size_t i,
-                            std::string &hex_digits) {
+HsWordResult ProcessHsWord(const std::string& s, size_t word_start, size_t i,
+                           std::string& hex_digits) {
   std::string word = s.substr(word_start, i - word_start);
 
   bool all_hex = true;
@@ -813,22 +791,20 @@ HsWordResult ProcessHsWord(const std::string &s, size_t word_start, size_t i,
     if (hex_digits.empty()) {
       return HsWordResult::kOddBeforeData;
     }
-    return HsWordResult::kStop; // odd-length hex after valid data → comment
+    return HsWordResult::kStop;  // odd-length hex after valid data → comment
   }
-  return HsWordResult::kStop; // non-hex word → inline comment
+  return HsWordResult::kStop;  // non-hex word → inline comment
 }
 
 /// Extract valid hex digits from a normalised (dots removed) .HS operand.
 /// Sets @p odd_hex_before_data to true if a malformed odd-length hex word
 /// appears before any valid data.
-std::string ExtractHsHexDigits(const std::string &normalised,
-                                bool &odd_hex_before_data) {
+std::string ExtractHsHexDigits(const std::string& normalised, bool& odd_hex_before_data) {
   std::string hex_digits;
   odd_hex_before_data = false;
   size_t i = 0;
   while (i < normalised.length()) {
-    HsWhitespaceAction action =
-        SkipHsWhitespace(normalised, i, !hex_digits.empty());
+    HsWhitespaceAction action = SkipHsWhitespace(normalised, i, !hex_digits.empty());
     if (action == HsWhitespaceAction::kEndOfString) {
       break;
     }
@@ -855,11 +831,11 @@ std::string ExtractHsHexDigits(const std::string &normalised,
   return hex_digits;
 }
 
-} // anonymous namespace
+}  // anonymous namespace
 
-void HandleHs(DirectiveContext &context) {
-  const std::string &operand = context.operand;
-  (void)context.label; // Label handled separately
+void HandleHs(DirectiveContext& context) {
+  const std::string& operand = context.operand;
+  (void)context.label;  // Label handled separately
 
   std::vector<uint8_t> data;
   std::string normalised = RemoveHsDots(Trim(operand));
@@ -874,10 +850,8 @@ void HandleHs(DirectiveContext &context) {
     ThrowFormattedError(".HS requires even number of hex digits", context);
   }
 
-  for (size_t i = 0; i < hex_digits.length();
-       i += constants::HEX_DIGITS_PER_BYTE) {
-    std::string byte_str =
-        "$" + hex_digits.substr(i, constants::HEX_DIGITS_PER_BYTE);
+  for (size_t i = 0; i < hex_digits.length(); i += constants::HEX_DIGITS_PER_BYTE) {
+    std::string byte_str = "$" + hex_digits.substr(i, constants::HEX_DIGITS_PER_BYTE);
     bool success = false;
     std::string error_msg;
     uint32_t byte_val = xasm::ParseHexSafe(byte_str, success, error_msg);
@@ -888,7 +862,7 @@ void HandleHs(DirectiveContext &context) {
   }
 
   ValidateParser(context.parser_state);
-  auto *hs_parser = static_cast<ScmasmSyntaxParser *>(context.parser_state);
+  auto* hs_parser = static_cast<ScmasmSyntaxParser*>(context.parser_state);
   if (hs_parser->InDummySection()) {
     *context.current_address += data.size();
     return;
@@ -899,9 +873,9 @@ void HandleHs(DirectiveContext &context) {
   *context.current_address += data.size();
 }
 
-void HandleBs(DirectiveContext &context) {
-  const std::string &operand = context.operand;
-  (void)context.label; // Label handled separately
+void HandleBs(DirectiveContext& context) {
+  const std::string& operand = context.operand;
+  (void)context.label;  // Label handled separately
 
   // .BS (Block Storage) - Reserve N bytes of space
   // SCMASM syntax: .BS count
@@ -922,8 +896,7 @@ void HandleBs(DirectiveContext &context) {
   }
 
   // Evaluate the byte count expression (supports symbols, hex, decimal)
-  uint32_t byte_count =
-      EvaluateExpression(trimmed, *context.symbols, context.parser_state);
+  uint32_t byte_count = EvaluateExpression(trimmed, *context.symbols, context.parser_state);
 
   // Validate byte count (reasonable limit: 64KB)
   if (byte_count > 65536) {
@@ -932,7 +905,7 @@ void HandleBs(DirectiveContext &context) {
 
   // Check if in dummy mode (structure definition)
   ValidateParser(context.parser_state);
-  auto *parser = static_cast<ScmasmSyntaxParser *>(context.parser_state);
+  auto* parser = static_cast<ScmasmSyntaxParser*>(context.parser_state);
 
   if (parser->InDummySection()) {
     // In dummy mode: just advance address, don't emit bytes
@@ -948,8 +921,8 @@ void HandleBs(DirectiveContext &context) {
   }
 }
 
-void HandleMa(DirectiveContext &context) {
-  const std::string &operand = context.operand;
+void HandleMa(DirectiveContext& context) {
+  const std::string& operand = context.operand;
   // Macro name can come from label or operand
   std::string macro_name;
 
@@ -963,7 +936,7 @@ void HandleMa(DirectiveContext &context) {
 
   // Access parser state to set macro definition mode
   ValidateParser(context.parser_state);
-  auto *parser = static_cast<ScmasmSyntaxParser *>(context.parser_state);
+  auto* parser = static_cast<ScmasmSyntaxParser*>(context.parser_state);
 
   // Delegate to parser's HandleMa method
   // Note: This maintains coupling to parser for macro state management
@@ -972,13 +945,13 @@ void HandleMa(DirectiveContext &context) {
   parser->HandleMa(context);
 }
 
-void HandleEndm(DirectiveContext &context) {
-  const std::string &operand = context.operand;
+void HandleEndm(DirectiveContext& context) {
+  const std::string& operand = context.operand;
   (void)operand;
 
   // Access parser state to end macro definition
   ValidateParser(context.parser_state);
-  auto *parser = static_cast<ScmasmSyntaxParser *>(context.parser_state);
+  auto* parser = static_cast<ScmasmSyntaxParser*>(context.parser_state);
 
   // Delegate to parser's HandleEm method
   parser->HandleEm();
@@ -988,9 +961,9 @@ void HandleEndm(DirectiveContext &context) {
 // P0 Priority Directive Handlers (A2oSX Critical)
 // ============================================================================
 
-void HandlePs(DirectiveContext &context) {
-  const std::string &operand = context.operand;
-  (void)context.label; // Label handled separately
+void HandlePs(DirectiveContext& context) {
+  const std::string& operand = context.operand;
+  (void)context.label;  // Label handled separately
 
   RequireOperand(operand, ".PS", context);
 
@@ -1027,8 +1000,7 @@ namespace {
  * Replaces the longest matching virtual prefix with its actual counterpart.
  * Returns @p filename unchanged if no mapping matches.
  */
-std::string ApplyInbPathMappings(const std::string &filename,
-                                 const DirectiveContext &context) {
+std::string ApplyInbPathMappings(const std::string& filename, const DirectiveContext& context) {
   if (context.path_mappings == nullptr || context.path_mappings->empty()) {
     return filename;
   }
@@ -1040,7 +1012,7 @@ std::string ApplyInbPathMappings(const std::string &filename,
   std::string longest_match_value;
   size_t longest_match_len = 0;
 
-  for (const auto &[virtual_path, actual_path] : *context.path_mappings) {
+  for (const auto& [virtual_path, actual_path] : *context.path_mappings) {
     std::filesystem::path virtual_path_obj(virtual_path);
     std::string normalized_virtual = virtual_path_obj.generic_string();
 
@@ -1067,7 +1039,7 @@ std::string ApplyInbPathMappings(const std::string &filename,
   }
 
   if (longest_match_value.empty()) {
-    return filename; // No mapping matched
+    return filename;  // No mapping matched
   }
 
   std::string suffix = normalized_path.substr(longest_match_len);
@@ -1095,9 +1067,8 @@ std::string ApplyInbPathMappings(const std::string &filename,
  * On success returns the resolved path; on failure returns an empty path and
  * appends every attempted location to @p tried_paths.
  */
-std::filesystem::path TryResolvePath(const std::string &filename,
-                                     const DirectiveContext &context,
-                                     std::vector<std::string> &tried_paths) {
+std::filesystem::path TryResolvePath(const std::string& filename, const DirectiveContext& context,
+                                     std::vector<std::string>& tried_paths) {
   std::filesystem::path include_path(filename);
 
   // Case 1: Absolute path
@@ -1111,8 +1082,7 @@ std::filesystem::path TryResolvePath(const std::string &filename,
 
   // Case 2: Relative to source file directory
   if (!context.current_file.empty()) {
-    std::filesystem::path source_dir =
-        std::filesystem::path(context.current_file).parent_path();
+    std::filesystem::path source_dir = std::filesystem::path(context.current_file).parent_path();
     std::filesystem::path candidate = source_dir / filename;
     tried_paths.push_back(candidate.string());
     if (std::filesystem::exists(candidate)) {
@@ -1122,9 +1092,8 @@ std::filesystem::path TryResolvePath(const std::string &filename,
 
   // Case 3: Each include-path directory
   if (context.include_paths != nullptr) {
-    for (const auto &include_dir : *context.include_paths) {
-      std::filesystem::path candidate =
-          std::filesystem::path(include_dir) / filename;
+    for (const auto& include_dir : *context.include_paths) {
+      std::filesystem::path candidate = std::filesystem::path(include_dir) / filename;
       tried_paths.push_back(candidate.string());
       if (std::filesystem::exists(candidate)) {
         return candidate;
@@ -1139,8 +1108,7 @@ std::filesystem::path TryResolvePath(const std::string &filename,
   }
 
   // Case 5: Parent directory (A2osX compatibility — BIN/ includes INC/)
-  std::filesystem::path parent_candidate =
-      std::filesystem::path("..") / filename;
+  std::filesystem::path parent_candidate = std::filesystem::path("..") / filename;
   tried_paths.push_back(parent_candidate.string());
   if (std::filesystem::exists(parent_candidate)) {
     return parent_candidate;
@@ -1149,15 +1117,15 @@ std::filesystem::path TryResolvePath(const std::string &filename,
   return {};
 }
 
-} // anonymous namespace
+}  // anonymous namespace
 
 // ============================================================================
 // HandleInb
 // ============================================================================
 
-void HandleInb(DirectiveContext &context) {
-  const std::string &operand = context.operand;
-  (void)context.label; // Label handled separately
+void HandleInb(DirectiveContext& context) {
+  const std::string& operand = context.operand;
+  (void)context.label;  // Label handled separately
 
   // .INB - Include Source File
   // Parses assembly source file and includes it at current position.
@@ -1172,12 +1140,10 @@ void HandleInb(DirectiveContext &context) {
 
   RequireOperand(operand, ".INB", context);
 
-  std::string include_filename =
-      ApplyInbPathMappings(Trim(operand), context);
+  std::string include_filename = ApplyInbPathMappings(Trim(operand), context);
 
   std::vector<std::string> tried_paths;
-  std::filesystem::path resolved_path =
-      TryResolvePath(include_filename, context, tried_paths);
+  std::filesystem::path resolved_path = TryResolvePath(include_filename, context, tried_paths);
 
   // Retry with .txt extension (A2osX compatibility: "file.s" → "file.s.txt")
   if (resolved_path.empty()) {
@@ -1203,8 +1169,7 @@ void HandleInb(DirectiveContext &context) {
   // Open the resolved file
   std::ifstream file(resolved_path);
   if (!file.is_open()) {
-    ThrowFormattedError(".INB cannot open file: " + resolved_path.string(),
-                        context);
+    ThrowFormattedError(".INB cannot open file: " + resolved_path.string(), context);
   }
 
   // Read entire file content
@@ -1214,7 +1179,7 @@ void HandleInb(DirectiveContext &context) {
 
   // Get parser from context
   ValidateParser(context.parser_state);
-  auto *parser = static_cast<ScmasmSyntaxParser *>(context.parser_state);
+  auto* parser = static_cast<ScmasmSyntaxParser*>(context.parser_state);
 
   // Track file for error reporting
   std::string previous_file = parser->GetCurrentFile();
@@ -1233,49 +1198,49 @@ void HandleInb(DirectiveContext &context) {
   }
 }
 
-void HandleList(DirectiveContext &context) {
-  const std::string &operand = context.operand;
-  (void)context.label;   // Label handled separately
-  (void)operand; // Listing control parameter (ON/OFF)
-  (void)context; // No state changes needed for stub
+void HandleList(DirectiveContext& context) {
+  const std::string& operand = context.operand;
+  (void)context.label;  // Label handled separately
+  (void)operand;        // Listing control parameter (ON/OFF)
+  (void)context;        // No state changes needed for stub
 
   // Stub implementation - listing control has no effect yet
   // This allows .LIST directives to be parsed without error
   // Full listing output generation is out of scope for P0
 }
 
-void HandleDummy(DirectiveContext &context) {
-  const std::string &operand = context.operand;
-  (void)context.label;   // Label handled separately
-  (void)operand; // Optional operand
+void HandleDummy(DirectiveContext& context) {
+  const std::string& operand = context.operand;
+  (void)context.label;  // Label handled separately
+  (void)operand;        // Optional operand
 
   // Enter dummy section mode - data directives will update address but not emit
   // bytes.  Save the current main-section PC so .ED can restore it; this
   // prevents a .OR inside the dummy block from permanently repositioning the
   // main section's current address.
   ValidateParser(context.parser_state);
-  auto *parser = static_cast<ScmasmSyntaxParser *>(context.parser_state);
+  auto* parser = static_cast<ScmasmSyntaxParser*>(context.parser_state);
   parser->StartDummySection(*context.current_address);
 }
 
-void HandleEd(DirectiveContext &context) {
-  const std::string &operand = context.operand;
-  (void)context.label;   // Label handled separately
-  (void)operand; // Operand unused
+void HandleEd(DirectiveContext& context) {
+  const std::string& operand = context.operand;
+  (void)context.label;  // Label handled separately
+  (void)operand;        // Operand unused
 
   // Exit dummy section mode - restore the main-section PC to whatever it was
   // when .DUMMY was entered.  Without this, any .OR inside the dummy block
   // (e.g. ".OR ZPDRV" in a2osx.i) would permanently reposition the assembler's
   // PC, corrupting all subsequent label addresses.
   ValidateParser(context.parser_state);
-  auto *parser = static_cast<ScmasmSyntaxParser *>(context.parser_state);
+  auto* parser = static_cast<ScmasmSyntaxParser*>(context.parser_state);
   uint32_t saved_addr = parser->EndDummySection();
   *context.current_address = saved_addr;
 }
 
-void HandleOp(DirectiveContext &context) {
-  const std::string &operand = context.operand;
-  (void)context.label; // Label handled separately
+void HandleOp(DirectiveContext& context) {
+  const std::string& operand = context.operand;
+  (void)context.label;  // Label handled separately
 
   std::string trimmed = Trim(operand);
   // Strip SCMASM inline comment: take only the first whitespace-delimited token
@@ -1293,7 +1258,7 @@ void HandleOp(DirectiveContext &context) {
   }
 
   // Switch CPU plugin based on operand
-  auto *parser = static_cast<ScmasmSyntaxParser *>(context.parser_state);
+  auto* parser = static_cast<ScmasmSyntaxParser*>(context.parser_state);
   if (trimmed == "6502") {
     parser->SetCpu("6502");
   } else if (trimmed == "65C02") {
@@ -1314,67 +1279,67 @@ namespace {
  * @param s Input string pointer (will be advanced)
  * @return Parsed byte value
  */
-uint8_t ParseEscapeSequence(const char *&s) {
+uint8_t ParseEscapeSequence(const char*& s) {
   if (*s != '\\') {
     return static_cast<uint8_t>(*s++);
   }
 
-  s++; // Skip backslash
+  s++;  // Skip backslash
 
   switch (*s) {
-  case 'a':
-    s++;
-    return constants::ascii::BELL;
-  case 'b':
-    s++;
-    return constants::ascii::BACKSPACE;
-  case 'e':
-    s++;
-    return constants::ascii::ESCAPE;
-  case 'f':
-    s++;
-    return constants::ascii::FORMFEED;
-  case 'n':
-    s++;
-    return constants::ascii::NEWLINE;
-  case 'r':
-    s++;
-    return constants::ascii::CR;
-  case 't':
-    s++;
-    return constants::ascii::TAB;
-  case 'v':
-    s++;
-    return constants::ascii::VTAB;
-  case '0':
-    s++;
-    return constants::ascii::NULL_CHAR;
-  case '\\':
-    s++;
-    return '\\'; // Backslash
-  case '"':
-    s++;
-    return '"'; // Double quote
-  case '\'':
-    s++;
-    return '\''; // Single quote
-  case 'x': {
-    // Hex escape: \xHH
-    s++;
-    if (std::isxdigit(*s) && std::isxdigit(*(s + 1))) {
-      int hi = std::isdigit(*s) ? (*s - '0') : (std::toupper(*s) - 'A' + 10);
+    case 'a':
       s++;
-      int lo = std::isdigit(*s) ? (*s - '0') : (std::toupper(*s) - 'A' + 10);
+      return constants::ascii::BELL;
+    case 'b':
       s++;
-      return static_cast<uint8_t>((hi << 4) | lo);
-    } else {
-      // Invalid hex escape - just return 'x'
-      return 'x';
+      return constants::ascii::BACKSPACE;
+    case 'e':
+      s++;
+      return constants::ascii::ESCAPE;
+    case 'f':
+      s++;
+      return constants::ascii::FORMFEED;
+    case 'n':
+      s++;
+      return constants::ascii::NEWLINE;
+    case 'r':
+      s++;
+      return constants::ascii::CR;
+    case 't':
+      s++;
+      return constants::ascii::TAB;
+    case 'v':
+      s++;
+      return constants::ascii::VTAB;
+    case '0':
+      s++;
+      return constants::ascii::NULL_CHAR;
+    case '\\':
+      s++;
+      return '\\';  // Backslash
+    case '"':
+      s++;
+      return '"';  // Double quote
+    case '\'':
+      s++;
+      return '\'';  // Single quote
+    case 'x': {
+      // Hex escape: \xHH
+      s++;
+      if (std::isxdigit(*s) && std::isxdigit(*(s + 1))) {
+        int hi = std::isdigit(*s) ? (*s - '0') : (std::toupper(*s) - 'A' + 10);
+        s++;
+        int lo = std::isdigit(*s) ? (*s - '0') : (std::toupper(*s) - 'A' + 10);
+        s++;
+        return static_cast<uint8_t>((hi << 4) | lo);
+      } else {
+        // Invalid hex escape - just return 'x'
+        return 'x';
+      }
     }
-  }
-  default:
-    // Unknown escape - return character as-is
-    return static_cast<uint8_t>(*s++);
+    default:
+      // Unknown escape - return character as-is
+      return static_cast<uint8_t>(*s++);
   }
 }
 
@@ -1389,7 +1354,7 @@ uint8_t ParseEscapeSequence(const char *&s) {
 //   the first '"', emitting only "Usage : CUT ".
 //   .CZ does NOT apply the rule (e.g. .CZ '%s = "%s"\r\n' emits the full
 //   string including the embedded '"' characters).
-void ParseCString(const std::string &operand, std::vector<uint8_t> &result,
+void ParseCString(const std::string& operand, std::vector<uint8_t>& result,
                   bool mixed_delim = false) {
   result.clear();
 
@@ -1413,12 +1378,12 @@ void ParseCString(const std::string &operand, std::vector<uint8_t> &result,
     }
   }
   if (end == std::string::npos) {
-    end = trimmed.size(); // Accept unterminated string (SCMASM compatible)
+    end = trimmed.size();  // Accept unterminated string (SCMASM compatible)
   }
 
   // Parse string content with escape sequences.
-  const char *s = trimmed.c_str() + 1; // Start after opening delimiter
-  const char *s_end = trimmed.c_str() + end;
+  const char* s = trimmed.c_str() + 1;  // Start after opening delimiter
+  const char* s_end = trimmed.c_str() + end;
 
   while (s < s_end) {
     if (*s == '\\' && s + 1 >= s_end) {
@@ -1433,11 +1398,11 @@ void ParseCString(const std::string &operand, std::vector<uint8_t> &result,
   }
 }
 
-} // anonymous namespace
+}  // anonymous namespace
 
-void HandleCs(DirectiveContext &context) {
-  const std::string &operand = context.operand;
-  (void)context.label; // Label handled separately
+void HandleCs(DirectiveContext& context) {
+  const std::string& operand = context.operand;
+  (void)context.label;  // Label handled separately
 
   RequireOperand(operand, ".CS", context);
 
@@ -1451,9 +1416,9 @@ void HandleCs(DirectiveContext &context) {
   *context.current_address += data.size();
 }
 
-void HandleCz(DirectiveContext &context) {
-  const std::string &operand = context.operand;
-  (void)context.label; // Label handled separately
+void HandleCz(DirectiveContext& context) {
+  const std::string& operand = context.operand;
+  (void)context.label;  // Label handled separately
 
   RequireOperand(operand, ".CZ", context);
 
@@ -1470,8 +1435,8 @@ void HandleCz(DirectiveContext &context) {
   *context.current_address += data.size();
 }
 
-void HandleTf(DirectiveContext &context) {
-  const std::string &operand = context.operand;
+void HandleTf(DirectiveContext& context) {
+  const std::string& operand = context.operand;
 
   // .TF <path>[,TSYS]  — sets the output file for this assembly unit.
   // Strip optional type suffix (e.g. ",TSYS", ",TBIN") — these were ProDOS
@@ -1494,18 +1459,18 @@ void HandleTf(DirectiveContext &context) {
   }
 
   // Store in parser so main() can retrieve it after Parse() returns.
-  auto *parser = static_cast<ScmasmSyntaxParser *>(context.parser_state);
+  auto* parser = static_cast<ScmasmSyntaxParser*>(context.parser_state);
   if (parser) {
     parser->SetTfOutput(path);
   }
 }
 
-void HandleEp(DirectiveContext &context) {
-  const std::string &operand = context.operand;
-  (void)context.label; // Label handled separately
+void HandleEp(DirectiveContext& context) {
+  const std::string& operand = context.operand;
+  (void)context.label;  // Label handled separately
 
   // Cast parser state to access phase tracking
-  auto *parser = static_cast<ScmasmSyntaxParser *>(context.parser_state);
+  auto* parser = static_cast<ScmasmSyntaxParser*>(context.parser_state);
 
   // Check if we're ending a phase
   if (parser && parser->InPhase()) {
@@ -1523,8 +1488,7 @@ void HandleEp(DirectiveContext &context) {
       return;
     }
     // .EP with operand in phase context is an error
-    ThrowFormattedError(".EP with operand not allowed within .PH/.EP block",
-                        context);
+    ThrowFormattedError(".EP with operand not allowed within .PH/.EP block", context);
   }
 
   // Not in phase - treat as entry point directive
@@ -1541,23 +1505,22 @@ void HandleEp(DirectiveContext &context) {
   if (ep_ws != std::string::npos) {
     ep_expr = ep_expr.substr(0, ep_ws);
   }
-  uint32_t address =
-      EvaluateExpression(ep_expr, *context.symbols, context.parser_state);
+  uint32_t address = EvaluateExpression(ep_expr, *context.symbols, context.parser_state);
 
   // TODO: Store entry point in section metadata
   // For now, just validate the expression
   (void)address;
 }
 
-void HandlePh(DirectiveContext &context) {
-  const std::string &operand = context.operand;
-  (void)context.label; // Label handled separately
+void HandlePh(DirectiveContext& context) {
+  const std::string& operand = context.operand;
+  (void)context.label;  // Label handled separately
 
   RequireOperand(operand, ".PH", context);
 
   // Cast parser state to access phase tracking
   ValidateParser(context.parser_state);
-  auto *parser = static_cast<ScmasmSyntaxParser *>(context.parser_state);
+  auto* parser = static_cast<ScmasmSyntaxParser*>(context.parser_state);
 
   // Strip inline comment then evaluate virtual address
   std::string ph_expr = Trim(operand);
@@ -1565,8 +1528,7 @@ void HandlePh(DirectiveContext &context) {
   if (ph_ws != std::string::npos) {
     ph_expr = ph_expr.substr(0, ph_ws);
   }
-  uint32_t virtual_addr =
-      EvaluateExpression(ph_expr, *context.symbols, context.parser_state);
+  uint32_t virtual_addr = EvaluateExpression(ph_expr, *context.symbols, context.parser_state);
 
   // Calculate current real address
   uint32_t real_addr = 0;
@@ -1588,9 +1550,9 @@ void HandlePh(DirectiveContext &context) {
   context.section->atoms.push_back(phase_atom);
 }
 
-void HandleHx(DirectiveContext &context) {
-  const std::string &operand = context.operand;
-  (void)context.label; // Label handled separately
+void HandleHx(DirectiveContext& context) {
+  const std::string& operand = context.operand;
+  (void)context.label;  // Label handled separately
 
   std::vector<uint8_t> nibbles;
   std::string trimmed = Trim(operand);
@@ -1599,14 +1561,13 @@ void HandleHx(DirectiveContext &context) {
   // Whitespace, dots, and commas are allowed as separators
   for (char c : trimmed) {
     if (std::isspace(c) || c == '.' || c == ',') {
-      continue; // Skip separators
+      continue;  // Skip separators
     }
 
     // Convert single hex digit to nibble value (0-15)
     int val = 0;
     if (!ParseHexDigit(c, val)) {
-      ThrowFormattedError("Invalid hex digit in .HX: " + std::string(1, c),
-                         context);
+      ThrowFormattedError("Invalid hex digit in .HX: " + std::string(1, c), context);
     }
     nibbles.push_back(static_cast<uint8_t>(val));
   }
@@ -1636,22 +1597,22 @@ void HandleHx(DirectiveContext &context) {
   *context.current_address += data.size();
 }
 
-void HandleTa(DirectiveContext &context) {
-  const std::string &operand = context.operand;
-  (void)context.label;   // Label handled separately
-  (void)operand; // Target address
-  (void)context; // No-op
+void HandleTa(DirectiveContext& context) {
+  const std::string& operand = context.operand;
+  (void)context.label;  // Label handled separately
+  (void)operand;        // Target address
+  (void)context;        // No-op
 
   // .TA (Target Address) is a no-op in cross-assemblers
   // Used by SCMASM editor to set assembly target on Apple II
   // In cross-assembly, has no effect
 }
 
-void HandleDo(DirectiveContext &context) {
-  const std::string &operand = context.operand;
-  (void)context.label;   // Label handled separately
-  (void)operand; // Condition expression
-  (void)context; // State management
+void HandleDo(DirectiveContext& context) {
+  const std::string& operand = context.operand;
+  (void)context.label;  // Label handled separately
+  (void)operand;        // Condition expression
+  (void)context;        // State management
 
   // TODO: Implement conditional assembly
   // .DO/.FIN require special handling in ParseLine (not registry dispatch)
@@ -1659,26 +1620,26 @@ void HandleDo(DirectiveContext &context) {
   ThrowFormattedError(".DO conditional assembly not yet implemented", context);
 }
 
-void HandleFin(DirectiveContext &context) {
-  const std::string &operand = context.operand;
-  (void)context.label;   // Label handled separately
-  (void)operand; // Unused
-  (void)context; // State management
+void HandleFin(DirectiveContext& context) {
+  const std::string& operand = context.operand;
+  (void)context.label;  // Label handled separately
+  (void)operand;        // Unused
+  (void)context;        // State management
 
   // TODO: Implement conditional assembly
   // For now, stub implementation
   ThrowFormattedError(".FIN conditional assembly not yet implemented", context);
 }
 
-void HandleAc(DirectiveContext &context) {
-  const std::string &operand = context.operand;
-  (void)context.label;   // Label handled separately
-  (void)operand; // String with optional prefix
-  (void)context; // State management
+void HandleAc(DirectiveContext& context) {
+  const std::string& operand = context.operand;
+  (void)context.label;  // Label handled separately
+  (void)operand;        // String with optional prefix
+  (void)context;        // State management
 
   // TODO: Implement .AC directive (ASCII string with optional numeric prefix)
   // For now, stub implementation
   ThrowFormattedError(".AC directive not yet implemented", context);
 }
 
-} // namespace xasm::scmasm
+}  // namespace xasm::scmasm

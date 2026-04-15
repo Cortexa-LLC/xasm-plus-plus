@@ -27,20 +27,20 @@ namespace xasm {
  * Each atom type represents a different assembly language construct.
  */
 enum class AtomType : std::uint8_t {
-  Label,          ///< Symbol definition (e.g., "start:" or "loop:")
-  Instruction,    ///< CPU instruction (e.g., "LDA #$42")
-  Data,           ///< Raw data bytes (e.g., ".byte $01, $02, $03")
-  Space,          ///< Reserved/uninitialized space (e.g., ".ds 100")
-  Align,          ///< Alignment directive (e.g., ".align 256")
-  Org,            ///< Origin directive (e.g., ".org $8000")
-  DummyOrg,       ///< Dummy-section origin (.OR inside .DUMMY/.ED) - updates
-                  ///< ResolveSymbols PC but emits no bytes and does not move the
-                  ///< real program counter during code generation.
-  ListingControl, ///< Listing control directive (e.g., "TITLE", "PAGE", "LIST")
-  Phase,          ///< Phase directive (.PH start / .EP end)
-  Equate,         ///< Equate with position-dependent expression (.EQ *-LABEL)
-  CpuMode,        ///< CPU mode change (XC / XC OFF in Merlin)
-  MxState,        ///< 65816 M/X flag state change (MX directive in Merlin)
+  Label,           ///< Symbol definition (e.g., "start:" or "loop:")
+  Instruction,     ///< CPU instruction (e.g., "LDA #$42")
+  Data,            ///< Raw data bytes (e.g., ".byte $01, $02, $03")
+  Space,           ///< Reserved/uninitialized space (e.g., ".ds 100")
+  Align,           ///< Alignment directive (e.g., ".align 256")
+  Org,             ///< Origin directive (e.g., ".org $8000")
+  DummyOrg,        ///< Dummy-section origin (.OR inside .DUMMY/.ED) - updates
+                   ///< ResolveSymbols PC but emits no bytes and does not move the
+                   ///< real program counter during code generation.
+  ListingControl,  ///< Listing control directive (e.g., "TITLE", "PAGE", "LIST")
+  Phase,           ///< Phase directive (.PH start / .EP end)
+  Equate,          ///< Equate with position-dependent expression (.EQ *-LABEL)
+  CpuMode,         ///< CPU mode change (XC / XC OFF in Merlin)
+  MxState,         ///< 65816 M/X flag state change (MX directive in Merlin)
 };
 
 /**
@@ -50,9 +50,9 @@ enum class AtomType : std::uint8_t {
  * source code. Used for generating helpful error messages.
  */
 struct SourceLocation {
-  std::string filename{}; ///< Source filename
-  int line = 0;             ///< Line number (1-based)
-  int column = 0;           ///< Column number (1-based)
+  std::string filename{};  ///< Source filename
+  int line = 0;            ///< Line number (1-based)
+  int column = 0;          ///< Column number (1-based)
 
   /** @brief Default constructor - creates invalid location */
   SourceLocation() = default;
@@ -63,8 +63,7 @@ struct SourceLocation {
    * @param l Line number
    * @param c Column number
    */
-  SourceLocation(const std::string &file, int l, int c)
-      : filename(file), line(l), column(c) {}
+  SourceLocation(const std::string& file, int l, int c) : filename(file), line(l), column(c) {}
 };
 
 /**
@@ -87,21 +86,20 @@ struct SourceLocation {
  * stores mnemonic and operand).
  */
 class Atom {
-public:
-  AtomType type;              ///< Type of this atom
-  SourceLocation location;    ///< Source location for error reporting
-  size_t size = 0;                ///< Size in bytes (current pass)
-  size_t last_size = 0;           ///< Size in bytes (previous pass)
-  uint32_t changes = 0;           ///< Number of times size has changed
-  std::shared_ptr<Atom> next{}; ///< Next atom in linked list (nullptr if last)
-  std::string source_line{}; ///< Original source line text (for listing output)
+ public:
+  AtomType type;                 ///< Type of this atom
+  SourceLocation location;       ///< Source location for error reporting
+  size_t size = 0;               ///< Size in bytes (current pass)
+  size_t last_size = 0;          ///< Size in bytes (previous pass)
+  uint32_t changes = 0;          ///< Number of times size has changed
+  std::shared_ptr<Atom> next{};  ///< Next atom in linked list (nullptr if last)
+  std::string source_line{};     ///< Original source line text (for listing output)
 
   /**
    * @brief Construct an atom of the given type
    * @param t Atom type
    */
-  explicit Atom(AtomType t)
-      : type(t) {}
+  explicit Atom(AtomType t) : type(t) {}
 
   /**
    * @brief Virtual destructor for polymorphic deletion
@@ -112,7 +110,7 @@ public:
    * @brief Accept a visitor (double dispatch).
    * Each concrete subclass overrides this to call visitor.Visit(*this).
    */
-  virtual void Accept(IAtomVisitor &visitor) = 0;
+  virtual void Accept(IAtomVisitor& visitor) = 0;
 };
 
 /**
@@ -129,20 +127,20 @@ public:
  * @endcode
  */
 class LabelAtom : public Atom {
-public:
-  std::string name{}; ///< Symbol name
-  uint32_t address{0}; ///< Resolved address of this label
+ public:
+  std::string name{};   ///< Symbol name
+  uint32_t address{0};  ///< Resolved address of this label
 
   /**
    * @brief Construct a label atom
    * @param n Symbol name
    * @param addr Address where this label is defined
    */
-  LabelAtom(const std::string &n, uint32_t addr)
-      : Atom(AtomType::Label), name(n), address(addr) {
-    size = 0; // Labels don't take space
+  LabelAtom(const std::string& n, uint32_t addr) : Atom(AtomType::Label), name(n), address(addr) {
+    size = 0;  // Labels don't take space
   }
-  void Accept(IAtomVisitor &v) override { v.Visit(*this); }
+
+  void Accept(IAtomVisitor& v) override { v.Visit(*this); }
 };
 
 /**
@@ -161,22 +159,22 @@ public:
  *       the encoding phase of assembly
  */
 class InstructionAtom : public Atom {
-public:
-  std::string mnemonic{}; ///< Instruction mnemonic (e.g., "LDA", "STA")
-  std::string operand{};  ///< Operand string (e.g., "#$42", "$1234,X")
-  std::vector<uint8_t>
-      encoded_bytes{}; ///< Encoded machine code (set by CPU plugin)
+ public:
+  std::string mnemonic{};                ///< Instruction mnemonic (e.g., "LDA", "STA")
+  std::string operand{};                 ///< Operand string (e.g., "#$42", "$1234,X")
+  std::vector<uint8_t> encoded_bytes{};  ///< Encoded machine code (set by CPU plugin)
 
   /**
    * @brief Construct an instruction atom
    * @param mnem Instruction mnemonic
    * @param oper Operand string
    */
-  InstructionAtom(const std::string &mnem, const std::string &oper)
+  InstructionAtom(const std::string& mnem, const std::string& oper)
       : Atom(AtomType::Instruction), mnemonic(mnem), operand(oper) {
     // Size determined during encoding phase
   }
-  void Accept(IAtomVisitor &v) override { v.Visit(*this); }
+
+  void Accept(IAtomVisitor& v) override { v.Visit(*this); }
 };
 
 /**
@@ -187,11 +185,12 @@ public:
  * The mode is stored as an int:  0=6502, 1=65C02, 2=65816.
  */
 class CpuModeAtom : public Atom {
-public:
-  int mode; ///< 0=6502, 1=65C02, 2=65816
+ public:
+  int mode;  ///< 0=6502, 1=65C02, 2=65816
 
   explicit CpuModeAtom(int m) : Atom(AtomType::CpuMode), mode(m) {}
-  void Accept(IAtomVisitor &v) override { v.Visit(*this); }
+
+  void Accept(IAtomVisitor& v) override { v.Visit(*this); }
 };
 
 /**
@@ -202,21 +201,22 @@ public:
  * m_flag=true means 8-bit accumulator; x_flag=true means 8-bit index registers.
  */
 class MxAtom : public Atom {
-public:
-  bool m_flag; ///< true = 8-bit accumulator (M=1), false = 16-bit (M=0)
-  bool x_flag; ///< true = 8-bit index (X=1), false = 16-bit (X=0)
+ public:
+  bool m_flag;  ///< true = 8-bit accumulator (M=1), false = 16-bit (M=0)
+  bool x_flag;  ///< true = 8-bit index (X=1), false = 16-bit (X=0)
 
   MxAtom(bool m, bool x) : Atom(AtomType::MxState), m_flag(m), x_flag(x) {}
-  void Accept(IAtomVisitor &v) override { v.Visit(*this); }
+
+  void Accept(IAtomVisitor& v) override { v.Visit(*this); }
 };
 
 /**
  * @brief Data size for data atoms (byte vs word)
  */
 enum class DataSize : std::uint8_t {
-  Byte, ///< 8-bit data (db, dfb directives)
-  Word, ///< 16-bit data (dw, da directives)
-  Long  ///< 24-bit data (da in 65816 mode — Merlin 16/32 compatible)
+  Byte,  ///< 8-bit data (db, dfb directives)
+  Word,  ///< 16-bit data (dw, da directives)
+  Long   ///< 24-bit data (da in 65816 mode — Merlin 16/32 compatible)
 };
 
 /**
@@ -238,17 +238,17 @@ enum class DataSize : std::uint8_t {
  * @endcode
  */
 class DataAtom : public Atom {
-public:
-  std::vector<std::string> expressions{}; ///< Original expression strings
-  std::vector<uint8_t> data{};            ///< Evaluated data bytes
-  DataSize data_size;                   ///< Size of each data element
+ public:
+  std::vector<std::string> expressions{};  ///< Original expression strings
+  std::vector<uint8_t> data{};             ///< Evaluated data bytes
+  DataSize data_size;                      ///< Size of each data element
 
   /**
    * @brief Construct a data atom with expressions (for multi-pass evaluation)
    * @param exprs Vector of expression strings
    * @param size Data size (Byte or Word)
    */
-  DataAtom(const std::vector<std::string> &exprs, DataSize size)
+  DataAtom(const std::vector<std::string>& exprs, DataSize size)
       : Atom(AtomType::Data), expressions(exprs), data_size(size) {
     // Size will be determined after evaluation
     this->size = 0;
@@ -258,11 +258,12 @@ public:
    * @brief Construct a data atom with pre-evaluated bytes (legacy constructor)
    * @param d Vector of bytes to emit
    */
-  explicit DataAtom(const std::vector<uint8_t> &d)
+  explicit DataAtom(const std::vector<uint8_t>& d)
       : Atom(AtomType::Data), data(d), data_size(DataSize::Byte) {
     size = data.size();
   }
-  void Accept(IAtomVisitor &v) override { v.Visit(*this); }
+
+  void Accept(IAtomVisitor& v) override { v.Visit(*this); }
 };
 
 /**
@@ -277,17 +278,15 @@ public:
  * @endcode
  */
 class SpaceAtom : public Atom {
-public:
-  size_t count{0}; ///< Number of bytes to reserve
-  std::string expression_str{}; ///< Raw expression (contains '*') for re-evaluation each pass
+ public:
+  size_t count{0};               ///< Number of bytes to reserve
+  std::string expression_str{};  ///< Raw expression (contains '*') for re-evaluation each pass
 
   /**
    * @brief Construct a space atom with a fixed count
    * @param c Number of bytes to reserve
    */
-  explicit SpaceAtom(size_t c) : Atom(AtomType::Space), count(c) {
-    size = count;
-  }
+  explicit SpaceAtom(size_t c) : Atom(AtomType::Space), count(c) { size = count; }
 
   /**
    * @brief Construct a space atom with a PC-relative expression
@@ -298,7 +297,8 @@ public:
       : Atom(AtomType::Space), count(c), expression_str(std::move(expr)) {
     size = count;
   }
-  void Accept(IAtomVisitor &v) override { v.Visit(*this); }
+
+  void Accept(IAtomVisitor& v) override { v.Visit(*this); }
 };
 
 /**
@@ -314,8 +314,8 @@ public:
  * @endcode
  */
 class AlignAtom : public Atom {
-public:
-  size_t alignment = 0; ///< Alignment boundary (must be power of 2)
+ public:
+  size_t alignment = 0;  ///< Alignment boundary (must be power of 2)
 
   /**
    * @brief Construct an align atom
@@ -324,7 +324,8 @@ public:
   explicit AlignAtom(size_t align) : Atom(AtomType::Align), alignment(align) {
     // Size determined during layout phase
   }
-  void Accept(IAtomVisitor &v) override { v.Visit(*this); }
+
+  void Accept(IAtomVisitor& v) override { v.Visit(*this); }
 };
 
 /**
@@ -339,17 +340,18 @@ public:
  * @endcode
  */
 class OrgAtom : public Atom {
-public:
-  uint32_t address{0}; ///< New program counter address
+ public:
+  uint32_t address{0};  ///< New program counter address
 
   /**
    * @brief Construct an org atom
    * @param addr Address to set the program counter to
    */
   explicit OrgAtom(uint32_t addr) : Atom(AtomType::Org), address(addr) {
-    size = 0; // ORG doesn't generate bytes
+    size = 0;  // ORG doesn't generate bytes
   }
-  void Accept(IAtomVisitor &v) override { v.Visit(*this); }
+
+  void Accept(IAtomVisitor& v) override { v.Visit(*this); }
 };
 
 /**
@@ -370,18 +372,18 @@ public:
  * @endcode
  */
 class DummyOrgAtom : public Atom {
-public:
-  uint32_t address{0}; ///< Zero-page (or other) address for symbol resolution
+ public:
+  uint32_t address{0};  ///< Zero-page (or other) address for symbol resolution
 
   /**
    * @brief Construct a dummy-section org atom
    * @param addr Address for symbol resolution within the dummy block
    */
-  explicit DummyOrgAtom(uint32_t addr)
-      : Atom(AtomType::DummyOrg), address(addr) {
-    size = 0; // DummyOrg doesn't generate bytes
+  explicit DummyOrgAtom(uint32_t addr) : Atom(AtomType::DummyOrg), address(addr) {
+    size = 0;  // DummyOrg doesn't generate bytes
   }
-  void Accept(IAtomVisitor &v) override { v.Visit(*this); }
+
+  void Accept(IAtomVisitor& v) override { v.Visit(*this); }
 };
 
 /**
@@ -399,9 +401,9 @@ public:
  * @endcode
  */
 class PhaseAtom : public Atom {
-public:
+ public:
   bool is_start{false};      ///< true = .PH start of phase, false = .EP end
-  uint32_t virtual_addr{0};   ///< Virtual address for phase start (unused for end)
+  uint32_t virtual_addr{0};  ///< Virtual address for phase start (unused for end)
 
   /**
    * @brief Construct a phase atom
@@ -410,23 +412,24 @@ public:
    */
   PhaseAtom(bool start, uint32_t virt)
       : Atom(AtomType::Phase), is_start(start), virtual_addr(virt) {
-    size = 0; // Phase atoms don't generate bytes
+    size = 0;  // Phase atoms don't generate bytes
   }
-  void Accept(IAtomVisitor &v) override { v.Visit(*this); }
+
+  void Accept(IAtomVisitor& v) override { v.Visit(*this); }
 };
 
 /**
  * @brief Listing control type for directives
  */
 enum class ListingControlType : std::uint8_t {
-  Title,    ///< TITLE directive - sets page title
-  Subtitle, ///< SUBTTL directive - sets page subtitle
-  Page,     ///< PAGE/EJECT directive - forces page break
-  Space,    ///< SPACE directive - inserts blank lines
-  List,     ///< LIST directive - enables listing output
-  Nolist,   ///< NOLIST directive - disables listing output
-  Lall,     ///< LALL directive - list all macro expansions
-  Sall,     ///< SALL directive - suppress macro expansion listing
+  Title,     ///< TITLE directive - sets page title
+  Subtitle,  ///< SUBTTL directive - sets page subtitle
+  Page,      ///< PAGE/EJECT directive - forces page break
+  Space,     ///< SPACE directive - inserts blank lines
+  List,      ///< LIST directive - enables listing output
+  Nolist,    ///< NOLIST directive - disables listing output
+  Lall,      ///< LALL directive - list all macro expansions
+  Sall,      ///< SALL directive - suppress macro expansion listing
 };
 
 /**
@@ -446,19 +449,19 @@ enum class ListingControlType : std::uint8_t {
  * @endcode
  */
 class ListingControlAtom : public Atom {
-public:
-  ListingControlType control_type{}; ///< Type of listing control
-  std::string value{};               ///< String value (for TITLE)
-  int count{0};                      ///< Numeric value (for SPACE)
+ public:
+  ListingControlType control_type{};  ///< Type of listing control
+  std::string value{};                ///< String value (for TITLE)
+  int count{0};                       ///< Numeric value (for SPACE)
 
   /**
    * @brief Construct a listing control atom with string value
    * @param type Control type
    * @param val String value
    */
-  ListingControlAtom(ListingControlType type, const std::string &val)
+  ListingControlAtom(ListingControlType type, const std::string& val)
       : Atom(AtomType::ListingControl), control_type(type), value(val) {
-    size = 0; // Listing control doesn't generate bytes
+    size = 0;  // Listing control doesn't generate bytes
   }
 
   /**
@@ -468,7 +471,7 @@ public:
    */
   ListingControlAtom(ListingControlType type, int cnt)
       : Atom(AtomType::ListingControl), control_type(type), count(cnt) {
-    size = 0; // Listing control doesn't generate bytes
+    size = 0;  // Listing control doesn't generate bytes
   }
 
   /**
@@ -477,9 +480,10 @@ public:
    */
   explicit ListingControlAtom(ListingControlType type)
       : Atom(AtomType::ListingControl), control_type(type) {
-    size = 0; // Listing control doesn't generate bytes
+    size = 0;  // Listing control doesn't generate bytes
   }
-  void Accept(IAtomVisitor &v) override { v.Visit(*this); }
+
+  void Accept(IAtomVisitor& v) override { v.Visit(*this); }
 };
 
 /**
@@ -497,20 +501,21 @@ public:
  * @endcode
  */
 class EquateAtom : public Atom {
-public:
-  std::string label_name{};    ///< Symbol name (normalized/uppercase)
-  std::string expression_str{}; ///< Raw expression string (contains '*')
+ public:
+  std::string label_name{};      ///< Symbol name (normalized/uppercase)
+  std::string expression_str{};  ///< Raw expression string (contains '*')
 
   /**
    * @brief Construct an equate atom
    * @param name Symbol name (normalized)
    * @param expr Expression string (must contain '*')
    */
-  EquateAtom(const std::string &name, const std::string &expr)
+  EquateAtom(const std::string& name, const std::string& expr)
       : Atom(AtomType::Equate), label_name(name), expression_str(expr) {
-    size = 0; // Equate atoms don't generate bytes
+    size = 0;  // Equate atoms don't generate bytes
   }
-  void Accept(IAtomVisitor &v) override { v.Visit(*this); }
+
+  void Accept(IAtomVisitor& v) override { v.Visit(*this); }
 };
 
-} // namespace xasm
+}  // namespace xasm

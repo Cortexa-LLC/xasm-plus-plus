@@ -4,21 +4,22 @@
  */
 
 #include "xasm++/common/expression_parser.h"
-#include "xasm++/directives/directive_constants.h"
+
 #include <algorithm>
 #include <cctype>
 #include <stdexcept>
 
+#include "xasm++/directives/directive_constants.h"
+
 namespace xasm {
 
-ExpressionParser::ExpressionParser(const SymbolTable *symbols,
-                                   const INumberParser *number_parser,
+ExpressionParser::ExpressionParser(const SymbolTable* symbols, const INumberParser* number_parser,
                                    ParserFeatures features)
     : symbols_(symbols), number_parser_(number_parser), features_(features) {
   InitPrefixTable();
 }
 
-std::shared_ptr<Expression> ExpressionParser::Parse(const std::string &str) {
+std::shared_ptr<Expression> ExpressionParser::Parse(const std::string& str) {
   expr_ = str;
   pos_ = 0;
   SkipWhitespace();
@@ -93,16 +94,13 @@ std::shared_ptr<Expression> ExpressionParser::ParseComparison() {
       left = std::make_shared<BinaryOpExpr>(BinaryOp::LessOrEqual, left, right);
     } else if (Match(">=")) {
       std::shared_ptr<Expression> right = ParseBitwiseOr();
-      left =
-          std::make_shared<BinaryOpExpr>(BinaryOp::GreaterOrEqual, left, right);
-    } else if (Peek() == '<' && pos_ + 1 < expr_.length() &&
-               expr_[pos_ + 1] != '<') {
+      left = std::make_shared<BinaryOpExpr>(BinaryOp::GreaterOrEqual, left, right);
+    } else if (Peek() == '<' && pos_ + 1 < expr_.length() && expr_[pos_ + 1] != '<') {
       // Single '<' (not '<<' shift operator)
       Consume();
       std::shared_ptr<Expression> right = ParseBitwiseOr();
       left = std::make_shared<BinaryOpExpr>(BinaryOp::LessThan, left, right);
-    } else if (Peek() == '>' && pos_ + 1 < expr_.length() &&
-               expr_[pos_ + 1] != '>') {
+    } else if (Peek() == '>' && pos_ + 1 < expr_.length() && expr_[pos_ + 1] != '>') {
       // Single '>' (not '>>' shift operator)
       Consume();
       std::shared_ptr<Expression> right = ParseBitwiseOr();
@@ -284,7 +282,8 @@ std::shared_ptr<Expression> ExpressionParser::ParseUnary() {
     Consume();
     // In Merlin, `<base+offset` means `<(base+offset)` — the operator
     // applies to the entire following additive expression.
-    std::shared_ptr<Expression> operand = features_.merlin_byte_ops_greedy ? ParseAddSub() : ParseUnary();
+    std::shared_ptr<Expression> operand =
+        features_.merlin_byte_ops_greedy ? ParseAddSub() : ParseUnary();
     return std::make_shared<UnaryOpExpr>(UnaryOp::LowByte, operand);
   }
 
@@ -294,7 +293,8 @@ std::shared_ptr<Expression> ExpressionParser::ParseUnary() {
     Consume();
     // In Merlin, `>base+offset` means `>(base+offset)` — the operator
     // applies to the entire following additive expression.
-    std::shared_ptr<Expression> operand = features_.merlin_byte_ops_greedy ? ParseAddSub() : ParseUnary();
+    std::shared_ptr<Expression> operand =
+        features_.merlin_byte_ops_greedy ? ParseAddSub() : ParseUnary();
     return std::make_shared<UnaryOpExpr>(UnaryOp::HighByte, operand);
   }
 
@@ -388,15 +388,14 @@ std::shared_ptr<Expression> ExpressionParser::TryParseCustomNumber() {
   // Potential ASCII character constant (non-operator, non-paren,
   // non-identifier start) Try if it's not an operator that should be handled
   // elsewhere
-  else if (!std::isalnum(first_char) && first_char != '_' &&
-           first_char != '(') {
+  else if (!std::isalnum(first_char) && first_char != '_' && first_char != '(') {
     // Try treating as 2-char ASCII constant (delimiter + char)
-    token += Consume(); // delimiter
+    token += Consume();  // delimiter
     if (pos_ < expr_.length() && pos_ + 1 <= expr_.length()) {
       // Check if next char could be part of character constant
       char next = Peek();
       if (std::isprint(next)) {
-        token += Consume(); // character
+        token += Consume();  // character
       }
     }
   }
@@ -413,7 +412,7 @@ std::shared_ptr<Expression> ExpressionParser::TryParseCustomNumber() {
 
     // Check if $ was followed by non-hex-digit - if so, it's current location
     if (token == "$") {
-      Consume(); // consume the $
+      Consume();  // consume the $
       return std::make_shared<CurrentLocationExpr>();
     }
   }
@@ -426,7 +425,7 @@ std::shared_ptr<Expression> ExpressionParser::TryParseDollarCurrentLocation() {
     return nullptr;
   }
   size_t saved_pos = pos_;
-  Consume(); // consume $
+  Consume();  // consume $
   if (!std::isxdigit(Peek())) {
     // $ not followed by hex digit - current location operator
     return std::make_shared<CurrentLocationExpr>();
@@ -444,10 +443,8 @@ std::shared_ptr<Expression> ExpressionParser::TryParseIdentifierOrCall() {
   // start character.  Suppress it here so '.' after a primary is handled by
   // ParseBitwiseOr() rather than greedily consumed into an identifier.
   bool allow_dot_ident_start = !features_.allow_merlin_bitwise_ops;
-  if (!std::isalpha(Peek()) && Peek() != '_' &&
-      !(allow_dot_ident_start && Peek() == '.') && Peek() != '$' &&
-      Peek() != '?' &&
-      !(features_.allow_merlin_var_prefix && Peek() == ']')) {
+  if (!std::isalpha(Peek()) && Peek() != '_' && !(allow_dot_ident_start && Peek() == '.') &&
+      Peek() != '$' && Peek() != '?' && !(features_.allow_merlin_var_prefix && Peek() == ']')) {
     return nullptr;
   }
 
@@ -474,8 +471,7 @@ std::shared_ptr<Expression> ExpressionParser::TryParseIdentifierOrCall() {
 
     // Handle LOW and HIGH functions
     std::string ident_upper = ident;
-    std::transform(ident_upper.begin(), ident_upper.end(), ident_upper.begin(),
-                   ::toupper);
+    std::transform(ident_upper.begin(), ident_upper.end(), ident_upper.begin(), ::toupper);
 
     if (ident_upper == directives::LOW_FUNC) {
       return std::make_shared<UnaryOpExpr>(UnaryOp::LowByte, arg);
@@ -520,13 +516,13 @@ void ExpressionParser::InitPrefixTable() {
 
   // '%' — binary literal
   prefix_table_['%'] = [this]() -> std::shared_ptr<Expression> {
-    Consume(); // consume '%'
+    Consume();  // consume '%'
     return std::make_shared<LiteralExpr>(ParsePercentBinary());
   };
 
   // '@' — octal literal (some syntaxes)
   prefix_table_['@'] = [this]() -> std::shared_ptr<Expression> {
-    Consume(); // consume '@'
+    Consume();  // consume '@'
     return std::make_shared<LiteralExpr>(ParseOctalDigits());
   };
 
@@ -535,13 +531,13 @@ void ExpressionParser::InitPrefixTable() {
     if (Peek() == '0' && pos_ + 1 < expr_.length()) {
       char next = expr_[pos_ + 1];
       if (next == 'x' || next == 'X') {
-        Consume(); // '0'
-        Consume(); // 'x'
+        Consume();  // '0'
+        Consume();  // 'x'
         return std::make_shared<LiteralExpr>(Parse0xHex());
       }
       if (next == 'b' || next == 'B') {
-        Consume(); // '0'
-        Consume(); // 'b'
+        Consume();  // '0'
+        Consume();  // 'b'
         return std::make_shared<LiteralExpr>(Parse0bBinary());
       }
     }
@@ -563,9 +559,9 @@ int64_t ExpressionParser::ParseDollarHex() {
   int64_t value = 0;
   while (std::isxdigit(Peek())) {
     char c = Consume();
-    int digit = (c >= '0' && c <= '9') ? (c - '0')
+    int digit = (c >= '0' && c <= '9')   ? (c - '0')
                 : (c >= 'A' && c <= 'F') ? (c - 'A' + 10)
-                                          : (c - 'a' + 10);
+                                         : (c - 'a' + 10);
     value = (value * 16) + digit;
   }
   return value;
@@ -598,9 +594,9 @@ int64_t ExpressionParser::Parse0xHex() {
   int64_t value = 0;
   while (std::isxdigit(Peek())) {
     char c = Consume();
-    int digit = (c >= '0' && c <= '9') ? (c - '0')
+    int digit = (c >= '0' && c <= '9')   ? (c - '0')
                 : (c >= 'A' && c <= 'F') ? (c - 'A' + 10)
-                                          : (c - 'a' + 10);
+                                         : (c - 'a' + 10);
     value = (value * 16) + digit;
   }
   return value;
@@ -609,8 +605,7 @@ int64_t ExpressionParser::Parse0xHex() {
 int64_t ExpressionParser::Parse0bBinary() {
   // '0b' already consumed by caller
   if (Peek() != '0' && Peek() != '1') {
-    throw std::runtime_error(
-        "Invalid binary number: expected 0 or 1 after 0b");
+    throw std::runtime_error("Invalid binary number: expected 0 or 1 after 0b");
   }
   int64_t value = 0;
   while (Peek() == '0' || Peek() == '1') {
@@ -698,7 +693,7 @@ char ExpressionParser::Consume() {
   return '\0';
 }
 
-bool ExpressionParser::Match(const std::string &str) {
+bool ExpressionParser::Match(const std::string& str) {
   if (pos_ + str.length() > expr_.length()) {
     return false;
   }
@@ -721,9 +716,8 @@ std::string ExpressionParser::ParseIdentifier() {
   // ADR-005 V9: In Merlin mode, '.' is an operator, not an identifier character.
   bool is_merlin_var = (features_.allow_merlin_var_prefix && Peek() == ']');
   bool allow_dot_in_ident = !features_.allow_merlin_bitwise_ops;
-  if (!(std::isalpha(Peek()) || Peek() == '_' ||
-        (allow_dot_in_ident && Peek() == '.') || Peek() == '$' ||
-        Peek() == '?' || is_merlin_var)) {
+  if (!(std::isalpha(Peek()) || Peek() == '_' || (allow_dot_in_ident && Peek() == '.') ||
+        Peek() == '$' || Peek() == '?' || is_merlin_var)) {
     throw std::runtime_error("Expected identifier");
   }
 
@@ -733,13 +727,12 @@ std::string ExpressionParser::ParseIdentifier() {
   // '@' is used in SCMASM scoped local label names (e.g. GLOBAL@.1)
   // ':' is used in Merlin scoped local label names (e.g. MAIN:loop)
   // ADR-005 V9: In Merlin mode, '.' is a binary OR operator, not part of names.
-  while (std::isalnum(Peek()) || Peek() == '_' ||
-         (allow_dot_in_ident && Peek() == '.') || Peek() == '$' ||
-         Peek() == '?' || Peek() == '@' || Peek() == ':') {
+  while (std::isalnum(Peek()) || Peek() == '_' || (allow_dot_in_ident && Peek() == '.') ||
+         Peek() == '$' || Peek() == '?' || Peek() == '@' || Peek() == ':') {
     Consume();
   }
 
   return expr_.substr(start, pos_ - start);
 }
 
-} // namespace xasm
+}  // namespace xasm

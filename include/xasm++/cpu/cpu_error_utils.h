@@ -33,8 +33,7 @@ namespace xasm::cpu {
  * @throws std::invalid_argument with message "Unsupported instruction:
  * <mnemonic>"
  */
-[[noreturn]] inline void
-ThrowUnsupportedInstruction(const std::string &mnemonic) {
+[[noreturn]] inline void ThrowUnsupportedInstruction(const std::string& mnemonic) {
   throw std::invalid_argument("Unsupported instruction: " + mnemonic);
 }
 
@@ -52,10 +51,8 @@ ThrowUnsupportedInstruction(const std::string &mnemonic) {
  * @throws std::invalid_argument with message "Special encoding not supported
  * for instruction: <mnemonic>"
  */
-[[noreturn]] inline void
-ThrowSpecialEncodingNotSupported(const std::string &mnemonic) {
-  throw std::invalid_argument(
-      "Special encoding not supported for instruction: " + mnemonic);
+[[noreturn]] inline void ThrowSpecialEncodingNotSupported(const std::string& mnemonic) {
+  throw std::invalid_argument("Special encoding not supported for instruction: " + mnemonic);
 }
 
 /**
@@ -106,11 +103,9 @@ ThrowSpecialEncodingNotSupported(const std::string &mnemonic) {
  * @throws std::runtime_error with message "<mnemonic> requires two operands:
  * <expected_format>"
  */
-[[noreturn]] inline void
-ThrowRequiresTwoOperands(const std::string &mnemonic,
-                         const std::string &expected_format) {
-  throw std::runtime_error(mnemonic +
-                           " requires two operands: " + expected_format);
+[[noreturn]] inline void ThrowRequiresTwoOperands(const std::string& mnemonic,
+                                                  const std::string& expected_format) {
+  throw std::runtime_error(mnemonic + " requires two operands: " + expected_format);
 }
 
 /**
@@ -129,12 +124,11 @@ ThrowRequiresTwoOperands(const std::string &mnemonic,
  * @throws std::runtime_error with message "Invalid bank values for <mnemonic>:
  * <reason>"
  */
-[[noreturn]] inline void ThrowInvalidValues(const std::string &mnemonic,
-                                            const std::string &reason) {
-  throw std::runtime_error("Invalid bank values for " + mnemonic + ": " +
-                           reason);
+[[noreturn]] inline void ThrowInvalidValues(const std::string& mnemonic,
+                                            const std::string& reason) {
+  throw std::runtime_error("Invalid bank values for " + mnemonic + ": " + reason);
 }
 
-} // namespace xasm::cpu
+}  // namespace xasm::cpu
 
-#endif // XASM_CPU_ERROR_UTILS_H
+#endif  // XASM_CPU_ERROR_UTILS_H

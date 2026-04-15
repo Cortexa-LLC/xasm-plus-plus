@@ -32,7 +32,7 @@ namespace xasm {
  * plugins provide different instruction encoding strategies.
  */
 class CpuPlugin {
-public:
+ public:
   /**
    * @brief Virtual destructor for proper cleanup
    */
@@ -71,7 +71,7 @@ public:
    * @note Comparison should be case-insensitive (accepts "lda", "LDA", "Lda")
    * @note This does NOT check addressing mode validity, only mnemonic validity
    */
-  virtual bool HasOpcode(const std::string &mnemonic) const = 0;
+  virtual bool HasOpcode(const std::string& mnemonic) const = 0;
 
   /**
    * @brief Encode an instruction into machine code
@@ -91,9 +91,8 @@ public:
    *
    * @note Different CPUs may parse operand_str differently based on syntax
    */
-  virtual std::vector<uint8_t>
-  EncodeInstruction(const std::string &mnemonic, uint32_t operand,
-                    const std::string &operand_str) const = 0;
+  virtual std::vector<uint8_t> EncodeInstruction(const std::string& mnemonic, uint32_t operand,
+                                                 const std::string& operand_str) const = 0;
 
   /**
    * @brief Estimate instruction size from mnemonic and operand string
@@ -119,8 +118,8 @@ public:
    * @note Default implementation returns 3 (conservative, safe for parsers
    *       that don't have a CPU plugin set).
    */
-  virtual size_t GetInstructionSize(const std::string &mnemonic,
-                                    const std::string &operand_str) const {
+  virtual size_t GetInstructionSize(const std::string& mnemonic,
+                                    const std::string& operand_str) const {
     (void)mnemonic;
     (void)operand_str;
     return 3;
@@ -138,8 +137,8 @@ public:
    *
    * @note Default implementation returns false (no special handling needed)
    */
-  virtual bool RequiresSpecialEncoding(const std::string &mnemonic) const {
-    (void)mnemonic; // Unused in default implementation
+  virtual bool RequiresSpecialEncoding(const std::string& mnemonic) const {
+    (void)mnemonic;  // Unused in default implementation
     return false;
   }
 
@@ -200,23 +199,21 @@ public:
    *
    * @note Default implementation throws exception (not supported)
    */
-  virtual std::vector<uint8_t>
-  EncodeInstructionSpecial(const std::string &mnemonic,
-                           const std::string &operand,
-                           uint16_t current_address) const {
-    (void)operand;         // Unused in default implementation
-    (void)current_address; // Unused in default implementation
-    throw std::invalid_argument(
-        "Special encoding not supported for instruction: " + mnemonic);
+  virtual std::vector<uint8_t> EncodeInstructionSpecial(const std::string& mnemonic,
+                                                        const std::string& operand,
+                                                        uint16_t current_address) const {
+    (void)operand;          // Unused in default implementation
+    (void)current_address;  // Unused in default implementation
+    throw std::invalid_argument("Special encoding not supported for instruction: " + mnemonic);
   }
 
   // Disable copying and moving (plugins are typically unique)
-  CpuPlugin(const CpuPlugin &) = delete;
-  CpuPlugin &operator=(const CpuPlugin &) = delete;
-  CpuPlugin(CpuPlugin &&) = delete;
-  CpuPlugin &operator=(CpuPlugin &&) = delete;
+  CpuPlugin(const CpuPlugin&) = delete;
+  CpuPlugin& operator=(const CpuPlugin&) = delete;
+  CpuPlugin(CpuPlugin&&) = delete;
+  CpuPlugin& operator=(CpuPlugin&&) = delete;
 
-protected:
+ protected:
   /**
    * @brief Protected constructor (interface class)
    *
@@ -225,4 +222,4 @@ protected:
   CpuPlugin() = default;
 };
 
-} // namespace xasm
+}  // namespace xasm

@@ -19,4 +19,4 @@ namespace xasm::cpu6809 {
 /// Addresses below this value can use direct page addressing mode
 constexpr uint32_t DIRECT_PAGE_MAX = 0x100;
 
-} // namespace xasm::cpu6809
+}  // namespace xasm::cpu6809

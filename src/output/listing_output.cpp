@@ -9,21 +9,27 @@
  */
 
 #include "xasm++/output/listing_output.h"
-#include "xasm++/atom.h"
-#include "xasm++/output/output_format_constants.h"
-#include "xasm++/section.h"
-#include "xasm++/symbol.h"
+
 #include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
 
+#include "xasm++/atom.h"
+#include "xasm++/output/output_format_constants.h"
+#include "xasm++/section.h"
+#include "xasm++/symbol.h"
+
 namespace xasm {
 
-std::string ListingOutput::GetName() const { return "listing"; }
+std::string ListingOutput::GetName() const {
+  return "listing";
+}
 
-std::string ListingOutput::GetFileExtension() const { return ".lst"; }
+std::string ListingOutput::GetFileExtension() const {
+  return ".lst";
+}
 
 /**
  * @brief Format a hex address with padding
@@ -31,9 +37,8 @@ std::string ListingOutput::GetFileExtension() const { return ".lst"; }
  * @param width Field width (default: 4 for 16-bit addresses)
  * @return Formatted string
  */
-static std::string
-FormatAddress(uint32_t addr,
-              int width = output_format::HEX_ADDRESS_16BIT_WIDTH) {
+static std::string FormatAddress(uint32_t addr,
+                                 int width = output_format::HEX_ADDRESS_16BIT_WIDTH) {
   std::ostringstream oss;
   oss << std::uppercase << std::hex << std::setw(width)
       << std::setfill(output_format::HEX_FILL_CHAR) << addr;
@@ -46,33 +51,29 @@ FormatAddress(uint32_t addr,
  * @param max_bytes Maximum bytes to show per line (default: 8)
  * @return Formatted string
  */
-static std::string
-FormatBytes(const std::vector<uint8_t> &bytes,
-            size_t max_bytes = output_format::LISTING_MAX_BYTES_PER_LINE) {
+static std::string FormatBytes(const std::vector<uint8_t>& bytes,
+                               size_t max_bytes = output_format::LISTING_MAX_BYTES_PER_LINE) {
   std::ostringstream oss;
   size_t count = std::min(bytes.size(), max_bytes);
   for (size_t i = 0; i < count; ++i) {
     if (i > 0) {
       oss << ' ';
     }
-    oss << std::uppercase << std::hex
-        << std::setw(output_format::HEX_BYTE_WIDTH)
-        << std::setfill(output_format::HEX_FILL_CHAR)
-        << static_cast<int>(bytes[i]);
+    oss << std::uppercase << std::hex << std::setw(output_format::HEX_BYTE_WIDTH)
+        << std::setfill(output_format::HEX_FILL_CHAR) << static_cast<int>(bytes[i]);
   }
   return oss.str();
 }
 
-void ListingOutput::WriteOutput(const std::string &filename,
-                                const std::vector<Section *> &sections,
-                                const SymbolTable & /* symbols */) {
+void ListingOutput::WriteOutput(const std::string& filename, const std::vector<Section*>& sections,
+                                const SymbolTable& /* symbols */) {
   std::ofstream file(filename);
   if (!file.is_open()) {
     throw std::runtime_error("Cannot open output file: " + filename);
   }
 
   std::string page_title = "Assembly Listing";
-  bool listing_enabled = true; // LIST/NOLIST control
+  bool listing_enabled = true;  // LIST/NOLIST control
   // Note: show_macro_expansion would be used when macro expansion tracking is
   // implemented For now, this flag is set but not used as macro content is
   // already expanded inline
@@ -84,7 +85,7 @@ void ListingOutput::WriteOutput(const std::string &filename,
   file << "-----  -------  -----------------  ------\n";
 
   // Process each section
-  for (const auto *section : sections) {
+  for (const auto* section : sections) {
     if (!section->atoms.empty()) {
       file << "\n; Section: " << section->name << "\n";
     }
@@ -93,50 +94,50 @@ void ListingOutput::WriteOutput(const std::string &filename,
 
     // Process each atom in the section
     for (size_t i = 0; i < section->atoms.size(); ++i) {
-      const auto &atom = section->atoms[i];
+      const auto& atom = section->atoms[i];
       // Handle listing control directives
-      if (const auto *ctrl = dynamic_cast<const ListingControlAtom *>(atom.get())) {
+      if (const auto* ctrl = dynamic_cast<const ListingControlAtom*>(atom.get())) {
         bool output_source = false;
 
         switch (ctrl->control_type) {
-        case ListingControlType::Title:
-          // Update page title for future pages
-          page_title = ctrl->value;
-          output_source = true; // Show TITLE directive in listing
-          break;
-        case ListingControlType::Subtitle:
-          // Subtitles could be appended to page title or displayed separately
-          // For now, just show the directive in listing
-          output_source = true;
-          break;
-        case ListingControlType::List:
-          listing_enabled = true;
-          output_source = true; // Show LIST directive in listing
-          break;
-        case ListingControlType::Nolist:
-          listing_enabled = false;
-          output_source = true; // Show NOLIST directive in listing
-          break;
-        case ListingControlType::Page:
-          // Insert page break
-          file << "\f"; // Form feed character
-          file << page_title << "\n";
-          file << std::string(page_title.length(), '=') << "\n\n";
-          file << "Line   Address  Bytes              Source\n";
-          file << "-----  -------  -----------------  ------\n";
-          break;
-        case ListingControlType::Space:
-          // Insert blank lines
-          for (int i = 0; i < ctrl->count; ++i) {
-            file << "\n";
-          }
-          break;
-        case ListingControlType::Lall:
-        case ListingControlType::Sall:
-          // Enable/disable macro expansion display in listing
-          // (Future: control whether macro body lines are shown in listing)
-          output_source = true;
-          break;
+          case ListingControlType::Title:
+            // Update page title for future pages
+            page_title = ctrl->value;
+            output_source = true;  // Show TITLE directive in listing
+            break;
+          case ListingControlType::Subtitle:
+            // Subtitles could be appended to page title or displayed separately
+            // For now, just show the directive in listing
+            output_source = true;
+            break;
+          case ListingControlType::List:
+            listing_enabled = true;
+            output_source = true;  // Show LIST directive in listing
+            break;
+          case ListingControlType::Nolist:
+            listing_enabled = false;
+            output_source = true;  // Show NOLIST directive in listing
+            break;
+          case ListingControlType::Page:
+            // Insert page break
+            file << "\f";  // Form feed character
+            file << page_title << "\n";
+            file << std::string(page_title.length(), '=') << "\n\n";
+            file << "Line   Address  Bytes              Source\n";
+            file << "-----  -------  -----------------  ------\n";
+            break;
+          case ListingControlType::Space:
+            // Insert blank lines
+            for (int i = 0; i < ctrl->count; ++i) {
+              file << "\n";
+            }
+            break;
+          case ListingControlType::Lall:
+          case ListingControlType::Sall:
+            // Enable/disable macro expansion display in listing
+            // (Future: control whether macro body lines are shown in listing)
+            output_source = true;
+            break;
         }
 
         // Output source line for directives if requested
@@ -144,12 +145,11 @@ void ListingOutput::WriteOutput(const std::string &filename,
           std::string line_num = "     ";
           if (ctrl->location.line > 0) {
             std::ostringstream oss;
-            oss << std::setw(output_format::LISTING_LINE_NUMBER_WIDTH)
-                << std::right << ctrl->location.line;
+            oss << std::setw(output_format::LISTING_LINE_NUMBER_WIDTH) << std::right
+                << ctrl->location.line;
             line_num = oss.str();
           }
-          file << line_num << "                            "
-               << ctrl->source_line << "\n";
+          file << line_num << "                            " << ctrl->source_line << "\n";
         }
 
         continue;
@@ -158,9 +158,9 @@ void ListingOutput::WriteOutput(const std::string &filename,
       // Skip if listing is disabled
       if (!listing_enabled) {
         // Still need to track address for instructions/data
-        if (const auto *inst = dynamic_cast<const InstructionAtom *>(atom.get())) {
+        if (const auto* inst = dynamic_cast<const InstructionAtom*>(atom.get())) {
           current_address += inst->size;
-        } else if (const auto *data = dynamic_cast<const DataAtom *>(atom.get())) {
+        } else if (const auto* data = dynamic_cast<const DataAtom*>(atom.get())) {
           current_address += data->data.size();
         }
         continue;
@@ -181,10 +181,9 @@ void ListingOutput::WriteOutput(const std::string &filename,
         source_text = atom->source_line;
       } else {
         // Fallback to constructing from atom type
-        if (const auto *lbl = dynamic_cast<const LabelAtom *>(atom.get())) {
+        if (const auto* lbl = dynamic_cast<const LabelAtom*>(atom.get())) {
           source_text = lbl->name + ":";
-        } else if (const auto *inst =
-                       dynamic_cast<const InstructionAtom *>(atom.get())) {
+        } else if (const auto* inst = dynamic_cast<const InstructionAtom*>(atom.get())) {
           source_text = inst->mnemonic;
           if (!inst->operand.empty()) {
             source_text += " " + inst->operand;
@@ -193,12 +192,12 @@ void ListingOutput::WriteOutput(const std::string &filename,
       }
 
       // Handle different atom types
-      if (const auto *lbl = dynamic_cast<const LabelAtom *>(atom.get())) {
+      if (const auto* lbl = dynamic_cast<const LabelAtom*>(atom.get())) {
         // Label atom - check if next atom is on same line
         // If so, skip the label (it will be shown with the instruction)
         bool skip_label = false;
         if (i + 1 < section->atoms.size() && lbl->location.line > 0) {
-          const auto &next_atom = section->atoms[i + 1];
+          const auto& next_atom = section->atoms[i + 1];
           if (next_atom->location.line == lbl->location.line) {
             skip_label = true;
           }
@@ -206,33 +205,28 @@ void ListingOutput::WriteOutput(const std::string &filename,
 
         if (!skip_label) {
           // Show standalone label
-          file << line_num << "  " << FormatAddress(current_address)
-               << "                        " << source_text << "\n";
+          file << line_num << "  " << FormatAddress(current_address) << "                        "
+               << source_text << "\n";
         }
-      } else if (const auto *inst =
-                     dynamic_cast<const InstructionAtom *>(atom.get())) {
+      } else if (const auto* inst = dynamic_cast<const InstructionAtom*>(atom.get())) {
         // Instruction atom - show address, bytes, and source
         std::string bytes_str = FormatBytes(inst->encoded_bytes);
-        file << line_num << "  " << FormatAddress(current_address) << "     "
-             << std::left
-             << std::setw(output_format::LISTING_BYTES_COLUMN_WIDTH)
-             << bytes_str << "  " << source_text << "\n";
+        file << line_num << "  " << FormatAddress(current_address) << "     " << std::left
+             << std::setw(output_format::LISTING_BYTES_COLUMN_WIDTH) << bytes_str << "  "
+             << source_text << "\n";
         current_address += inst->encoded_bytes.size();
-      } else if (const auto *data = dynamic_cast<const DataAtom *>(atom.get())) {
+      } else if (const auto* data = dynamic_cast<const DataAtom*>(atom.get())) {
         // Data atom - show address and bytes
         std::string bytes_str = FormatBytes(data->data);
-        file << line_num << "  " << FormatAddress(current_address) << "     "
-             << std::left
-             << std::setw(output_format::LISTING_BYTES_COLUMN_WIDTH)
-             << bytes_str << "  " << source_text << "\n";
+        file << line_num << "  " << FormatAddress(current_address) << "     " << std::left
+             << std::setw(output_format::LISTING_BYTES_COLUMN_WIDTH) << bytes_str << "  "
+             << source_text << "\n";
         current_address += data->data.size();
-      } else if (const auto *org = dynamic_cast<const OrgAtom *>(atom.get())) {
+      } else if (const auto* org = dynamic_cast<const OrgAtom*>(atom.get())) {
         // Org directive - update current address BEFORE outputting the line
         current_address = org->address;
-        file << line_num << "  " << FormatAddress(org->address)
-             << "                        "
-             << (source_text.empty() ? (".ORG $" + FormatAddress(org->address))
-                                     : source_text)
+        file << line_num << "  " << FormatAddress(org->address) << "                        "
+             << (source_text.empty() ? (".ORG $" + FormatAddress(org->address)) : source_text)
              << "\n";
       }
       // Skip alignment, reserve, and other non-data atoms
@@ -243,4 +237,4 @@ void ListingOutput::WriteOutput(const std::string &filename,
   file.close();
 }
 
-} // namespace xasm
+}  // namespace xasm

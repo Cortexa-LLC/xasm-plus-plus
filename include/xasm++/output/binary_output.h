@@ -10,10 +10,11 @@
 
 #pragma once
 
-#include "xasm++/output/output_plugin.h"
 #include <array>
 #include <string>
 #include <vector>
+
+#include "xasm++/output/output_plugin.h"
 
 namespace xasm {
 
@@ -45,7 +46,7 @@ class SymbolTable;
  * @endcode
  */
 class BinaryOutput : public OutputPlugin {
-public:
+ public:
   /**
    * @brief Default constructor
    */
@@ -72,9 +73,8 @@ public:
    *
    * @throws std::runtime_error if file cannot be written
    */
-  void WriteOutput(const std::string &filename,
-                   const std::vector<Section *> &sections,
-                   const SymbolTable &symbols) override;
+  void WriteOutput(const std::string& filename, const std::vector<Section*>& sections,
+                   const SymbolTable& symbols) override;
 
   /**
    * @brief Write output with optional RW18 header (Merlin compatibility)
@@ -92,10 +92,9 @@ public:
    *
    * @throws std::runtime_error if file cannot be written
    */
-  static void WriteOutputWithRw18(const std::string &filename,
-                           const std::vector<Section *> &sections,
-                           const SymbolTable &symbols,
-                           const std::array<uint16_t, 4> *rw18_header);
+  static void WriteOutputWithRw18(const std::string& filename,
+                                  const std::vector<Section*>& sections, const SymbolTable& symbols,
+                                  const std::array<uint16_t, 4>* rw18_header);
 };
 
-} // namespace xasm
+}  // namespace xasm

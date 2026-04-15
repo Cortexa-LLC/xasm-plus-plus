@@ -17,7 +17,13 @@
 
 #pragma once
 
+#include <cctype>
 #include <cstdint>
+#include <memory>
+#include <set>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 #include "xasm++/common/expression_parser.h"
 #include "xasm++/expression.h"
@@ -25,12 +31,6 @@
 #include "xasm++/segment_manager.h"
 #include "xasm++/symbol.h"
 #include "xasm++/syntax/directive_registry.h"
-#include <cctype>
-#include <memory>
-#include <set>
-#include <string>
-#include <unordered_map>
-#include <vector>
 
 namespace xasm {
 
@@ -58,7 +58,7 @@ class CpuZ80;
  * @endcode
  */
 class Z80NumberParser : public INumberParser {
-public:
+ public:
   /**
    * @brief Construct with default radix 10
    */
@@ -71,7 +71,7 @@ public:
    * @param value Output parameter - receives the parsed value
    * @return true if successfully parsed, false otherwise
    */
-  bool TryParse(const std::string &token, int64_t &value) const override;
+  bool TryParse(const std::string& token, int64_t& value) const override;
 
   /**
    * @brief Set default radix for numbers without explicit format
@@ -87,8 +87,8 @@ public:
    */
   int GetRadix() const { return radix_; }
 
-private:
-  int radix_ = 10; ///< Default number base (2-16, default 10)
+ private:
+  int radix_ = 10;  ///< Default number base (2-16, default 10)
 };
 
 /**
@@ -223,9 +223,9 @@ private:
  */
 class EdtasmM80PlusPlusSyntaxParser {
   // Friend declarations for directive handlers
-  friend void RegisterEdtasmDirectiveHandlers(DirectiveRegistry &registry);
+  friend void RegisterEdtasmDirectiveHandlers(DirectiveRegistry& registry);
 
-public:
+ public:
   /**
    * @brief Constructor - initializes parser state
    */
@@ -236,7 +236,7 @@ public:
    *
    * @param cpu Pointer to CPU plugin (must remain valid during parsing)
    */
-  void SetCpu(CpuZ80 *cpu);
+  void SetCpu(CpuZ80* cpu);
 
   /**
    * @brief Mark END directive as seen
@@ -249,15 +249,13 @@ public:
    * @brief Set listing title
    * @param title New listing title
    */
-  void SetListingTitle(const std::string &title) { listing_title_ = title; }
+  void SetListingTitle(const std::string& title) { listing_title_ = title; }
 
   /**
    * @brief Set listing subtitle
    * @param subtitle New listing subtitle
    */
-  void SetListingSubtitle(const std::string &subtitle) {
-    listing_subtitle_ = subtitle;
-  }
+  void SetListingSubtitle(const std::string& subtitle) { listing_subtitle_ = subtitle; }
 
   /**
    * @brief Enable listing output
@@ -279,13 +277,13 @@ public:
    * @brief Set module name
    * @param name Module name from NAME directive
    */
-  void SetModuleName(const std::string &name) { module_name_ = name; }
+  void SetModuleName(const std::string& name) { module_name_ = name; }
 
   /**
    * @brief Get segment manager
    * @return Reference to segment manager
    */
-  SegmentManager &GetSegmentManager() { return segment_manager_; }
+  SegmentManager& GetSegmentManager() { return segment_manager_; }
 
   /**
    * @brief Set number radix
@@ -331,8 +329,7 @@ public:
    * @throws std::runtime_error on parse errors (syntax errors, undefined
    * labels, etc.)
    */
-  void Parse(const std::string &source, Section &section,
-             ConcreteSymbolTable &symbols);
+  void Parse(const std::string& source, Section& section, ConcreteSymbolTable& symbols);
 
   /**
    * @brief Parse expression from string
@@ -340,15 +337,14 @@ public:
    * @param symbols Symbol table for symbol resolution
    * @return Expression AST
    */
-  std::shared_ptr<Expression> ParseExpression(const std::string &str,
-                                              ConcreteSymbolTable &symbols);
+  std::shared_ptr<Expression> ParseExpression(const std::string& str, ConcreteSymbolTable& symbols);
 
   /**
    * @brief Parse comma-separated symbol list
    * @param operand Symbol list string
    * @return Vector of symbol names
    */
-  static std::vector<std::string> ParseSymbolList(const std::string &operand);
+  static std::vector<std::string> ParseSymbolList(const std::string& operand);
 
   /**
    * @brief Conditional assembly block state
@@ -356,13 +352,12 @@ public:
    * Tracks IF/ELSE/ENDIF conditional assembly blocks.
    */
   struct ConditionalBlock {
-    bool condition = false;     ///< True if condition is met
-    bool in_else_block = false; ///< True if currently in ELSE block
-    bool should_emit = false;   ///< True if code should be emitted
+    bool condition = false;      ///< True if condition is met
+    bool in_else_block = false;  ///< True if currently in ELSE block
+    bool should_emit = false;    ///< True if code should be emitted
   };
 
-  std::vector<ConditionalBlock>
-      conditional_stack_ = {}; ///< Stack of nested conditionals
+  std::vector<ConditionalBlock> conditional_stack_ = {};  ///< Stack of nested conditionals
 
   /**
    * @brief Macro definition
@@ -370,10 +365,10 @@ public:
    * Stores a macro body for later expansion.
    */
   struct MacroDefinition {
-    std::string name = {};                ///< Macro name
-    std::vector<std::string> body = {};   ///< Lines of macro body (unexpanded)
-    std::vector<std::string> params = {}; ///< Parameter names
-    std::vector<std::string> locals = {}; ///< LOCAL symbols in macro
+    std::string name = {};                 ///< Macro name
+    std::vector<std::string> body = {};    ///< Lines of macro body (unexpanded)
+    std::vector<std::string> params = {};  ///< Parameter names
+    std::vector<std::string> locals = {};  ///< LOCAL symbols in macro
   };
 
   /**
@@ -384,29 +379,24 @@ public:
   enum class RepeatType : std::uint8_t { NONE, REPT, IRP, IRPC };
 
   // Macro state (accessible to directive handlers)
-  bool in_macro_definition_ = false; ///< True if defining a macro
-  MacroDefinition current_macro_;    ///< Current macro being defined
-  std::unordered_map<std::string, MacroDefinition> macros_ = {}; ///< Defined macros
-  int macro_expansion_depth_ = 0; ///< Prevent infinite recursion
+  bool in_macro_definition_ = false;                              ///< True if defining a macro
+  MacroDefinition current_macro_;                                 ///< Current macro being defined
+  std::unordered_map<std::string, MacroDefinition> macros_ = {};  ///< Defined macros
+  int macro_expansion_depth_ = 0;                                 ///< Prevent infinite recursion
   int macro_unique_counter_ = 0;  ///< Counter for LOCAL label uniqueness
-  int next_macro_unique_id_ =
-      0; ///< ID for next macro expansion (for LOCAL labels)
-  bool exitm_triggered_ =
-      false; ///< True if EXITM was encountered in current macro expansion
-  int macro_nesting_depth_ =
-      0; ///< Track nesting depth when capturing macro body
-  std::set<std::string>
-      macro_local_labels_ = {}; ///< Set of current macro LOCAL labels (unique names)
-                           ///< that should not create atoms
+  int next_macro_unique_id_ = 0;  ///< ID for next macro expansion (for LOCAL labels)
+  bool exitm_triggered_ = false;  ///< True if EXITM was encountered in current macro expansion
+  int macro_nesting_depth_ = 0;   ///< Track nesting depth when capturing macro body
+  std::set<std::string> macro_local_labels_ = {};  ///< Set of current macro LOCAL labels (unique
+                                                   ///< names) that should not create atoms
 
   // Repeat block state (REPT/IRP/IRPC) (accessible to directive handlers)
-  RepeatType in_repeat_block_ =
-      RepeatType::NONE; ///< Type of repeat block being captured
-  int rept_count_ = 0;  ///< Repeat count for REPT
-  std::vector<std::string> repeat_body_ = {}; ///< Lines in repeat block
-  int repeat_nesting_depth_ = 0;         ///< Track nested REPT/IRP/IRPC blocks
-  std::string repeat_param_ = {};             ///< Parameter name for IRP/IRPC
-  std::vector<std::string> repeat_values_ = {}; ///< Values for IRP iteration
+  RepeatType in_repeat_block_ = RepeatType::NONE;  ///< Type of repeat block being captured
+  int rept_count_ = 0;                             ///< Repeat count for REPT
+  std::vector<std::string> repeat_body_ = {};      ///< Lines in repeat block
+  int repeat_nesting_depth_ = 0;                   ///< Track nested REPT/IRP/IRPC blocks
+  std::string repeat_param_ = {};                  ///< Parameter name for IRP/IRPC
+  std::vector<std::string> repeat_values_ = {};    ///< Values for IRP iteration
 
   /**
    * @brief Expand and parse lines (for directive handlers)
@@ -414,8 +404,8 @@ public:
    * Used by REPT/IRP/IRPC directive handlers to expand repeat blocks.
    * @note Internal use - called by directive handlers
    */
-  void ExpandAndParseLines(const std::vector<std::string> &lines,
-                           Section &section, ConcreteSymbolTable &symbols);
+  void ExpandAndParseLines(const std::vector<std::string>& lines, Section& section,
+                           ConcreteSymbolTable& symbols);
 
   /**
    * @brief Substitute macro parameters in a line (for directive handlers)
@@ -423,12 +413,11 @@ public:
    * Used by IRP/IRPC directive handlers for parameter substitution.
    * @note Internal use - called by directive handlers
    */
-  std::string
-  SubstituteMacroParameters(const std::string &line,
-                            const std::vector<std::string> &param_names,
-                            const std::vector<std::string> &param_values);
+  std::string SubstituteMacroParameters(const std::string& line,
+                                        const std::vector<std::string>& param_names,
+                                        const std::vector<std::string>& param_values);
 
-private:
+ private:
   /**
    * @brief Label scope for managing local labels
    *
@@ -436,87 +425,81 @@ private:
    * global label.
    */
   struct LabelScope {
-    std::string global_label = {};    ///< The global label this scope belongs to
-    std::unordered_map<std::string, uint32_t>
-        local_labels = {}; ///< local_name -> address
+    std::string global_label = {};  ///< The global label this scope belongs to
+    std::unordered_map<std::string, uint32_t> local_labels = {};  ///< local_name -> address
   };
 
-  LabelScope current_scope_; ///< Current label scope (for local labels)
+  LabelScope current_scope_;  ///< Current label scope (for local labels)
 
-  uint32_t current_address_ = 0; ///< Current address (for tracking label addresses)
+  uint32_t current_address_ = 0;     ///< Current address (for tracking label addresses)
   bool end_directive_seen_ = false;  ///< True if END directive has been processed
 
   // Source location tracking (for error reporting)
-  std::string current_file_ = {}; ///< Current source filename
-  int current_line_ = 0;         ///< Current line number
+  std::string current_file_ = {};  ///< Current source filename
+  int current_line_ = 0;           ///< Current line number
 
   // Listing control state
-  bool listing_enabled_ = true;         ///< True if listing output enabled
-  std::string listing_title_ = {};    ///< Listing title (TITLE directive)
-  std::string listing_subtitle_ = {}; ///< Listing subtitle (SUBTTL directive)
-  std::string module_name_ = {};      ///< Module name (NAME directive)
+  bool listing_enabled_ = true;        ///< True if listing output enabled
+  std::string listing_title_ = {};     ///< Listing title (TITLE directive)
+  std::string listing_subtitle_ = {};  ///< Listing subtitle (SUBTTL directive)
+  std::string module_name_ = {};       ///< Module name (NAME directive)
 
   // Special features state
-  int current_radix_ = 10; ///< Current number base (2-16, default 10)
+  int current_radix_ = 10;  ///< Current number base (2-16, default 10)
 
-  CpuZ80 *cpu_ = nullptr; ///< CPU plugin for undocumented instructions
+  CpuZ80* cpu_ = nullptr;  ///< CPU plugin for undocumented instructions
 
-  DirectiveRegistry directive_registry_; ///< Registry for directive handlers
-  SegmentManager segment_manager_; ///< Manages segments (CSEG/DSEG/ASEG/COMMON)
+  DirectiveRegistry directive_registry_;  ///< Registry for directive handlers
+  SegmentManager segment_manager_;        ///< Manages segments (CSEG/DSEG/ASEG/COMMON)
 
   // Expression and number parsing
-  Z80NumberParser z80_number_parser_; ///< Z80-specific number parser
+  Z80NumberParser z80_number_parser_;  ///< Z80-specific number parser
 
   // Parsing helpers
-  void InitializeDirectiveRegistry(); ///< Register all directives
-  static std::string StripComments(const std::string &line);
-  static std::string Trim(const std::string &str);
+  void InitializeDirectiveRegistry();  ///< Register all directives
+  static std::string StripComments(const std::string& line);
+  static std::string Trim(const std::string& str);
 
   // Macro helpers
-  static std::string MakeLocalLabelUnique(const std::string &line,
-                                   const std::vector<std::string> &local_labels,
-                                   int unique_id);
+  static std::string MakeLocalLabelUnique(const std::string& line,
+                                          const std::vector<std::string>& local_labels,
+                                          int unique_id);
 
-  void ParseLine(const std::string &line, Section &section,
-                 ConcreteSymbolTable &symbols);
+  void ParseLine(const std::string& line, Section& section, ConcreteSymbolTable& symbols);
 
   // Returns true if the line was fully consumed by the capture-state handler
   // (macro/repeat body capture), meaning ParseLine should return immediately.
-  bool HandleCapturingMode(const std::string &trimmed_line,
-                            bool is_endm, bool is_end);
+  bool HandleCapturingMode(const std::string& trimmed_line, bool is_endm, bool is_end);
 
   // Build a DirectiveContext from the current parse state.
-  DirectiveContext MakeDirectiveContext(Section &section,
-                                        ConcreteSymbolTable &symbols,
-                                        const std::string &original_line,
-                                        const std::string &mnemonic,
-                                        const std::string &label,
-                                        const std::string &operand);
+  DirectiveContext MakeDirectiveContext(Section& section, ConcreteSymbolTable& symbols,
+                                        const std::string& original_line,
+                                        const std::string& mnemonic, const std::string& label,
+                                        const std::string& operand);
 
   // Label parsing
-  std::string ParseLabel(const std::string &line, size_t &pos, Section &section,
-                         ConcreteSymbolTable &symbols);
+  std::string ParseLabel(const std::string& line, size_t& pos, Section& section,
+                         ConcreteSymbolTable& symbols);
 
   // ParseLine helpers — each handles one phase of dispatch
-  static bool IsConditionalDirective(const std::string &upper_mnemonic);
-  void RegisterMacroLocals(const std::string &operand);
-  void ParseTokens(const std::string &line, std::string &upper_mnemonic,
-                   std::string &label, std::string &operand,
-                   Section &section, ConcreteSymbolTable &symbols);
-  void ExpandMacroCall(const MacroDefinition &macro, const std::string &operand,
-                       Section &section, ConcreteSymbolTable &symbols);
+  static bool IsConditionalDirective(const std::string& upper_mnemonic);
+  void RegisterMacroLocals(const std::string& operand);
+  void ParseTokens(const std::string& line, std::string& upper_mnemonic, std::string& label,
+                   std::string& operand, Section& section, ConcreteSymbolTable& symbols);
+  void ExpandMacroCall(const MacroDefinition& macro, const std::string& operand, Section& section,
+                       ConcreteSymbolTable& symbols);
 
   // Instruction size estimation
-  static uint32_t EstimateZ80InstructionSize(const DirectiveContext &ctx);
-  static uint32_t EstimateIndexedInsnSize(const std::string &operand);
+  static uint32_t EstimateZ80InstructionSize(const DirectiveContext& ctx);
+  static uint32_t EstimateIndexedInsnSize(const std::string& operand);
 
   // Expression/number parsing
-  uint32_t ParseNumber(const std::string &str) const;
-  uint32_t ParseHexVariant(const std::string &trimmed) const;
-  uint32_t ParseByCurrentRadix(const std::string &trimmed) const;
+  uint32_t ParseNumber(const std::string& str) const;
+  uint32_t ParseHexVariant(const std::string& trimmed) const;
+  uint32_t ParseByCurrentRadix(const std::string& trimmed) const;
 
   // Error formatting with source location
-  std::string FormatError(const std::string &message) const;
+  std::string FormatError(const std::string& message) const;
 };
 
-} // namespace xasm
+}  // namespace xasm

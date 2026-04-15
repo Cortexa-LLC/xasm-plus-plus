@@ -4,11 +4,12 @@
  */
 
 #include "xasm++/syntax/scmasm_expression_utils.h"
+
 #include <cctype>
 
 namespace xasm::scmasm {
 
-std::string NormalizeExpression(const std::string &expr) {
+std::string NormalizeExpression(const std::string& expr) {
   std::string result;
   result.reserve(expr.size());
 
@@ -18,20 +19,19 @@ std::string NormalizeExpression(const std::string &expr) {
     // Identifiers: [A-Za-z_][A-Za-z0-9_.]* - uppercase them
     if (std::isalpha(c) || c == '_' || c == '.') {
       // Scan identifier
-      while (i < expr.size() &&
-             (std::isalnum(expr[i]) || expr[i] == '_' || expr[i] == '.')) {
+      while (i < expr.size() && (std::isalnum(expr[i]) || expr[i] == '_' || expr[i] == '.')) {
         result += std::toupper(static_cast<unsigned char>(expr[i]));
         ++i;
       }
-      --i; // Back up one since loop will increment
+      --i;  // Back up one since loop will increment
     }
     // Hex numbers: $XX or 0xXX - uppercase hex digits
-    else if (c == '$' || (c == '0' && i + 1 < expr.size() &&
-                          (expr[i + 1] == 'x' || expr[i + 1] == 'X'))) {
+    else if (c == '$' ||
+             (c == '0' && i + 1 < expr.size() && (expr[i + 1] == 'x' || expr[i + 1] == 'X'))) {
       result += c;
       if (c == '0') {
         ++i;
-        result += 'x'; // Normalize to lowercase 0x
+        result += 'x';  // Normalize to lowercase 0x
         ++i;
       } else {
         ++i;
@@ -41,15 +41,15 @@ std::string NormalizeExpression(const std::string &expr) {
         result += std::toupper(static_cast<unsigned char>(expr[i]));
         ++i;
       }
-      --i; // Back up one
+      --i;  // Back up one
     }
     // Binary numbers: %BBBB or 0bBBBB - pass through
-    else if (c == '%' || (c == '0' && i + 1 < expr.size() &&
-                          (expr[i + 1] == 'b' || expr[i + 1] == 'B'))) {
+    else if (c == '%' ||
+             (c == '0' && i + 1 < expr.size() && (expr[i + 1] == 'b' || expr[i + 1] == 'B'))) {
       result += c;
       if (c == '0') {
         ++i;
-        result += 'b'; // Normalize to lowercase 0b
+        result += 'b';  // Normalize to lowercase 0b
         ++i;
       } else {
         ++i;
@@ -58,7 +58,7 @@ std::string NormalizeExpression(const std::string &expr) {
         result += expr[i];
         ++i;
       }
-      --i; // Back up one
+      --i;  // Back up one
     }
     // Everything else (operators, whitespace, digits) - pass through
     else {
@@ -69,7 +69,7 @@ std::string NormalizeExpression(const std::string &expr) {
   return result;
 }
 
-std::string CanonicalizeSlashHighByte(const std::string &expr) {
+std::string CanonicalizeSlashHighByte(const std::string& expr) {
   // Replace '/' with '>' when '/' appears in a "prefix unary" position:
   // at the start of the expression, or immediately after an operator,
   // open-parenthesis, or comma (with optional whitespace).
@@ -88,18 +88,17 @@ std::string CanonicalizeSlashHighByte(const std::string &expr) {
 
     if (c == '/') {
       if (prefix_position) {
-        result += '>'; // Replace SCMASM prefix '/' with canonical '>'
+        result += '>';  // Replace SCMASM prefix '/' with canonical '>'
       } else {
-        result += '/'; // Binary division — keep as-is
+        result += '/';  // Binary division — keep as-is
       }
       // After '/', the next operator is in a prefix position
       prefix_position = true;
     } else if (c == ' ' || c == '\t') {
       // Whitespace doesn't change positional state
       result += c;
-    } else if (c == '+' || c == '-' || c == '*' || c == '%' || c == '&' ||
-               c == '|' || c == '^' || c == '~' || c == '<' || c == '>' ||
-               c == '(' || c == ',') {
+    } else if (c == '+' || c == '-' || c == '*' || c == '%' || c == '&' || c == '|' || c == '^' ||
+               c == '~' || c == '<' || c == '>' || c == '(' || c == ',') {
       // Operator or opening delimiter: next token is in prefix position
       result += c;
       prefix_position = true;
@@ -113,17 +112,18 @@ std::string CanonicalizeSlashHighByte(const std::string &expr) {
   return result;
 }
 
-std::string CanonicalizeEqualityOperator(const std::string &expr) {
+std::string CanonicalizeEqualityOperator(const std::string& expr) {
   // Replace standalone '=' with '==' for the shared ExpressionParser.
   // Leave '==', '!=', '<=', '>=' untouched.
   std::string result;
-  result.reserve(expr.size() + 4); // Reserve a little extra for insertions
+  result.reserve(expr.size() + 4);  // Reserve a little extra for insertions
 
   for (size_t i = 0; i < expr.size(); ++i) {
     char c = expr[i];
 
-    if (c == '=' && (i == 0 || (expr[i - 1] != '!' && expr[i - 1] != '<' &&
-                                 expr[i - 1] != '>' && expr[i - 1] != '=')) &&
+    if (c == '=' &&
+        (i == 0 ||
+         (expr[i - 1] != '!' && expr[i - 1] != '<' && expr[i - 1] != '>' && expr[i - 1] != '=')) &&
         (i + 1 >= expr.size() || expr[i + 1] != '=')) {
       // Standalone '=' — emit as '=='
       result += "==";
@@ -135,4 +135,4 @@ std::string CanonicalizeEqualityOperator(const std::string &expr) {
   return result;
 }
 
-} // namespace xasm::scmasm
+}  // namespace xasm::scmasm

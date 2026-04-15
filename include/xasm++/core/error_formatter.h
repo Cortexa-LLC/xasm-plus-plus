@@ -23,11 +23,11 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
+#include <vector>
 
 #include "xasm++/assembler.h"
 #include "xasm++/symbol.h"
-#include <string>
-#include <vector>
 
 namespace xasm {
 
@@ -49,14 +49,14 @@ namespace xasm {
  * @endcode
  */
 class ErrorFormatter {
-public:
+ public:
   /**
    * @brief Color output mode
    */
   enum class ColorMode : std::uint8_t {
-    Auto,    ///< Auto-detect based on terminal and NO_COLOR env var
-    Enabled, ///< Always use colors
-    Disabled ///< Never use colors
+    Auto,     ///< Auto-detect based on terminal and NO_COLOR env var
+    Enabled,  ///< Always use colors
+    Disabled  ///< Never use colors
   };
 
   /**
@@ -80,8 +80,7 @@ public:
    * @param symbols Symbol table for generating suggestions (nullable)
    * @return Formatted error message string
    */
-  std::string FormatError(const AssemblerError &error,
-                          const ConcreteSymbolTable *symbols) const;
+  std::string FormatError(const AssemblerError& error, const ConcreteSymbolTable* symbols) const;
 
   /**
    * @brief Calculate Levenshtein edit distance between two strings
@@ -92,11 +91,10 @@ public:
    * @param s2 Second string
    * @return Minimum number of edits (insert, delete, substitute) needed
    */
-  static size_t CalculateEditDistance(const std::string &s1,
-                                      const std::string &s2);
+  static size_t CalculateEditDistance(const std::string& s1, const std::string& s2);
 
-private:
-  ColorMode color_mode_; ///< Color output mode
+ private:
+  ColorMode color_mode_;  ///< Color output mode
 
   /**
    * @brief Check if color output should be used
@@ -117,7 +115,7 @@ private:
    * @param color ANSI color code (e.g., "31" for red)
    * @return Colorized text with reset at end
    */
-  std::string Colorize(const std::string &text, const std::string &color) const;
+  std::string Colorize(const std::string& text, const std::string& color) const;
 
   /**
    * @brief Read a specific line from a file
@@ -126,8 +124,7 @@ private:
    * @param line_number Line number (1-based)
    * @return Line content (without newline) or empty string if not found
    */
-  static std::string ReadSourceLine(const std::string &filename,
-                             size_t line_number);
+  static std::string ReadSourceLine(const std::string& filename, size_t line_number);
 
   /**
    * @brief Generate column marker line
@@ -142,8 +139,7 @@ private:
    * @param message Message to show after marker (optional)
    * @return Formatted marker line
    */
-  std::string GenerateColumnMarker(size_t column, size_t length,
-                                   const std::string &message) const;
+  std::string GenerateColumnMarker(size_t column, size_t length, const std::string& message) const;
 
   /**
    * @brief Find similar symbols for suggestions
@@ -155,9 +151,8 @@ private:
    * @param symbols Symbol table to search
    * @return Vector of suggested symbol names (may be empty)
    */
-  std::vector<std::string>
-  static FindSimilarSymbols(const std::string &typo,
-                     const ConcreteSymbolTable *symbols);
+  std::vector<std::string> static FindSimilarSymbols(const std::string& typo,
+                                                     const ConcreteSymbolTable* symbols);
 
   /**
    * @brief Extract symbol name from error message
@@ -169,7 +164,7 @@ private:
    * @param message Error message
    * @return Symbol name if found, empty string otherwise
    */
-  static std::string ExtractSymbolName(const std::string &message);
+  static std::string ExtractSymbolName(const std::string& message);
 
   /**
    * @brief Format symbol suggestions as help text
@@ -188,8 +183,7 @@ private:
    * @param suggestions Vector of symbol names
    * @return Formatted help text (empty if no suggestions)
    */
-  std::string
-  FormatSuggestions(const std::vector<std::string> &suggestions) const;
+  std::string FormatSuggestions(const std::vector<std::string>& suggestions) const;
 };
 
-} // namespace xasm
+}  // namespace xasm

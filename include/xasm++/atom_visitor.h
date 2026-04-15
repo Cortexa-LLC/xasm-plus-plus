@@ -38,21 +38,32 @@ class EquateAtom;
  * visitors only override the atom types they care about.
  */
 class IAtomVisitor {
-public:
+ public:
   virtual ~IAtomVisitor() = default;
 
-  virtual void Visit(LabelAtom &) {}
-  virtual void Visit(InstructionAtom &) {}
-  virtual void Visit(CpuModeAtom &) {}
-  virtual void Visit(MxAtom &) {}
-  virtual void Visit(DataAtom &) {}
-  virtual void Visit(SpaceAtom &) {}
-  virtual void Visit(AlignAtom &) {}
-  virtual void Visit(OrgAtom &) {}
-  virtual void Visit(DummyOrgAtom &) {}
-  virtual void Visit(PhaseAtom &) {}
-  virtual void Visit(ListingControlAtom &) {}
-  virtual void Visit(EquateAtom &) {}
+  virtual void Visit(LabelAtom&) {}
+
+  virtual void Visit(InstructionAtom&) {}
+
+  virtual void Visit(CpuModeAtom&) {}
+
+  virtual void Visit(MxAtom&) {}
+
+  virtual void Visit(DataAtom&) {}
+
+  virtual void Visit(SpaceAtom&) {}
+
+  virtual void Visit(AlignAtom&) {}
+
+  virtual void Visit(OrgAtom&) {}
+
+  virtual void Visit(DummyOrgAtom&) {}
+
+  virtual void Visit(PhaseAtom&) {}
+
+  virtual void Visit(ListingControlAtom&) {}
+
+  virtual void Visit(EquateAtom&) {}
 };
 
-} // namespace xasm
+}  // namespace xasm

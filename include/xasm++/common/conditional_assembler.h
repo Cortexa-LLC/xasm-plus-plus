@@ -80,7 +80,7 @@ namespace xasm {
  * instance.
  */
 class ConditionalAssembler {
-public:
+ public:
   /**
    * @brief Construct a conditional assembler (initially emitting)
    */
@@ -233,14 +233,14 @@ public:
    */
   size_t GetDepth() const;
 
-private:
+ private:
   /**
    * @brief State of a single conditional block
    */
   struct ConditionalBlock {
-    bool condition = false;     ///< True if condition was met
-    bool in_else_block = false; ///< True if currently in ELSE branch
-    bool should_emit = false;   ///< True if code should be emitted in this block
+    bool condition = false;      ///< True if condition was met
+    bool in_else_block = false;  ///< True if currently in ELSE branch
+    bool should_emit = false;    ///< True if code should be emitted in this block
   };
 
   /**
@@ -252,4 +252,4 @@ private:
   std::vector<ConditionalBlock> stack_ = {};
 };
 
-} // namespace xasm
+}  // namespace xasm

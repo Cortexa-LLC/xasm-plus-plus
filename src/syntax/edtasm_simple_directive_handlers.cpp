@@ -10,15 +10,17 @@
  */
 
 #include "xasm++/directives/edtasm_simple_directive_handlers.h"
+
+#include <algorithm>
+#include <cctype>
+#include <sstream>
+#include <stdexcept>
+
 #include "xasm++/atom.h"
 #include "xasm++/expression.h"
 #include "xasm++/parse_utils.h"
 #include "xasm++/syntax/directive_registry.h"
 #include "xasm++/syntax/edtasm_syntax.h"
-#include <algorithm>
-#include <cctype>
-#include <sstream>
-#include <stdexcept>
 
 namespace {
 
@@ -27,14 +29,14 @@ namespace {
  * @param ctx Directive context
  * @return Parser pointer or nullptr if not set
  */
-xasm::EdtasmSyntaxParser *GetParser(xasm::DirectiveContext &ctx) {
-  return static_cast<xasm::EdtasmSyntaxParser *>(ctx.parser_state);
+xasm::EdtasmSyntaxParser* GetParser(xasm::DirectiveContext& ctx) {
+  return static_cast<xasm::EdtasmSyntaxParser*>(ctx.parser_state);
 }
 
 /**
  * @brief Helper: Trim whitespace from both ends
  */
-std::string Trim(const std::string &str) {
+std::string Trim(const std::string& str) {
   size_t start = str.find_first_not_of(" \t");
   if (start == std::string::npos) {
     return "";
@@ -46,7 +48,7 @@ std::string Trim(const std::string &str) {
 /**
  * @brief Helper: Parse numeric value (supports $hex, %binary, 'char', decimal)
  */
-uint32_t ParseNumber(const std::string &str) {
+uint32_t ParseNumber(const std::string& str) {
   std::string trimmed = Trim(str);
 
   if (trimmed.empty()) {
@@ -80,12 +82,12 @@ uint32_t ParseNumber(const std::string &str) {
   // Decimal (default)
   try {
     return static_cast<uint32_t>(xasm::ParseDecimal(trimmed));
-  } catch (const std::exception &e) {
+  } catch (const std::exception& e) {
     throw std::runtime_error("Invalid decimal number: " + trimmed);
   }
 }
 
-} // anonymous namespace
+}  // anonymous namespace
 
 namespace xasm::edtasm {
 
@@ -93,11 +95,11 @@ namespace xasm::edtasm {
 // Directive Handlers - Free Functions in edtasm namespace
 // ===========================================================================
 
-void HandleOrg(DirectiveContext &context) {
-  const std::string &operand = context.operand;
-  (void)context.label; // Label handled in ParseLine
+void HandleOrg(DirectiveContext& context) {
+  const std::string& operand = context.operand;
+  (void)context.label;  // Label handled in ParseLine
 
-  auto *parser = GetParser(context);
+  auto* parser = GetParser(context);
   if (!parser) {
     throw std::runtime_error("ORG: Invalid parser state");
   }
@@ -107,40 +109,38 @@ void HandleOrg(DirectiveContext &context) {
   *context.current_address = address;
 }
 
-void HandleEnd(DirectiveContext &context) {
-  const std::string &operand = context.operand;
-  (void)context.label;   // Label handled in ParseLine
-  (void)operand; // Entry point not currently used
-  (void)context; // END produces no atoms
+void HandleEnd(DirectiveContext& context) {
+  const std::string& operand = context.operand;
+  (void)context.label;  // Label handled in ParseLine
+  (void)operand;        // Entry point not currently used
+  (void)context;        // END produces no atoms
   // END directive produces no atoms, signals end of assembly
 }
 
-void HandleEqu(DirectiveContext &context) {
-  const std::string &operand = context.operand;
+void HandleEqu(DirectiveContext& context) {
+  const std::string& operand = context.operand;
   if (context.label.empty()) {
     throw std::runtime_error("EQU requires a context.label");
   }
 
   uint32_t value = ParseNumber(operand);
-  context.symbols->Define(context.label, SymbolType::Equate,
-                          std::make_shared<LiteralExpr>(value));
+  context.symbols->Define(context.label, SymbolType::Equate, std::make_shared<LiteralExpr>(value));
 }
 
-void HandleSet(DirectiveContext &context) {
-  const std::string &operand = context.operand;
+void HandleSet(DirectiveContext& context) {
+  const std::string& operand = context.operand;
   if (context.label.empty()) {
     throw std::runtime_error("SET requires a context.label");
   }
 
   uint32_t value = ParseNumber(operand);
   // SET allows redefinition, so we define it as Set type
-  context.symbols->Define(context.label, SymbolType::Set,
-                          std::make_shared<LiteralExpr>(value));
+  context.symbols->Define(context.label, SymbolType::Set, std::make_shared<LiteralExpr>(value));
 }
 
-void HandleFcb(DirectiveContext &context) {
-  const std::string &operand = context.operand;
-  (void)context.label; // Label handled in ParseLine
+void HandleFcb(DirectiveContext& context) {
+  const std::string& operand = context.operand;
+  (void)context.label;  // Label handled in ParseLine
 
   std::vector<uint8_t> bytes;
   std::istringstream ops(operand);
@@ -157,9 +157,9 @@ void HandleFcb(DirectiveContext &context) {
   *context.current_address += bytes.size();
 }
 
-void HandleFdb(DirectiveContext &context) {
-  const std::string &operand = context.operand;
-  (void)context.label; // Label handled in ParseLine
+void HandleFdb(DirectiveContext& context) {
+  const std::string& operand = context.operand;
+  (void)context.label;  // Label handled in ParseLine
 
   std::vector<uint8_t> bytes;
   std::istringstream ops(operand);
@@ -170,8 +170,8 @@ void HandleFdb(DirectiveContext &context) {
     if (!value.empty()) {
       uint32_t word = ParseNumber(value);
       // 6809 uses big-endian (MSB first)
-      bytes.push_back(static_cast<uint8_t>((word >> 8) & 0xFF)); // High byte
-      bytes.push_back(static_cast<uint8_t>(word & 0xFF));        // Low byte
+      bytes.push_back(static_cast<uint8_t>((word >> 8) & 0xFF));  // High byte
+      bytes.push_back(static_cast<uint8_t>(word & 0xFF));         // Low byte
     }
   }
 
@@ -179,9 +179,9 @@ void HandleFdb(DirectiveContext &context) {
   *context.current_address += bytes.size();
 }
 
-void HandleFcc(DirectiveContext &context) {
-  const std::string &operand = context.operand;
-  (void)context.label; // Label handled in ParseLine
+void HandleFcc(DirectiveContext& context) {
+  const std::string& operand = context.operand;
+  (void)context.label;  // Label handled in ParseLine
 
   std::string trimmed = Trim(operand);
   if (trimmed.empty()) {
@@ -203,20 +203,20 @@ void HandleFcc(DirectiveContext &context) {
   *context.current_address += bytes.size();
 }
 
-void HandleRmb(DirectiveContext &context) {
-  const std::string &operand = context.operand;
-  (void)context.label; // Label handled in ParseLine
+void HandleRmb(DirectiveContext& context) {
+  const std::string& operand = context.operand;
+  (void)context.label;  // Label handled in ParseLine
 
   uint32_t size = ParseNumber(operand);
   context.section->atoms.push_back(std::make_shared<SpaceAtom>(size));
   *context.current_address += size;
 }
 
-void HandleSetdp(DirectiveContext &context) {
-  const std::string &operand = context.operand;
-  (void)context.label; // Label handled in ParseLine
+void HandleSetdp(DirectiveContext& context) {
+  const std::string& operand = context.operand;
+  (void)context.label;  // Label handled in ParseLine
 
-  auto *parser = GetParser(context);
+  auto* parser = GetParser(context);
   if (!parser) {
     throw std::runtime_error("SETDP: Invalid parser state");
   }
@@ -225,4 +225,4 @@ void HandleSetdp(DirectiveContext &context) {
   // SETDP produces no atoms, just informs assembler
 }
 
-} // namespace xasm::edtasm
+}  // namespace xasm::edtasm

@@ -34,12 +34,12 @@ namespace xasm {
  * @endcode
  */
 enum class SectionAttributes : std::uint8_t {
-  Code = 0x01,    ///< Code section (contains executable instructions)
-  Data = 0x02,    ///< Data section (contains initialized data)
-  Bss = 0x04,     ///< BSS section (contains uninitialized data)
-  Read = 0x08,    ///< Readable section
-  Write = 0x10,   ///< Writable section
-  Execute = 0x20, ///< Executable section
+  Code = 0x01,     ///< Code section (contains executable instructions)
+  Data = 0x02,     ///< Data section (contains initialized data)
+  Bss = 0x04,      ///< BSS section (contains uninitialized data)
+  Read = 0x08,     ///< Readable section
+  Write = 0x10,    ///< Writable section
+  Execute = 0x20,  ///< Executable section
 };
 
 /**
@@ -62,13 +62,12 @@ enum class SectionAttributes : std::uint8_t {
  * @endcode
  */
 class Section {
-public:
-  std::string name{}; ///< Section name (e.g., "CODE", "DATA")
-  uint32_t attributes =
-      0;            ///< Section attributes (bitwise OR of SectionAttributes)
-  uint64_t org = 0; ///< Origin address (starting address)
-  std::vector<std::shared_ptr<Atom>> atoms{}; ///< List of atoms in this section
-  size_t current_offset = 0;                ///< Current offset within section
+ public:
+  std::string name{};       ///< Section name (e.g., "CODE", "DATA")
+  uint32_t attributes = 0;  ///< Section attributes (bitwise OR of SectionAttributes)
+  uint64_t org = 0;         ///< Origin address (starting address)
+  std::vector<std::shared_ptr<Atom>> atoms{};  ///< List of atoms in this section
+  size_t current_offset = 0;                   ///< Current offset within section
 
   /**
    * @brief Default constructor - creates an empty section
@@ -82,8 +81,8 @@ public:
    * @param attr Section attributes (bitwise OR of SectionAttributes)
    * @param origin Starting address for this section (default: 0)
    */
-  Section(const std::string &n, uint32_t attr, uint64_t origin = 0)
+  Section(const std::string& n, uint32_t attr, uint64_t origin = 0)
       : name(n), attributes(attr), org(origin) {}
 };
 
-} // namespace xasm
+}  // namespace xasm

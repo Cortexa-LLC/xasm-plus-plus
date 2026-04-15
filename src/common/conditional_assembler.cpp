@@ -7,6 +7,7 @@
  */
 
 #include "xasm++/common/conditional_assembler.h"
+
 #include <stdexcept>
 
 namespace xasm {
@@ -19,9 +20,9 @@ void ConditionalAssembler::BeginIf(bool condition) {
   bool should_emit = parent_should_emit && condition;
 
   stack_.push_back({
-      condition,  // condition
-      false,      // in_else_block (not in ELSE yet)
-      should_emit // should_emit
+      condition,   // condition
+      false,       // in_else_block (not in ELSE yet)
+      should_emit  // should_emit
   });
 }
 
@@ -30,7 +31,7 @@ void ConditionalAssembler::BeginElse() {
     throw std::runtime_error("ELSE without matching IF");
   }
 
-  ConditionalBlock &block = stack_.back();
+  ConditionalBlock& block = stack_.back();
   if (block.in_else_block) {
     throw std::runtime_error("Multiple ELSE in same IF block");
   }
@@ -40,8 +41,7 @@ void ConditionalAssembler::BeginElse() {
   // Determine if code in ELSE branch should be emitted:
   // - Parent must be emitting
   // - Original condition must be false (so ELSE is taken)
-  bool parent_should_emit =
-      stack_.size() > 1 ? stack_[stack_.size() - 2].should_emit : true;
+  bool parent_should_emit = stack_.size() > 1 ? stack_[stack_.size() - 2].should_emit : true;
   block.should_emit = parent_should_emit && !block.condition;
 }
 
@@ -63,10 +63,16 @@ bool ConditionalAssembler::ShouldEmit() const {
   return stack_.back().should_emit;
 }
 
-bool ConditionalAssembler::IsBalanced() const { return stack_.empty(); }
+bool ConditionalAssembler::IsBalanced() const {
+  return stack_.empty();
+}
 
-void ConditionalAssembler::Reset() { stack_.clear(); }
+void ConditionalAssembler::Reset() {
+  stack_.clear();
+}
 
-size_t ConditionalAssembler::GetDepth() const { return stack_.size(); }
+size_t ConditionalAssembler::GetDepth() const {
+  return stack_.size();
+}
 
-} // namespace xasm
+}  // namespace xasm

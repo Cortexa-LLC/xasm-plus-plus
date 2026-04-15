@@ -9,9 +9,10 @@
 
 #pragma once
 
+#include <string>
+
 #include "xasm++/symbol.h"
 #include "xasm++/util/string_utils.h"
-#include <string>
 
 namespace xasm {
 
@@ -23,40 +24,39 @@ namespace xasm {
  * for SCMASM compatibility.
  */
 class ScmasmSymbolTable : public SymbolTable {
-public:
+ public:
   explicit ScmasmSymbolTable() = default;
 
-  bool Lookup(const std::string &name, int64_t &value) const override {
+  bool Lookup(const std::string& name, int64_t& value) const override {
     return table_.Lookup(util::ToUpper(name), value);
   }
 
-  void Define(const std::string &name, SymbolType type,
+  void Define(const std::string& name, SymbolType type,
               std::shared_ptr<Expression> value) override {
     table_.Define(util::ToUpper(name), type, value);
   }
 
-  const Symbol *GetSymbol(const std::string &name) const override {
+  const Symbol* GetSymbol(const std::string& name) const override {
     return table_.GetSymbol(util::ToUpper(name));
   }
 
-  Symbol *GetSymbol(const std::string &name) override {
+  Symbol* GetSymbol(const std::string& name) override {
     return table_.GetSymbol(util::ToUpper(name));
   }
 
-  void GetAll(std::vector<const Symbol *> &symbols) const override {
-    table_.GetAll(symbols);
-  }
+  void GetAll(std::vector<const Symbol*>& symbols) const override { table_.GetAll(symbols); }
 
   void Clear() override { table_.Clear(); }
 
   /**
    * @brief Get underlying concrete symbol table (for testing/debugging)
    */
-  ConcreteSymbolTable &GetConcreteTable() { return table_; }
-  const ConcreteSymbolTable &GetConcreteTable() const { return table_; }
+  ConcreteSymbolTable& GetConcreteTable() { return table_; }
 
-private:
+  const ConcreteSymbolTable& GetConcreteTable() const { return table_; }
+
+ private:
   ConcreteSymbolTable table_;
 };
 
-} // namespace xasm
+}  // namespace xasm

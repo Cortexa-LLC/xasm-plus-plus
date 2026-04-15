@@ -39,8 +39,9 @@
 
 #pragma once
 
-#include "xasm++/syntax/directive_registry.h"
 #include <string>
+
+#include "xasm++/syntax/directive_registry.h"
 
 namespace xasm {
 
@@ -62,8 +63,7 @@ namespace xasm {
  * // Returns: "test.asm:42: Test error"
  * @endcode
  */
-std::string FormatError(const DirectiveContext &ctx,
-                        const std::string &message);
+std::string FormatError(const DirectiveContext& ctx, const std::string& message);
 
 /**
  * @brief Throw formatted error with file:line: context
@@ -81,8 +81,7 @@ std::string FormatError(const DirectiveContext &ctx,
  * // Throws: "test.asm:42: Invalid operand"
  * @endcode
  */
-[[noreturn]] void ThrowFormattedError(const DirectiveContext &ctx,
-                                      const std::string &message);
+[[noreturn]] void ThrowFormattedError(const DirectiveContext& ctx, const std::string& message);
 
 /**
  * @brief Throw "X requires a label" error
@@ -102,8 +101,8 @@ std::string FormatError(const DirectiveContext &ctx,
  * // Throws: "test.asm:42: EQU requires a label"
  * @endcode
  */
-[[noreturn]] void ThrowRequiresLabel(const DirectiveContext &ctx,
-                                     const std::string &directive_name);
+[[noreturn]] void ThrowRequiresLabel(const DirectiveContext& ctx,
+                                     const std::string& directive_name);
 
 /**
  * @brief Throw "X requires operand" error
@@ -123,8 +122,8 @@ std::string FormatError(const DirectiveContext &ctx,
  * // Throws: "test.asm:42: FCC requires operand"
  * @endcode
  */
-[[noreturn]] void ThrowRequiresOperand(const DirectiveContext &ctx,
-                                       const std::string &directive_name);
+[[noreturn]] void ThrowRequiresOperand(const DirectiveContext& ctx,
+                                       const std::string& directive_name);
 
 /**
  * @brief Throw "X without matching Y" error
@@ -152,10 +151,9 @@ std::string FormatError(const DirectiveContext &ctx,
  * // Throws: "test.asm:42: ENDM without matching MACRO/REPT/IRP"
  * @endcode
  */
-[[noreturn]] void
-ThrowMissingMatchingDirective(const DirectiveContext &ctx,
-                              const std::string &closing_directive,
-                              const std::string &opening_directive);
+[[noreturn]] void ThrowMissingMatchingDirective(const DirectiveContext& ctx,
+                                                const std::string& closing_directive,
+                                                const std::string& opening_directive);
 
 /**
  * @brief Throw "X directive not yet implemented" error
@@ -178,9 +176,9 @@ ThrowMissingMatchingDirective(const DirectiveContext &ctx,
  * // Throws: "test.asm:42: DD directive not yet implemented"
  * @endcode
  */
-[[noreturn]] void ThrowNotImplemented(const DirectiveContext &ctx,
-                                      const std::string &directive_name,
-                                      const std::string &operand);
+[[noreturn]] void ThrowNotImplemented(const DirectiveContext& ctx,
+                                      const std::string& directive_name,
+                                      const std::string& operand);
 
 /**
  * @brief Throw "Invalid X value" error with optional reason
@@ -209,9 +207,7 @@ ThrowMissingMatchingDirective(const DirectiveContext &ctx,
  * // Throws: "test.asm:42: Invalid address value: -100"
  * @endcode
  */
-[[noreturn]] void ThrowInvalidValue(const DirectiveContext &ctx,
-                                    const std::string &value_type,
-                                    const std::string &value,
-                                    const std::string &reason);
+[[noreturn]] void ThrowInvalidValue(const DirectiveContext& ctx, const std::string& value_type,
+                                    const std::string& value, const std::string& reason);
 
-} // namespace xasm
+}  // namespace xasm

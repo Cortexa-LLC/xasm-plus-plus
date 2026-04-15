@@ -4,6 +4,7 @@
  */
 
 #include "xasm++/symbol.h"
+
 #include <algorithm>
 #include <cctype>
 
@@ -11,7 +12,7 @@ namespace xasm {
 
 // ConcreteSymbolTable implementation
 
-void ConcreteSymbolTable::Define(const std::string &name, SymbolType type,
+void ConcreteSymbolTable::Define(const std::string& name, SymbolType type,
                                  std::shared_ptr<Expression> value) {
   // Preserve export/import flags if symbol already exists
   bool was_exported = false;
@@ -29,12 +30,11 @@ void ConcreteSymbolTable::Define(const std::string &name, SymbolType type,
   symbols_[name].is_imported = was_imported;
 }
 
-void ConcreteSymbolTable::DefineLabel(const std::string &name, int64_t value) {
+void ConcreteSymbolTable::DefineLabel(const std::string& name, int64_t value) {
   Define(name, SymbolType::Label, std::make_shared<LiteralExpr>(value));
 }
 
-bool ConcreteSymbolTable::Lookup(const std::string &name,
-                                 int64_t &value) const {
+bool ConcreteSymbolTable::Lookup(const std::string& name, int64_t& value) const {
   auto it = symbols_.find(name);
   if (it != symbols_.end()) {
     value = it->second.value->Evaluate(*this);
@@ -69,7 +69,7 @@ bool ConcreteSymbolTable::Lookup(const std::string &name,
   return false;
 }
 
-const Symbol *ConcreteSymbolTable::GetSymbol(const std::string &name) const {
+const Symbol* ConcreteSymbolTable::GetSymbol(const std::string& name) const {
   auto it = symbols_.find(name);
   if (it != symbols_.end()) {
     return &it->second;
@@ -77,7 +77,7 @@ const Symbol *ConcreteSymbolTable::GetSymbol(const std::string &name) const {
   return nullptr;
 }
 
-Symbol *ConcreteSymbolTable::GetSymbol(const std::string &name) {
+Symbol* ConcreteSymbolTable::GetSymbol(const std::string& name) {
   auto it = symbols_.find(name);
   if (it != symbols_.end()) {
     return &it->second;
@@ -85,19 +85,18 @@ Symbol *ConcreteSymbolTable::GetSymbol(const std::string &name) {
   return nullptr;
 }
 
-bool ConcreteSymbolTable::IsDefined(const std::string &name) const {
+bool ConcreteSymbolTable::IsDefined(const std::string& name) const {
   return symbols_.contains(name);
 }
 
-const std::unordered_map<std::string, Symbol> &
-ConcreteSymbolTable::GetAllSymbols() const {
+const std::unordered_map<std::string, Symbol>& ConcreteSymbolTable::GetAllSymbols() const {
   return symbols_;
 }
 
 std::vector<std::string> ConcreteSymbolTable::GetAllSymbolNames() const {
   std::vector<std::string> names;
   names.reserve(symbols_.size());
-  for (const auto &pair : symbols_) {
+  for (const auto& pair : symbols_) {
     names.push_back(pair.first);
   }
   return names;
@@ -116,4 +115,4 @@ void ConcreteSymbolTable::SetCurrentLocation(int64_t location) {
   current_location_ = location;
 }
 
-} // namespace xasm
+}  // namespace xasm

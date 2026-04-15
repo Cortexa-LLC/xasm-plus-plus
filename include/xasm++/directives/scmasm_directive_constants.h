@@ -12,52 +12,52 @@
 namespace xasm::scmasm::directives {
 
 // Origin and addressing
-constexpr const char *OR = ".OR";
-constexpr const char *PH = ".PH"; // Phase assembly
+constexpr const char* OR = ".OR";
+constexpr const char* PH = ".PH";  // Phase assembly
 
 // Symbol definition
-constexpr const char *EQ = ".EQ";
-constexpr const char *SE = ".SE";
+constexpr const char* EQ = ".EQ";
+constexpr const char* SE = ".SE";
 
 // String directives
-constexpr const char *AS = ".AS";
-constexpr const char *AT = ".AT";
-constexpr const char *AZ = ".AZ";
+constexpr const char* AS = ".AS";
+constexpr const char* AT = ".AT";
+constexpr const char* AZ = ".AZ";
 
 // Data directives
-constexpr const char *DA = ".DA";
-constexpr const char *DFB = ".DFB"; // Alias to .DA
-constexpr const char *HS = ".HS";
-constexpr const char *BS = ".BS";
+constexpr const char* DA = ".DA";
+constexpr const char* DFB = ".DFB";  // Alias to .DA
+constexpr const char* HS = ".HS";
+constexpr const char* BS = ".BS";
 
 // Macro directives
-constexpr const char *MA = ".MA";
-constexpr const char *ENDM = ".ENDM";
-constexpr const char *EM = ".EM"; // Alias to .ENDM
+constexpr const char* MA = ".MA";
+constexpr const char* ENDM = ".ENDM";
+constexpr const char* EM = ".EM";  // Alias to .ENDM
 
 // P0 Priority Directives (A2oSX Critical)
-constexpr const char *PS = ".PS";       // Pascal string (length-prefixed)
-constexpr const char *INB = ".INB";         // Include source file
-constexpr const char *INCLUDE = ".INCLUDE"; // Alias: .INCLUDE = .INB
-constexpr const char *LIST = ".LIST";   // Listing control
-constexpr const char *DUMMY = ".DUMMY"; // Dummy section
-constexpr const char *ED = ".ED";       // End dummy section
-constexpr const char *OP = ".OP";       // CPU operation mode
+constexpr const char* PS = ".PS";            // Pascal string (length-prefixed)
+constexpr const char* INB = ".INB";          // Include source file
+constexpr const char* INCLUDE = ".INCLUDE";  // Alias: .INCLUDE = .INB
+constexpr const char* LIST = ".LIST";        // Listing control
+constexpr const char* DUMMY = ".DUMMY";      // Dummy section
+constexpr const char* ED = ".ED";            // End dummy section
+constexpr const char* OP = ".OP";            // CPU operation mode
 
 // Phase 3: 100% Coverage Directives
-constexpr const char *CS = ".CS";     // C-string with escape sequences
-constexpr const char *CZ = ".CZ";     // C-string zero-terminated
-constexpr const char *TF = ".TF";     // Text file/title metadata
-constexpr const char *EP = ".EP";     // Entry point
-constexpr const char *HX = ".HX";     // Hex nibble storage
-constexpr const char *TA = ".TA";     // Target address (no-op)
-constexpr const char *AC = ".AC";     // ASCII with numeric prefix
-constexpr const char *DO = ".DO";     // Conditional assembly start
-constexpr const char *ELSE = ".ELSE"; // Conditional assembly else
-constexpr const char *FIN = ".FIN";   // Conditional assembly end
-constexpr const char *LU = ".LU";     // Lookup table
-constexpr const char *ENDU = ".ENDU"; // End user macro/loop
+constexpr const char* CS = ".CS";      // C-string with escape sequences
+constexpr const char* CZ = ".CZ";      // C-string zero-terminated
+constexpr const char* TF = ".TF";      // Text file/title metadata
+constexpr const char* EP = ".EP";      // Entry point
+constexpr const char* HX = ".HX";      // Hex nibble storage
+constexpr const char* TA = ".TA";      // Target address (no-op)
+constexpr const char* AC = ".AC";      // ASCII with numeric prefix
+constexpr const char* DO = ".DO";      // Conditional assembly start
+constexpr const char* ELSE = ".ELSE";  // Conditional assembly else
+constexpr const char* FIN = ".FIN";    // Conditional assembly end
+constexpr const char* LU = ".LU";      // Lookup table
+constexpr const char* ENDU = ".ENDU";  // End user macro/loop
 
-} // namespace xasm::scmasm::directives
+}  // namespace xasm::scmasm::directives
 
-#endif // XASMPP_DIRECTIVES_SCMASM_DIRECTIVE_CONSTANTS_H
+#endif  // XASMPP_DIRECTIVES_SCMASM_DIRECTIVE_CONSTANTS_H

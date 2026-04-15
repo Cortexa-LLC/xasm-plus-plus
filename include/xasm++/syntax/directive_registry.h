@@ -30,32 +30,33 @@ class ConcreteSymbolTable;
  * all handler signatures.
  */
 struct DirectiveContext {
-  Section *section = nullptr;             ///< Current assembly section
-  ConcreteSymbolTable *symbols = nullptr; ///< Symbol table
-  uint32_t *current_address = nullptr;    ///< Pointer to current address
-  void *parser_state = nullptr;           ///< Opaque parser state (for casting)
+  Section* section = nullptr;              ///< Current assembly section
+  ConcreteSymbolTable* symbols = nullptr;  ///< Symbol table
+  uint32_t* current_address = nullptr;     ///< Pointer to current address
+  void* parser_state = nullptr;            ///< Opaque parser state (for casting)
 
   // Source location tracking for listing output
-  std::string current_file = {}; ///< Current source filename
-  int current_line = 0;     ///< Current line number
-  std::string source_line = {};  ///< Original source line text
+  std::string current_file = {};  ///< Current source filename
+  int current_line = 0;           ///< Current line number
+  std::string source_line = {};   ///< Original source line text
 
   // Include path search directories
-  const std::vector<std::string> *include_paths =
-      nullptr; ///< Include search paths for .INB directive
+  const std::vector<std::string>* include_paths =
+      nullptr;  ///< Include search paths for .INB directive
 
   // Path mappings for virtual path substitution
-  const std::map<std::string, std::string> *path_mappings =
-      nullptr; ///< Path substitutions for .INB directive (virtual→actual)
+  const std::map<std::string, std::string>* path_mappings =
+      nullptr;  ///< Path substitutions for .INB directive (virtual→actual)
 
   // Label on the current source line (empty if none)
-  std::string label = {}; ///< Label field (populated by Execute before handler call)
+  std::string label = {};  ///< Label field (populated by Execute before handler call)
 
   // Operand field on the current source line (empty if none)
-  std::string operand = {}; ///< Operand field (populated by Execute before handler call)
+  std::string operand = {};  ///< Operand field (populated by Execute before handler call)
 
   // Mnemonic/directive name on the current source line (empty if none)
-  std::string mnemonic = {}; ///< Mnemonic/directive name (populated by Execute before handler call)
+  std::string mnemonic =
+      {};  ///< Mnemonic/directive name (populated by Execute before handler call)
 
   /**
    * @brief Constructor with common context
@@ -71,8 +72,7 @@ struct DirectiveContext {
  *
  * @throws std::runtime_error on directive processing errors
  */
-using DirectiveHandler =
-    std::function<void(DirectiveContext &context)>;
+using DirectiveHandler = std::function<void(DirectiveContext& context)>;
 
 /**
  * @brief Registry for directive handlers
@@ -117,7 +117,7 @@ using DirectiveHandler =
  * @endcode
  */
 class DirectiveRegistry {
-public:
+ public:
   /**
    * @brief Register a directive handler
    *
@@ -130,7 +130,7 @@ public:
    * @note Multiple mnemonics can share the same handler (e.g., "DB" and
    * "DEFB")
    */
-  void Register(const std::string &mnemonic, DirectiveHandler handler);
+  void Register(const std::string& mnemonic, DirectiveHandler handler);
 
   /**
    * @brief Register a directive handler for multiple aliases
@@ -141,8 +141,7 @@ public:
    * @param mnemonics List of directive names (all aliases)
    * @param handler Handler function to execute for all these directives
    */
-  void Register(std::initializer_list<std::string> mnemonics,
-                DirectiveHandler handler);
+  void Register(std::initializer_list<std::string> mnemonics, DirectiveHandler handler);
 
   /**
    * @brief Execute a registered directive handler
@@ -156,7 +155,7 @@ public:
    *
    * @throws std::runtime_error if directive not registered
    */
-  void Execute(DirectiveContext &context);
+  void Execute(DirectiveContext& context);
 
   /**
    * @brief Check if a directive is registered
@@ -164,19 +163,19 @@ public:
    * @param mnemonic Directive name to check (case-insensitive)
    * @return true if directive is registered, false otherwise
    */
-  bool IsRegistered(const std::string &mnemonic) const;
+  bool IsRegistered(const std::string& mnemonic) const;
 
-private:
+ private:
   /**
    * @brief Convert mnemonic to uppercase for case-insensitive lookup
    *
    * @param mnemonic Input mnemonic
    * @return Uppercase version of mnemonic
    */
-  static std::string ToUpper(const std::string &mnemonic);
+  static std::string ToUpper(const std::string& mnemonic);
 
   /// Map of uppercase mnemonic -> handler function
   std::unordered_map<std::string, DirectiveHandler> handlers_ = {};
 };
 
-} // namespace xasm
+}  // namespace xasm

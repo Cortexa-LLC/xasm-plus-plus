@@ -78,7 +78,7 @@ constexpr uint8_t POSTAMBLE_PADDING = 0x00;
 /// @brief Maximum address value for CoCo DOS format (16-bit)
 constexpr uint64_t MAX_ADDRESS = 0xFFFF;
 
-} // namespace coco_loadm
+}  // namespace coco_loadm
 
 // =============================================================================
 // Intel HEX Format Constants
@@ -110,7 +110,7 @@ constexpr uint16_t EXTENDED_LINEAR_ADDRESS_FIELD = 0x0000;
 /// @brief Byte count for extended linear address record (always 2)
 constexpr uint8_t EXTENDED_LINEAR_ADDRESS_BYTE_COUNT = 2;
 
-} // namespace intel_hex
+}  // namespace intel_hex
 
 // =============================================================================
 // S-Record (Motorola) Format Constants
@@ -182,7 +182,7 @@ constexpr uint64_t ADDRESS_24BIT_THRESHOLD = 0x1000000;
 /// @brief Threshold for using 16-bit count (same as THRESHOLD_COUNT_24BIT)
 constexpr size_t COUNT_16BIT_THRESHOLD = 0x10000;
 
-} // namespace srec
+}  // namespace srec
 
 // =============================================================================
 // Bit Manipulation Constants
@@ -202,7 +202,7 @@ constexpr uint8_t MASK_LOW_BYTE = 0xFF;
 /// @brief Mask for low 16 bits (0xFFFF)
 constexpr uint16_t MASK_LOW_WORD = 0xFFFF;
 
-} // namespace bit_ops
+}  // namespace bit_ops
 
 // =============================================================================
 // Binary Output Constants
@@ -213,6 +213,6 @@ namespace binary {
 /// @brief Zero byte for padding/initialization (0x00)
 constexpr uint8_t ZERO_BYTE = 0x00;
 
-} // namespace binary
+}  // namespace binary
 
-} // namespace xasm::output_format
+}  // namespace xasm::output_format

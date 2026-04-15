@@ -37,10 +37,11 @@
 
 #pragma once
 
-#include "xasm++/section.h"
-#include "xasm++/symbol.h" // For ConcreteSymbolTable
 #include <cstdint>
 #include <string>
+
+#include "xasm++/section.h"
+#include "xasm++/symbol.h"  // For ConcreteSymbolTable
 
 // Forward declaration for DirectiveRegistry
 namespace xasm {
@@ -78,7 +79,7 @@ namespace xasm {
 // Forward declare DirectiveContext
 struct DirectiveContext;
 
-void HandleOrg(DirectiveContext &context);
+void HandleOrg(DirectiveContext& context);
 
 /**
  * @brief Handle EQU directive - define constant symbol
@@ -103,7 +104,7 @@ void HandleOrg(DirectiveContext &context);
  * // symbols now contains IO_PORT=0xD000
  * @endcode
  */
-void HandleEqu(DirectiveContext &context);
+void HandleEqu(DirectiveContext& context);
 
 /**
  * @brief Handle DB directive - define byte data
@@ -126,7 +127,7 @@ void HandleEqu(DirectiveContext &context);
  * // address advanced by 4
  * @endcode
  */
-void HandleDb(DirectiveContext &context);
+void HandleDb(DirectiveContext& context);
 
 /**
  * @brief Handle DW directive - define word data
@@ -149,7 +150,7 @@ void HandleDb(DirectiveContext &context);
  * // address advanced by 4 (2 words * 2 bytes)
  * @endcode
  */
-void HandleDw(DirectiveContext &context);
+void HandleDw(DirectiveContext& context);
 
 /**
  * @brief Handle DS directive - define space (reserve bytes)
@@ -177,7 +178,7 @@ void HandleDw(DirectiveContext &context);
  * // Evaluates SIZE*2 and reserves that many bytes
  * @endcode
  */
-void HandleDs(DirectiveContext &context);
+void HandleDs(DirectiveContext& context);
 
 // ============================================================================
 // DirectiveRegistry Integration
@@ -215,6 +216,6 @@ void HandleDs(DirectiveContext &context);
  * registry.Execute("DB", "", "1,2,3", context);
  * @endcode
  */
-void RegisterCoreDirectiveHandlers(DirectiveRegistry &registry);
+void RegisterCoreDirectiveHandlers(DirectiveRegistry& registry);
 
-} // namespace xasm
+}  // namespace xasm

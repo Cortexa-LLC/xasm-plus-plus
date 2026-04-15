@@ -18,10 +18,11 @@
 
 #pragma once
 
-#include "xasm++/cpu/cpu_plugin.h"
 #include <cstdint>
 #include <string>
 #include <vector>
+
+#include "xasm++/cpu/cpu_plugin.h"
 
 namespace xasm {
 
@@ -65,7 +66,7 @@ namespace xasm {
  * @endcode
  */
 class CpuZ80 : public CpuPlugin {
-public:
+ public:
   /**
    * @brief Default constructor - initializes Z80 mode
    */
@@ -78,10 +79,10 @@ public:
 
   // CpuPlugin interface implementation
   std::string GetCpuFamily() const override { return "Z80"; }
-  std::vector<std::string> GetSupportedVariants() const override {
-    return {"Z80", "GameBoy"};
-  }
-  bool HasOpcode(const std::string &mnemonic) const override;
+
+  std::vector<std::string> GetSupportedVariants() const override { return {"Z80", "GameBoy"}; }
+
+  bool HasOpcode(const std::string& mnemonic) const override;
 
   /**
    * @brief Get the CPU plugin name
@@ -90,9 +91,8 @@ public:
   static std::string GetName() { return "Z80"; }
 
   // CpuPlugin instruction encoding interface
-  std::vector<uint8_t>
-  EncodeInstruction(const std::string &mnemonic, uint32_t operand,
-                    const std::string &operand_str) const override;
+  std::vector<uint8_t> EncodeInstruction(const std::string& mnemonic, uint32_t operand,
+                                         const std::string& operand_str) const override;
 
   /**
    * @name 8-bit Load Instructions
@@ -155,7 +155,7 @@ public:
    */
   static std::vector<uint8_t> EncodeLD_L_n(uint8_t value);
 
-  /** @} */ // End of 8-bit Load Instructions
+  /** @} */  // End of 8-bit Load Instructions
 
   /**
    * @name 16-bit Load Instructions
@@ -170,7 +170,7 @@ public:
    *
    * @note Uses little-endian byte order (LSB first)
    */
-  static std::vector<uint8_t> EncodeLD_BC_nn(uint16_t value) ;
+  static std::vector<uint8_t> EncodeLD_BC_nn(uint16_t value);
 
   /**
    * @brief Encode LD DE, nn instruction (load immediate into DE)
@@ -180,7 +180,7 @@ public:
    *
    * @note Uses little-endian byte order (LSB first)
    */
-  static std::vector<uint8_t> EncodeLD_DE_nn(uint16_t value) ;
+  static std::vector<uint8_t> EncodeLD_DE_nn(uint16_t value);
 
   /**
    * @brief Encode LD HL, nn instruction (load immediate into HL)
@@ -190,7 +190,7 @@ public:
    *
    * @note Uses little-endian byte order (LSB first)
    */
-  static std::vector<uint8_t> EncodeLD_HL_nn(uint16_t value) ;
+  static std::vector<uint8_t> EncodeLD_HL_nn(uint16_t value);
 
   /**
    * @brief Encode LD SP, nn instruction (load immediate into SP)
@@ -200,7 +200,7 @@ public:
    *
    * @note Uses little-endian byte order (LSB first)
    */
-  static std::vector<uint8_t> EncodeLD_SP_nn(uint16_t value) ;
+  static std::vector<uint8_t> EncodeLD_SP_nn(uint16_t value);
 
   /**
    * @brief Encode LD A, (BC) instruction (load A from address in BC)
@@ -246,7 +246,7 @@ public:
    *
    * @note Uses little-endian byte order (LSB first)
    */
-  static std::vector<uint8_t> EncodeLD_HL_addr(uint16_t address) ;
+  static std::vector<uint8_t> EncodeLD_HL_addr(uint16_t address);
 
   /**
    * @brief Encode LD (nn), HL instruction (store HL to memory address)
@@ -256,7 +256,7 @@ public:
    *
    * @note Uses little-endian byte order (LSB first)
    */
-  static std::vector<uint8_t> EncodeLD_addr_HL(uint16_t address) ;
+  static std::vector<uint8_t> EncodeLD_addr_HL(uint16_t address);
 
   /**
    * @brief Encode LD SP, HL instruction (copy HL to stack pointer)
@@ -265,7 +265,7 @@ public:
    */
   static std::vector<uint8_t> EncodeLD_SP_HL();
 
-  /** @} */ // End of 16-bit Load Instructions
+  /** @} */  // End of 16-bit Load Instructions
 
   /**
    * @name Arithmetic Instructions
@@ -302,7 +302,7 @@ public:
    */
   static std::vector<uint8_t> EncodeDEC_A();
 
-  /** @} */ // End of Arithmetic Instructions
+  /** @} */  // End of Arithmetic Instructions
 
   /**
    * @name Control Flow Instructions
@@ -324,7 +324,7 @@ public:
    *
    * @note Uses little-endian byte order (LSB first)
    */
-  static std::vector<uint8_t> EncodeJP_nn(uint16_t address) ;
+  static std::vector<uint8_t> EncodeJP_nn(uint16_t address);
 
   /**
    * @brief Encode RET instruction (return from subroutine)
@@ -333,7 +333,7 @@ public:
    */
   static std::vector<uint8_t> EncodeRET();
 
-  /** @} */ // End of Control Flow Instructions
+  /** @} */  // End of Control Flow Instructions
 
   /**
    * @name Stack Operations
@@ -354,7 +354,7 @@ public:
    */
   static std::vector<uint8_t> EncodePOP_BC();
 
-  /** @} */ // End of Stack Operations
+  /** @} */  // End of Stack Operations
 
   /**
    * @name Bit Operations (CB Prefix)
@@ -394,7 +394,7 @@ public:
    */
   static std::vector<uint8_t> EncodeRES(uint8_t bit, uint8_t reg);
 
-  /** @} */ // End of Bit Operations
+  /** @} */  // End of Bit Operations
 
   /**
    * @name IX Register Operations (DD Prefix)
@@ -409,7 +409,7 @@ public:
    *
    * @note Uses little-endian byte order (LSB first)
    */
-  static std::vector<uint8_t> EncodeLD_IX_nn(uint16_t value) ;
+  static std::vector<uint8_t> EncodeLD_IX_nn(uint16_t value);
 
   /**
    * @brief Encode LD A, (IX+d) instruction (load from indexed address)
@@ -419,7 +419,7 @@ public:
    */
   static std::vector<uint8_t> EncodeLD_A_IX_d(int8_t displacement);
 
-  /** @} */ // End of IX Register Operations
+  /** @} */  // End of IX Register Operations
 
   /**
    * @name IY Register Operations (FD Prefix)
@@ -434,7 +434,7 @@ public:
    *
    * @note Uses little-endian byte order (LSB first)
    */
-  static std::vector<uint8_t> EncodeLD_IY_nn(uint16_t value) ;
+  static std::vector<uint8_t> EncodeLD_IY_nn(uint16_t value);
 
   /**
    * @brief Encode LD A, (IY+d) instruction (load from indexed address)
@@ -444,7 +444,7 @@ public:
    */
   static std::vector<uint8_t> EncodeLD_A_IY_d(int8_t displacement);
 
-  /** @} */ // End of IY Register Operations
+  /** @} */  // End of IY Register Operations
 
   /**
    * @name Register-to-Register Load Instructions
@@ -475,7 +475,7 @@ public:
    */
   static std::vector<uint8_t> EncodeLD_C_A();
 
-  /** @} */ // End of Register-to-Register Load Instructions
+  /** @} */  // End of Register-to-Register Load Instructions
 
   /**
    * @name Additional Arithmetic Instructions
@@ -506,7 +506,7 @@ public:
    */
   static std::vector<uint8_t> EncodeCP_n(uint8_t value);
 
-  /** @} */ // End of Additional Arithmetic Instructions
+  /** @} */  // End of Additional Arithmetic Instructions
 
   /**
    * @name Logical Operations
@@ -546,7 +546,7 @@ public:
    */
   static std::vector<uint8_t> EncodeXOR_A();
 
-  /** @} */ // End of Logical Operations
+  /** @} */  // End of Logical Operations
 
   /**
    * @name Branch Instructions
@@ -593,7 +593,7 @@ public:
    */
   static std::vector<uint8_t> EncodeJR_C_e(int8_t offset);
 
-  /** @} */ // End of Branch Instructions
+  /** @} */  // End of Branch Instructions
 
   /**
    * @name Memory Access Instructions
@@ -606,7 +606,7 @@ public:
    * @param address 16-bit address
    * @return Vector of encoded bytes {0x3A, low_byte, high_byte}
    */
-  static std::vector<uint8_t> EncodeLD_A_addr(uint16_t address) ;
+  static std::vector<uint8_t> EncodeLD_A_addr(uint16_t address);
 
   /**
    * @brief Encode LD (nn), A instruction (store to absolute address)
@@ -614,7 +614,7 @@ public:
    * @param address 16-bit address
    * @return Vector of encoded bytes {0x32, low_byte, high_byte}
    */
-  static std::vector<uint8_t> EncodeLD_addr_A(uint16_t address) ;
+  static std::vector<uint8_t> EncodeLD_addr_A(uint16_t address);
 
   /**
    * @brief Encode LD A, (HL) instruction (load from HL)
@@ -628,7 +628,7 @@ public:
    */
   static std::vector<uint8_t> EncodeLD_HL_A();
 
-  /** @} */ // End of Memory Access Instructions
+  /** @} */  // End of Memory Access Instructions
 
   /**
    * @name Rotate and Shift Instructions
@@ -679,7 +679,7 @@ public:
    */
   static std::vector<uint8_t> EncodeRRD();
 
-  /** @} */ // End of Rotate and Shift Instructions
+  /** @} */  // End of Rotate and Shift Instructions
 
   // ==========================================================================
   /**
@@ -834,7 +834,7 @@ public:
    */
   static std::vector<uint8_t> EncodeOUT_C_A();
 
-  /** @} */ // End of Input/Output Instructions
+  /** @} */  // End of Input/Output Instructions
 
   /**
    * @name Extended Instructions (ED Prefix)
@@ -889,7 +889,7 @@ public:
    */
   static std::vector<uint8_t> EncodeNEG();
 
-  /** @} */ // End of Extended Instructions
+  /** @} */  // End of Extended Instructions
 
   /**
    * @name Additional Stack Operations
@@ -932,7 +932,7 @@ public:
    */
   static std::vector<uint8_t> EncodePOP_AF();
 
-  /** @} */ // End of Additional Stack Operations
+  /** @} */  // End of Additional Stack Operations
 
   /**
    * @name Conditional Call and Return Instructions
@@ -945,7 +945,7 @@ public:
    * @param address 16-bit target address
    * @return Vector of encoded bytes {0xCD, low_byte, high_byte}
    */
-  static std::vector<uint8_t> EncodeCALL_nn(uint16_t address) ;
+  static std::vector<uint8_t> EncodeCALL_nn(uint16_t address);
 
   /**
    * @brief Encode CALL NZ, nn instruction (call if not zero)
@@ -953,7 +953,7 @@ public:
    * @param address 16-bit target address
    * @return Vector of encoded bytes {0xC4, low_byte, high_byte}
    */
-  static std::vector<uint8_t> EncodeCALL_NZ_nn(uint16_t address) ;
+  static std::vector<uint8_t> EncodeCALL_NZ_nn(uint16_t address);
 
   /**
    * @brief Encode RET Z instruction (return if zero)
@@ -967,9 +967,9 @@ public:
    */
   static std::vector<uint8_t> EncodeRET_NZ();
 
-  /** @} */ // End of Conditional Call and Return Instructions
+  /** @} */  // End of Conditional Call and Return Instructions
 
-private:
+ private:
   /**
    * @brief Encode 16-bit value in little-endian byte order
    *
@@ -987,4 +987,4 @@ private:
   static std::vector<uint8_t> ToLittleEndian(uint16_t value);
 };
 
-} // namespace xasm
+}  // namespace xasm

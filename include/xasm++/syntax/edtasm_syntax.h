@@ -11,28 +11,29 @@
 
 #pragma once
 
+#include <functional>
+#include <string>
+#include <unordered_map>
+
 #include "xasm++/directives/edtasm_simple_directive_handlers.h"
 #include "xasm++/section.h"
 #include "xasm++/symbol.h"
 #include "xasm++/syntax/directive_registry.h"
-#include <functional>
-#include <string>
-#include <unordered_map>
 
 namespace xasm {
 
 // Forward declarations for edtasm namespace
 namespace edtasm {
-void HandleOrg(DirectiveContext &);
-void HandleEnd(DirectiveContext &);
-void HandleEqu(DirectiveContext &);
-void HandleSet(DirectiveContext &);
-void HandleFcb(DirectiveContext &);
-void HandleFdb(DirectiveContext &);
-void HandleFcc(DirectiveContext &);
-void HandleRmb(DirectiveContext &);
-void HandleSetdp(DirectiveContext &);
-} // namespace edtasm
+void HandleOrg(DirectiveContext&);
+void HandleEnd(DirectiveContext&);
+void HandleEqu(DirectiveContext&);
+void HandleSet(DirectiveContext&);
+void HandleFcb(DirectiveContext&);
+void HandleFdb(DirectiveContext&);
+void HandleFcc(DirectiveContext&);
+void HandleRmb(DirectiveContext&);
+void HandleSetdp(DirectiveContext&);
+}  // namespace edtasm
 
 /**
  * @brief EDTASM+ assembly syntax parser
@@ -82,17 +83,17 @@ void HandleSetdp(DirectiveContext &);
  * @endcode
  */
 class EdtasmSyntaxParser {
-public:
+ public:
   // Friend declarations for edtasm namespace directive handlers
-  friend void edtasm::HandleOrg(DirectiveContext &);
-  friend void edtasm::HandleEnd(DirectiveContext &);
-  friend void edtasm::HandleEqu(DirectiveContext &);
-  friend void edtasm::HandleSet(DirectiveContext &);
-  friend void edtasm::HandleFcb(DirectiveContext &);
-  friend void edtasm::HandleFdb(DirectiveContext &);
-  friend void edtasm::HandleFcc(DirectiveContext &);
-  friend void edtasm::HandleRmb(DirectiveContext &);
-  friend void edtasm::HandleSetdp(DirectiveContext &);
+  friend void edtasm::HandleOrg(DirectiveContext&);
+  friend void edtasm::HandleEnd(DirectiveContext&);
+  friend void edtasm::HandleEqu(DirectiveContext&);
+  friend void edtasm::HandleSet(DirectiveContext&);
+  friend void edtasm::HandleFcb(DirectiveContext&);
+  friend void edtasm::HandleFdb(DirectiveContext&);
+  friend void edtasm::HandleFcc(DirectiveContext&);
+  friend void edtasm::HandleRmb(DirectiveContext&);
+  friend void edtasm::HandleSetdp(DirectiveContext&);
 
   /**
    * @brief Default constructor - initializes directive registry
@@ -113,16 +114,14 @@ public:
    * @throws std::runtime_error on parse errors (syntax errors, invalid
    * directives, etc.)
    */
-  void Parse(const std::string &source, Section &section,
-             ConcreteSymbolTable &symbols);
+  void Parse(const std::string& source, Section& section, ConcreteSymbolTable& symbols);
 
-private:
-  uint32_t current_address_ = 0; ///< Current assembly address
-  uint8_t direct_page_ = 0;      ///< Current direct page value (for SETDP)
+ private:
+  uint32_t current_address_ = 0;  ///< Current assembly address
+  uint8_t direct_page_ = 0;       ///< Current direct page value (for SETDP)
 
   // Directive registry pattern (O(1) lookup) - matches Merlin signature
-  using DirectiveHandler =
-      std::function<void(DirectiveContext &context)>;
+  using DirectiveHandler = std::function<void(DirectiveContext& context)>;
   std::unordered_map<std::string, DirectiveHandler> directive_registry_ = {};
 
   /**
@@ -140,8 +139,7 @@ private:
    * @param section Section to add atoms to
    * @param symbols Symbol table for definitions
    */
-  void ParseLine(const std::string &line, Section &section,
-                 ConcreteSymbolTable &symbols);
+  void ParseLine(const std::string& line, Section& section, ConcreteSymbolTable& symbols);
 
   /**
    * @brief Parse directive (ORG, END, EQU, SET, FCB, FDB, FCC, RMB, SETDP)
@@ -152,9 +150,8 @@ private:
    * @param section Section to add atoms to
    * @param symbols Symbol table
    */
-  void ParseDirective(const std::string &directive, const std::string &operands,
-                      const std::string &label, Section &section,
-                      ConcreteSymbolTable &symbols);
+  void ParseDirective(const std::string& directive, const std::string& operands,
+                      const std::string& label, Section& section, ConcreteSymbolTable& symbols);
 
   /**
    * @brief Parse numeric value (supports $hex, %binary, 'char', decimal)
@@ -163,7 +160,7 @@ private:
    * @return Parsed numeric value
    * @throws std::runtime_error on invalid format
    */
-  static uint32_t ParseNumber(const std::string &str);
+  static uint32_t ParseNumber(const std::string& str);
 
   /**
    * @brief Strip comments from line
@@ -171,7 +168,7 @@ private:
    * @param line Line to process
    * @return Line without comments
    */
-  static std::string StripComments(const std::string &line);
+  static std::string StripComments(const std::string& line);
 
   /**
    * @brief Trim whitespace from both ends
@@ -179,7 +176,7 @@ private:
    * @param str String to trim
    * @return Trimmed string
    */
-  static std::string Trim(const std::string &str);
+  static std::string Trim(const std::string& str);
 
   /**
    * @brief Convert string to uppercase
@@ -187,7 +184,7 @@ private:
    * @param str String to convert
    * @return Uppercase string
    */
-  static std::string ToUpper(const std::string &str);
+  static std::string ToUpper(const std::string& str);
 
   /**
    * @brief Check if line is a comment line (starts with *)
@@ -195,7 +192,7 @@ private:
    * @param line Line to check
    * @return true if comment line
    */
-  static bool IsCommentLine(const std::string &line);
+  static bool IsCommentLine(const std::string& line);
 };
 
-} // namespace xasm
+}  // namespace xasm

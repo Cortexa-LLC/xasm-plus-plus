@@ -15,13 +15,13 @@
 
 #pragma once
 
-#include "xasm++/output/output_writer.h"
-#include "xasm++/section.h"
-
 #include <cstdint>
 #include <ostream>
 #include <string>
 #include <vector>
+
+#include "xasm++/output/output_writer.h"
+#include "xasm++/section.h"
 
 namespace xasm {
 
@@ -62,7 +62,7 @@ namespace xasm {
  * - Load command: `SYSTEM "filename"`
  */
 class TrsDosWriter : public OutputWriter {
-public:
+ public:
   /**
    * @brief Construct TRS-DOS writer with default settings
    */
@@ -81,8 +81,7 @@ public:
    * @param output Output stream to write binary data to
    * @throws std::runtime_error if writing fails
    */
-  void Write(const std::vector<Section> &sections,
-             std::ostream &output) override;
+  void Write(const std::vector<Section>& sections, std::ostream& output) override;
 
   /**
    * @brief Get file extension for TRS-DOS format
@@ -106,9 +105,9 @@ public:
    */
   void SetEntryPoint(uint64_t address);
 
-private:
-  bool has_entry_point_ = false;      ///< Whether entry point is specified
-  uint64_t entry_point_addr_ = 0; ///< Entry point address
+ private:
+  bool has_entry_point_ = false;   ///< Whether entry point is specified
+  uint64_t entry_point_addr_ = 0;  ///< Entry point address
 
   /**
    * @brief Write a single segment
@@ -118,8 +117,8 @@ private:
    * @param address Load address
    * @param data Data bytes
    */
-  static void WriteSegment(std::ostream &output, uint8_t type, uint64_t address,
-                    const std::vector<uint8_t> &data);
+  static void WriteSegment(std::ostream& output, uint8_t type, uint64_t address,
+                           const std::vector<uint8_t>& data);
 
   /**
    * @brief Write 16-bit value in little-endian format
@@ -127,7 +126,7 @@ private:
    * @param output Output stream
    * @param value 16-bit value to write
    */
-  static void WriteLE16(std::ostream &output, uint16_t value);
+  static void WriteLE16(std::ostream& output, uint16_t value);
 
   /**
    * @brief Extract bytes from atoms for writing
@@ -138,7 +137,7 @@ private:
    * @param section Section to extract bytes from
    * @return Vector of (address, byte) pairs
    */
-  static std::vector<std::pair<uint64_t, uint8_t>> ExtractBytes(const Section &section);
+  static std::vector<std::pair<uint64_t, uint8_t>> ExtractBytes(const Section& section);
 };
 
-} // namespace xasm
+}  // namespace xasm

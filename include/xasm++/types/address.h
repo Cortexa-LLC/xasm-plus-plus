@@ -41,7 +41,7 @@ namespace xasm {
  * @endcode
  */
 class Address {
-public:
+ public:
   /**
    * @brief Construct an Address from a uint32_t value
    * @param value The address value (supports 0x000000-0xFFFFFF)
@@ -60,9 +60,7 @@ public:
    *
    * Zero page addresses use faster, shorter instructions on 6502.
    */
-  [[nodiscard]] constexpr bool IsZeroPage() const noexcept {
-    return value_ <= 0xFF;
-  }
+  [[nodiscard]] constexpr bool IsZeroPage() const noexcept { return value_ <= 0xFF; }
 
   /**
    * @brief Check if address is absolute (>= 0x100)
@@ -70,9 +68,7 @@ public:
    *
    * Absolute addresses require full 16-bit or 24-bit addressing.
    */
-  [[nodiscard]] constexpr bool IsAbsolute() const noexcept {
-    return value_ >= 0x100;
-  }
+  [[nodiscard]] constexpr bool IsAbsolute() const noexcept { return value_ >= 0x100; }
 
   /**
    * @brief Format address as hex string with $ prefix
@@ -117,75 +113,55 @@ public:
   /**
    * @brief Equality comparison
    */
-  constexpr bool operator==(const Address &other) const noexcept {
-    return value_ == other.value_;
-  }
+  constexpr bool operator==(const Address& other) const noexcept { return value_ == other.value_; }
 
   /**
    * @brief Equality comparison with uint32_t
    */
-  constexpr bool operator==(uint32_t other) const noexcept {
-    return value_ == other;
-  }
+  constexpr bool operator==(uint32_t other) const noexcept { return value_ == other; }
 
   /**
    * @brief Inequality comparison
    */
-  constexpr bool operator!=(const Address &other) const noexcept {
-    return value_ != other.value_;
-  }
+  constexpr bool operator!=(const Address& other) const noexcept { return value_ != other.value_; }
 
   /**
    * @brief Inequality comparison with uint32_t
    */
-  constexpr bool operator!=(uint32_t other) const noexcept {
-    return value_ != other;
-  }
+  constexpr bool operator!=(uint32_t other) const noexcept { return value_ != other; }
 
   /**
    * @brief Less-than comparison
    */
-  constexpr bool operator<(const Address &other) const noexcept {
-    return value_ < other.value_;
-  }
+  constexpr bool operator<(const Address& other) const noexcept { return value_ < other.value_; }
 
   /**
    * @brief Less-than comparison with uint32_t
    */
-  constexpr bool operator<(uint32_t other) const noexcept {
-    return value_ < other;
-  }
+  constexpr bool operator<(uint32_t other) const noexcept { return value_ < other; }
 
   /**
    * @brief Less-than-or-equal comparison
    */
-  constexpr bool operator<=(const Address &other) const noexcept {
-    return value_ <= other.value_;
-  }
+  constexpr bool operator<=(const Address& other) const noexcept { return value_ <= other.value_; }
 
   /**
    * @brief Greater-than comparison
    */
-  constexpr bool operator>(const Address &other) const noexcept {
-    return value_ > other.value_;
-  }
+  constexpr bool operator>(const Address& other) const noexcept { return value_ > other.value_; }
 
   /**
    * @brief Greater-than comparison with uint32_t
    */
-  constexpr bool operator>(uint32_t other) const noexcept {
-    return value_ > other;
-  }
+  constexpr bool operator>(uint32_t other) const noexcept { return value_ > other; }
 
   /**
    * @brief Greater-than-or-equal comparison
    */
-  constexpr bool operator>=(const Address &other) const noexcept {
-    return value_ >= other.value_;
-  }
+  constexpr bool operator>=(const Address& other) const noexcept { return value_ >= other.value_; }
 
-private:
-  uint32_t value_; ///< The raw address value
+ private:
+  uint32_t value_;  ///< The raw address value
 };
 
-} // namespace xasm
+}  // namespace xasm

@@ -14,7 +14,7 @@
 namespace xasm {
 
 // Parse command-line arguments and return options struct
-CommandLineOptions ParseCommandLine(int argc, char **argv) {
+CommandLineOptions ParseCommandLine(int argc, char** argv) {
   CommandLineOptions opts;
 
   CLI::App app{"xasm++ - Cross-platform assembler", "xasm++"};
@@ -30,40 +30,36 @@ CommandLineOptions ParseCommandLine(int argc, char **argv) {
   // CPU architecture option
   app.add_option("--cpu", opts.cpu, "CPU architecture (default: 6502)")
       ->default_val(cpu::CPU_6502)
-      ->check(CLI::IsMember({cpu::CPU_6502, cpu::CPU_65C02, cpu::CPU_65C02_ROCK,
-                             cpu::CPU_65816, cpu::CPU_6809}));
+      ->check(CLI::IsMember(
+          {cpu::CPU_6502, cpu::CPU_65C02, cpu::CPU_65C02_ROCK, cpu::CPU_65816, cpu::CPU_6809}));
 
   // Syntax parser option
   app.add_option("--syntax", opts.syntax, "Syntax parser (default: simple)")
       ->default_val("simple")
-      ->check(CLI::IsMember(
-          {"simple", "merlin", "scmasm",
-           "edtasm"})); // simple, merlin, scmasm, and edtasm supported
+      ->check(CLI::IsMember({"simple", "merlin", "scmasm",
+                             "edtasm"}));  // simple, merlin, scmasm, and edtasm supported
 
   // Output file option
   app.add_option("--output,-o", opts.output, "Output file (default: a.out)")
       ->default_val("a.out")
-      ->each([&opts](const std::string &) { opts.output_explicit = true; });
+      ->each([&opts](const std::string&) { opts.output_explicit = true; });
 
   // Listing file option (optional)
   app.add_option("--list", opts.listing_file, "Generate listing file (.lst)");
 
   // Symbol table option (optional)
-  app.add_option("--symbols", opts.symbol_file,
-                 "Generate symbol table file (.sym)");
+  app.add_option("--symbols", opts.symbol_file, "Generate symbol table file (.sym)");
 
   // Color output option
-  app.add_option("--color", opts.color_mode,
-                 "Color output (auto, always, never)")
+  app.add_option("--color", opts.color_mode, "Color output (auto, always, never)")
       ->default_val("auto")
       ->check(CLI::IsMember({"auto", "always", "never"}));
 
   // Include path option (renamed from --include-path to --include, keeping -I alias)
   // allow_extra_args(false) prevents CLI11 from greedily consuming the positional
   // input filename when -I is followed by the source file (e.g. -I /stage src/foo.s)
-  app.add_option(
-      "--include,-I", opts.include,
-      "Add directory to include search path (for .INB directive)")
+  app.add_option("--include,-I", opts.include,
+                 "Add directory to include search path (for .INB directive)")
       ->allow_extra_args(false);
 
   // Path mapping option for .INB directive (A2osX compatibility)
@@ -78,28 +74,22 @@ CommandLineOptions ParseCommandLine(int argc, char **argv) {
 
   // Maximum assembly passes
   app.add_option("--max-passes", opts.max_passes,
-                 "Maximum assembly passes (default: " +
-                     std::to_string(Assembler::MAX_PASSES) + ")")
+                 "Maximum assembly passes (default: " + std::to_string(Assembler::MAX_PASSES) + ")")
       ->default_val(Assembler::MAX_PASSES);
 
   // Label map file for debugging
-  app.add_option("--label-map", opts.label_map,
-                 "Generate label map file for debugging");
+  app.add_option("--label-map", opts.label_map, "Generate label map file for debugging");
 
   // Warning control options
   // --warn LEVEL sets warning level (0=none,1=default,2=extra,3=all)
   // --no-warn is shorthand for --warn 0
-  app.add_option("--warn", opts.warn,
-                 "Warning level: 0=none, 1=default, 2=extra, 3=all")
+  app.add_option("--warn", opts.warn, "Warning level: 0=none, 1=default, 2=extra, 3=all")
       ->default_val(1)
       ->check(CLI::Range(0, 3));
-  app.add_flag("--no-warn",
-               [&opts](int64_t /*count*/) {
-                 opts.warn = 0;
-               },
-               "Suppress all warnings (equivalent to --warn 0)");
-  app.add_flag("--werror", opts.werror,
-               "Treat warnings as errors");
+  app.add_flag(
+      "--no-warn", [&opts](int64_t /*count*/) { opts.warn = 0; },
+      "Suppress all warnings (equivalent to --warn 0)");
+  app.add_flag("--werror", opts.werror, "Treat warnings as errors");
 
   // Branch relaxation (off by default - original assemblers error on out-of-range)
   app.add_flag("--relax-branches", opts.relax_branches,
@@ -110,25 +100,21 @@ CommandLineOptions ParseCommandLine(int argc, char **argv) {
                "(vasm -rw18 compatibility for Prince of Persia modules)");
 
   // Quiet mode
-  app.add_flag("-q,--quiet", opts.quiet,
-               "Suppress non-essential output");
+  app.add_flag("-q,--quiet", opts.quiet, "Suppress non-essential output");
 
   // Verbose mode
-  app.add_flag("-V,--verbose", opts.verbose,
-               "Enable verbose output");
+  app.add_flag("-V,--verbose", opts.verbose, "Enable verbose output");
 
   // Origin address override
-  app.add_option("--org", opts.org,
-                 "Origin address (override default)");
+  app.add_option("--org", opts.org, "Origin address (override default)");
 
   // Output format
   // First, parse as string, then convert to enum
   std::string format_str;
-  app.add_option("--format", format_str,
-                 "Output format (binary, ihex, srec)")
+  app.add_option("--format", format_str, "Output format (binary, ihex, srec)")
       ->default_val("binary")
       ->check(CLI::IsMember({"binary", "ihex", "srec"}));
-  
+
   // After parsing, convert string to enum
   app.callback([&opts, &format_str]() {
     if (format_str == "binary") {
@@ -142,14 +128,14 @@ CommandLineOptions ParseCommandLine(int argc, char **argv) {
 
   try {
     app.parse(argc, argv);
-  } catch (const CLI::CallForHelp &e) {
+  } catch (const CLI::CallForHelp& e) {
     opts.show_help = true;
     opts.help_message = app.help();
     return opts;
-  } catch (const CLI::CallForVersion &e) {
+  } catch (const CLI::CallForVersion& e) {
     opts.show_version = true;
     return opts;
-  } catch (const CLI::ParseError &e) {
+  } catch (const CLI::ParseError& e) {
     app.exit(e);
     throw;
   }
@@ -163,4 +149,4 @@ CommandLineOptions ParseCommandLine(int argc, char **argv) {
   return opts;
 }
 
-} // namespace xasm
+}  // namespace xasm
