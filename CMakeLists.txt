@@ -54,6 +54,14 @@ else()
     endif()
 endif()
 
+# Apple ld warns when a static library appears more than once in the link
+# command due to CMake's transitive PUBLIC dependency propagation (e.g.
+# xasm_cpu is pulled in by both xasm_syntax and xasm_output through xasm_core).
+# The linker deduplicates correctly; suppress the spurious diagnostic.
+if(APPLE)
+    add_link_options(-Wl,-no_warn_duplicate_libraries)
+endif()
+
 # Options
 option(BUILD_TESTING "Build tests" ON)
 option(ENABLE_COVERAGE "Enable coverage reporting" OFF)
