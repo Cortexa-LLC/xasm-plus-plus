@@ -1204,15 +1204,35 @@ bool ScmasmSyntaxParser::IsOpcodeOrMacro(const std::string &label_upper) const {
   return kPseudoOps.contains(label_upper);
 }
 
+// Returns true if ch is a valid first character for a SCMASM label.
+// Valid start chars: letter, '.', ':', '_', '&' (macro-label prefix).
+static bool IsValidLabelStartChar(char ch) {
+  return std::isalpha(static_cast<unsigned char>(ch)) || ch == '.' ||
+         ch == ':' || ch == '_' || ch == '&';
+}
+
+// Returns true if a dot/colon-prefixed token contains alpha chars after the
+// prefix — meaning it is a directive token, not a local numeric label.
+// Local labels (e.g. ".0", ".99") contain only digits after the prefix.
+static bool IsDirectiveNotLocalLabel(const std::string &label) {
+  if (label.length() < 2 || (label[0] != '.' && label[0] != ':')) {
+    return false;
+  }
+  for (size_t i = 1; i < label.length(); i++) {
+    if (std::isalpha(static_cast<unsigned char>(label[i]))) {
+      return true;
+    }
+  }
+  return false;
+}
+
 std::string ScmasmSyntaxParser::ParseLabel(const std::string &line, size_t &pos,
                                            Section & /*section*/,
                                            ConcreteSymbolTable & /*symbols*/) {
   SkipToLabelStart(line, pos);
 
   // Labels must start with letter, ., :, _, or & (SCMASM & macro-label prefix)
-  if (pos >= line.length() || (!std::isalpha(line[pos]) && line[pos] != '.' &&
-                               line[pos] != ':' && line[pos] != '_' &&
-                               line[pos] != '&')) {
+  if (pos >= line.length() || !IsValidLabelStartChar(line[pos])) {
     return "";
   }
 
@@ -1223,13 +1243,9 @@ std::string ScmasmSyntaxParser::ParseLabel(const std::string &line, size_t &pos,
   }
 
   // Directives start with '.'/':', local labels are digit-only after the prefix.
-  if (label.length() >= 2 && (label[0] == '.' || label[0] == ':')) {
-    for (size_t i = 1; i < label.length(); i++) {
-      if (std::isalpha(label[i])) {
-        pos = label_start;
-        return "";
-      }
-    }
+  if (IsDirectiveNotLocalLabel(label)) {
+    pos = label_start;
+    return "";
   }
 
   // Column-0 tokens are always labels (SCMASM convention). Only check for
