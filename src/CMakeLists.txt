@@ -1,9 +1,6 @@
 # Core library (Phase 1 - in progress)
 add_library(xasm_core STATIC
-    core/atom.cpp
-    core/expression.cpp
     core/symbol.cpp
-    core/section.cpp
     core/segment_manager.cpp
     core/assembler.cpp
     core/parse_utils.cpp
