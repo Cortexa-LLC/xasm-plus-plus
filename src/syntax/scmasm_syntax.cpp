@@ -1785,16 +1785,55 @@ void ScmasmSyntaxParser::HandleAz(const std::string &operand, Section &section,
   section.atoms.push_back(atom);
 }
 
+// Emit bytes for a single .DA value token according to its prefix character.
+void ScmasmSyntaxParser::EmitDaValue(const std::string &value_trimmed,
+                                     std::vector<uint8_t> &data,
+                                     ConcreteSymbolTable &symbols) {
+  char prefix = value_trimmed[0];
+  if (prefix == '#') {
+    // 8-bit: low byte only
+    uint32_t num = EvaluateExpression(Trim(value_trimmed.substr(1)), symbols);
+    data.push_back(static_cast<uint8_t>(num & 0xFF));
+  } else if (prefix == '/') {
+    // 8-bit: second byte (bits 8-15)
+    uint32_t num = EvaluateExpression(Trim(value_trimmed.substr(1)), symbols);
+    data.push_back(static_cast<uint8_t>((num >> 8) & 0xFF));
+  } else if (prefix == '<') {
+    // 24-bit: three bytes (little-endian)
+    uint32_t num = EvaluateExpression(Trim(value_trimmed.substr(1)), symbols);
+    data.push_back(static_cast<uint8_t>(num & 0xFF));
+    data.push_back(static_cast<uint8_t>((num >> 8) & 0xFF));
+    data.push_back(static_cast<uint8_t>((num >> 16) & 0xFF));
+  } else if (prefix == '>') {
+    // 32-bit: four bytes (little-endian)
+    uint32_t num = EvaluateExpression(Trim(value_trimmed.substr(1)), symbols);
+    data.push_back(static_cast<uint8_t>(num & 0xFF));
+    data.push_back(static_cast<uint8_t>((num >> 8) & 0xFF));
+    data.push_back(static_cast<uint8_t>((num >> 16) & 0xFF));
+    data.push_back(static_cast<uint8_t>((num >> 24) & 0xFF));
+  } else {
+    // DEFAULT: 16-bit (little-endian)
+    uint32_t num = EvaluateExpression(value_trimmed, symbols);
+    data.push_back(static_cast<uint8_t>(num & 0xFF));
+    data.push_back(static_cast<uint8_t>((num >> 8) & 0xFF));
+  }
+}
+
 void ScmasmSyntaxParser::HandleDa(const std::string &operand, Section &section,
                                   ConcreteSymbolTable &symbols) {
   std::vector<uint8_t> data;
 
-  // Split by comma
-  std::string trimmed = Trim(operand);
+  // Split comma-separated operand into individual value tokens.
+  // SCMASM .DA: Size determined by operator prefix
+  // #expr → 8-bit (low byte)
+  // /expr → 8-bit (second byte, bits 8-15)
+  // expr  → 16-bit (default, little-endian)
+  // <expr → 24-bit (little-endian)
+  // >expr → 32-bit (little-endian)
   std::vector<std::string> values;
+  std::string trimmed = Trim(operand);
   size_t start = 0;
   size_t pos = 0;
-
   while (pos <= trimmed.length()) {
     if (pos == trimmed.length() || trimmed[pos] == ',') {
       std::string value = Trim(trimmed.substr(start, pos - start));
@@ -1806,53 +1845,12 @@ void ScmasmSyntaxParser::HandleDa(const std::string &operand, Section &section,
     ++pos;
   }
 
-  // SCMASM .DA: Size determined by operator prefix
-  // #expr → 8-bit (low byte)
-  // /expr → 8-bit (second byte, bits 8-15)
-  // expr  → 16-bit (default, little-endian)
-  // <expr → 24-bit (little-endian)
-  // >expr → 32-bit (little-endian)
   for (const auto &val : values) {
     std::string value_trimmed = Trim(val);
-
     if (value_trimmed.empty()) {
       continue;
     }
-
-    char prefix = value_trimmed[0];
-    std::string expr;
-
-    if (prefix == '#') {
-      // 8-bit: low byte only
-      expr = Trim(value_trimmed.substr(1));
-      uint32_t num = EvaluateExpression(expr, symbols);
-      data.push_back(static_cast<uint8_t>(num & 0xFF));
-    } else if (prefix == '/') {
-      // 8-bit: second byte (bits 8-15)
-      expr = Trim(value_trimmed.substr(1));
-      uint32_t num = EvaluateExpression(expr, symbols);
-      data.push_back(static_cast<uint8_t>((num >> 8) & 0xFF));
-    } else if (prefix == '<') {
-      // 24-bit: three bytes (little-endian)
-      expr = Trim(value_trimmed.substr(1));
-      uint32_t num = EvaluateExpression(expr, symbols);
-      data.push_back(static_cast<uint8_t>(num & 0xFF));
-      data.push_back(static_cast<uint8_t>((num >> 8) & 0xFF));
-      data.push_back(static_cast<uint8_t>((num >> 16) & 0xFF));
-    } else if (prefix == '>') {
-      // 32-bit: four bytes (little-endian)
-      expr = Trim(value_trimmed.substr(1));
-      uint32_t num = EvaluateExpression(expr, symbols);
-      data.push_back(static_cast<uint8_t>(num & 0xFF));
-      data.push_back(static_cast<uint8_t>((num >> 8) & 0xFF));
-      data.push_back(static_cast<uint8_t>((num >> 16) & 0xFF));
-      data.push_back(static_cast<uint8_t>((num >> 24) & 0xFF));
-    } else {
-      // DEFAULT: 16-bit (little-endian)
-      uint32_t num = EvaluateExpression(value_trimmed, symbols);
-      data.push_back(static_cast<uint8_t>(num & 0xFF));
-      data.push_back(static_cast<uint8_t>((num >> 8) & 0xFF));
-    }
+    EmitDaValue(value_trimmed, data, symbols);
   }
 
   auto atom = std::make_shared<DataAtom>(data);

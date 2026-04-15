@@ -686,6 +686,9 @@ private:
   void HandleDa(const std::string &operand, Section &section,
                 ConcreteSymbolTable &symbols);
 
+  void EmitDaValue(const std::string &value_trimmed, std::vector<uint8_t> &data,
+                   ConcreteSymbolTable &symbols);
+
   /**
    * @brief Parse .HS directive (hex string)
    *
