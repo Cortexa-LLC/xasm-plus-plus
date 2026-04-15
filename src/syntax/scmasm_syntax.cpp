@@ -957,17 +957,30 @@ static void StripInlineComment(std::string& operand) {
 }
 
 // Estimate instruction size, applying ZP correction when symbol is known.
+// EvalFn: evaluates an expression string and returns its value; throws on failure.
+using EvalFn = std::function<uint32_t(const std::string&)>;
+
 static size_t EstimateInstrSize(const std::string& opcode, const std::string& operand,
-                                CpuPlugin* cpu, ConcreteSymbolTable& symbols) {
+                                CpuPlugin* cpu, const EvalFn& eval) {
   size_t est = cpu->GetInstructionSize(opcode, operand);
-  if (est == 3) {
+  // GetInstructionSize assumes absolute (3-byte) for symbol operands.  For
+  // many 6502 mnemonics a ZP form exists (2 bytes).  Evaluate the operand
+  // with the current symbol table; if it resolves to $00–$FF, correct to 2.
+  // Exclusions: JSR and JMP have no ZP form — always 3.
+  if (est == 3 && opcode != "JSR" && opcode != "JMP") {
+    // Strip index suffix (,X or ,Y) so the base expression evaluates.
+    std::string eval_expr = operand;
+    auto comma = eval_expr.rfind(',');
+    if (comma != std::string::npos) {
+      eval_expr = eval_expr.substr(0, comma);
+    }
     try {
-      auto expr = std::make_shared<SymbolExpr>(operand);
-      int64_t sym_val = expr->Evaluate(symbols);
-      if (sym_val >= 0 && sym_val <= 0xFF) {
+      uint32_t val = eval(eval_expr);
+      if (val <= 0xFF) {
         est = 2;
       }
     } catch (...) {
+      // Forward reference or unevaluable — keep est=3.
     }
   }
   return est;
@@ -988,7 +1001,10 @@ void ScmasmSyntaxParser::HandleInstructionLine(const std::string& opcode_upper,
   }
 
   if (cpu_) {
-    current_address_ += EstimateInstrSize(opcode_upper, instr_operand, cpu_, symbols);
+    auto eval = [this, &symbols](const std::string& expr) -> uint32_t {
+      return EvaluateExpression(expr, symbols);
+    };
+    current_address_ += EstimateInstrSize(opcode_upper, instr_operand, cpu_, eval);
   }
 }
 

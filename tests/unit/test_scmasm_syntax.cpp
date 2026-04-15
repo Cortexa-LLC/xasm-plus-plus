@@ -4615,6 +4615,52 @@ TEST(ScmasmBranchRelaxation, ForwardBranch_ZPInGap_NoFalseRelax_At127) {
 }
 
 // ============================================================================
+// Regression: ZP size correction must handle lowercase operands and .PH
+// ============================================================================
+//
+// Root cause (commit 10203b4): EstimateInstrSize used SymbolExpr(operand)
+// directly, which performs a case-sensitive symbol lookup.  SCMASM stores all
+// symbols uppercase ("BUF"), but instruction operands are kept in their
+// original case ("buf").  The lookup failed → est stayed at 3 instead of
+// being corrected to 2.  With many ZP-addressed instructions between .PH and
+// a later .BS TARGET-*, the over-counted PC exceeded TARGET, causing the
+// ".BS byte count too large" error via uint32_t underflow.
+//
+// Pattern from A2osX SHARED/X.BB.FX.S.txt:
+//   dcmd .EQ $42            (ZP symbol, stored uppercase as "DCMD")
+//   ...
+//   .PH $800                (virtual base = $0800)
+//   lda dcmd                (lowercase operand; 2 bytes ZP, must not count as 3)
+//   ...90 more ZP instrs...
+//   BB.Free .EQ $900-*      (must not underflow)
+//   .BS BB.Free
+//
+TEST(ScmasmBranchRelaxation, BS_CurrentAddress_LowercaseZPSymbol_NoOverflow) {
+  ScmasmSyntaxParser parser;
+  Cpu6502 cpu;
+  parser.SetCpu(&cpu);
+  Section section;
+  ConcreteSymbolTable symbols;
+
+  // Define a ZP symbol with lowercase name — stored internally as "BUF".
+  std::string source = "buf\t\t.EQ\t$30\n";
+  source += "\t\t.PH\t$800\n";
+  // 90 x "lda buf" — each is a 2-byte ZP instruction.
+  // Without the fix: counted as 3 bytes each → PC = $800 + 270 = $90E > $900.
+  // With the fix:    counted as 2 bytes each → PC = $800 + 180 = $8B4 < $900.
+  for (int i = 0; i < 90; ++i) {
+    source += "\t\tlda\tbuf\n";
+  }
+  // .BS $900-* must succeed (non-negative gap) only if ZP correction fires.
+  source += "BB.Free\t\t.EQ\t$900-*\n";
+  source += "\t\t.BS\tBB.Free\n";
+
+  ASSERT_NO_THROW(parser.Parse(source, section, symbols))
+      << "EstimateInstrSize must correct lowercase ZP symbol operands to 2 "
+         "bytes; over-counting pushes PC past $900 causing .BS underflow";
+}
+
+// ============================================================================
 // Macro-Shadowing-Label Regression Tests
 //
 // Regression for the bug where ParseLabel() rejected column-0 tokens that
