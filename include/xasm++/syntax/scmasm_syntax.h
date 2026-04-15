@@ -543,11 +543,38 @@ private:
                  ConcreteSymbolTable &symbols,
                  const std::vector<std::string> &source, size_t &line_idx);
 
+  /// Process one raw source line (strip/filter, delegate to ParseLine).
+  void ProcessOneLine(const std::string &raw, Section &section,
+                      ConcreteSymbolTable &symbols,
+                      const std::vector<std::string> &lines,
+                      size_t &line_idx);
+
+  /// Handle a line received while collecting a macro body.
+  void HandleMacroBodyLine(const std::string &line, size_t &line_idx);
+
+  /// Flush any pending label at end-of-file.
+  void FlushPendingLabel(Section &section, ConcreteSymbolTable &symbols);
+
   /**
    * @brief Try to handle a directive line (opcode starts with '.')
    * @return true if handled
    */
   bool TryHandleDirectiveLine(const std::string &opcode_upper,
+                              const std::string &operand,
+                              const std::string &label, Section &section,
+                              ConcreteSymbolTable &symbols,
+                              const std::vector<std::string> &source,
+                              size_t &line_idx);
+
+  /// Define label for a directive using SCMASM namespace scoping rules.
+  void DefineLabelForDirectiveSCMASM(const std::string &opcode_upper,
+                                     const std::string &label,
+                                     Section &section,
+                                     ConcreteSymbolTable &symbols);
+
+  /// Dispatch control-flow directives (.DO, .LU, .ELSE, .FIN, .ENDU).
+  /// @return true if the directive was handled; false if not a control-flow directive.
+  bool TryDispatchControlFlow(const std::string &opcode_upper,
                               const std::string &operand,
                               const std::string &label, Section &section,
                               ConcreteSymbolTable &symbols,
@@ -810,6 +837,112 @@ private:
    * @return Formatted error string
    */
   std::string FormatError(const std::string &message) const;
+
+  // -------------------------------------------------------------------------
+  // Complexity-reduction helpers (extracted from high-CC functions)
+  // -------------------------------------------------------------------------
+
+  /** Bounds of a .DO/.LU conditional block. */
+  struct DoBlockBounds {
+    size_t else_line; ///< index of .ELSE line, or npos if none
+    size_t fin_line;  ///< index of the matching .FIN line
+  };
+
+  /**
+   * @brief Scan source for the matching .FIN (and optional .ELSE) of a
+   *        .DO or .LU block starting at start_idx+1.
+   */
+  static DoBlockBounds FindDoBlockBounds(
+      const std::vector<std::string> &source, size_t start_idx);
+
+  /**
+   * @brief Emit a label atom (local or global) at addr, inserting into the
+   *        atoms vector at atom_insert_pos.
+   */
+  void EmitDoLabel(const std::string &label, uint32_t addr,
+                   size_t atom_insert_pos, Section &section,
+                   ConcreteSymbolTable &symbols);
+
+  /**
+   * @brief Flush pending_label_ as an address-label at current_address_.
+   *        Used when pending_label_ precedes a non-.EQ/.SE opcode.
+   */
+  void FlushPendingLabelAsAddress(Section &section,
+                                  ConcreteSymbolTable &symbols);
+
+  /**
+   * @brief Check for *LABEL .EQ / *LABEL .SE private-label pattern and
+   *        strip the leading '*', returning the remainder in result.
+   * @return true if line is a private-label line (result set), false otherwise.
+   */
+  static bool TryHandlePrivateLabelEq(const std::string &line,
+                                      std::string &result);
+
+  /**
+   * @brief Advance pos past leading whitespace and Apple II control chars.
+   */
+  static void SkipToLabelStart(const std::string &line, size_t &pos);
+
+  /**
+   * @brief Scan the label body starting at pos and return the label token.
+   *        pos is left pointing to the first character after the label.
+   */
+  static std::string ScanLabelToken(const std::string &line, size_t &pos);
+
+  /**
+   * @brief Find matching .ENDU line index (handles nesting).
+   * @return Line index or std::string::npos if not found.
+   */
+  size_t FindEnduBounds(const std::vector<std::string> &source,
+                         size_t start_idx) const;
+
+  /**
+   * @brief Define any label on a .ELSE or .FIN boundary line at current addr.
+   */
+  void DefineBoundaryLabel(const std::vector<std::string> &source,
+                           size_t boundary_idx, Section &section,
+                           ConcreteSymbolTable &symbols);
+
+  // -------------------------------------------------------------------------
+  // ParseNumber helpers (one per number format)
+  // -------------------------------------------------------------------------
+  static uint32_t ParseHexNumber(const std::string &trimmed);
+  static uint32_t ParseBinaryNumber(const std::string &trimmed);
+  static uint32_t ParseCharConstant(const std::string &trimmed);
+  static uint32_t ParseDecimalNumber(const std::string &trimmed);
+
+  // -------------------------------------------------------------------------
+  // TryHandlePrivateLabelEq helpers
+  // -------------------------------------------------------------------------
+  /** Scan *LABEL token; return label (without '*') or "" if invalid chars. */
+  static std::string ScanPrivateLabelToken(const std::string &line);
+  /** Find directive opcode in a *LABEL <directive> line; return "" if absent. */
+  static std::string ExtractDirectiveFromStarLine(const std::string &line,
+                                                   size_t label_end);
+
+  // -------------------------------------------------------------------------
+  // StripEditorCommands helpers
+  // -------------------------------------------------------------------------
+  /** Return true if token (already uppercased) is a known editor command. */
+  static bool IsEditorCommand(const std::string &token_upper);
+  /** Build and return the uppercased first token starting at pos. */
+  static std::string BuildCommandToken(const std::string &line, size_t pos);
+
+  // -------------------------------------------------------------------------
+  // ParseLabel helpers
+  // -------------------------------------------------------------------------
+  /** Return true if label_upper is a known opcode, macro, or pseudo-op. */
+  bool IsOpcodeOrMacro(const std::string &label_upper) const;
+  /** Classify and return the label type: local (.N / :N), private, global. */
+  static std::string ClassifyAndReturnLabel(const std::string &raw,
+                                             bool is_private);
+
+  // -------------------------------------------------------------------------
+  // ParseLine helpers
+  // -------------------------------------------------------------------------
+  /** Resolve pending_label_ when current opcode is known. */
+  void ResolvePendingLabel(const std::string &opcode_upper, std::string &label,
+                           Section &section, ConcreteSymbolTable &symbols);
 };
 
 } // namespace xasm
