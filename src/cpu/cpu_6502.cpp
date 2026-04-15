@@ -1233,7 +1233,7 @@ size_t Cpu6502::CalculateInstructionSize(AddressingMode mode) {
  *  - "$xx"  (1–2 hex digits)  → 2 bytes (explicit zero-page)
  *  - "$xxxx" or symbol        → 3 bytes (absolute)
  */
-size_t Cpu6502::GetInstructionSize(const std::string &mnemonic, // NOLINT(bugprone-easily-swappable-parameters)
+size_t Cpu6502::GetInstructionSize(const std::string &mnemonic,
                                    const std::string &operand_str) const {
   // Strip trailing '!' from mnemonic before processing
   std::string clean_mnemonic = mnemonic;
@@ -1572,7 +1572,7 @@ std::vector<uint8_t> Cpu6502::EncodeSMB7(uint8_t operand,
 // Opcodes: 0F, 1F, 2F, 3F, 4F, 5F, 6F, 7F
 // ============================================================================
 
-std::vector<uint8_t> Cpu6502::EncodeBBR0(uint8_t zp_addr, // NOLINT(bugprone-easily-swappable-parameters)
+std::vector<uint8_t> Cpu6502::EncodeBBR0(uint8_t zp_addr,
                                          uint8_t offset) const {
   if (cpu_mode_ != CpuMode::Cpu65C02Rock) {
     return {};
@@ -1580,7 +1580,7 @@ std::vector<uint8_t> Cpu6502::EncodeBBR0(uint8_t zp_addr, // NOLINT(bugprone-eas
   return {RockwellOpcodes::BBR0, zp_addr, offset};
 }
 
-std::vector<uint8_t> Cpu6502::EncodeBBR1(uint8_t zp_addr, // NOLINT(bugprone-easily-swappable-parameters)
+std::vector<uint8_t> Cpu6502::EncodeBBR1(uint8_t zp_addr,
                                          uint8_t offset) const {
   if (cpu_mode_ != CpuMode::Cpu65C02Rock) {
     return {};
@@ -1588,7 +1588,7 @@ std::vector<uint8_t> Cpu6502::EncodeBBR1(uint8_t zp_addr, // NOLINT(bugprone-eas
   return {RockwellOpcodes::BBR1, zp_addr, offset};
 }
 
-std::vector<uint8_t> Cpu6502::EncodeBBR2(uint8_t zp_addr, // NOLINT(bugprone-easily-swappable-parameters)
+std::vector<uint8_t> Cpu6502::EncodeBBR2(uint8_t zp_addr,
                                          uint8_t offset) const {
   if (cpu_mode_ != CpuMode::Cpu65C02Rock) {
     return {};
@@ -1596,7 +1596,7 @@ std::vector<uint8_t> Cpu6502::EncodeBBR2(uint8_t zp_addr, // NOLINT(bugprone-eas
   return {RockwellOpcodes::BBR2, zp_addr, offset};
 }
 
-std::vector<uint8_t> Cpu6502::EncodeBBR3(uint8_t zp_addr, // NOLINT(bugprone-easily-swappable-parameters)
+std::vector<uint8_t> Cpu6502::EncodeBBR3(uint8_t zp_addr,
                                          uint8_t offset) const {
   if (cpu_mode_ != CpuMode::Cpu65C02Rock) {
     return {};
@@ -1604,7 +1604,7 @@ std::vector<uint8_t> Cpu6502::EncodeBBR3(uint8_t zp_addr, // NOLINT(bugprone-eas
   return {RockwellOpcodes::BBR3, zp_addr, offset};
 }
 
-std::vector<uint8_t> Cpu6502::EncodeBBR4(uint8_t zp_addr, // NOLINT(bugprone-easily-swappable-parameters)
+std::vector<uint8_t> Cpu6502::EncodeBBR4(uint8_t zp_addr,
                                          uint8_t offset) const {
   if (cpu_mode_ != CpuMode::Cpu65C02Rock) {
     return {};
@@ -1612,7 +1612,7 @@ std::vector<uint8_t> Cpu6502::EncodeBBR4(uint8_t zp_addr, // NOLINT(bugprone-eas
   return {RockwellOpcodes::BBR4, zp_addr, offset};
 }
 
-std::vector<uint8_t> Cpu6502::EncodeBBR5(uint8_t zp_addr, // NOLINT(bugprone-easily-swappable-parameters)
+std::vector<uint8_t> Cpu6502::EncodeBBR5(uint8_t zp_addr,
                                          uint8_t offset) const {
   if (cpu_mode_ != CpuMode::Cpu65C02Rock) {
     return {};
@@ -1620,7 +1620,7 @@ std::vector<uint8_t> Cpu6502::EncodeBBR5(uint8_t zp_addr, // NOLINT(bugprone-eas
   return {RockwellOpcodes::BBR5, zp_addr, offset};
 }
 
-std::vector<uint8_t> Cpu6502::EncodeBBR6(uint8_t zp_addr, // NOLINT(bugprone-easily-swappable-parameters)
+std::vector<uint8_t> Cpu6502::EncodeBBR6(uint8_t zp_addr,
                                          uint8_t offset) const {
   if (cpu_mode_ != CpuMode::Cpu65C02Rock) {
     return {};
@@ -1628,7 +1628,7 @@ std::vector<uint8_t> Cpu6502::EncodeBBR6(uint8_t zp_addr, // NOLINT(bugprone-eas
   return {RockwellOpcodes::BBR6, zp_addr, offset};
 }
 
-std::vector<uint8_t> Cpu6502::EncodeBBR7(uint8_t zp_addr, // NOLINT(bugprone-easily-swappable-parameters)
+std::vector<uint8_t> Cpu6502::EncodeBBR7(uint8_t zp_addr,
                                          uint8_t offset) const {
   if (cpu_mode_ != CpuMode::Cpu65C02Rock) {
     return {};
@@ -1647,7 +1647,7 @@ std::vector<uint8_t> Cpu6502::EncodeBBR7(uint8_t zp_addr, // NOLINT(bugprone-eas
 // Opcodes: 8F, 9F, AF, BF, CF, DF, EF, FF
 // ============================================================================
 
-std::vector<uint8_t> Cpu6502::EncodeBBS0(uint8_t zp_addr, // NOLINT(bugprone-easily-swappable-parameters)
+std::vector<uint8_t> Cpu6502::EncodeBBS0(uint8_t zp_addr,
                                          uint8_t offset) const {
   if (cpu_mode_ != CpuMode::Cpu65C02Rock) {
     return {};
@@ -1655,7 +1655,7 @@ std::vector<uint8_t> Cpu6502::EncodeBBS0(uint8_t zp_addr, // NOLINT(bugprone-eas
   return {RockwellOpcodes::BBS0, zp_addr, offset};
 }
 
-std::vector<uint8_t> Cpu6502::EncodeBBS1(uint8_t zp_addr, // NOLINT(bugprone-easily-swappable-parameters)
+std::vector<uint8_t> Cpu6502::EncodeBBS1(uint8_t zp_addr,
                                          uint8_t offset) const {
   if (cpu_mode_ != CpuMode::Cpu65C02Rock) {
     return {};
@@ -1663,7 +1663,7 @@ std::vector<uint8_t> Cpu6502::EncodeBBS1(uint8_t zp_addr, // NOLINT(bugprone-eas
   return {RockwellOpcodes::BBS1, zp_addr, offset};
 }
 
-std::vector<uint8_t> Cpu6502::EncodeBBS2(uint8_t zp_addr, // NOLINT(bugprone-easily-swappable-parameters)
+std::vector<uint8_t> Cpu6502::EncodeBBS2(uint8_t zp_addr,
                                          uint8_t offset) const {
   if (cpu_mode_ != CpuMode::Cpu65C02Rock) {
     return {};
@@ -1671,7 +1671,7 @@ std::vector<uint8_t> Cpu6502::EncodeBBS2(uint8_t zp_addr, // NOLINT(bugprone-eas
   return {RockwellOpcodes::BBS2, zp_addr, offset};
 }
 
-std::vector<uint8_t> Cpu6502::EncodeBBS3(uint8_t zp_addr, // NOLINT(bugprone-easily-swappable-parameters)
+std::vector<uint8_t> Cpu6502::EncodeBBS3(uint8_t zp_addr,
                                          uint8_t offset) const {
   if (cpu_mode_ != CpuMode::Cpu65C02Rock) {
     return {};
@@ -1679,7 +1679,7 @@ std::vector<uint8_t> Cpu6502::EncodeBBS3(uint8_t zp_addr, // NOLINT(bugprone-eas
   return {RockwellOpcodes::BBS3, zp_addr, offset};
 }
 
-std::vector<uint8_t> Cpu6502::EncodeBBS4(uint8_t zp_addr, // NOLINT(bugprone-easily-swappable-parameters)
+std::vector<uint8_t> Cpu6502::EncodeBBS4(uint8_t zp_addr,
                                          uint8_t offset) const {
   if (cpu_mode_ != CpuMode::Cpu65C02Rock) {
     return {};
@@ -1687,7 +1687,7 @@ std::vector<uint8_t> Cpu6502::EncodeBBS4(uint8_t zp_addr, // NOLINT(bugprone-eas
   return {RockwellOpcodes::BBS4, zp_addr, offset};
 }
 
-std::vector<uint8_t> Cpu6502::EncodeBBS5(uint8_t zp_addr, // NOLINT(bugprone-easily-swappable-parameters)
+std::vector<uint8_t> Cpu6502::EncodeBBS5(uint8_t zp_addr,
                                          uint8_t offset) const {
   if (cpu_mode_ != CpuMode::Cpu65C02Rock) {
     return {};
@@ -1695,7 +1695,7 @@ std::vector<uint8_t> Cpu6502::EncodeBBS5(uint8_t zp_addr, // NOLINT(bugprone-eas
   return {RockwellOpcodes::BBS5, zp_addr, offset};
 }
 
-std::vector<uint8_t> Cpu6502::EncodeBBS6(uint8_t zp_addr, // NOLINT(bugprone-easily-swappable-parameters)
+std::vector<uint8_t> Cpu6502::EncodeBBS6(uint8_t zp_addr,
                                          uint8_t offset) const {
   if (cpu_mode_ != CpuMode::Cpu65C02Rock) {
     return {};
@@ -1703,7 +1703,7 @@ std::vector<uint8_t> Cpu6502::EncodeBBS6(uint8_t zp_addr, // NOLINT(bugprone-eas
   return {RockwellOpcodes::BBS6, zp_addr, offset};
 }
 
-std::vector<uint8_t> Cpu6502::EncodeBBS7(uint8_t zp_addr, // NOLINT(bugprone-easily-swappable-parameters)
+std::vector<uint8_t> Cpu6502::EncodeBBS7(uint8_t zp_addr,
                                          uint8_t offset) const {
   if (cpu_mode_ != CpuMode::Cpu65C02Rock) {
     return {};
@@ -2136,7 +2136,7 @@ const std::unordered_map<std::string, Cpu6502::EncFn> &Cpu6502::EncoderTable() {
  * @throws std::out_of_range if operand value out of range
  */
 std::vector<uint8_t>
-Cpu6502::EncodeInstruction(const std::string &mnemonic, uint32_t operand, // NOLINT(bugprone-easily-swappable-parameters)
+Cpu6502::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
                            const std::string &operand_str) const {
   // Strip trailing '!' from mnemonic before processing
   // The '!' suffix is used in some assembly dialects to force
@@ -2348,7 +2348,7 @@ bool Cpu6502::RequiresSpecialEncoding(const std::string &mnemonic) const {
  * @throws std::runtime_error if encoding fails
  */
 std::vector<uint8_t>
-Cpu6502::EncodeInstructionSpecial(const std::string &mnemonic, // NOLINT(bugprone-easily-swappable-parameters)
+Cpu6502::EncodeInstructionSpecial(const std::string &mnemonic,
                                   const std::string &operand,
                                   uint16_t current_address) const {
   // Strip trailing '!' from mnemonic before processing

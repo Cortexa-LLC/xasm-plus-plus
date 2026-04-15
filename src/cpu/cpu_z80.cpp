@@ -21,7 +21,7 @@ namespace Opcodes = Z80Opcodes;
 // ============================================================================
 
 std::vector<uint8_t>
-CpuZ80::EncodeInstruction(const std::string &mnemonic, uint32_t operand, // NOLINT(bugprone-easily-swappable-parameters)
+CpuZ80::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
                           const std::string &operand_str) const {
   // ── Parse mnemonic string to enum (single map lookup) ───────────────────
   const Z80Mnemonic mn = ParseZ80Mnemonic(mnemonic);
@@ -293,17 +293,17 @@ std::vector<uint8_t> CpuZ80::EncodePOP_BC() { return {Opcodes::POP_BC}; }
 // Bit Operations (CB Prefix)
 // ============================================================================
 
-std::vector<uint8_t> CpuZ80::EncodeBIT(uint8_t bit, uint8_t reg) { // NOLINT(bugprone-easily-swappable-parameters)
+std::vector<uint8_t> CpuZ80::EncodeBIT(uint8_t bit, uint8_t reg) {
   uint8_t opcode = 0x40 + (bit << 3) + reg;
   return {Opcodes::CB_PREFIX, opcode};
 }
 
-std::vector<uint8_t> CpuZ80::EncodeSET(uint8_t bit, uint8_t reg) { // NOLINT(bugprone-easily-swappable-parameters)
+std::vector<uint8_t> CpuZ80::EncodeSET(uint8_t bit, uint8_t reg) {
   uint8_t opcode = 0xC0 + (bit << 3) + reg;
   return {Opcodes::CB_PREFIX, opcode};
 }
 
-std::vector<uint8_t> CpuZ80::EncodeRES(uint8_t bit, uint8_t reg) { // NOLINT(bugprone-easily-swappable-parameters)
+std::vector<uint8_t> CpuZ80::EncodeRES(uint8_t bit, uint8_t reg) {
   uint8_t opcode = 0x80 + (bit << 3) + reg;
   return {Opcodes::CB_PREFIX, opcode};
 }

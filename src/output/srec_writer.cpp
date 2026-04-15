@@ -83,7 +83,7 @@ int SRecordWriter::DetermineFormat(uint64_t max_address) {
   }
 }
 
-void SRecordWriter::WriteRecord(std::ostream &output, int record_type, // NOLINT(bugprone-easily-swappable-parameters)
+void SRecordWriter::WriteRecord(std::ostream &output, int record_type,
                                 uint64_t address,
                                 const std::vector<uint8_t> &data) {
   size_t addr_size = GetAddressSize(record_type);
@@ -117,7 +117,7 @@ void SRecordWriter::WriteRecord(std::ostream &output, int record_type, // NOLINT
   output << '\n';
 }
 
-uint8_t SRecordWriter::CalculateChecksum(uint8_t byte_count, uint64_t address, // NOLINT(bugprone-easily-swappable-parameters)
+uint8_t SRecordWriter::CalculateChecksum(uint8_t byte_count, uint64_t address,
                                          size_t addr_size,
                                          const std::vector<uint8_t> &data) {
   uint8_t sum = byte_count;
@@ -150,7 +150,7 @@ void SRecordWriter::WriteHeader(std::ostream &output,
               output_format::srec::HEADER_ADDRESS, header_data);
 }
 
-void SRecordWriter::WriteTerminator(std::ostream &output, int format, // NOLINT(bugprone-easily-swappable-parameters)
+void SRecordWriter::WriteTerminator(std::ostream &output, int format,
                                     uint64_t start_address) {
   // S9 for S1, S8 for S2, S7 for S3
   int terminator_type =

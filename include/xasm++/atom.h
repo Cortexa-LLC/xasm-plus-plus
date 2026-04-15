@@ -63,7 +63,7 @@ struct SourceLocation {
    * @param l Line number
    * @param c Column number
    */
-  SourceLocation(const std::string &file, int l, int c) // NOLINT(bugprone-easily-swappable-parameters)
+  SourceLocation(const std::string &file, int l, int c)
       : filename(file), line(l), column(c) {}
 };
 

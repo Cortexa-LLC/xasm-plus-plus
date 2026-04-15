@@ -107,7 +107,7 @@ ThrowSpecialEncodingNotSupported(const std::string &mnemonic) {
  * <expected_format>"
  */
 [[noreturn]] inline void
-ThrowRequiresTwoOperands(const std::string &mnemonic, // NOLINT(bugprone-easily-swappable-parameters)
+ThrowRequiresTwoOperands(const std::string &mnemonic,
                          const std::string &expected_format) {
   throw std::runtime_error(mnemonic +
                            " requires two operands: " + expected_format);
@@ -129,7 +129,7 @@ ThrowRequiresTwoOperands(const std::string &mnemonic, // NOLINT(bugprone-easily-
  * @throws std::runtime_error with message "Invalid bank values for <mnemonic>:
  * <reason>"
  */
-[[noreturn]] inline void ThrowInvalidValues(const std::string &mnemonic, // NOLINT(bugprone-easily-swappable-parameters)
+[[noreturn]] inline void ThrowInvalidValues(const std::string &mnemonic,
                                             const std::string &reason) {
   throw std::runtime_error("Invalid bank values for " + mnemonic + ": " +
                            reason);

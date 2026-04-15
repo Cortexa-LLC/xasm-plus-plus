@@ -104,7 +104,7 @@ void IntelHexWriter::SetBytesPerLine(size_t bytes) {
   bytes_per_line_ = bytes;
 }
 
-void IntelHexWriter::WriteRecord(std::ostream &output, uint8_t byte_count, // NOLINT(bugprone-easily-swappable-parameters)
+void IntelHexWriter::WriteRecord(std::ostream &output, uint8_t byte_count,
                                  uint16_t address, uint8_t record_type,
                                  const std::vector<uint8_t> &data) {
   // Calculate checksum
@@ -131,7 +131,7 @@ void IntelHexWriter::WriteRecord(std::ostream &output, uint8_t byte_count, // NO
   output << "\n";
 }
 
-uint8_t IntelHexWriter::CalculateChecksum(uint8_t byte_count, uint16_t address, // NOLINT(bugprone-easily-swappable-parameters)
+uint8_t IntelHexWriter::CalculateChecksum(uint8_t byte_count, uint16_t address,
                                           uint8_t record_type,
                                           const std::vector<uint8_t> &data) {
   // Sum all bytes

@@ -187,7 +187,7 @@ constexpr bool FitsInSignedByte(int32_t value) {
  * // Z80: BIT 0, A → CB 47
  * auto encoded = WithPrefix(0xCB, {0x47});
  */
-inline std::vector<uint8_t> WithPrefix(uint8_t prefix, // NOLINT(bugprone-easily-swappable-parameters)
+inline std::vector<uint8_t> WithPrefix(uint8_t prefix,
                                        std::initializer_list<uint8_t> bytes) {
   std::vector<uint8_t> result;
   result.reserve(1 + bytes.size());

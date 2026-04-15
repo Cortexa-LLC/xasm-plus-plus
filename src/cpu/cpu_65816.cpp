@@ -171,13 +171,13 @@ std::vector<uint8_t> Cpu6502::EncodePER(uint16_t operand,
 }
 
 // MVN - Block Move Negative (65816)
-std::vector<uint8_t> Cpu6502::EncodeMVN(uint8_t srcbank, // NOLINT(bugprone-easily-swappable-parameters)
+std::vector<uint8_t> Cpu6502::EncodeMVN(uint8_t srcbank,
                                         uint8_t destbank) const {
   return {0x54, srcbank, destbank};
 }
 
 // MVP - Block Move Positive (65816)
-std::vector<uint8_t> Cpu6502::EncodeMVP(uint8_t srcbank, // NOLINT(bugprone-easily-swappable-parameters)
+std::vector<uint8_t> Cpu6502::EncodeMVP(uint8_t srcbank,
                                         uint8_t destbank) const {
   if (!IsCpu65816()) {
     return {};

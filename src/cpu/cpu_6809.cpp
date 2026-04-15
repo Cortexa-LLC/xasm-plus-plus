@@ -174,7 +174,7 @@ static const std::unordered_map<M6809Mnemonic, InstrOpcodes> kOpcodeTable = {
  * @return          Post-byte and any trailing offset bytes
  */
 static std::vector<uint8_t>
-BuildIndexedPostByte(AddressingMode6809 mode, int32_t offset, // NOLINT(bugprone-easily-swappable-parameters)
+BuildIndexedPostByte(AddressingMode6809 mode, int32_t offset,
                      uint8_t base_reg) {
   std::vector<uint8_t> result;
   uint8_t reg_bits = (base_reg & 0x03) << 5;
@@ -703,7 +703,7 @@ std::vector<uint8_t> Cpu6809::EncodeBSR(int32_t offset,
 // ============================================================================
 
 /// Helper: build a 4-byte long branch: page-2 prefix + opcode + 16-bit offset
-static std::vector<uint8_t> MakeLongBranch(uint8_t opcode, int16_t offset) { // NOLINT(bugprone-easily-swappable-parameters)
+static std::vector<uint8_t> MakeLongBranch(uint8_t opcode, int16_t offset) {
   std::vector<uint8_t> result = {Opcodes6809::PAGE2_PREFIX, opcode};
   auto offset_bytes = encoding::ToBigEndian16(static_cast<uint16_t>(offset));
   result.insert(result.end(), offset_bytes.begin(), offset_bytes.end());
@@ -766,7 +766,7 @@ std::vector<uint8_t> Cpu6809::EncodeLBSR(int16_t offset) {
 // Register-transfer and Exchange
 // ============================================================================
 
-std::vector<uint8_t> Cpu6809::EncodeTFR(uint8_t src, uint8_t dst) { // NOLINT(bugprone-easily-swappable-parameters)
+std::vector<uint8_t> Cpu6809::EncodeTFR(uint8_t src, uint8_t dst) {
   // Post-byte format: high nibble = source, low nibble = destination
   uint8_t postbyte = (src << 4) | dst;
   return {Opcodes6809::TFR, postbyte};
@@ -803,7 +803,7 @@ std::vector<uint8_t> Cpu6809::EncodePULU(uint8_t mask) {
 // ============================================================================
 
 std::vector<uint8_t>
-Cpu6809::EncodeIndexedPostByte(AddressingMode6809 mode, int32_t offset, // NOLINT(bugprone-easily-swappable-parameters)
+Cpu6809::EncodeIndexedPostByte(AddressingMode6809 mode, int32_t offset,
                                uint8_t base_reg) {
   // Delegate to the free-function implementation (shared with EncodeMemInstr).
   return BuildIndexedPostByte(mode, offset, base_reg);
@@ -879,7 +879,7 @@ bool Cpu6809::HasOpcode(const std::string &mnemonic) const {
 // ============================================================================
 
 std::vector<uint8_t>
-Cpu6809::EncodeInstruction(const std::string &mnemonic, uint32_t operand, // NOLINT(bugprone-easily-swappable-parameters)
+Cpu6809::EncodeInstruction(const std::string &mnemonic, uint32_t operand,
                            const std::string &operand_str) const {
   // ── Parse mnemonic string to enum (single map lookup) ───────────────────
   const M6809Mnemonic mn = ParseM6809Mnemonic(mnemonic);
