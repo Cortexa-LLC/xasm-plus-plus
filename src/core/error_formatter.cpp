@@ -48,7 +48,7 @@ ErrorFormatter::FormatError(const AssemblerError &error,
         ReadSourceLine(error.location.filename, error.location.line);
     if (!source_line.empty()) {
       // Calculate gutter width (line number width)
-      int gutter_width = std::to_string(error.location.line).length(); // NOLINT(cppcoreguidelines-init-variables)
+      int gutter_width = std::to_string(error.location.line).length();
       gutter_width = std::max(gutter_width, 2);
 
       // Empty line before context
@@ -59,7 +59,7 @@ ErrorFormatter::FormatError(const AssemblerError &error,
       }
 
       // The error line
-      if (ShouldUseColors()) { // NOLINT(bugprone-branch-clone)
+      if (ShouldUseColors()) {
         oss << " " << std::setw(gutter_width) << error.location.line
             << " \033[1;36m|\033[0m " << source_line << "\n";
       } else {
@@ -109,16 +109,16 @@ size_t ErrorFormatter::CalculateEditDistance(const std::string &s1,
   std::vector<std::vector<size_t>> dp(kLen1 + 1, std::vector<size_t>(kLen2 + 1));
 
   // Initialize base cases
-  for (size_t i = 0; i <= kLen1; ++i) { // NOLINT(bugprone-infinite-loop)
+  for (size_t i = 0; i <= kLen1; ++i) {
     dp[i][0] = i;
   }
-  for (size_t j = 0; j <= kLen2; ++j) { // NOLINT(bugprone-infinite-loop)
+  for (size_t j = 0; j <= kLen2; ++j) {
     dp[0][j] = j;
   }
 
   // Fill matrix
-  for (size_t i = 1; i <= kLen1; ++i) { // NOLINT(bugprone-infinite-loop)
-    for (size_t j = 1; j <= kLen2; ++j) { // NOLINT(bugprone-infinite-loop)
+  for (size_t i = 1; i <= kLen1; ++i) {
+    for (size_t j = 1; j <= kLen2; ++j) {
       size_t cost = (s1[i - 1] == s2[j - 1]) ? 0 : 1;
       dp[i][j] = std::min({
           dp[i - 1][j] + 1,       // deletion
@@ -133,7 +133,7 @@ size_t ErrorFormatter::CalculateEditDistance(const std::string &s1,
 
 bool ErrorFormatter::ShouldUseColors() const {
   // Check NO_COLOR environment variable
-  const char *no_color = std::getenv("NO_COLOR"); // NOLINT(cppcoreguidelines-init-variables)
+  const char *no_color = std::getenv("NO_COLOR");
   if (no_color != nullptr && no_color[0] != '\0') {
     return false;
   }

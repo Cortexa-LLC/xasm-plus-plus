@@ -882,7 +882,7 @@ std::vector<uint8_t>
 Cpu6809::EncodeInstruction(const std::string &mnemonic, uint32_t operand, // NOLINT(bugprone-easily-swappable-parameters)
                            const std::string &operand_str) const {
   // ── Parse mnemonic string to enum (single map lookup) ───────────────────
-  const M6809Mnemonic mn = ParseM6809Mnemonic(mnemonic); // NOLINT(cppcoreguidelines-init-variables)
+  const M6809Mnemonic mn = ParseM6809Mnemonic(mnemonic);
 
   // Determine addressing mode from operand_str
   std::string trimmed = util::Trim(operand_str);

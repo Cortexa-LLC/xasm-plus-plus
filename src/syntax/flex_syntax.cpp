@@ -91,7 +91,7 @@ uint32_t FlexAsmSyntax::ParseNumber(const std::string &str) {
   // Decimal (default)
   try {
     return static_cast<uint32_t>(xasm::ParseDecimal(trimmed));
-  } catch (const std::exception &e) { // NOLINT(bugprone-empty-catch)
+  } catch (const std::exception &e) {
     throw std::runtime_error("Invalid decimal number: " + trimmed);
   }
 }
@@ -250,7 +250,7 @@ void FlexAsmSyntax::ParseDirective(const std::string &directive,
 
     if (should_evaluate) {
       // Evaluate condition and push result onto stack
-      bool condition_result = EvaluateCondition(operands); // NOLINT(cppcoreguidelines-init-variables)
+      bool condition_result = EvaluateCondition(operands);
       conditional_stack_.push(condition_result);
 
       // If condition is false AND we're currently assembling, enter skipping
@@ -679,10 +679,10 @@ FlexAsmSyntax::SubstituteParameters(const std::string &line,
     size_t pos = 0;
     while ((pos = result.find(param, pos)) != std::string::npos) {
       // Check if this is a whole word match
-      bool is_start_boundary = // NOLINT(cppcoreguidelines-init-variables)
+      bool is_start_boundary =
           (pos == 0 ||
            !std::isalnum(static_cast<unsigned char>(result[pos - 1])));
-      bool is_end_boundary = (pos + param.length() >= result.length() || // NOLINT(cppcoreguidelines-init-variables)
+      bool is_end_boundary = (pos + param.length() >= result.length() ||
                               !std::isalnum(static_cast<unsigned char>(
                                   result[pos + param.length()])));
 

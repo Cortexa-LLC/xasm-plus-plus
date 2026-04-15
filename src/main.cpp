@@ -276,7 +276,7 @@ static void WriteAuxOutputFiles(const CommandLineOptions &opts,
       if (!opts.quiet) {
         std::cout << "Listing file generated: " << opts.listing_file << "\n";
       }
-    } catch (const std::exception &e) { // NOLINT(bugprone-empty-catch)
+    } catch (const std::exception &e) {
       std::cerr << "Warning: Failed to generate listing file: " << e.what()
                 << "\n";
     }
@@ -289,7 +289,7 @@ static void WriteAuxOutputFiles(const CommandLineOptions &opts,
       if (!opts.quiet) {
         std::cout << "Symbol table generated: " << opts.symbol_file << "\n";
       }
-    } catch (const std::exception &e) { // NOLINT(bugprone-empty-catch)
+    } catch (const std::exception &e) {
       std::cerr << "Warning: Failed to generate symbol table: " << e.what()
                 << "\n";
     }
@@ -302,7 +302,7 @@ static void WriteAuxOutputFiles(const CommandLineOptions &opts,
       if (!opts.quiet) {
         std::cout << "Label map generated: " << opts.label_map << "\n";
       }
-    } catch (const std::exception &e) { // NOLINT(bugprone-empty-catch)
+    } catch (const std::exception &e) {
       std::cerr << "Warning: Failed to generate label map: " << e.what()
                 << "\n";
     }

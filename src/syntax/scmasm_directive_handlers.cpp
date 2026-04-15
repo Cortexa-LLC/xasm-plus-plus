@@ -272,7 +272,7 @@ void HandleEq(DirectiveContext &context) {
   // dummy-section's ZP address counter which is fixed, so no EquateAtom needed.
   bool in_dummy = context.parser_state &&
       static_cast<ScmasmSyntaxParser *>(context.parser_state)->InDummySection();
-  bool has_star = value_expr.find('*') != std::string::npos; // NOLINT(cppcoreguidelines-init-variables)
+  bool has_star = value_expr.find('*') != std::string::npos;
   if ((has_star && !in_dummy) || needs_reassembly_eval) {
     auto eq_atom = std::make_shared<EquateAtom>(norm_label, value_expr);
     context.section->atoms.push_back(eq_atom);
@@ -1302,9 +1302,9 @@ uint8_t ParseEscapeSequence(const char *&s) {
     // Hex escape: \xHH
     s++;
     if (std::isxdigit(*s) && std::isxdigit(*(s + 1))) {
-      int hi = std::isdigit(*s) ? (*s - '0') : (std::toupper(*s) - 'A' + 10); // NOLINT(cppcoreguidelines-init-variables)
+      int hi = std::isdigit(*s) ? (*s - '0') : (std::toupper(*s) - 'A' + 10);
       s++;
-      int lo = std::isdigit(*s) ? (*s - '0') : (std::toupper(*s) - 'A' + 10); // NOLINT(cppcoreguidelines-init-variables)
+      int lo = std::isdigit(*s) ? (*s - '0') : (std::toupper(*s) - 'A' + 10);
       s++;
       return static_cast<uint8_t>((hi << 4) | lo);
     } else {

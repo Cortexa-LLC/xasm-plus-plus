@@ -46,7 +46,7 @@ uint32_t ParseHex(const std::string &str) {
 
   try {
     return std::stoul(hex_str, nullptr, 16);
-  } catch (const std::exception &e) { // NOLINT(bugprone-empty-catch)
+  } catch (const std::exception &e) {
     throw std::runtime_error("Failed to parse hex string '" + str +
                              "': " + e.what());
   }

@@ -144,10 +144,10 @@ std::string MacroProcessor::SubstituteParameters(
     size_t pos = 0;
     while ((pos = result.find(param, pos)) != std::string::npos) {
       // Check if this is a whole word match
-      bool is_start_boundary = // NOLINT(cppcoreguidelines-init-variables)
+      bool is_start_boundary =
           (pos == 0 ||
            !std::isalnum(static_cast<unsigned char>(result[pos - 1])));
-      bool is_end_boundary = (pos + param.length() >= result.length() || // NOLINT(cppcoreguidelines-init-variables)
+      bool is_end_boundary = (pos + param.length() >= result.length() ||
                               !std::isalnum(static_cast<unsigned char>(
                                   result[pos + param.length()])));
 

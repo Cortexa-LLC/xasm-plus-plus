@@ -67,7 +67,7 @@ static uint32_t ParseNumber(const std::string &str,
   try {
     auto expr = parser.Parse(clean_str);
     return static_cast<uint32_t>(expr->Evaluate(symbols));
-  } catch (const std::runtime_error &e) { // NOLINT(bugprone-empty-catch)
+  } catch (const std::runtime_error &e) {
     // Re-throw with context
     throw std::runtime_error(std::string("Parse error: ") + e.what());
   }
@@ -127,10 +127,10 @@ void HandleEqu(DirectiveContext &context) {
     bool has_star = false;
     for (size_t i = 0; i < raw.size(); ++i) {
       if (raw[i] == '*') {
-        bool before = // NOLINT(cppcoreguidelines-init-variables)
+        bool before =
             (i > 0 && (std::isalnum(static_cast<unsigned char>(raw[i - 1]))
                        || raw[i - 1] == ')'));
-        bool after = // NOLINT(cppcoreguidelines-init-variables)
+        bool after =
             (i + 1 < raw.size() &&
              (std::isalnum(static_cast<unsigned char>(raw[i + 1]))
               || raw[i + 1] == '(' || raw[i + 1] == '$' || raw[i + 1] == '%'));
@@ -847,7 +847,7 @@ void HandleUsr(DirectiveContext &context) {
         auto expr = parser->ParseExpression(arg, *context.symbols);
         int64_t value = expr->Evaluate(*context.symbols);
         args[i] = static_cast<uint16_t>(value & 0xFFFF);
-      } catch (const std::exception &e) { // NOLINT(bugprone-empty-catch)
+      } catch (const std::exception &e) {
         // On error, use 0 for this argument
         args[i] = 0;
       }

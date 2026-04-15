@@ -15,7 +15,7 @@ void ConditionalAssembler::BeginIf(bool condition) {
   // Determine if code should be emitted based on:
   // 1. Current condition
   // 2. Parent block's should_emit state (if any)
-  bool parent_should_emit = stack_.empty() ? true : stack_.back().should_emit; // NOLINT(cppcoreguidelines-init-variables)
+  bool parent_should_emit = stack_.empty() ? true : stack_.back().should_emit;
   bool should_emit = parent_should_emit && condition;
 
   stack_.push_back({
@@ -40,7 +40,7 @@ void ConditionalAssembler::BeginElse() {
   // Determine if code in ELSE branch should be emitted:
   // - Parent must be emitting
   // - Original condition must be false (so ELSE is taken)
-  bool parent_should_emit = // NOLINT(cppcoreguidelines-init-variables)
+  bool parent_should_emit =
       stack_.size() > 1 ? stack_[stack_.size() - 2].should_emit : true;
   block.should_emit = parent_should_emit && !block.condition;
 }
