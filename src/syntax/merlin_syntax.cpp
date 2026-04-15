@@ -176,6 +176,31 @@ std::string MerlinSyntaxParser::FormatError(const std::string &message) const {
   return oss.str();
 }
 
+/// Strip Merlin-style inline comment from an instruction operand.
+/// In Merlin, any whitespace-separated trailing text is a comment (no ';'
+/// needed). Quoted string char literals (e.g. "#\"A\"") are not stripped.
+std::string MerlinSyntaxParser::StripMerlinInlineComment(
+    const std::string &operands) {
+  // Skip leading '#' or '<' prefix operators
+  size_t offset = 0;
+  if (!operands.empty() &&
+      (operands[0] == '#' || operands[0] == '<')) {
+    offset = 1;
+  }
+  // If expression itself starts with a quote, leave alone (char literal)
+  if (offset < operands.size() &&
+      (operands[offset] == '"' || operands[offset] == '\'')) {
+    return operands;
+  }
+  for (size_t i = offset; i < operands.size(); ++i) {
+    if (operands[i] == ' ' || operands[i] == '\t') {
+      return operands.substr(0, offset) +
+             Trim(operands.substr(offset, i - offset));
+    }
+  }
+  return operands;
+}
+
 // ============================================================================
 // Number Parsing (DEPRECATED - delegated to ExpressionParser)
 // ============================================================================
@@ -203,7 +228,7 @@ uint32_t MerlinSyntaxParser::ParseNumber(const std::string &str) {
   try {
     auto expr = parser.Parse(clean_str);
     return static_cast<uint32_t>(expr->Evaluate(empty_symbols));
-  } catch (const std::runtime_error &e) { // NOLINT(bugprone-empty-catch)
+  } catch (const std::runtime_error &e) {
     // Re-throw with Merlin formatting
     throw std::runtime_error(FormatError(e.what()));
   }
@@ -221,53 +246,52 @@ MerlinSyntaxParser::TryParseCharLiteral(const std::string &expr,
   }
   char quote = expr[0];
   if (expr.length() == 1) {
-    // Just a lone quote (e.g. SPECIALK.S edge case) – treat as 0
-    return std::make_shared<LiteralExpr>(0);
+    return std::make_shared<LiteralExpr>(0); // lone quote — treat as 0
   }
-  // Find the closing quote
   size_t close = expr.find(quote, 1);
   if (close == std::string::npos) {
-    // Unclosed quote – return 0 gracefully (matches Merlin behaviour)
-    return std::make_shared<LiteralExpr>(0);
+    return std::make_shared<LiteralExpr>(0); // unclosed quote — Merlin compat
   }
-  // Extract character between quotes and apply Apple II high-bit convention
   std::string chars = expr.substr(1, close - 1);
   int64_t char_val =
       chars.empty() ? 0 : (static_cast<uint8_t>(chars[0]) | 0x80);
-  // Check for compound expression after the closing quote (e.g. "A"-CTRL)
   std::string rest = Trim(expr.substr(close + 1));
   if (rest.empty()) {
     return std::make_shared<LiteralExpr>(char_val);
   }
-  // Combine char literal value with the remaining expression via the
-  // operator that leads the rest string (e.g. "+1", "-CTRL").
-  if (!rest.empty() && (rest[0] == '+' || rest[0] == '-' || rest[0] == '*' ||
-                        rest[0] == '/')) {
-    char op = rest[0];
-    std::string rhs = Trim(rest.substr(1));
-    if (!rhs.empty()) {
-      auto left_expr = std::make_shared<LiteralExpr>(char_val);
-      auto right_expr = ParseExpression(rhs, symbols);
-      switch (op) {
-        case '+': // NOLINT(bugprone-branch-clone)
-          return std::make_shared<BinaryOpExpr>(BinaryOp::Add, left_expr,
-                                                right_expr);
-        case '-':
-          return std::make_shared<BinaryOpExpr>(BinaryOp::Subtract, left_expr,
-                                                right_expr);
-        case '*':
-          return std::make_shared<BinaryOpExpr>(BinaryOp::Multiply, left_expr,
-                                                right_expr);
-        case '/':
-          return std::make_shared<BinaryOpExpr>(BinaryOp::Divide, left_expr,
-                                                right_expr);
-        default:
-          break;
-      }
-    }
+  return CompoundCharExpr(char_val, rest, symbols);
+}
+
+/// Build a compound expression from a char literal value and trailing "+N", "-X" etc.
+std::shared_ptr<Expression>
+MerlinSyntaxParser::CompoundCharExpr(int64_t char_val, const std::string &rest,
+                                     ConcreteSymbolTable &symbols) {
+  if (rest.empty() || (rest[0] != '+' && rest[0] != '-' &&
+                       rest[0] != '*' && rest[0] != '/')) {
+    return std::make_shared<LiteralExpr>(char_val);
   }
-  // No recognised compound form – return the character value alone
-  return std::make_shared<LiteralExpr>(char_val);
+  std::string rhs = Trim(rest.substr(1));
+  if (rhs.empty()) {
+    return std::make_shared<LiteralExpr>(char_val);
+  }
+  auto left_expr  = std::make_shared<LiteralExpr>(char_val);
+  auto right_expr = ParseExpression(rhs, symbols);
+  return MakeBinaryExpr(rest[0], left_expr, right_expr);
+}
+
+/// Build a BinaryOpExpr from a char operator; returns left if op unrecognised.
+std::shared_ptr<Expression>
+MerlinSyntaxParser::MakeBinaryExpr(
+    char op,
+    std::shared_ptr<Expression> left_expr,
+    std::shared_ptr<Expression> right_expr) {
+  switch (op) {
+    case '+': return std::make_shared<BinaryOpExpr>(BinaryOp::Add,      left_expr, right_expr);
+    case '-': return std::make_shared<BinaryOpExpr>(BinaryOp::Subtract, left_expr, right_expr);
+    case '*': return std::make_shared<BinaryOpExpr>(BinaryOp::Multiply, left_expr, right_expr);
+    case '/': return std::make_shared<BinaryOpExpr>(BinaryOp::Divide,   left_expr, right_expr);
+    default:  return left_expr;
+  }
 }
 
 std::shared_ptr<Expression>
@@ -320,42 +344,9 @@ std::shared_ptr<Expression>
 MerlinSyntaxParser::ParseExpression(const std::string &str,
                                     ConcreteSymbolTable &symbols) {
 
-  std::string expr = Trim(str);
+  std::string expr = StripMerlinExprComment(Trim(str));
 
-  // ========================================================================
-  // Merlin-Specific Pre-Processing (V1 and V2 — moved from assembler.cpp)
-  // ========================================================================
-
-  // V1: Strip Merlin inline comment from expression.
-  // In Merlin, any whitespace-separated trailing text after the operand is a
-  // comment — it need not start with ';'. Two forms:
-  //   lda #99 "stabbed"  → quoted string comment   → strip to 99
-  //   lda #-5 impaled    → bare word/number comment → strip to -5
-  // Only strip when the expression does NOT start with a quote (otherwise
-  // the whole expression is a character literal, e.g. #"A").
-  if (!expr.empty() && expr[0] != '"' && expr[0] != '\'') {
-    size_t first_space = std::string::npos;
-    for (size_t i = 0; i < expr.size(); ++i) {
-      if (expr[i] == ' ' || expr[i] == '\t') {
-        first_space = i;
-        break;
-      }
-    }
-    if (first_space != std::string::npos) {
-      expr = Trim(expr.substr(0, first_space));
-    }
-  }
-
-  // V2: (removed) `.Inc`/`.Dec` are NOT magic +1/-1 suffixes.
-  // In Merlin, `.` is the bitwise OR operator. `RdGrp.Inc` means `RdGrp | Inc`
-  // where `Inc` is a symbol (e.g. `Inc = $40`).  The OR is handled by the
-  // ExpressionParser when `allow_merlin_bitwise_ops` is set.
-
-  // ========================================================================
-  // Merlin-Specific Features (handle before delegating to ExpressionParser)
-  // ========================================================================
-
-  // Merlin-Specific Features (handle before delegating to ExpressionParser)
+  // Merlin-specific prefix operators: character literals, low/high byte
   if (auto result = TryParseCharLiteral(expr, symbols)) {
     return result;
   }
@@ -366,81 +357,49 @@ MerlinSyntaxParser::ParseExpression(const std::string &str,
     return result;
   }
 
-
-  // ========================================================================
-  // Delegate to Shared ExpressionParser
-  // ========================================================================
-
-  // Check for empty expression (legacy behavior: treat as 0)
-  // This handles edge cases like "X+" where trailing operator leaves empty
-  // right side
   if (expr.empty()) {
     return std::make_shared<LiteralExpr>(0);
   }
-
-  // Check for Merlin edge cases that conflict with Z80 semantics
   if (expr == "$") {
-    // In Merlin, "$" alone is an error (not program counter like Z80)
-    // Merlin uses "*" for program counter
     throw std::runtime_error(
         FormatError("Invalid hex number: '$' (no digits after $)"));
   }
 
-  // Check for trailing operators (legacy Merlin behavior: treat missing operand
-  // as 0) Examples: "X+", "Y-", "Z*"
-  if (!expr.empty()) {
-    char last_char = expr[expr.length() - 1];
-    if (last_char == '+' || last_char == '-' || last_char == '*') {
-      // Strip trailing operator and parse as is
-      // Old Merlin behavior: X+ evaluates to X+0 = X
-      std::string clean_expr = Trim(expr.substr(0, expr.length() - 1));
-      if (!clean_expr.empty()) {
-        return ParseExpression(clean_expr, symbols);
-      }
+  // Trailing operator: strip and re-parse (e.g. "X+" → X+0 = X)
+  char last_char = expr[expr.length() - 1];
+  if (last_char == '+' || last_char == '-' || last_char == '*') {
+    std::string clean_expr = Trim(expr.substr(0, expr.length() - 1));
+    if (!clean_expr.empty()) {
+      return ParseExpression(clean_expr, symbols);
     }
   }
 
-  // Substitute * (program counter) with current address before delegating.
-  // Handles forms like: *-CHECKER, maxgatevel=*-gatevel-1, CHECKEND=*-START.
-  // A standalone '*' or '*' at start/after operator = program counter.
-  // '*' with operands on BOTH sides = multiplication — leave alone.
-  if (expr.find('*') != std::string::npos) {
-    std::ostringstream hex_stream;
-    hex_stream << "$" << std::hex
-               << (in_dum_block_ ? dum_address_ : current_address_);
-    std::string pc_hex = hex_stream.str();
-    size_t p = 0;
-    while ((p = expr.find('*', p)) != std::string::npos) {
-      bool before_ident = // NOLINT(cppcoreguidelines-init-variables)
-          p > 0 && (std::isalnum(static_cast<unsigned char>(expr[p - 1])) ||
-                    expr[p - 1] == ')');
-      bool after_ident = // NOLINT(cppcoreguidelines-init-variables)
-          p + 1 < expr.length() &&
-          (std::isalnum(static_cast<unsigned char>(expr[p + 1])) ||
-           expr[p + 1] == '(' || expr[p + 1] == '$' || expr[p + 1] == '%');
-      if (before_ident && after_ident) {
-        p++; // multiplication — skip
-      } else {
-        expr.replace(p, 1, pc_hex);
-        p += pc_hex.length();
-      }
-    }
-  }
-
-  // All other expressions (arithmetic, symbols, literals) handled by shared
-  // parser, with Merlin features enabled so ]var identifiers work (ADR-005 V8).
+  expr = SubstitutePCInDSOperand(expr);
   ExpressionParser parser(&symbols, nullptr, ParserFeatures::ForMerlin());
   try {
     return parser.Parse(expr);
-  } catch (const std::runtime_error &e) { // NOLINT(bugprone-empty-catch)
-    // Catch exceptions from ExpressionParser and add location context
+  } catch (const std::runtime_error &e) {
     throw std::runtime_error(FormatError(e.what()));
   }
 }
 
-// ============================================================================
-// Local Label Scoping Helpers
-// ============================================================================
+/// Strip trailing whitespace-delimited inline comment from a Merlin expression.
+/// Leaves quoted strings (char literals) untouched.
+// static
+std::string MerlinSyntaxParser::StripMerlinExprComment(const std::string &expr) {
+  if (expr.empty() || expr[0] == '"' || expr[0] == '\'') {
+    return expr;
+  }
+  size_t first_space = std::string::npos;
+  for (size_t i = 0; i < expr.size(); ++i) {
+    if (expr[i] == ' ' || expr[i] == '\t') {
+      first_space = i;
+      break;
+    }
+  }
+  return (first_space != std::string::npos) ? Trim(expr.substr(0, first_space))
+                                             : expr;
+}
 
 std::string
 MerlinSyntaxParser::ScopeLocalLabel(const std::string &label) const {
@@ -451,6 +410,68 @@ MerlinSyntaxParser::ScopeLocalLabel(const std::string &label) const {
   return label;
 }
 
+// ============================================================================
+// SubstituteMerlinVars Sub-Helpers
+// ============================================================================
+
+/// Returns the position in 'line' where ]var substitution should begin.
+/// Skips the label column (and '=' sign) for assignment lines starting with ']'.
+static size_t ComputeSubstStartPos(const std::string &line) {
+  if (line.empty() || line[0] != ']') {
+    return 0;
+  }
+  // Find end of leading ]label token
+  size_t label_end = 1;
+  while (label_end < line.size() &&
+         (std::isalnum(static_cast<unsigned char>(line[label_end])) ||
+          line[label_end] == '_')) {
+    ++label_end;
+  }
+  // Skip optional whitespace then '=' if present (assignment form)
+  size_t pos = label_end;
+  while (pos < line.size() && std::isspace(static_cast<unsigned char>(line[pos]))) {
+    ++pos;
+  }
+  if (pos < line.size() && line[pos] == '=') {
+    return pos + 1; // start after '='
+  }
+  return label_end; // directive form — skip only the label
+}
+
+/// Copy a quoted string from line[i] into result; return index after close quote.
+static size_t CopyQuotedString(const std::string &line, size_t i,
+                               std::string &result) {
+  char quote = line[i];
+  result += line[i++];
+  while (i < line.size() && line[i] != quote) {
+    result += line[i++];
+  }
+  if (i < line.size()) {
+    result += line[i++]; // closing quote
+  }
+  return i;
+}
+
+/// Substitute a ]var token starting at line[i] into result; return updated i.
+static size_t SubstituteVarToken(const std::string &line, size_t i,
+                                 const ConcreteSymbolTable &symbols,
+                                 std::string &result) {
+  size_t tok_start = i++;
+  while (i < line.size() &&
+         (std::isalnum(static_cast<unsigned char>(line[i])) ||
+          line[i] == '_')) {
+    ++i;
+  }
+  std::string var_name = line.substr(tok_start, i - tok_start);
+  int64_t sym_val = 0;
+  if (symbols.Lookup(var_name, sym_val)) {
+    result += std::to_string(sym_val);
+  } else {
+    result += var_name;
+  }
+  return i;
+}
+
 std::string
 MerlinSyntaxParser::SubstituteMerlinVars(const std::string &line,
                                          const ConcreteSymbolTable &symbols) {
@@ -459,77 +480,22 @@ MerlinSyntaxParser::SubstituteMerlinVars(const std::string &line,
     return line;
   }
 
-  // In Merlin, labels (including ]variables) occupy the FIRST column (no
-  // leading whitespace).  A line like "]byte = ]byte+1" has "]byte" as a
-  // label/LHS — HandleEqu already evaluates the RHS eagerly, so we must NOT
-  // substitute the leading ]var or we would turn the line into "0 = 0+1".
-  // Strategy: if the line starts with ']', copy through the label token and
-  // the '=' sign unchanged, then substitute only the RHS.
-  size_t start_substitute = 0;
-  if (!line.empty() && line[0] == ']') {
-    // Find end of label token
-    size_t label_end = 1;
-    while (label_end < line.size() &&
-           (std::isalnum(static_cast<unsigned char>(line[label_end])) ||
-            line[label_end] == '_')) {
-      ++label_end;
-    }
-    // Skip optional whitespace and '=' so we only substitute the RHS
-    size_t pos = label_end;
-    while (pos < line.size() && std::isspace(static_cast<unsigned char>(line[pos]))) {
-      ++pos;
-    }
-    if (pos < line.size() && line[pos] == '=') {
-      ++pos; // skip '='
-      // start_substitute points to the RHS; copy prefix unchanged
-      start_substitute = pos;
-    }
-    // If it's not an assignment (e.g., "]var DS 1"), substitute everything
-    // after the label token so we don't rename the variable being declared.
-    // Actually for DS and similar directives on a ]var label, the label is
-    // resolved by HandleEqu/ParseLine separately — just skip the label token.
-    if (start_substitute == 0) {
-      start_substitute = label_end;
-    }
-  }
+  // Compute where substitution should start.
+  // If line starts with ']', skip the label/LHS to avoid renaming it.
+  size_t start_substitute = ComputeSubstStartPos(line);
 
   std::string result = line.substr(0, start_substitute);
   result.reserve(line.size());
 
   for (size_t i = start_substitute; i < line.size();) {
-    // Skip quoted strings without substitution
     if (line[i] == '"' || line[i] == '\'') {
-      char quote = line[i];
-      result += line[i++];
-      while (i < line.size() && line[i] != quote) {
-        result += line[i++];
-      }
-      if (i < line.size()) {
-        result += line[i++]; // closing quote
-      }
+      i = CopyQuotedString(line, i, result);
       continue;
     }
-
     if (line[i] == ']') {
-      // Collect ]identifier
-      size_t tok_start = i++;
-      while (i < line.size() &&
-             (std::isalnum(static_cast<unsigned char>(line[i])) ||
-              line[i] == '_')) {
-        ++i;
-      }
-      std::string var_name = line.substr(tok_start, i - tok_start);
-      // Look up current value
-      int64_t sym_val = 0;
-      if (symbols.Lookup(var_name, sym_val)) {
-        result += std::to_string(sym_val);
-        continue;
-      }
-      // Not found — output original token
-      result += var_name;
+      i = SubstituteVarToken(line, i, symbols, result);
       continue;
     }
-
     result += line[i++];
   }
 
@@ -546,32 +512,39 @@ MerlinSyntaxParser::ScopeLocalLabelsInOperand(const std::string &operand) const 
   result.reserve(operand.size() + (current_scope_.global_label.size() * 2));
 
   for (size_t i = 0; i < operand.size();) {
-    char c = operand[i];
-    // A ':word' token starts at position 0 or after a non-identifier char
-    bool at_word_start = // NOLINT(cppcoreguidelines-init-variables)
-        (i == 0) ||
-        (!std::isalnum(static_cast<unsigned char>(operand[i - 1])) &&
-         operand[i - 1] != '_');
-
-    if (c == ':' && at_word_start && i + 1 < operand.size() &&
-        (std::isalnum(static_cast<unsigned char>(operand[i + 1])) ||
-         operand[i + 1] == '_')) {
-      // Local label reference — prepend global scope: ADDSOUND:rts
+    if (StartsLocalLabelRef(operand, i)) {
       result += current_scope_.global_label;
       result += ':';
-      i++; // skip the ':'
+      ++i; // skip the ':'
       while (i < operand.size() &&
              (std::isalnum(static_cast<unsigned char>(operand[i])) ||
               operand[i] == '_')) {
         result += operand[i++];
       }
     } else {
-      result += c;
-      i++;
+      result += operand[i++];
     }
   }
 
   return result;
+}
+
+/// Return true if operand[i] begins a ':local' label reference.
+// static
+bool MerlinSyntaxParser::StartsLocalLabelRef(const std::string &operand,
+                                              size_t i) {
+  if (operand[i] != ':') {
+    return false;
+  }
+  // Must be at start of a word (position 0 or after a non-ident char)
+  bool at_word_start = (i == 0) ||
+      (!std::isalnum(static_cast<unsigned char>(operand[i - 1])) &&
+       operand[i - 1] != '_');
+  // Must be followed by an identifier char
+  bool valid_next = (i + 1 < operand.size() &&
+      (std::isalnum(static_cast<unsigned char>(operand[i + 1])) ||
+       operand[i + 1] == '_'));
+  return at_word_start && valid_next;
 }
 
 // Expand Merlin character literals ("X" or 'X') in an instruction operand
@@ -625,7 +598,6 @@ MerlinSyntaxParser::ExpandMerlinCharLiterals(const std::string &operand) {
 
 std::string
 MerlinSyntaxParser::ExpandVarLabelsInOperand(const std::string &operand) const {
-  // Fast path: no ] in operand
   if (operand.find(']') == std::string::npos) {
     return operand;
   }
@@ -635,45 +607,39 @@ MerlinSyntaxParser::ExpandVarLabelsInOperand(const std::string &operand) const {
 
   for (size_t i = 0; i < operand.size();) {
     if (operand[i] == ']') {
-      // Collect ]identifier
-      size_t tok_start = i++;
-      while (i < operand.size() &&
-             (std::isalnum(static_cast<unsigned char>(operand[i])) ||
-              operand[i] == '_')) {
-        ++i;
-      }
-      std::string var_name = operand.substr(tok_start, i - tok_start);
-
-      // Check if this ]varname is immediately followed by ':'.
-      // If so, it's acting as a scope qualifier ("]rts:local" form) and must
-      // NOT be expanded — the :local label was defined under the original
-      // (non-unique) scope name "]rts", so the reference must stay as "]rts".
-      bool followed_by_colon = (i < operand.size() && operand[i] == ':');
-
-      auto it = var_label_seq_.find(var_name);
-      if (!followed_by_colon && it != var_label_seq_.end() && it->second > 0) {
-        // Direct reference: replace ]varname with ]varname_N (most recent
-        // definition, which may be a backward or forward reference resolved
-        // in multi-pass assembly).
-        result += var_name + "_" + std::to_string(it->second);
-      } else if (!followed_by_colon && !var_name.empty() &&
-                 (it == var_label_seq_.end() || it->second != 0)) {
-        // No definition seen yet: this is a forward reference to the first
-        // occurrence of a code-label ]var.  Expand to ]var_1 so that once
-        // the definition is parsed it resolves in multi-pass.
-        result += var_name + "_1";
-      } else {
-        // EQU-style ]var = VALUE (it->second == 0): use plain name so the
-        // lookup in the symbol table succeeds.
-        // Also covers scope qualifier — keep as-is.
-        result += var_name;
-      }
+      i = AppendExpandedVarLabel(operand, i, result);
     } else {
       result += operand[i++];
     }
   }
 
   return result;
+}
+
+/// Expand a single ]var token starting at operand[i] into result.
+/// Returns the updated index after the token.
+size_t MerlinSyntaxParser::AppendExpandedVarLabel(const std::string &operand,
+                                                   size_t i,
+                                                   std::string &result) const {
+  size_t tok_start = i++;
+  while (i < operand.size() &&
+         (std::isalnum(static_cast<unsigned char>(operand[i])) ||
+          operand[i] == '_')) {
+    ++i;
+  }
+  std::string var_name = operand.substr(tok_start, i - tok_start);
+  bool followed_by_colon = (i < operand.size() && operand[i] == ':');
+
+  auto it = var_label_seq_.find(var_name);
+  if (!followed_by_colon && it != var_label_seq_.end() && it->second > 0) {
+    result += var_name + "_" + std::to_string(it->second);
+  } else if (!followed_by_colon && !var_name.empty() &&
+             (it == var_label_seq_.end() || it->second != 0)) {
+    result += var_name + "_1";
+  } else {
+    result += var_name;
+  }
+  return i;
 }
 
 // ============================================================================
@@ -739,118 +705,94 @@ void MerlinSyntaxParser::HandleEqu(const DirectiveContext &ctx,
   }
 }
 
-void MerlinSyntaxParser::HandleDS(const std::string &operand, Section &section, // NOLINT(readability-make-member-function-const)
+// ============================================================================
+// HandleDS Sub-Helpers
+// ============================================================================
+
+/// Returns true if '*' at position pos in str is a program counter (not mult).
+static bool IsPC(const std::string &str, size_t pos) {
+  bool before = (pos > 0 && (std::isalnum(static_cast<unsigned char>(str[pos - 1]))
+                              || str[pos - 1] == ')'));
+  bool after  = (pos + 1 < str.size() &&
+                 (std::isalnum(static_cast<unsigned char>(str[pos + 1]))
+                  || str[pos + 1] == '(' || str[pos + 1] == '$'
+                  || str[pos + 1] == '%'));
+  return !(before && after);
+}
+
+std::string MerlinSyntaxParser::SubstitutePCInDSOperand(
+    const std::string &op) const {
+  if (op.find('*') == std::string::npos) {
+    return op;
+  }
+  std::ostringstream hex_stream;
+  hex_stream << "$" << std::hex
+             << (in_dum_block_ ? dum_address_ : current_address_);
+  std::string pc_hex = hex_stream.str();
+  std::string result = op;
+  size_t pos = 0;
+  while ((pos = result.find('*', pos)) != std::string::npos) {
+    if (IsPC(result, pos)) {
+      result.replace(pos, 1, pc_hex);
+      pos += pc_hex.length();
+    } else {
+      ++pos;
+    }
+  }
+  return result;
+}
+
+uint32_t MerlinSyntaxParser::ResolveDSCount(
+    const std::string &op, ConcreteSymbolTable &symbols) {
+  if (op.empty()) {
+    return 0;
+  }
+  auto expr = ParseExpression(op, symbols);
+  try {
+    int64_t value = expr->Evaluate(symbols);
+    if (value < 0) {
+      throw std::runtime_error(FormatError(
+          "DS: Negative count not allowed: " + std::to_string(value)));
+    }
+    return static_cast<uint32_t>(value);
+  } catch (const std::runtime_error &e) {
+    // Re-throw with location if not already formatted
+    std::string msg = e.what();
+    size_t first_colon = msg.find(':');
+    if (first_colon != std::string::npos && first_colon < msg.length() - 1) {
+      size_t second_colon = msg.find(':', first_colon + 1);
+      if (second_colon != std::string::npos && second_colon > first_colon + 1) {
+        for (size_t i = first_colon + 1; i < second_colon; ++i) {
+          if (std::isdigit(static_cast<unsigned char>(msg[i]))) {
+            throw; // already has location
+          }
+        }
+      }
+    }
+    throw std::runtime_error(FormatError(msg));
+  }
+}
+
+void MerlinSyntaxParser::HandleDS(const std::string &operand, Section &section,
                                   ConcreteSymbolTable &symbols) {
   // DS directive - define space (reserve bytes)
   // Supports: DS 100        (literal)
   //           DS COUNT      (symbol)
   //           DS *+10       (program counter arithmetic)
 
-  std::string op = Trim(operand);
-
-  // Substitute * (program counter) with current address
-  // But NOT when * is multiplication operator (between operands)
-  if (op.find('*') != std::string::npos) {
-    std::ostringstream hex_stream;
-    hex_stream << "$" << std::hex
-               << (in_dum_block_ ? dum_address_ : current_address_);
-    std::string pc_hex = hex_stream.str();
-
-    // Replace * with address, checking context
-    size_t pos = 0;
-    while ((pos = op.find('*', pos)) != std::string::npos) {
-      bool is_multiplication = false;
-
-      // Check operand before *
-      bool has_operand_before = false;
-      if (pos > 0) {
-        char before = op[pos - 1];
-        if (std::isalnum(static_cast<unsigned char>(before)) || before == ')') {
-          has_operand_before = true;
-        }
-      }
-
-      // Check operand after *
-      bool has_operand_after = false;
-      if (pos + 1 < op.length()) {
-        char after = op[pos + 1];
-        if (std::isalnum(static_cast<unsigned char>(after)) || after == '(' ||
-            after == '$' || after == '%') {
-          has_operand_after = true;
-        }
-      }
-
-      // Multiplication only if operands on BOTH sides
-      is_multiplication = has_operand_before && has_operand_after;
-
-      if (is_multiplication) {
-        pos++; // Skip multiplication operator
-      } else {
-        // Program counter - substitute
-        op.replace(pos, 1, pc_hex);
-        pos += pc_hex.length();
-      }
-    }
-  }
-
-  // Parse expression (supports arithmetic, symbols, literals)
-  uint32_t count = 0;
-  if (!op.empty()) {
-    auto expr = ParseExpression(op, symbols);
-    try {
-      int64_t value = expr->Evaluate(symbols);
-      if (value < 0) {
-        throw std::runtime_error(FormatError(
-            "DS: Negative count not allowed: " + std::to_string(value)));
-      }
-      count = static_cast<uint32_t>(value);
-    } catch (const std::runtime_error &e) {
-      // Re-throw with location information if not already formatted
-      std::string msg = e.what();
-      // Check if message already has file:line: format
-      // Format is: filename:number: error: message
-      size_t first_colon = msg.find(':');
-      bool has_location = false;
-      if (first_colon != std::string::npos && first_colon < msg.length() - 1) {
-        size_t second_colon = msg.find(':', first_colon + 1);
-        if (second_colon != std::string::npos &&
-            second_colon > first_colon + 1) {
-          // Check if there's a digit between the two colons (line number)
-          bool has_digit = false;
-          for (size_t i = first_colon + 1; i < second_colon; ++i) {
-            if (std::isdigit(static_cast<unsigned char>(msg[i]))) {
-              has_digit = true;
-              break;
-            }
-          }
-          has_location = has_digit;
-        }
-      }
-
-      if (!has_location) {
-        throw std::runtime_error(FormatError(msg));
-      } else {
-        throw;
-      }
-    }
-  }
+  std::string op = SubstitutePCInDSOperand(Trim(operand));
+  uint32_t count = ResolveDSCount(op, symbols);
 
   // DUM blocks: advance address without emitting bytes
   if (!in_dum_block_) {
     // If the original operand contains '*' (PC-relative), store the raw
-    // expression so the assembler can re-evaluate it each pass (as the PC
-    // shifts when branch relaxations change code sizes between passes).
+    // expression so the assembler can re-evaluate it each pass.
     std::string raw = Trim(operand);
     bool has_star = false;
     for (size_t i = 0; i < raw.size(); ++i) {
-      if (raw[i] == '*') {
-        // Check it's not a multiplication operator (operands on both sides)
-        bool before = (i > 0 && (std::isalnum(static_cast<unsigned char>(raw[i-1])) || raw[i-1] == ')')); // NOLINT(cppcoreguidelines-init-variables)
-        bool after  = (i+1 < raw.size() && (std::isalnum(static_cast<unsigned char>(raw[i+1])) || raw[i+1] == '(' || raw[i+1] == '$' || raw[i+1] == '%')); // NOLINT(cppcoreguidelines-init-variables)
-        if (!(before && after)) {
-          has_star = true;
-          break;
-        }
+      if (raw[i] == '*' && IsPC(raw, i)) {
+        has_star = true;
+        break;
       }
     }
     if (has_star) {
@@ -884,7 +826,7 @@ void MerlinSyntaxParser::HandleDum(const std::string &operand,
   } else {
     // Symbol - look it up
     int64_t value = 0;
-    if (symbols.Lookup(op, value)) { // NOLINT(bugprone-branch-clone)
+    if (symbols.Lookup(op, value)) {
       dum_address_ = static_cast<uint32_t>(value);
     } else {
       // Symbol not found - ERROR instead of silently using 0
@@ -1053,73 +995,62 @@ void MerlinSyntaxParser::HandleMacroEnd() {
   in_macro_definition_ = false;
 }
 
+/// Parse macro invocation operand string into a list of parameter strings.
+/// Semicolon-separated (MAC style) or comma-separated.
+static std::vector<std::string> ParseMacroParams(const std::string &operand) {
+  if (operand.empty()) {
+    return {};
+  }
+  char separator = (operand.find(';') != std::string::npos) ? ';' : ',';
+  std::vector<std::string> params;
+  std::string token;
+  bool in_string = false;
+  char string_delim = '\0';
+  for (char c : operand + separator) {
+    if (!in_string && (c == '"' || c == '\'')) {
+      in_string = true;
+      string_delim = c;
+      token += c;
+    } else if (in_string && c == string_delim) {
+      in_string = false;
+      token += c;
+    } else if (!in_string && c == separator) {
+      std::string t = Trim(token);
+      if (!t.empty()) {
+        params.push_back(t);
+      }
+      token.clear();
+    } else {
+      token += c;
+    }
+  }
+  return params;
+}
+
 void MerlinSyntaxParser::ExpandMacro(const DirectiveContext &ctx,
                                      Section &section,
                                      ConcreteSymbolTable &symbols) {
   const std::string &macro_name = ctx.mnemonic;
   const std::string &operand = ctx.operand;
-  // Expand a macro: MACRONAME param1,param2,...
 
-  // Check recursion depth
   if (macro_expansion_depth_ >= 100) {
     throw std::runtime_error(FormatError(
         "Macro expansion depth limit exceeded (possible recursion)"));
   }
 
   std::string upper_name = ToUpper(macro_name);
-
-  // Look up macro
   auto it = macros_.find(upper_name);
   if (it == macros_.end()) {
     throw std::runtime_error(FormatError("Undefined macro: " + macro_name));
   }
 
   const MacroDefinition &macro = it->second;
+  std::vector<std::string> params = ParseMacroParams(operand);
 
-  // Parse parameters from operand
-  // Parameters can be separated by semicolons (MAC style) or commas (alternate
-  // style)
-  std::vector<std::string> params;
-  if (!operand.empty()) {
-    std::string token;
-    bool in_string = false;
-    char string_delimiter = '\0';
-
-    // Determine separator: semicolon for MAC style, comma otherwise
-    char separator = (operand.find(';') != std::string::npos) ? ';' : ','; // NOLINT(cppcoreguidelines-init-variables)
-
-    for (char c :
-         operand + separator) { // Add trailing separator to flush last token
-      if (!in_string && (c == '"' || c == '\'')) {
-        in_string = true;
-        string_delimiter = c;
-        token += c;
-      } else if (in_string && c == string_delimiter) {
-        in_string = false;
-        token += c;
-      } else if (!in_string && (c == separator)) {
-        std::string trimmed = Trim(token);
-        if (!trimmed.empty()) {
-          params.push_back(trimmed);
-        }
-        token.clear();
-      } else {
-        token += c;
-      }
-    }
-  }
-
-  // Expand macro body
   macro_expansion_depth_++;
-
   for (const auto &line : macro.body) {
-    // Substitute parameters
-    std::string expanded = SubstituteParameters(line, params);
-
-    // Parse expanded line recursively
-    ParseLine(expanded, section, symbols);
+    ParseLine(SubstituteParameters(line, params), section, symbols);
   }
-
   macro_expansion_depth_--;
 }
 
@@ -1231,7 +1162,7 @@ void MerlinSyntaxParser::HandleLup(const std::string &operand) {
   int count = 0;
   try {
     count = static_cast<int>(ParseNumber(count_str));
-  } catch (...) { // NOLINT(bugprone-empty-catch)
+  } catch (...) {
     throw std::runtime_error(
         FormatError("LUP count must be a number: " + count_str));
   }
@@ -1345,8 +1276,7 @@ void MerlinSyntaxParser::HandleInstructionLine(const std::string &directive,
     auto merlin_scope_fn = [this](const std::string &lbl) -> std::string {
       std::string scoped = ScopeLocalLabel(lbl);
       if (!lbl.empty() && lbl[0] == ']' && lbl.find(':') == std::string::npos) {
-        int seq = ++var_label_seq_[lbl]; // NOLINT(cppcoreguidelines-init-variables)
-        scoped = lbl + "_" + std::to_string(seq);
+        int seq = ++var_label_seq_[lbl];        scoped = lbl + "_" + std::to_string(seq);
       }
       return scoped;
     };
@@ -1374,39 +1304,164 @@ void MerlinSyntaxParser::HandleInstructionLine(const std::string &directive,
   // values so the shared ParseExpression never sees Merlin char-literal syntax.
   operands = ScopeLocalLabelsInOperand(operands);
   operands = ExpandVarLabelsInOperand(operands);
-  // V1: Strip Merlin inline comment from instruction operand.
-  // In Merlin, any whitespace-separated trailing text is a comment — it need
-  // not start with ';' or a quote.  e.g.:
-  //   "#99 \"stabbed\""  → "#99"   (quoted string comment)
-  //   "#-5 impaled"      → "#-5"   (bare word comment)
-  // Only strip when the operand (after skipping a leading '#') does NOT start
-  // with a quote (which would be a char literal like "#\"A\"").
-  {
-    std::string stripped = operands;
-    // Skip leading '#' or '<' prefix (immediate / low-byte operators)
-    size_t offset = 0;
-    if (!stripped.empty() && (stripped[0] == '#' || stripped[0] == '<')) {
-      offset = 1;
-    }
-    // If the expression itself starts with a quote, leave it alone (char
-    // literal)
-    if (offset < stripped.size() && stripped[offset] != '"' &&
-        stripped[offset] != '\'') {
-      for (size_t i = offset; i < stripped.size(); ++i) {
-        if (stripped[i] == ' ' || stripped[i] == '\t') {
-          // Any space/tab after the expression = start of comment field
-          stripped = stripped.substr(0, offset) +
-                     Trim(stripped.substr(offset, i - offset));
-          break;
-        }
-      }
-    }
-    operands = stripped;
-  }
+  operands = StripMerlinInlineComment(operands);
   operands = ExpandMerlinCharLiterals(operands);
   section.atoms.push_back(
       std::make_shared<InstructionAtom>(directive, operands));
   current_address_ += 1; // Placeholder size
+}
+
+// ============================================================================
+// ParseLine Sub-Handlers (extracted helpers to reduce cognitive complexity)
+// ============================================================================
+
+bool MerlinSyntaxParser::HandleMacroCaptureState(
+    const std::string &code_line, const std::string &upper_trimmed) {
+  if (!in_macro_definition_) {
+    return false;
+  }
+  if (upper_trimmed == directives::EOM) {
+    HandleEOM();
+    return true;
+  }
+  if (upper_trimmed == directives::MACRO_END_ALT) {
+    HandleMacroEnd();
+    return true;
+  }
+  current_macro_.body.push_back(code_line);
+  return true;
+}
+
+bool MerlinSyntaxParser::HandleLupCaptureState(
+    const std::string &code_line, const std::string &upper_trimmed,
+    Section &section, ConcreteSymbolTable &symbols) {
+  if (!in_lup_block_) {
+    return false;
+  }
+  if (upper_trimmed != "--^") {
+    // Check if this line starts a nested LUP block
+    std::string lup_directive = std::string(directives::LUP) + " ";
+    if (upper_trimmed.starts_with(lup_directive) ||
+        upper_trimmed == directives::LUP) {
+      lup_nesting_depth_++;
+    }
+    lup_body_.push_back(code_line);
+    return true;
+  }
+  // "--^" terminates LUP
+  if (lup_nesting_depth_ > 0) {
+    lup_nesting_depth_--;
+    lup_body_.push_back(code_line);
+    return true;
+  }
+  // End of outermost LUP — expand body
+  std::vector<std::string> body_copy = lup_body_;
+  int count = lup_count_;
+  in_lup_block_ = false;
+  lup_body_.clear();
+  lup_count_ = 0;
+  lup_nesting_depth_ = 0;
+  for (int i = 0; i < count; ++i) {
+    for (const auto &lup_line : body_copy) {
+      std::string expanded = SubstituteMerlinVars(lup_line, symbols);
+      ParseLine(expanded, section, symbols);
+    }
+  }
+  return true;
+}
+
+bool MerlinSyntaxParser::HandleConditionalDirective(
+    const std::string &trimmed, const std::string &upper_trimmed,
+    ConcreteSymbolTable &symbols) {
+  std::string do_directive = std::string(directives::DO) + " ";
+  if (upper_trimmed.starts_with(do_directive) ||
+      upper_trimmed == directives::DO) {
+    std::string operand = trimmed.length() > 3 ? Trim(trimmed.substr(3)) : "0";
+    HandleDo(operand, symbols);
+    return true;
+  }
+  if (upper_trimmed == directives::ELSE) {
+    HandleElse();
+    return true;
+  }
+  if (upper_trimmed == directives::FIN) {
+    HandleFin();
+    return true;
+  }
+  return false;
+}
+
+bool MerlinSyntaxParser::HandleLabelOnlyLine(const std::string &label,
+                                              Section &section,
+                                              ConcreteSymbolTable &symbols) {
+  if (label.empty()) {
+    return true; // empty label on label-only line — nothing to do
+  }
+  uint32_t label_addr = in_dum_block_ ? dum_address_ : current_address_;
+  std::string scoped_label = ScopeLocalLabel(label);
+  // ]variable labels on their own line must be uniqued (same as
+  // instruction-carrying ]var labels) so ExpandVarLabelsInOperand resolves
+  // nearby references to the correct definition instance.
+  if (label[0] == ']' && label.find(':') == std::string::npos) {
+    int seq = ++var_label_seq_[label];    scoped_label = label + "_" + std::to_string(seq);
+  }
+  symbols.Define(scoped_label, SymbolType::Label,
+                 std::make_shared<LiteralExpr>(label_addr));
+  if (!in_dum_block_) {
+    section.atoms.push_back(
+        std::make_shared<LabelAtom>(scoped_label, label_addr));
+  }
+  // Only true global labels update the scope
+  if (label[0] != ':' &&
+      (label[0] != ']' || current_scope_.global_label.empty())) {
+    current_scope_.global_label = label;
+    current_scope_.local_labels.clear();
+  }
+  return true;
+}
+
+// static
+bool MerlinSyntaxParser::EquateNeedsReeval(const std::string &value) {
+  for (size_t i = 0; i < value.size(); ++i) {
+    char c = value[i];
+    if (c == '*' && IsPC(value, i)) {
+      return true;
+    }
+    if (c == '$') {
+      // Skip hex literal digits
+      while (i + 1 < value.size() &&
+             std::isxdigit(static_cast<unsigned char>(value[i + 1]))) {
+        ++i;
+      }
+      continue;
+    }
+    if (std::isalpha(static_cast<unsigned char>(c))) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool MerlinSyntaxParser::HandleEquateLine(const std::string &label,
+                                           const std::string &code_line,
+                                           size_t equals_pos, Section &section,
+                                           ConcreteSymbolTable &symbols) {
+  if (equals_pos == std::string::npos || label.empty()) {
+    return false;
+  }
+  std::string value = Trim(code_line.substr(equals_pos + 1));
+  {
+    DirectiveContext equ_ctx;
+    equ_ctx.label = label;
+    equ_ctx.operand = value;
+    HandleEqu(equ_ctx, symbols);
+  }
+  // If expression contains '*' (PC) or a code-label reference, push an
+  // EquateAtom so the assembler re-evaluates it each pass.
+  if (!in_dum_block_ && EquateNeedsReeval(value)) {
+    section.atoms.push_back(std::make_shared<EquateAtom>(label, value));
+  }
+  return true;
 }
 
 // ============================================================================
@@ -1429,91 +1484,21 @@ void MerlinSyntaxParser::ParseLine(const std::string &line, Section &section,
     return;
   }
 
-  // If in macro definition mode, capture lines (except EOM or <<<)
   std::string upper_trimmed = ToUpper(trimmed);
-  if (in_macro_definition_) {
-    // Check for EOM directive to end macro definition
-    if (upper_trimmed == directives::EOM) {
-      HandleEOM();
-      return;
-    }
-    // Check for <<< to end macro definition (Merlin style)
-    if (upper_trimmed == directives::MACRO_END_ALT) {
-      HandleMacroEnd();
-      return;
-    }
-    // Otherwise, add line to macro body
-    current_macro_.body.push_back(code_line);
+
+  if (HandleMacroCaptureState(code_line, upper_trimmed)) {
+    return;
+  }
+  if (HandleLupCaptureState(code_line, upper_trimmed, section, symbols)) {
+    return;
+  }
+  if (HandleConditionalDirective(trimmed, upper_trimmed, symbols)) {
     return;
   }
 
-  // If in LUP block mode, capture lines (except --^)
-  if (in_lup_block_) {
-    // Check for --^ directive to end LUP block
-    if (upper_trimmed == "--^") {
-      // If nesting depth > 0, this ends an inner LUP
-      if (lup_nesting_depth_ > 0) {
-        lup_nesting_depth_--;
-        lup_body_.push_back(code_line);
-        return;
-      }
-
-      // End of outermost LUP block - expand and parse
-      std::vector<std::string> body_copy =
-          lup_body_; // Copy to avoid use-after-free
-      int count = lup_count_;
-
-      // Reset LUP state BEFORE expansion (so lines can be parsed normally)
-      in_lup_block_ = false;
-      lup_body_.clear();
-      lup_count_ = 0;
-      lup_nesting_depth_ = 0;
-
-      // Repeat the body count times.
-      // Substitute ]variable values before each line so that each iteration
-      // captures the variable's current value (mutable assembly-time counter).
-      for (int i = 0; i < count; ++i) {
-        for (const auto &lup_line : body_copy) {
-          std::string expanded = SubstituteMerlinVars(lup_line, symbols);
-          ParseLine(expanded, section, symbols);
-        }
-      }
-      return;
-    }
-
-    // Check if this line starts a nested LUP block
-    std::string lup_directive = std::string(directives::LUP) + " ";
-    if (upper_trimmed.starts_with(lup_directive) ||
-        upper_trimmed == directives::LUP) {
-      lup_nesting_depth_++;
-    }
-
-    // Add line to LUP body
-    lup_body_.push_back(code_line);
-    return;
-  }
-
-  // Check for conditional assembly directives (DO/ELSE/FIN)
-  // These must be processed even when inside a false conditional block
-  std::string do_directive = std::string(directives::DO) + " ";
-  if (upper_trimmed.starts_with(do_directive) ||
-      upper_trimmed == directives::DO) {
-    // Extract operand after "DO"
-    std::string operand = trimmed.length() > 3 ? Trim(trimmed.substr(3)) : "0";
-    HandleDo(operand, symbols);
-    return;
-  } else if (upper_trimmed == directives::ELSE) {
-    HandleElse();
-    return;
-  } else if (upper_trimmed == directives::FIN) {
-    HandleFin();
-    return;
-  }
-
-  // Check if we should skip this line due to conditional assembly (Phase 4: use
-  // shared component)
+  // Check if we should skip this line due to conditional assembly
   if (!conditional_.ShouldEmit()) {
-    return; // Skip this line - we're in a false conditional block
+    return;
   }
 
   // Parse label (if present) - use original (untrimmed) code_line
@@ -1528,95 +1513,13 @@ void MerlinSyntaxParser::ParseLine(const std::string &line, Section &section,
 
   // If only label on line (no directive/instruction)
   if (pos >= code_line.length()) {
-    if (!label.empty()) {
-      // In DUM blocks, labels get the DUM address; no LabelAtom emitted
-      // (LabelAtoms are overwritten by current_address in ResolveSymbols)
-      uint32_t label_addr = in_dum_block_ ? dum_address_ : current_address_;
-      std::string scoped_label = ScopeLocalLabel(label);
-      // ]variable labels on their own line must be uniqued the same way
-      // as instruction-carrying ]var labels so that ExpandVarLabelsInOperand
-      // resolves nearby references (forward or backward) to the correct
-      // definition instance.  Without this, a label-only "]rts" line does not
-      // increment var_label_seq_, causing subsequent "bne ]rts" to expand to
-      // the wrong (earlier) definition.
-      if (!label.empty() && label[0] == ']' &&
-          label.find(':') == std::string::npos) {
-        int seq = ++var_label_seq_[label]; // NOLINT(cppcoreguidelines-init-variables)
-        scoped_label = label + "_" + std::to_string(seq);
-      }
-      symbols.Define(scoped_label, SymbolType::Label,
-                     std::make_shared<LiteralExpr>(label_addr));
-      if (!in_dum_block_) {
-        section.atoms.push_back(
-            std::make_shared<LabelAtom>(scoped_label, label_addr));
-      }
-
-      // Only true global labels (no ':' or ']' prefix) update the scope.
-      // ]variable labels are mutable variables, not scope anchors — EXCEPT
-      // when there is no current scope yet (start of file before any true
-      // global label), in which case they must anchor scope so that :local
-      // labels defined after them can be resolved.
-      if (label[0] != ':' &&
-          (label[0] != ']' || current_scope_.global_label.empty())) {
-        current_scope_.global_label = label;
-        current_scope_.local_labels.clear();
-      }
-    }
+    HandleLabelOnlyLine(label, section, symbols);
     return;
   }
 
-  // Check for = syntax (alternate EQU) first
-  // Format: LABEL = VALUE
+  // Check for = syntax (alternate EQU): LABEL = VALUE
   size_t equals_pos = code_line.find('=', pos);
-  if (equals_pos != std::string::npos && !label.empty()) {
-    // This is an = equate
-    std::string value = Trim(code_line.substr(equals_pos + 1));
-    {
-      DirectiveContext equ_ctx;
-      equ_ctx.label = label;
-      equ_ctx.operand = value;
-      HandleEqu(equ_ctx, symbols);
-    }
-    // If the expression contains '*' (PC reference) or a code-label reference
-    // (alpha identifier not inside a hex literal), push an EquateAtom so the
-    // assembler re-evaluates it each pass with the correct virtual address.
-    // At parse time, instruction sizes are placeholder (1 byte each), so
-    // expressions like "CHECKEND = *-CHECKER" or "Tmovemem = MOVEMEM-$B000"
-    // compute wrong values if evaluated only once at parse time.
-    if (!in_dum_block_) {
-      bool needs_reeval = false;
-      for (size_t i = 0; i < value.size(); ++i) {
-        char c = value[i];
-        if (c == '*') {
-          bool before = // NOLINT(cppcoreguidelines-init-variables)
-              (i > 0 && (std::isalnum(static_cast<unsigned char>(value[i - 1]))
-                         || value[i - 1] == ')'));
-          bool after = // NOLINT(cppcoreguidelines-init-variables)
-              (i + 1 < value.size() &&
-               (std::isalnum(static_cast<unsigned char>(value[i + 1]))
-                || value[i + 1] == '(' || value[i + 1] == '$'
-                || value[i + 1] == '%'));
-          if (!(before && after)) {
-            needs_reeval = true;
-            break;
-          }
-        } else if (c == '$') {
-          // Skip the whole hex literal ($ followed by hex digits)
-          while (i + 1 < value.size() &&
-                 std::isxdigit(static_cast<unsigned char>(value[i + 1]))) {
-            ++i;
-          }
-        } else if (std::isalpha(static_cast<unsigned char>(c))) {
-          // Alpha char starting an identifier (not inside a hex literal)
-          // → likely a code-label reference
-          needs_reeval = true;
-          break;
-        }
-      }
-      if (needs_reeval) {
-        section.atoms.push_back(std::make_shared<EquateAtom>(label, value));
-      }
-    }
+  if (HandleEquateLine(label, code_line, equals_pos, section, symbols)) {
     return;
   }
 

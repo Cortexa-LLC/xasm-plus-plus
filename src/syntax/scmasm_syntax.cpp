@@ -382,8 +382,7 @@ void ScmasmSyntaxParser::Parse(const std::string &source, Section &section,
 // Strips trailing whitespace characters from a line.
 static std::string StripTrailingWhitespace(const std::string &line) {
   size_t end = line.size();
-  // NOLINT(bugprone-infinite-loop): false positive — --end is inside body
-  while (end > 0 && (line[end - 1] == ' ' || line[end - 1] == '\t' || // NOLINT(bugprone-infinite-loop)
+  while (end > 0 && (line[end - 1] == ' ' || line[end - 1] == '\t' ||
                      line[end - 1] == '\r' || line[end - 1] == '\n')) {
     --end;
   }
@@ -413,7 +412,7 @@ void ScmasmSyntaxParser::ProcessOneLine(const std::string &raw,
 
   try {
     ParseLine(line, section, symbols, lines, line_idx);
-  } catch (const std::exception &e) { // NOLINT(bugprone-empty-catch)
+  } catch (const std::exception &e) {
     throw std::runtime_error(FormatError(e.what()));
   }
 }
@@ -823,7 +822,7 @@ bool ScmasmSyntaxParser::TryDispatchControlFlow(
     HandleDo(do_ctx, section, symbols, source, line_idx);
     return true;
   }
-  if (opcode_upper == LU) { // NOLINT(bugprone-branch-clone)
+  if (opcode_upper == LU) {
     DirectiveContext lu_ctx;
     lu_ctx.label = label;
     lu_ctx.operand = operand;
@@ -1350,7 +1349,7 @@ uint32_t ScmasmSyntaxParser::ParseHexNumber(const std::string &trimmed) {
   }
   try {
     return std::stoul(hex, nullptr, RADIX_HEXADECIMAL);
-  } catch (const std::exception &e) { // NOLINT(bugprone-empty-catch)
+  } catch (const std::exception &e) {
     throw std::runtime_error("Failed to parse hex number '" + trimmed +
                              "': " + e.what());
   }
@@ -1375,7 +1374,7 @@ uint32_t ScmasmSyntaxParser::ParseBinaryNumber(const std::string &trimmed) {
   }
   try {
     return std::stoul(binary, nullptr, RADIX_BINARY);
-  } catch (const std::exception &e) { // NOLINT(bugprone-empty-catch)
+  } catch (const std::exception &e) {
     throw std::runtime_error("Failed to parse binary number '" + trimmed +
                              "': " + e.what());
   }
@@ -1400,7 +1399,7 @@ uint32_t ScmasmSyntaxParser::ParseDecimalNumber(const std::string &trimmed) {
   }
   try {
     return std::stoul(trimmed, nullptr, RADIX_DECIMAL);
-  } catch (const std::exception &e) { // NOLINT(bugprone-empty-catch)
+  } catch (const std::exception &e) {
     throw std::runtime_error("Failed to parse decimal number '" + trimmed +
                              "': " + e.what());
   }
@@ -1554,10 +1553,10 @@ uint8_t ScmasmSyntaxParser::ApplyHighBitRule(HighBitChars hbc) {
 
   if (hbc.delimiter < 0x27) {
     // Set high bit — explicit cast resolves narrowing: uint8_t |= unsigned
-    result = static_cast<uint8_t>(static_cast<unsigned>(result) | 0x80U); // NOLINT(bugprone-narrowing-conversions,cppcoreguidelines-narrowing-conversions)
+    result = static_cast<uint8_t>(static_cast<unsigned>(result) | 0x80U);
   } else {
     // Clear high bit — explicit cast resolves narrowing: uint8_t &= unsigned
-    result = static_cast<uint8_t>(static_cast<unsigned>(result) & 0x7FU); // NOLINT(bugprone-narrowing-conversions,cppcoreguidelines-narrowing-conversions)
+    result = static_cast<uint8_t>(static_cast<unsigned>(result) & 0x7FU);
   }
 
   return result;
@@ -1937,7 +1936,7 @@ void ScmasmSyntaxParser::HandleMa(const DirectiveContext &ctx) {
   std::string macro_name;
   if (!label.empty()) {
     macro_name = label;
-  } else if (!operand.empty()) { // NOLINT(bugprone-branch-clone)
+  } else if (!operand.empty()) {
     macro_name = Trim(operand);
   } else {
     throw std::runtime_error(".MA requires a macro name");

@@ -589,8 +589,65 @@ private:
   static std::string SubstituteParameters(const std::string &line,
                                    const std::vector<std::string> &params);
 
+  // ParseLine sub-handlers (extracted to reduce cognitive complexity)
+  /// Handle line capture during macro definition; returns true if consumed.
+  bool HandleMacroCaptureState(const std::string &code_line,
+                               const std::string &upper_trimmed);
+  /// Handle line capture during LUP block; returns true if consumed.
+  bool HandleLupCaptureState(const std::string &code_line,
+                             const std::string &upper_trimmed,
+                             Section &section, ConcreteSymbolTable &symbols);
+  /// Handle DO/ELSE/FIN directives; returns true if consumed.
+  bool HandleConditionalDirective(const std::string &trimmed,
+                                  const std::string &upper_trimmed,
+                                  ConcreteSymbolTable &symbols);
+  /// Handle label-only line (pos >= code_line.length()); returns true.
+  bool HandleLabelOnlyLine(const std::string &label, Section &section,
+                           ConcreteSymbolTable &symbols);
+  /// Return true if an equate RHS value needs deferred re-evaluation.
+  static bool EquateNeedsReeval(const std::string &value);
+  /// Handle "LABEL = VALUE" equate syntax; returns true if consumed.
+  bool HandleEquateLine(const std::string &label, const std::string &code_line,
+                        size_t equals_pos, Section &section,
+                        ConcreteSymbolTable &symbols);
+
+  // HandleDS sub-helpers
+  /// Substitute standalone '*' (program counter) in a DS operand string.
+  std::string SubstitutePCInDSOperand(const std::string &op) const;
+  /// Resolve a DS operand to a byte count (numeric literal, symbol, or *+N).
+  uint32_t ResolveDSCount(const std::string &op,
+                          ConcreteSymbolTable &symbols);
+
+  // ParseExpression sub-helpers
+  /// Parse a high-byte ('>') prefix expression.
+  std::shared_ptr<Expression>
+  ParseHighByteExpr(const std::string &expr, ConcreteSymbolTable &symbols);
+  /// Parse a low-byte ('<') prefix expression.
+  std::shared_ptr<Expression>
+  ParseLowByteExpr(const std::string &expr, ConcreteSymbolTable &symbols);
+  /// Build a compound char+operator expression from char value and trailing rest.
+  std::shared_ptr<Expression>
+  CompoundCharExpr(int64_t char_val, const std::string &rest,
+                   ConcreteSymbolTable &symbols);
+  /// Build a binary expression from a single-char arithmetic operator.
+  static std::shared_ptr<Expression>
+  MakeBinaryExpr(char op, std::shared_ptr<Expression> lhs,
+                 std::shared_ptr<Expression> rhs);
+
+  /// Expand a ]var token into result; returns updated parse index.
+  size_t AppendExpandedVarLabel(const std::string &operand, size_t i,
+                                std::string &result) const;
+  /// Return true if operand[i] begins a ':local' label reference.
+  static bool StartsLocalLabelRef(const std::string &operand, size_t i);
+
   // Error formatting with source location
   std::string FormatError(const std::string &message) const;
+
+  // Strip Merlin-style inline comment from instruction operand.
+  static std::string StripMerlinInlineComment(const std::string &operands);
+
+  // Strip trailing whitespace-delimited inline comment from an expression.
+  static std::string StripMerlinExprComment(const std::string &expr);
 };
 
 } // namespace xasm
