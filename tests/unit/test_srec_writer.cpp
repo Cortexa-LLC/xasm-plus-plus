@@ -182,7 +182,7 @@ TEST_F(SRecordWriterTest, SingleByteAtZero_S19) {
   ASSERT_TRUE(ValidateSRecord(lines[1], type_char, type_num, byte_count,
                               address, data, checksum));
   EXPECT_EQ(type_num, 1); // S1 record
-  EXPECT_EQ(address, 0x0000);
+  EXPECT_EQ(address, static_cast<uint64_t>(0x0000));
   EXPECT_EQ(data.size(), 1UL);
   EXPECT_EQ(data[0], 0x42);
 }
@@ -209,7 +209,7 @@ TEST_F(SRecordWriterTest, MultipleBytes_S19) {
   ASSERT_TRUE(ValidateSRecord(lines[1], type_char, type_num, byte_count,
                               address, data, checksum));
   EXPECT_EQ(type_num, 1);
-  EXPECT_EQ(address, 0x1000);
+  EXPECT_EQ(address, static_cast<uint64_t>(0x1000));
   EXPECT_EQ(data, test_data);
 }
 
@@ -239,7 +239,7 @@ TEST_F(SRecordWriterTest, AutoSelectS28Format) {
   ASSERT_TRUE(ValidateSRecord(lines[1], type_char, type_num, byte_count,
                               address, data, checksum));
   EXPECT_EQ(type_num, 2); // S2 record
-  EXPECT_EQ(address, 0x10000);
+  EXPECT_EQ(address, static_cast<uint64_t>(0x10000));
   EXPECT_EQ(data.size(), 2UL);
   EXPECT_EQ(data[0], 0xAA);
   EXPECT_EQ(data[1], 0xBB);
@@ -276,7 +276,7 @@ TEST_F(SRecordWriterTest, AutoSelectS37Format) {
   ASSERT_TRUE(ValidateSRecord(lines[1], type_char, type_num, byte_count,
                               address, data, checksum));
   EXPECT_EQ(type_num, 3); // S3 record
-  EXPECT_EQ(address, 0x1000000);
+  EXPECT_EQ(address, static_cast<uint64_t>(0x1000000));
   EXPECT_EQ(data.size(), 2UL);
   EXPECT_EQ(data[0], 0xCC);
   EXPECT_EQ(data[1], 0xDD);
@@ -313,7 +313,7 @@ TEST_F(SRecordWriterTest, HeaderRecord) {
   ASSERT_TRUE(ValidateSRecord(lines[0], type_char, type_num, byte_count,
                               address, data, checksum));
   EXPECT_EQ(type_num, 0);     // S0 record
-  EXPECT_EQ(address, 0x0000); // Typically zero for header
+  EXPECT_EQ(address, static_cast<uint64_t>(0x0000)); // Typically zero for header
 }
 
 // ============================================================================

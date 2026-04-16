@@ -93,6 +93,20 @@ target_link_libraries(test_cpu6502
 
 gtest_discover_tests(test_cpu6502)
 
+# 65C02 extension tests
+add_executable(test_cpu_65c02
+    test_cpu_65c02.cpp
+)
+
+target_link_libraries(test_cpu_65c02
+    xasm_cpu
+    xasm_core
+    gtest_main
+    gtest
+)
+
+gtest_discover_tests(test_cpu_65c02)
+
 # CPU 6809 tests
 add_executable(test_cpu6809
     test_cpu6809.cpp
@@ -741,3 +755,150 @@ target_link_libraries(test_scmasm_expression_utils
 
 gtest_discover_tests(test_scmasm_expression_utils)
 
+
+# S-Record writer tests
+add_executable(test_srec_writer
+    test_srec_writer.cpp
+)
+
+target_link_libraries(test_srec_writer
+    xasm_output
+    xasm_core
+    gtest_main
+    gtest
+)
+
+gtest_discover_tests(test_srec_writer)
+
+# CoCo DOS (LOADM) writer tests
+add_executable(test_coco_loadm_writer
+    test_coco_loadm_writer.cpp
+)
+
+target_link_libraries(test_coco_loadm_writer
+    xasm_output
+    xasm_core
+    gtest_main
+    gtest
+)
+
+gtest_discover_tests(test_coco_loadm_writer)
+
+# TRS-DOS writer tests
+add_executable(test_trsdos_writer
+    test_trsdos_writer.cpp
+)
+
+target_link_libraries(test_trsdos_writer
+    xasm_output
+    xasm_core
+    gtest_main
+    gtest
+)
+
+gtest_discover_tests(test_trsdos_writer)
+
+# Output integration tests (output format system with CLI)
+add_executable(test_output_integration
+    test_output_integration.cpp
+)
+
+target_link_libraries(test_output_integration
+    xasm_output
+    xasm_syntax
+    xasm_cpu
+    xasm_core
+    gtest_main
+    gtest
+)
+
+target_include_directories(test_output_integration PRIVATE
+    ${PROJECT_SOURCE_DIR}/include
+)
+
+gtest_discover_tests(test_output_integration)
+
+# Mnemonic constants / opcode enum tests
+add_executable(test_mnemonic_constants
+    test_mnemonic_constants.cpp
+)
+
+target_link_libraries(test_mnemonic_constants
+    xasm_cpu
+    xasm_core
+    gtest_main
+    gtest
+)
+
+gtest_discover_tests(test_mnemonic_constants)
+
+# Z80 opcode tests
+add_executable(test_opcodes_z80
+    test_opcodes_z80.cpp
+)
+
+target_link_libraries(test_opcodes_z80
+    xasm_cpu
+    xasm_core
+    gtest_main
+    gtest
+)
+
+gtest_discover_tests(test_opcodes_z80)
+
+# Z80 expression tests
+add_executable(test_z80_expressions
+    test_z80_expressions.cpp
+)
+
+target_link_libraries(test_z80_expressions
+    xasm_syntax
+    xasm_cpu
+    xasm_core
+    gtest_main
+    gtest
+)
+
+gtest_discover_tests(test_z80_expressions)
+
+# Directive registry tests
+add_executable(test_directive_registry
+    test_directive_registry.cpp
+)
+
+target_link_libraries(test_directive_registry
+    xasm_syntax
+    xasm_core
+    gtest_main
+    gtest
+)
+
+gtest_discover_tests(test_directive_registry)
+
+# Const-correctness syntax tests
+add_executable(test_const_correctness_syntax
+    test_const_correctness_syntax.cpp
+)
+
+target_link_libraries(test_const_correctness_syntax
+    xasm_syntax
+    xasm_core
+    gtest_main
+    gtest
+)
+
+gtest_discover_tests(test_const_correctness_syntax)
+
+# Const-correctness utility methods tests
+add_executable(test_const_correctness_utility_methods
+    test_const_correctness_utility_methods.cpp
+)
+
+target_link_libraries(test_const_correctness_utility_methods
+    xasm_syntax
+    xasm_core
+    gtest_main
+    gtest
+)
+
+gtest_discover_tests(test_const_correctness_utility_methods)

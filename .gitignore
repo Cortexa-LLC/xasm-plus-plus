@@ -120,3 +120,4 @@ test_*.log
 a.out
 .claude/metrics/
 clang-tidy-report.txt
+build-coverage/

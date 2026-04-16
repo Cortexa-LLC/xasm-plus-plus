@@ -80,6 +80,8 @@ add_library(xasm_output STATIC
   output/symbol_output.cpp
   output/intel_hex_writer.cpp
   output/srec_writer.cpp
+  output/coco_loadm_writer.cpp
+  output/trsdos_writer.cpp
   # Future output plugins:
   # output/hex_output.cpp
   # output/apple2/dos33_output.cpp
