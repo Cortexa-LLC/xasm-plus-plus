@@ -1,6 +1,6 @@
 /**
  * @file test_core_directive_handlers.cpp
- * @brief Unit tests for core directive handlers (ORG, EQU, DB, DW, DS)
+ * @brief Unit tests for core directive handlers (kORG, kEQU, kDB, kDW, kDS)
  *
  * Tests extraction of common directive handlers into free functions
  * as part of God-Class Phase 6b refactoring.
@@ -40,11 +40,11 @@ protected:
 };
 
 // ============================================================================
-// ORG Directive Tests
+// kORG Directive Tests
 // ============================================================================
 
 /**
- * @test ORG creates OrgAtom with correct decimal address
+ * @test kORG creates OrgAtom with correct decimal address
  */
 TEST_F(CoreDirectiveHandlersTest, OrgWithDecimalAddress) {
   // Act
@@ -60,7 +60,7 @@ TEST_F(CoreDirectiveHandlersTest, OrgWithDecimalAddress) {
 }
 
 /**
- * @test ORG creates OrgAtom with correct hex address
+ * @test kORG creates OrgAtom with correct hex address
  */
 TEST_F(CoreDirectiveHandlersTest, OrgWithHexAddress) {
   // Act
@@ -76,7 +76,7 @@ TEST_F(CoreDirectiveHandlersTest, OrgWithHexAddress) {
 }
 
 /**
- * @test ORG creates OrgAtom with correct binary address
+ * @test kORG creates OrgAtom with correct binary address
  */
 TEST_F(CoreDirectiveHandlersTest, OrgWithBinaryAddress) {
   // Act
@@ -92,7 +92,7 @@ TEST_F(CoreDirectiveHandlersTest, OrgWithBinaryAddress) {
 }
 
 /**
- * @test ORG resolves symbol address
+ * @test kORG resolves symbol address
  */
 TEST_F(CoreDirectiveHandlersTest, OrgWithSymbolAddress) {
   // Arrange
@@ -112,7 +112,7 @@ TEST_F(CoreDirectiveHandlersTest, OrgWithSymbolAddress) {
 }
 
 /**
- * @test ORG throws on empty operand
+ * @test kORG throws on empty operand
  */
 TEST_F(CoreDirectiveHandlersTest, OrgWithEmptyOperandThrows) {
   // Act & Assert
@@ -120,7 +120,7 @@ TEST_F(CoreDirectiveHandlersTest, OrgWithEmptyOperandThrows) {
 }
 
 /**
- * @test ORG handles whitespace in operand
+ * @test kORG handles whitespace in operand
  */
 TEST_F(CoreDirectiveHandlersTest, OrgWithWhitespace) {
   // Act
@@ -135,11 +135,11 @@ TEST_F(CoreDirectiveHandlersTest, OrgWithWhitespace) {
 }
 
 // ============================================================================
-// EQU Directive Tests
+// kEQU Directive Tests
 // ============================================================================
 
 /**
- * @test EQU defines symbol with literal value
+ * @test kEQU defines symbol with literal value
  */
 TEST_F(CoreDirectiveHandlersTest, EquWithLiteralValue) {
   // Act
@@ -154,7 +154,7 @@ TEST_F(CoreDirectiveHandlersTest, EquWithLiteralValue) {
 }
 
 /**
- * @test EQU defines symbol with hex value
+ * @test kEQU defines symbol with hex value
  */
 TEST_F(CoreDirectiveHandlersTest, EquWithHexValue) {
   // Act
@@ -169,7 +169,7 @@ TEST_F(CoreDirectiveHandlersTest, EquWithHexValue) {
 }
 
 /**
- * @test EQU defines symbol with expression
+ * @test kEQU defines symbol with expression
  */
 TEST_F(CoreDirectiveHandlersTest, EquWithExpression) {
   // Arrange
@@ -188,7 +188,7 @@ TEST_F(CoreDirectiveHandlersTest, EquWithExpression) {
 }
 
 /**
- * @test EQU throws on empty label
+ * @test kEQU throws on empty label
  */
 TEST_F(CoreDirectiveHandlersTest, EquWithEmptyLabelThrows) {
   // Act & Assert
@@ -196,7 +196,7 @@ TEST_F(CoreDirectiveHandlersTest, EquWithEmptyLabelThrows) {
 }
 
 /**
- * @test EQU does not create atoms
+ * @test kEQU does not create atoms
  */
 TEST_F(CoreDirectiveHandlersTest, EquDoesNotCreateAtoms) {
   // Act
@@ -209,11 +209,11 @@ TEST_F(CoreDirectiveHandlersTest, EquDoesNotCreateAtoms) {
 }
 
 // ============================================================================
-// DB Directive Tests
+// kDB Directive Tests
 // ============================================================================
 
 /**
- * @test DB creates DataAtom with single byte
+ * @test kDB creates DataAtom with single byte
  */
 TEST_F(CoreDirectiveHandlersTest, DbWithSingleByte) {
   // Act
@@ -231,7 +231,7 @@ TEST_F(CoreDirectiveHandlersTest, DbWithSingleByte) {
 }
 
 /**
- * @test DB creates DataAtom with multiple bytes
+ * @test kDB creates DataAtom with multiple bytes
  */
 TEST_F(CoreDirectiveHandlersTest, DbWithMultipleBytes) {
   // Act
@@ -250,11 +250,11 @@ TEST_F(CoreDirectiveHandlersTest, DbWithMultipleBytes) {
 }
 
 /**
- * @test DB handles expressions
+ * @test kDB handles expressions
  */
 TEST_F(CoreDirectiveHandlersTest, DbWithExpressions) {
   // Act
-  context_.operand = "$FF,1+2,%00001111";
+  context_.operand = "$kFF,1+2,%00001111";
   HandleDb(context_);
 
   // Assert
@@ -262,13 +262,13 @@ TEST_F(CoreDirectiveHandlersTest, DbWithExpressions) {
   auto data_atom = std::dynamic_pointer_cast<DataAtom>(section_->atoms[0]);
   ASSERT_NE(data_atom, nullptr);
   ASSERT_EQ(data_atom->expressions.size(), 3UL);
-  EXPECT_EQ(data_atom->expressions[0], "$FF");
+  EXPECT_EQ(data_atom->expressions[0], "$kFF");
   EXPECT_EQ(data_atom->expressions[1], "1+2");
   EXPECT_EQ(data_atom->expressions[2], "%00001111");
 }
 
 /**
- * @test DB handles whitespace in operands
+ * @test kDB handles whitespace in operands
  */
 TEST_F(CoreDirectiveHandlersTest, DbWithWhitespace) {
   // Act
@@ -286,7 +286,7 @@ TEST_F(CoreDirectiveHandlersTest, DbWithWhitespace) {
 }
 
 /**
- * @test DB handles empty operand
+ * @test kDB handles empty operand
  */
 TEST_F(CoreDirectiveHandlersTest, DbWithEmptyOperand) {
   // Act
@@ -302,11 +302,11 @@ TEST_F(CoreDirectiveHandlersTest, DbWithEmptyOperand) {
 }
 
 // ============================================================================
-// DW Directive Tests
+// kDW Directive Tests
 // ============================================================================
 
 /**
- * @test DW creates DataAtom with word size
+ * @test kDW creates DataAtom with word size
  */
 TEST_F(CoreDirectiveHandlersTest, DwWithSingleWord) {
   // Act
@@ -324,7 +324,7 @@ TEST_F(CoreDirectiveHandlersTest, DwWithSingleWord) {
 }
 
 /**
- * @test DW creates DataAtom with multiple words
+ * @test kDW creates DataAtom with multiple words
  */
 TEST_F(CoreDirectiveHandlersTest, DwWithMultipleWords) {
   // Act
@@ -341,7 +341,7 @@ TEST_F(CoreDirectiveHandlersTest, DwWithMultipleWords) {
 }
 
 /**
- * @test DW handles whitespace
+ * @test kDW handles whitespace
  */
 TEST_F(CoreDirectiveHandlersTest, DwWithWhitespace) {
   // Act
@@ -358,11 +358,11 @@ TEST_F(CoreDirectiveHandlersTest, DwWithWhitespace) {
 }
 
 // ============================================================================
-// DS Directive Tests
+// kDS Directive Tests
 // ============================================================================
 
 /**
- * @test DS creates SpaceAtom with correct count
+ * @test kDS creates SpaceAtom with correct count
  */
 TEST_F(CoreDirectiveHandlersTest, DsWithLiteralCount) {
   // Act
@@ -378,7 +378,7 @@ TEST_F(CoreDirectiveHandlersTest, DsWithLiteralCount) {
 }
 
 /**
- * @test DS handles hex count
+ * @test kDS handles hex count
  */
 TEST_F(CoreDirectiveHandlersTest, DsWithHexCount) {
   // Act
@@ -394,7 +394,7 @@ TEST_F(CoreDirectiveHandlersTest, DsWithHexCount) {
 }
 
 /**
- * @test DS handles expression with symbol
+ * @test kDS handles expression with symbol
  */
 TEST_F(CoreDirectiveHandlersTest, DsWithExpression) {
   // Arrange
@@ -414,7 +414,7 @@ TEST_F(CoreDirectiveHandlersTest, DsWithExpression) {
 }
 
 /**
- * @test DS throws on negative count
+ * @test kDS throws on negative count
  */
 TEST_F(CoreDirectiveHandlersTest, DsWithNegativeCountThrows) {
   // Act & Assert
@@ -422,7 +422,7 @@ TEST_F(CoreDirectiveHandlersTest, DsWithNegativeCountThrows) {
 }
 
 /**
- * @test DS handles whitespace
+ * @test kDS handles whitespace
  */
 TEST_F(CoreDirectiveHandlersTest, DsWithWhitespace) {
   // Act
@@ -437,7 +437,7 @@ TEST_F(CoreDirectiveHandlersTest, DsWithWhitespace) {
 }
 
 /**
- * @test DS with empty operand creates zero-size SpaceAtom
+ * @test kDS with empty operand creates zero-size SpaceAtom
  */
 TEST_F(CoreDirectiveHandlersTest, DsWithEmptyOperand) {
   // Act
@@ -483,11 +483,11 @@ protected:
 };
 
 /**
- * @test Registry ORG directive works correctly
+ * @test Registry kORG directive works correctly
  */
 TEST_F(CoreDirectiveRegistryTest, RegistryOrgWorks) {
   // Act
-  context_.mnemonic = directives::ORG;
+  context_.mnemonic = directives::kORG;
   context_.label = "";
   context_.operand = "$C000";
   registry_.Execute(context_);
@@ -501,11 +501,11 @@ TEST_F(CoreDirectiveRegistryTest, RegistryOrgWorks) {
 }
 
 /**
- * @test Registry EQU directive works correctly
+ * @test Registry kEQU directive works correctly
  */
 TEST_F(CoreDirectiveRegistryTest, RegistryEquWorks) {
   // Act
-  context_.mnemonic = directives::EQU;
+  context_.mnemonic = directives::kEQU;
   context_.label = "TEST_VALUE";
   context_.operand = "42";
   registry_.Execute(context_);
@@ -517,11 +517,11 @@ TEST_F(CoreDirectiveRegistryTest, RegistryEquWorks) {
 }
 
 /**
- * @test Registry DB directive works correctly
+ * @test Registry kDB directive works correctly
  */
 TEST_F(CoreDirectiveRegistryTest, RegistryDbWorks) {
   // Act
-  context_.mnemonic = directives::DB;
+  context_.mnemonic = directives::kDB;
   context_.label = "";
   context_.operand = "1,2,3";
   registry_.Execute(context_);
@@ -536,11 +536,11 @@ TEST_F(CoreDirectiveRegistryTest, RegistryDbWorks) {
 }
 
 /**
- * @test Registry DW directive works correctly
+ * @test Registry kDW directive works correctly
  */
 TEST_F(CoreDirectiveRegistryTest, RegistryDwWorks) {
   // Act
-  context_.mnemonic = directives::DW;
+  context_.mnemonic = directives::kDW;
   context_.label = "";
   context_.operand = "$1000,$2000";
   registry_.Execute(context_);
@@ -555,11 +555,11 @@ TEST_F(CoreDirectiveRegistryTest, RegistryDwWorks) {
 }
 
 /**
- * @test Registry DS directive works correctly
+ * @test Registry kDS directive works correctly
  */
 TEST_F(CoreDirectiveRegistryTest, RegistryDsWorks) {
   // Act
-  context_.mnemonic = directives::DS;
+  context_.mnemonic = directives::kDS;
   context_.label = "";
   context_.operand = "100";
   registry_.Execute(context_);
@@ -573,18 +573,18 @@ TEST_F(CoreDirectiveRegistryTest, RegistryDsWorks) {
 }
 
 /**
- * @test Registry recognizes DB aliases (DEFB, BYTE)
+ * @test Registry recognizes kDB aliases (kDEFB, kBYTE)
  */
 TEST_F(CoreDirectiveRegistryTest, RegistryDbAliases) {
-  // Test DEFB
-  context_.mnemonic = directives::DEFB;
+  // Test kDEFB
+  context_.mnemonic = directives::kDEFB;
   context_.label = "";
   context_.operand = "42";
   registry_.Execute(context_);
   ASSERT_EQ(section_->atoms.size(), 1UL);
 
-  // Test BYTE
-  context_.mnemonic = directives::BYTE;
+  // Test kBYTE
+  context_.mnemonic = directives::kBYTE;
   context_.label = "";
   context_.operand = "43";
   registry_.Execute(context_);
@@ -592,18 +592,18 @@ TEST_F(CoreDirectiveRegistryTest, RegistryDbAliases) {
 }
 
 /**
- * @test Registry recognizes DW aliases (DEFW, WORD)
+ * @test Registry recognizes kDW aliases (kDEFW, kWORD)
  */
 TEST_F(CoreDirectiveRegistryTest, RegistryDwAliases) {
-  // Test DEFW
-  context_.mnemonic = directives::DEFW;
+  // Test kDEFW
+  context_.mnemonic = directives::kDEFW;
   context_.label = "";
   context_.operand = "$1234";
   registry_.Execute(context_);
   ASSERT_EQ(section_->atoms.size(), 1UL);
 
-  // Test WORD
-  context_.mnemonic = directives::WORD;
+  // Test kWORD
+  context_.mnemonic = directives::kWORD;
   context_.label = "";
   context_.operand = "$5678";
   registry_.Execute(context_);
@@ -611,25 +611,25 @@ TEST_F(CoreDirectiveRegistryTest, RegistryDwAliases) {
 }
 
 /**
- * @test Registry recognizes DS aliases (DEFS, BLOCK, RMB)
+ * @test Registry recognizes kDS aliases (kDEFS, kBLOCK, kRMB)
  */
 TEST_F(CoreDirectiveRegistryTest, RegistryDsAliases) {
-  // Test DEFS
-  context_.mnemonic = directives::DEFS;
+  // Test kDEFS
+  context_.mnemonic = directives::kDEFS;
   context_.label = "";
   context_.operand = "10";
   registry_.Execute(context_);
   ASSERT_EQ(section_->atoms.size(), 1UL);
 
-  // Test BLOCK
-  context_.mnemonic = directives::BLOCK;
+  // Test kBLOCK
+  context_.mnemonic = directives::kBLOCK;
   context_.label = "";
   context_.operand = "20";
   registry_.Execute(context_);
   ASSERT_EQ(section_->atoms.size(), 2UL);
 
-  // Test RMB
-  context_.mnemonic = directives::RMB;
+  // Test kRMB
+  context_.mnemonic = directives::kRMB;
   context_.label = "";
   context_.operand = "30";
   registry_.Execute(context_);
@@ -640,18 +640,18 @@ TEST_F(CoreDirectiveRegistryTest, RegistryDsAliases) {
  * @test Registry IsRegistered works for all directives
  */
 TEST_F(CoreDirectiveRegistryTest, RegistryIsRegistered) {
-  EXPECT_TRUE(registry_.IsRegistered(directives::ORG));
-  EXPECT_TRUE(registry_.IsRegistered(directives::EQU));
-  EXPECT_TRUE(registry_.IsRegistered(directives::DB));
-  EXPECT_TRUE(registry_.IsRegistered(directives::DEFB));
-  EXPECT_TRUE(registry_.IsRegistered(directives::BYTE));
-  EXPECT_TRUE(registry_.IsRegistered(directives::DW));
-  EXPECT_TRUE(registry_.IsRegistered(directives::DEFW));
-  EXPECT_TRUE(registry_.IsRegistered(directives::WORD));
-  EXPECT_TRUE(registry_.IsRegistered(directives::DS));
-  EXPECT_TRUE(registry_.IsRegistered(directives::DEFS));
-  EXPECT_TRUE(registry_.IsRegistered(directives::BLOCK));
-  EXPECT_TRUE(registry_.IsRegistered(directives::RMB));
+  EXPECT_TRUE(registry_.IsRegistered(directives::kORG));
+  EXPECT_TRUE(registry_.IsRegistered(directives::kEQU));
+  EXPECT_TRUE(registry_.IsRegistered(directives::kDB));
+  EXPECT_TRUE(registry_.IsRegistered(directives::kDEFB));
+  EXPECT_TRUE(registry_.IsRegistered(directives::kBYTE));
+  EXPECT_TRUE(registry_.IsRegistered(directives::kDW));
+  EXPECT_TRUE(registry_.IsRegistered(directives::kDEFW));
+  EXPECT_TRUE(registry_.IsRegistered(directives::kWORD));
+  EXPECT_TRUE(registry_.IsRegistered(directives::kDS));
+  EXPECT_TRUE(registry_.IsRegistered(directives::kDEFS));
+  EXPECT_TRUE(registry_.IsRegistered(directives::kBLOCK));
+  EXPECT_TRUE(registry_.IsRegistered(directives::kRMB));
   EXPECT_FALSE(registry_.IsRegistered("UNKNOWN"));
 }
 
@@ -660,7 +660,7 @@ TEST_F(CoreDirectiveRegistryTest, RegistryIsRegistered) {
 // ============================================================================
 
 /**
- * @test ORG with addition expression
+ * @test kORG with addition expression
  */
 TEST_F(CoreDirectiveHandlersTest, OrgWithAdditionExpression) {
   // Act
@@ -676,7 +676,7 @@ TEST_F(CoreDirectiveHandlersTest, OrgWithAdditionExpression) {
 }
 
 /**
- * @test ORG with subtraction expression
+ * @test kORG with subtraction expression
  */
 TEST_F(CoreDirectiveHandlersTest, OrgWithSubtractionExpression) {
   // Act
@@ -692,7 +692,7 @@ TEST_F(CoreDirectiveHandlersTest, OrgWithSubtractionExpression) {
 }
 
 /**
- * @test ORG with multiplication expression
+ * @test kORG with multiplication expression
  */
 TEST_F(CoreDirectiveHandlersTest, OrgWithMultiplicationExpression) {
   // Act
@@ -708,7 +708,7 @@ TEST_F(CoreDirectiveHandlersTest, OrgWithMultiplicationExpression) {
 }
 
 /**
- * @test ORG with division expression
+ * @test kORG with division expression
  */
 TEST_F(CoreDirectiveHandlersTest, OrgWithDivisionExpression) {
   // Act
@@ -724,7 +724,7 @@ TEST_F(CoreDirectiveHandlersTest, OrgWithDivisionExpression) {
 }
 
 /**
- * @test ORG with modulo expression
+ * @test kORG with modulo expression
  */
 TEST_F(CoreDirectiveHandlersTest, OrgWithModuloExpression) {
   // Act
@@ -740,7 +740,7 @@ TEST_F(CoreDirectiveHandlersTest, OrgWithModuloExpression) {
 }
 
 /**
- * @test ORG with nested expression
+ * @test kORG with nested expression
  */
 TEST_F(CoreDirectiveHandlersTest, OrgWithNestedExpression) {
   // Act
@@ -756,7 +756,7 @@ TEST_F(CoreDirectiveHandlersTest, OrgWithNestedExpression) {
 }
 
 /**
- * @test ORG with complex nested expression
+ * @test kORG with complex nested expression
  */
 TEST_F(CoreDirectiveHandlersTest, OrgWithComplexNestedExpression) {
   // Act
@@ -772,7 +772,7 @@ TEST_F(CoreDirectiveHandlersTest, OrgWithComplexNestedExpression) {
 }
 
 /**
- * @test ORG with symbol in arithmetic expression
+ * @test kORG with symbol in arithmetic expression
  */
 TEST_F(CoreDirectiveHandlersTest, OrgWithSymbolArithmetic) {
   // Arrange
@@ -792,7 +792,7 @@ TEST_F(CoreDirectiveHandlersTest, OrgWithSymbolArithmetic) {
 }
 
 /**
- * @test EQU with multiplication expression
+ * @test kEQU with multiplication expression
  */
 TEST_F(CoreDirectiveHandlersTest, EquWithMultiplicationExpression) {
   // Act
@@ -807,18 +807,18 @@ TEST_F(CoreDirectiveHandlersTest, EquWithMultiplicationExpression) {
 }
 
 /**
- * @test EQU with complex expression
+ * @test kEQU with complex expression
  */
 TEST_F(CoreDirectiveHandlersTest, EquWithComplexExpression) {
   // Arrange
-  symbols_->Define("WIDTH", SymbolType::Label,
+  symbols_->Define("kWIDTH", SymbolType::Label,
                    std::make_shared<LiteralExpr>(40));
   symbols_->Define("HEIGHT", SymbolType::Label,
                    std::make_shared<LiteralExpr>(25));
 
   // Act
   context_.label = "SCREEN_SIZE";
-  context_.operand = "WIDTH*HEIGHT";
+  context_.operand = "kWIDTH*HEIGHT";
   HandleEqu(context_);
 
   // Assert
@@ -828,7 +828,7 @@ TEST_F(CoreDirectiveHandlersTest, EquWithComplexExpression) {
 }
 
 /**
- * @test EQU with nested expression and symbols
+ * @test kEQU with nested expression and symbols
  */
 TEST_F(CoreDirectiveHandlersTest, EquWithNestedExpressionAndSymbols) {
   // Arrange
@@ -849,7 +849,7 @@ TEST_F(CoreDirectiveHandlersTest, EquWithNestedExpressionAndSymbols) {
 }
 
 /**
- * @test DS with multiplication expression
+ * @test kDS with multiplication expression
  */
 TEST_F(CoreDirectiveHandlersTest, DsWithMultiplicationExpression) {
   // Act
@@ -865,7 +865,7 @@ TEST_F(CoreDirectiveHandlersTest, DsWithMultiplicationExpression) {
 }
 
 /**
- * @test DS with symbol and arithmetic
+ * @test kDS with symbol and arithmetic
  */
 TEST_F(CoreDirectiveHandlersTest, DsWithSymbolAndArithmetic) {
   // Arrange
@@ -885,7 +885,7 @@ TEST_F(CoreDirectiveHandlersTest, DsWithSymbolAndArithmetic) {
 }
 
 /**
- * @test DS with division expression
+ * @test kDS with division expression
  */
 TEST_F(CoreDirectiveHandlersTest, DsWithDivisionExpression) {
   // Act
@@ -901,7 +901,7 @@ TEST_F(CoreDirectiveHandlersTest, DsWithDivisionExpression) {
 }
 
 /**
- * @test ORG with operator precedence (multiplication before addition)
+ * @test kORG with operator precedence (multiplication before addition)
  */
 TEST_F(CoreDirectiveHandlersTest, OrgWithOperatorPrecedence) {
   // Act - should evaluate as $1000 + ($10 * 2) = $1000 + $20 = $1020

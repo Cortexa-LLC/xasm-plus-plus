@@ -82,20 +82,20 @@ std::vector<std::string> SplitByComma(const std::string& str) {
 // ============================================================================
 
 void RegisterCoreDirectiveHandlers(DirectiveRegistry& registry) {
-  // ORG directive - Set origin address
-  registry.Register(directives::ORG, HandleOrg);
+  // kORG directive - Set origin address
+  registry.Register(directives::kORG, HandleOrg);
 
-  // EQU directive - Define constant symbol
-  registry.Register(directives::EQU, HandleEqu);
+  // kEQU directive - Define constant symbol
+  registry.Register(directives::kEQU, HandleEqu);
 
-  // DB directive and aliases - Define byte data
-  registry.Register({directives::DB, directives::DEFB, directives::BYTE}, HandleDb);
+  // kDB directive and aliases - Define byte data
+  registry.Register({directives::kDB, directives::kDEFB, directives::kBYTE}, HandleDb);
 
-  // DW directive and aliases - Define word data
-  registry.Register({directives::DW, directives::DEFW, directives::WORD}, HandleDw);
+  // kDW directive and aliases - Define word data
+  registry.Register({directives::kDW, directives::kDEFW, directives::kWORD}, HandleDw);
 
-  // DS directive and aliases - Define space
-  registry.Register({directives::DS, directives::DEFS, directives::BLOCK, directives::RMB},
+  // kDS directive and aliases - Define space
+  registry.Register({directives::kDS, directives::kDEFS, directives::kBLOCK, directives::kRMB},
                     HandleDs);
 }
 
@@ -105,11 +105,11 @@ void RegisterCoreDirectiveHandlers(DirectiveRegistry& registry) {
 
 void HandleOrg(DirectiveContext& context) {
   const std::string& operand = context.operand;
-  (void)context.label;  // ORG doesn't use context.label
+  (void)context.label;  // kORG doesn't use context.label
   std::string op = Trim(operand);
 
   if (op.empty()) {
-    ThrowRequiresOperand(context, directives::ORG);
+    ThrowRequiresOperand(context, directives::kORG);
   }
 
   // Parse address (number or symbol)
@@ -131,7 +131,7 @@ void HandleEqu(DirectiveContext& context) {
   std::string op = Trim(operand);
 
   if (lbl.empty()) {
-    ThrowRequiresLabel(context, directives::EQU);
+    ThrowRequiresLabel(context, directives::kEQU);
   }
 
   // Parse value expression
@@ -144,7 +144,7 @@ void HandleEqu(DirectiveContext& context) {
 void HandleDb(DirectiveContext& context) {
   const std::string& operand = context.operand;
   (void)
-      context.label;  // DB doesn't use context.label (could be used for auto-context.label feature)
+      context.label;  // kDB doesn't use context.label (could be used for auto-context.label feature)
   std::string op = Trim(operand);
 
   // Split by commas
@@ -165,7 +165,7 @@ void HandleDb(DirectiveContext& context) {
 void HandleDw(DirectiveContext& context) {
   const std::string& operand = context.operand;
   (void)
-      context.label;  // DW doesn't use context.label (could be used for auto-context.label feature)
+      context.label;  // kDW doesn't use context.label (could be used for auto-context.label feature)
   std::string op = Trim(operand);
 
   // Split by commas
@@ -186,7 +186,7 @@ void HandleDw(DirectiveContext& context) {
 void HandleDs(DirectiveContext& context) {
   const std::string& operand = context.operand;
   (void)
-      context.label;  // DS doesn't use context.label (could be used for auto-context.label feature)
+      context.label;  // kDS doesn't use context.label (could be used for auto-context.label feature)
   std::string op = Trim(operand);
 
   uint32_t count = 0;

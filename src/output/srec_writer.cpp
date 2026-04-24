@@ -70,19 +70,19 @@ std::string SRecordWriter::GetFormatName() const {
 }
 
 void SRecordWriter::SetBytesPerLine(size_t bytes) {
-  if (bytes == 0 || bytes > output_format::MAX_BYTES_PER_LINE) {
+  if (bytes == 0 || bytes > output_format::kMAX_BYTES_PER_LINE) {
     throw std::invalid_argument("Bytes per line must be > 0 and <= 255");
   }
   bytes_per_line_ = bytes;
 }
 
 int SRecordWriter::DetermineFormat(uint64_t max_address) {
-  if (max_address >= output_format::srec::ADDRESS_24BIT_THRESHOLD) {
-    return output_format::srec::RECORD_TYPE_DATA_32BIT;  // S3 (32-bit addresses)
-  } else if (max_address >= output_format::srec::ADDRESS_16BIT_THRESHOLD) {
-    return output_format::srec::RECORD_TYPE_DATA_24BIT;  // S2 (24-bit addresses)
+  if (max_address >= output_format::srec::kADDRESS_24BIT_THRESHOLD) {
+    return output_format::srec::kRECORD_TYPE_DATA_32BIT;  // S3 (32-bit addresses)
+  } else if (max_address >= output_format::srec::kADDRESS_16BIT_THRESHOLD) {
+    return output_format::srec::kRECORD_TYPE_DATA_24BIT;  // S2 (24-bit addresses)
   } else {
-    return output_format::srec::RECORD_TYPE_DATA_16BIT;  // S1 (16-bit addresses)
+    return output_format::srec::kRECORD_TYPE_DATA_16BIT;  // S1 (16-bit addresses)
   }
 }
 
@@ -90,26 +90,26 @@ void SRecordWriter::WriteRecord(std::ostream& output, int record_type, uint64_t 
                                 const std::vector<uint8_t>& data) {
   size_t addr_size = GetAddressSize(record_type);
   uint8_t byte_count = addr_size + data.size() +
-                       output_format::srec::CHECKSUM_BYTE_COUNT;  // address + data + checksum
+                       output_format::srec::kCHECKSUM_BYTE_COUNT;  // address + data + checksum
 
   // Start with 'S' and record type
   output << 'S' << record_type;
 
   // Write byte count
-  output << std::hex << std::uppercase << std::setfill(output_format::HEX_FILL_CHAR)
-         << std::setw(output_format::HEX_BYTE_WIDTH) << static_cast<int>(byte_count);
+  output << std::hex << std::uppercase << std::setfill(output_format::kHEX_FILL_CHAR)
+         << std::setw(output_format::kHEX_BYTE_WIDTH) << static_cast<int>(byte_count);
 
   // Write address
-  output << std::setw(addr_size * output_format::HEX_BYTE_WIDTH) << address;
+  output << std::setw(addr_size * output_format::kHEX_BYTE_WIDTH) << address;
 
   // Write data bytes
   for (uint8_t byte : data) {
-    output << std::setw(output_format::HEX_BYTE_WIDTH) << static_cast<int>(byte);
+    output << std::setw(output_format::kHEX_BYTE_WIDTH) << static_cast<int>(byte);
   }
 
   // Calculate and write checksum
   uint8_t checksum = CalculateChecksum(byte_count, address, addr_size, data);
-  output << std::setw(output_format::HEX_BYTE_WIDTH) << static_cast<int>(checksum);
+  output << std::setw(output_format::kHEX_BYTE_WIDTH) << static_cast<int>(checksum);
 
   output << '\n';
 }
@@ -120,8 +120,8 @@ uint8_t SRecordWriter::CalculateChecksum(uint8_t byte_count, uint64_t address, s
 
   // Add address bytes
   for (size_t i = 0; i < addr_size; ++i) {
-    sum += (address >> (output_format::bit_ops::SHIFT_HIGH_BYTE * (addr_size - 1 - i))) &
-           output_format::bit_ops::MASK_LOW_BYTE;
+    sum += (address >> (output_format::bit_ops::kSHIFT_HIGH_BYTE * (addr_size - 1 - i))) &
+           output_format::bit_ops::kMASK_LOW_BYTE;
   }
 
   // Add data bytes
@@ -130,7 +130,7 @@ uint8_t SRecordWriter::CalculateChecksum(uint8_t byte_count, uint64_t address, s
   }
 
   // Return one's complement
-  return ~sum & output_format::bit_ops::MASK_LOW_BYTE;
+  return ~sum & output_format::bit_ops::kMASK_LOW_BYTE;
 }
 
 void SRecordWriter::WriteHeader(std::ostream& output, const std::string& module_name) {
@@ -140,21 +140,21 @@ void SRecordWriter::WriteHeader(std::ostream& output, const std::string& module_
     header_data.push_back(static_cast<uint8_t>(c));
   }
 
-  WriteRecord(output, output_format::srec::RECORD_TYPE_HEADER, output_format::srec::HEADER_ADDRESS,
+  WriteRecord(output, output_format::srec::kRECORD_TYPE_HEADER, output_format::srec::kHEADER_ADDRESS,
               header_data);
 }
 
 void SRecordWriter::WriteTerminator(std::ostream& output, int format, uint64_t start_address) {
   // S9 for S1, S8 for S2, S7 for S3
-  int terminator_type = output_format::srec::TERMINATOR_BASE - format;  // S9=9, S8=8, S7=7
+  int terminator_type = output_format::srec::kTERMINATOR_BASE - format;  // S9=9, S8=8, S7=7
   WriteRecord(output, terminator_type, start_address, {});
 }
 
 void SRecordWriter::WriteCountRecord(std::ostream& output, size_t record_count, int /* format */) {
   // S5 for counts < 65536, S6 for larger counts
-  int count_type = (record_count < output_format::srec::COUNT_16BIT_THRESHOLD)
-                       ? output_format::srec::RECORD_TYPE_COUNT_16BIT
-                       : output_format::srec::RECORD_TYPE_COUNT_24BIT;
+  int count_type = (record_count < output_format::srec::kCOUNT_16BIT_THRESHOLD)
+                       ? output_format::srec::kRECORD_TYPE_COUNT_16BIT
+                       : output_format::srec::kRECORD_TYPE_COUNT_24BIT;
   // S5/S6: the "address" field holds the record count (per S-Record spec)
   const uint64_t kCountAsAddress = static_cast<uint64_t>(record_count);
   WriteRecord(output, count_type, kCountAsAddress, {});
@@ -189,18 +189,18 @@ std::vector<std::pair<uint64_t, uint8_t>> SRecordWriter::ExtractBytes(const Sect
 
 size_t SRecordWriter::GetAddressSize(int format) {
   switch (format) {
-    case output_format::srec::RECORD_TYPE_HEADER:
-    case output_format::srec::RECORD_TYPE_DATA_16BIT:
-    case output_format::srec::RECORD_TYPE_COUNT_16BIT:
-    case output_format::srec::RECORD_TYPE_TERM_16BIT:
-      return output_format::srec::ADDRESS_SIZE_16BIT;  // 16-bit address
-    case output_format::srec::RECORD_TYPE_DATA_24BIT:
-    case output_format::srec::RECORD_TYPE_COUNT_24BIT:
-    case output_format::srec::RECORD_TYPE_TERM_24BIT:
-      return output_format::srec::ADDRESS_SIZE_24BIT;  // 24-bit address
-    case output_format::srec::RECORD_TYPE_DATA_32BIT:
-    case output_format::srec::RECORD_TYPE_TERM_32BIT:
-      return output_format::srec::ADDRESS_SIZE_32BIT;  // 32-bit address
+    case output_format::srec::kRECORD_TYPE_HEADER:
+    case output_format::srec::kRECORD_TYPE_DATA_16BIT:
+    case output_format::srec::kRECORD_TYPE_COUNT_16BIT:
+    case output_format::srec::kRECORD_TYPE_TERM_16BIT:
+      return output_format::srec::kADDRESS_SIZE_16BIT;  // 16-bit address
+    case output_format::srec::kRECORD_TYPE_DATA_24BIT:
+    case output_format::srec::kRECORD_TYPE_COUNT_24BIT:
+    case output_format::srec::kRECORD_TYPE_TERM_24BIT:
+      return output_format::srec::kADDRESS_SIZE_24BIT;  // 24-bit address
+    case output_format::srec::kRECORD_TYPE_DATA_32BIT:
+    case output_format::srec::kRECORD_TYPE_TERM_32BIT:
+      return output_format::srec::kADDRESS_SIZE_32BIT;  // 32-bit address
     default:
       throw std::runtime_error("Invalid S-Record format type");
   }

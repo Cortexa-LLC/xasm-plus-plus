@@ -38,10 +38,10 @@ std::string ListingOutput::GetFileExtension() const {
  * @return Formatted string
  */
 static std::string FormatAddress(uint32_t addr,
-                                 int width = output_format::HEX_ADDRESS_16BIT_WIDTH) {
+                                 int width = output_format::kHEX_ADDRESS_16BIT_WIDTH) {
   std::ostringstream oss;
   oss << std::uppercase << std::hex << std::setw(width)
-      << std::setfill(output_format::HEX_FILL_CHAR) << addr;
+      << std::setfill(output_format::kHEX_FILL_CHAR) << addr;
   return oss.str();
 }
 
@@ -52,15 +52,15 @@ static std::string FormatAddress(uint32_t addr,
  * @return Formatted string
  */
 static std::string FormatBytes(const std::vector<uint8_t>& bytes,
-                               size_t max_bytes = output_format::LISTING_MAX_BYTES_PER_LINE) {
+                               size_t max_bytes = output_format::kLISTING_MAX_BYTES_PER_LINE) {
   std::ostringstream oss;
   size_t count = std::min(bytes.size(), max_bytes);
   for (size_t i = 0; i < count; ++i) {
     if (i > 0) {
       oss << ' ';
     }
-    oss << std::uppercase << std::hex << std::setw(output_format::HEX_BYTE_WIDTH)
-        << std::setfill(output_format::HEX_FILL_CHAR) << static_cast<int>(bytes[i]);
+    oss << std::uppercase << std::hex << std::setw(output_format::kHEX_BYTE_WIDTH)
+        << std::setfill(output_format::kHEX_FILL_CHAR) << static_cast<int>(bytes[i]);
   }
   return oss.str();
 }
@@ -73,7 +73,7 @@ void ListingOutput::WriteOutput(const std::string& filename, const std::vector<S
   }
 
   std::string page_title = "Assembly Listing";
-  bool listing_enabled = true;  // LIST/NOLIST control
+  bool listing_enabled = true;  // kLIST/kNOLIST control
   // Note: show_macro_expansion would be used when macro expansion tracking is
   // implemented For now, this flag is set but not used as macro content is
   // already expanded inline
@@ -103,7 +103,7 @@ void ListingOutput::WriteOutput(const std::string& filename, const std::vector<S
           case ListingControlType::Title:
             // Update page title for future pages
             page_title = ctrl->value;
-            output_source = true;  // Show TITLE directive in listing
+            output_source = true;  // Show kTITLE directive in listing
             break;
           case ListingControlType::Subtitle:
             // Subtitles could be appended to page title or displayed separately
@@ -112,11 +112,11 @@ void ListingOutput::WriteOutput(const std::string& filename, const std::vector<S
             break;
           case ListingControlType::List:
             listing_enabled = true;
-            output_source = true;  // Show LIST directive in listing
+            output_source = true;  // Show kLIST directive in listing
             break;
           case ListingControlType::Nolist:
             listing_enabled = false;
-            output_source = true;  // Show NOLIST directive in listing
+            output_source = true;  // Show kNOLIST directive in listing
             break;
           case ListingControlType::Page:
             // Insert page break
@@ -145,7 +145,7 @@ void ListingOutput::WriteOutput(const std::string& filename, const std::vector<S
           std::string line_num = "     ";
           if (ctrl->location.line > 0) {
             std::ostringstream oss;
-            oss << std::setw(output_format::LISTING_LINE_NUMBER_WIDTH) << std::right
+            oss << std::setw(output_format::kLISTING_LINE_NUMBER_WIDTH) << std::right
                 << ctrl->location.line;
             line_num = oss.str();
           }
@@ -170,7 +170,7 @@ void ListingOutput::WriteOutput(const std::string& filename, const std::vector<S
       std::string line_num = "     ";
       if (atom->location.line > 0) {
         std::ostringstream oss;
-        oss << std::setw(output_format::LISTING_LINE_NUMBER_WIDTH) << std::right
+        oss << std::setw(output_format::kLISTING_LINE_NUMBER_WIDTH) << std::right
             << atom->location.line;
         line_num = oss.str();
       }
@@ -212,14 +212,14 @@ void ListingOutput::WriteOutput(const std::string& filename, const std::vector<S
         // Instruction atom - show address, bytes, and source
         std::string bytes_str = FormatBytes(inst->encoded_bytes);
         file << line_num << "  " << FormatAddress(current_address) << "     " << std::left
-             << std::setw(output_format::LISTING_BYTES_COLUMN_WIDTH) << bytes_str << "  "
+             << std::setw(output_format::kLISTING_BYTES_COLUMN_WIDTH) << bytes_str << "  "
              << source_text << "\n";
         current_address += inst->encoded_bytes.size();
       } else if (const auto* data = dynamic_cast<const DataAtom*>(atom.get())) {
         // Data atom - show address and bytes
         std::string bytes_str = FormatBytes(data->data);
         file << line_num << "  " << FormatAddress(current_address) << "     " << std::left
-             << std::setw(output_format::LISTING_BYTES_COLUMN_WIDTH) << bytes_str << "  "
+             << std::setw(output_format::kLISTING_BYTES_COLUMN_WIDTH) << bytes_str << "  "
              << source_text << "\n";
         current_address += data->data.size();
       } else if (const auto* org = dynamic_cast<const OrgAtom*>(atom.get())) {

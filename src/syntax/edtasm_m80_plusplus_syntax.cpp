@@ -30,7 +30,7 @@ namespace xasm {
 namespace {
 
 // Numeric literal prefixes
-constexpr char HEX_PREFIX_DOLLAR = '$';  // $FF
+constexpr char HEX_PREFIX_DOLLAR = '$';  // $kFF
 constexpr char HEX_PREFIX_0X = 'x';      // 0xFF
 
 // Radix values
@@ -54,7 +54,7 @@ constexpr int INSTRUCTION_SIZE_THREE_BYTES = 3;  // JP, CALL, 16-bit immediate o
 using namespace CommonDirectives;
 using namespace Z80Directives;
 
-// Import specific Z80 mnemonics (avoid conflicts with CommonDirectives::SET)
+// Import specific Z80 mnemonics (avoid conflicts with CommonDirectives::kSET)
 using Z80Mnemonics::kCALL;
 using Z80Mnemonics::kDJNZ;
 using Z80Mnemonics::kJP;
@@ -62,15 +62,15 @@ using Z80Mnemonics::kJR;
 using Z80Mnemonics::kRST;
 
 // Import EDTASM-M80++ specific directive constants
-using xasm::directives::DOT_LIST;
-using xasm::directives::DOT_RADIX;
-using xasm::directives::DOT_SUBTTL;
-using xasm::directives::DOT_TITLE;
-using xasm::directives::DOT_XLIST;
-using xasm::directives::LALL;
-using xasm::directives::SALL;
-using xasm::directives::STAR_LIST;
-using xasm::directives::STAR_RADIX;
+using xasm::directives::kDOT_LIST;
+using xasm::directives::kDOT_RADIX;
+using xasm::directives::kDOT_SUBTTL;
+using xasm::directives::kDOT_TITLE;
+using xasm::directives::kDOT_XLIST;
+using xasm::directives::kLALL;
+using xasm::directives::kSALL;
+using xasm::directives::kSTAR_LIST;
+using xasm::directives::kSTAR_RADIX;
 
 // ============================================================================
 // Z80NumberParser Implementation
@@ -233,17 +233,17 @@ void EdtasmM80PlusPlusSyntaxParser::Parse(const std::string& source, Section& se
   macro_expansion_depth_ = 0;
   macro_nesting_depth_ = 0;
 
-  // Define special predefined symbols (DATE, TIME)
+  // Define special predefined symbols (kDATE, kTIME)
   auto now = std::chrono::system_clock::now();
   std::time_t now_time = std::chrono::system_clock::to_time_t(now);
   std::tm* local_time = std::localtime(&now_time);
 
-  // DATE: YYYYMMDD format
+  // kDATE: YYYYMMDD format
   int date_value = ((local_time->tm_year + 1900) * 10000) + ((local_time->tm_mon + 1) * 100) +
                    local_time->tm_mday;
   symbols.DefineLabel("DATE", date_value);
 
-  // TIME: HHMMSS format
+  // kTIME: HHMMSS format
   int time_value = (local_time->tm_hour * 10000) + (local_time->tm_min * 100) + local_time->tm_sec;
   symbols.DefineLabel("TIME", time_value);
 
@@ -254,7 +254,7 @@ void EdtasmM80PlusPlusSyntaxParser::Parse(const std::string& source, Section& se
   while (std::getline(iss, line)) {
     current_line_++;
 
-    // Stop processing if END directive was seen
+    // Stop processing if kEND directive was seen
     if (end_directive_seen_) {
       break;
     }
@@ -272,8 +272,8 @@ void EdtasmM80PlusPlusSyntaxParser::Parse(const std::string& source, Section& se
     ParseLine(line, section, symbols);
   }
 
-  // Check for unclosed blocks (only if END directive wasn't seen)
-  // END directive stops assembly, so unclosed blocks after it are acceptable
+  // Check for unclosed blocks (only if kEND directive wasn't seen)
+  // kEND directive stops assembly, so unclosed blocks after it are acceptable
   if (!end_directive_seen_) {
     if (in_macro_definition_) {
       throw std::runtime_error("Unclosed MACRO definition: " + current_macro_.name);
@@ -330,7 +330,7 @@ DirectiveContext EdtasmM80PlusPlusSyntaxParser::MakeDirectiveContext(
 // Called at the top of ParseLine when in_macro_definition_ or
 // in_repeat_block_ is active.  Returns true if the line was consumed (i.e.
 // ParseLine should return immediately after calling this), false when the
-// line should continue with normal processing (e.g. ENDM that closes the
+// line should continue with normal processing (e.g. kENDM that closes the
 // outermost block).
 // ---------------------------------------------------------------------------
 bool EdtasmM80PlusPlusSyntaxParser::HandleCapturingMode(const std::string& trimmed_line,
@@ -339,7 +339,7 @@ bool EdtasmM80PlusPlusSyntaxParser::HandleCapturingMode(const std::string& trimm
   if (!in_macro_definition_ && in_repeat_block_ == RepeatType::NONE) {
     return false;
   }
-  // Guard: LOCAL and END are never captured.
+  // Guard: kLOCAL and kEND are never captured.
   if (is_end) {
     return false;
   }
@@ -347,7 +347,7 @@ bool EdtasmM80PlusPlusSyntaxParser::HandleCapturingMode(const std::string& trimm
   // Helper: returns true when the uppercased trimmed_line starts with any of
   // the block-opening keywords that increment nesting depth.
   auto is_nesting_opener = [&](const std::string& upper_line) {
-    static const std::string_view kOpeners[] = {MACRO, REPT, IRP, IRPC};
+    static const std::string_view kOpeners[] = {kMACRO, kREPT, kIRP, kIRPC};
     for (auto kw : kOpeners) {
       std::string kw_space = std::string(kw) + " ";
       std::string kw_tab = std::string(kw) + "\t";
@@ -371,9 +371,9 @@ bool EdtasmM80PlusPlusSyntaxParser::HandleCapturingMode(const std::string& trimm
       if (macro_nesting_depth_ > 0) {
         macro_nesting_depth_--;
         current_macro_.body.push_back(trimmed_line);
-        return true;  // consumed — nested ENDM
+        return true;  // consumed — nested kENDM
       }
-      return false;  // outermost ENDM: fall through to normal ENDM handler
+      return false;  // outermost kENDM: fall through to normal kENDM handler
     }
     // Regular body line.
     current_macro_.body.push_back(trimmed_line);
@@ -390,9 +390,9 @@ bool EdtasmM80PlusPlusSyntaxParser::HandleCapturingMode(const std::string& trimm
     if (repeat_nesting_depth_ > 0) {
       repeat_nesting_depth_--;
       repeat_body_.push_back(trimmed_line);
-      return true;  // consumed — nested ENDM
+      return true;  // consumed — nested kENDM
     }
-    return false;  // outermost ENDM: fall through to normal ENDM handler
+    return false;  // outermost kENDM: fall through to normal kENDM handler
   }
   // Regular repeat body line.
   repeat_body_.push_back(trimmed_line);
@@ -427,8 +427,8 @@ static std::string ToUpper(std::string s) {
 
 bool EdtasmM80PlusPlusSyntaxParser::IsConditionalDirective(const std::string& upper_mnemonic) {
   static const std::unordered_set<std::string> kConditionalDirectives = {
-      IF,  IFDEF, IFNDEF, IFEQ, IFNE,  IFLT,  IFGT, IFLE,  IFGE,
-      IF1, IF2,   IFB,    IFNB, IFIDN, IFDIF, ELSE, ENDIF,
+      kIF,  kIFDEF, kIFNDEF, kIFEQ, kIFNE,  kIFLT,  kIFGT, kIFLE,  kIFGE,
+      kIF1, kIF2,   kIFB,    kIFNB, kIFIDN, kIFDIF, kELSE, kENDIF,
   };
   return kConditionalDirectives.count(upper_mnemonic) > 0;
 }
@@ -495,7 +495,7 @@ void EdtasmM80PlusPlusSyntaxParser::ExpandMacroCall(const MacroDefinition& macro
                              std::to_string(args.size()));
   }
 
-  // Expand macro body with parameter substitution and LOCAL label uniquification
+  // Expand macro body with parameter substitution and kLOCAL label uniquification
   int unique_id = next_macro_unique_id_++;
   macro_local_labels_.clear();
   for (const auto& local_label : macro.locals) {
@@ -521,22 +521,22 @@ static bool LineIsKeyword(const std::string& upper_line, const std::string& keyw
 }
 
 // Returns true when the first non-whitespace token in @p upper_line is the
-// LOCAL directive keyword.
+// kLOCAL directive keyword.
 static bool LineStartsWithLocal(const std::string& upper_line) {
   size_t pos = upper_line.find_first_not_of(" \t");
   if (pos == std::string::npos) {
     return false;
   }
   const std::string rest = upper_line.substr(pos);
-  return rest.starts_with(std::string(LOCAL) + " ") || rest.starts_with(std::string(LOCAL) + "\t");
+  return rest.starts_with(std::string(kLOCAL) + " ") || rest.starts_with(std::string(kLOCAL) + "\t");
 }
 
-// Returns the substring after the LOCAL keyword (the operand), trimmed.
+// Returns the substring after the kLOCAL keyword (the operand), trimmed.
 static std::string ExtractLocalOperand(const std::string& upper_line) {
   size_t pos = upper_line.find_first_not_of(" \t");
   const std::string rest = (pos == std::string::npos) ? upper_line : upper_line.substr(pos);
-  // Skip LOCAL keyword
-  std::string after = rest.substr(std::strlen(LOCAL));
+  // Skip kLOCAL keyword
+  std::string after = rest.substr(std::strlen(kLOCAL));
   // ltrim
   size_t start = after.find_first_not_of(" \t");
   if (start == std::string::npos) {
@@ -551,7 +551,7 @@ static std::string ExtractLocalOperand(const std::string& upper_line) {
 // Also advances `pos` past the operand start.
 static bool IsLabelBindingDirective(const std::string& upper_second) {
   static const std::unordered_set<std::string> kLabelBinders = {
-      EQU, EQUALS, SET, DEFL, MACRO,
+      kEQU, kEQUALS, kSET, kDEFL, kMACRO,
   };
   return kLabelBinders.count(upper_second) > 0;
 }
@@ -564,10 +564,10 @@ void EdtasmM80PlusPlusSyntaxParser::ParseLine(const std::string& line, Section& 
   std::string upper_line = trimmed_line;
   std::transform(upper_line.begin(), upper_line.end(), upper_line.begin(), ::toupper);
 
-  const bool is_endm = LineIsKeyword(upper_line, ENDM);
-  const bool is_end = LineIsKeyword(upper_line, END);
+  const bool is_endm = LineIsKeyword(upper_line, kENDM);
+  const bool is_end = LineIsKeyword(upper_line, kEND);
 
-  // LOCAL inside a macro definition — process immediately (not captured).
+  // kLOCAL inside a macro definition — process immediately (not captured).
   if (in_macro_definition_ && LineStartsWithLocal(upper_line)) {
     RegisterMacroLocals(ExtractLocalOperand(upper_line));
     return;
@@ -612,7 +612,7 @@ void EdtasmM80PlusPlusSyntaxParser::ParseLine(const std::string& line, Section& 
     return;
   }
 
-  // Emit CPU instruction atom (encoding deferred to CPU plugin, Phase 9+).
+  // Emit kCPU instruction atom (encoding deferred to kCPU plugin, Phase 9+).
   auto inst_atom = std::make_shared<InstructionAtom>(upper_mnemonic, operand);
   inst_atom->location = SourceLocation(current_file_, current_line_, 1);
   inst_atom->source_line = original_line;
@@ -631,7 +631,7 @@ void EdtasmM80PlusPlusSyntaxParser::ParseLine(const std::string& line, Section& 
 /**
  * @brief Estimate size of IX/IY-indexed instructions.
  *
- * All IX/IY instructions carry a DD/FD prefix.  When the operand also
+ * All IX/IY instructions carry a kDD/FD prefix.  When the operand also
  * contains an indirect-addressing bracket '(' the prefix is followed by
  * the opcode AND a displacement byte, optionally with a 16-bit immediate.
  */
@@ -683,7 +683,7 @@ uint32_t EdtasmM80PlusPlusSyntaxParser::EstimateZ80InstructionSize(const Directi
     return INSTRUCTION_SIZE_TWO_BYTES;
   }
 
-  // DD/FD-prefixed IX/IY instructions
+  // kDD/FD-prefixed IX/IY instructions
   if (HasIndexRegisterOperand(operand)) {
     return EstimateIndexedInsnSize(operand);
   }
@@ -802,7 +802,7 @@ static uint32_t ParseHexOrThrow(const std::string& hex_str) {
 }
 
 /**
- * @brief Parse hex formats: $FF, 0xFF, 0FFH.
+ * @brief Parse hex formats: $kFF, 0xFF, 0FFH.
  *
  * Returns the parsed value.  The caller must ensure @p trimmed starts with
  * HEX_PREFIX_DOLLAR, "0x"/"0X", or ends with 'H'/'h'.
@@ -915,16 +915,16 @@ std::string EdtasmM80PlusPlusSyntaxParser::FormatError(const std::string& messag
 /**
  * @brief Expand and parse a block of lines
  *
- * Used by REPT, IRP, IRPC to recursively parse captured lines.
+ * Used by kREPT, kIRP, kIRPC to recursively parse captured lines.
  */
 void EdtasmM80PlusPlusSyntaxParser::ExpandAndParseLines(const std::vector<std::string>& lines,
                                                         Section& section,
                                                         ConcreteSymbolTable& symbols) {
   // Note: Don't reset exitm_triggered_ here - let caller handle it
-  // so EXITM can properly exit from REPT/IRP/IRPC loops
+  // so kEXITM can properly exit from kREPT/kIRP/kIRPC loops
   for (const auto& line : lines) {
     if (exitm_triggered_) {
-      break;  // Exit early if EXITM was encountered
+      break;  // Exit early if kEXITM was encountered
     }
     ParseLine(line, section, symbols);
   }
@@ -1004,9 +1004,9 @@ std::string EdtasmM80PlusPlusSyntaxParser::SubstituteMacroParameters(
 }
 
 /**
- * @brief Make LOCAL labels unique within a macro expansion
+ * @brief Make kLOCAL labels unique within a macro expansion
  *
- * Appends unique ID to labels declared as LOCAL.
+ * Appends unique ID to labels declared as kLOCAL.
  */
 // Returns true when the next character after the end of a found token is not
 // a word character (i.e. the occurrence is a complete word/reference).

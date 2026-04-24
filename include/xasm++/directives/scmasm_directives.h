@@ -34,217 +34,217 @@ namespace SCMASMDirectives {
 // ============================================================================
 
 /// Begin conditional block (.DO)
-constexpr const char* DO = ".DO";
+constexpr const char* kDO = ".DO";
 
 /// Alternative branch in conditional (.ELSE)
-constexpr const char* ELSE = ".ELSE";
+constexpr const char* kELSE = ".ELSE";
 
 /// End conditional block (.FIN)
-constexpr const char* FIN = ".FIN";
+constexpr const char* kFIN = ".FIN";
 
 /// Begin IF block (.IF)
-constexpr const char* IF = ".IF";
+constexpr const char* kIF = ".IF";
 
 /// End IF block (.ENDIF)
-constexpr const char* ENDIF = ".ENDIF";
+constexpr const char* kENDIF = ".ENDIF";
 
 // ============================================================================
 // SCMASM Loop Constructs
 // ============================================================================
 
 /// Begin WHILE loop (.WHILE)
-constexpr const char* WHILE = ".WHILE";
+constexpr const char* kWHILE = ".WHILE";
 
 /// End WHILE loop (.ENDW)
-constexpr const char* ENDW = ".ENDW";
+constexpr const char* kENDW = ".ENDW";
 
 /// Begin REPEAT loop (.REPEAT)
-constexpr const char* REPEAT = ".REPEAT";
+constexpr const char* kREPEAT = ".REPEAT";
 
 /// UNTIL condition for REPEAT (.UNTIL)
-constexpr const char* UNTIL = ".UNTIL";
+constexpr const char* kUNTIL = ".UNTIL";
 
 /// End REPEAT loop (.ENDR)
-constexpr const char* ENDR = ".ENDR";
+constexpr const char* kENDR = ".ENDR";
 
 // ============================================================================
 // SCMASM Origin and Section
 // ============================================================================
 
 /// Set origin address (.ORG)
-constexpr const char* ORG = ".ORG";
+constexpr const char* kORG = ".ORG";
 
 /// Relocatable section (.SECTION)
-constexpr const char* SECTION = ".SECTION";
+constexpr const char* kSECTION = ".SECTION";
 
 /// End section (.ENDS)
-constexpr const char* ENDS = ".ENDS";
+constexpr const char* kENDS = ".ENDS";
 
 // ============================================================================
 // SCMASM Data Definition
 // ============================================================================
 
 /// Define byte (.DB)
-constexpr const char* DB = ".DB";
+constexpr const char* kDB = ".DB";
 
 /// Define word (.DW)
-constexpr const char* DW = ".DW";
+constexpr const char* kDW = ".DW";
 
 /// Define doubleword (.DD)
-constexpr const char* DD = ".DD";
+constexpr const char* kDD = ".DD";
 
 /// Define space (.DS)
-constexpr const char* DS = ".DS";
+constexpr const char* kDS = ".DS";
 
 /// ASCII string (.ASCII)
-constexpr const char* ASCII = ".ASCII";
+constexpr const char* kASCII = ".ASCII";
 
 /// ASCII string with zero terminator (.ASCIZ)
-constexpr const char* ASCIZ = ".ASCIZ";
+constexpr const char* kASCIZ = ".ASCIZ";
 
 /// Fill memory (.FILL)
-constexpr const char* FILL = ".FILL";
+constexpr const char* kFILL = ".FILL";
 
 /// Block storage (.BLOCK)
-constexpr const char* BLOCK = ".BLOCK";
+constexpr const char* kBLOCK = ".BLOCK";
 
 // ============================================================================
 // SCMASM Symbol Definition
 // ============================================================================
 
 /// Equate symbol (.EQU)
-constexpr const char* EQU = ".EQU";
+constexpr const char* kEQU = ".EQU";
 
 /// Set symbol (.SET)
-constexpr const char* SET = ".SET";
+constexpr const char* kSET = ".SET";
 
 /// Assignment (.=)
-constexpr const char* EQUALS = ".=";
+constexpr const char* kEQUALS = ".=";
 
 // ============================================================================
 // SCMASM File Inclusion
 // ============================================================================
 
 /// Include source file (.INCLUDE)
-constexpr const char* INCLUDE = ".INCLUDE";
+constexpr const char* kINCLUDE = ".INCLUDE";
 
 /// Include binary file (.INCBIN)
-constexpr const char* INCBIN = ".INCBIN";
+constexpr const char* kINCBIN = ".INCBIN";
 
 // ============================================================================
 // SCMASM Macro Definition
 // ============================================================================
 
 /// Begin macro definition (.MACRO)
-constexpr const char* MACRO = ".MACRO";
+constexpr const char* kMACRO = ".MACRO";
 
 /// End macro definition (.ENDM)
-constexpr const char* ENDM = ".ENDM";
+constexpr const char* kENDM = ".ENDM";
 
 /// Local symbol in macro (.LOCAL)
-constexpr const char* LOCAL = ".LOCAL";
+constexpr const char* kLOCAL = ".LOCAL";
 
 /// Exit macro (.EXITM)
-constexpr const char* EXITM = ".EXITM";
+constexpr const char* kEXITM = ".EXITM";
 
 // ============================================================================
 // SCMASM Listing Control
 // ============================================================================
 
 /// Enable listing (.LIST)
-constexpr const char* LIST = ".LIST";
+constexpr const char* kLIST = ".LIST";
 
 /// Disable listing (.NOLIST)
-constexpr const char* NOLIST = ".NOLIST";
+constexpr const char* kNOLIST = ".NOLIST";
 
 /// Page break (.PAGE)
-constexpr const char* PAGE = ".PAGE";
+constexpr const char* kPAGE = ".PAGE";
 
 /// Set title (.TITLE)
-constexpr const char* TITLE = ".TITLE";
+constexpr const char* kTITLE = ".TITLE";
 
 /// Set subtitle (.SBTTL)
-constexpr const char* SBTTL = ".SBTTL";
+constexpr const char* kSBTTL = ".SBTTL";
 
 /// Set page width (.WIDTH)
-constexpr const char* WIDTH = ".WIDTH";
+constexpr const char* kWIDTH = ".WIDTH";
 
 /// Set page length (.LENGTH)
-constexpr const char* LENGTH = ".LENGTH";
+constexpr const char* kLENGTH = ".LENGTH";
 
 // ============================================================================
 // SCMASM Error Control
 // ============================================================================
 
 /// Force error with message (.ERROR)
-constexpr const char* ERROR = ".ERROR";
+constexpr const char* kERROR = ".ERROR";
 
 /// Display warning message (.WARNING)
-constexpr const char* WARNING = ".WARNING";
+constexpr const char* kWARNING = ".WARNING";
 
 /// Display message (.MESSAGE)
-constexpr const char* MESSAGE = ".MESSAGE";
+constexpr const char* kMESSAGE = ".MESSAGE";
 
 // ============================================================================
 // SCMASM Symbol Control
 // ============================================================================
 
 /// Global symbol (.GLOBAL)
-constexpr const char* GLOBAL = ".GLOBAL";
+constexpr const char* kGLOBAL = ".GLOBAL";
 
 /// External symbol (.EXTERN)
-constexpr const char* EXTERN = ".EXTERN";
+constexpr const char* kEXTERN = ".EXTERN";
 
 /// Public symbol (.PUBLIC)
-constexpr const char* PUBLIC = ".PUBLIC";
+constexpr const char* kPUBLIC = ".PUBLIC";
 
 /// Export symbol (.EXPORT)
-constexpr const char* EXPORT = ".EXPORT";
+constexpr const char* kEXPORT = ".EXPORT";
 
 /// Import symbol (.IMPORT)
-constexpr const char* IMPORT = ".IMPORT";
+constexpr const char* kIMPORT = ".IMPORT";
 
 // ============================================================================
 // SCMASM Alignment
 // ============================================================================
 
 /// Align to boundary (.ALIGN)
-constexpr const char* ALIGN = ".ALIGN";
+constexpr const char* kALIGN = ".ALIGN";
 
 /// Align to even address (.EVEN)
-constexpr const char* EVEN = ".EVEN";
+constexpr const char* kEVEN = ".EVEN";
 
 /// Align to odd address (.ODD)
-constexpr const char* ODD = ".ODD";
+constexpr const char* kODD = ".ODD";
 
 // ============================================================================
 // SCMASM Special Directives
 // ============================================================================
 
 /// End assembly (.END)
-constexpr const char* END = ".END";
+constexpr const char* kEND = ".END";
 
 /// Option control (.OPT)
-constexpr const char* OPT = ".OPT";
+constexpr const char* kOPT = ".OPT";
 
 /// Processor selection (.PROCESSOR)
-constexpr const char* PROCESSOR = ".PROCESSOR";
+constexpr const char* kPROCESSOR = ".PROCESSOR";
 
 /// CPU directive (.CPU)
-constexpr const char* CPU = ".CPU";
+constexpr const char* kCPU = ".CPU";
 
 // ============================================================================
 // SCMASM Object Format
 // ============================================================================
 
 /// Object file format (.FORMAT)
-constexpr const char* FORMAT = ".FORMAT";
+constexpr const char* kFORMAT = ".FORMAT";
 
 /// Entry point (.ENTRY)
-constexpr const char* ENTRY = ".ENTRY";
+constexpr const char* kENTRY = ".ENTRY";
 
 /// Library search (.LIBRARY)
-constexpr const char* LIBRARY = ".LIBRARY";
+constexpr const char* kLIBRARY = ".LIBRARY";
 
 }  // namespace SCMASMDirectives
 }  // namespace xasm

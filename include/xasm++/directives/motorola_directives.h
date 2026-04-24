@@ -16,62 +16,62 @@ namespace motorola {
 // ============================================================================
 
 /// FCB - Form Constant Byte (define byte data)
-constexpr const char* FCB = "FCB";
+constexpr const char* kFCB = "FCB";
 
 /// FDB - Form Double Byte (define 16-bit word data, big-endian)
-constexpr const char* FDB = "FDB";
+constexpr const char* kFDB = "FDB";
 
 /// FCC - Form Constant Character (define string data)
-constexpr const char* FCC = "FCC";
+constexpr const char* kFCC = "FCC";
 
 /// SET - Define variable symbol (can be redefined)
-constexpr const char* SET = "SET";
+constexpr const char* kSET = "SET";
 
 // ============================================================================
 // Direct Page Addressing
 // ============================================================================
 
 /// SETDP - Set direct page register value for optimization hints
-constexpr const char* SETDP = "SETDP";
+constexpr const char* kSETDP = "SETDP";
 
 // ============================================================================
 // Listing Control Directives
 // ============================================================================
 
 /// NAM - Set program name
-constexpr const char* NAM = "NAM";
+constexpr const char* kNAM = "NAM";
 
 /// TTL - Set listing title
-constexpr const char* TTL = "TTL";
+constexpr const char* kTTL = "TTL";
 
 /// STTL - Set subtitle
-constexpr const char* STTL = "STTL";
+constexpr const char* kSTTL = "STTL";
 
 /// PAGE - Page eject (start new page in listing)
-constexpr const char* PAGE = "PAGE";
+constexpr const char* kPAGE = "PAGE";
 
 /// SPC - Insert space/blank lines in listing
-constexpr const char* SPC = "SPC";
+constexpr const char* kSPC = "SPC";
 
 // ============================================================================
 // Conditional Assembly
 // ============================================================================
 
 /// IFC - If Condition (begin conditional assembly block)
-constexpr const char* IFC = "IFC";
+constexpr const char* kIFC = "IFC";
 
 /// ENDC - End Condition (end conditional assembly block)
-constexpr const char* ENDC = "ENDC";
+constexpr const char* kENDC = "ENDC";
 
 // ============================================================================
 // Option Values
 // ============================================================================
 
 /// ON - Enable option
-constexpr const char* ON = "ON";
+constexpr const char* kON = "ON";
 
 /// OFF - Disable option
-constexpr const char* OFF = "OFF";
+constexpr const char* kOFF = "OFF";
 
 }  // namespace motorola
 }  // namespace xasm

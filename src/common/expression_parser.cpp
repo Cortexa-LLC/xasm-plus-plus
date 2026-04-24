@@ -276,7 +276,7 @@ std::shared_ptr<Expression> ExpressionParser::ParseUnary() {
 
   // Low byte operator (< or #)
   // Note: '<' is prefix unary, distinct from infix comparison <
-  // '#' is used by Merlin / assembler data directives (DB/DFB) to mean
+  // '#' is used by Merlin / assembler data directives (kDB/kDFB) to mean
   // "low byte of address", identical semantics to '<'.
   if (c == '<' || c == '#') {
     Consume();
@@ -385,11 +385,11 @@ std::shared_ptr<Expression> ExpressionParser::TryParseCustomNumber() {
       }
     }
   }
-  // Potential ASCII character constant (non-operator, non-paren,
+  // Potential kASCII character constant (non-operator, non-paren,
   // non-identifier start) Try if it's not an operator that should be handled
   // elsewhere
   else if (!std::isalnum(first_char) && first_char != '_' && first_char != '(') {
-    // Try treating as 2-char ASCII constant (delimiter + char)
+    // Try treating as 2-char kASCII constant (delimiter + char)
     token += Consume();  // delimiter
     if (pos_ < expr_.length() && pos_ + 1 <= expr_.length()) {
       // Check if next char could be part of character constant
@@ -450,7 +450,7 @@ std::shared_ptr<Expression> ExpressionParser::TryParseIdentifierOrCall() {
 
   std::string ident = ParseIdentifier();
 
-  // Try parsing as number first (for RADIX mode where "FF" is a hex number)
+  // Try parsing as number first (for kRADIX mode where "FF" is a hex number)
   if (number_parser_) {
     int64_t value = 0;
     if (number_parser_->TryParse(ident, value)) {
@@ -473,9 +473,9 @@ std::shared_ptr<Expression> ExpressionParser::TryParseIdentifierOrCall() {
     std::string ident_upper = ident;
     std::transform(ident_upper.begin(), ident_upper.end(), ident_upper.begin(), ::toupper);
 
-    if (ident_upper == directives::LOW_FUNC) {
+    if (ident_upper == directives::kLOW_FUNC) {
       return std::make_shared<UnaryOpExpr>(UnaryOp::LowByte, arg);
-    } else if (ident_upper == directives::HIGH_FUNC) {
+    } else if (ident_upper == directives::kHIGH_FUNC) {
       return std::make_shared<UnaryOpExpr>(UnaryOp::HighByte, arg);
     } else {
       throw std::runtime_error("Unknown function: " + ident);
@@ -724,7 +724,7 @@ std::string ExpressionParser::ParseIdentifier() {
   Consume();
 
   // Continue with alphanumeric, underscore, period (unless Merlin mode), $, ?, @, :
-  // '@' is used in SCMASM scoped local label names (e.g. GLOBAL@.1)
+  // '@' is used in SCMASM scoped local label names (e.g. kGLOBAL@.1)
   // ':' is used in Merlin scoped local label names (e.g. MAIN:loop)
   // ADR-005 V9: In Merlin mode, '.' is a binary OR operator, not part of names.
   while (std::isalnum(Peek()) || Peek() == '_' || (allow_dot_in_ident && Peek() == '.') ||

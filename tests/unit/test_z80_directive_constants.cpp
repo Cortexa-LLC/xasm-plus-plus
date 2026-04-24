@@ -23,36 +23,36 @@ using namespace xasm::Z80Directives;
  */
 TEST(Z80DirectiveConstantsTest, CommonDirectivesAreDefined) {
   // Verify common directive constants exist and have correct values
-  EXPECT_STREQ(ORG, "ORG");
-  EXPECT_STREQ(EQU, "EQU");
-  EXPECT_STREQ(SET, "SET");
-  EXPECT_STREQ(DEFL, "DEFL");
-  EXPECT_STREQ(EQUALS, "=");
-  EXPECT_STREQ(DB, "DB");
-  EXPECT_STREQ(DEFB, "DEFB");
-  EXPECT_STREQ(BYTE, "BYTE");
-  EXPECT_STREQ(DM, "DM");
-  EXPECT_STREQ(DEFM, "DEFM");
-  EXPECT_STREQ(DW, "DW");
-  EXPECT_STREQ(DEFW, "DEFW");
-  EXPECT_STREQ(WORD, "WORD");
-  EXPECT_STREQ(DS, "DS");
-  EXPECT_STREQ(DEFS, "DEFS");
-  EXPECT_STREQ(DSPACE, "DSPACE");
-  EXPECT_STREQ(BLOCK, "BLOCK");
-  EXPECT_STREQ(PUBLIC, "PUBLIC");
-  EXPECT_STREQ(GLOBAL, "GLOBAL");
-  EXPECT_STREQ(ENTRY, "ENTRY");
-  EXPECT_STREQ(EXTERN, "EXTERN");
-  EXPECT_STREQ(EXTRN, "EXTRN");
-  EXPECT_STREQ(EXT, "EXT");
-  EXPECT_STREQ(IF, "IF");
-  EXPECT_STREQ(ELSE, "ELSE");
-  EXPECT_STREQ(ENDIF, "ENDIF");
-  EXPECT_STREQ(MACRO, "MACRO");
-  EXPECT_STREQ(ENDM, "ENDM");
-  EXPECT_STREQ(REPT, "REPT");
-  EXPECT_STREQ(END, "END");
+  EXPECT_STREQ(kORG, "ORG");
+  EXPECT_STREQ(kEQU, "EQU");
+  EXPECT_STREQ(kSET, "SET");
+  EXPECT_STREQ(kDEFL, "DEFL");
+  EXPECT_STREQ(kEQUALS, "=");
+  EXPECT_STREQ(kDB, "DB");
+  EXPECT_STREQ(kDEFB, "DEFB");
+  EXPECT_STREQ(kBYTE, "BYTE");
+  EXPECT_STREQ(kDM, "DM");
+  EXPECT_STREQ(kDEFM, "DEFM");
+  EXPECT_STREQ(kDW, "DW");
+  EXPECT_STREQ(kDEFW, "DEFW");
+  EXPECT_STREQ(kWORD, "WORD");
+  EXPECT_STREQ(kDS, "DS");
+  EXPECT_STREQ(kDEFS, "DEFS");
+  EXPECT_STREQ(kDSPACE, "DSPACE");
+  EXPECT_STREQ(kBLOCK, "BLOCK");
+  EXPECT_STREQ(kPUBLIC, "PUBLIC");
+  EXPECT_STREQ(kGLOBAL, "GLOBAL");
+  EXPECT_STREQ(kENTRY, "ENTRY");
+  EXPECT_STREQ(kEXTERN, "EXTERN");
+  EXPECT_STREQ(kEXTRN, "EXTRN");
+  EXPECT_STREQ(kEXT, "EXT");
+  EXPECT_STREQ(kIF, "IF");
+  EXPECT_STREQ(kELSE, "ELSE");
+  EXPECT_STREQ(kENDIF, "ENDIF");
+  EXPECT_STREQ(kMACRO, "MACRO");
+  EXPECT_STREQ(kENDM, "ENDM");
+  EXPECT_STREQ(kREPT, "REPT");
+  EXPECT_STREQ(kEND, "END");
 }
 
 /**
@@ -60,9 +60,9 @@ TEST(Z80DirectiveConstantsTest, CommonDirectivesAreDefined) {
  */
 TEST(Z80DirectiveConstantsTest, Z80DirectivesAreDefined) {
   // Verify Z80 directive constants exist and have correct values
-  EXPECT_STREQ(CSEG, "CSEG");
-  EXPECT_STREQ(DSEG, "DSEG");
-  EXPECT_STREQ(ASEG, "ASEG");
+  EXPECT_STREQ(kCSEG, "CSEG");
+  EXPECT_STREQ(kDSEG, "DSEG");
+  EXPECT_STREQ(kASEG, "ASEG");
 }
 
 /**
@@ -130,8 +130,8 @@ TEST(Z80DirectiveConstantsTest, DirectivesRegisteredWithConstants) {
 TEST(Z80DirectiveConstantsTest, ConstantsProvideCompileTimeChecking) {
   // This test verifies that directive constants can be used
   // in contexts that require compile-time constants
-  constexpr const char *org_directive = CommonDirectives::ORG;
-  constexpr const char *cseg_directive = Z80Directives::CSEG;
+  constexpr const char *org_directive = CommonDirectives::kORG;
+  constexpr const char *cseg_directive = Z80Directives::kCSEG;
 
   EXPECT_STREQ(org_directive, "ORG");
   EXPECT_STREQ(cseg_directive, "CSEG");

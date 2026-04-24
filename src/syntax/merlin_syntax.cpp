@@ -2,7 +2,7 @@
  * @file merlin_syntax.cpp
  * @brief Merlin assembly syntax parser implementation
  *
- * Phases 1-3: Foundation, Local Labels, DUM Blocks
+ * Phases 1-3: Foundation, Local Labels, kDUM Blocks
  */
 
 #include "xasm++/syntax/merlin_syntax.h"
@@ -99,37 +99,37 @@ void MerlinSyntaxParser::SetCpu(Cpu6502* cpu) {
 
 void MerlinSyntaxParser::InitializeDirectiveRegistry() {
   // Register directive handlers from merlin namespace
-  directive_registry_[ORG] = merlin::HandleOrg;
-  directive_registry_[EQU] = merlin::HandleEqu;
-  directive_registry_[DB] = merlin::HandleDb;
-  directive_registry_[DFB] = merlin::HandleDb;  // Alias
-  directive_registry_[DW] = merlin::HandleDw;
-  directive_registry_[HEX] = merlin::HandleHex;
-  directive_registry_[DS] = merlin::HandleDs;
-  directive_registry_[DUM] = merlin::HandleDum;
-  directive_registry_[DEND] = merlin::HandleDend;
-  directive_registry_[PUT] = merlin::HandlePut;
-  directive_registry_[DO] = merlin::HandleDo;
-  directive_registry_[ELSE] = merlin::HandleElse;
-  directive_registry_[FIN] = merlin::HandleFin;
-  directive_registry_[LST] = merlin::HandleLst;
-  directive_registry_[LSTDO] = merlin::HandleLstdo;
-  directive_registry_[TR] = merlin::HandleTr;
-  directive_registry_[ASC] = merlin::HandleAsc;
-  directive_registry_[DCI] = merlin::HandleDci;
-  directive_registry_[INV] = merlin::HandleInv;
-  directive_registry_[FLS] = merlin::HandleFls;
-  directive_registry_[DA] = merlin::HandleDa;
-  directive_registry_[PMC] = merlin::HandlePmc;
-  directive_registry_[EOM] = merlin::HandleEom;
-  directive_registry_[MAC] = merlin::HandleMac;
-  directive_registry_[USR] = merlin::HandleUsr;
-  directive_registry_[END] = merlin::HandleEnd;
-  directive_registry_[SAV] = merlin::HandleSav;
-  directive_registry_[XC] = merlin::HandleXc;
-  directive_registry_[MX] = merlin::HandleMx;
-  directive_registry_[REV] = merlin::HandleRev;
-  directive_registry_[LUP] = merlin::HandleLup;
+  directive_registry_[kORG] = merlin::HandleOrg;
+  directive_registry_[kEQU] = merlin::HandleEqu;
+  directive_registry_[kDB] = merlin::HandleDb;
+  directive_registry_[kDFB] = merlin::HandleDb;  // Alias
+  directive_registry_[kDW] = merlin::HandleDw;
+  directive_registry_[kHEX] = merlin::HandleHex;
+  directive_registry_[kDS] = merlin::HandleDs;
+  directive_registry_[kDUM] = merlin::HandleDum;
+  directive_registry_[kDEND] = merlin::HandleDend;
+  directive_registry_[kPUT] = merlin::HandlePut;
+  directive_registry_[kDO] = merlin::HandleDo;
+  directive_registry_[kELSE] = merlin::HandleElse;
+  directive_registry_[kFIN] = merlin::HandleFin;
+  directive_registry_[kLST] = merlin::HandleLst;
+  directive_registry_[kLSTDO] = merlin::HandleLstdo;
+  directive_registry_[kTR] = merlin::HandleTr;
+  directive_registry_[kASC] = merlin::HandleAsc;
+  directive_registry_[kDCI] = merlin::HandleDci;
+  directive_registry_[kINV] = merlin::HandleInv;
+  directive_registry_[kFLS] = merlin::HandleFls;
+  directive_registry_[kDA] = merlin::HandleDa;
+  directive_registry_[kPMC] = merlin::HandlePmc;
+  directive_registry_[kEOM] = merlin::HandleEom;
+  directive_registry_[kMAC] = merlin::HandleMac;
+  directive_registry_[kUSR] = merlin::HandleUsr;
+  directive_registry_[kEND] = merlin::HandleEnd;
+  directive_registry_[kSAV] = merlin::HandleSav;
+  directive_registry_[kXC] = merlin::HandleXc;
+  directive_registry_[kMX] = merlin::HandleMx;
+  directive_registry_[kREV] = merlin::HandleRev;
+  directive_registry_[kLUP] = merlin::HandleLup;
 }
 
 bool MerlinSyntaxParser::DispatchDirective(const std::string& directive, const std::string& label,
@@ -529,7 +529,7 @@ bool MerlinSyntaxParser::StartsLocalLabelRef(const std::string& operand, size_t 
 }
 
 // Expand Merlin character literals ("X" or 'X') in an instruction operand
-// to their Apple II high-bit hex equivalents ($XX where XX = ASCII | 0x80).
+// to their Apple II high-bit hex equivalents ($XX where XX = kASCII | 0x80).
 // This is the Merlin-specific equivalent of SCMASM's ExpandCharLiteralsInExpr:
 // it pre-processes the operand string at Parse() time so that the shared
 // assembler.cpp::ParseExpression never has to handle Merlin char literals
@@ -626,7 +626,7 @@ std::string MerlinSyntaxParser::ParseLabel(const std::string& line, size_t& pos,
   // Merlin labels can be:
   // 1. Global label: START (starts in column 1-9, no special prefix)
   // 2. :Local label: :LOOP (prefixed with :, scoped to last global)
-  // 3. ]Variable label: ]TEMP (prefixed with ], used in DUM blocks)
+  // 3. ]Variable label: ]TEMP (prefixed with ], used in kDUM blocks)
 
   // Check if line starts with label (non-whitespace in first columns)
   if (pos == 0 && !line.empty() && !std::isspace(line[0])) {
@@ -640,7 +640,7 @@ std::string MerlinSyntaxParser::ParseLabel(const std::string& line, size_t& pos,
     pos = label_end;
 
     // Just return the label - let caller decide what to do with it
-    // (EQU defines symbols without atoms, other labels create atoms)
+    // (kEQU defines symbols without atoms, other labels create atoms)
     return label;
   }
 
@@ -654,10 +654,10 @@ std::string MerlinSyntaxParser::ParseLabel(const std::string& line, size_t& pos,
 void MerlinSyntaxParser::HandleEqu(const DirectiveContext& ctx, ConcreteSymbolTable& symbols) {
   const std::string& label = ctx.label;
   const std::string& operand = ctx.operand;
-  // EQU directive - define symbolic constant (no code generated)
+  // kEQU directive - define symbolic constant (no code generated)
   auto expr = ParseExpression(operand, symbols);
   // Eagerly evaluate to a literal when possible to prevent circular
-  // self-references (e.g., ]var = ]var+1 in LUP loops).  Deferred evaluation
+  // self-references (e.g., ]var = ]var+1 in kLUP loops).  Deferred evaluation
   // is still used when the expression references undefined forward symbols.
   try {
     int64_t val = expr->Evaluate(symbols);
@@ -667,7 +667,7 @@ void MerlinSyntaxParser::HandleEqu(const DirectiveContext& ctx, ConcreteSymbolTa
     symbols.Define(label, SymbolType::Label, expr);
   }
 
-  // Mark ]var EQU-style assignments in var_label_seq_ with sentinel 0 so
+  // Mark ]var kEQU-style assignments in var_label_seq_ with sentinel 0 so
   // ExpandVarLabelsInOperand uses the plain name (e.g. ]XH) instead of the
   // uniqued code-label form (]XH_1).  Only insert if not already tracked as
   // a code label (seq > 0).
@@ -742,11 +742,11 @@ uint32_t MerlinSyntaxParser::ResolveDSCount(const std::string& op, ConcreteSymbo
 
 void MerlinSyntaxParser::HandleDS(const std::string& operand, Section& section,
                                   ConcreteSymbolTable& symbols) {
-  // DS directive - define space (reserve bytes)
-  // Supports: DS 100        (literal)
-  //           DS COUNT      (symbol)
-  //           DS *+10       (program counter arithmetic)
-  //           DS 64,$00     (count, fill byte)
+  // kDS directive - define space (reserve bytes)
+  // Supports: kDS 100        (literal)
+  //           kDS COUNT      (symbol)
+  //           kDS *+10       (program counter arithmetic)
+  //           kDS 64,$00     (count, fill byte)
 
   std::string full_op = Trim(operand);
   uint8_t fill_byte = 0;
@@ -756,7 +756,7 @@ void MerlinSyntaxParser::HandleDS(const std::string& operand, Section& section,
     full_op = "";
   }
 
-  // Check for two-argument form: DS count,fill
+  // Check for two-argument form: kDS count,fill
   auto comma = full_op.find(',');
   if (comma != std::string::npos) {
     std::string fill_str = Trim(full_op.substr(comma + 1));
@@ -768,7 +768,7 @@ void MerlinSyntaxParser::HandleDS(const std::string& operand, Section& section,
   std::string op = SubstitutePCInDSOperand(full_op);
   uint32_t count = ResolveDSCount(op, symbols);
 
-  // DUM blocks: advance address without emitting bytes
+  // kDUM blocks: advance address without emitting bytes
   if (!in_dum_block_) {
     // If the original operand contains '*' (PC-relative), store the raw
     // expression so the assembler can re-evaluate it each pass.
@@ -791,7 +791,7 @@ void MerlinSyntaxParser::HandleDS(const std::string& operand, Section& section,
 }
 
 void MerlinSyntaxParser::HandleDum(const std::string& operand, ConcreteSymbolTable& symbols) {
-  // DUM (Dummy section) - start variable definition block
+  // kDUM (Dummy section) - start variable definition block
   in_dum_block_ = true;
 
   std::string op = Trim(operand);
@@ -811,20 +811,20 @@ void MerlinSyntaxParser::HandleDum(const std::string& operand, ConcreteSymbolTab
     if (symbols.Lookup(op, value)) {
       dum_address_ = static_cast<uint32_t>(value);
     } else {
-      // Symbol not found - ERROR instead of silently using 0
+      // Symbol not found - kERROR instead of silently using 0
       throw std::runtime_error(FormatError("DUM directive: symbol '" + op + "' not defined"));
     }
   }
 }
 
 void MerlinSyntaxParser::HandleDend() {
-  // DEND - end dummy section
+  // kDEND - end dummy section
   in_dum_block_ = false;
 }
 
 void MerlinSyntaxParser::HandlePut(const std::string& operand, Section& section,
                                    ConcreteSymbolTable& symbols) {
-  // PUT filename - include another source file
+  // kPUT filename - include another source file
   std::string filename = Trim(operand);
 
   // Auto-append .S extension if no extension present
@@ -868,7 +868,7 @@ void MerlinSyntaxParser::HandlePut(const std::string& operand, Section& section,
 }
 
 void MerlinSyntaxParser::HandleDo(const std::string& operand, ConcreteSymbolTable& symbols) {
-  // DO directive - begin conditional assembly block
+  // kDO directive - begin conditional assembly block
   // Evaluate operand expression: non-zero = true, zero = false
 
   std::string op = Trim(operand);
@@ -892,7 +892,7 @@ void MerlinSyntaxParser::HandleDo(const std::string& operand, ConcreteSymbolTabl
 }
 
 void MerlinSyntaxParser::HandleElse() {
-  // ELSE directive - toggle conditional assembly state
+  // kELSE directive - toggle conditional assembly state
   try {
     conditional_.BeginElse();
   } catch (const std::runtime_error& e) {
@@ -908,8 +908,8 @@ void MerlinSyntaxParser::HandleElse() {
 }
 
 void MerlinSyntaxParser::HandleFin() {
-  // FIN directive - end conditional assembly block
-  // Merlin ignores extra FIN directives (no matching DO) — treat as no-op.
+  // kFIN directive - end conditional assembly block
+  // Merlin ignores extra kFIN directives (no matching kDO) — treat as no-op.
   if (conditional_.IsBalanced()) {
     return;
   }
@@ -932,7 +932,7 @@ void MerlinSyntaxParser::HandleFin() {
 }
 
 void MerlinSyntaxParser::HandleEnd() {
-  // END - mark end of source (stop processing further lines)
+  // kEND - mark end of source (stop processing further lines)
   end_directive_seen_ = true;
 }
 
@@ -945,7 +945,7 @@ void MerlinSyntaxParser::HandleEnd() {
 // in_macro_definition_) and require complex interaction with macro expansion.
 
 void MerlinSyntaxParser::HandlePMC(const std::string& operand) {
-  // PMC - Start macro definition
+  // kPMC - Start macro definition
   if (in_macro_definition_) {
     throw std::runtime_error(FormatError("Nested macro definitions not allowed"));
   }
@@ -956,7 +956,7 @@ void MerlinSyntaxParser::HandlePMC(const std::string& operand) {
 }
 
 void MerlinSyntaxParser::HandleEOM() {
-  // EOM - End macro definition
+  // kEOM - End macro definition
   if (!in_macro_definition_) {
     throw std::runtime_error(FormatError("EOM without matching PMC"));
   }
@@ -974,7 +974,7 @@ void MerlinSyntaxParser::HandleMacroEnd() {
 }
 
 /// Parse macro invocation operand string into a list of parameter strings.
-/// Semicolon-separated (MAC style) or comma-separated.
+/// Semicolon-separated (kMAC style) or comma-separated.
 static std::vector<std::string> ParseMacroParams(const std::string& operand) {
   if (operand.empty()) {
     return {};
@@ -1056,29 +1056,29 @@ std::string MerlinSyntaxParser::SubstituteParameters(const std::string& line,
 }
 
 void MerlinSyntaxParser::HandleXc(const std::string& operand) {
-  // XC [ON|OFF] - Toggle 65C02/65816 CPU instruction set
+  // kXC [kON|kOFF] - Toggle 65C02/65816 kCPU instruction set
   //
-  // Merlin XC semantics:
-  //   XC (first)  → 65C02 mode
-  //   XC (second) → 65816 mode (when already in 65C02)
-  //   XC OFF      → back to base 6502
+  // Merlin kXC semantics:
+  //   kXC (first)  → 65C02 mode
+  //   kXC (second) → 65816 mode (when already in 65C02)
+  //   kXC kOFF      → back to base 6502
 
   if (!cpu_) {
-    // No CPU set - silently ignore (for tests that don't need CPU)
+    // No kCPU set - silently ignore (for tests that don't need kCPU)
     return;
   }
 
   std::string op = ToUpper(Trim(operand));
 
-  if (op.empty() || op == directives::ON) {
+  if (op.empty() || op == directives::kON) {
     if (cpu_->GetCpuMode() == CpuMode::Cpu65C02) {
-      // Second XC: upgrade to 65816
+      // Second kXC: upgrade to 65816
       cpu_->SetCpuMode(CpuMode::Cpu65816);
     } else {
-      // First XC (or XC from 65816 back to 65C02 not typical, treat as 65C02)
+      // First kXC (or kXC from 65816 back to 65C02 not typical, treat as 65C02)
       cpu_->SetCpuMode(CpuMode::Cpu65C02);
     }
-  } else if (op == directives::OFF) {
+  } else if (op == directives::kOFF) {
     // Disable extended mode (back to 6502)
     cpu_->SetCpuMode(CpuMode::Cpu6502);
   } else {
@@ -1087,8 +1087,8 @@ void MerlinSyntaxParser::HandleXc(const std::string& operand) {
 }
 
 void MerlinSyntaxParser::HandleMx(const std::string& operand) {
-  // MX mode - Set 65816 accumulator and index register widths
-  // This is a directive only - tracks state but doesn't change CPU encoding
+  // kMX mode - Set 65816 accumulator and index register widths
+  // This is a directive only - tracks state but doesn't change kCPU encoding
 
   std::string op = Trim(operand);
   if (op.empty()) {
@@ -1120,8 +1120,8 @@ void MerlinSyntaxParser::HandleMx(const std::string& operand) {
 }
 
 void MerlinSyntaxParser::HandleLup(const std::string& operand) {
-  // LUP count - Loop directive (repeat following code count times)
-  // Syntax: LUP count
+  // kLUP count - Loop directive (repeat following code count times)
+  // Syntax: kLUP count
   //         <lines>
   //         --^
 
@@ -1143,11 +1143,11 @@ void MerlinSyntaxParser::HandleLup(const std::string& operand) {
     throw std::runtime_error(FormatError("LUP count cannot be negative: " + count_str));
   }
 
-  // Start capturing LUP block
+  // Start capturing kLUP block
   in_lup_block_ = true;
   lup_count_ = count;
   lup_body_.clear();
-  lup_nesting_depth_ = 0;  // Track nesting for nested LUP blocks
+  lup_nesting_depth_ = 0;  // Track nesting for nested kLUP blocks
 }
 
 // ============================================================================
@@ -1234,7 +1234,7 @@ void MerlinSyntaxParser::HandleInstructionLine(const std::string& directive,
     // subroutines.  Give each definition a unique name (]rts_1, ]rts_2, …) so
     // that multi-pass assembly resolves references to the *nearby* definition
     // rather than always using the last global one.  Only label-on-instruction
-    // definitions get unique names; EQU-style ]var = VALUE assignments keep
+    // definitions get unique names; kEQU-style ]var = VALUE assignments keep
     // their original name because they act as mutable numeric variables.
     auto merlin_scope_fn = [this](const std::string& lbl) -> std::string {
       std::string scoped = ScopeLocalLabel(lbl);
@@ -1279,11 +1279,11 @@ bool MerlinSyntaxParser::HandleMacroCaptureState(const std::string& code_line,
   if (!in_macro_definition_) {
     return false;
   }
-  if (upper_trimmed == directives::EOM) {
+  if (upper_trimmed == directives::kEOM) {
     HandleEOM();
     return true;
   }
-  if (upper_trimmed == directives::MACRO_END_ALT) {
+  if (upper_trimmed == directives::kMACRO_END_ALT) {
     HandleMacroEnd();
     return true;
   }
@@ -1298,21 +1298,21 @@ bool MerlinSyntaxParser::HandleLupCaptureState(const std::string& code_line,
     return false;
   }
   if (upper_trimmed != "--^") {
-    // Check if this line starts a nested LUP block
-    std::string lup_directive = std::string(directives::LUP) + " ";
-    if (upper_trimmed.starts_with(lup_directive) || upper_trimmed == directives::LUP) {
+    // Check if this line starts a nested kLUP block
+    std::string lup_directive = std::string(directives::kLUP) + " ";
+    if (upper_trimmed.starts_with(lup_directive) || upper_trimmed == directives::kLUP) {
       lup_nesting_depth_++;
     }
     lup_body_.push_back(code_line);
     return true;
   }
-  // "--^" terminates LUP
+  // "--^" terminates kLUP
   if (lup_nesting_depth_ > 0) {
     lup_nesting_depth_--;
     lup_body_.push_back(code_line);
     return true;
   }
-  // End of outermost LUP — expand body
+  // End of outermost kLUP — expand body
   std::vector<std::string> body_copy = lup_body_;
   int count = lup_count_;
   in_lup_block_ = false;
@@ -1331,17 +1331,17 @@ bool MerlinSyntaxParser::HandleLupCaptureState(const std::string& code_line,
 bool MerlinSyntaxParser::HandleConditionalDirective(const std::string& trimmed,
                                                     const std::string& upper_trimmed,
                                                     ConcreteSymbolTable& symbols) {
-  std::string do_directive = std::string(directives::DO) + " ";
-  if (upper_trimmed.starts_with(do_directive) || upper_trimmed == directives::DO) {
+  std::string do_directive = std::string(directives::kDO) + " ";
+  if (upper_trimmed.starts_with(do_directive) || upper_trimmed == directives::kDO) {
     std::string operand = trimmed.length() > 3 ? Trim(trimmed.substr(3)) : "0";
     HandleDo(operand, symbols);
     return true;
   }
-  if (upper_trimmed == directives::ELSE) {
+  if (upper_trimmed == directives::kELSE) {
     HandleElse();
     return true;
   }
-  if (upper_trimmed == directives::FIN) {
+  if (upper_trimmed == directives::kFIN) {
     HandleFin();
     return true;
   }
@@ -1422,7 +1422,7 @@ bool MerlinSyntaxParser::HandleEquateLine(const std::string& label, const std::s
 
 void MerlinSyntaxParser::ParseLine(const std::string& line, Section& section,
                                    ConcreteSymbolTable& symbols) {
-  // If END directive seen, ignore all subsequent lines
+  // If kEND directive seen, ignore all subsequent lines
   if (end_directive_seen_) {
     return;
   }
@@ -1469,7 +1469,7 @@ void MerlinSyntaxParser::ParseLine(const std::string& line, Section& section,
     return;
   }
 
-  // Check for = syntax (alternate EQU): LABEL = VALUE
+  // Check for = syntax (alternate kEQU): LABEL = VALUE
   size_t equals_pos = code_line.find('=', pos);
   if (HandleEquateLine(label, code_line, equals_pos, section, symbols)) {
     return;
@@ -1535,7 +1535,7 @@ void MerlinSyntaxParser::Parse(const std::string& source, Section& section,
     ParseLine(line, section, symbols);
   }
 
-  // Validate that all DO blocks are closed (Phase 4: use shared component)
+  // Validate that all kDO blocks are closed (Phase 4: use shared component)
   if (!conditional_.IsBalanced()) {
     throw std::runtime_error(FormatError("Unmatched DO directive (missing FIN)"));
   }
@@ -1545,7 +1545,7 @@ void MerlinSyntaxParser::Parse(const std::string& source, Section& section,
     throw std::runtime_error(FormatError("Unclosed macro definition (missing <<<)"));
   }
 
-  // Validate that LUP blocks are closed
+  // Validate that kLUP blocks are closed
   if (in_lup_block_) {
     throw std::runtime_error(FormatError("Unclosed LUP block (missing --^)"));
   }

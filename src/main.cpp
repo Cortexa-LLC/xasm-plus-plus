@@ -69,22 +69,22 @@ static void ApplyPreDefinitions(const std::vector<std::string>& defines,
 }
 
 // ---------------------------------------------------------------------------
-// Helper: select and wire up the CPU plugin.
-// Returns nullptr on unknown CPU (caller should print error and exit).
+// Helper: select and wire up the kCPU plugin.
+// Returns nullptr on unknown kCPU (caller should print error and exit).
 // ---------------------------------------------------------------------------
 static CpuPlugin* SelectCpu(const std::string& cpu_name, Cpu6502& cpu6502, Cpu6809& cpu6809,
                             CpuZ80& cpu_z80) {
   static const std::unordered_map<std::string, CpuMode> k6502Modes = {
-      {cpu::CPU_6502, CpuMode::Cpu6502},
-      {cpu::CPU_65C02, CpuMode::Cpu65C02},
-      {cpu::CPU_65C02_ROCK, CpuMode::Cpu65C02Rock},
-      {cpu::CPU_65816, CpuMode::Cpu65816},
+      {cpu::kCPU_6502, CpuMode::Cpu6502},
+      {cpu::kCPU_65C02, CpuMode::Cpu65C02},
+      {cpu::kCPU_65C02_ROCK, CpuMode::Cpu65C02Rock},
+      {cpu::kCPU_65816, CpuMode::Cpu65816},
   };
 
-  if (cpu_name == cpu::CPU_6809) {
+  if (cpu_name == cpu::kCPU_6809) {
     return &cpu6809;
   }
-  if (cpu_name == cpu::CPU_Z80) {
+  if (cpu_name == cpu::kCPU_Z80) {
     return &cpu_z80;
   }
   auto it = k6502Modes.find(cpu_name);
@@ -97,17 +97,17 @@ static CpuPlugin* SelectCpu(const std::string& cpu_name, Cpu6502& cpu6502, Cpu68
 
 // ---------------------------------------------------------------------------
 // Helper: run the Merlin-specific parse step.
-// Returns false when the CPU/syntax combination is invalid.
+// Returns false when the kCPU/syntax combination is invalid.
 // ---------------------------------------------------------------------------
 static bool RunMerlinParse(const CommandLineOptions& opts,
                            std::optional<std::array<uint16_t, 4>>& rw18_header,
                            const std::string& source, Section& section,
                            ConcreteSymbolTable& symbols, Cpu6502& cpu6502) {
-  if (opts.cpu == cpu::CPU_6809 || opts.cpu == cpu::CPU_Z80) {
+  if (opts.cpu == cpu::kCPU_6809 || opts.cpu == cpu::kCPU_Z80) {
     std::cerr << "Error: Merlin syntax is only compatible with 6502 "
                  "family CPUs\n";
-    std::cerr << "For " << cpu::CPU_6809 << ", use --syntax edtasm or --syntax scmasm\n";
-    std::cerr << "For " << cpu::CPU_Z80 << ", use --syntax edtasm_m80_plusplus\n";
+    std::cerr << "For " << cpu::kCPU_6809 << ", use --syntax edtasm or --syntax scmasm\n";
+    std::cerr << "For " << cpu::kCPU_Z80 << ", use --syntax edtasm_m80_plusplus\n";
     return false;
   }
   MerlinSyntaxParser parser;
@@ -124,11 +124,11 @@ static bool RunMerlinParse(const CommandLineOptions& opts,
 
 // ---------------------------------------------------------------------------
 // Helper: run the EDTASM-M80++ parse step.
-// Returns false when the CPU is wrong.
+// Returns false when the kCPU is wrong.
 // ---------------------------------------------------------------------------
 static bool RunEdtasmM80Parse(const std::string& cpu_name, const std::string& source,
                               Section& section, ConcreteSymbolTable& symbols, CpuZ80& cpu_z80) {
-  if (cpu_name != cpu::CPU_Z80) {
+  if (cpu_name != cpu::kCPU_Z80) {
     std::cerr << "Error: EDTASM-M80++ syntax requires --cpu z80\n";
     return false;
   }
@@ -332,7 +332,7 @@ int main(int argc, char** argv) {
     std::string source = buffer.str();
     file.close();
 
-    // Step 2: Initialise section, symbol table, and CPU plugin
+    // Step 2: Initialise section, symbol table, and kCPU plugin
     Section section;
     ConcreteSymbolTable symbols;
 
@@ -347,16 +347,16 @@ int main(int argc, char** argv) {
     CpuPlugin* cpu = SelectCpu(opts.cpu, cpu6502, cpu6809, cpu_z80);
     if (cpu == nullptr) {
       std::cerr << "Error: Unknown CPU type: " << opts.cpu << "\n";
-      std::cerr << "Supported: " << cpu::CPU_6502 << ", " << cpu::CPU_65C02 << ", "
-                << cpu::CPU_65C02_ROCK << ", " << cpu::CPU_65816 << ", " << cpu::CPU_6809 << ", "
-                << cpu::CPU_Z80 << "\n";
+      std::cerr << "Supported: " << cpu::kCPU_6502 << ", " << cpu::kCPU_65C02 << ", "
+                << cpu::kCPU_65C02_ROCK << ", " << cpu::kCPU_65816 << ", " << cpu::kCPU_6809 << ", "
+                << cpu::kCPU_Z80 << "\n";
       return 1;
     }
 
     // Branch relaxation defaults to off.
     cpu6502.SetRelaxBranches(opts.relax_branches);
 
-    // Step 3: Parse source (change to source dir for PUT/include resolution)
+    // Step 3: Parse source (change to source dir for kPUT/include resolution)
     std::filesystem::path input_path = std::filesystem::absolute(opts.input_file);
     std::filesystem::path source_dir = input_path.parent_path();
     std::filesystem::path original_dir = std::filesystem::current_path();
@@ -381,7 +381,7 @@ int main(int argc, char** argv) {
       return 1;
     }
 
-    // Step 4: Create assembler (CPU already created in Step 2)
+    // Step 4: Create assembler (kCPU already created in Step 2)
     Assembler assembler;
     assembler.SetCpuPlugin(cpu);
     assembler.SetSymbolTable(&symbols);  // CRITICAL: Link symbol table to assembler

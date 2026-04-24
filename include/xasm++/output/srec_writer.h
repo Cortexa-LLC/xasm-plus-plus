@@ -121,7 +121,7 @@ class SRecordWriter : public OutputWriter {
 
  private:
   size_t bytes_per_line_ =
-      output_format::SREC_DEFAULT_BYTES_PER_LINE;  ///< Number of data bytes per record (default:
+      output_format::kSREC_DEFAULT_BYTES_PER_LINE;  ///< Number of data bytes per record (default:
                                                    ///< 32)
 
   /**

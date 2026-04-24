@@ -27,11 +27,11 @@ CommandLineOptions ParseCommandLine(int argc, char** argv) {
   // without it)
   app.add_option("input", opts.input_file, "Input assembly file");
 
-  // CPU architecture option
+  // kCPU architecture option
   app.add_option("--cpu", opts.cpu, "CPU architecture (default: 6502)")
-      ->default_val(cpu::CPU_6502)
+      ->default_val(cpu::kCPU_6502)
       ->check(CLI::IsMember(
-          {cpu::CPU_6502, cpu::CPU_65C02, cpu::CPU_65C02_ROCK, cpu::CPU_65816, cpu::CPU_6809}));
+          {cpu::kCPU_6502, cpu::kCPU_65C02, cpu::kCPU_65C02_ROCK, cpu::kCPU_65816, cpu::kCPU_6809}));
 
   // Syntax parser option
   app.add_option("--syntax", opts.syntax, "Syntax parser (default: simple)")

@@ -38,7 +38,7 @@ constexpr int RADIX_DECIMAL = 10;
 constexpr int RADIX_HEXADECIMAL = 16;
 
 // ---------------------------------------------------------------------------
-// IsEqOperandSafe  (used by StripComments to validate star-label .EQ values)
+// IsEqOperandSafe  (used by StripComments to validate star-label .kEQ values)
 //
 // Returns true if the operand can be resolved without consulting the symbol
 // table — i.e. it contains only numeric literals, `*` (current address), and
@@ -47,7 +47,7 @@ constexpr int RADIX_HEXADECIMAL = 16;
 //   • An invalid character inside a hex literal  (e.g. "$Cn5C" where 'n' is
 //     not a hex digit)
 //
-// When this returns false, StripComments treats the *LABEL .EQ line as an
+// When this returns false, StripComments treats the *LABEL .kEQ line as an
 // ordinary full-line comment.
 // ---------------------------------------------------------------------------
 // Advances i past a hex literal (digits only). Returns false if no hex digits.
@@ -162,7 +162,7 @@ static bool TryParseBinary(const std::string& token, int64_t& value) {
   }
 }
 
-// Tries to parse an ASCII character constant (delimiter + char, length==2).
+// Tries to parse an kASCII character constant (delimiter + char, length==2).
 // Returns false if not a char constant format.
 static bool TryParseCharLiteral(const std::string& token, int64_t& value) {
   if (std::isalnum(static_cast<unsigned char>(token[0])) || token.length() != 2) {
@@ -226,68 +226,68 @@ void ScmasmSyntaxParser::InitializeDirectiveRegistry() {
   // Phase 6c.2: Use extracted free functions with directive name constants
   using namespace scmasm::directives;
 
-  // .OR - Set origin address
-  directive_registry_[OR] = scmasm::HandleOr;
+  // .kOR - Set origin address
+  directive_registry_[kOR] = scmasm::HandleOr;
 
-  // .EQ - Define constant
-  directive_registry_[EQ] = scmasm::HandleEq;
+  // .kEQ - Define constant
+  directive_registry_[kEQ] = scmasm::HandleEq;
 
-  // .SE - Set variable (redefinable)
-  directive_registry_[SE] = scmasm::HandleSe;
+  // .kSE - Set variable (redefinable)
+  directive_registry_[kSE] = scmasm::HandleSe;
 
-  // .AS - ASCII string
-  directive_registry_[AS] = scmasm::HandleAs;
+  // .kAS - kASCII string
+  directive_registry_[kAS] = scmasm::HandleAs;
 
-  // .AT - ASCII text (high bit on last char)
-  directive_registry_[AT] = scmasm::HandleAt;
+  // .kAT - kASCII text (high bit on last char)
+  directive_registry_[kAT] = scmasm::HandleAt;
 
-  // .AZ - ASCII zero-terminated
-  directive_registry_[AZ] = scmasm::HandleAz;
+  // .kAZ - kASCII zero-terminated
+  directive_registry_[kAZ] = scmasm::HandleAz;
 
-  // .DA / .DFB - Define byte(s)
-  directive_registry_[DA] = scmasm::HandleDa;
-  directive_registry_[DFB] = scmasm::HandleDa;  // Alias
+  // .kDA / .kDFB - Define byte(s)
+  directive_registry_[kDA] = scmasm::HandleDa;
+  directive_registry_[kDFB] = scmasm::HandleDa;  // Alias
 
-  // .HS - Hex string
-  directive_registry_[HS] = scmasm::HandleHs;
+  // .kHS - Hex string
+  directive_registry_[kHS] = scmasm::HandleHs;
 
-  // .BS - Binary string
-  directive_registry_[BS] = scmasm::HandleBs;
+  // .kBS - Binary string
+  directive_registry_[kBS] = scmasm::HandleBs;
 
-  // .MA - Begin macro definition
-  directive_registry_[MA] = scmasm::HandleMa;
+  // .kMA - Begin macro definition
+  directive_registry_[kMA] = scmasm::HandleMa;
 
-  // .ENDM / .EM - End macro definition
-  directive_registry_[ENDM] = scmasm::HandleEndm;
-  directive_registry_[EM] = scmasm::HandleEndm;  // Alias
+  // .kENDM / .kEM - End macro definition
+  directive_registry_[kENDM] = scmasm::HandleEndm;
+  directive_registry_[kEM] = scmasm::HandleEndm;  // Alias
 
   // P0 Priority Directives (A2oSX Critical)
-  directive_registry_[PS] = scmasm::HandlePs;        // Pascal string
-  directive_registry_[INB] = scmasm::HandleInb;      // Include source file
-  directive_registry_[INCLUDE] = scmasm::HandleInb;  // Alias: .INCLUDE = .INB
-  directive_registry_[LIST] = scmasm::HandleList;    // Listing control
-  directive_registry_[DUMMY] = scmasm::HandleDummy;  // Dummy section
-  directive_registry_[ED] = scmasm::HandleEd;        // End dummy section
-  directive_registry_[OP] = scmasm::HandleOp;        // CPU operation mode
+  directive_registry_[kPS] = scmasm::HandlePs;        // Pascal string
+  directive_registry_[kINB] = scmasm::HandleInb;      // Include source file
+  directive_registry_[kINCLUDE] = scmasm::HandleInb;  // Alias: .kINCLUDE = .kINB
+  directive_registry_[kLIST] = scmasm::HandleList;    // Listing control
+  directive_registry_[kDUMMY] = scmasm::HandleDummy;  // Dummy section
+  directive_registry_[kED] = scmasm::HandleEd;        // End dummy section
+  directive_registry_[kOP] = scmasm::HandleOp;        // kCPU operation mode
 
   // Phase 3: 100% Coverage Directives
-  directive_registry_[CS] = scmasm::HandleCs;  // C-string with escapes
-  directive_registry_[CZ] = scmasm::HandleCz;  // C-string zero-terminated
-  directive_registry_[TF] = scmasm::HandleTf;  // Text file/title metadata
-  directive_registry_[EP] = scmasm::HandleEp;  // Entry point / end phase
-  directive_registry_[PH] = scmasm::HandlePh;  // Phase assembly
-  directive_registry_[HX] = scmasm::HandleHx;  // Hex nibble storage
-  directive_registry_[TA] = scmasm::HandleTa;  // Target address (no-op)
-  directive_registry_[AC] = scmasm::HandleAc;  // ASCII with prefix
+  directive_registry_[kCS] = scmasm::HandleCs;  // C-string with escapes
+  directive_registry_[kCZ] = scmasm::HandleCz;  // C-string zero-terminated
+  directive_registry_[kTF] = scmasm::HandleTf;  // Text file/title metadata
+  directive_registry_[kEP] = scmasm::HandleEp;  // Entry point / end phase
+  directive_registry_[kPH] = scmasm::HandlePh;  // Phase assembly
+  directive_registry_[kHX] = scmasm::HandleHx;  // Hex nibble storage
+  directive_registry_[kTA] = scmasm::HandleTa;  // Target address (no-op)
+  directive_registry_[kAC] = scmasm::HandleAc;  // kASCII with prefix
 
-  // Note: Control flow directives (.DO, .ELSE, .FIN, .LU, .ENDU) are NOT
+  // Note: Control flow directives (.kDO, .kELSE, .kFIN, .kLU, .kENDU) are NOT
   // registered here because they require special handling in ParseLine with
   // line skipping and nested scoping. They cannot be dispatched via the simple
   // registry pattern.
 }
 
 // ============================================================================
-// CPU Plugin Configuration
+// kCPU Plugin Configuration
 // ============================================================================
 
 void ScmasmSyntaxParser::SetCpu(CpuPlugin* cpu) {
@@ -299,10 +299,10 @@ void ScmasmSyntaxParser::SetCpu(const std::string& cpu_name) {
   // The pointer is stored in owned_cpu_ so that it outlives this function
   // and is freed when the parser is destroyed.  Previously cpu6502 was a
   // local variable, causing cpu_ to become a dangling pointer and crash
-  // the first time an instruction was assembled after a .OP directive.
+  // the first time an instruction was assembled after a .kOP directive.
   auto cpu6502 = std::make_unique<Cpu6502>();
 
-  // Set the appropriate CPU mode based on the requested variant
+  // Set the appropriate kCPU mode based on the requested variant
   if (cpu_name == "6502") {
     cpu6502->SetCpuMode(CpuMode::Cpu6502);
   } else if (cpu_name == "65C02") {
@@ -416,7 +416,7 @@ void ScmasmSyntaxParser::ProcessOneLine(const std::string& raw, Section& section
   }
 }
 
-// Handles a line received while inside a .MA/.ENDM block.
+// Handles a line received while inside a .kMA/.kENDM block.
 void ScmasmSyntaxParser::HandleMacroBodyLine(const std::string& line, size_t& line_idx) {
   std::string upper_line = Trim(line);
   std::transform(upper_line.begin(), upper_line.end(), upper_line.begin(), ::toupper);
@@ -635,12 +635,12 @@ std::string ScmasmSyntaxParser::StripComments(const std::string& line) {
 
   // Check for * in column 1 (after any leading whitespace)
   //
-  // SCMASM private-label marker: *LABEL .EQ value
+  // SCMASM private-label marker: *LABEL .kEQ value
   // In SCMASM, a line starting with *<labelchar> at column 0 is NOT a full
   // comment — the * is a private/reserved label marker that the assembler
   // still processes (defining the label), only the opcode emission is
-  // suppressed for real instructions.  .EQ/.SE directives are zero-emission
-  // anyway, so *LABEL .EQ value fully defines the label.
+  // suppressed for real instructions.  .kEQ/.kSE directives are zero-emission
+  // anyway, so *LABEL .kEQ value fully defines the label.
   //
   // Rule:
   //   * at column 0 followed by a valid label-start char → strip * and
@@ -785,10 +785,10 @@ static DirectiveContext MakeDirectiveContext(
 }
 
 // Returns true if opcode is a control-flow directive that must not appear
-// without a matching opening directive (mismatched ELSE/FIN/ENDU).
+// without a matching opening directive (mismatched kELSE/kFIN/kENDU).
 static bool IsMismatchedControlFlow(const std::string& opcode) {
   using namespace scmasm::directives;
-  return opcode == ELSE || opcode == FIN || opcode == ENDU;
+  return opcode == kELSE || opcode == kFIN || opcode == kENDU;
 }
 
 // Dispatch control-flow directives that are not in the registry.
@@ -800,7 +800,7 @@ bool ScmasmSyntaxParser::TryDispatchControlFlow(const std::string& opcode_upper,
                                                 const std::vector<std::string>& source,
                                                 size_t& line_idx) {
   using namespace scmasm::directives;
-  if (opcode_upper == DO) {
+  if (opcode_upper == kDO) {
     std::string do_operand = operand;
     size_t ws = do_operand.find_first_of(" \t");
     if (ws != std::string::npos) {
@@ -812,7 +812,7 @@ bool ScmasmSyntaxParser::TryDispatchControlFlow(const std::string& opcode_upper,
     HandleDo(do_ctx, section, symbols, source, line_idx);
     return true;
   }
-  if (opcode_upper == LU) {
+  if (opcode_upper == kLU) {
     DirectiveContext lu_ctx;
     lu_ctx.label = label;
     lu_ctx.operand = operand;
@@ -965,7 +965,7 @@ static size_t EstimateInstrSize(const std::string& opcode, const std::string& op
   size_t est = cpu->GetInstructionSize(opcode, operand);
   // GetInstructionSize assumes absolute (3-byte) for symbol operands.  For
   // many 6502 mnemonics a ZP form exists (2 bytes).  Evaluate the operand
-  // with the current symbol table; if it resolves to $00–$FF, correct to 2.
+  // with the current symbol table; if it resolves to $00–$kFF, correct to 2.
   // Exclusions: JSR and JMP have no ZP form — always 3.
   if (est == 3 && opcode != "JSR" && opcode != "JMP") {
     // Strip index suffix (,X or ,Y) so the base expression evaluates.
@@ -1056,8 +1056,8 @@ void ScmasmSyntaxParser::ParseLine(const std::string& line, Section& section,
   }
 
   // If nothing left (just a label, nothing else), defer it as pending_label_.
-  // It may be the label for a .EQ/.SE on the next line (SCMASM pattern where
-  // the label appears on a separate line before the .EQ directive).
+  // It may be the label for a .kEQ/.kSE on the next line (SCMASM pattern where
+  // the label appears on a separate line before the .kEQ directive).
   // Otherwise it will be defined at the next instruction's address.
   if (pos >= line.length()) {
     if (!label.empty()) {
@@ -1265,7 +1265,7 @@ void ScmasmSyntaxParser::HandleOr(const std::string& operand, Section& section,
   // Parse address (with expression evaluation)
   uint32_t address = EvaluateExpression(operand, symbols);
 
-  // Create ORG atom
+  // Create kORG atom
   auto org_atom = std::make_shared<OrgAtom>(address);
   section.atoms.push_back(org_atom);
 
@@ -1283,7 +1283,7 @@ void ScmasmSyntaxParser::HandleEq(const DirectiveContext& ctx, ConcreteSymbolTab
   // Parse value (with expression evaluation)
   uint32_t value = EvaluateExpression(operand, symbols);
 
-  // Define symbol (immutable) - .EQ creates Equate type
+  // Define symbol (immutable) - .kEQ creates Equate type
   auto expr = std::make_shared<LiteralExpr>(value);
   symbols.Define(label, SymbolType::Equate, expr);
 }
@@ -1298,15 +1298,15 @@ void ScmasmSyntaxParser::HandleSe(const DirectiveContext& ctx, ConcreteSymbolTab
   // Parse value (with expression evaluation)
   uint32_t value = EvaluateExpression(operand, symbols);
 
-  // Check if symbol already exists (SE allows redefinition)
+  // Check if symbol already exists (kSE allows redefinition)
   int64_t existing_value = 0;
   auto expr = std::make_shared<LiteralExpr>(value);
 
   if (symbols.Lookup(label, existing_value)) {
-    // Redefine it - .SE creates Set type (redefinable)
+    // Redefine it - .kSE creates Set type (redefinable)
     symbols.Define(label, SymbolType::Set, expr);
   } else {
-    // First definition - .SE creates Set type (redefinable)
+    // First definition - .kSE creates Set type (redefinable)
     symbols.Define(label, SymbolType::Set, expr);
     variable_symbols_[label] = true;
   }
@@ -1357,7 +1357,7 @@ uint32_t ScmasmSyntaxParser::ParseBinaryNumber(const std::string& trimmed) {
 }
 
 uint32_t ScmasmSyntaxParser::ParseCharConstant(const std::string& trimmed) {
-  // Exactly 2 chars: delimiter + ASCII char
+  // Exactly 2 chars: delimiter + kASCII char
   char delimiter = trimmed[0];
   char c = trimmed[1];
   return ApplyHighBitRule({c, delimiter});
@@ -1394,7 +1394,7 @@ uint32_t ScmasmSyntaxParser::ParseNumber(const std::string& str) {
   if (trimmed[0] == '%') {
     return ParseBinaryNumber(trimmed);
   }
-  // ASCII char constant: non-digit + exactly one char
+  // kASCII char constant: non-digit + exactly one char
   if (!std::isdigit(static_cast<unsigned char>(trimmed[0])) && trimmed.length() == 2) {
     return ParseCharConstant(trimmed);
   }
@@ -1518,7 +1518,7 @@ uint32_t ScmasmSyntaxParser::EvaluateExpression(const std::string& str,
 
 uint8_t ScmasmSyntaxParser::ApplyHighBitRule(HighBitChars hbc) {
   // SCMASM high-bit rule:
-  // If delimiter ASCII < 0x27 (apostrophe '), high bit is SET
+  // If delimiter kASCII < 0x27 (apostrophe '), high bit is kSET
   // Otherwise, high bit is CLEAR
 
   auto result = static_cast<uint8_t>(hbc.input);
@@ -1747,7 +1747,7 @@ void ScmasmSyntaxParser::HandleAz(const std::string& operand, Section& section,
   section.atoms.push_back(atom);
 }
 
-// Emit bytes for a single .DA value token according to its prefix character.
+// Emit bytes for a single .kDA value token according to its prefix character.
 void ScmasmSyntaxParser::EmitDaValue(const std::string& value_trimmed, std::vector<uint8_t>& data,
                                      ConcreteSymbolTable& symbols) {
   char prefix = value_trimmed[0];
@@ -1785,7 +1785,7 @@ void ScmasmSyntaxParser::HandleDa(const std::string& operand, Section& section,
   std::vector<uint8_t> data;
 
   // Split comma-separated operand into individual value tokens.
-  // SCMASM .DA: Size determined by operator prefix
+  // SCMASM .kDA: Size determined by operator prefix
   // #expr → 8-bit (low byte)
   // /expr → 8-bit (second byte, bits 8-15)
   // expr  → 16-bit (default, little-endian)
@@ -1856,8 +1856,8 @@ void ScmasmSyntaxParser::HandleHs(const std::string& operand, Section& section,
 
 void ScmasmSyntaxParser::HandleBs(const std::string& operand, Section& section,
                                   ConcreteSymbolTable& symbols) {
-  // .BS (Block Storage) - Reserve N bytes of space
-  // SCMASM syntax: .BS count
+  // .kBS (Block Storage) - Reserve N bytes of space
+  // SCMASM syntax: .kBS count
   // Where count is a decimal or hex number ($hex, %binary)
   // This reserves 'count' bytes filled with zeros
 
@@ -2095,11 +2095,11 @@ ScmasmSyntaxParser::DoBlockBounds ScmasmSyntaxParser::FindDoBlockBounds(
     std::string directive = ExtractUpperOpcode(ln);
 
     using namespace scmasm::directives;
-    if (first_tok == DO || directive == DO) {
+    if (first_tok == kDO || directive == kDO) {
       nesting++;
-    } else if ((first_tok == ELSE || directive == ELSE) && nesting == 1) {
+    } else if ((first_tok == kELSE || directive == kELSE) && nesting == 1) {
       bounds.else_line = i;
-    } else if (first_tok == FIN || directive == FIN) {
+    } else if (first_tok == kFIN || directive == kFIN) {
       nesting--;
       if (nesting == 0) {
         bounds.fin_line = i;
@@ -2153,7 +2153,7 @@ void ScmasmSyntaxParser::DefineBoundaryLabel(const std::vector<std::string>& sou
   }
   std::string blabel = bline.substr(0, lend);
   // If the first token starts with '.' and is NOT a local label (.N digits),
-  // it's the directive itself (.FIN, .ELSE) — skip it.
+  // it's the directive itself (.kFIN, .kELSE) — skip it.
   if (blabel.empty() || (blabel[0] == '.' && !IsLocalLabel(blabel))) {
     return;
   }
@@ -2184,13 +2184,13 @@ void ScmasmSyntaxParser::HandleDo(const DirectiveContext& ctx, Section& section,
     throw std::runtime_error(".DO requires an expression");
   }
 
-  // Capture address and atom-insert position at start of .DO line.
+  // Capture address and atom-insert position at start of .kDO line.
   uint32_t start_address = current_address_;
   size_t label_atom_position = section.atoms.size();
 
   uint32_t condition = EvaluateExpression(operand, symbols);
 
-  // Find matching .ELSE / .FIN
+  // Find matching .kELSE / .kFIN
   auto bounds = FindDoBlockBounds(source, line_idx);
   if (bounds.fin_line == std::string::npos) {
     throw std::runtime_error(".DO without matching .FIN");
@@ -2209,7 +2209,7 @@ void ScmasmSyntaxParser::HandleDo(const DirectiveContext& ctx, Section& section,
     start_line = else_line + 1;
     end_line = fin_line;
   } else {
-    // No .ELSE, skip entire block; just emit any .DO-line label.
+    // No .kELSE, skip entire block; just emit any .kDO-line label.
     EmitDoLabel(label, current_address_, section.atoms.size(), section, symbols);
     line_idx = fin_line;
     return;
@@ -2236,13 +2236,13 @@ void ScmasmSyntaxParser::HandleDo(const DirectiveContext& ctx, Section& section,
     }
   }
 
-  // Define labels on boundary lines (.ELSE / .FIN).
+  // Define labels on boundary lines (.kELSE / .kFIN).
   DefineBoundaryLabel(source, end_line, section, symbols);
   if (condition != 0 && fin_line != end_line) {
     DefineBoundaryLabel(source, fin_line, section, symbols);
   }
 
-  // Emit the .DO-line label at start_address (before block content).
+  // Emit the .kDO-line label at start_address (before block content).
   EmitDoLabel(label, start_address, label_atom_position, section, symbols);
 
   line_idx = fin_line;
@@ -2256,9 +2256,9 @@ size_t ScmasmSyntaxParser::FindEnduBounds(const std::vector<std::string>& source
     std::string ln = Trim(StripComments(StripLineNumber(source[i])));
     std::string upper = ln;
     std::transform(upper.begin(), upper.end(), upper.begin(), ::toupper);
-    if (upper.starts_with(LU)) {
+    if (upper.starts_with(kLU)) {
       nesting++;
-    } else if (upper.starts_with(ENDU) && --nesting == 0) {
+    } else if (upper.starts_with(kENDU) && --nesting == 0) {
       return i;
     }
   }
@@ -2300,7 +2300,7 @@ void ScmasmSyntaxParser::HandleLu(const DirectiveContext& ctx, Section& section,
   size_t label_atom_position = section.atoms.size();
   uint32_t count = EvaluateExpression(operand, symbols);
 
-  // Find matching .ENDU (handles nesting).
+  // Find matching .kENDU (handles nesting).
   size_t endu_line = FindEnduBounds(source, line_idx);
   if (endu_line == std::string::npos) {
     throw std::runtime_error(".LU without matching .ENDU");

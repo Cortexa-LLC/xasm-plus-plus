@@ -55,7 +55,7 @@ std::string Trim(const std::string& str) {
 /**
  * @brief Parse string with delimiter semantics
  *
- * Extracts string from operand as plain 7-bit ASCII. The delimiter character
+ * Extracts string from operand as plain 7-bit kASCII. The delimiter character
  * is used only to find the start/end of the string; it does NOT affect the
  * encoding of the string bytes.  The high-bit rule (delimiter < 0x27 → set
  * bit 7) applies only to single-character literals in instruction operands
@@ -81,7 +81,7 @@ char ParseString(const std::string& operand, std::vector<uint8_t>& result) {
     end = trimmed.size();
   }
 
-  // Extract string content as plain 7-bit ASCII (no high-bit manipulation).
+  // Extract string content as plain 7-bit kASCII (no high-bit manipulation).
   for (size_t i = 1; i < end; ++i) {
     result.push_back(static_cast<uint8_t>(trimmed[i]));
   }
@@ -89,24 +89,24 @@ char ParseString(const std::string& operand, std::vector<uint8_t>& result) {
   return delimiter;
 }
 
-// Apply INVERTED high-bit rule (for .PS directive)
-// Delimiter >= 0x27: SET high bit
+// Apply INVERTED high-bit rule (for .kPS directive)
+// Delimiter >= 0x27: kSET high bit
 // Delimiter < 0x27: CLEAR high bit
 uint8_t ApplyInvertedHighBitRule(HighBitChars hbc) {
   auto result = static_cast<uint8_t>(hbc.input);
 
-  if (hbc.delimiter >= HIGH_BIT_DELIMITER_THRESHOLD) {
+  if (hbc.delimiter >= kHIGH_BIT_DELIMITER_THRESHOLD) {
     // Set high bit (inverted from normal rule)
-    result |= HIGH_BIT_MASK;
+    result |= kHIGH_BIT_MASK;
   } else {
     // Clear high bit (inverted from normal rule)
-    result &= LOW_7_BITS_MASK;
+    result &= kLOW_7_BITS_MASK;
   }
 
   return result;
 }
 
-// Parse string with INVERTED high-bit rule (for .PS)
+// Parse string with INVERTED high-bit rule (for .kPS)
 char ParseStringInverted(const std::string& operand, std::vector<uint8_t>& result) {
   result.clear();
 
@@ -177,12 +177,12 @@ void HandleOr(DirectiveContext& context) {
   // Evaluate address expression
   uint32_t address = EvaluateExpression(addr_expr, *context.symbols, context.parser_state);
 
-  // Inside a .DUMMY/.ED block, .OR repositions the dummy-section PC so that
+  // Inside a .kDUMMY/.kED block, .kOR repositions the dummy-section PC so that
   // labels defined there get the correct zero-page (or other) address.
   // We emit a DummyOrgAtom so that ResolveSymbols() can track the ZP address
   // when it walks the atom list, while the code emitter (EncodeInstructions /
   // binary output) silently skips it and leaves the real program counter alone.
-  // Outside a dummy section, .OR emits a normal OrgAtom that moves the real PC.
+  // Outside a dummy section, .kOR emits a normal OrgAtom that moves the real PC.
   ValidateParser(context.parser_state);
   auto* parser = static_cast<ScmasmSyntaxParser*>(context.parser_state);
   if (parser->InDummySection()) {
@@ -233,7 +233,7 @@ void HandleEq(DirectiveContext& context) {
 
   // For local labels (':N' or '.N'), use the scoped name to match how branch
   // operands reference them (via LocalLabelScope in ParseLine). This is
-  // critical for ':1 .EQ *' patterns inside macros (e.g. INCW.G), where each
+  // critical for ':1 .kEQ *' patterns inside macros (e.g. INCW.G), where each
   // macro invocation must have its own per-invocation scope prefix so that the
   // EquateAtom re-evaluates the correct scoped symbol across multi-pass runs.
   if (context.parser_state && !context.label.empty() &&
@@ -247,7 +247,7 @@ void HandleEq(DirectiveContext& context) {
   // unit that is not included by this source file), use 0 as a placeholder and
   // push an EquateAtom so the symbol is re-evaluated on every assembly pass.
   // This matches original SCMASM/vasm behaviour where undefined symbols in
-  // .EQ expressions default to 0 rather than aborting the parse.
+  // .kEQ expressions default to 0 rather than aborting the parse.
   uint32_t value = 0;
   bool needs_reassembly_eval = false;
   try {
@@ -263,11 +263,11 @@ void HandleEq(DirectiveContext& context) {
 
   // Push an EquateAtom when:
   // 1. The expression contains '*' (current address) — must track PC changes
-  //    across branch-relaxation passes; OR
+  //    across branch-relaxation passes; kOR
   // 2. Evaluation failed above (forward/undefined reference) — must retry
   //    during assembly passes once all symbols are defined.
   //
-  // EXCEPTION for case 1: inside a .DUMMY section, '*' refers to the
+  // EXCEPTION for case 1: inside a .kDUMMY section, '*' refers to the
   // dummy-section's ZP address counter which is fixed, so no EquateAtom needed.
   bool in_dummy = context.parser_state &&
                   static_cast<ScmasmSyntaxParser*>(context.parser_state)->InDummySection();
@@ -292,7 +292,7 @@ void HandleSe(DirectiveContext& context) {
   // Evaluate value expression
   uint32_t value = EvaluateExpression(val_expr, *context.symbols, context.parser_state);
 
-  // .SE creates Set type (redefinable)
+  // .kSE creates Set type (redefinable)
   // Normalize label to uppercase for case-insensitive SCMASM compatibility
   auto expr = std::make_shared<LiteralExpr>(value);
   context.symbols->Define(util::ToUpper(context.label), SymbolType::Set, expr);
@@ -305,7 +305,7 @@ void HandleAs(DirectiveContext& context) {
   RequireOperand(operand, ".AS", context);
 
   // SCMASM prefix modifiers before the opening delimiter:
-  //   -"text"  set high bit on the LAST byte (same as .AT)
+  //   -"text"  set high bit on the LAST byte (same as .kAT)
   // Strip the prefix and delegate appropriately.
   std::string trimmed_op = Trim(operand);
   bool high_bit_last = false;
@@ -318,7 +318,7 @@ void HandleAs(DirectiveContext& context) {
   ParseString(trimmed_op, data);
 
   if (high_bit_last && !data.empty()) {
-    data.back() |= constants::HIGH_BIT_MASK;
+    data.back() |= constants::kHIGH_BIT_MASK;
   }
 
   auto atom = std::make_shared<DataAtom>(data);
@@ -339,7 +339,7 @@ void HandleAt(DirectiveContext& context) {
 
   // Set high bit on LAST character
   if (!data.empty()) {
-    data.back() |= constants::HIGH_BIT_MASK;
+    data.back() |= constants::kHIGH_BIT_MASK;
   }
 
   auto atom = std::make_shared<DataAtom>(data);
@@ -370,12 +370,12 @@ void HandleAz(DirectiveContext& context) {
 
   if (high_bit_all) {
     for (auto& b : data) {
-      b |= constants::HIGH_BIT_MASK;
+      b |= constants::kHIGH_BIT_MASK;
     }
   }
 
   // Add null terminator (always plain, no high bit)
-  data.push_back(constants::NULL_TERMINATOR);
+  data.push_back(constants::kNULL_TERMINATOR);
 
   auto atom = std::make_shared<DataAtom>(data);
   context.section->atoms.push_back(atom);
@@ -393,7 +393,7 @@ namespace {
 /**
  * @brief Token produced by TokenizeDaOperand.
  *
- * Represents one comma-separated entry in a .DA operand, or signals that an
+ * Represents one comma-separated entry in a .kDA operand, or signals that an
  * inline comment was encountered (comment_ended == true).
  */
 struct DaToken {
@@ -453,7 +453,7 @@ size_t FindUnquotedWhitespace(const std::string& token) {
 }
 
 /**
- * @brief Extract all .DA tokens from the operand string.
+ * @brief Extract all .kDA tokens from the operand string.
  *
  * Scans @p src for comma-separated expressions, honouring:
  *  - $$"..." / $$'...' string literals (commas inside are not separators)
@@ -507,7 +507,7 @@ std::vector<DaToken> TokenizeDaOperand(const std::string& src) {
 }
 
 /**
- * @brief Emit bytes/expressions for one .DA expression token.
+ * @brief Emit bytes/expressions for one .kDA expression token.
  *
  * Interprets the SCMASM prefix (#, /, <, >) to determine width, then
  * appends the appropriate byte placeholder(s) to @p data and the
@@ -521,7 +521,7 @@ std::vector<DaToken> TokenizeDaOperand(const std::string& src) {
  *   expr  → 16-bit default   (2 bytes, little-endian)
  */
 
-/// Strip trailing inline comment from a .DA token expression.
+/// Strip trailing inline comment from a .kDA token expression.
 /// Scans char-by-char to avoid treating spaces inside quoted literals as
 /// comment starts (e.g. the space in #" " must not trigger truncation).
 std::string StripTrailingComment(const std::string& expr) {
@@ -543,7 +543,7 @@ std::string StripTrailingComment(const std::string& expr) {
   return Trim(result);
 }
 
-/// Emit bytes for a $$"..." Apple II encoded string in a .DA operand.
+/// Emit bytes for a $$"..." Apple II encoded string in a .kDA operand.
 void EmitDollarDollarString(const std::string& trimmed_expr,
                             std::vector<std::string>& byte_expressions,
                             std::vector<uint8_t>& data) {
@@ -554,41 +554,41 @@ void EmitDollarDollarString(const std::string& trimmed_expr,
   }
   for (char c : str_content) {
     uint8_t byte = static_cast<uint8_t>(c);
-    if (delim >= HIGH_BIT_DELIMITER_THRESHOLD) {
-      byte |= HIGH_BIT_MASK;
+    if (delim >= kHIGH_BIT_DELIMITER_THRESHOLD) {
+      byte |= kHIGH_BIT_MASK;
     } else {
-      byte &= LOW_7_BITS_MASK;
+      byte &= kLOW_7_BITS_MASK;
     }
     data.push_back(byte);
     byte_expressions.push_back(std::to_string(byte));
   }
 }
 
-/// Emit 1 low byte for .DA #expr.
+/// Emit 1 low byte for .kDA #expr.
 void EmitDaLowByte(const std::string& base_expr, const DirectiveContext& context,
                    std::vector<std::string>& byte_expressions, std::vector<uint8_t>& data) {
   byte_expressions.push_back("<(" + base_expr + ")");
   try {
     uint32_t num = EvaluateExpression(base_expr, *context.symbols, context.parser_state);
-    data.push_back(static_cast<uint8_t>(num & BYTE_MASK));
+    data.push_back(static_cast<uint8_t>(num & kBYTE_MASK));
   } catch (...) {
     data.push_back(0);
   }
 }
 
-/// Emit 1 high byte for .DA /expr.
+/// Emit 1 high byte for .kDA /expr.
 void EmitDaHighByte(const std::string& base_expr, const DirectiveContext& context,
                     std::vector<std::string>& byte_expressions, std::vector<uint8_t>& data) {
   byte_expressions.push_back(">(" + base_expr + ")");
   try {
     uint32_t num = EvaluateExpression(base_expr, *context.symbols, context.parser_state);
-    data.push_back(static_cast<uint8_t>((num >> BYTE_1_SHIFT) & BYTE_MASK));
+    data.push_back(static_cast<uint8_t>((num >> kBYTE_1_SHIFT) & kBYTE_MASK));
   } catch (...) {
     data.push_back(0);
   }
 }
 
-/// Emit 3 bytes (little-endian 24-bit) for .DA <expr.
+/// Emit 3 bytes (little-endian 24-bit) for .kDA <expr.
 void EmitDa24Bit(const std::string& base_expr, const DirectiveContext& context,
                  std::vector<std::string>& byte_expressions, std::vector<uint8_t>& data) {
   byte_expressions.push_back("<(" + base_expr + ")");
@@ -596,9 +596,9 @@ void EmitDa24Bit(const std::string& base_expr, const DirectiveContext& context,
   byte_expressions.push_back("<((" + base_expr + ")/65536)");
   try {
     uint32_t num = EvaluateExpression(base_expr, *context.symbols, context.parser_state);
-    data.push_back(static_cast<uint8_t>(num & BYTE_MASK));
-    data.push_back(static_cast<uint8_t>((num >> BYTE_1_SHIFT) & BYTE_MASK));
-    data.push_back(static_cast<uint8_t>((num >> BYTE_2_SHIFT) & BYTE_MASK));
+    data.push_back(static_cast<uint8_t>(num & kBYTE_MASK));
+    data.push_back(static_cast<uint8_t>((num >> kBYTE_1_SHIFT) & kBYTE_MASK));
+    data.push_back(static_cast<uint8_t>((num >> kBYTE_2_SHIFT) & kBYTE_MASK));
   } catch (...) {
     data.push_back(0);
     data.push_back(0);
@@ -606,7 +606,7 @@ void EmitDa24Bit(const std::string& base_expr, const DirectiveContext& context,
   }
 }
 
-/// Emit 4 bytes (little-endian 32-bit) for .DA >expr.
+/// Emit 4 bytes (little-endian 32-bit) for .kDA >expr.
 void EmitDa32Bit(const std::string& base_expr, const DirectiveContext& context,
                  std::vector<std::string>& byte_expressions, std::vector<uint8_t>& data) {
   byte_expressions.push_back("<(" + base_expr + ")");
@@ -615,10 +615,10 @@ void EmitDa32Bit(const std::string& base_expr, const DirectiveContext& context,
   byte_expressions.push_back("<((" + base_expr + ")/16777216)");
   try {
     uint32_t num = EvaluateExpression(base_expr, *context.symbols, context.parser_state);
-    data.push_back(static_cast<uint8_t>(num & constants::BYTE_MASK));
-    data.push_back(static_cast<uint8_t>((num >> constants::BYTE_1_SHIFT) & constants::BYTE_MASK));
-    data.push_back(static_cast<uint8_t>((num >> constants::BYTE_2_SHIFT) & constants::BYTE_MASK));
-    data.push_back(static_cast<uint8_t>((num >> constants::BYTE_3_SHIFT) & constants::BYTE_MASK));
+    data.push_back(static_cast<uint8_t>(num & constants::kBYTE_MASK));
+    data.push_back(static_cast<uint8_t>((num >> constants::kBYTE_1_SHIFT) & constants::kBYTE_MASK));
+    data.push_back(static_cast<uint8_t>((num >> constants::kBYTE_2_SHIFT) & constants::kBYTE_MASK));
+    data.push_back(static_cast<uint8_t>((num >> constants::kBYTE_3_SHIFT) & constants::kBYTE_MASK));
   } catch (...) {
     data.push_back(0);
     data.push_back(0);
@@ -627,15 +627,15 @@ void EmitDa32Bit(const std::string& base_expr, const DirectiveContext& context,
   }
 }
 
-/// Emit 2 bytes (little-endian 16-bit) for .DA expr (no prefix).
+/// Emit 2 bytes (little-endian 16-bit) for .kDA expr (no prefix).
 void EmitDa16Bit(const std::string& base_expr, const DirectiveContext& context,
                  std::vector<std::string>& byte_expressions, std::vector<uint8_t>& data) {
   byte_expressions.push_back("<(" + base_expr + ")");
   byte_expressions.push_back(">(" + base_expr + ")");
   try {
     uint32_t num = EvaluateExpression(base_expr, *context.symbols, context.parser_state);
-    data.push_back(static_cast<uint8_t>(num & BYTE_MASK));
-    data.push_back(static_cast<uint8_t>((num >> BYTE_1_SHIFT) & BYTE_MASK));
+    data.push_back(static_cast<uint8_t>(num & kBYTE_MASK));
+    data.push_back(static_cast<uint8_t>((num >> kBYTE_1_SHIFT) & kBYTE_MASK));
   } catch (...) {
     data.push_back(0);
     data.push_back(0);
@@ -650,7 +650,7 @@ void ProcessDaExpression(const std::string& raw_expr, const DirectiveContext& co
     return;
   }
 
-  // Handle $$"..." Apple II encoded strings in .DA.
+  // Handle $$"..." Apple II encoded strings in .kDA.
   // Delimiter < 0x27 → clear high bit; delimiter >= 0x27 → set high bit.
   if (trimmed_expr.size() >= 3 && trimmed_expr[0] == '$' && trimmed_expr[1] == '$') {
     EmitDollarDollarString(trimmed_expr, byte_expressions, data);
@@ -692,16 +692,16 @@ void HandleDa(DirectiveContext& context) {
   const std::string& operand = context.operand;
   (void)context.label;  // Label handled separately
 
-  // In SCMASM, .DA operands are comma-separated, but each operand may be
+  // In SCMASM, .kDA operands are comma-separated, but each operand may be
   // followed by whitespace-delimited comment text on the same line. A comment
   // begins at the first whitespace inside a token (i.e. after the expression
   // value). Crucially, any comma that appears inside the comment text must NOT
-  // be treated as a .DA list separator.
+  // be treated as a .kDA list separator.
   //
   // Example (from LIBBLKDEV.S.txt):
-  //   .DA #$61   6502,Level 1 (65c02)
+  //   .kDA #$61   6502,Level 1 (65c02)
   // Here "6502,Level 1 (65c02)" is a comment. The comma after "6502" must NOT
-  // trigger a second .DA entry.
+  // trigger a second .kDA entry.
   std::vector<std::string> byte_expressions;
   std::vector<uint8_t> data;
 
@@ -727,8 +727,8 @@ void HandleDa(DirectiveContext& context) {
 
 namespace {
 
-/// Remove dot separators from a .HS operand string.
-/// Dots are purely visual nibble-separators in SCMASM .HS syntax.
+/// Remove dot separators from a .kHS operand string.
+/// Dots are purely visual nibble-separators in SCMASM .kHS syntax.
 std::string RemoveHsDots(const std::string& s) {
   std::string result;
   result.reserve(s.size());
@@ -740,7 +740,7 @@ std::string RemoveHsDots(const std::string& s) {
   return result;
 }
 
-/// Result of scanning one whitespace run in a .HS operand.
+/// Result of scanning one whitespace run in a .kHS operand.
 enum class HsWhitespaceAction { kContinue, kStop, kEndOfString };
 
 /// Skip whitespace at position @p i in @p s.
@@ -765,7 +765,7 @@ HsWhitespaceAction SkipHsWhitespace(const std::string& s, size_t& i, bool has_da
   return HsWhitespaceAction::kContinue;
 }
 
-/// Result of processing one hex word in a .HS operand.
+/// Result of processing one hex word in a .kHS operand.
 enum class HsWordResult { kAppended, kOddBeforeData, kStop };
 
 /// Process one hex word starting at @p word_start in @p s ending at @p i.
@@ -796,7 +796,7 @@ HsWordResult ProcessHsWord(const std::string& s, size_t word_start, size_t i,
   return HsWordResult::kStop;  // non-hex word → inline comment
 }
 
-/// Extract valid hex digits from a normalised (dots removed) .HS operand.
+/// Extract valid hex digits from a normalised (dots removed) .kHS operand.
 /// Sets @p odd_hex_before_data to true if a malformed odd-length hex word
 /// appears before any valid data.
 std::string ExtractHsHexDigits(const std::string& normalised, bool& odd_hex_before_data) {
@@ -846,12 +846,12 @@ void HandleHs(DirectiveContext& context) {
   if (odd_hex_before_data) {
     ThrowFormattedError(".HS requires even number of hex digits", context);
   }
-  if (hex_digits.length() % constants::HEX_DIGITS_PER_BYTE != 0) {
+  if (hex_digits.length() % constants::kHEX_DIGITS_PER_BYTE != 0) {
     ThrowFormattedError(".HS requires even number of hex digits", context);
   }
 
-  for (size_t i = 0; i < hex_digits.length(); i += constants::HEX_DIGITS_PER_BYTE) {
-    std::string byte_str = "$" + hex_digits.substr(i, constants::HEX_DIGITS_PER_BYTE);
+  for (size_t i = 0; i < hex_digits.length(); i += constants::kHEX_DIGITS_PER_BYTE) {
+    std::string byte_str = "$" + hex_digits.substr(i, constants::kHEX_DIGITS_PER_BYTE);
     bool success = false;
     std::string error_msg;
     uint32_t byte_val = xasm::ParseHexSafe(byte_str, success, error_msg);
@@ -877,8 +877,8 @@ void HandleBs(DirectiveContext& context) {
   const std::string& operand = context.operand;
   (void)context.label;  // Label handled separately
 
-  // .BS (Block Storage) - Reserve N bytes of space
-  // SCMASM syntax: .BS count
+  // .kBS (Block Storage) - Reserve N bytes of space
+  // SCMASM syntax: .kBS count
   // Where count is a decimal or hex number ($hex, %binary)
   // This reserves 'count' bytes filled with zeros
 
@@ -967,12 +967,12 @@ void HandlePs(DirectiveContext& context) {
 
   RequireOperand(operand, ".PS", context);
 
-  // Parse string with INVERTED high-bit rule (.PS is opposite of .AS)
+  // Parse string with INVERTED high-bit rule (.kPS is opposite of .kAS)
   std::vector<uint8_t> data;
   ParseStringInverted(operand, data);
 
   // Validate length (Pascal strings are max 255 bytes)
-  if (data.size() > constants::PASCAL_STRING_MAX_LENGTH) {
+  if (data.size() > constants::kPASCAL_STRING_MAX_LENGTH) {
     ThrowFormattedError(".PS string too long (max 255 bytes)", context);
   }
 
@@ -1127,7 +1127,7 @@ void HandleInb(DirectiveContext& context) {
   const std::string& operand = context.operand;
   (void)context.label;  // Label handled separately
 
-  // .INB - Include Source File
+  // .kINB - Include Source File
   // Parses assembly source file and includes it at current position.
   // Used extensively in A2osX for modular source file includes.
   //
@@ -1201,11 +1201,11 @@ void HandleInb(DirectiveContext& context) {
 void HandleList(DirectiveContext& context) {
   const std::string& operand = context.operand;
   (void)context.label;  // Label handled separately
-  (void)operand;        // Listing control parameter (ON/OFF)
+  (void)operand;        // Listing control parameter (kON/kOFF)
   (void)context;        // No state changes needed for stub
 
   // Stub implementation - listing control has no effect yet
-  // This allows .LIST directives to be parsed without error
+  // This allows .kLIST directives to be parsed without error
   // Full listing output generation is out of scope for P0
 }
 
@@ -1215,8 +1215,8 @@ void HandleDummy(DirectiveContext& context) {
   (void)operand;        // Optional operand
 
   // Enter dummy section mode - data directives will update address but not emit
-  // bytes.  Save the current main-section PC so .ED can restore it; this
-  // prevents a .OR inside the dummy block from permanently repositioning the
+  // bytes.  Save the current main-section PC so .kED can restore it; this
+  // prevents a .kOR inside the dummy block from permanently repositioning the
   // main section's current address.
   ValidateParser(context.parser_state);
   auto* parser = static_cast<ScmasmSyntaxParser*>(context.parser_state);
@@ -1229,7 +1229,7 @@ void HandleEd(DirectiveContext& context) {
   (void)operand;        // Operand unused
 
   // Exit dummy section mode - restore the main-section PC to whatever it was
-  // when .DUMMY was entered.  Without this, any .OR inside the dummy block
+  // when .kDUMMY was entered.  Without this, any .kOR inside the dummy block
   // (e.g. ".OR ZPDRV" in a2osx.i) would permanently reposition the assembler's
   // PC, corrupting all subsequent label addresses.
   ValidateParser(context.parser_state);
@@ -1252,12 +1252,12 @@ void HandleOp(DirectiveContext& context) {
   }
   std::transform(trimmed.begin(), trimmed.end(), trimmed.begin(), ::toupper);
 
-  // Validate CPU name (6502, 65C02, 65816)
+  // Validate kCPU name (6502, 65C02, 65816)
   if (trimmed != "6502" && trimmed != "65C02" && trimmed != "65816") {
     ThrowFormattedError(".OP requires valid CPU (6502, 65C02, 65816)", context);
   }
 
-  // Switch CPU plugin based on operand
+  // Switch kCPU plugin based on operand
   auto* parser = static_cast<ScmasmSyntaxParser*>(context.parser_state);
   if (trimmed == "6502") {
     parser->SetCpu("6502");
@@ -1289,31 +1289,31 @@ uint8_t ParseEscapeSequence(const char*& s) {
   switch (*s) {
     case 'a':
       s++;
-      return constants::ascii::BELL;
+      return constants::ascii::kBELL;
     case 'b':
       s++;
-      return constants::ascii::BACKSPACE;
+      return constants::ascii::kBACKSPACE;
     case 'e':
       s++;
-      return constants::ascii::ESCAPE;
+      return constants::ascii::kESCAPE;
     case 'f':
       s++;
-      return constants::ascii::FORMFEED;
+      return constants::ascii::kFORMFEED;
     case 'n':
       s++;
-      return constants::ascii::NEWLINE;
+      return constants::ascii::kNEWLINE;
     case 'r':
       s++;
-      return constants::ascii::CR;
+      return constants::ascii::kCR;
     case 't':
       s++;
-      return constants::ascii::TAB;
+      return constants::ascii::kTAB;
     case 'v':
       s++;
-      return constants::ascii::VTAB;
+      return constants::ascii::kVTAB;
     case '0':
       s++;
-      return constants::ascii::NULL_CHAR;
+      return constants::ascii::kNULL_CHAR;
     case '\\':
       s++;
       return '\\';  // Backslash
@@ -1349,10 +1349,10 @@ uint8_t ParseEscapeSequence(const char*& s) {
  * @param result Output vector of bytes
  */
 // mixed_delim: when true, a double-quote (") inside a single-quote-delimited
-//   string also terminates the string.  This applies only to .CS — verified
-//   against STABLE.800.po:  .CS 'Usage : CUT "line of text"\r\n'  stops at
+//   string also terminates the string.  This applies only to .kCS — verified
+//   against STABLE.800.po:  .kCS 'Usage : CUT "line of text"\r\n'  stops at
 //   the first '"', emitting only "Usage : CUT ".
-//   .CZ does NOT apply the rule (e.g. .CZ '%s = "%s"\r\n' emits the full
+//   .kCZ does NOT apply the rule (e.g. .kCZ '%s = "%s"\r\n' emits the full
 //   string including the embedded '"' characters).
 void ParseCString(const std::string& operand, std::vector<uint8_t>& result,
                   bool mixed_delim = false) {
@@ -1370,7 +1370,7 @@ void ParseCString(const std::string& operand, std::vector<uint8_t>& result,
   // as the string terminator (same as if the closing delimiter was at EOL).
   size_t end = trimmed.find(delimiter, 1);
   if (mixed_delim && delimiter == '\'') {
-    // .CS mixed-delimiter rule: an embedded '"' also terminates a
+    // .kCS mixed-delimiter rule: an embedded '"' also terminates a
     // single-quote-delimited string (verified against STABLE.800.po).
     size_t alt = trimmed.find('"', 1);
     if (alt != std::string::npos && (end == std::string::npos || alt < end)) {
@@ -1426,7 +1426,7 @@ void HandleCz(DirectiveContext& context) {
   ParseCString(operand, data);
 
   // Add null terminator
-  data.push_back(constants::NULL_TERMINATOR);
+  data.push_back(constants::kNULL_TERMINATOR);
 
   auto atom = std::make_shared<DataAtom>(data);
   context.section->atoms.push_back(atom);
@@ -1438,7 +1438,7 @@ void HandleCz(DirectiveContext& context) {
 void HandleTf(DirectiveContext& context) {
   const std::string& operand = context.operand;
 
-  // .TF <path>[,TSYS]  — sets the output file for this assembly unit.
+  // .kTF <path>[,TSYS]  — sets the output file for this assembly unit.
   // Strip optional type suffix (e.g. ",TSYS", ",TBIN") — these were ProDOS
   // file-type hints for the on-device assembler; irrelevant for cross-assembly.
   std::string path = Trim(operand);
@@ -1474,7 +1474,7 @@ void HandleEp(DirectiveContext& context) {
 
   // Check if we're ending a phase
   if (parser && parser->InPhase()) {
-    // .EP without operand ends phase assembly
+    // .kEP without operand ends phase assembly
     if (operand.empty()) {
       // End phase and get new real address
       uint32_t new_real_addr = parser->EndPhase(*context.current_address);
@@ -1487,12 +1487,12 @@ void HandleEp(DirectiveContext& context) {
       *context.current_address = new_real_addr;
       return;
     }
-    // .EP with operand in phase context is an error
+    // .kEP with operand in phase context is an error
     ThrowFormattedError(".EP with operand not allowed within .PH/.EP block", context);
   }
 
   // Not in phase - treat as entry point directive
-  // .EP without operand sets entry to current address
+  // .kEP without operand sets entry to current address
   if (operand.empty()) {
     // TODO: Store current address as entry point in section metadata
     // For now, just accept the directive
@@ -1573,10 +1573,10 @@ void HandleHx(DirectiveContext& context) {
   }
 
   // Pack nibble pairs into bytes.
-  // SCMASM .HX uses nibble-swapped encoding: the first nibble of each pair
+  // SCMASM .kHX uses nibble-swapped encoding: the first nibble of each pair
   // is the LOW nibble of the byte, and the second is the HIGH nibble.
-  // e.g. .HX 02 -> byte 0x20  (not 0x02 as in standard hex)
-  // e.g. .HX 00022000 -> bytes 00 20 02 00  (not 00 02 20 00)
+  // e.g. .kHX 02 -> byte 0x20  (not 0x02 as in standard hex)
+  // e.g. .kHX 00022000 -> bytes 00 20 02 00  (not 00 02 20 00)
   // This reflects the Apple II 4bpp color format where pixel nibbles are
   // stored low-nibble-first within each byte.
   std::vector<uint8_t> data;
@@ -1603,7 +1603,7 @@ void HandleTa(DirectiveContext& context) {
   (void)operand;        // Target address
   (void)context;        // No-op
 
-  // .TA (Target Address) is a no-op in cross-assemblers
+  // .kTA (Target Address) is a no-op in cross-assemblers
   // Used by SCMASM editor to set assembly target on Apple II
   // In cross-assembly, has no effect
 }
@@ -1615,7 +1615,7 @@ void HandleDo(DirectiveContext& context) {
   (void)context;        // State management
 
   // TODO: Implement conditional assembly
-  // .DO/.FIN require special handling in ParseLine (not registry dispatch)
+  // .kDO/.kFIN require special handling in ParseLine (not registry dispatch)
   // For now, stub implementation
   ThrowFormattedError(".DO conditional assembly not yet implemented", context);
 }
@@ -1637,7 +1637,7 @@ void HandleAc(DirectiveContext& context) {
   (void)operand;        // String with optional prefix
   (void)context;        // State management
 
-  // TODO: Implement .AC directive (ASCII string with optional numeric prefix)
+  // TODO: Implement .kAC directive (kASCII string with optional numeric prefix)
   // For now, stub implementation
   ThrowFormattedError(".AC directive not yet implemented", context);
 }

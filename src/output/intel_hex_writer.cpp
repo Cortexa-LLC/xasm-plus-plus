@@ -1,8 +1,8 @@
 /**
  * @file intel_hex_writer.cpp
- * @brief Implementation of Intel HEX format writer
+ * @brief Implementation of Intel kHEX format writer
  *
- * This file implements the IntelHexWriter class for generating Intel HEX
+ * This file implements the IntelHexWriter class for generating Intel kHEX
  * format output from assembled sections.
  *
  * @note Part of Phase 2: Output Format System
@@ -41,8 +41,8 @@ void IntelHexWriter::Write(const std::vector<Section>& sections, std::ostream& o
       uint64_t address = bytes[i].first;
 
       // Check if we need an extended address record
-      uint16_t extended_address = (address >> output_format::bit_ops::SHIFT_UPPER_WORD) &
-                                  output_format::bit_ops::MASK_LOW_WORD;
+      uint16_t extended_address = (address >> output_format::bit_ops::kSHIFT_UPPER_WORD) &
+                                  output_format::bit_ops::kMASK_LOW_WORD;
       if (extended_address != current_extended_address ||
           (extended_address != 0 && !extended_address_written)) {
         // Only write extended address if non-zero or we've already written one
@@ -56,7 +56,7 @@ void IntelHexWriter::Write(const std::vector<Section>& sections, std::ostream& o
       // Collect bytes for this record
       std::vector<uint8_t> record_data;
       uint64_t record_address = address;
-      uint16_t record_address_low = address & output_format::bit_ops::MASK_LOW_WORD;
+      uint16_t record_address_low = address & output_format::bit_ops::kMASK_LOW_WORD;
 
       // Gather consecutive bytes up to bytes_per_line
       while (i < bytes.size() && record_data.size() < bytes_per_line_) {
@@ -64,8 +64,8 @@ void IntelHexWriter::Write(const std::vector<Section>& sections, std::ostream& o
 
         // Check if byte is consecutive (same extended address, consecutive low
         // address)
-        uint16_t byte_extended = (byte_address >> output_format::bit_ops::SHIFT_UPPER_WORD) &
-                                 output_format::bit_ops::MASK_LOW_WORD;
+        uint16_t byte_extended = (byte_address >> output_format::bit_ops::kSHIFT_UPPER_WORD) &
+                                 output_format::bit_ops::kMASK_LOW_WORD;
 
         if (byte_extended != extended_address) {
           break;  // Different extended address - need new record
@@ -99,7 +99,7 @@ std::string IntelHexWriter::GetFormatName() const {
 }
 
 void IntelHexWriter::SetBytesPerLine(size_t bytes) {
-  if (bytes == 0 || bytes > output_format::MAX_BYTES_PER_LINE) {
+  if (bytes == 0 || bytes > output_format::kMAX_BYTES_PER_LINE) {
     throw std::invalid_argument("Bytes per line must be between 1 and 255");
   }
   bytes_per_line_ = bytes;
@@ -112,16 +112,16 @@ void IntelHexWriter::WriteRecord(std::ostream& output, uint8_t byte_count, uint1
 
   // Write record
   output << ":";
-  output << std::uppercase << std::hex << std::setfill(output_format::HEX_FILL_CHAR);
-  output << std::setw(output_format::HEX_BYTE_WIDTH) << static_cast<int>(byte_count);
-  output << std::setw(output_format::HEX_ADDRESS_16BIT_WIDTH) << static_cast<int>(address);
-  output << std::setw(output_format::HEX_BYTE_WIDTH) << static_cast<int>(record_type);
+  output << std::uppercase << std::hex << std::setfill(output_format::kHEX_FILL_CHAR);
+  output << std::setw(output_format::kHEX_BYTE_WIDTH) << static_cast<int>(byte_count);
+  output << std::setw(output_format::kHEX_ADDRESS_16BIT_WIDTH) << static_cast<int>(address);
+  output << std::setw(output_format::kHEX_BYTE_WIDTH) << static_cast<int>(record_type);
 
   for (uint8_t byte : data) {
-    output << std::setw(output_format::HEX_BYTE_WIDTH) << static_cast<int>(byte);
+    output << std::setw(output_format::kHEX_BYTE_WIDTH) << static_cast<int>(byte);
   }
 
-  output << std::setw(output_format::HEX_BYTE_WIDTH) << static_cast<int>(checksum);
+  output << std::setw(output_format::kHEX_BYTE_WIDTH) << static_cast<int>(checksum);
   output << "\n";
 }
 
@@ -129,9 +129,9 @@ uint8_t IntelHexWriter::CalculateChecksum(uint8_t byte_count, uint16_t address, 
                                           const std::vector<uint8_t>& data) {
   // Sum all bytes
   uint8_t sum = byte_count;
-  sum += (address >> output_format::bit_ops::SHIFT_HIGH_BYTE) &
-         output_format::bit_ops::MASK_LOW_BYTE;            // High byte of address
-  sum += address & output_format::bit_ops::MASK_LOW_BYTE;  // Low byte of address
+  sum += (address >> output_format::bit_ops::kSHIFT_HIGH_BYTE) &
+         output_format::bit_ops::kMASK_LOW_BYTE;            // High byte of address
+  sum += address & output_format::bit_ops::kMASK_LOW_BYTE;  // Low byte of address
   sum += record_type;
 
   for (uint8_t byte : data) {
@@ -139,24 +139,24 @@ uint8_t IntelHexWriter::CalculateChecksum(uint8_t byte_count, uint16_t address, 
   }
 
   // Two's complement
-  return static_cast<uint8_t>((~sum + 1) & output_format::bit_ops::MASK_LOW_BYTE);
+  return static_cast<uint8_t>((~sum + 1) & output_format::bit_ops::kMASK_LOW_BYTE);
 }
 
 void IntelHexWriter::WriteExtendedLinearAddress(std::ostream& output, uint16_t upper_address) {
   std::vector<uint8_t> data;
-  data.push_back((upper_address >> output_format::bit_ops::SHIFT_HIGH_BYTE) &
-                 output_format::bit_ops::MASK_LOW_BYTE);                  // High byte
-  data.push_back(upper_address & output_format::bit_ops::MASK_LOW_BYTE);  // Low byte
+  data.push_back((upper_address >> output_format::bit_ops::kSHIFT_HIGH_BYTE) &
+                 output_format::bit_ops::kMASK_LOW_BYTE);                  // High byte
+  data.push_back(upper_address & output_format::bit_ops::kMASK_LOW_BYTE);  // Low byte
 
-  WriteRecord(output, output_format::intel_hex::EXTENDED_LINEAR_ADDRESS_BYTE_COUNT,
-              output_format::intel_hex::EXTENDED_LINEAR_ADDRESS_FIELD,
-              output_format::intel_hex::RECORD_TYPE_EXTENDED_LINEAR_ADDRESS, data);
+  WriteRecord(output, output_format::intel_hex::kEXTENDED_LINEAR_ADDRESS_BYTE_COUNT,
+              output_format::intel_hex::kEXTENDED_LINEAR_ADDRESS_FIELD,
+              output_format::intel_hex::kRECORD_TYPE_EXTENDED_LINEAR_ADDRESS, data);
 }
 
 void IntelHexWriter::WriteEOF(std::ostream& output) {
   std::vector<uint8_t> empty_data;
-  WriteRecord(output, output_format::intel_hex::EOF_BYTE_COUNT,
-              output_format::intel_hex::EOF_ADDRESS, output_format::intel_hex::RECORD_TYPE_EOF,
+  WriteRecord(output, output_format::intel_hex::kEOF_BYTE_COUNT,
+              output_format::intel_hex::kEOF_ADDRESS, output_format::intel_hex::kRECORD_TYPE_EOF,
               empty_data);
 }
 

@@ -109,7 +109,7 @@ class IntelHexWriter : public OutputWriter {
 
  private:
   size_t bytes_per_line_ =
-      output_format::INTEL_HEX_DEFAULT_BYTES_PER_LINE;  ///< Number of data bytes per record
+      output_format::kINTEL_HEX_DEFAULT_BYTES_PER_LINE;  ///< Number of data bytes per record
                                                         ///< (default: 16)
 
   /**

@@ -36,15 +36,15 @@ void EdtasmSyntaxParser::InitializeDirectiveRegistry() {
   using namespace directives;
 
   // Register directive handlers from edtasm namespace (direct assignment)
-  directive_registry_[ORG] = edtasm::HandleOrg;
-  directive_registry_[END] = edtasm::HandleEnd;
-  directive_registry_[EQU] = edtasm::HandleEqu;
-  directive_registry_[SET] = edtasm::HandleSet;
-  directive_registry_[FCB] = edtasm::HandleFcb;
-  directive_registry_[FDB] = edtasm::HandleFdb;
-  directive_registry_[FCC] = edtasm::HandleFcc;
-  directive_registry_[RMB] = edtasm::HandleRmb;
-  directive_registry_[SETDP] = edtasm::HandleSetdp;
+  directive_registry_[kORG] = edtasm::HandleOrg;
+  directive_registry_[kEND] = edtasm::HandleEnd;
+  directive_registry_[kEQU] = edtasm::HandleEqu;
+  directive_registry_[kSET] = edtasm::HandleSet;
+  directive_registry_[kFCB] = edtasm::HandleFcb;
+  directive_registry_[kFDB] = edtasm::HandleFdb;
+  directive_registry_[kFCC] = edtasm::HandleFcc;
+  directive_registry_[kRMB] = edtasm::HandleRmb;
+  directive_registry_[kSETDP] = edtasm::HandleSetdp;
 }
 
 // ===========================================================================
@@ -111,7 +111,7 @@ uint32_t EdtasmSyntaxParser::ParseNumber(const std::string& str) {
     return value;
   }
 
-  // ASCII character ('A')
+  // kASCII character ('A')
   if (trimmed[0] == '\'' && trimmed.length() >= 3 && trimmed[2] == '\'') {
     return static_cast<uint32_t>(trimmed[1]);
   }
@@ -213,16 +213,16 @@ void EdtasmSyntaxParser::ParseLine(const std::string& line, Section& section,
 
   // Check if opcode is a directive
   std::string opcode_upper = ToUpper(opcode);
-  bool is_directive = (opcode_upper == directives::ORG || opcode_upper == directives::END ||
-                       opcode_upper == directives::EQU || opcode_upper == directives::SET ||
-                       opcode_upper == directives::FCB || opcode_upper == directives::FDB ||
-                       opcode_upper == directives::FCC || opcode_upper == directives::RMB ||
-                       opcode_upper == directives::SETDP);
+  bool is_directive = (opcode_upper == directives::kORG || opcode_upper == directives::kEND ||
+                       opcode_upper == directives::kEQU || opcode_upper == directives::kSET ||
+                       opcode_upper == directives::kFCB || opcode_upper == directives::kFDB ||
+                       opcode_upper == directives::kFCC || opcode_upper == directives::kRMB ||
+                       opcode_upper == directives::kSETDP);
 
-  // Create label atom for non-EQU/SET directives and instructions.
-  // EQU and SET handle their labels internally (they don't create address
+  // Create label atom for non-kEQU/kSET directives and instructions.
+  // kEQU and kSET handle their labels internally (they don't create address
   // labels).
-  if (!label.empty() && opcode_upper != directives::EQU && opcode_upper != directives::SET) {
+  if (!label.empty() && opcode_upper != directives::kEQU && opcode_upper != directives::kSET) {
     symbols.Define(label, SymbolType::Label, std::make_shared<LiteralExpr>(current_address_));
     section.atoms.push_back(std::make_shared<LabelAtom>(label, current_address_));
   }

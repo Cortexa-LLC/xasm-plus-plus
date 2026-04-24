@@ -123,7 +123,7 @@ static void ProcessStringLiteral(const std::string& token, std::vector<uint8_t>&
 // Directive Handler Implementations
 // ============================================================================
 
-// DB/DEFB/BYTE/DM/DEFM/TEXT/ASCII - Define byte(s)
+// kDB/kDEFB/kBYTE/kDM/kDEFM/kTEXT/kASCII - Define byte(s)
 void HandleDbDirective(DirectiveContext& ctx) {
   const std::string& operand = ctx.operand;
   auto* parser = static_cast<EdtasmM80PlusPlusSyntaxParser*>(ctx.parser_state);
@@ -177,12 +177,12 @@ void HandleDbDirective(DirectiveContext& ctx) {
   }
 }
 
-// DW/DEFW/WORD - Define word(s)
+// kDW/kDEFW/kWORD - Define word(s)
 void HandleDwDirective(DirectiveContext& ctx) {
   const std::string& operand = ctx.operand;
   auto tokens = ParseDataTokens(operand);
 
-  // DW now always stores as expressions for consistent forward/backward ref
+  // kDW now always stores as expressions for consistent forward/backward ref
   // handling
   std::vector<std::string> expressions;
 
@@ -204,7 +204,7 @@ void HandleDwDirective(DirectiveContext& ctx) {
   }
 }
 
-// DS/DEFS/DSPACE/BLOCK - Define storage
+// kDS/kDEFS/kDSPACE/kBLOCK - Define storage
 void HandleDsDirective(DirectiveContext& ctx) {
   const std::string& operand = ctx.operand;
   auto* parser = static_cast<EdtasmM80PlusPlusSyntaxParser*>(ctx.parser_state);
@@ -218,7 +218,7 @@ void HandleDsDirective(DirectiveContext& ctx) {
 
   uint32_t size = ParseAndEvaluateExpression(size_str, *parser, *ctx.symbols, "DS");
 
-  // DS/DEFS should create SpaceAtom for reserve space semantics
+  // kDS/kDEFS should create SpaceAtom for reserve space semantics
   if (fill_str.empty()) {
     // No fill value - use SpaceAtom
     auto space_atom = std::make_shared<SpaceAtom>(size);
@@ -238,15 +238,15 @@ void HandleDsDirective(DirectiveContext& ctx) {
   (*ctx.current_address) += size;
 }
 
-// DD/DEFD/DWORD - Define doubleword(s)
+// kDD/kDEFD/kDWORD - Define doubleword(s)
 void HandleDdDirective(DirectiveContext& ctx) {
   const std::string& operand = ctx.operand;
 
-  // TODO: Implement DD directive when DataSize::DWord is added to atom.h
+  // TODO: Implement kDD directive when DataSize::DWord is added to atom.h
   throw std::runtime_error("DD directive not yet implemented: " + operand);
 }
 
-// PUBLIC/GLOBAL/ENTRY - Mark symbols as public
+// kPUBLIC/kGLOBAL/kENTRY - Mark symbols as public
 void HandlePublicDirective(DirectiveContext& ctx) {
   const std::string& operand = ctx.operand;
   auto tokens = ParseDataTokens(operand);
@@ -267,7 +267,7 @@ void HandlePublicDirective(DirectiveContext& ctx) {
   }
 }
 
-// EXTERN/EXTRN/EXT - Mark symbols as external
+// kEXTERN/kEXTRN/kEXT - Mark symbols as external
 void HandleExternDirective(DirectiveContext& ctx) {
   const std::string& operand = ctx.operand;
   auto tokens = ParseDataTokens(operand);
@@ -279,25 +279,25 @@ void HandleExternDirective(DirectiveContext& ctx) {
   }
 }
 
-// CSEG - Code segment
+// kCSEG - Code segment
 void HandleCsegDirective(DirectiveContext& ctx) {
   auto* parser = static_cast<EdtasmM80PlusPlusSyntaxParser*>(ctx.parser_state);
   parser->GetSegmentManager().SwitchToSegment(SegmentType::Code);
 }
 
-// DSEG - Data segment
+// kDSEG - Data segment
 void HandleDsegDirective(DirectiveContext& ctx) {
   auto* parser = static_cast<EdtasmM80PlusPlusSyntaxParser*>(ctx.parser_state);
   parser->GetSegmentManager().SwitchToSegment(SegmentType::Data);
 }
 
-// ASEG - Absolute segment
+// kASEG - Absolute segment
 void HandleAsegDirective(DirectiveContext& ctx) {
   auto* parser = static_cast<EdtasmM80PlusPlusSyntaxParser*>(ctx.parser_state);
   parser->GetSegmentManager().SwitchToSegment(SegmentType::Absolute);
 }
 
-// COMMON - Common block
+// kCOMMON - Common block
 void HandleCommonDirective(DirectiveContext& ctx) {
   const std::string& operand = ctx.operand;
   auto* parser = static_cast<EdtasmM80PlusPlusSyntaxParser*>(ctx.parser_state);
@@ -305,13 +305,13 @@ void HandleCommonDirective(DirectiveContext& ctx) {
   parser->GetSegmentManager().SwitchToCommon(block_name);
 }
 
-// ENDC - End common block
+// kENDC - End common block
 void HandleEndcDirective(DirectiveContext& ctx) {
   auto* parser = static_cast<EdtasmM80PlusPlusSyntaxParser*>(ctx.parser_state);
   parser->GetSegmentManager().SwitchToSegment(SegmentType::Code);
 }
 
-// IF - Conditional assembly
+// kIF - Conditional assembly
 void HandleIfDirective(DirectiveContext& ctx) {
   const std::string& operand = ctx.operand;
   auto* parser = static_cast<EdtasmM80PlusPlusSyntaxParser*>(ctx.parser_state);
@@ -319,19 +319,19 @@ void HandleIfDirective(DirectiveContext& ctx) {
   parser->PushConditional(value != 0);
 }
 
-// ELSE - Conditional assembly else
+// kELSE - Conditional assembly else
 void HandleElseDirective(DirectiveContext& ctx) {
   auto* parser = static_cast<EdtasmM80PlusPlusSyntaxParser*>(ctx.parser_state);
   parser->ToggleConditional();
 }
 
-// ENDIF - End conditional assembly
+// kENDIF - End conditional assembly
 void HandleEndifDirective(DirectiveContext& ctx) {
   auto* parser = static_cast<EdtasmM80PlusPlusSyntaxParser*>(ctx.parser_state);
   parser->PopConditional();
 }
 
-// IFDEF - If symbol defined
+// kIFDEF - If symbol defined
 void HandleIfdefDirective(DirectiveContext& ctx) {
   const std::string& operand = ctx.operand;
   auto* parser = static_cast<EdtasmM80PlusPlusSyntaxParser*>(ctx.parser_state);
@@ -340,7 +340,7 @@ void HandleIfdefDirective(DirectiveContext& ctx) {
   parser->PushConditional(defined);
 }
 
-// IFNDEF - If symbol not defined
+// kIFNDEF - If symbol not defined
 void HandleIfndefDirective(DirectiveContext& ctx) {
   const std::string& operand = ctx.operand;
   auto* parser = static_cast<EdtasmM80PlusPlusSyntaxParser*>(ctx.parser_state);
@@ -349,7 +349,7 @@ void HandleIfndefDirective(DirectiveContext& ctx) {
   parser->PushConditional(!defined);
 }
 
-// IFE - If equal to zero
+// kIFE - If equal to zero
 void HandleIfeDirective(DirectiveContext& ctx) {
   const std::string& operand = ctx.operand;
   auto* parser = static_cast<EdtasmM80PlusPlusSyntaxParser*>(ctx.parser_state);
@@ -357,12 +357,12 @@ void HandleIfeDirective(DirectiveContext& ctx) {
   parser->PushConditional(value == 0);
 }
 
-// IFEQ - If equal
+// kIFEQ - If equal
 void HandleIfeqDirective(DirectiveContext& ctx) {
   HandleIfeDirective(ctx);
 }
 
-// IFNE - If not equal to zero
+// kIFNE - If not equal to zero
 void HandleIfneDirective(DirectiveContext& ctx) {
   const std::string& operand = ctx.operand;
   auto* parser = static_cast<EdtasmM80PlusPlusSyntaxParser*>(ctx.parser_state);
@@ -370,7 +370,7 @@ void HandleIfneDirective(DirectiveContext& ctx) {
   parser->PushConditional(value != 0);
 }
 
-// IFGT - If greater than zero
+// kIFGT - If greater than zero
 void HandleIfgtDirective(DirectiveContext& ctx) {
   const std::string& operand = ctx.operand;
   auto* parser = static_cast<EdtasmM80PlusPlusSyntaxParser*>(ctx.parser_state);
@@ -378,7 +378,7 @@ void HandleIfgtDirective(DirectiveContext& ctx) {
   parser->PushConditional(value > 0);
 }
 
-// IFGE - If greater than or equal to zero
+// kIFGE - If greater than or equal to zero
 void HandleIfgeDirective(DirectiveContext& ctx) {
   const std::string& operand = ctx.operand;
   auto* parser = static_cast<EdtasmM80PlusPlusSyntaxParser*>(ctx.parser_state);
@@ -386,7 +386,7 @@ void HandleIfgeDirective(DirectiveContext& ctx) {
   parser->PushConditional(value >= 0);
 }
 
-// IFLT - If less than zero
+// kIFLT - If less than zero
 void HandleIfltDirective(DirectiveContext& ctx) {
   const std::string& operand = ctx.operand;
   auto* parser = static_cast<EdtasmM80PlusPlusSyntaxParser*>(ctx.parser_state);
@@ -394,7 +394,7 @@ void HandleIfltDirective(DirectiveContext& ctx) {
   parser->PushConditional(value < 0);
 }
 
-// IFLE - If less than or equal to zero
+// kIFLE - If less than or equal to zero
 void HandleIfleDirective(DirectiveContext& ctx) {
   const std::string& operand = ctx.operand;
   auto* parser = static_cast<EdtasmM80PlusPlusSyntaxParser*>(ctx.parser_state);
@@ -402,35 +402,35 @@ void HandleIfleDirective(DirectiveContext& ctx) {
   parser->PushConditional(value <= 0);
 }
 
-// IF1 - If first pass (always false for single-pass assembler)
+// kIF1 - If first pass (always false for single-pass assembler)
 void HandleIf1Directive(DirectiveContext& ctx) {
   auto* parser = static_cast<EdtasmM80PlusPlusSyntaxParser*>(ctx.parser_state);
-  // Single-pass assembler: IF1 is always false (we're never on "pass 1")
+  // Single-pass assembler: kIF1 is always false (we're never on "pass 1")
   parser->PushConditional(false);
 }
 
-// IF2 - If second pass (always false for single-pass assembler)
+// kIF2 - If second pass (always false for single-pass assembler)
 void HandleIf2Directive(DirectiveContext& ctx) {
   auto* parser = static_cast<EdtasmM80PlusPlusSyntaxParser*>(ctx.parser_state);
-  // Single-pass assembler: IF2 is always false (we're never on "pass 2")
+  // Single-pass assembler: kIF2 is always false (we're never on "pass 2")
   parser->PushConditional(false);
 }
 
-// IFB - If blank
+// kIFB - If blank
 void HandleIfbDirective(DirectiveContext& ctx) {
   const std::string& operand = ctx.operand;
   auto* parser = static_cast<EdtasmM80PlusPlusSyntaxParser*>(ctx.parser_state);
   parser->PushConditional(util::Trim(operand).empty());
 }
 
-// IFNB - If not blank
+// kIFNB - If not blank
 void HandleIfnbDirective(DirectiveContext& ctx) {
   const std::string& operand = ctx.operand;
   auto* parser = static_cast<EdtasmM80PlusPlusSyntaxParser*>(ctx.parser_state);
   parser->PushConditional(!util::Trim(operand).empty());
 }
 
-// IFIDN - If identical (case-insensitive)
+// kIFIDN - If identical (case-insensitive)
 void HandleIfidnDirective(DirectiveContext& ctx) {
   const std::string& operand = ctx.operand;
   auto* parser = static_cast<EdtasmM80PlusPlusSyntaxParser*>(ctx.parser_state);
@@ -447,7 +447,7 @@ void HandleIfidnDirective(DirectiveContext& ctx) {
   parser->PushConditional(util::ToUpper(str1) == util::ToUpper(str2));
 }
 
-// IFDIF - If different (case-insensitive)
+// kIFDIF - If different (case-insensitive)
 void HandleIfdifDirective(DirectiveContext& ctx) {
   const std::string& operand = ctx.operand;
   auto* parser = static_cast<EdtasmM80PlusPlusSyntaxParser*>(ctx.parser_state);
@@ -464,14 +464,14 @@ void HandleIfdifDirective(DirectiveContext& ctx) {
   parser->PushConditional(util::ToUpper(str1) != util::ToUpper(str2));
 }
 
-// INCLUDE - Include file
+// kINCLUDE - Include file
 void HandleIncludeDirective(DirectiveContext& ctx) {
   const std::string& operand = ctx.operand;
   // TODO: Implement file inclusion when needed
   throw std::runtime_error("INCLUDE directive not yet implemented: " + operand);
 }
 
-// LIST - Enable listing
+// kLIST - Enable listing
 void HandleListDirective(DirectiveContext& ctx) {
   auto* parser = static_cast<EdtasmM80PlusPlusSyntaxParser*>(ctx.parser_state);
   parser->EnableListing();
@@ -480,7 +480,7 @@ void HandleListDirective(DirectiveContext& ctx) {
   ctx.section->atoms.push_back(atom);
 }
 
-// NOLIST - Disable listing
+// kNOLIST - Disable listing
 void HandleNolistDirective(DirectiveContext& ctx) {
   auto* parser = static_cast<EdtasmM80PlusPlusSyntaxParser*>(ctx.parser_state);
   parser->DisableListing();
@@ -489,7 +489,7 @@ void HandleNolistDirective(DirectiveContext& ctx) {
   ctx.section->atoms.push_back(atom);
 }
 
-// TITLE - Set listing title
+// kTITLE - Set listing title
 void HandleTitleDirective(DirectiveContext& ctx) {
   const std::string& operand = ctx.operand;
   auto* parser = static_cast<EdtasmM80PlusPlusSyntaxParser*>(ctx.parser_state);
@@ -499,7 +499,7 @@ void HandleTitleDirective(DirectiveContext& ctx) {
   ctx.section->atoms.push_back(atom);
 }
 
-// SUBTTL - Set listing subtitle
+// kSUBTTL - Set listing subtitle
 void HandleSubttlDirective(DirectiveContext& ctx) {
   const std::string& operand = ctx.operand;
   auto* parser = static_cast<EdtasmM80PlusPlusSyntaxParser*>(ctx.parser_state);
@@ -509,20 +509,20 @@ void HandleSubttlDirective(DirectiveContext& ctx) {
   ctx.section->atoms.push_back(atom);
 }
 
-// NAME - Set module name
+// kNAME - Set module name
 void HandleNameDirective(DirectiveContext& ctx) {
   const std::string& operand = ctx.operand;
   auto* parser = static_cast<EdtasmM80PlusPlusSyntaxParser*>(ctx.parser_state);
   parser->SetModuleName(util::Trim(operand));
 }
 
-// END - End of source file (stops assembly)
+// kEND - End of source file (stops assembly)
 void HandleEndDirective(DirectiveContext& ctx) {
   auto* parser = static_cast<EdtasmM80PlusPlusSyntaxParser*>(ctx.parser_state);
   parser->MarkEndDirectiveSeen();
 }
 
-// EQU - Define constant symbol
+// kEQU - Define constant symbol
 void HandleEquDirective(DirectiveContext& ctx) {
   const std::string& operand = ctx.operand;
   if (ctx.label.empty()) {
@@ -534,7 +534,7 @@ void HandleEquDirective(DirectiveContext& ctx) {
   ctx.symbols->DefineLabel(ctx.label, value);
 }
 
-// SET/=/DEFL - Define redefinable symbol
+// kSET/=/kDEFL - Define redefinable symbol
 void HandleSetDirective(DirectiveContext& ctx) {
   const std::string& operand = ctx.operand;
   if (ctx.label.empty()) {
@@ -543,11 +543,11 @@ void HandleSetDirective(DirectiveContext& ctx) {
 
   auto* parser = static_cast<EdtasmM80PlusPlusSyntaxParser*>(ctx.parser_state);
   uint32_t value = ParseAndEvaluateExpression(operand, *parser, *ctx.symbols, "SET");
-  // SET allows redefinition, so just define/redefine the label
+  // kSET allows redefinition, so just define/redefine the label
   ctx.symbols->DefineLabel(ctx.label, value);
 }
 
-// ORG - Set origin address
+// kORG - Set origin address
 void HandleOrgDirective(DirectiveContext& ctx) {
   const std::string& operand = ctx.operand;
   auto* parser = static_cast<EdtasmM80PlusPlusSyntaxParser*>(ctx.parser_state);
@@ -561,13 +561,13 @@ void HandleOrgDirective(DirectiveContext& ctx) {
   *ctx.current_address = address;
 }
 
-// *LIST - Toggle listing (Z80ASM style)
+// *kLIST - Toggle listing (Z80ASM style)
 void HandleStarListDirective(DirectiveContext& ctx) {
   const std::string& operand = ctx.operand;
   auto* parser = static_cast<EdtasmM80PlusPlusSyntaxParser*>(ctx.parser_state);
 
-  // Parse operand to determine ON or OFF
-  bool enable = true;  // Default to ON
+  // Parse operand to determine kON or kOFF
+  bool enable = true;  // Default to kON
   std::string upper_operand = operand;
   std::transform(upper_operand.begin(), upper_operand.end(), upper_operand.begin(), ::toupper);
 
@@ -591,26 +591,26 @@ void HandleStarListDirective(DirectiveContext& ctx) {
   }
 }
 
-// LALL - List all (macro expansion)
+// kLALL - List all (macro expansion)
 void HandleLallDirective(DirectiveContext& /*ctx*/) {
   // TODO: Implement when macro listing control is needed
   // For now, this is a no-op as we don't have macro listing control yet
 }
 
-// SALL - Suppress all (macro expansion)
+// kSALL - Suppress all (macro expansion)
 void HandleSallDirective(DirectiveContext& /*ctx*/) {
   // TODO: Implement when macro listing control is needed
   // For now, this is a no-op as we don't have macro listing control yet
 }
 
-// EJECT - Page eject (listing control)
+// kEJECT - Page eject (listing control)
 void HandleEjectDirective(DirectiveContext& ctx) {
   // Create atom for listing control (page break)
   auto atom = std::make_shared<ListingControlAtom>(ListingControlType::Page, "");
   ctx.section->atoms.push_back(atom);
 }
 
-// SPACE - Add blank lines (listing control)
+// kSPACE - Add blank lines (listing control)
 void HandleSpaceDirective(DirectiveContext& ctx) {
   const std::string& operand = ctx.operand;
   // Parse the operand to get line count
@@ -627,12 +627,12 @@ void HandleSpaceDirective(DirectiveContext& ctx) {
   ctx.section->atoms.push_back(atom);
 }
 
-// RADIX - Set number radix
+// kRADIX - Set number radix
 void HandleRadixDirective(DirectiveContext& ctx) {
   const std::string& operand = ctx.operand;
   auto* parser = static_cast<EdtasmM80PlusPlusSyntaxParser*>(ctx.parser_state);
 
-  // RADIX operand must be parsed in decimal (base 10) always
+  // kRADIX operand must be parsed in decimal (base 10) always
   // to avoid chicken-and-egg problem with current radix
   parser->SetRadix(10);  // Temporarily set to decimal for parsing
 
@@ -640,7 +640,7 @@ void HandleRadixDirective(DirectiveContext& ctx) {
   parser->SetRadix(radix);  // Set to the new radix value
 }
 
-// MACRO - Start macro definition
+// kMACRO - Start macro definition
 void HandleMacroDirective(DirectiveContext& ctx) {
   const std::string& operand = ctx.operand;
   auto* parser = static_cast<EdtasmM80PlusPlusSyntaxParser*>(ctx.parser_state);
@@ -649,7 +649,7 @@ void HandleMacroDirective(DirectiveContext& ctx) {
   std::vector<std::string> params;
 
   if (!ctx.label.empty()) {
-    // Label-based syntax: MYNAME MACRO param1,param2
+    // Label-based syntax: MYNAME kMACRO param1,param2
     macro_name = ctx.label;
     if (!operand.empty()) {
       auto tokens = ParseDataTokens(operand);
@@ -658,7 +658,7 @@ void HandleMacroDirective(DirectiveContext& ctx) {
       }
     }
   } else if (!operand.empty()) {
-    // Operand-based syntax: MACRO MYNAME,param1,param2
+    // Operand-based syntax: kMACRO MYNAME,param1,param2
     auto tokens = ParseDataTokens(operand);
     if (tokens.empty()) {
       throw std::runtime_error("MACRO requires a name");
@@ -680,10 +680,10 @@ void HandleMacroDirective(DirectiveContext& ctx) {
   parser->macro_nesting_depth_ = 0;
 }
 
-// ENDM - End macro/repeat block
+// kENDM - End macro/repeat block
 // ---------------------------------------------------------------------------
-// ExpandRepeatBlock — invoked by HandleEndmDirective when ENDM closes a
-// REPT/IRP/IRPC block.  Clears parser repeat-state first (to prevent
+// ExpandRepeatBlock — invoked by HandleEndmDirective when kENDM closes a
+// kREPT/kIRP/kIRPC block.  Clears parser repeat-state first (to prevent
 // re-capture of expanded lines), then expands.
 // ---------------------------------------------------------------------------
 static void ExpandRepeatBlock(EdtasmM80PlusPlusSyntaxParser* parser,
@@ -702,7 +702,7 @@ static void ExpandRepeatBlock(EdtasmM80PlusPlusSyntaxParser* parser,
     return;
   }
 
-  // IRP / IRPC: iterate over value list
+  // kIRP / kIRPC: iterate over value list
   for (const auto& value : repeat_values) {
     if (parser->exitm_triggered_) {
       break;
@@ -753,20 +753,20 @@ void HandleEndmDirective(DirectiveContext& ctx) {
   throw std::runtime_error("ENDM without matching MACRO/REPT/IRP/IRPC");
 }
 
-// LOCAL - Define local symbol in macro
+// kLOCAL - Define local symbol in macro
 void HandleLocalDirective(DirectiveContext& /*ctx*/) {
-  // LOCAL is handled specially during macro capture in ParseLine
+  // kLOCAL is handled specially during macro capture in ParseLine
   // This handler should never be called in normal execution
   throw std::runtime_error("LOCAL directive can only be used inside MACRO");
 }
 
-// EXITM - Exit macro early
+// kEXITM - Exit macro early
 void HandleExitmDirective(DirectiveContext& ctx) {
   auto* parser = static_cast<EdtasmM80PlusPlusSyntaxParser*>(ctx.parser_state);
   parser->exitm_triggered_ = true;
 }
 
-// REPT - Repeat block
+// kREPT - Repeat block
 void HandleReptDirective(DirectiveContext& ctx) {
   const std::string& operand = ctx.operand;
   auto* parser = static_cast<EdtasmM80PlusPlusSyntaxParser*>(ctx.parser_state);
@@ -779,12 +779,12 @@ void HandleReptDirective(DirectiveContext& ctx) {
   parser->repeat_nesting_depth_ = 0;
 }
 
-// IRP - Iterate over parameters
+// kIRP - Iterate over parameters
 void HandleIrpDirective(DirectiveContext& ctx) {
   const std::string& operand = ctx.operand;
   auto* parser = static_cast<EdtasmM80PlusPlusSyntaxParser*>(ctx.parser_state);
 
-  // Parse: IRP symbol,<arg1,arg2,...>
+  // Parse: kIRP symbol,<arg1,arg2,...>
   size_t comma_pos = operand.find(',');
   if (comma_pos == std::string::npos) {
     throw std::runtime_error("IRP requires symbol and argument list");
@@ -800,7 +800,7 @@ void HandleIrpDirective(DirectiveContext& ctx) {
 
   std::vector<std::string> args = ParseDataTokens(args_str);
 
-  // Start IRP block
+  // Start kIRP block
   parser->in_repeat_block_ = EdtasmM80PlusPlusSyntaxParser::RepeatType::IRP;
   parser->repeat_param_ = symbol;
   parser->repeat_values_ = args;
@@ -808,12 +808,12 @@ void HandleIrpDirective(DirectiveContext& ctx) {
   parser->repeat_nesting_depth_ = 0;
 }
 
-// IRPC - Iterate over characters
+// kIRPC - Iterate over characters
 void HandleIrpcDirective(DirectiveContext& ctx) {
   const std::string& operand = ctx.operand;
   auto* parser = static_cast<EdtasmM80PlusPlusSyntaxParser*>(ctx.parser_state);
 
-  // Parse: IRPC symbol,<string>
+  // Parse: kIRPC symbol,<string>
   size_t comma_pos = operand.find(',');
   if (comma_pos == std::string::npos) {
     throw std::runtime_error("IRPC requires symbol and string");
@@ -833,7 +833,7 @@ void HandleIrpcDirective(DirectiveContext& ctx) {
     args.emplace_back(1, c);
   }
 
-  // Start IRPC block
+  // Start kIRPC block
   parser->in_repeat_block_ = EdtasmM80PlusPlusSyntaxParser::RepeatType::IRPC;
   parser->repeat_param_ = symbol;
   parser->repeat_values_ = args;
@@ -892,22 +892,22 @@ void RegisterEdtasmDirectiveHandlers(DirectiveRegistry& registry) {
 
   // Listing control
   registry.Register("LIST", HandleListDirective);
-  registry.Register(DOT_LIST, HandleListDirective);  // .LIST alias
+  registry.Register(kDOT_LIST, HandleListDirective);  // .kLIST alias
   registry.Register("NOLIST", HandleNolistDirective);
-  registry.Register(DOT_XLIST, HandleNolistDirective);  // .XLIST alias
-  registry.Register(STAR_LIST, HandleStarListDirective);
+  registry.Register(kDOT_XLIST, HandleNolistDirective);  // .kXLIST alias
+  registry.Register(kSTAR_LIST, HandleStarListDirective);
   registry.Register("LALL", HandleLallDirective);
   registry.Register("SALL", HandleSallDirective);
   registry.Register("TITLE", HandleTitleDirective);
-  registry.Register(DOT_TITLE, HandleTitleDirective);  // .TITLE alias
+  registry.Register(kDOT_TITLE, HandleTitleDirective);  // .kTITLE alias
   registry.Register("SUBTTL", HandleSubttlDirective);
-  registry.Register(DOT_SUBTTL, HandleSubttlDirective);  // .SUBTTL alias
+  registry.Register(kDOT_SUBTTL, HandleSubttlDirective);  // .kSUBTTL alias
   registry.Register("EJECT", HandleEjectDirective);
   registry.Register("SPACE", HandleSpaceDirective);
   registry.Register("NAME", HandleNameDirective);
   registry.Register("RADIX", HandleRadixDirective);
-  registry.Register(DOT_RADIX, HandleRadixDirective);  // .RADIX alias
-  registry.Register(STAR_RADIX, HandleRadixDirective);
+  registry.Register(kDOT_RADIX, HandleRadixDirective);  // .kRADIX alias
+  registry.Register(kSTAR_RADIX, HandleRadixDirective);
 
   // Macro system
   registry.Register("MACRO", HandleMacroDirective);

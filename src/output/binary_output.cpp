@@ -90,7 +90,7 @@ static void WriteAtom(std::ofstream& out, const std::shared_ptr<Atom>& atom, siz
         size_t alignment = align_atom->alignment;
         size_t padding = (alignment - (position % alignment)) % alignment;
         if (padding > 0) {
-          std::vector<uint8_t> pad_bytes(padding, output_format::binary::ZERO_BYTE);
+          std::vector<uint8_t> pad_bytes(padding, output_format::binary::kZERO_BYTE);
           out.write(reinterpret_cast<const char*>(pad_bytes.data()),
                     static_cast<std::streamsize>(pad_bytes.size()));
           position += padding;

@@ -12,51 +12,51 @@
 namespace xasm::scmasm::directives {
 
 // Origin and addressing
-constexpr const char* OR = ".OR";
-constexpr const char* PH = ".PH";  // Phase assembly
+constexpr const char* kOR = ".OR";
+constexpr const char* kPH = ".PH";  // Phase assembly
 
 // Symbol definition
-constexpr const char* EQ = ".EQ";
-constexpr const char* SE = ".SE";
+constexpr const char* kEQ = ".EQ";
+constexpr const char* kSE = ".SE";
 
 // String directives
-constexpr const char* AS = ".AS";
-constexpr const char* AT = ".AT";
-constexpr const char* AZ = ".AZ";
+constexpr const char* kAS = ".AS";
+constexpr const char* kAT = ".AT";
+constexpr const char* kAZ = ".AZ";
 
 // Data directives
-constexpr const char* DA = ".DA";
-constexpr const char* DFB = ".DFB";  // Alias to .DA
-constexpr const char* HS = ".HS";
-constexpr const char* BS = ".BS";
+constexpr const char* kDA = ".DA";
+constexpr const char* kDFB = ".DFB";  // Alias to .DA
+constexpr const char* kHS = ".HS";
+constexpr const char* kBS = ".BS";
 
 // Macro directives
-constexpr const char* MA = ".MA";
-constexpr const char* ENDM = ".ENDM";
-constexpr const char* EM = ".EM";  // Alias to .ENDM
+constexpr const char* kMA = ".MA";
+constexpr const char* kENDM = ".ENDM";
+constexpr const char* kEM = ".EM";  // Alias to .ENDM
 
 // P0 Priority Directives (A2oSX Critical)
-constexpr const char* PS = ".PS";            // Pascal string (length-prefixed)
-constexpr const char* INB = ".INB";          // Include source file
-constexpr const char* INCLUDE = ".INCLUDE";  // Alias: .INCLUDE = .INB
-constexpr const char* LIST = ".LIST";        // Listing control
-constexpr const char* DUMMY = ".DUMMY";      // Dummy section
-constexpr const char* ED = ".ED";            // End dummy section
-constexpr const char* OP = ".OP";            // CPU operation mode
+constexpr const char* kPS = ".PS";            // Pascal string (length-prefixed)
+constexpr const char* kINB = ".INB";          // Include source file
+constexpr const char* kINCLUDE = ".INCLUDE";  // Alias: .INCLUDE = .INB
+constexpr const char* kLIST = ".LIST";        // Listing control
+constexpr const char* kDUMMY = ".DUMMY";      // Dummy section
+constexpr const char* kED = ".ED";            // End dummy section
+constexpr const char* kOP = ".OP";            // CPU operation mode
 
 // Phase 3: 100% Coverage Directives
-constexpr const char* CS = ".CS";      // C-string with escape sequences
-constexpr const char* CZ = ".CZ";      // C-string zero-terminated
-constexpr const char* TF = ".TF";      // Text file/title metadata
-constexpr const char* EP = ".EP";      // Entry point
-constexpr const char* HX = ".HX";      // Hex nibble storage
-constexpr const char* TA = ".TA";      // Target address (no-op)
-constexpr const char* AC = ".AC";      // ASCII with numeric prefix
-constexpr const char* DO = ".DO";      // Conditional assembly start
-constexpr const char* ELSE = ".ELSE";  // Conditional assembly else
-constexpr const char* FIN = ".FIN";    // Conditional assembly end
-constexpr const char* LU = ".LU";      // Lookup table
-constexpr const char* ENDU = ".ENDU";  // End user macro/loop
+constexpr const char* kCS = ".CS";      // C-string with escape sequences
+constexpr const char* kCZ = ".CZ";      // C-string zero-terminated
+constexpr const char* kTF = ".TF";      // Text file/title metadata
+constexpr const char* kEP = ".EP";      // Entry point
+constexpr const char* kHX = ".HX";      // Hex nibble storage
+constexpr const char* kTA = ".TA";      // Target address (no-op)
+constexpr const char* kAC = ".AC";      // ASCII with numeric prefix
+constexpr const char* kDO = ".DO";      // Conditional assembly start
+constexpr const char* kELSE = ".ELSE";  // Conditional assembly else
+constexpr const char* kFIN = ".FIN";    // Conditional assembly end
+constexpr const char* kLU = ".LU";      // Lookup table
+constexpr const char* kENDU = ".ENDU";  // End user macro/loop
 
 }  // namespace xasm::scmasm::directives
 

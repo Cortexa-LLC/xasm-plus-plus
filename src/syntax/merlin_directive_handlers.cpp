@@ -83,7 +83,7 @@ static uint32_t ParseNumber(const std::string& str, ConcreteSymbolTable& symbols
 void HandleOrg(DirectiveContext& context) {
   const std::string& operand = context.operand;
 
-  // ORG directive - set assembly origin address
+  // kORG directive - set assembly origin address
   RequireOperand(operand, "ORG", context);
   std::string op = Trim(operand);
 
@@ -114,7 +114,7 @@ void HandleEqu(DirectiveContext& context) {
   ValidateParser(context.parser_state);
   auto* parser = static_cast<MerlinSyntaxParser*>(context.parser_state);
 
-  // EQU directive - define symbolic constant (no code generated)
+  // kEQU directive - define symbolic constant (no code generated)
   auto expr = parser->ParseExpression(operand, *context.symbols);
   context.symbols->Define(context.label, SymbolType::Label, expr);
 
@@ -159,7 +159,7 @@ void HandleDb(DirectiveContext& context) {
     context.section->atoms.push_back(std::make_shared<LabelAtom>(context.label, current_address));
   }
 
-  // DB directive - define byte(s)
+  // kDB directive - define byte(s)
   // Try immediate evaluation; fall back to deferred if any forward references.
   std::vector<std::string> expressions;
   std::vector<uint8_t> bytes;
@@ -201,7 +201,7 @@ void HandleDw(DirectiveContext& context) {
     context.section->atoms.push_back(std::make_shared<LabelAtom>(context.label, current_address));
   }
 
-  // DW directive - define word(s) (16-bit values)
+  // kDW directive - define word(s) (16-bit values)
   // Store expressions for multi-pass evaluation (support forward references)
   std::vector<std::string> expressions;
   std::istringstream iss(operand);
@@ -233,7 +233,7 @@ void HandleHex(DirectiveContext& context) {
     context.section->atoms.push_back(std::make_shared<LabelAtom>(context.label, current_address));
   }
 
-  // HEX directive - Direct implementation from merlin_directives.cpp
+  // kHEX directive - Direct implementation from merlin_directives.cpp
   std::vector<uint8_t> bytes;
   std::string hex_str = Trim(operand);
 
@@ -300,20 +300,20 @@ void HandleDs(DirectiveContext& context) {
 
   // Create label atom first if label present
   if (!context.label.empty()) {
-    // Use dum_address_ if in DUM block, otherwise current_address_
+    // Use dum_address_ if in kDUM block, otherwise current_address_
     uint32_t label_address =
         parser->IsInDumBlock() ? parser->GetDumAddress() : parser->GetCurrentAddress();
-    // ]variable labels in DS directives (e.g. "]dest DS 2" in DUM blocks)
+    // ]variable labels in kDS directives (e.g. "]dest DS 2" in kDUM blocks)
     // must be uniqued the same way as instruction-defined ]var labels so
     // that ExpandVarLabelsInOperand resolves backward references correctly.
     std::string effective_label = parser->UniqueVarLabel(context.label);
     context.symbols->Define(effective_label, SymbolType::Label,
                             std::make_shared<LiteralExpr>(label_address));
-    // In DUM mode, do NOT push a LabelAtom into the atom stream.
+    // In kDUM mode, do NOT push a LabelAtom into the atom stream.
     // ResolveSymbols processes LabelAtoms by overwriting the address with
     // current_address (the real program counter), which would replace the
     // correct dum_address_ we just stored in the symbol table.
-    // DUM-section symbols are fully defined at parse time (symbol table only);
+    // kDUM-section symbols are fully defined at parse time (symbol table only);
     // they do not need a LabelAtom for the assembler to process.
     if (!parser->IsInDumBlock()) {
       context.section->atoms.push_back(std::make_shared<LabelAtom>(effective_label, label_address));
@@ -406,8 +406,8 @@ void HandleLst(DirectiveContext& context) {
   (void)operand;
   (void)context;
 
-  // LST directive - Direct implementation from merlin_directives.cpp
-  // LST/LST OFF - listing control
+  // kLST directive - Direct implementation from merlin_directives.cpp
+  // kLST/kLST kOFF - listing control
   // No-op for compatibility (listing not implemented)
 }
 
@@ -416,8 +416,8 @@ void HandleLstdo(DirectiveContext& context) {
   (void)operand;
   (void)context;
 
-  // LSTDO directive - Direct implementation from merlin_directives.cpp
-  // LSTDO - list during DO blocks
+  // kLSTDO directive - Direct implementation from merlin_directives.cpp
+  // kLSTDO - list during kDO blocks
   // No-op for compatibility (listing not implemented)
 }
 
@@ -426,8 +426,8 @@ void HandleTr(DirectiveContext& context) {
   (void)operand;
   (void)context;
 
-  // TR directive - Direct implementation from merlin_directives.cpp
-  // TR [ADR|ON|OFF] - truncate listing
+  // kTR directive - Direct implementation from merlin_directives.cpp
+  // kTR [ADR|kON|kOFF] - truncate listing
   // No-op for compatibility (listing not implemented)
 }
 
@@ -442,8 +442,8 @@ void HandleAsc(DirectiveContext& context) {
     context.section->atoms.push_back(std::make_shared<LabelAtom>(context.label, current_address));
   }
 
-  // ASC directive - Direct implementation from merlin_directives.cpp
-  // ASC 'string' or ASC "string" - ASCII string directive
+  // kASC directive - Direct implementation from merlin_directives.cpp
+  // kASC 'string' or kASC "string" - kASCII string directive
   // Apple II/Merlin standard: Sets high bit on ALL characters (0x80 | char)
 
   std::vector<uint8_t> bytes;
@@ -502,8 +502,8 @@ void HandleDci(DirectiveContext& context) {
     context.section->atoms.push_back(std::make_shared<LabelAtom>(context.label, current_address));
   }
 
-  // DCI directive - Direct implementation from merlin_directives.cpp
-  // DCI 'string' - DCI string (last character with high bit set)
+  // kDCI directive - Direct implementation from merlin_directives.cpp
+  // kDCI 'string' - kDCI string (last character with high bit set)
 
   std::vector<uint8_t> bytes;
   std::string op = Trim(operand);
@@ -563,8 +563,8 @@ void HandleInv(DirectiveContext& context) {
     context.section->atoms.push_back(std::make_shared<LabelAtom>(context.label, current_address));
   }
 
-  // INV directive - Direct implementation from merlin_directives.cpp
-  // INV 'string' - Inverse ASCII (all characters with high bit set)
+  // kINV directive - Direct implementation from merlin_directives.cpp
+  // kINV 'string' - Inverse kASCII (all characters with high bit set)
 
   std::vector<uint8_t> bytes;
   std::string op = Trim(operand);
@@ -618,8 +618,8 @@ void HandleFls(DirectiveContext& context) {
     context.section->atoms.push_back(std::make_shared<LabelAtom>(context.label, current_address));
   }
 
-  // FLS directive - Direct implementation from merlin_directives.cpp
-  // FLS 'string' - Flash ASCII (alternating high bit for flashing effect)
+  // kFLS directive - Direct implementation from merlin_directives.cpp
+  // kFLS 'string' - Flash kASCII (alternating high bit for flashing effect)
 
   std::vector<uint8_t> bytes;
   std::string op = Trim(operand);
@@ -656,7 +656,7 @@ void HandleFls(DirectiveContext& context) {
   for (size_t i = 0; i < text.length(); ++i) {
     auto byte = static_cast<uint8_t>(text[i]);
 
-    // Set high bit on ODD-indexed characters (1, 3, 5...)
+    // Set high bit on kODD-indexed characters (1, 3, 5...)
     if (i % 2 == 1) {
       byte |= 0x80;
     }
@@ -670,7 +670,7 @@ void HandleFls(DirectiveContext& context) {
 
 void HandleDa(DirectiveContext& context) {
   const std::string& operand = context.operand;
-  // DA (Define Address) - In 65816 mode (Merlin 16/32), DA emits 3 bytes
+  // kDA (Define Address) - In 65816 mode (Merlin 16/32), kDA emits 3 bytes
   // (24-bit little-endian address).  In 6502/65C02 mode it emits 2 bytes.
   bool is_65816 = false;
   if (context.parser_state) {
@@ -779,7 +779,7 @@ void HandleMac(DirectiveContext& context) {
 
 void HandleUsr(DirectiveContext& context) {
   const std::string& operand = context.operand;
-  // USR directive - captures arguments for RW18 output format
+  // kUSR directive - captures arguments for RW18 output format
   // Create label if present
   if (!context.label.empty()) {
     uint32_t current_address = *context.current_address;
@@ -788,7 +788,7 @@ void HandleUsr(DirectiveContext& context) {
     context.section->atoms.push_back(std::make_shared<LabelAtom>(context.label, current_address));
   }
 
-  // Parse USR directive arguments for RW18 mode
+  // Parse kUSR directive arguments for RW18 mode
   // Format: usr $a9,16,$b00,*-org
   // Arguments are comma-separated expressions
   auto* parser = static_cast<MerlinSyntaxParser*>(context.parser_state);
@@ -834,7 +834,7 @@ void HandleUsr(DirectiveContext& context) {
     parser->SetUsrArgs(args);
   }
 
-  // USR is a no-op - user-defined subroutine (no atoms generated)
+  // kUSR is a no-op - user-defined subroutine (no atoms generated)
 }
 
 void HandleEnd(DirectiveContext& context) {
@@ -845,7 +845,7 @@ void HandleEnd(DirectiveContext& context) {
   ValidateParser(context.parser_state);
   auto* parser = static_cast<MerlinSyntaxParser*>(context.parser_state);
 
-  // END directive - Direct implementation from merlin_directives.cpp
+  // kEND directive - Direct implementation from merlin_directives.cpp
   // Create label if present
   if (!context.label.empty()) {
     uint32_t current_address = *context.current_address;
@@ -854,7 +854,7 @@ void HandleEnd(DirectiveContext& context) {
     context.section->atoms.push_back(std::make_shared<LabelAtom>(context.label, current_address));
   }
 
-  // END - mark end of source (stop processing further lines)
+  // kEND - mark end of source (stop processing further lines)
   // Note: Needs parser state access for end_directive_seen_ flag
   parser->HandleEnd();
 }
@@ -864,8 +864,8 @@ void HandleSav(DirectiveContext& context) {
   (void)operand;
   (void)context;
 
-  // SAV directive - Direct implementation from merlin_directives.cpp
-  // SAV filename - Save output filename directive
+  // kSAV directive - Direct implementation from merlin_directives.cpp
+  // kSAV filename - Save output filename directive
   // No-op for compatibility (output filename controlled by command-line args)
 }
 
@@ -877,12 +877,12 @@ void HandleXc(DirectiveContext& context) {
   ValidateParser(context.parser_state);
   auto* parser = static_cast<MerlinSyntaxParser*>(context.parser_state);
 
-  // Update CPU mode on the parser's CPU object
+  // Update kCPU mode on the parser's kCPU object
   parser->HandleXc(operand);
 
   // Emit a CpuModeAtom so the assembler replays the mode change during encoding.
   // Without this, all instructions are encoded with the FINAL cpu mode from
-  // parsing, which breaks XC-gated instructions (e.g. TSB, XCE, PHY, REP).
+  // parsing, which breaks kXC-gated instructions (e.g. TSB, XCE, PHY, REP).
   if (context.section && parser->GetCpu()) {
     int mode_int = 0;
     switch (parser->GetCpu()->GetCpuMode()) {
@@ -936,7 +936,7 @@ void HandleMx(DirectiveContext& context) {
     }
   }
 
-  // Emit MxAtom so the assembler replays the MX state during encoding.
+  // Emit MxAtom so the assembler replays the kMX state during encoding.
   // bit1=M flag, bit0=X flag (1=8-bit, 0=16-bit)
   bool m_flag = (mode & 2) != 0;
   bool x_flag = (mode & 1) != 0;
@@ -945,7 +945,7 @@ void HandleMx(DirectiveContext& context) {
 
 void HandleRev(DirectiveContext& context) {
   const std::string& operand = context.operand;
-  // REV "string" - Reverse ASCII string
+  // kREV "string" - Reverse kASCII string
   std::string op = Trim(operand);
 
   if (op.empty()) {

@@ -31,185 +31,185 @@ namespace xasm::Z80Directives {
 // ============================================================================
 
 /// Code segment - relocatable code section
-constexpr const char* CSEG = "CSEG";
+constexpr const char* kCSEG = "CSEG";
 
 /// Data segment - relocatable data section
-constexpr const char* DSEG = "DSEG";
+constexpr const char* kDSEG = "DSEG";
 
 /// Absolute segment - fixed address section
-constexpr const char* ASEG = "ASEG";
+constexpr const char* kASEG = "ASEG";
 
 // ============================================================================
 // Z80-Specific Data Definition
 // ============================================================================
 
 /// Define doubleword(s) (32-bit values) - some Z80 assemblers
-constexpr const char* DD = "DD";
+constexpr const char* kDD = "DD";
 
 /// Define doubleword(s) - alternate name
-constexpr const char* DEFD = "DEFD";
+constexpr const char* kDEFD = "DEFD";
 
 /// Define doubleword(s) - alternate name
-constexpr const char* DWORD = "DWORD";
+constexpr const char* kDWORD = "DWORD";
 
 // ============================================================================
 // Z80 Common Block (BSS-like)
 // ============================================================================
 
 /// Begin common block definition
-constexpr const char* COMMON = "COMMON";
+constexpr const char* kCOMMON = "COMMON";
 
 /// End common block definition
-constexpr const char* ENDC = "ENDC";
+constexpr const char* kENDC = "ENDC";
 
 // ============================================================================
 // Z80 Conditional Assembly Extensions
 // ============================================================================
 
 /// Conditional assembly - if defined
-constexpr const char* IFDEF = "IFDEF";
+constexpr const char* kIFDEF = "IFDEF";
 
 /// Conditional assembly - if not defined
-constexpr const char* IFNDEF = "IFNDEF";
+constexpr const char* kIFNDEF = "IFNDEF";
 
 /// Conditional assembly - if equal (expression = 0)
-constexpr const char* IFE = "IFE";
+constexpr const char* kIFE = "IFE";
 
 /// Conditional assembly - if equal (two operands)
-constexpr const char* IFEQ = "IFEQ";
+constexpr const char* kIFEQ = "IFEQ";
 
 /// Conditional assembly - if not equal
-constexpr const char* IFNE = "IFNE";
+constexpr const char* kIFNE = "IFNE";
 
 /// Conditional assembly - if greater than
-constexpr const char* IFGT = "IFGT";
+constexpr const char* kIFGT = "IFGT";
 
 /// Conditional assembly - if greater than or equal
-constexpr const char* IFGE = "IFGE";
+constexpr const char* kIFGE = "IFGE";
 
 /// Conditional assembly - if less than
-constexpr const char* IFLT = "IFLT";
+constexpr const char* kIFLT = "IFLT";
 
 /// Conditional assembly - if less than or equal
-constexpr const char* IFLE = "IFLE";
+constexpr const char* kIFLE = "IFLE";
 
 /// Conditional assembly - if first pass
-constexpr const char* IF1 = "IF1";
+constexpr const char* kIF1 = "IF1";
 
 /// Conditional assembly - if second pass
-constexpr const char* IF2 = "IF2";
+constexpr const char* kIF2 = "IF2";
 
 /// Conditional assembly - if blank (empty operand)
-constexpr const char* IFB = "IFB";
+constexpr const char* kIFB = "IFB";
 
 /// Conditional assembly - if not blank (non-empty operand)
-constexpr const char* IFNB = "IFNB";
+constexpr const char* kIFNB = "IFNB";
 
 /// Conditional assembly - if identical (string comparison)
-constexpr const char* IFIDN = "IFIDN";
+constexpr const char* kIFIDN = "IFIDN";
 
 /// Conditional assembly - if different (string comparison)
-constexpr const char* IFDIF = "IFDIF";
+constexpr const char* kIFDIF = "IFDIF";
 
 // ============================================================================
 // Z80 Include and Library
 // ============================================================================
 
 /// Include source file
-constexpr const char* INCLUDE = "INCLUDE";
+constexpr const char* kINCLUDE = "INCLUDE";
 
 /// Include binary file
-constexpr const char* INCBIN = "INCBIN";
+constexpr const char* kINCBIN = "INCBIN";
 
 /// Search library (some Z80 linkers)
-constexpr const char* LIBRARY = "LIBRARY";
+constexpr const char* kLIBRARY = "LIBRARY";
 
 // ============================================================================
 // Z80 Listing Control
 // ============================================================================
 
 /// Enable listing output
-constexpr const char* LIST = "LIST";
+constexpr const char* kLIST = "LIST";
 
 /// Disable listing output
-constexpr const char* NOLIST = "NOLIST";
+constexpr const char* kNOLIST = "NOLIST";
 
 /// Page break in listing
-constexpr const char* PAGE = "PAGE";
+constexpr const char* kPAGE = "PAGE";
 
 /// Set listing title
-constexpr const char* TITLE = "TITLE";
+constexpr const char* kTITLE = "TITLE";
 
 /// Set listing subtitle
-constexpr const char* SUBTTL = "SUBTTL";
+constexpr const char* kSUBTTL = "SUBTTL";
 
 /// Disable listing output (alternate form)
-constexpr const char* XLIST = "XLIST";
+constexpr const char* kXLIST = "XLIST";
 
 /// Page eject in listing
-constexpr const char* EJECT = "EJECT";
+constexpr const char* kEJECT = "EJECT";
 
 /// Insert blank lines in listing (operand = number of lines)
-constexpr const char* SPACE = "SPACE";
+constexpr const char* kSPACE = "SPACE";
 
 /// Set module name
-constexpr const char* NAME = "NAME";
+constexpr const char* kNAME = "NAME";
 
 // ============================================================================
 // Z80 Macro Extensions
 // ============================================================================
 
 /// End macro - alternate form
-constexpr const char* ENDMACRO = "ENDMACRO";
+constexpr const char* kENDMACRO = "ENDMACRO";
 
 /// Local symbol declaration (macro scope)
-constexpr const char* LOCAL = "LOCAL";
+constexpr const char* kLOCAL = "LOCAL";
 
 /// Exit macro early
-constexpr const char* EXITM = "EXITM";
+constexpr const char* kEXITM = "EXITM";
 
 /// Infinite repeat (until ENDR)
-constexpr const char* IRP = "IRP";
+constexpr const char* kIRP = "IRP";
 
 /// Iterate over characters in string (IRPC param, string)
-constexpr const char* IRPC = "IRPC";
+constexpr const char* kIRPC = "IRPC";
 
 /// End repeat block
-constexpr const char* ENDR = "ENDR";
+constexpr const char* kENDR = "ENDR";
 
 // ============================================================================
 // Z80 Module/Section Control
 // ============================================================================
 
 /// Define module name
-constexpr const char* MODULE = "MODULE";
+constexpr const char* kMODULE = "MODULE";
 
 /// Define named section
-constexpr const char* SECTION = "SECTION";
+constexpr const char* kSECTION = "SECTION";
 
 /// End module
-constexpr const char* ENDMOD = "ENDMOD";
+constexpr const char* kENDMOD = "ENDMOD";
 
 // ============================================================================
 // Z80 Alignment
 // ============================================================================
 
 /// Align to boundary
-constexpr const char* ALIGN = "ALIGN";
+constexpr const char* kALIGN = "ALIGN";
 
 /// Phase (logical address different from physical)
-constexpr const char* PHASE = "PHASE";
+constexpr const char* kPHASE = "PHASE";
 
 /// End phase
-constexpr const char* DEPHASE = "DEPHASE";
+constexpr const char* kDEPHASE = "DEPHASE";
 
 /// Set default number base (2-16)
-constexpr const char* RADIX = "RADIX";
+constexpr const char* kRADIX = "RADIX";
 
 /// Get current date as integer (YYYYMMDD)
-constexpr const char* DATE = "DATE";
+constexpr const char* kDATE = "DATE";
 
 /// Get current time as integer (HHMMSS)
-constexpr const char* TIME = "TIME";
+constexpr const char* kTIME = "TIME";
 
 }  // namespace xasm::Z80Directives

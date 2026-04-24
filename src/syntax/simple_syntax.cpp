@@ -48,14 +48,14 @@ SimpleSyntaxParser::SimpleSyntaxParser() {
 void SimpleSyntaxParser::InitializeDirectives() {
   using namespace directives;
 
-  // Register .ORG directive
-  directive_registry_.Register(ORG, simple::HandleOrg);
+  // Register .kORG directive
+  directive_registry_.Register(kORG, simple::HandleOrg);
 
-  // Register .DB directive
-  directive_registry_.Register(DB, simple::HandleDb);
+  // Register .kDB directive
+  directive_registry_.Register(kDB, simple::HandleDb);
 
-  // Register .DW directive
-  directive_registry_.Register(DW, simple::HandleDw);
+  // Register .kDW directive
+  directive_registry_.Register(kDW, simple::HandleDw);
 }
 
 void SimpleSyntaxParser::Parse(const std::string& source, Section& section,
