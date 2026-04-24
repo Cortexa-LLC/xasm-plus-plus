@@ -61,7 +61,7 @@ class Symbol {
   Section* section{nullptr};            ///< Section where defined (nullptr for absolute symbols)
   bool is_exported = false;             ///< True if exported to other modules
   bool is_imported = false;             ///< True if imported from another module
-  SourceLocation definition;            ///< Source location where defined
+  SourceLocation definition = {};            ///< Source location where defined
 
   /**
    * @brief Default constructor

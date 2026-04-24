@@ -345,7 +345,7 @@ class MerlinSyntaxParser {
     std::unordered_map<std::string, uint32_t> local_labels = {};  ///< :label -> address
   };
 
-  LabelScope current_scope_;  ///< Current label scope (for :LOCAL labels)
+  LabelScope current_scope_ = {};  ///< Current label scope (for :LOCAL labels)
 
   /**
    * @brief Macro definition
@@ -360,7 +360,7 @@ class MerlinSyntaxParser {
 
   // Macro state
   bool in_macro_definition_ = false;                              ///< True if defining a macro
-  MacroDefinition current_macro_;                                 ///< Current macro being defined
+  MacroDefinition current_macro_ = {};                             ///< Current macro being defined
   std::unordered_map<std::string, MacroDefinition> macros_ = {};  ///< Defined macros
   int macro_expansion_depth_ = 0;                                 ///< Prevent infinite recursion
 
@@ -405,7 +405,7 @@ class MerlinSyntaxParser {
    * Replaces local ConditionalBlock struct and conditional_stack_
    * with shared ConditionalAssembler component.
    */
-  ConditionalAssembler conditional_;  ///< Shared conditional assembly logic
+  ConditionalAssembler conditional_ = {};  ///< Shared conditional assembly logic
 
   /**
    * @brief Directive handler function type (NEW signature using

@@ -119,14 +119,14 @@ class SCMASMNumberParser : public INumberParser {
 
 /// @brief Helper struct for ApplyHighBitRule - groups adjacent char parameters
 struct HighBitChars {
-  char input;      ///< Input character
-  char delimiter;  ///< Delimiter character (controls high-bit rule)
+  char input = '\0';      ///< Input character
+  char delimiter = '\0';  ///< Delimiter character (controls high-bit rule)
 };
 
 /// @brief Helper struct for StartPhase - groups adjacent address parameters
 struct PhaseAddresses {
-  uint32_t real_addr;     ///< Real (physical) address
-  uint32_t virtual_addr;  ///< Virtual address
+  uint32_t real_addr = 0;     ///< Real (physical) address
+  uint32_t virtual_addr = 0;  ///< Virtual address
 };
 
 class ScmasmSyntaxParser {
@@ -403,8 +403,8 @@ class ScmasmSyntaxParser {
 
   // Macro definition structure
   struct MacroDef {
-    std::string name;
-    std::vector<std::string> lines;  ///< Macro body lines
+    std::string name = {};
+    std::vector<std::string> lines = {};  ///< Macro body lines
   };
 
   // Macro nesting limit (prevent infinite recursion)
@@ -469,7 +469,7 @@ class ScmasmSyntaxParser {
   std::unordered_map<std::string, DirectiveHandler> directive_registry_ = {};
 
   // Expression and number parsing (Phase 2 integration)
-  SCMASMNumberParser scmasm_number_parser_;  ///< SCMASM-specific number parser
+  SCMASMNumberParser scmasm_number_parser_ = {};  ///< SCMASM-specific number parser
 
   /**
    * @brief Initialize directive registry with all supported directives
@@ -817,8 +817,8 @@ class ScmasmSyntaxParser {
 
   /** Bounds of a .DO/.LU conditional block. */
   struct DoBlockBounds {
-    size_t else_line;  ///< index of .ELSE line, or npos if none
-    size_t fin_line;   ///< index of the matching .FIN line
+    size_t else_line = std::string::npos;  ///< index of .ELSE line, or npos if none
+    size_t fin_line = std::string::npos;   ///< index of the matching .FIN line
   };
 
   /**

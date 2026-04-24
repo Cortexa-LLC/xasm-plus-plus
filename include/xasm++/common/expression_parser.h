@@ -211,9 +211,9 @@ class ExpressionParser {
   std::shared_ptr<Expression> Parse(const std::string& str);
 
  private:
-  const SymbolTable* symbols_;          ///< Symbol table for symbol resolution
-  const INumberParser* number_parser_;  ///< Optional custom number parser
-  ParserFeatures features_;             ///< Dialect feature flags
+  const SymbolTable* symbols_ = nullptr;          ///< Symbol table for symbol resolution
+  const INumberParser* number_parser_ = nullptr;  ///< Optional custom number parser
+  ParserFeatures features_ = {};             ///< Dialect feature flags
   std::string expr_ = {};               ///< Current expression being parsed
   size_t pos_ = 0;                      ///< Current position in expression
 
@@ -221,7 +221,7 @@ class ExpressionParser {
   using PrefixParseFn = std::function<std::shared_ptr<Expression>()>;
 
   /// Dispatch table: maps first character to parse function
-  std::unordered_map<char, PrefixParseFn> prefix_table_;
+  std::unordered_map<char, PrefixParseFn> prefix_table_{};
 
   /**
    * @brief Populate prefix_table_ with all prefix parse functions.

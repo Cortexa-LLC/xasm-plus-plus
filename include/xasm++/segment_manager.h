@@ -153,13 +153,13 @@ class SegmentManager {
   };
 
   SegmentType current_segment_ = SegmentType::Code;  ///< Currently active segment type
-  std::string current_common_name_;                  ///< Current COMMON block name (if any)
+  std::string current_common_name_ = {};                  ///< Current COMMON block name (if any)
 
   /// Address counters for each standard segment type
-  std::map<SegmentType, SegmentState> segments_;
+  std::map<SegmentType, SegmentState> segments_ = {};
 
   /// Address counters for named COMMON blocks
-  std::map<std::string, SegmentState> common_blocks_;
+  std::map<std::string, SegmentState> common_blocks_ = {};
 };
 
 }  // namespace xasm

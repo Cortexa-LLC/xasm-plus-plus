@@ -380,7 +380,7 @@ class EdtasmM80PlusPlusSyntaxParser {
 
   // Macro state (accessible to directive handlers)
   bool in_macro_definition_ = false;                              ///< True if defining a macro
-  MacroDefinition current_macro_;                                 ///< Current macro being defined
+  MacroDefinition current_macro_ = {};                             ///< Current macro being defined
   std::unordered_map<std::string, MacroDefinition> macros_ = {};  ///< Defined macros
   int macro_expansion_depth_ = 0;                                 ///< Prevent infinite recursion
   int macro_unique_counter_ = 0;  ///< Counter for LOCAL label uniqueness
@@ -429,7 +429,7 @@ class EdtasmM80PlusPlusSyntaxParser {
     std::unordered_map<std::string, uint32_t> local_labels = {};  ///< local_name -> address
   };
 
-  LabelScope current_scope_;  ///< Current label scope (for local labels)
+  LabelScope current_scope_ = {};  ///< Current label scope (for local labels)
 
   uint32_t current_address_ = 0;     ///< Current address (for tracking label addresses)
   bool end_directive_seen_ = false;  ///< True if END directive has been processed
@@ -449,11 +449,11 @@ class EdtasmM80PlusPlusSyntaxParser {
 
   CpuZ80* cpu_ = nullptr;  ///< CPU plugin for undocumented instructions
 
-  DirectiveRegistry directive_registry_;  ///< Registry for directive handlers
-  SegmentManager segment_manager_;        ///< Manages segments (CSEG/DSEG/ASEG/COMMON)
+  DirectiveRegistry directive_registry_ = {};  ///< Registry for directive handlers
+  SegmentManager segment_manager_ = {};  ///< Manages segments (CSEG/DSEG/ASEG/COMMON)
 
   // Expression and number parsing
-  Z80NumberParser z80_number_parser_;  ///< Z80-specific number parser
+  Z80NumberParser z80_number_parser_ = {};  ///< Z80-specific number parser
 
   // Parsing helpers
   void InitializeDirectiveRegistry();  ///< Register all directives
