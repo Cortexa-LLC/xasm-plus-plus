@@ -33,9 +33,9 @@ namespace xasm {
 namespace {
 
 // Radix values for number parsing
-constexpr int RADIX_BINARY = 2;
-constexpr int RADIX_DECIMAL = 10;
-constexpr int RADIX_HEXADECIMAL = 16;
+constexpr int kRADIX_BINARY = 2;
+constexpr int kRADIX_DECIMAL = 10;
+constexpr int kRADIX_HEXADECIMAL = 16;
 
 // ---------------------------------------------------------------------------
 // IsEqOperandSafe  (used by StripComments to validate star-label .kEQ values)
@@ -131,7 +131,7 @@ static bool TryParseHex(const std::string& token, int64_t& value) {
     }
   }
   try {
-    value = std::stoll(hex, nullptr, RADIX_HEXADECIMAL);
+    value = std::stoll(hex, nullptr, kRADIX_HEXADECIMAL);
     return true;
   } catch (...) {
     return false;
@@ -155,7 +155,7 @@ static bool TryParseBinary(const std::string& token, int64_t& value) {
     return false;
   }
   try {
-    value = std::stoll(binary, nullptr, RADIX_BINARY);
+    value = std::stoll(binary, nullptr, kRADIX_BINARY);
     return true;
   } catch (...) {
     return false;
@@ -191,7 +191,7 @@ static bool TryParseDecimal(const std::string& token, int64_t& value) {
     }
   }
   try {
-    value = std::stoll(token, nullptr, RADIX_DECIMAL);
+    value = std::stoll(token, nullptr, kRADIX_DECIMAL);
     return true;
   } catch (...) {
     return false;
@@ -1328,7 +1328,7 @@ uint32_t ScmasmSyntaxParser::ParseHexNumber(const std::string& trimmed) {
     }
   }
   try {
-    return std::stoul(hex, nullptr, RADIX_HEXADECIMAL);
+    return std::stoul(hex, nullptr, kRADIX_HEXADECIMAL);
   } catch (const std::exception& e) {
     throw std::runtime_error("Failed to parse hex number '" + trimmed + "': " + e.what());
   }
@@ -1350,7 +1350,7 @@ uint32_t ScmasmSyntaxParser::ParseBinaryNumber(const std::string& trimmed) {
     throw std::runtime_error("Binary number has no digits: " + trimmed);
   }
   try {
-    return std::stoul(binary, nullptr, RADIX_BINARY);
+    return std::stoul(binary, nullptr, kRADIX_BINARY);
   } catch (const std::exception& e) {
     throw std::runtime_error("Failed to parse binary number '" + trimmed + "': " + e.what());
   }
@@ -1373,7 +1373,7 @@ uint32_t ScmasmSyntaxParser::ParseDecimalNumber(const std::string& trimmed) {
     }
   }
   try {
-    return std::stoul(trimmed, nullptr, RADIX_DECIMAL);
+    return std::stoul(trimmed, nullptr, kRADIX_DECIMAL);
   } catch (const std::exception& e) {
     throw std::runtime_error("Failed to parse decimal number '" + trimmed + "': " + e.what());
   }
@@ -1846,7 +1846,7 @@ void ScmasmSyntaxParser::HandleHs(const std::string& operand, Section& section,
   // Convert pairs to bytes
   for (size_t i = 0; i < hex_digits.length(); i += 2) {
     std::string byte_str = hex_digits.substr(i, 2);
-    auto byte = static_cast<uint8_t>(std::stoi(byte_str, nullptr, RADIX_HEXADECIMAL));
+    auto byte = static_cast<uint8_t>(std::stoi(byte_str, nullptr, kRADIX_HEXADECIMAL));
     data.push_back(byte);
   }
 
@@ -1941,9 +1941,9 @@ void ScmasmSyntaxParser::InvokeMacro(const std::string& name,
                                      const std::vector<std::string>& params, Section& section,
                                      ConcreteSymbolTable& symbols) {
   // Check for infinite recursion
-  if (macro_invocation_depth_ >= MAX_MACRO_NESTING_DEPTH) {
+  if (macro_invocation_depth_ >= kMAX_MACRO_NESTING_DEPTH) {
     throw std::runtime_error("Macro nesting too deep (max " +
-                             std::to_string(MAX_MACRO_NESTING_DEPTH) + " levels)");
+                             std::to_string(kMAX_MACRO_NESTING_DEPTH) + " levels)");
   }
 
   // Find macro

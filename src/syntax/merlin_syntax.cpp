@@ -32,9 +32,9 @@ using namespace xasm::directives;
 namespace {
 
 // Radix values for number parsing
-constexpr int RADIX_BINARY = 2;
-constexpr int RADIX_DECIMAL = 10;
-constexpr int RADIX_HEXADECIMAL = 16;
+constexpr int kRADIX_BINARY = 2;
+constexpr int kRADIX_DECIMAL = 10;
+constexpr int kRADIX_HEXADECIMAL = 16;
 
 // Parse a numeric literal (hex with '$' prefix, binary with '%' prefix,
 // or plain decimal digits).  Returns true if the string was a numeric literal
@@ -45,15 +45,15 @@ bool ParseNumericLiteral(const std::string& op, uint32_t& out_value) {
     return false;
   }
   if (op[0] == '$') {
-    out_value = static_cast<uint32_t>(std::stoul(op.substr(1), nullptr, RADIX_HEXADECIMAL));
+    out_value = static_cast<uint32_t>(std::stoul(op.substr(1), nullptr, kRADIX_HEXADECIMAL));
     return true;
   }
   if (op[0] == '%') {
-    out_value = static_cast<uint32_t>(std::stoul(op.substr(1), nullptr, RADIX_BINARY));
+    out_value = static_cast<uint32_t>(std::stoul(op.substr(1), nullptr, kRADIX_BINARY));
     return true;
   }
   if (std::isdigit(static_cast<unsigned char>(op[0]))) {
-    out_value = static_cast<uint32_t>(std::stoul(op, nullptr, RADIX_DECIMAL));
+    out_value = static_cast<uint32_t>(std::stoul(op, nullptr, kRADIX_DECIMAL));
     return true;
   }
   return false;

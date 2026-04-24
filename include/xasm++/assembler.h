@@ -101,12 +101,12 @@ class Assembler {
  public:
   /// Maximum number of passes in fast phase before switching to slower
   /// convergence checking
-  static constexpr int FAST_PHASE_LIMIT = 50;
+  static constexpr int kFAST_PHASE_LIMIT = 50;
 
   /// Maximum assembly passes before reporting non-convergence error.
   /// Complex kernels with many cascading forward references may need 15-20
   /// passes; 50 is a safe upper bound that still catches infinite loops.
-  static constexpr int MAX_PASSES = 50;
+  static constexpr int kMAX_PASSES = 50;
 
   /**
    * @brief Construct a new Assembler
@@ -183,7 +183,7 @@ class Assembler {
   /**
    * @brief Set the maximum number of assembly passes
    *
-   * Overrides the default MAX_PASSES limit. Useful when assembling code
+   * Overrides the default kMAX_PASSES limit. Useful when assembling code
    * with many forward references that require more convergence passes, or
    * when limiting passes for faster builds.
    *
@@ -212,8 +212,8 @@ class Assembler {
    * Performs multi-pass assembly to resolve forward references and handle
    * branch relaxation. The assembly process continues until:
    * - All instruction sizes converge (no more changes)
-   * - FAST_PHASE_LIMIT passes completed (switches to slower convergence)
-   * - MAX_PASSES reached (prevents infinite loops)
+   * - kFAST_PHASE_LIMIT passes completed (switches to slower convergence)
+   * - kMAX_PASSES reached (prevents infinite loops)
    *
    * @return AssemblerResult containing success status, pass count, and errors
    *
@@ -332,7 +332,7 @@ class Assembler {
   std::vector<Section> sections_;   ///< Sections to assemble
   CpuPlugin* cpu_ = nullptr;        ///< CPU plugin for instruction encoding
   SymbolTable* symbols_ = nullptr;  ///< Symbol table for symbol resolution
-  int max_passes_ = MAX_PASSES;     ///< Maximum assembly passes (default: MAX_PASSES)
+  int max_passes_ = kMAX_PASSES;     ///< Maximum assembly passes (default: kMAX_PASSES)
   /// Expression parser features for instruction operand evaluation (ADR-005 V9)
   ParserFeatures expression_features_;
 

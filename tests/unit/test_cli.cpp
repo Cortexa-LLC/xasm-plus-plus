@@ -391,7 +391,7 @@ TEST(CLITest, MaxPassesDefault) {
 
   CommandLineOptions opts = ParseCommandLine(argc, const_cast<char **>(argv));
 
-  EXPECT_EQ(opts.max_passes, Assembler::MAX_PASSES);
+  EXPECT_EQ(opts.max_passes, Assembler::kMAX_PASSES);
 }
 
 // Test 35: --label-map specifies output file for label map

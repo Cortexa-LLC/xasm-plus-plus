@@ -130,9 +130,9 @@ TEST(Z80DirectiveConstantsTest, DirectivesRegisteredWithConstants) {
 TEST(Z80DirectiveConstantsTest, ConstantsProvideCompileTimeChecking) {
   // This test verifies that directive constants can be used
   // in contexts that require compile-time constants
-  constexpr const char *org_directive = CommonDirectives::kORG;
-  constexpr const char *cseg_directive = Z80Directives::kCSEG;
+  constexpr const char *korg_directive = CommonDirectives::kORG;
+  constexpr const char *kcseg_directive = Z80Directives::kCSEG;
 
-  EXPECT_STREQ(org_directive, "ORG");
-  EXPECT_STREQ(cseg_directive, "CSEG");
+  EXPECT_STREQ(korg_directive, "ORG");
+  EXPECT_STREQ(kcseg_directive, "CSEG");
 }

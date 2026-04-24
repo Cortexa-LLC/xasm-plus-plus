@@ -17,180 +17,180 @@ namespace Opcodes {
 // ============================================================================
 
 // LDA - Load Accumulator
-constexpr uint8_t kLDA_IMM = 0xA9;  // LDA #imm     - Immediate
-constexpr uint8_t kLDA_ZP = 0xA5;   // LDA zp       - Zero Page
-constexpr uint8_t kLDA_ZPX = 0xB5;  // LDA zp,X     - Zero Page,X
-constexpr uint8_t kLDA_ABS = 0xAD;  // LDA abs      - Absolute
-constexpr uint8_t kLDA_ABX = 0xBD;  // LDA abs,X    - Absolute,X
-constexpr uint8_t kLDA_ABY = 0xB9;  // LDA abs,Y    - Absolute,Y
-constexpr uint8_t kLDA_INX = 0xA1;  // LDA (zp,X)   - Indexed Indirect
-constexpr uint8_t kLDA_INY = 0xB1;  // LDA (zp),Y   - Indirect Indexed
-constexpr uint8_t kLDA_IZP = 0xB2;  // LDA (zp)     - Indirect Zero Page (65C02+)
-constexpr uint8_t kLDA_ALG = 0xAF;  // LDA long     - Absolute Long (65816)
-constexpr uint8_t kLDA_ILG = 0xA7;  // LDA [dp]     - Indirect Long (65816)
-constexpr uint8_t kLDA_ILY = 0xB7;  // LDA [dp],Y   - Indirect Long Indexed,Y (65816)
-constexpr uint8_t kLDA_SR = 0xA3;   // LDA sr,S     - Stack Relative (65816)
-constexpr uint8_t kLDA_SRY = 0xB3;  // LDA (sr,S),Y - Stack Relative Indirect Indexed,Y (65816)
+constexpr uint8_t kLDA_IMM = 0xA9;  // kLDA #imm     - Immediate
+constexpr uint8_t kLDA_ZP = 0xA5;   // kLDA zp       - Zero Page
+constexpr uint8_t kLDA_ZPX = 0xB5;  // kLDA zp,X     - Zero Page,X
+constexpr uint8_t kLDA_ABS = 0xAD;  // kLDA abs      - Absolute
+constexpr uint8_t kLDA_ABX = 0xBD;  // kLDA abs,X    - Absolute,X
+constexpr uint8_t kLDA_ABY = 0xB9;  // kLDA abs,Y    - Absolute,Y
+constexpr uint8_t kLDA_INX = 0xA1;  // kLDA (zp,X)   - Indexed Indirect
+constexpr uint8_t kLDA_INY = 0xB1;  // kLDA (zp),Y   - Indirect Indexed
+constexpr uint8_t kLDA_IZP = 0xB2;  // kLDA (zp)     - Indirect Zero Page (65C02+)
+constexpr uint8_t kLDA_ALG = 0xAF;  // kLDA long     - Absolute Long (65816)
+constexpr uint8_t kLDA_ILG = 0xA7;  // kLDA [dp]     - Indirect Long (65816)
+constexpr uint8_t kLDA_ILY = 0xB7;  // kLDA [dp],Y   - Indirect Long Indexed,Y (65816)
+constexpr uint8_t kLDA_SR = 0xA3;   // kLDA sr,S     - Stack Relative (65816)
+constexpr uint8_t kLDA_SRY = 0xB3;  // kLDA (sr,S),Y - Stack Relative Indirect Indexed,Y (65816)
 
 // LDX - Load X Register
-constexpr uint8_t kLDX_IMM = 0xA2;  // LDX #imm     - Immediate
-constexpr uint8_t kLDX_ZP = 0xA6;   // LDX zp       - Zero Page
-constexpr uint8_t kLDX_ZPY = 0xB6;  // LDX zp,Y     - Zero Page,Y
-constexpr uint8_t kLDX_ABS = 0xAE;  // LDX abs      - Absolute
-constexpr uint8_t kLDX_ABY = 0xBE;  // LDX abs,Y    - Absolute,Y
+constexpr uint8_t kLDX_IMM = 0xA2;  // kLDX #imm     - Immediate
+constexpr uint8_t kLDX_ZP = 0xA6;   // kLDX zp       - Zero Page
+constexpr uint8_t kLDX_ZPY = 0xB6;  // kLDX zp,Y     - Zero Page,Y
+constexpr uint8_t kLDX_ABS = 0xAE;  // kLDX abs      - Absolute
+constexpr uint8_t kLDX_ABY = 0xBE;  // kLDX abs,Y    - Absolute,Y
 
 // LDY - Load Y Register
-constexpr uint8_t kLDY_IMM = 0xA0;  // LDY #imm     - Immediate
-constexpr uint8_t kLDY_ZP = 0xA4;   // LDY zp       - Zero Page
-constexpr uint8_t kLDY_ZPX = 0xB4;  // LDY zp,X     - Zero Page,X
-constexpr uint8_t kLDY_ABS = 0xAC;  // LDY abs      - Absolute
-constexpr uint8_t kLDY_ABX = 0xBC;  // LDY abs,X    - Absolute,X
+constexpr uint8_t kLDY_IMM = 0xA0;  // kLDY #imm     - Immediate
+constexpr uint8_t kLDY_ZP = 0xA4;   // kLDY zp       - Zero Page
+constexpr uint8_t kLDY_ZPX = 0xB4;  // kLDY zp,X     - Zero Page,X
+constexpr uint8_t kLDY_ABS = 0xAC;  // kLDY abs      - Absolute
+constexpr uint8_t kLDY_ABX = 0xBC;  // kLDY abs,X    - Absolute,X
 
 // STA - Store Accumulator
-constexpr uint8_t kSTA_ZP = 0x85;   // STA zp       - Zero Page
-constexpr uint8_t kSTA_ZPX = 0x95;  // STA zp,X     - Zero Page,X
-constexpr uint8_t kSTA_ABS = 0x8D;  // STA abs      - Absolute
-constexpr uint8_t kSTA_ABX = 0x9D;  // STA abs,X    - Absolute,X
-constexpr uint8_t kSTA_ABY = 0x99;  // STA abs,Y    - Absolute,Y
-constexpr uint8_t kSTA_INX = 0x81;  // STA (zp,X)   - Indexed Indirect
-constexpr uint8_t kSTA_INY = 0x91;  // STA (zp),Y   - Indirect Indexed
-constexpr uint8_t kSTA_IZP = 0x92;  // STA (zp)     - Indirect Zero Page (65C02+)
+constexpr uint8_t kSTA_ZP = 0x85;   // kSTA zp       - Zero Page
+constexpr uint8_t kSTA_ZPX = 0x95;  // kSTA zp,X     - Zero Page,X
+constexpr uint8_t kSTA_ABS = 0x8D;  // kSTA abs      - Absolute
+constexpr uint8_t kSTA_ABX = 0x9D;  // kSTA abs,X    - Absolute,X
+constexpr uint8_t kSTA_ABY = 0x99;  // kSTA abs,Y    - Absolute,Y
+constexpr uint8_t kSTA_INX = 0x81;  // kSTA (zp,X)   - Indexed Indirect
+constexpr uint8_t kSTA_INY = 0x91;  // kSTA (zp),Y   - Indirect Indexed
+constexpr uint8_t kSTA_IZP = 0x92;  // kSTA (zp)     - Indirect Zero Page (65C02+)
 
 // STX - Store X Register
-constexpr uint8_t kSTX_ZP = 0x86;   // STX zp       - Zero Page
-constexpr uint8_t kSTX_ZPY = 0x96;  // STX zp,Y     - Zero Page,Y
-constexpr uint8_t kSTX_ABS = 0x8E;  // STX abs      - Absolute
+constexpr uint8_t kSTX_ZP = 0x86;   // kSTX zp       - Zero Page
+constexpr uint8_t kSTX_ZPY = 0x96;  // kSTX zp,Y     - Zero Page,Y
+constexpr uint8_t kSTX_ABS = 0x8E;  // kSTX abs      - Absolute
 
 // STY - Store Y Register
-constexpr uint8_t kSTY_ZP = 0x84;   // STY zp       - Zero Page
-constexpr uint8_t kSTY_ZPX = 0x94;  // STY zp,X     - Zero Page,X
-constexpr uint8_t kSTY_ABS = 0x8C;  // STY abs      - Absolute
+constexpr uint8_t kSTY_ZP = 0x84;   // kSTY zp       - Zero Page
+constexpr uint8_t kSTY_ZPX = 0x94;  // kSTY zp,X     - Zero Page,X
+constexpr uint8_t kSTY_ABS = 0x8C;  // kSTY abs      - Absolute
 
 // STZ - Store Zero (65C02+)
-constexpr uint8_t kSTZ_ZP = 0x64;   // STZ zp       - Zero Page
-constexpr uint8_t kSTZ_ZPX = 0x74;  // STZ zp,X     - Zero Page,X
-constexpr uint8_t kSTZ_ABS = 0x9C;  // STZ abs      - Absolute
-constexpr uint8_t kSTZ_ABX = 0x9E;  // STZ abs,X    - Absolute,X
+constexpr uint8_t kSTZ_ZP = 0x64;   // kSTZ zp       - Zero Page
+constexpr uint8_t kSTZ_ZPX = 0x74;  // kSTZ zp,X     - Zero Page,X
+constexpr uint8_t kSTZ_ABS = 0x9C;  // kSTZ abs      - Absolute
+constexpr uint8_t kSTZ_ABX = 0x9E;  // kSTZ abs,X    - Absolute,X
 
 // ============================================================================
 // Arithmetic Instructions
 // ============================================================================
 
 // ADC - Add with Carry
-constexpr uint8_t kADC_IMM = 0x69;  // ADC #imm     - Immediate
-constexpr uint8_t kADC_ZP = 0x65;   // ADC zp       - Zero Page
-constexpr uint8_t kADC_ZPX = 0x75;  // ADC zp,X     - Zero Page,X
-constexpr uint8_t kADC_ABS = 0x6D;  // ADC abs      - Absolute
-constexpr uint8_t kADC_ABX = 0x7D;  // ADC abs,X    - Absolute,X
-constexpr uint8_t kADC_ABY = 0x79;  // ADC abs,Y    - Absolute,Y
-constexpr uint8_t kADC_INX = 0x61;  // ADC (zp,X)   - Indexed Indirect
-constexpr uint8_t kADC_INY = 0x71;  // ADC (zp),Y   - Indirect Indexed
-constexpr uint8_t kADC_IZP = 0x72;  // ADC (zp)     - Indirect Zero Page (65C02+)
+constexpr uint8_t kADC_IMM = 0x69;  // kADC #imm     - Immediate
+constexpr uint8_t kADC_ZP = 0x65;   // kADC zp       - Zero Page
+constexpr uint8_t kADC_ZPX = 0x75;  // kADC zp,X     - Zero Page,X
+constexpr uint8_t kADC_ABS = 0x6D;  // kADC abs      - Absolute
+constexpr uint8_t kADC_ABX = 0x7D;  // kADC abs,X    - Absolute,X
+constexpr uint8_t kADC_ABY = 0x79;  // kADC abs,Y    - Absolute,Y
+constexpr uint8_t kADC_INX = 0x61;  // kADC (zp,X)   - Indexed Indirect
+constexpr uint8_t kADC_INY = 0x71;  // kADC (zp),Y   - Indirect Indexed
+constexpr uint8_t kADC_IZP = 0x72;  // kADC (zp)     - Indirect Zero Page (65C02+)
 
 // SBC - Subtract with Carry
-constexpr uint8_t kSBC_IMM = 0xE9;  // SBC #imm     - Immediate
-constexpr uint8_t kSBC_ZP = 0xE5;   // SBC zp       - Zero Page
-constexpr uint8_t kSBC_ZPX = 0xF5;  // SBC zp,X     - Zero Page,X
-constexpr uint8_t kSBC_ABS = 0xED;  // SBC abs      - Absolute
-constexpr uint8_t kSBC_ABX = 0xFD;  // SBC abs,X    - Absolute,X
-constexpr uint8_t kSBC_ABY = 0xF9;  // SBC abs,Y    - Absolute,Y
-constexpr uint8_t kSBC_INX = 0xE1;  // SBC (zp,X)   - Indexed Indirect
-constexpr uint8_t kSBC_INY = 0xF1;  // SBC (zp),Y   - Indirect Indexed
-constexpr uint8_t kSBC_IZP = 0xF2;  // SBC (zp)     - Indirect Zero Page (65C02+)
+constexpr uint8_t kSBC_IMM = 0xE9;  // kSBC #imm     - Immediate
+constexpr uint8_t kSBC_ZP = 0xE5;   // kSBC zp       - Zero Page
+constexpr uint8_t kSBC_ZPX = 0xF5;  // kSBC zp,X     - Zero Page,X
+constexpr uint8_t kSBC_ABS = 0xED;  // kSBC abs      - Absolute
+constexpr uint8_t kSBC_ABX = 0xFD;  // kSBC abs,X    - Absolute,X
+constexpr uint8_t kSBC_ABY = 0xF9;  // kSBC abs,Y    - Absolute,Y
+constexpr uint8_t kSBC_INX = 0xE1;  // kSBC (zp,X)   - Indexed Indirect
+constexpr uint8_t kSBC_INY = 0xF1;  // kSBC (zp),Y   - Indirect Indexed
+constexpr uint8_t kSBC_IZP = 0xF2;  // kSBC (zp)     - Indirect Zero Page (65C02+)
 
 // ============================================================================
 // Logic Instructions
 // ============================================================================
 
 // AND - Logical AND
-constexpr uint8_t kAND_IMM = 0x29;  // AND #imm     - Immediate
-constexpr uint8_t kAND_ZP = 0x25;   // AND zp       - Zero Page
-constexpr uint8_t kAND_ZPX = 0x35;  // AND zp,X     - Zero Page,X
-constexpr uint8_t kAND_ABS = 0x2D;  // AND abs      - Absolute
-constexpr uint8_t kAND_ABX = 0x3D;  // AND abs,X    - Absolute,X
-constexpr uint8_t kAND_ABY = 0x39;  // AND abs,Y    - Absolute,Y
-constexpr uint8_t kAND_INX = 0x21;  // AND (zp,X)   - Indexed Indirect
-constexpr uint8_t kAND_INY = 0x31;  // AND (zp),Y   - Indirect Indexed
-constexpr uint8_t kAND_IZP = 0x32;  // AND (zp)     - Indirect Zero Page (65C02+)
+constexpr uint8_t kAND_IMM = 0x29;  // kAND #imm     - Immediate
+constexpr uint8_t kAND_ZP = 0x25;   // kAND zp       - Zero Page
+constexpr uint8_t kAND_ZPX = 0x35;  // kAND zp,X     - Zero Page,X
+constexpr uint8_t kAND_ABS = 0x2D;  // kAND abs      - Absolute
+constexpr uint8_t kAND_ABX = 0x3D;  // kAND abs,X    - Absolute,X
+constexpr uint8_t kAND_ABY = 0x39;  // kAND abs,Y    - Absolute,Y
+constexpr uint8_t kAND_INX = 0x21;  // kAND (zp,X)   - Indexed Indirect
+constexpr uint8_t kAND_INY = 0x31;  // kAND (zp),Y   - Indirect Indexed
+constexpr uint8_t kAND_IZP = 0x32;  // kAND (zp)     - Indirect Zero Page (65C02+)
 
 // ORA - Logical OR
-constexpr uint8_t kORA_IMM = 0x09;  // ORA #imm     - Immediate
-constexpr uint8_t kORA_ZP = 0x05;   // ORA zp       - Zero Page
-constexpr uint8_t kORA_ZPX = 0x15;  // ORA zp,X     - Zero Page,X
-constexpr uint8_t kORA_ABS = 0x0D;  // ORA abs      - Absolute
-constexpr uint8_t kORA_ABX = 0x1D;  // ORA abs,X    - Absolute,X
-constexpr uint8_t kORA_ABY = 0x19;  // ORA abs,Y    - Absolute,Y
-constexpr uint8_t kORA_INX = 0x01;  // ORA (zp,X)   - Indexed Indirect
-constexpr uint8_t kORA_INY = 0x11;  // ORA (zp),Y   - Indirect Indexed
-constexpr uint8_t kORA_IZP = 0x12;  // ORA (zp)     - Indirect Zero Page (65C02+)
+constexpr uint8_t kORA_IMM = 0x09;  // kORA #imm     - Immediate
+constexpr uint8_t kORA_ZP = 0x05;   // kORA zp       - Zero Page
+constexpr uint8_t kORA_ZPX = 0x15;  // kORA zp,X     - Zero Page,X
+constexpr uint8_t kORA_ABS = 0x0D;  // kORA abs      - Absolute
+constexpr uint8_t kORA_ABX = 0x1D;  // kORA abs,X    - Absolute,X
+constexpr uint8_t kORA_ABY = 0x19;  // kORA abs,Y    - Absolute,Y
+constexpr uint8_t kORA_INX = 0x01;  // kORA (zp,X)   - Indexed Indirect
+constexpr uint8_t kORA_INY = 0x11;  // kORA (zp),Y   - Indirect Indexed
+constexpr uint8_t kORA_IZP = 0x12;  // kORA (zp)     - Indirect Zero Page (65C02+)
 
 // EOR - Exclusive OR
-constexpr uint8_t kEOR_IMM = 0x49;  // EOR #imm     - Immediate
-constexpr uint8_t kEOR_ZP = 0x45;   // EOR zp       - Zero Page
-constexpr uint8_t kEOR_ZPX = 0x55;  // EOR zp,X     - Zero Page,X
-constexpr uint8_t kEOR_ABS = 0x4D;  // EOR abs      - Absolute
-constexpr uint8_t kEOR_ABX = 0x5D;  // EOR abs,X    - Absolute,X
-constexpr uint8_t kEOR_ABY = 0x59;  // EOR abs,Y    - Absolute,Y
-constexpr uint8_t kEOR_INX = 0x41;  // EOR (zp,X)   - Indexed Indirect
-constexpr uint8_t kEOR_INY = 0x51;  // EOR (zp),Y   - Indirect Indexed
-constexpr uint8_t kEOR_IZP = 0x52;  // EOR (zp)     - Indirect Zero Page (65C02+)
+constexpr uint8_t kEOR_IMM = 0x49;  // kEOR #imm     - Immediate
+constexpr uint8_t kEOR_ZP = 0x45;   // kEOR zp       - Zero Page
+constexpr uint8_t kEOR_ZPX = 0x55;  // kEOR zp,X     - Zero Page,X
+constexpr uint8_t kEOR_ABS = 0x4D;  // kEOR abs      - Absolute
+constexpr uint8_t kEOR_ABX = 0x5D;  // kEOR abs,X    - Absolute,X
+constexpr uint8_t kEOR_ABY = 0x59;  // kEOR abs,Y    - Absolute,Y
+constexpr uint8_t kEOR_INX = 0x41;  // kEOR (zp,X)   - Indexed Indirect
+constexpr uint8_t kEOR_INY = 0x51;  // kEOR (zp),Y   - Indirect Indexed
+constexpr uint8_t kEOR_IZP = 0x52;  // kEOR (zp)     - Indirect Zero Page (65C02+)
 
 // ============================================================================
 // Shift and Rotate Instructions
 // ============================================================================
 
 // ASL - Arithmetic Shift Left
-constexpr uint8_t kASL_ACC = 0x0A;  // ASL A        - Accumulator
-constexpr uint8_t kASL_ZP = 0x06;   // ASL zp       - Zero Page
-constexpr uint8_t kASL_ZPX = 0x16;  // ASL zp,X     - Zero Page,X
-constexpr uint8_t kASL_ABS = 0x0E;  // ASL abs      - Absolute
-constexpr uint8_t kASL_ABX = 0x1E;  // ASL abs,X    - Absolute,X
+constexpr uint8_t kASL_ACC = 0x0A;  // kASL A        - Accumulator
+constexpr uint8_t kASL_ZP = 0x06;   // kASL zp       - Zero Page
+constexpr uint8_t kASL_ZPX = 0x16;  // kASL zp,X     - Zero Page,X
+constexpr uint8_t kASL_ABS = 0x0E;  // kASL abs      - Absolute
+constexpr uint8_t kASL_ABX = 0x1E;  // kASL abs,X    - Absolute,X
 
 // LSR - Logical Shift Right
-constexpr uint8_t kLSR_ACC = 0x4A;  // LSR A        - Accumulator
-constexpr uint8_t kLSR_ZP = 0x46;   // LSR zp       - Zero Page
-constexpr uint8_t kLSR_ZPX = 0x56;  // LSR zp,X     - Zero Page,X
-constexpr uint8_t kLSR_ABS = 0x4E;  // LSR abs      - Absolute
-constexpr uint8_t kLSR_ABX = 0x5E;  // LSR abs,X    - Absolute,X
+constexpr uint8_t kLSR_ACC = 0x4A;  // kLSR A        - Accumulator
+constexpr uint8_t kLSR_ZP = 0x46;   // kLSR zp       - Zero Page
+constexpr uint8_t kLSR_ZPX = 0x56;  // kLSR zp,X     - Zero Page,X
+constexpr uint8_t kLSR_ABS = 0x4E;  // kLSR abs      - Absolute
+constexpr uint8_t kLSR_ABX = 0x5E;  // kLSR abs,X    - Absolute,X
 
 // ROL - Rotate Left
-constexpr uint8_t kROL_ACC = 0x2A;  // ROL A        - Accumulator
-constexpr uint8_t kROL_ZP = 0x26;   // ROL zp       - Zero Page
-constexpr uint8_t kROL_ZPX = 0x36;  // ROL zp,X     - Zero Page,X
-constexpr uint8_t kROL_ABS = 0x2E;  // ROL abs      - Absolute
-constexpr uint8_t kROL_ABX = 0x3E;  // ROL abs,X    - Absolute,X
+constexpr uint8_t kROL_ACC = 0x2A;  // kROL A        - Accumulator
+constexpr uint8_t kROL_ZP = 0x26;   // kROL zp       - Zero Page
+constexpr uint8_t kROL_ZPX = 0x36;  // kROL zp,X     - Zero Page,X
+constexpr uint8_t kROL_ABS = 0x2E;  // kROL abs      - Absolute
+constexpr uint8_t kROL_ABX = 0x3E;  // kROL abs,X    - Absolute,X
 
 // ROR - Rotate Right
-constexpr uint8_t kROR_ACC = 0x6A;  // ROR A        - Accumulator
-constexpr uint8_t kROR_ZP = 0x66;   // ROR zp       - Zero Page
-constexpr uint8_t kROR_ZPX = 0x76;  // ROR zp,X     - Zero Page,X
-constexpr uint8_t kROR_ABS = 0x6E;  // ROR abs      - Absolute
-constexpr uint8_t kROR_ABX = 0x7E;  // ROR abs,X    - Absolute,X
+constexpr uint8_t kROR_ACC = 0x6A;  // kROR A        - Accumulator
+constexpr uint8_t kROR_ZP = 0x66;   // kROR zp       - Zero Page
+constexpr uint8_t kROR_ZPX = 0x76;  // kROR zp,X     - Zero Page,X
+constexpr uint8_t kROR_ABS = 0x6E;  // kROR abs      - Absolute
+constexpr uint8_t kROR_ABX = 0x7E;  // kROR abs,X    - Absolute,X
 
 // ============================================================================
 // Compare Instructions
 // ============================================================================
 
 // CMP - Compare Accumulator
-constexpr uint8_t kCMP_IMM = 0xC9;  // CMP #imm     - Immediate
-constexpr uint8_t kCMP_ZP = 0xC5;   // CMP zp       - Zero Page
-constexpr uint8_t kCMP_ZPX = 0xD5;  // CMP zp,X     - Zero Page,X
-constexpr uint8_t kCMP_ABS = 0xCD;  // CMP abs      - Absolute
-constexpr uint8_t kCMP_ABX = 0xDD;  // CMP abs,X    - Absolute,X
-constexpr uint8_t kCMP_ABY = 0xD9;  // CMP abs,Y    - Absolute,Y
-constexpr uint8_t kCMP_INX = 0xC1;  // CMP (zp,X)   - Indexed Indirect
-constexpr uint8_t kCMP_INY = 0xD1;  // CMP (zp),Y   - Indirect Indexed
-constexpr uint8_t kCMP_IZP = 0xD2;  // CMP (zp)     - Indirect Zero Page (65C02+)
+constexpr uint8_t kCMP_IMM = 0xC9;  // kCMP #imm     - Immediate
+constexpr uint8_t kCMP_ZP = 0xC5;   // kCMP zp       - Zero Page
+constexpr uint8_t kCMP_ZPX = 0xD5;  // kCMP zp,X     - Zero Page,X
+constexpr uint8_t kCMP_ABS = 0xCD;  // kCMP abs      - Absolute
+constexpr uint8_t kCMP_ABX = 0xDD;  // kCMP abs,X    - Absolute,X
+constexpr uint8_t kCMP_ABY = 0xD9;  // kCMP abs,Y    - Absolute,Y
+constexpr uint8_t kCMP_INX = 0xC1;  // kCMP (zp,X)   - Indexed Indirect
+constexpr uint8_t kCMP_INY = 0xD1;  // kCMP (zp),Y   - Indirect Indexed
+constexpr uint8_t kCMP_IZP = 0xD2;  // kCMP (zp)     - Indirect Zero Page (65C02+)
 
 // CPX - Compare X Register
-constexpr uint8_t kCPX_IMM = 0xE0;  // CPX #imm     - Immediate
-constexpr uint8_t kCPX_ZP = 0xE4;   // CPX zp       - Zero Page
-constexpr uint8_t kCPX_ABS = 0xEC;  // CPX abs      - Absolute
+constexpr uint8_t kCPX_IMM = 0xE0;  // kCPX #imm     - Immediate
+constexpr uint8_t kCPX_ZP = 0xE4;   // kCPX zp       - Zero Page
+constexpr uint8_t kCPX_ABS = 0xEC;  // kCPX abs      - Absolute
 
 // CPY - Compare Y Register
-constexpr uint8_t kCPY_IMM = 0xC0;  // CPY #imm     - Immediate
-constexpr uint8_t kCPY_ZP = 0xC4;   // CPY zp       - Zero Page
-constexpr uint8_t kCPY_ABS = 0xCC;  // CPY abs      - Absolute
+constexpr uint8_t kCPY_IMM = 0xC0;  // kCPY #imm     - Immediate
+constexpr uint8_t kCPY_ZP = 0xC4;   // kCPY zp       - Zero Page
+constexpr uint8_t kCPY_ABS = 0xCC;  // kCPY abs      - Absolute
 
 // ============================================================================
 // Branch Instructions
@@ -210,9 +210,9 @@ constexpr uint8_t kBRA = 0x80;  // kBRA rel      - Branch Always (65C02)
 // Jump and Subroutine Instructions
 // ============================================================================
 
-constexpr uint8_t kJMP_ABS = 0x4C;  // JMP abs      - Jump Absolute
-constexpr uint8_t kJMP_IND = 0x6C;  // JMP (ind)    - Jump Indirect
-constexpr uint8_t kJMP_AIX = 0x7C;  // JMP (abs,X)  - Jump Absolute Indexed Indirect (65C02+)
+constexpr uint8_t kJMP_ABS = 0x4C;  // kJMP abs      - Jump Absolute
+constexpr uint8_t kJMP_IND = 0x6C;  // kJMP (ind)    - Jump Indirect
+constexpr uint8_t kJMP_AIX = 0x7C;  // kJMP (abs,X)  - Jump Absolute Indexed Indirect (65C02+)
 
 constexpr uint8_t kJSR = 0x20;  // kJSR abs      - Jump to Subroutine
 constexpr uint8_t kRTS = 0x60;  // kRTS          - Return from Subroutine
@@ -243,18 +243,18 @@ constexpr uint8_t kDEX = 0xCA;  // kDEX          - Decrement X
 constexpr uint8_t kDEY = 0x88;  // kDEY          - Decrement Y
 
 // INC - Increment Memory
-constexpr uint8_t kINC_ZP = 0xE6;   // INC zp       - Zero Page
-constexpr uint8_t kINC_ZPX = 0xF6;  // INC zp,X     - Zero Page,X
-constexpr uint8_t kINC_ABS = 0xEE;  // INC abs      - Absolute
-constexpr uint8_t kINC_ABX = 0xFE;  // INC abs,X    - Absolute,X
-constexpr uint8_t kINC_ACC = 0x1A;  // INC / INA    - Accumulator (65C02+)
+constexpr uint8_t kINC_ZP = 0xE6;   // kINC zp       - Zero Page
+constexpr uint8_t kINC_ZPX = 0xF6;  // kINC zp,X     - Zero Page,X
+constexpr uint8_t kINC_ABS = 0xEE;  // kINC abs      - Absolute
+constexpr uint8_t kINC_ABX = 0xFE;  // kINC abs,X    - Absolute,X
+constexpr uint8_t kINC_ACC = 0x1A;  // kINC / INA    - Accumulator (65C02+)
 
 // DEC - Decrement Memory
-constexpr uint8_t kDEC_ZP = 0xC6;   // DEC zp       - Zero Page
-constexpr uint8_t kDEC_ZPX = 0xD6;  // DEC zp,X     - Zero Page,X
-constexpr uint8_t kDEC_ABS = 0xCE;  // DEC abs      - Absolute
-constexpr uint8_t kDEC_ABX = 0xDE;  // DEC abs,X    - Absolute,X
-constexpr uint8_t kDEC_ACC = 0x3A;  // DEC / DEA    - Accumulator (65C02+)
+constexpr uint8_t kDEC_ZP = 0xC6;   // kDEC zp       - Zero Page
+constexpr uint8_t kDEC_ZPX = 0xD6;  // kDEC zp,X     - Zero Page,X
+constexpr uint8_t kDEC_ABS = 0xCE;  // kDEC abs      - Absolute
+constexpr uint8_t kDEC_ABX = 0xDE;  // kDEC abs,X    - Absolute,X
+constexpr uint8_t kDEC_ACC = 0x3A;  // kDEC / DEA    - Accumulator (65C02+)
 
 // ============================================================================
 // Flag Operation Instructions
@@ -287,19 +287,19 @@ constexpr uint8_t kWAI = 0xCB;  // kWAI          - Wait for Interrupt (65C02 Roc
 constexpr uint8_t kSTP = 0xDB;  // kSTP          - Stop Processor (65C02 Rockwell)
 
 // BIT - Test Bits
-constexpr uint8_t kBIT_ZP = 0x24;   // BIT zp       - Zero Page
-constexpr uint8_t kBIT_ABS = 0x2C;  // BIT abs      - Absolute
-constexpr uint8_t kBIT_IMM = 0x89;  // BIT #imm     - Immediate (65C02+)
-constexpr uint8_t kBIT_ZPX = 0x34;  // BIT zp,X     - Zero Page,X (65C02+)
-constexpr uint8_t kBIT_ABX = 0x3C;  // BIT abs,X    - Absolute,X (65C02+)
+constexpr uint8_t kBIT_ZP = 0x24;   // kBIT zp       - Zero Page
+constexpr uint8_t kBIT_ABS = 0x2C;  // kBIT abs      - Absolute
+constexpr uint8_t kBIT_IMM = 0x89;  // kBIT #imm     - Immediate (65C02+)
+constexpr uint8_t kBIT_ZPX = 0x34;  // kBIT zp,X     - Zero Page,X (65C02+)
+constexpr uint8_t kBIT_ABX = 0x3C;  // kBIT abs,X    - Absolute,X (65C02+)
 
 // TRB - Test and Reset Bits (65C02+)
-constexpr uint8_t kTRB_ZP = 0x14;   // TRB zp       - Zero Page
-constexpr uint8_t kTRB_ABS = 0x1C;  // TRB abs      - Absolute
+constexpr uint8_t kTRB_ZP = 0x14;   // kTRB zp       - Zero Page
+constexpr uint8_t kTRB_ABS = 0x1C;  // kTRB abs      - Absolute
 
 // TSB - Test and Set Bits (65C02+)
-constexpr uint8_t kTSB_ZP = 0x04;   // TSB zp       - Zero Page
-constexpr uint8_t kTSB_ABS = 0x0C;  // TSB abs      - Absolute
+constexpr uint8_t kTSB_ZP = 0x04;   // kTSB zp       - Zero Page
+constexpr uint8_t kTSB_ABS = 0x0C;  // kTSB abs      - Absolute
 
 // ============================================================================
 // 65816-Specific Instructions
@@ -321,9 +321,9 @@ constexpr uint8_t kTXY = 0x9B;  // kTXY          - Transfer X to Y (65816)
 constexpr uint8_t kTYX = 0xBB;  // kTYX          - Transfer Y to X (65816)
 
 // 65816 Jump Operations
-constexpr uint8_t kJML_ALG = 0x5C;  // JML long     - Jump Long Absolute
-constexpr uint8_t kJML_IND = 0xDC;  // JML [ind]    - Jump Long Indirect
-constexpr uint8_t kJSL_ALG = 0x22;  // JSL long     - Jump Subroutine Long
+constexpr uint8_t kJML_ALG = 0x5C;  // kJML long     - Jump Long Absolute
+constexpr uint8_t kJML_IND = 0xDC;  // kJML [ind]    - Jump Long Indirect
+constexpr uint8_t kJSL_ALG = 0x22;  // kJSL long     - Jump Subroutine Long
 constexpr uint8_t kRTL = 0x6B;      // kRTL          - Return from Subroutine Long
 
 // 65816 Stack Addressing
@@ -360,8 +360,8 @@ constexpr uint8_t kBRANCH_RELAXATION_OFFSET = 0x03;
 // ============================================================================
 
 // Radix values for std::stoul and similar parsing functions
-constexpr int RADIX_HEXADECIMAL = 16;  // Hexadecimal (base 16)
-constexpr int RADIX_DECIMAL = 10;      // Decimal (base 10)
+constexpr int kRADIX_HEXADECIMAL = 16;  // Hexadecimal (base 16)
+constexpr int kRADIX_DECIMAL = 10;      // Decimal (base 10)
 
 }  // namespace Opcodes
 
@@ -372,34 +372,34 @@ constexpr int RADIX_DECIMAL = 10;      // Decimal (base 10)
 namespace M6502Mnemonics {
 
 // Load/Store Instructions
-constexpr const char* LDA = "LDA";
-constexpr const char* LDX = "LDX";
-constexpr const char* LDY = "LDY";
-constexpr const char* STA = "STA";
-constexpr const char* STX = "STX";
-constexpr const char* STY = "STY";
-constexpr const char* STZ = "STZ";  // 65C02+
+constexpr const char* kLDA = "LDA";
+constexpr const char* kLDX = "LDX";
+constexpr const char* kLDY = "LDY";
+constexpr const char* kSTA = "STA";
+constexpr const char* kSTX = "STX";
+constexpr const char* kSTY = "STY";
+constexpr const char* kSTZ = "STZ";  // 65C02+
 
 // Arithmetic Instructions
-constexpr const char* ADC = "ADC";
-constexpr const char* SBC = "SBC";
-constexpr const char* INC = "INC";
-constexpr const char* DEC = "DEC";
+constexpr const char* kADC = "ADC";
+constexpr const char* kSBC = "SBC";
+constexpr const char* kINC = "INC";
+constexpr const char* kDEC = "DEC";
 constexpr const char* kINX = "INX";
 constexpr const char* kINY = "INY";
 constexpr const char* kDEX = "DEX";
 constexpr const char* kDEY = "DEY";
 
 // Logical Instructions
-constexpr const char* AND = "AND";
-constexpr const char* ORA = "ORA";
-constexpr const char* EOR = "EOR";
-constexpr const char* BIT = "BIT";
+constexpr const char* kAND = "AND";
+constexpr const char* kORA = "ORA";
+constexpr const char* kEOR = "EOR";
+constexpr const char* kBIT = "BIT";
 
 // Compare Instructions
-constexpr const char* CMP = "CMP";
-constexpr const char* CPX = "CPX";
-constexpr const char* CPY = "CPY";
+constexpr const char* kCMP = "CMP";
+constexpr const char* kCPX = "CPX";
+constexpr const char* kCPY = "CPY";
 
 // Branch Instructions
 constexpr const char* kBEQ = "BEQ";
@@ -413,15 +413,15 @@ constexpr const char* kBVC = "BVC";
 constexpr const char* kBRA = "BRA";  // 65C02+
 
 // Pseudo Branch Instructions (aliases)
-constexpr const char* BLT = "BLT";  // Alias for kBCC (Branch if Less Than)
+constexpr const char* kBLT = "BLT";  // Alias for kBCC (Branch if Less Than)
 
 // Jump Instructions
-constexpr const char* JMP = "JMP";
+constexpr const char* kJMP = "JMP";
 constexpr const char* kJSR = "JSR";
 constexpr const char* kRTS = "RTS";
 constexpr const char* kRTI = "RTI";
-constexpr const char* JML = "JML";  // 65816
-constexpr const char* JSL = "JSL";  // 65816
+constexpr const char* kJML = "JML";  // 65816
+constexpr const char* kJSL = "JSL";  // 65816
 constexpr const char* kRTL = "RTL";  // 65816
 
 // Stack Instructions
@@ -454,10 +454,10 @@ constexpr const char* kTXY = "TXY";  // 65816
 constexpr const char* kTYX = "TYX";  // 65816
 
 // Shift/Rotate Instructions
-constexpr const char* ASL = "ASL";
-constexpr const char* LSR = "LSR";
-constexpr const char* ROL = "ROL";
-constexpr const char* ROR = "ROR";
+constexpr const char* kASL = "ASL";
+constexpr const char* kLSR = "LSR";
+constexpr const char* kROL = "ROL";
+constexpr const char* kROR = "ROR";
 
 // Flag Instructions
 constexpr const char* kCLC = "CLC";
@@ -472,8 +472,8 @@ constexpr const char* kSEP = "SEP";  // 65816
 constexpr const char* kXCE = "XCE";  // 65816
 
 // Test/Set Instructions
-constexpr const char* TRB = "TRB";  // 65C02+
-constexpr const char* TSB = "TSB";  // 65C02+
+constexpr const char* kTRB = "TRB";  // 65C02+
+constexpr const char* kTSB = "TSB";  // 65C02+
 
 // Special Instructions
 constexpr const char* kNOP = "NOP";

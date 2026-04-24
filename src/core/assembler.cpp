@@ -879,7 +879,7 @@ AssemblerResult Assembler::Assemble() {
   // - Pass 2: Re-encode with updated addresses, check if sizes changed
   // - Pass N: Repeat until sizes stop changing (converged)
   //
-  // Typically converges in 2-3 passes. MAX_PASSES (10) prevents infinite loops
+  // Typically converges in 2-3 passes. kMAX_PASSES (10) prevents infinite loops
   // from pathological cases (e.g., oscillating forward references).
   //
   // WHY 10 PASSES?

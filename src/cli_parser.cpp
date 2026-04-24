@@ -74,8 +74,8 @@ CommandLineOptions ParseCommandLine(int argc, char** argv) {
 
   // Maximum assembly passes
   app.add_option("--max-passes", opts.max_passes,
-                 "Maximum assembly passes (default: " + std::to_string(Assembler::MAX_PASSES) + ")")
-      ->default_val(Assembler::MAX_PASSES);
+                 "Maximum assembly passes (default: " + std::to_string(Assembler::kMAX_PASSES) + ")")
+      ->default_val(Assembler::kMAX_PASSES);
 
   // Label map file for debugging
   app.add_option("--label-map", opts.label_map, "Generate label map file for debugging");

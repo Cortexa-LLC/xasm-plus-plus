@@ -497,14 +497,14 @@ constexpr uint8_t kINDIRECT_FLAG = 0x10;  // [ ,R ] indirect
 namespace Registers {
 
 // Register codes for kTFR and kEXG instructions (4-bit codes)
-constexpr uint8_t D = 0x0;   // D register (A:B concatenated, 16-bit)
-constexpr uint8_t X = 0x1;   // X register (16-bit)
-constexpr uint8_t Y = 0x2;   // Y register (16-bit)
-constexpr uint8_t U = 0x3;   // U stack pointer (16-bit)
-constexpr uint8_t S = 0x4;   // S stack pointer (16-bit)
+constexpr uint8_t kD = 0x0;   // D register (A:B concatenated, 16-bit)
+constexpr uint8_t kX = 0x1;   // X register (16-bit)
+constexpr uint8_t kY = 0x2;   // Y register (16-bit)
+constexpr uint8_t kU = 0x3;   // U stack pointer (16-bit)
+constexpr uint8_t kS = 0x4;   // S stack pointer (16-bit)
 constexpr uint8_t kPC = 0x5;  // kPC program counter (16-bit)
-constexpr uint8_t A = 0x8;   // A accumulator (8-bit)
-constexpr uint8_t B = 0x9;   // B accumulator (8-bit)
+constexpr uint8_t kA = 0x8;   // A accumulator (8-bit)
+constexpr uint8_t kB = 0x9;   // B accumulator (8-bit)
 constexpr uint8_t kCC = 0xA;  // kCC condition codes (8-bit)
 constexpr uint8_t kDP = 0xB;  // kDP direct page register (8-bit)
 
@@ -518,11 +518,11 @@ namespace StackMask {
 
 // Register mask bits for kPSHS/kPULS/kPSHU/kPULU instructions
 constexpr uint8_t kCC = 0x01;      // Bit 0: kCC (Condition Codes)
-constexpr uint8_t A = 0x02;       // Bit 1: A
-constexpr uint8_t B = 0x04;       // Bit 2: B
+constexpr uint8_t kA = 0x02;       // Bit 1: A
+constexpr uint8_t kB = 0x04;       // Bit 2: B
 constexpr uint8_t kDP = 0x08;      // Bit 3: kDP (Direct Page)
-constexpr uint8_t X = 0x10;       // Bit 4: X
-constexpr uint8_t Y = 0x20;       // Bit 5: Y
+constexpr uint8_t kX = 0x10;       // Bit 4: X
+constexpr uint8_t kY = 0x20;       // Bit 5: Y
 constexpr uint8_t kU_OR_S = 0x40;  // Bit 6: U (for kPSHS/kPULS) or S (for kPSHU/kPULU)
 constexpr uint8_t kPC = 0x80;      // Bit 7: kPC (Program Counter)
 

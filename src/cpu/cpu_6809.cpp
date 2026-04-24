@@ -44,7 +44,7 @@ uint8_t Cpu6809::GetDirectPage() const {
 // ============================================================================
 
 /// Sentinel value: "this addressing mode is not valid for this instruction"
-static constexpr uint8_t NO_OP = 0xFF;
+static constexpr uint8_t kNO_OP = 0xFF;
 
 /**
  * @brief Opcode entries for a single mnemonic across all memory-operand
@@ -52,10 +52,10 @@ static constexpr uint8_t NO_OP = 0xFF;
  *
  * Fields:
  *  prefix  — optional page-2 ($10) or page-3 ($11) prefix byte, or 0x00
- *  imm     — Immediate8 or Immediate16 opcode (NO_OP if not supported)
- *  dir     — Direct-page opcode               (NO_OP if not supported)
- *  ext     — Extended opcode                  (NO_OP if not supported)
- *  idx     — Indexed opcode                   (NO_OP if not supported)
+ *  imm     — Immediate8 or Immediate16 opcode (kNO_OP if not supported)
+ *  dir     — Direct-page opcode               (kNO_OP if not supported)
+ *  ext     — Extended opcode                  (kNO_OP if not supported)
+ *  idx     — Indexed opcode                   (kNO_OP if not supported)
  *  imm16   — true when the immediate form takes a 16-bit operand
  */
 struct InstrOpcodes {
@@ -77,31 +77,31 @@ static const std::unordered_map<M6809Mnemonic, InstrOpcodes> kOpcodeTable = {
   // 8-bit Load / Store — accumulator A
   // -------------------------------------------------------------------------
   { M6809Mnemonic::LDA,  { 0x00, Opcodes6809::kLDA_IMM,  Opcodes6809::kLDA_DIR,  Opcodes6809::kLDA_EXT,  Opcodes6809::kLDA_IDX,  false } },
-  { M6809Mnemonic::STA,  { 0x00, NO_OP,                  Opcodes6809::kSTA_DIR,  Opcodes6809::kSTA_EXT,  Opcodes6809::kSTA_IDX,  false } },
+  { M6809Mnemonic::STA,  { 0x00, kNO_OP,                  Opcodes6809::kSTA_DIR,  Opcodes6809::kSTA_EXT,  Opcodes6809::kSTA_IDX,  false } },
 
   // -------------------------------------------------------------------------
   // 8-bit Load / Store — accumulator B
   // -------------------------------------------------------------------------
   { M6809Mnemonic::LDB,  { 0x00, Opcodes6809::kLDB_IMM,  Opcodes6809::kLDB_DIR,  Opcodes6809::kLDB_EXT,  Opcodes6809::kLDB_IDX,  false } },
-  { M6809Mnemonic::STB,  { 0x00, NO_OP,                  Opcodes6809::kSTB_DIR,  Opcodes6809::kSTB_EXT,  Opcodes6809::kSTB_IDX,  false } },
+  { M6809Mnemonic::STB,  { 0x00, kNO_OP,                  Opcodes6809::kSTB_DIR,  Opcodes6809::kSTB_EXT,  Opcodes6809::kSTB_IDX,  false } },
 
   // -------------------------------------------------------------------------
   // 16-bit Load / Store — accumulator D
   // -------------------------------------------------------------------------
   { M6809Mnemonic::LDD,  { 0x00, Opcodes6809::kLDD_IMM,  Opcodes6809::kLDD_DIR,  Opcodes6809::kLDD_EXT,  Opcodes6809::kLDD_IDX,  true  } },
-  { M6809Mnemonic::STD,  { 0x00, NO_OP,                  Opcodes6809::kSTD_DIR,  Opcodes6809::kSTD_EXT,  Opcodes6809::kSTD_IDX,  false } },
+  { M6809Mnemonic::STD,  { 0x00, kNO_OP,                  Opcodes6809::kSTD_DIR,  Opcodes6809::kSTD_EXT,  Opcodes6809::kSTD_IDX,  false } },
 
   // -------------------------------------------------------------------------
   // 16-bit Load / Store — index register X
   // -------------------------------------------------------------------------
   { M6809Mnemonic::LDX,  { 0x00, Opcodes6809::kLDX_IMM,  Opcodes6809::kLDX_DIR,  Opcodes6809::kLDX_EXT,  Opcodes6809::kLDX_IDX,  true  } },
-  { M6809Mnemonic::STX,  { 0x00, NO_OP,                  Opcodes6809::kSTX_DIR,  Opcodes6809::kSTX_EXT,  Opcodes6809::kSTX_IDX,  false } },
+  { M6809Mnemonic::STX,  { 0x00, kNO_OP,                  Opcodes6809::kSTX_DIR,  Opcodes6809::kSTX_EXT,  Opcodes6809::kSTX_IDX,  false } },
 
   // -------------------------------------------------------------------------
   // 16-bit Load / Store — index register Y  (page-2 prefix)
   // -------------------------------------------------------------------------
   { M6809Mnemonic::LDY,  { 0x10, Opcodes6809::Page2::kLDY_IMM, Opcodes6809::Page2::kLDY_DIR, Opcodes6809::Page2::kLDY_EXT, Opcodes6809::Page2::kLDY_IDX, true  } },
-  { M6809Mnemonic::STY,  { 0x10, NO_OP,                        Opcodes6809::Page2::kSTY_DIR, Opcodes6809::Page2::kSTY_EXT, Opcodes6809::Page2::kSTY_IDX, false } },
+  { M6809Mnemonic::STY,  { 0x10, kNO_OP,                        Opcodes6809::Page2::kSTY_DIR, Opcodes6809::Page2::kSTY_EXT, Opcodes6809::Page2::kSTY_IDX, false } },
 
   // -------------------------------------------------------------------------
   // Arithmetic — ADD
@@ -123,7 +123,7 @@ static const std::unordered_map<M6809Mnemonic, InstrOpcodes> kOpcodeTable = {
   { M6809Mnemonic::CMPX, { 0x00, Opcodes6809::kCMPX_IMM, Opcodes6809::kCMPX_DIR, Opcodes6809::kCMPX_EXT, Opcodes6809::kCMPX_IDX, true  } },
 
   // CMPY uses page-2 prefix; no indexed mode defined
-  { M6809Mnemonic::CMPY, { 0x10, Opcodes6809::Page2::kCMPY_IMM, Opcodes6809::Page2::kCMPY_DIR, Opcodes6809::Page2::kCMPY_EXT, NO_OP, true } },
+  { M6809Mnemonic::CMPY, { 0x10, Opcodes6809::Page2::kCMPY_IMM, Opcodes6809::Page2::kCMPY_DIR, Opcodes6809::Page2::kCMPY_EXT, kNO_OP, true } },
 
   // -------------------------------------------------------------------------
   // Logical — AND
@@ -152,14 +152,14 @@ static const std::unordered_map<M6809Mnemonic, InstrOpcodes> kOpcodeTable = {
   // -------------------------------------------------------------------------
   // Jump / Subroutine  (no immediate mode)
   // -------------------------------------------------------------------------
-  { M6809Mnemonic::JMP,  { 0x00, NO_OP, Opcodes6809::kJMP_DIR, Opcodes6809::kJMP_EXT, Opcodes6809::kJMP_IDX, false } },
-  { M6809Mnemonic::JSR,  { 0x00, NO_OP, Opcodes6809::kJSR_DIR, Opcodes6809::kJSR_EXT, Opcodes6809::kJSR_IDX, false } },
+  { M6809Mnemonic::JMP,  { 0x00, kNO_OP, Opcodes6809::kJMP_DIR, Opcodes6809::kJMP_EXT, Opcodes6809::kJMP_IDX, false } },
+  { M6809Mnemonic::JSR,  { 0x00, kNO_OP, Opcodes6809::kJSR_DIR, Opcodes6809::kJSR_EXT, Opcodes6809::kJSR_IDX, false } },
 
   // -------------------------------------------------------------------------
   // Load Effective Address  (indexed mode only; treated via Extended for addr)
   // -------------------------------------------------------------------------
-  { M6809Mnemonic::LEAX, { 0x00, NO_OP, NO_OP, Opcodes6809::kLEAX, Opcodes6809::kLEAX, false } },
-  { M6809Mnemonic::LEAY, { 0x00, NO_OP, NO_OP, Opcodes6809::kLEAY, Opcodes6809::kLEAY, false } },
+  { M6809Mnemonic::LEAX, { 0x00, kNO_OP, kNO_OP, Opcodes6809::kLEAX, Opcodes6809::kLEAX, false } },
+  { M6809Mnemonic::LEAY, { 0x00, kNO_OP, kNO_OP, Opcodes6809::kLEAY, Opcodes6809::kLEAY, false } },
 };
 // clang-format on
 
@@ -278,7 +278,7 @@ static std::vector<uint8_t> EncodeMemInstr(const InstrOpcodes& entry, uint32_t o
                                            AddressingMode6809 mode) {
   // Helper: build {[prefix,] opcode, imm8}
   auto make_imm8 = [&](uint8_t opcode) -> std::vector<uint8_t> {
-    if (opcode == NO_OP) {
+    if (opcode == kNO_OP) {
       return {};
     }
     std::vector<uint8_t> r;
@@ -292,7 +292,7 @@ static std::vector<uint8_t> EncodeMemInstr(const InstrOpcodes& entry, uint32_t o
 
   // Helper: build {[prefix,] opcode, hi, lo}  (big-endian 16-bit operand)
   auto make_imm16 = [&](uint8_t opcode) -> std::vector<uint8_t> {
-    if (opcode == NO_OP) {
+    if (opcode == kNO_OP) {
       return {};
     }
     std::vector<uint8_t> r;
@@ -339,7 +339,7 @@ static std::vector<uint8_t> EncodeMemInstr(const InstrOpcodes& entry, uint32_t o
     case AddressingMode6809::IndexedPCRelative16:
     case AddressingMode6809::IndexedIndirect:
     case AddressingMode6809::IndexedExtendedIndirect: {
-      if (entry.idx == NO_OP) {
+      if (entry.idx == kNO_OP) {
         return {};
       }
       std::vector<uint8_t> result;

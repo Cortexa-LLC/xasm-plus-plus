@@ -81,7 +81,7 @@ TEST(AssemblerTest, PassCountTracking) {
 
   EXPECT_TRUE(result.success);
   EXPECT_GE(result.pass_count, 1U);
-  EXPECT_LE(result.pass_count, static_cast<unsigned>(Assembler::MAX_PASSES));
+  EXPECT_LE(result.pass_count, static_cast<unsigned>(Assembler::kMAX_PASSES));
 }
 
 // Test 7: Convergence (no size changes means done)
@@ -117,8 +117,8 @@ TEST(AssemblerTest, ErrorAccumulation) {
 
 // Test 9: Get pass count limits
 TEST(AssemblerTest, PassLimits) {
-  EXPECT_EQ(Assembler::FAST_PHASE_LIMIT, 50);
-  EXPECT_EQ(Assembler::MAX_PASSES,
+  EXPECT_EQ(Assembler::kFAST_PHASE_LIMIT, 50);
+  EXPECT_EQ(Assembler::kMAX_PASSES,
             50); // Complex kernels may need 15-20 passes to converge
 }
 

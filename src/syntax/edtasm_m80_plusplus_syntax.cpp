@@ -30,23 +30,23 @@ namespace xasm {
 namespace {
 
 // Numeric literal prefixes
-constexpr char HEX_PREFIX_DOLLAR = '$';  // $kFF
-constexpr char HEX_PREFIX_0X = 'x';      // 0xFF
+constexpr char kHEX_PREFIX_DOLLAR = '$';  // $kFF
+constexpr char kHEX_PREFIX_0X = 'x';      // 0xFF
 
 // Radix values
-constexpr int RADIX_BINARY = 2;
-constexpr int RADIX_OCTAL = 8;
-constexpr int RADIX_DECIMAL = 10;
-constexpr int RADIX_HEXADECIMAL = 16;
+constexpr int kRADIX_BINARY = 2;
+constexpr int kRADIX_OCTAL = 8;
+constexpr int kRADIX_DECIMAL = 10;
+constexpr int kRADIX_HEXADECIMAL = 16;
 
 // String delimiters (moved to edtasm_directive_handlers.cpp)
 // constexpr char SINGLE_QUOTE = '\'';
 // constexpr char DOUBLE_QUOTE = '"';
 
 // Z80 instruction size constants (for size estimation)
-constexpr int INSTRUCTION_SIZE_SINGLE_BYTE = 1;  // RST, register-only operations
-constexpr int INSTRUCTION_SIZE_TWO_BYTES = 2;    // JR, DJNZ, immediate 8-bit operands
-constexpr int INSTRUCTION_SIZE_THREE_BYTES = 3;  // JP, CALL, 16-bit immediate operands
+constexpr int kINSTRUCTION_SIZE_SINGLE_BYTE = 1;  // RST, register-only operations
+constexpr int kINSTRUCTION_SIZE_TWO_BYTES = 2;    // JR, DJNZ, immediate 8-bit operands
+constexpr int kINSTRUCTION_SIZE_THREE_BYTES = 3;  // JP, CALL, 16-bit immediate operands
 
 }  // anonymous namespace
 
@@ -134,22 +134,22 @@ bool Z80NumberParser::TryParse(const std::string& token, int64_t& value) const {
         return false;
       }
     }
-    return ParseSuffixedLiteral(token, RADIX_HEXADECIMAL, ParseHexDigit, value);
+    return ParseSuffixedLiteral(token, kRADIX_HEXADECIMAL, ParseHexDigit, value);
   }
 
   // Octal with O or Q suffix: 377O, 77Q, etc.
   if (suffix == 'O' || suffix == 'o' || suffix == 'Q' || suffix == 'q') {
-    return ParseSuffixedLiteral(token, RADIX_OCTAL, ParseOctalDigit, value);
+    return ParseSuffixedLiteral(token, kRADIX_OCTAL, ParseOctalDigit, value);
   }
 
   // Binary with B suffix: 11111111B, 10101010B, etc.
   if (suffix == 'B' || suffix == 'b') {
-    return ParseSuffixedLiteral(token, RADIX_BINARY, ParseBinaryDigit, value);
+    return ParseSuffixedLiteral(token, kRADIX_BINARY, ParseBinaryDigit, value);
   }
 
   // Decimal with D suffix: 255D, 42D, etc.
   if (suffix == 'D' || suffix == 'd') {
-    return ParseSuffixedLiteral(token, RADIX_DECIMAL, ParseDecimalDigit, value);
+    return ParseSuffixedLiteral(token, kRADIX_DECIMAL, ParseDecimalDigit, value);
   }
 
   // No explicit suffix — use the current radix.
@@ -227,7 +227,7 @@ void EdtasmM80PlusPlusSyntaxParser::Parse(const std::string& source, Section& se
   listing_subtitle_.clear();
   module_name_.clear();
   current_radix_ = 10;
-  z80_number_parser_.SetRadix(RADIX_DECIMAL);
+  z80_number_parser_.SetRadix(kRADIX_DECIMAL);
   in_macro_definition_ = false;
   in_repeat_block_ = RepeatType::NONE;
   macro_expansion_depth_ = 0;
@@ -637,10 +637,10 @@ void EdtasmM80PlusPlusSyntaxParser::ParseLine(const std::string& line, Section& 
  */
 uint32_t EdtasmM80PlusPlusSyntaxParser::EstimateIndexedInsnSize(const std::string& operand) {
   if (operand.find('(') == std::string::npos) {
-    return INSTRUCTION_SIZE_TWO_BYTES;  // prefix + opcode, no displacement
+    return kINSTRUCTION_SIZE_TWO_BYTES;  // prefix + opcode, no displacement
   }
   // (IX+d) — with displacement; if also a comma operand, add immediate byte
-  return (operand.find(',') != std::string::npos) ? 4 : INSTRUCTION_SIZE_THREE_BYTES;
+  return (operand.find(',') != std::string::npos) ? 4 : kINSTRUCTION_SIZE_THREE_BYTES;
 }
 
 /**
@@ -659,7 +659,7 @@ static uint32_t EstimateImmediate16BitSize(const std::string& operand) {
   while (hex_end < operand.size() && std::isxdigit(operand[hex_end])) {
     ++hex_end;
   }
-  return (hex_end - hex_start > 2) ? INSTRUCTION_SIZE_THREE_BYTES : 0;
+  return (hex_end - hex_start > 2) ? kINSTRUCTION_SIZE_THREE_BYTES : 0;
 }
 
 // Returns true when the operand contains an I- or R-register reference
@@ -680,7 +680,7 @@ uint32_t EdtasmM80PlusPlusSyntaxParser::EstimateZ80InstructionSize(const Directi
 
   // ED-prefixed LD I/R instructions (2 bytes)
   if (mnemonic.starts_with("LD") && HasIRRegisterOperand(operand)) {
-    return INSTRUCTION_SIZE_TWO_BYTES;
+    return kINSTRUCTION_SIZE_TWO_BYTES;
   }
 
   // kDD/FD-prefixed IX/IY instructions
@@ -698,23 +698,23 @@ uint32_t EdtasmM80PlusPlusSyntaxParser::EstimateZ80InstructionSize(const Directi
 
   // Generic comma operand → opcode + 8-bit immediate = 2 bytes
   if (operand.find(',') != std::string::npos) {
-    return INSTRUCTION_SIZE_TWO_BYTES;
+    return kINSTRUCTION_SIZE_TWO_BYTES;
   }
 
   // Relative jumps / absolute jumps+calls / RST → per-mnemonic sizing
   static const std::unordered_map<std::string, uint32_t> kMnemonicSizes = {
-      {std::string(kJR), INSTRUCTION_SIZE_TWO_BYTES},
-      {std::string(kDJNZ), INSTRUCTION_SIZE_TWO_BYTES},
-      {std::string(kJP), INSTRUCTION_SIZE_THREE_BYTES},
-      {std::string(kCALL), INSTRUCTION_SIZE_THREE_BYTES},
-      {std::string(kRST), INSTRUCTION_SIZE_SINGLE_BYTE},
+      {std::string(kJR), kINSTRUCTION_SIZE_TWO_BYTES},
+      {std::string(kDJNZ), kINSTRUCTION_SIZE_TWO_BYTES},
+      {std::string(kJP), kINSTRUCTION_SIZE_THREE_BYTES},
+      {std::string(kCALL), kINSTRUCTION_SIZE_THREE_BYTES},
+      {std::string(kRST), kINSTRUCTION_SIZE_SINGLE_BYTE},
   };
   auto it = kMnemonicSizes.find(mnemonic);
   if (it != kMnemonicSizes.end()) {
     return it->second;
   }
 
-  return INSTRUCTION_SIZE_SINGLE_BYTE;
+  return kINSTRUCTION_SIZE_SINGLE_BYTE;
 }
 
 // Returns true when @p c is a valid assembler label identifier character.
@@ -805,14 +805,14 @@ static uint32_t ParseHexOrThrow(const std::string& hex_str) {
  * @brief Parse hex formats: $kFF, 0xFF, 0FFH.
  *
  * Returns the parsed value.  The caller must ensure @p trimmed starts with
- * HEX_PREFIX_DOLLAR, "0x"/"0X", or ends with 'H'/'h'.
+ * kHEX_PREFIX_DOLLAR, "0x"/"0X", or ends with 'H'/'h'.
  */
 uint32_t EdtasmM80PlusPlusSyntaxParser::ParseHexVariant(const std::string& trimmed) const {
-  if (trimmed[0] == HEX_PREFIX_DOLLAR) {
+  if (trimmed[0] == kHEX_PREFIX_DOLLAR) {
     return ParseHexOrThrow(trimmed);
   }
   if (trimmed.size() >= 2 && trimmed[0] == '0' &&
-      (trimmed[1] == HEX_PREFIX_0X || trimmed[1] == 'X')) {
+      (trimmed[1] == kHEX_PREFIX_0X || trimmed[1] == 'X')) {
     return ParseHexOrThrow("$" + trimmed.substr(2));
   }
   // H/h suffix
@@ -850,16 +850,16 @@ static bool TryParseSuffixed(const std::string& trimmed, uint32_t& result) {
  * @brief Parse a number using the currently active radix.
  */
 uint32_t EdtasmM80PlusPlusSyntaxParser::ParseByCurrentRadix(const std::string& trimmed) const {
-  if (current_radix_ == RADIX_BINARY) {
+  if (current_radix_ == kRADIX_BINARY) {
     return static_cast<uint32_t>(ParseBinary(trimmed));
   }
-  if (current_radix_ == RADIX_OCTAL) {
+  if (current_radix_ == kRADIX_OCTAL) {
     return static_cast<uint32_t>(ParseOctal(trimmed));
   }
-  if (current_radix_ == RADIX_DECIMAL) {
+  if (current_radix_ == kRADIX_DECIMAL) {
     return static_cast<uint32_t>(ParseDecimal(trimmed));
   }
-  if (current_radix_ == RADIX_HEXADECIMAL) {
+  if (current_radix_ == kRADIX_HEXADECIMAL) {
     return ParseHexOrThrow("$" + trimmed);
   }
   return static_cast<uint32_t>(std::stoul(trimmed, nullptr, current_radix_));
@@ -873,9 +873,9 @@ uint32_t EdtasmM80PlusPlusSyntaxParser::ParseNumber(const std::string& str) cons
 
   // Explicit hex prefixes/suffixes override the active radix
   const char last = static_cast<char>(std::toupper(trimmed.back()));
-  const bool is_hex = (trimmed[0] == HEX_PREFIX_DOLLAR) ||
+  const bool is_hex = (trimmed[0] == kHEX_PREFIX_DOLLAR) ||
                       (trimmed.size() >= 2 && trimmed[0] == '0' &&
-                       (trimmed[1] == HEX_PREFIX_0X || trimmed[1] == 'X')) ||
+                       (trimmed[1] == kHEX_PREFIX_0X || trimmed[1] == 'X')) ||
                       (trimmed.size() >= 2 && last == 'H');
   if (is_hex) {
     return ParseHexVariant(trimmed);

@@ -1263,7 +1263,7 @@ size_t Cpu6502::GetInstructionSize(const std::string& mnemonic,
       M6502Mnemonics::kBEQ, M6502Mnemonics::kBNE, M6502Mnemonics::kBCC,
       M6502Mnemonics::kBCS, M6502Mnemonics::kBMI, M6502Mnemonics::kBPL,
       M6502Mnemonics::kBVC, M6502Mnemonics::kBVS, M6502Mnemonics::kBRA,
-      M6502Mnemonics::BLT,  // alias for kBCC
+      M6502Mnemonics::kBLT,  // alias for kBCC
   };
   if (BRANCHES.contains(kMn)) {
     return 2;
@@ -1288,7 +1288,7 @@ size_t Cpu6502::GetInstructionSize(const std::string& mnemonic,
       // JMP (abs) → absolute indirect = 3 bytes
       // (JMP is the only 6502/65C02 instruction that uses (abs) indirect;
       // all other instructions with (sym) use ZP indirect = 2 bytes)
-      if (kMn == M6502Mnemonics::JMP || kMn == M6502Mnemonics::kJSR) {
+      if (kMn == M6502Mnemonics::kJMP || kMn == M6502Mnemonics::kJSR) {
         return 3;
       }
       // (zp) → ZP indirect (65C02) = 2 bytes
@@ -1342,7 +1342,7 @@ size_t Cpu6502::GetInstructionSize(const std::string& mnemonic,
  *
  * 6502 branch instructions use 8-bit signed relative offsets (-128 to +127
  * bytes). If target is outside this range, branch must be "relaxed" into B!cc +
- * JMP sequence.
+ * kJMP sequence.
  *
  * @param target Branch source and destination addresses
  * @return true if branch needs relaxation (out of range), false otherwise
@@ -1949,17 +1949,17 @@ using EncFnAlias = std::function<std::vector<uint8_t>(const Cpu6502*, uint32_t, 
 // Each covers a logical group of ~15 instructions to keep per-function CC low.
 static void PopulateLoadStoreArith(std::unordered_map<std::string, EncFnAlias>& t) {
   // clang-format off
-  t[LDA] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeLDA(op, m); };
-  t[LDX] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeLDX(op, m); };
-  t[LDY] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeLDY(op, m); };
-  t[STA] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeSTA(op, m); };
-  t[STX] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeSTX(op, m); };
-  t[STY] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeSTY(op, m); };
-  t[STZ] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeSTZ(op, m); };
-  t[ADC] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeADC(op, m); };
-  t[SBC] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeSBC(op, m); };
-  t[INC] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeINC(op, m); };
-  t[DEC] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeDEC(op, m); };
+  t[kLDA] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeLDA(op, m); };
+  t[kLDX] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeLDX(op, m); };
+  t[kLDY] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeLDY(op, m); };
+  t[kSTA] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeSTA(op, m); };
+  t[kSTX] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeSTX(op, m); };
+  t[kSTY] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeSTY(op, m); };
+  t[kSTZ] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeSTZ(op, m); };
+  t[kADC] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeADC(op, m); };
+  t[kSBC] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeSBC(op, m); };
+  t[kINC] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeINC(op, m); };
+  t[kDEC] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeDEC(op, m); };
   t[kINX] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeINX(); };
   t[kINY] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeINY(); };
   t[kDEX] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeDEX(); };
@@ -1969,13 +1969,13 @@ static void PopulateLoadStoreArith(std::unordered_map<std::string, EncFnAlias>& 
 
 static void PopulateLogicCompareBranch(std::unordered_map<std::string, EncFnAlias>& t) {
   // clang-format off
-  t[AND] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeAND(op, m); };
-  t[ORA] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeORA(op, m); };
-  t[EOR] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeEOR(op, m); };
-  t[BIT] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeBIT(op, m); };
-  t[CMP] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeCMP(op, m); };
-  t[CPX] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeCPX(op, m); };
-  t[CPY] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeCPY(op, m); };
+  t[kAND] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeAND(op, m); };
+  t[kORA] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeORA(op, m); };
+  t[kEOR] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeEOR(op, m); };
+  t[kBIT] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeBIT(op, m); };
+  t[kCMP] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeCMP(op, m); };
+  t[kCPX] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeCPX(op, m); };
+  t[kCPY] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeCPY(op, m); };
   // Branch (short; relaxed branches go via EncodeInstructionSpecial)
   t[kBEQ] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeBEQ(op, m); };
   t[kBNE] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeBNE(op, m); };
@@ -1991,7 +1991,7 @@ static void PopulateLogicCompareBranch(std::unordered_map<std::string, EncFnAlia
 
 static void PopulateJumpStackShift(std::unordered_map<std::string, EncFnAlias>& t) {
   // clang-format off
-  t[JMP] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeJMP(op, m); };
+  t[kJMP] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeJMP(op, m); };
   t[kJSR] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeJSR(op, m); };
   t[kRTS] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeRTS(); };
   t[kRTI] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeRTI(); };
@@ -2003,10 +2003,10 @@ static void PopulateJumpStackShift(std::unordered_map<std::string, EncFnAlias>& 
   t[kPLX] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodePLX(); };
   t[kPHY] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodePHY(); };
   t[kPLY] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodePLY(); };
-  t[ASL] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeASL(op, m); };
-  t[LSR] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeLSR(op, m); };
-  t[ROL] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeROL(op, m); };
-  t[ROR] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeROR(op, m); };
+  t[kASL] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeASL(op, m); };
+  t[kLSR] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeLSR(op, m); };
+  t[kROL] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeROL(op, m); };
+  t[kROR] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeROR(op, m); };
   // clang-format on
 }
 
@@ -2027,8 +2027,8 @@ static void PopulateFlagsTransferMisc(std::unordered_map<std::string, EncFnAlias
   t[kTXS] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeTXS(); };
   t[kNOP] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeNOP(); };
   t[kBRK] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeBRK(); };
-  t[TRB] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeTRB(op, m); };
-  t[TSB] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeTSB(op, m); };
+  t[kTRB] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeTRB(op, m); };
+  t[kTSB] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeTSB(op, m); };
   // clang-format on
 }
 
@@ -2045,8 +2045,8 @@ static void Populate65816(std::unordered_map<std::string, EncFnAlias>& t) {
   t[kTSC] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeTSC(); };
   t[kTXY] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeTXY(); };
   t[kTYX] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeTYX(); };
-  t[JML] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeJML(op, m); };
-  t[JSL] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeJSL(op, m); };
+  t[kJML] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeJML(op, m); };
+  t[kJSL] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeJSL(op, m); };
   t[kRTL] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeRTL(); };
   t[kPEA] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodePEA(op, m); };
   t[kPEI] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodePEI(op, m); };
@@ -2107,7 +2107,7 @@ std::vector<uint8_t> Cpu6502::EncodeInstruction(const std::string& mnemonic, uin
     if (s.empty() || s[0] != '$') {
       return 0;
     }
-    return std::stoul(s.substr(1), nullptr, Opcodes::RADIX_HEXADECIMAL);
+    return std::stoul(s.substr(1), nullptr, Opcodes::kRADIX_HEXADECIMAL);
   };
 
   // Determine addressing mode from operand_str
@@ -2125,8 +2125,8 @@ std::vector<uint8_t> Cpu6502::EncodeInstruction(const std::string& mnemonic, uin
   // Shift/rotate/inc/dec instructions with no operand mean accumulator mode.
   // SCMASM uses "asl" / "inc" (no operand) instead of the explicit "asl A" form.
   if (trimmed.empty() &&
-      (clean_mnemonic == ASL || clean_mnemonic == LSR || clean_mnemonic == ROL ||
-       clean_mnemonic == ROR || clean_mnemonic == INC || clean_mnemonic == DEC)) {
+      (clean_mnemonic == kASL || clean_mnemonic == kLSR || clean_mnemonic == kROL ||
+       clean_mnemonic == kROR || clean_mnemonic == kINC || clean_mnemonic == kDEC)) {
     mode = AddressingMode::Accumulator;
   }
 
@@ -2170,7 +2170,7 @@ std::vector<uint8_t> Cpu6502::EncodeInstruction(const std::string& mnemonic, uin
         }
         // JMP (abs): absolute indirect = Indirect
         // All other instructions (LDA, STA, ADC, etc.): (zp) = IndirectZeroPage (65C02+)
-        else if (clean_mnemonic == M6502Mnemonics::JMP) {
+        else if (clean_mnemonic == M6502Mnemonics::kJMP) {
           mode = AddressingMode::Indirect;
         } else {
           mode = AddressingMode::IndirectZeroPage;
@@ -2224,7 +2224,7 @@ std::vector<uint8_t> Cpu6502::EncodeInstruction(const std::string& mnemonic, uin
         // Symbol reference - use resolved operand value to determine mode.
         // ZeroPage is used for values 0–$FF, EXCEPT for JMP and kJSR which have
         // no ZeroPage variant and must always use Absolute addressing.
-        const bool kNoZpForm = (clean_mnemonic == JMP || clean_mnemonic == kJSR);
+        const bool kNoZpForm = (clean_mnemonic == kJMP || clean_mnemonic == kJSR);
         mode =
             (!kNoZpForm && operand <= 0xFF) ? AddressingMode::ZeroPage : AddressingMode::Absolute;
       }
@@ -2266,7 +2266,7 @@ bool Cpu6502::RequiresSpecialEncoding(const std::string& mnemonic) const {
       clean_mnemonic == M6502Mnemonics::kBCC || clean_mnemonic == M6502Mnemonics::kBCS ||
       clean_mnemonic == M6502Mnemonics::kBMI || clean_mnemonic == M6502Mnemonics::kBPL ||
       clean_mnemonic == M6502Mnemonics::kBVC || clean_mnemonic == M6502Mnemonics::kBVS ||
-      clean_mnemonic == M6502Mnemonics::BLT ||  // BLT is an alias for kBCC
+      clean_mnemonic == M6502Mnemonics::kBLT ||  // kBLT is an alias for kBCC
       clean_mnemonic == M6502Mnemonics::kBRA) {  // kBRA (65C02+)
     return true;
   }
@@ -2309,7 +2309,7 @@ std::vector<uint8_t> Cpu6502::EncodeInstructionSpecial(const std::string& mnemon
     if (s.empty() || s[0] != '$') {
       cpu::ThrowExpectedHexValue();
     }
-    return std::stoul(s.substr(1), nullptr, Opcodes::RADIX_HEXADECIMAL);
+    return std::stoul(s.substr(1), nullptr, Opcodes::kRADIX_HEXADECIMAL);
   };
 
   // Branch instructions with relaxation
@@ -2317,7 +2317,7 @@ std::vector<uint8_t> Cpu6502::EncodeInstructionSpecial(const std::string& mnemon
       clean_mnemonic == M6502Mnemonics::kBCC || clean_mnemonic == M6502Mnemonics::kBCS ||
       clean_mnemonic == M6502Mnemonics::kBMI || clean_mnemonic == M6502Mnemonics::kBPL ||
       clean_mnemonic == M6502Mnemonics::kBVC || clean_mnemonic == M6502Mnemonics::kBVS ||
-      clean_mnemonic == M6502Mnemonics::BLT || clean_mnemonic == M6502Mnemonics::kBRA) {
+      clean_mnemonic == M6502Mnemonics::kBLT || clean_mnemonic == M6502Mnemonics::kBRA) {
     // Parse target address from operand string
     std::string trimmed = util::Trim(operand);
     uint16_t target_addr = 0;
@@ -2333,7 +2333,7 @@ std::vector<uint8_t> Cpu6502::EncodeInstructionSpecial(const std::string& mnemon
     // BLT is an alias for kBCC (Branch if Less Than).
     static const std::unordered_map<std::string, uint8_t> kBranchOpcodes = {
         {M6502Mnemonics::kBEQ, Opcodes::kBEQ}, {M6502Mnemonics::kBNE, Opcodes::kBNE},
-        {M6502Mnemonics::kBCC, Opcodes::kBCC}, {M6502Mnemonics::BLT, Opcodes::kBCC},  // alias for kBCC
+        {M6502Mnemonics::kBCC, Opcodes::kBCC}, {M6502Mnemonics::kBLT, Opcodes::kBCC},  // alias for kBCC
         {M6502Mnemonics::kBCS, Opcodes::kBCS}, {M6502Mnemonics::kBMI, Opcodes::kBMI},
         {M6502Mnemonics::kBPL, Opcodes::kBPL}, {M6502Mnemonics::kBVC, Opcodes::kBVC},
         {M6502Mnemonics::kBVS, Opcodes::kBVS}, {M6502Mnemonics::kBRA, Opcodes::kBRA},
@@ -2378,7 +2378,7 @@ std::vector<uint8_t> Cpu6502::EncodeInstructionSpecial(const std::string& mnemon
       if (!str.empty() && str[0] == '$') {
         return static_cast<uint8_t>(parse_hex(str) & 0xFF);
       }
-      return static_cast<uint8_t>(std::stoul(str, nullptr, Opcodes::RADIX_DECIMAL) & 0xFF);
+      return static_cast<uint8_t>(std::stoul(str, nullptr, Opcodes::kRADIX_DECIMAL) & 0xFF);
     };
 
     try {
@@ -2435,18 +2435,18 @@ bool Cpu6502::HasOpcode(const std::string& mnemonic) const {
 
   // Base 6502 opcodes — valid in all modes
   static const std::unordered_set<std::string> kBaseOpcodes = {
-      M6502Mnemonics::LDA, M6502Mnemonics::LDX, M6502Mnemonics::LDY, M6502Mnemonics::STA,
-      M6502Mnemonics::STX, M6502Mnemonics::STY, M6502Mnemonics::ADC, M6502Mnemonics::SBC,
-      M6502Mnemonics::INC, M6502Mnemonics::DEC, M6502Mnemonics::kINX, M6502Mnemonics::kINY,
-      M6502Mnemonics::kDEX, M6502Mnemonics::kDEY, M6502Mnemonics::AND, M6502Mnemonics::ORA,
-      M6502Mnemonics::EOR, M6502Mnemonics::BIT, M6502Mnemonics::CMP, M6502Mnemonics::CPX,
-      M6502Mnemonics::CPY, M6502Mnemonics::kBEQ, M6502Mnemonics::kBNE, M6502Mnemonics::kBCS,
+      M6502Mnemonics::kLDA, M6502Mnemonics::kLDX, M6502Mnemonics::kLDY, M6502Mnemonics::kSTA,
+      M6502Mnemonics::kSTX, M6502Mnemonics::kSTY, M6502Mnemonics::kADC, M6502Mnemonics::kSBC,
+      M6502Mnemonics::kINC, M6502Mnemonics::kDEC, M6502Mnemonics::kINX, M6502Mnemonics::kINY,
+      M6502Mnemonics::kDEX, M6502Mnemonics::kDEY, M6502Mnemonics::kAND, M6502Mnemonics::kORA,
+      M6502Mnemonics::kEOR, M6502Mnemonics::kBIT, M6502Mnemonics::kCMP, M6502Mnemonics::kCPX,
+      M6502Mnemonics::kCPY, M6502Mnemonics::kBEQ, M6502Mnemonics::kBNE, M6502Mnemonics::kBCS,
       M6502Mnemonics::kBCC, M6502Mnemonics::kBMI, M6502Mnemonics::kBPL, M6502Mnemonics::kBVS,
       M6502Mnemonics::kBVC,
-      M6502Mnemonics::BLT,  // Alias for kBCC
-      M6502Mnemonics::JMP, M6502Mnemonics::kJSR, M6502Mnemonics::kRTS, M6502Mnemonics::kRTI,
+      M6502Mnemonics::kBLT,  // Alias for kBCC
+      M6502Mnemonics::kJMP, M6502Mnemonics::kJSR, M6502Mnemonics::kRTS, M6502Mnemonics::kRTI,
       M6502Mnemonics::kPHA, M6502Mnemonics::kPLA, M6502Mnemonics::kPHP, M6502Mnemonics::kPLP,
-      M6502Mnemonics::ASL, M6502Mnemonics::LSR, M6502Mnemonics::ROL, M6502Mnemonics::ROR,
+      M6502Mnemonics::kASL, M6502Mnemonics::kLSR, M6502Mnemonics::kROL, M6502Mnemonics::kROR,
       M6502Mnemonics::kCLC, M6502Mnemonics::kSEC, M6502Mnemonics::kCLD, M6502Mnemonics::kSED,
       M6502Mnemonics::kCLI, M6502Mnemonics::kSEI, M6502Mnemonics::kCLV, M6502Mnemonics::kTAX,
       M6502Mnemonics::kTXA, M6502Mnemonics::kTAY, M6502Mnemonics::kTYA, M6502Mnemonics::kTSX,
@@ -2455,7 +2455,7 @@ bool Cpu6502::HasOpcode(const std::string& mnemonic) const {
   // 65C02 additions — valid in Cpu65C02, Cpu65C02Rock, and Cpu65816 modes
   static const std::unordered_set<std::string> kC02Opcodes = {
       M6502Mnemonics::kPHX, M6502Mnemonics::kPLX, M6502Mnemonics::kPHY, M6502Mnemonics::kPLY,
-      M6502Mnemonics::STZ, M6502Mnemonics::TRB, M6502Mnemonics::TSB, M6502Mnemonics::kBRA,
+      M6502Mnemonics::kSTZ, M6502Mnemonics::kTRB, M6502Mnemonics::kTSB, M6502Mnemonics::kBRA,
       M6502Mnemonics::kSTP, M6502Mnemonics::kWAI};
 
   // 65C02 Rockwell extensions (RMB, SMB, BBR, BBS) — Cpu65C02Rock only
@@ -2476,8 +2476,8 @@ bool Cpu6502::HasOpcode(const std::string& mnemonic) const {
   static const std::unordered_set<std::string> kW816Opcodes = {
       M6502Mnemonics::kPHB, M6502Mnemonics::kPLB, M6502Mnemonics::kPHD, M6502Mnemonics::kPLD,
       M6502Mnemonics::kPHK, M6502Mnemonics::kTCD, M6502Mnemonics::kTCS, M6502Mnemonics::kTDC,
-      M6502Mnemonics::kTSC, M6502Mnemonics::kTXY, M6502Mnemonics::kTYX, M6502Mnemonics::JML,
-      M6502Mnemonics::JSL, M6502Mnemonics::kRTL, M6502Mnemonics::kPEA, M6502Mnemonics::kPEI,
+      M6502Mnemonics::kTSC, M6502Mnemonics::kTXY, M6502Mnemonics::kTYX, M6502Mnemonics::kJML,
+      M6502Mnemonics::kJSL, M6502Mnemonics::kRTL, M6502Mnemonics::kPEA, M6502Mnemonics::kPEI,
       M6502Mnemonics::kPER, M6502Mnemonics::kMVN, M6502Mnemonics::kMVP, M6502Mnemonics::kCOP,
       M6502Mnemonics::kWDM, M6502Mnemonics::kXBA, M6502Mnemonics::kXCE, M6502Mnemonics::kREP,
       M6502Mnemonics::kSEP};

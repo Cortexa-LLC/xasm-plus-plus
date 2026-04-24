@@ -30,7 +30,7 @@ using namespace xasm::directive_utils;
 namespace {
 
 // Radix values for number parsing
-constexpr int RADIX_HEXADECIMAL = 16;
+constexpr int kRADIX_HEXADECIMAL = 16;
 
 }  // anonymous namespace
 
@@ -255,7 +255,7 @@ void HandleHex(DirectiveContext& context) {
           }
         }
         try {
-          bytes.push_back(static_cast<uint8_t>(std::stoul(token, nullptr, RADIX_HEXADECIMAL)));
+          bytes.push_back(static_cast<uint8_t>(std::stoul(token, nullptr, kRADIX_HEXADECIMAL)));
         } catch (const std::exception& e) {
           ThrowFormattedError("Invalid hex value in HEX directive: '" + token + "' - " + e.what(),
                               context);
@@ -280,7 +280,7 @@ void HandleHex(DirectiveContext& context) {
     for (size_t i = 0; i + 1 < hex_str.length(); i += 2) {
       std::string byte_str = hex_str.substr(i, 2);
       try {
-        bytes.push_back(static_cast<uint8_t>(std::stoul(byte_str, nullptr, RADIX_HEXADECIMAL)));
+        bytes.push_back(static_cast<uint8_t>(std::stoul(byte_str, nullptr, kRADIX_HEXADECIMAL)));
       } catch (const std::exception& e) {
         ThrowFormattedError("Invalid hex value in HEX directive: '" + byte_str + "' - " + e.what(),
                             context);

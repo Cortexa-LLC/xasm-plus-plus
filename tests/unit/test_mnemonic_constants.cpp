@@ -117,19 +117,19 @@ TEST(MnemonicEnumTest, Z80_ParseUnknown) {
 // ============================================================================
 
 TEST(MnemonicConstantsTest, M6502_LoadStoreInstructions) {
-  EXPECT_STREQ("LDA", M6502Mnemonics::LDA);
-  EXPECT_STREQ("LDX", M6502Mnemonics::LDX);
-  EXPECT_STREQ("LDY", M6502Mnemonics::LDY);
-  EXPECT_STREQ("STA", M6502Mnemonics::STA);
-  EXPECT_STREQ("STX", M6502Mnemonics::STX);
-  EXPECT_STREQ("STY", M6502Mnemonics::STY);
+  EXPECT_STREQ("LDA", M6502Mnemonics::kLDA);
+  EXPECT_STREQ("LDX", M6502Mnemonics::kLDX);
+  EXPECT_STREQ("LDY", M6502Mnemonics::kLDY);
+  EXPECT_STREQ("STA", M6502Mnemonics::kSTA);
+  EXPECT_STREQ("STX", M6502Mnemonics::kSTX);
+  EXPECT_STREQ("STY", M6502Mnemonics::kSTY);
 }
 
 TEST(MnemonicConstantsTest, M6502_ArithmeticInstructions) {
-  EXPECT_STREQ("ADC", M6502Mnemonics::ADC);
-  EXPECT_STREQ("SBC", M6502Mnemonics::SBC);
-  EXPECT_STREQ("INC", M6502Mnemonics::INC);
-  EXPECT_STREQ("DEC", M6502Mnemonics::DEC);
+  EXPECT_STREQ("ADC", M6502Mnemonics::kADC);
+  EXPECT_STREQ("SBC", M6502Mnemonics::kSBC);
+  EXPECT_STREQ("INC", M6502Mnemonics::kINC);
+  EXPECT_STREQ("DEC", M6502Mnemonics::kDEC);
   EXPECT_STREQ("INX", M6502Mnemonics::kINX);
   EXPECT_STREQ("DEX", M6502Mnemonics::kDEX);
   EXPECT_STREQ("INY", M6502Mnemonics::kINY);
@@ -137,10 +137,10 @@ TEST(MnemonicConstantsTest, M6502_ArithmeticInstructions) {
 }
 
 TEST(MnemonicConstantsTest, M6502_LogicalInstructions) {
-  EXPECT_STREQ("AND", M6502Mnemonics::AND);
-  EXPECT_STREQ("ORA", M6502Mnemonics::ORA);
-  EXPECT_STREQ("EOR", M6502Mnemonics::EOR);
-  EXPECT_STREQ("BIT", M6502Mnemonics::BIT);
+  EXPECT_STREQ("AND", M6502Mnemonics::kAND);
+  EXPECT_STREQ("ORA", M6502Mnemonics::kORA);
+  EXPECT_STREQ("EOR", M6502Mnemonics::kEOR);
+  EXPECT_STREQ("BIT", M6502Mnemonics::kBIT);
 }
 
 TEST(MnemonicConstantsTest, M6502_BranchInstructions) {
@@ -155,7 +155,7 @@ TEST(MnemonicConstantsTest, M6502_BranchInstructions) {
 }
 
 TEST(MnemonicConstantsTest, M6502_JumpInstructions) {
-  EXPECT_STREQ("JMP", M6502Mnemonics::JMP);
+  EXPECT_STREQ("JMP", M6502Mnemonics::kJMP);
   EXPECT_STREQ("JSR", M6502Mnemonics::kJSR);
   EXPECT_STREQ("RTS", M6502Mnemonics::kRTS);
   EXPECT_STREQ("RTI", M6502Mnemonics::kRTI);

@@ -408,7 +408,7 @@ class ScmasmSyntaxParser {
   };
 
   // Macro nesting limit (prevent infinite recursion)
-  static constexpr int MAX_MACRO_NESTING_DEPTH = 63;
+  static constexpr int kMAX_MACRO_NESTING_DEPTH = 63;
 
   // Current state
   uint32_t current_address_ = 0;           ///< Current assembly address
