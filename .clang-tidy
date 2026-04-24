@@ -22,7 +22,8 @@ Checks: >
   -modernize-avoid-c-arrays,
   -readability-identifier-length,
   -readability-convert-member-functions-to-static,
-  -bugprone-easily-swappable-parameters
+  -bugprone-easily-swappable-parameters,
+  -bugprone-infinite-loop
 
 WarningsAsErrors: ''
 HeaderFilterRegex: '.*'

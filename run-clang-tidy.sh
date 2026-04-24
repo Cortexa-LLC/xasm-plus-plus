@@ -18,6 +18,11 @@ echo "Analyzing $TOTAL C++ files..."
 echo ""
 
 # Run clang-tidy
+# Note: --extra-arg isystem flags provide stdlib headers to Homebrew LLVM's clang-tidy.
+# They duplicate what Apple's compiler injects, causing multiple std::size_t declarations
+# visible to clang-tidy's type analysis, which triggers false-positive
+# bugprone-infinite-loop on standard for(size_t i=0; i<=n; ++i) loops.
+# That check is therefore excluded in .clang-tidy.
 $CLANG_TIDY -p build $FILES \
   --extra-arg="-isystem/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1" \
   --extra-arg="-isystem/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include" \
