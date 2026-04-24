@@ -76,90 +76,90 @@ static const std::unordered_map<M6809Mnemonic, InstrOpcodes> kOpcodeTable = {
   // -------------------------------------------------------------------------
   // 8-bit Load / Store — accumulator A
   // -------------------------------------------------------------------------
-  { M6809Mnemonic::LDA,  { 0x00, Opcodes6809::LDA_IMM,  Opcodes6809::LDA_DIR,  Opcodes6809::LDA_EXT,  Opcodes6809::LDA_IDX,  false } },
-  { M6809Mnemonic::STA,  { 0x00, NO_OP,                  Opcodes6809::STA_DIR,  Opcodes6809::STA_EXT,  Opcodes6809::STA_IDX,  false } },
+  { M6809Mnemonic::LDA,  { 0x00, Opcodes6809::kLDA_IMM,  Opcodes6809::kLDA_DIR,  Opcodes6809::kLDA_EXT,  Opcodes6809::kLDA_IDX,  false } },
+  { M6809Mnemonic::STA,  { 0x00, NO_OP,                  Opcodes6809::kSTA_DIR,  Opcodes6809::kSTA_EXT,  Opcodes6809::kSTA_IDX,  false } },
 
   // -------------------------------------------------------------------------
   // 8-bit Load / Store — accumulator B
   // -------------------------------------------------------------------------
-  { M6809Mnemonic::LDB,  { 0x00, Opcodes6809::LDB_IMM,  Opcodes6809::LDB_DIR,  Opcodes6809::LDB_EXT,  Opcodes6809::LDB_IDX,  false } },
-  { M6809Mnemonic::STB,  { 0x00, NO_OP,                  Opcodes6809::STB_DIR,  Opcodes6809::STB_EXT,  Opcodes6809::STB_IDX,  false } },
+  { M6809Mnemonic::LDB,  { 0x00, Opcodes6809::kLDB_IMM,  Opcodes6809::kLDB_DIR,  Opcodes6809::kLDB_EXT,  Opcodes6809::kLDB_IDX,  false } },
+  { M6809Mnemonic::STB,  { 0x00, NO_OP,                  Opcodes6809::kSTB_DIR,  Opcodes6809::kSTB_EXT,  Opcodes6809::kSTB_IDX,  false } },
 
   // -------------------------------------------------------------------------
   // 16-bit Load / Store — accumulator D
   // -------------------------------------------------------------------------
-  { M6809Mnemonic::LDD,  { 0x00, Opcodes6809::LDD_IMM,  Opcodes6809::LDD_DIR,  Opcodes6809::LDD_EXT,  Opcodes6809::LDD_IDX,  true  } },
-  { M6809Mnemonic::STD,  { 0x00, NO_OP,                  Opcodes6809::STD_DIR,  Opcodes6809::STD_EXT,  Opcodes6809::STD_IDX,  false } },
+  { M6809Mnemonic::LDD,  { 0x00, Opcodes6809::kLDD_IMM,  Opcodes6809::kLDD_DIR,  Opcodes6809::kLDD_EXT,  Opcodes6809::kLDD_IDX,  true  } },
+  { M6809Mnemonic::STD,  { 0x00, NO_OP,                  Opcodes6809::kSTD_DIR,  Opcodes6809::kSTD_EXT,  Opcodes6809::kSTD_IDX,  false } },
 
   // -------------------------------------------------------------------------
   // 16-bit Load / Store — index register X
   // -------------------------------------------------------------------------
-  { M6809Mnemonic::LDX,  { 0x00, Opcodes6809::LDX_IMM,  Opcodes6809::LDX_DIR,  Opcodes6809::LDX_EXT,  Opcodes6809::LDX_IDX,  true  } },
-  { M6809Mnemonic::STX,  { 0x00, NO_OP,                  Opcodes6809::STX_DIR,  Opcodes6809::STX_EXT,  Opcodes6809::STX_IDX,  false } },
+  { M6809Mnemonic::LDX,  { 0x00, Opcodes6809::kLDX_IMM,  Opcodes6809::kLDX_DIR,  Opcodes6809::kLDX_EXT,  Opcodes6809::kLDX_IDX,  true  } },
+  { M6809Mnemonic::STX,  { 0x00, NO_OP,                  Opcodes6809::kSTX_DIR,  Opcodes6809::kSTX_EXT,  Opcodes6809::kSTX_IDX,  false } },
 
   // -------------------------------------------------------------------------
   // 16-bit Load / Store — index register Y  (page-2 prefix)
   // -------------------------------------------------------------------------
-  { M6809Mnemonic::LDY,  { 0x10, Opcodes6809::Page2::LDY_IMM, Opcodes6809::Page2::LDY_DIR, Opcodes6809::Page2::LDY_EXT, Opcodes6809::Page2::LDY_IDX, true  } },
-  { M6809Mnemonic::STY,  { 0x10, NO_OP,                        Opcodes6809::Page2::STY_DIR, Opcodes6809::Page2::STY_EXT, Opcodes6809::Page2::STY_IDX, false } },
+  { M6809Mnemonic::LDY,  { 0x10, Opcodes6809::Page2::kLDY_IMM, Opcodes6809::Page2::kLDY_DIR, Opcodes6809::Page2::kLDY_EXT, Opcodes6809::Page2::kLDY_IDX, true  } },
+  { M6809Mnemonic::STY,  { 0x10, NO_OP,                        Opcodes6809::Page2::kSTY_DIR, Opcodes6809::Page2::kSTY_EXT, Opcodes6809::Page2::kSTY_IDX, false } },
 
   // -------------------------------------------------------------------------
   // Arithmetic — ADD
   // -------------------------------------------------------------------------
-  { M6809Mnemonic::ADDA, { 0x00, Opcodes6809::ADDA_IMM, Opcodes6809::ADDA_DIR, Opcodes6809::ADDA_EXT, Opcodes6809::ADDA_IDX, false } },
-  { M6809Mnemonic::ADDB, { 0x00, Opcodes6809::ADDB_IMM, Opcodes6809::ADDB_DIR, Opcodes6809::ADDB_EXT, Opcodes6809::ADDB_IDX, false } },
+  { M6809Mnemonic::ADDA, { 0x00, Opcodes6809::kADDA_IMM, Opcodes6809::kADDA_DIR, Opcodes6809::kADDA_EXT, Opcodes6809::kADDA_IDX, false } },
+  { M6809Mnemonic::ADDB, { 0x00, Opcodes6809::kADDB_IMM, Opcodes6809::kADDB_DIR, Opcodes6809::kADDB_EXT, Opcodes6809::kADDB_IDX, false } },
 
   // -------------------------------------------------------------------------
   // Arithmetic — SUB
   // -------------------------------------------------------------------------
-  { M6809Mnemonic::SUBA, { 0x00, Opcodes6809::SUBA_IMM, Opcodes6809::SUBA_DIR, Opcodes6809::SUBA_EXT, Opcodes6809::SUBA_IDX, false } },
-  { M6809Mnemonic::SUBB, { 0x00, Opcodes6809::SUBB_IMM, Opcodes6809::SUBB_DIR, Opcodes6809::SUBB_EXT, Opcodes6809::SUBB_IDX, false } },
+  { M6809Mnemonic::SUBA, { 0x00, Opcodes6809::kSUBA_IMM, Opcodes6809::kSUBA_DIR, Opcodes6809::kSUBA_EXT, Opcodes6809::kSUBA_IDX, false } },
+  { M6809Mnemonic::SUBB, { 0x00, Opcodes6809::kSUBB_IMM, Opcodes6809::kSUBB_DIR, Opcodes6809::kSUBB_EXT, Opcodes6809::kSUBB_IDX, false } },
 
   // -------------------------------------------------------------------------
   // Arithmetic — CMP (compare without storing result)
   // -------------------------------------------------------------------------
-  { M6809Mnemonic::CMPA, { 0x00, Opcodes6809::CMPA_IMM, Opcodes6809::CMPA_DIR, Opcodes6809::CMPA_EXT, Opcodes6809::CMPA_IDX, false } },
-  { M6809Mnemonic::CMPB, { 0x00, Opcodes6809::CMPB_IMM, Opcodes6809::CMPB_DIR, Opcodes6809::CMPB_EXT, Opcodes6809::CMPB_IDX, false } },
-  { M6809Mnemonic::CMPX, { 0x00, Opcodes6809::CMPX_IMM, Opcodes6809::CMPX_DIR, Opcodes6809::CMPX_EXT, Opcodes6809::CMPX_IDX, true  } },
+  { M6809Mnemonic::CMPA, { 0x00, Opcodes6809::kCMPA_IMM, Opcodes6809::kCMPA_DIR, Opcodes6809::kCMPA_EXT, Opcodes6809::kCMPA_IDX, false } },
+  { M6809Mnemonic::CMPB, { 0x00, Opcodes6809::kCMPB_IMM, Opcodes6809::kCMPB_DIR, Opcodes6809::kCMPB_EXT, Opcodes6809::kCMPB_IDX, false } },
+  { M6809Mnemonic::CMPX, { 0x00, Opcodes6809::kCMPX_IMM, Opcodes6809::kCMPX_DIR, Opcodes6809::kCMPX_EXT, Opcodes6809::kCMPX_IDX, true  } },
 
   // CMPY uses page-2 prefix; no indexed mode defined
-  { M6809Mnemonic::CMPY, { 0x10, Opcodes6809::Page2::CMPY_IMM, Opcodes6809::Page2::CMPY_DIR, Opcodes6809::Page2::CMPY_EXT, NO_OP, true } },
+  { M6809Mnemonic::CMPY, { 0x10, Opcodes6809::Page2::kCMPY_IMM, Opcodes6809::Page2::kCMPY_DIR, Opcodes6809::Page2::kCMPY_EXT, NO_OP, true } },
 
   // -------------------------------------------------------------------------
   // Logical — AND
   // -------------------------------------------------------------------------
-  { M6809Mnemonic::ANDA, { 0x00, Opcodes6809::ANDA_IMM, Opcodes6809::ANDA_DIR, Opcodes6809::ANDA_EXT, Opcodes6809::ANDA_IDX, false } },
-  { M6809Mnemonic::ANDB, { 0x00, Opcodes6809::ANDB_IMM, Opcodes6809::ANDB_DIR, Opcodes6809::ANDB_EXT, Opcodes6809::ANDB_IDX, false } },
+  { M6809Mnemonic::ANDA, { 0x00, Opcodes6809::kANDA_IMM, Opcodes6809::kANDA_DIR, Opcodes6809::kANDA_EXT, Opcodes6809::kANDA_IDX, false } },
+  { M6809Mnemonic::ANDB, { 0x00, Opcodes6809::kANDB_IMM, Opcodes6809::kANDB_DIR, Opcodes6809::kANDB_EXT, Opcodes6809::kANDB_IDX, false } },
 
   // -------------------------------------------------------------------------
   // Logical — OR
   // -------------------------------------------------------------------------
-  { M6809Mnemonic::ORA,  { 0x00, Opcodes6809::ORA_IMM,  Opcodes6809::ORA_DIR,  Opcodes6809::ORA_EXT,  Opcodes6809::ORA_IDX,  false } },
-  { M6809Mnemonic::ORB,  { 0x00, Opcodes6809::ORB_IMM,  Opcodes6809::ORB_DIR,  Opcodes6809::ORB_EXT,  Opcodes6809::ORB_IDX,  false } },
+  { M6809Mnemonic::ORA,  { 0x00, Opcodes6809::kORA_IMM,  Opcodes6809::kORA_DIR,  Opcodes6809::kORA_EXT,  Opcodes6809::kORA_IDX,  false } },
+  { M6809Mnemonic::ORB,  { 0x00, Opcodes6809::kORB_IMM,  Opcodes6809::kORB_DIR,  Opcodes6809::kORB_EXT,  Opcodes6809::kORB_IDX,  false } },
 
   // -------------------------------------------------------------------------
   // Logical — XOR (EOR)
   // -------------------------------------------------------------------------
-  { M6809Mnemonic::EORA, { 0x00, Opcodes6809::EORA_IMM, Opcodes6809::EORA_DIR, Opcodes6809::EORA_EXT, Opcodes6809::EORA_IDX, false } },
-  { M6809Mnemonic::EORB, { 0x00, Opcodes6809::EORB_IMM, Opcodes6809::EORB_DIR, Opcodes6809::EORB_EXT, Opcodes6809::EORB_IDX, false } },
+  { M6809Mnemonic::EORA, { 0x00, Opcodes6809::kEORA_IMM, Opcodes6809::kEORA_DIR, Opcodes6809::kEORA_EXT, Opcodes6809::kEORA_IDX, false } },
+  { M6809Mnemonic::EORB, { 0x00, Opcodes6809::kEORB_IMM, Opcodes6809::kEORB_DIR, Opcodes6809::kEORB_EXT, Opcodes6809::kEORB_IDX, false } },
 
   // -------------------------------------------------------------------------
   // Logical — BIT test (AND without storing result)
   // -------------------------------------------------------------------------
-  { M6809Mnemonic::BITA, { 0x00, Opcodes6809::BITA_IMM, Opcodes6809::BITA_DIR, Opcodes6809::BITA_EXT, Opcodes6809::BITA_IDX, false } },
-  { M6809Mnemonic::BITB, { 0x00, Opcodes6809::BITB_IMM, Opcodes6809::BITB_DIR, Opcodes6809::BITB_EXT, Opcodes6809::BITB_IDX, false } },
+  { M6809Mnemonic::BITA, { 0x00, Opcodes6809::kBITA_IMM, Opcodes6809::kBITA_DIR, Opcodes6809::kBITA_EXT, Opcodes6809::kBITA_IDX, false } },
+  { M6809Mnemonic::BITB, { 0x00, Opcodes6809::kBITB_IMM, Opcodes6809::kBITB_DIR, Opcodes6809::kBITB_EXT, Opcodes6809::kBITB_IDX, false } },
 
   // -------------------------------------------------------------------------
   // Jump / Subroutine  (no immediate mode)
   // -------------------------------------------------------------------------
-  { M6809Mnemonic::JMP,  { 0x00, NO_OP, Opcodes6809::JMP_DIR, Opcodes6809::JMP_EXT, Opcodes6809::JMP_IDX, false } },
-  { M6809Mnemonic::JSR,  { 0x00, NO_OP, Opcodes6809::JSR_DIR, Opcodes6809::JSR_EXT, Opcodes6809::JSR_IDX, false } },
+  { M6809Mnemonic::JMP,  { 0x00, NO_OP, Opcodes6809::kJMP_DIR, Opcodes6809::kJMP_EXT, Opcodes6809::kJMP_IDX, false } },
+  { M6809Mnemonic::JSR,  { 0x00, NO_OP, Opcodes6809::kJSR_DIR, Opcodes6809::kJSR_EXT, Opcodes6809::kJSR_IDX, false } },
 
   // -------------------------------------------------------------------------
   // Load Effective Address  (indexed mode only; treated via Extended for addr)
   // -------------------------------------------------------------------------
-  { M6809Mnemonic::LEAX, { 0x00, NO_OP, NO_OP, Opcodes6809::LEAX, Opcodes6809::LEAX, false } },
-  { M6809Mnemonic::LEAY, { 0x00, NO_OP, NO_OP, Opcodes6809::LEAY, Opcodes6809::LEAY, false } },
+  { M6809Mnemonic::LEAX, { 0x00, NO_OP, NO_OP, Opcodes6809::kLEAX, Opcodes6809::kLEAX, false } },
+  { M6809Mnemonic::LEAY, { 0x00, NO_OP, NO_OP, Opcodes6809::kLEAY, Opcodes6809::kLEAY, false } },
 };
 // clang-format on
 
@@ -362,102 +362,102 @@ static std::vector<uint8_t> EncodeMemInstr(const InstrOpcodes& entry, uint32_t o
 // ============================================================================
 
 std::vector<uint8_t> Cpu6809::EncodeNOP() {
-  return {Opcodes6809::NOP};  // NOP opcode
+  return {Opcodes6809::kNOP};  // kNOP opcode
 }
 
 std::vector<uint8_t> Cpu6809::EncodeRTS() {
-  return {Opcodes6809::RTS};  // RTS opcode
+  return {Opcodes6809::kRTS};  // kRTS opcode
 }
 
 std::vector<uint8_t> Cpu6809::EncodeCLRA() {
-  return {Opcodes6809::CLRA};  // CLRA opcode
+  return {Opcodes6809::kCLRA};  // kCLRA opcode
 }
 
 std::vector<uint8_t> Cpu6809::EncodeCLRB() {
-  return {Opcodes6809::CLRB};  // CLRB opcode
+  return {Opcodes6809::kCLRB};  // kCLRB opcode
 }
 
 // Shift and Rotate Instructions
 std::vector<uint8_t> Cpu6809::EncodeASLA() {
-  return {Opcodes6809::ASLA};
+  return {Opcodes6809::kASLA};
 }
 
 std::vector<uint8_t> Cpu6809::EncodeASLB() {
-  return {Opcodes6809::ASLB};
+  return {Opcodes6809::kASLB};
 }
 
 std::vector<uint8_t> Cpu6809::EncodeASRA() {
-  return {Opcodes6809::ASRA};
+  return {Opcodes6809::kASRA};
 }
 
 std::vector<uint8_t> Cpu6809::EncodeASRB() {
-  return {Opcodes6809::ASRB};
+  return {Opcodes6809::kASRB};
 }
 
 std::vector<uint8_t> Cpu6809::EncodeLSRA() {
-  return {Opcodes6809::LSRA};
+  return {Opcodes6809::kLSRA};
 }
 
 std::vector<uint8_t> Cpu6809::EncodeLSRB() {
-  return {Opcodes6809::LSRB};
+  return {Opcodes6809::kLSRB};
 }
 
 std::vector<uint8_t> Cpu6809::EncodeROLA() {
-  return {Opcodes6809::ROLA};
+  return {Opcodes6809::kROLA};
 }
 
 std::vector<uint8_t> Cpu6809::EncodeROLB() {
-  return {Opcodes6809::ROLB};
+  return {Opcodes6809::kROLB};
 }
 
 std::vector<uint8_t> Cpu6809::EncodeRORA() {
-  return {Opcodes6809::RORA};
+  return {Opcodes6809::kRORA};
 }
 
 std::vector<uint8_t> Cpu6809::EncodeRORB() {
-  return {Opcodes6809::RORB};
+  return {Opcodes6809::kRORB};
 }
 
 // Increment / Decrement
 std::vector<uint8_t> Cpu6809::EncodeINCA() {
-  return {Opcodes6809::INCA};
+  return {Opcodes6809::kINCA};
 }
 
 std::vector<uint8_t> Cpu6809::EncodeINCB() {
-  return {Opcodes6809::INCB};
+  return {Opcodes6809::kINCB};
 }
 
 std::vector<uint8_t> Cpu6809::EncodeDECA() {
-  return {Opcodes6809::DECA};
+  return {Opcodes6809::kDECA};
 }
 
 std::vector<uint8_t> Cpu6809::EncodeDECB() {
-  return {Opcodes6809::DECB};
+  return {Opcodes6809::kDECB};
 }
 
 // Test and Complement/Negate
 std::vector<uint8_t> Cpu6809::EncodeTSTA() {
-  return {Opcodes6809::TSTA};
+  return {Opcodes6809::kTSTA};
 }
 
 std::vector<uint8_t> Cpu6809::EncodeTSTB() {
-  return {Opcodes6809::TSTB};
+  return {Opcodes6809::kTSTB};
 }
 
 std::vector<uint8_t> Cpu6809::EncodeCOMA() {
-  return {Opcodes6809::COMA};
+  return {Opcodes6809::kCOMA};
 }
 
 std::vector<uint8_t> Cpu6809::EncodeCOMB() {
-  return {Opcodes6809::COMB};
+  return {Opcodes6809::kCOMB};
 }
 
 std::vector<uint8_t> Cpu6809::EncodeNEGA() {
-  return {Opcodes6809::NEGA};
+  return {Opcodes6809::kNEGA};
 }
 
 std::vector<uint8_t> Cpu6809::EncodeNEGB() {
-  return {Opcodes6809::NEGB};
+  return {Opcodes6809::kNEGB};
 }
 
 // ============================================================================
@@ -590,112 +590,112 @@ std::vector<uint8_t> Cpu6809::EncodeLEAY(uint32_t operand, AddressingMode6809 mo
 
 std::vector<uint8_t> Cpu6809::EncodeBRA(int32_t offset, AddressingMode6809 mode) {
   if (mode == AddressingMode6809::Relative8) {
-    return {Opcodes6809::BRA, static_cast<uint8_t>(offset & 0xFF)};
+    return {Opcodes6809::kBRA, static_cast<uint8_t>(offset & 0xFF)};
   }
   return {};
 }
 
 std::vector<uint8_t> Cpu6809::EncodeBEQ(int32_t offset, AddressingMode6809 mode) {
   if (mode == AddressingMode6809::Relative8) {
-    return {Opcodes6809::BEQ, static_cast<uint8_t>(offset & 0xFF)};
+    return {Opcodes6809::kBEQ, static_cast<uint8_t>(offset & 0xFF)};
   }
   return {};
 }
 
 std::vector<uint8_t> Cpu6809::EncodeBNE(int32_t offset, AddressingMode6809 mode) {
   if (mode == AddressingMode6809::Relative8) {
-    return {Opcodes6809::BNE, static_cast<uint8_t>(offset & 0xFF)};
+    return {Opcodes6809::kBNE, static_cast<uint8_t>(offset & 0xFF)};
   }
   return {};
 }
 
 std::vector<uint8_t> Cpu6809::EncodeBCC(int32_t offset, AddressingMode6809 mode) {
   if (mode == AddressingMode6809::Relative8) {
-    return {Opcodes6809::BCC, static_cast<uint8_t>(offset & 0xFF)};
+    return {Opcodes6809::kBCC, static_cast<uint8_t>(offset & 0xFF)};
   }
   return {};
 }
 
 std::vector<uint8_t> Cpu6809::EncodeBCS(int32_t offset, AddressingMode6809 mode) {
   if (mode == AddressingMode6809::Relative8) {
-    return {Opcodes6809::BCS, static_cast<uint8_t>(offset & 0xFF)};
+    return {Opcodes6809::kBCS, static_cast<uint8_t>(offset & 0xFF)};
   }
   return {};
 }
 
 std::vector<uint8_t> Cpu6809::EncodeBMI(int32_t offset, AddressingMode6809 mode) {
   if (mode == AddressingMode6809::Relative8) {
-    return {Opcodes6809::BMI, static_cast<uint8_t>(offset & 0xFF)};
+    return {Opcodes6809::kBMI, static_cast<uint8_t>(offset & 0xFF)};
   }
   return {};
 }
 
 std::vector<uint8_t> Cpu6809::EncodeBPL(int32_t offset, AddressingMode6809 mode) {
   if (mode == AddressingMode6809::Relative8) {
-    return {Opcodes6809::BPL, static_cast<uint8_t>(offset & 0xFF)};
+    return {Opcodes6809::kBPL, static_cast<uint8_t>(offset & 0xFF)};
   }
   return {};
 }
 
 std::vector<uint8_t> Cpu6809::EncodeBVS(int32_t offset, AddressingMode6809 mode) {
   if (mode == AddressingMode6809::Relative8) {
-    return {Opcodes6809::BVS, static_cast<uint8_t>(offset & 0xFF)};
+    return {Opcodes6809::kBVS, static_cast<uint8_t>(offset & 0xFF)};
   }
   return {};
 }
 
 std::vector<uint8_t> Cpu6809::EncodeBVC(int32_t offset, AddressingMode6809 mode) {
   if (mode == AddressingMode6809::Relative8) {
-    return {Opcodes6809::BVC, static_cast<uint8_t>(offset & 0xFF)};
+    return {Opcodes6809::kBVC, static_cast<uint8_t>(offset & 0xFF)};
   }
   return {};
 }
 
 std::vector<uint8_t> Cpu6809::EncodeBGE(int32_t offset, AddressingMode6809 mode) {
   if (mode == AddressingMode6809::Relative8) {
-    return {Opcodes6809::BGE, static_cast<uint8_t>(offset & 0xFF)};
+    return {Opcodes6809::kBGE, static_cast<uint8_t>(offset & 0xFF)};
   }
   return {};
 }
 
 std::vector<uint8_t> Cpu6809::EncodeBGT(int32_t offset, AddressingMode6809 mode) {
   if (mode == AddressingMode6809::Relative8) {
-    return {Opcodes6809::BGT, static_cast<uint8_t>(offset & 0xFF)};
+    return {Opcodes6809::kBGT, static_cast<uint8_t>(offset & 0xFF)};
   }
   return {};
 }
 
 std::vector<uint8_t> Cpu6809::EncodeBLE(int32_t offset, AddressingMode6809 mode) {
   if (mode == AddressingMode6809::Relative8) {
-    return {Opcodes6809::BLE, static_cast<uint8_t>(offset & 0xFF)};
+    return {Opcodes6809::kBLE, static_cast<uint8_t>(offset & 0xFF)};
   }
   return {};
 }
 
 std::vector<uint8_t> Cpu6809::EncodeBLT(int32_t offset, AddressingMode6809 mode) {
   if (mode == AddressingMode6809::Relative8) {
-    return {Opcodes6809::BLT, static_cast<uint8_t>(offset & 0xFF)};
+    return {Opcodes6809::kBLT, static_cast<uint8_t>(offset & 0xFF)};
   }
   return {};
 }
 
 std::vector<uint8_t> Cpu6809::EncodeBHI(int32_t offset, AddressingMode6809 mode) {
   if (mode == AddressingMode6809::Relative8) {
-    return {Opcodes6809::BHI, static_cast<uint8_t>(offset & 0xFF)};
+    return {Opcodes6809::kBHI, static_cast<uint8_t>(offset & 0xFF)};
   }
   return {};
 }
 
 std::vector<uint8_t> Cpu6809::EncodeBLS(int32_t offset, AddressingMode6809 mode) {
   if (mode == AddressingMode6809::Relative8) {
-    return {Opcodes6809::BLS, static_cast<uint8_t>(offset & 0xFF)};
+    return {Opcodes6809::kBLS, static_cast<uint8_t>(offset & 0xFF)};
   }
   return {};
 }
 
 std::vector<uint8_t> Cpu6809::EncodeBSR(int32_t offset, AddressingMode6809 mode) {
   if (mode == AddressingMode6809::Relative8) {
-    return {Opcodes6809::BSR, static_cast<uint8_t>(offset & 0xFF)};
+    return {Opcodes6809::kBSR, static_cast<uint8_t>(offset & 0xFF)};
   }
   return {};
 }
@@ -706,78 +706,78 @@ std::vector<uint8_t> Cpu6809::EncodeBSR(int32_t offset, AddressingMode6809 mode)
 
 /// Helper: build a 4-byte long branch: page-2 prefix + opcode + 16-bit offset
 static std::vector<uint8_t> MakeLongBranch(uint8_t opcode, int16_t offset) {
-  std::vector<uint8_t> result = {Opcodes6809::PAGE2_PREFIX, opcode};
+  std::vector<uint8_t> result = {Opcodes6809::kPAGE2_PREFIX, opcode};
   auto offset_bytes = encoding::ToBigEndian16(static_cast<uint16_t>(offset));
   result.insert(result.end(), offset_bytes.begin(), offset_bytes.end());
   return result;
 }
 
 std::vector<uint8_t> Cpu6809::EncodeLBRA(int16_t offset) {
-  return MakeLongBranch(Opcodes6809::Page2::LBRA, offset);
+  return MakeLongBranch(Opcodes6809::Page2::kLBRA, offset);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeLBRN(int16_t offset) {
-  return MakeLongBranch(Opcodes6809::Page2::LBRN, offset);
+  return MakeLongBranch(Opcodes6809::Page2::kLBRN, offset);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeLBEQ(int16_t offset) {
-  return MakeLongBranch(Opcodes6809::Page2::LBEQ, offset);
+  return MakeLongBranch(Opcodes6809::Page2::kLBEQ, offset);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeLBNE(int16_t offset) {
-  return MakeLongBranch(Opcodes6809::Page2::LBNE, offset);
+  return MakeLongBranch(Opcodes6809::Page2::kLBNE, offset);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeLBCC(int16_t offset) {
-  return MakeLongBranch(Opcodes6809::Page2::LBCC, offset);
+  return MakeLongBranch(Opcodes6809::Page2::kLBCC, offset);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeLBCS(int16_t offset) {
-  return MakeLongBranch(Opcodes6809::Page2::LBCS, offset);
+  return MakeLongBranch(Opcodes6809::Page2::kLBCS, offset);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeLBMI(int16_t offset) {
-  return MakeLongBranch(Opcodes6809::Page2::LBMI, offset);
+  return MakeLongBranch(Opcodes6809::Page2::kLBMI, offset);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeLBPL(int16_t offset) {
-  return MakeLongBranch(Opcodes6809::Page2::LBPL, offset);
+  return MakeLongBranch(Opcodes6809::Page2::kLBPL, offset);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeLBVS(int16_t offset) {
-  return MakeLongBranch(Opcodes6809::Page2::LBVS, offset);
+  return MakeLongBranch(Opcodes6809::Page2::kLBVS, offset);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeLBVC(int16_t offset) {
-  return MakeLongBranch(Opcodes6809::Page2::LBVC, offset);
+  return MakeLongBranch(Opcodes6809::Page2::kLBVC, offset);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeLBGE(int16_t offset) {
-  return MakeLongBranch(Opcodes6809::Page2::LBGE, offset);
+  return MakeLongBranch(Opcodes6809::Page2::kLBGE, offset);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeLBLT(int16_t offset) {
-  return MakeLongBranch(Opcodes6809::Page2::LBLT, offset);
+  return MakeLongBranch(Opcodes6809::Page2::kLBLT, offset);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeLBGT(int16_t offset) {
-  return MakeLongBranch(Opcodes6809::Page2::LBGT, offset);
+  return MakeLongBranch(Opcodes6809::Page2::kLBGT, offset);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeLBLE(int16_t offset) {
-  return MakeLongBranch(Opcodes6809::Page2::LBLE, offset);
+  return MakeLongBranch(Opcodes6809::Page2::kLBLE, offset);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeLBHI(int16_t offset) {
-  return MakeLongBranch(Opcodes6809::Page2::LBHI, offset);
+  return MakeLongBranch(Opcodes6809::Page2::kLBHI, offset);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeLBLS(int16_t offset) {
-  return MakeLongBranch(Opcodes6809::Page2::LBLS, offset);
+  return MakeLongBranch(Opcodes6809::Page2::kLBLS, offset);
 }
 
 std::vector<uint8_t> Cpu6809::EncodeLBSR(int16_t offset) {
-  return MakeLongBranch(Opcodes6809::Page2::LBSR, offset);
+  return MakeLongBranch(Opcodes6809::Page2::kLBSR, offset);
 }
 
 // ============================================================================
@@ -787,13 +787,13 @@ std::vector<uint8_t> Cpu6809::EncodeLBSR(int16_t offset) {
 std::vector<uint8_t> Cpu6809::EncodeTFR(uint8_t src, uint8_t dst) {
   // Post-byte format: high nibble = source, low nibble = destination
   uint8_t postbyte = (src << 4) | dst;
-  return {Opcodes6809::TFR, postbyte};
+  return {Opcodes6809::kTFR, postbyte};
 }
 
 std::vector<uint8_t> Cpu6809::EncodeEXG(uint8_t reg1, uint8_t reg2) {
   // Post-byte format: high nibble = reg1, low nibble = reg2
   uint8_t postbyte = (reg1 << 4) | reg2;
-  return {Opcodes6809::EXG, postbyte};
+  return {Opcodes6809::kEXG, postbyte};
 }
 
 // ============================================================================
@@ -801,19 +801,19 @@ std::vector<uint8_t> Cpu6809::EncodeEXG(uint8_t reg1, uint8_t reg2) {
 // ============================================================================
 
 std::vector<uint8_t> Cpu6809::EncodePSHS(uint8_t mask) {
-  return {Opcodes6809::PSHS, mask};
+  return {Opcodes6809::kPSHS, mask};
 }
 
 std::vector<uint8_t> Cpu6809::EncodePULS(uint8_t mask) {
-  return {Opcodes6809::PULS, mask};
+  return {Opcodes6809::kPULS, mask};
 }
 
 std::vector<uint8_t> Cpu6809::EncodePSHU(uint8_t mask) {
-  return {Opcodes6809::PSHU, mask};
+  return {Opcodes6809::kPSHU, mask};
 }
 
 std::vector<uint8_t> Cpu6809::EncodePULU(uint8_t mask) {
-  return {Opcodes6809::PULU, mask};
+  return {Opcodes6809::kPULU, mask};
 }
 
 // ============================================================================
@@ -915,7 +915,7 @@ std::vector<uint8_t> Cpu6809::EncodeInstruction(const std::string& mnemonic, uin
       mode = is_16bit ? AddressingMode6809::Immediate16 : AddressingMode6809::Immediate8;
     }
     // Direct page mode: <address or address < $100
-    else if (trimmed[0] == '<' || operand < cpu6809::DIRECT_PAGE_MAX) {
+    else if (trimmed[0] == '<' || operand < cpu6809::kDIRECT_PAGE_MAX) {
       mode = AddressingMode6809::Direct;
     }
     // Indexed modes: ,X or ,Y or offset,X etc.
@@ -1031,7 +1031,7 @@ std::vector<uint8_t> Cpu6809::EncodeInstruction(const std::string& mnemonic, uin
     case M6809Mnemonic::BSR:
       return EncodeBSR(kOff, mode);
     case M6809Mnemonic::BRN:
-      return {};  // BRN (Branch Never) - no-op
+      return {};  // kBRN (Branch Never) - no-op
 
     // ── Long branches ───────────────────────────────────────────────────────
     case M6809Mnemonic::LBRA:
