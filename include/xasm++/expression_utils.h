@@ -182,7 +182,8 @@ bool TryParseAndEvaluateExpression(const std::string& expr_str, ParserType& pars
       return true;
     }
   } catch (...) {
-    // Expression could not be evaluated (e.g., forward reference)
+    // Expression could not be evaluated (e.g., forward reference) — return false
+    static_cast<void>(0);
   }
   return false;
 }

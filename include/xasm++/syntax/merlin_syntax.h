@@ -18,49 +18,13 @@
 #include <vector>
 
 #include "xasm++/common/conditional_assembler.h"
+#include "xasm++/directives/merlin_directive_handlers.h"
 #include "xasm++/expression.h"
 #include "xasm++/section.h"
 #include "xasm++/symbol.h"
 #include "xasm++/syntax/directive_registry.h"
 
 namespace xasm {
-
-// Forward declaration for DirectiveContext (defined in directive_registry.h)
-struct DirectiveContext;
-
-// Forward declare merlin namespace and directive handlers
-namespace merlin {
-void HandleOrg(xasm::DirectiveContext&);
-void HandleEqu(xasm::DirectiveContext&);
-void HandleDb(xasm::DirectiveContext&);
-void HandleDw(xasm::DirectiveContext&);
-void HandleHex(xasm::DirectiveContext&);
-void HandleDs(xasm::DirectiveContext&);
-void HandleDum(xasm::DirectiveContext&);
-void HandleDend(xasm::DirectiveContext&);
-void HandlePut(xasm::DirectiveContext&);
-void HandleDo(xasm::DirectiveContext&);
-void HandleElse(xasm::DirectiveContext&);
-void HandleFin(xasm::DirectiveContext&);
-void HandleLst(xasm::DirectiveContext&);
-void HandleLstdo(xasm::DirectiveContext&);
-void HandleTr(xasm::DirectiveContext&);
-void HandleAsc(xasm::DirectiveContext&);
-void HandleDci(xasm::DirectiveContext&);
-void HandleInv(xasm::DirectiveContext&);
-void HandleFls(xasm::DirectiveContext&);
-void HandleDa(xasm::DirectiveContext&);
-void HandlePmc(xasm::DirectiveContext&);
-void HandleEom(xasm::DirectiveContext&);
-void HandleMac(xasm::DirectiveContext&);
-void HandleUsr(xasm::DirectiveContext&);
-void HandleEnd(xasm::DirectiveContext&);
-void HandleSav(xasm::DirectiveContext&);
-void HandleXc(xasm::DirectiveContext&);
-void HandleMx(xasm::DirectiveContext&);
-void HandleRev(xasm::DirectiveContext&);
-void HandleLup(xasm::DirectiveContext&);
-}  // namespace merlin
 
 // Forward declarations
 class Cpu6502;

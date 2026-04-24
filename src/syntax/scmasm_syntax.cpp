@@ -412,7 +412,8 @@ void ScmasmSyntaxParser::ProcessOneLine(const std::string& raw, Section& section
   try {
     ParseLine(line, section, symbols, lines, line_idx);
   } catch (const std::exception& e) {
-    throw std::runtime_error(FormatError(e.what()));
+    const std::string msg = FormatError(e.what());
+    throw std::runtime_error(msg);
   }
 }
 
@@ -981,6 +982,7 @@ static size_t EstimateInstrSize(const std::string& opcode, const std::string& op
       }
     } catch (...) {
       // Forward reference or unevaluable — keep est=3.
+      static_cast<void>(0);
     }
   }
   return est;
@@ -1501,6 +1503,8 @@ uint32_t ScmasmSyntaxParser::EvaluateExpression(const std::string& str,
       try {
         return ParseNumber(trimmed);
       } catch (...) {
+        // Not a valid SCMASM binary literal — fall through to ExpressionParser
+        static_cast<void>(0);
       }
     }
     if (trimmed.length() == 2 && !std::isalnum(trimmed[0]) && trimmed[0] != '$' &&
@@ -1508,6 +1512,8 @@ uint32_t ScmasmSyntaxParser::EvaluateExpression(const std::string& str,
       try {
         return ParseNumber(trimmed);
       } catch (...) {
+        // Not a valid 2-char literal — fall through to ExpressionParser
+        static_cast<void>(0);
       }
     }
   }

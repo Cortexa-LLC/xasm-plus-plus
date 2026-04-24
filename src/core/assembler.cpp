@@ -166,6 +166,7 @@ class RefixupPass final : public IAtomVisitor {
                       std::make_shared<LiteralExpr>(static_cast<uint32_t>(value)));
     } catch (const std::exception&) {
       // Should be resolved by now; ignore.
+      static_cast<void>(0);
     }
   }
 
@@ -798,6 +799,7 @@ void Assembler::EvaluateSpaceExpression(SpaceAtom& space, uint32_t virtual_addre
     }
   } catch (const std::exception&) {
     // Forward reference or evaluation error — keep previous count.
+    static_cast<void>(0);
   }
 }
 

@@ -22,19 +22,6 @@
 
 namespace xasm {
 
-// Forward declarations for edtasm namespace
-namespace edtasm {
-void HandleOrg(DirectiveContext&);
-void HandleEnd(DirectiveContext&);
-void HandleEqu(DirectiveContext&);
-void HandleSet(DirectiveContext&);
-void HandleFcb(DirectiveContext&);
-void HandleFdb(DirectiveContext&);
-void HandleFcc(DirectiveContext&);
-void HandleRmb(DirectiveContext&);
-void HandleSetdp(DirectiveContext&);
-}  // namespace edtasm
-
 /**
  * @brief EDTASM+ assembly syntax parser
  *

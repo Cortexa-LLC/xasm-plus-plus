@@ -69,8 +69,8 @@ static uint32_t ParseNumber(const std::string& str, ConcreteSymbolTable& symbols
     auto expr = parser.Parse(clean_str);
     return static_cast<uint32_t>(expr->Evaluate(symbols));
   } catch (const std::runtime_error& e) {
-    // Re-throw with context
-    throw std::runtime_error(std::string("Parse error: ") + e.what());
+    const std::string msg = std::string("Parse error: ") + e.what();
+    throw std::runtime_error(msg);
   }
 }
 

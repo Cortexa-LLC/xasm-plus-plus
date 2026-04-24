@@ -233,8 +233,8 @@ uint32_t MerlinSyntaxParser::ParseNumber(const std::string& str) {
     auto expr = parser.Parse(clean_str);
     return static_cast<uint32_t>(expr->Evaluate(empty_symbols));
   } catch (const std::runtime_error& e) {
-    // Re-throw with Merlin formatting
-    throw std::runtime_error(FormatError(e.what()));
+    const std::string msg = FormatError(e.what());
+    throw std::runtime_error(msg);
   }
 }
 
@@ -373,7 +373,8 @@ std::shared_ptr<Expression> MerlinSyntaxParser::ParseExpression(const std::strin
   try {
     return parser.Parse(expr);
   } catch (const std::runtime_error& e) {
-    throw std::runtime_error(FormatError(e.what()));
+    const std::string msg = FormatError(e.what());
+    throw std::runtime_error(msg);
   }
 }
 
@@ -1136,7 +1137,8 @@ void MerlinSyntaxParser::HandleLup(const std::string& operand) {
   try {
     count = static_cast<int>(ParseNumber(count_str));
   } catch (...) {
-    throw std::runtime_error(FormatError("LUP count must be a number: " + count_str));
+    const std::string msg = FormatError("LUP count must be a number: " + count_str);
+    throw std::runtime_error(msg);
   }
 
   if (count < 0) {
