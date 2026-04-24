@@ -43,7 +43,7 @@ CheckOptions:
   - key: readability-identifier-naming.PrivateMemberSuffix
     value: '_'
   - key: readability-identifier-naming.ConstantCase
-    value: CamelCase
+    value: aNy_CasE
   - key: readability-identifier-naming.ConstantPrefix
     value: k
   - key: readability-function-cognitive-complexity.Threshold
