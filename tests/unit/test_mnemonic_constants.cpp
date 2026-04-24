@@ -21,76 +21,76 @@ using namespace xasm;
 // ============================================================================
 
 TEST(MnemonicConstantsTest, Z80_LoadInstructions) {
-  EXPECT_STREQ("LD", Z80Mnemonics::LD);
-  EXPECT_STREQ("PUSH", Z80Mnemonics::PUSH);
-  EXPECT_STREQ("POP", Z80Mnemonics::POP);
+  EXPECT_STREQ("LD", Z80Mnemonics::kLD);
+  EXPECT_STREQ("PUSH", Z80Mnemonics::kPUSH);
+  EXPECT_STREQ("POP", Z80Mnemonics::kPOP);
 }
 
 TEST(MnemonicConstantsTest, Z80_ArithmeticInstructions) {
-  EXPECT_STREQ("ADD", Z80Mnemonics::ADD);
-  EXPECT_STREQ("ADC", Z80Mnemonics::ADC);
-  EXPECT_STREQ("SUB", Z80Mnemonics::SUB);
-  EXPECT_STREQ("SBC", Z80Mnemonics::SBC);
-  EXPECT_STREQ("INC", Z80Mnemonics::INC);
-  EXPECT_STREQ("DEC", Z80Mnemonics::DEC);
+  EXPECT_STREQ("ADD", Z80Mnemonics::kADD);
+  EXPECT_STREQ("ADC", Z80Mnemonics::kADC);
+  EXPECT_STREQ("SUB", Z80Mnemonics::kSUB);
+  EXPECT_STREQ("SBC", Z80Mnemonics::kSBC);
+  EXPECT_STREQ("INC", Z80Mnemonics::kINC);
+  EXPECT_STREQ("DEC", Z80Mnemonics::kDEC);
 }
 
 TEST(MnemonicConstantsTest, Z80_LogicalInstructions) {
-  EXPECT_STREQ("AND", Z80Mnemonics::AND);
-  EXPECT_STREQ("OR", Z80Mnemonics::OR);
-  EXPECT_STREQ("XOR", Z80Mnemonics::XOR);
-  EXPECT_STREQ("CP", Z80Mnemonics::CP);
+  EXPECT_STREQ("AND", Z80Mnemonics::kAND);
+  EXPECT_STREQ("OR", Z80Mnemonics::kOR);
+  EXPECT_STREQ("XOR", Z80Mnemonics::kXOR);
+  EXPECT_STREQ("CP", Z80Mnemonics::kCP);
 }
 
 TEST(MnemonicConstantsTest, Z80_BranchInstructions) {
-  EXPECT_STREQ("JP", Z80Mnemonics::JP);
-  EXPECT_STREQ("JR", Z80Mnemonics::JR);
-  EXPECT_STREQ("CALL", Z80Mnemonics::CALL);
-  EXPECT_STREQ("RET", Z80Mnemonics::RET);
-  EXPECT_STREQ("RST", Z80Mnemonics::RST);
+  EXPECT_STREQ("JP", Z80Mnemonics::kJP);
+  EXPECT_STREQ("JR", Z80Mnemonics::kJR);
+  EXPECT_STREQ("CALL", Z80Mnemonics::kCALL);
+  EXPECT_STREQ("RET", Z80Mnemonics::kRET);
+  EXPECT_STREQ("RST", Z80Mnemonics::kRST);
 }
 
 TEST(MnemonicConstantsTest, Z80_RotateInstructions) {
-  EXPECT_STREQ("RLCA", Z80Mnemonics::RLCA);
-  EXPECT_STREQ("RRCA", Z80Mnemonics::RRCA);
-  EXPECT_STREQ("RLA", Z80Mnemonics::RLA);
-  EXPECT_STREQ("RRA", Z80Mnemonics::RRA);
-  EXPECT_STREQ("RLC", Z80Mnemonics::RLC);
-  EXPECT_STREQ("RRC", Z80Mnemonics::RRC);
-  EXPECT_STREQ("RL", Z80Mnemonics::RL);
-  EXPECT_STREQ("RR", Z80Mnemonics::RR);
-  EXPECT_STREQ("SLA", Z80Mnemonics::SLA);
-  EXPECT_STREQ("SRA", Z80Mnemonics::SRA);
-  EXPECT_STREQ("SRL", Z80Mnemonics::SRL);
+  EXPECT_STREQ("RLCA", Z80Mnemonics::kRLCA);
+  EXPECT_STREQ("RRCA", Z80Mnemonics::kRRCA);
+  EXPECT_STREQ("RLA", Z80Mnemonics::kRLA);
+  EXPECT_STREQ("RRA", Z80Mnemonics::kRRA);
+  EXPECT_STREQ("RLC", Z80Mnemonics::kRLC);
+  EXPECT_STREQ("RRC", Z80Mnemonics::kRRC);
+  EXPECT_STREQ("RL", Z80Mnemonics::kRL);
+  EXPECT_STREQ("RR", Z80Mnemonics::kRR);
+  EXPECT_STREQ("SLA", Z80Mnemonics::kSLA);
+  EXPECT_STREQ("SRA", Z80Mnemonics::kSRA);
+  EXPECT_STREQ("SRL", Z80Mnemonics::kSRL);
 }
 
 TEST(MnemonicConstantsTest, Z80_BitInstructions) {
-  EXPECT_STREQ("BIT", Z80Mnemonics::BIT);
-  EXPECT_STREQ("SET", Z80Mnemonics::SET);
-  EXPECT_STREQ("RES", Z80Mnemonics::RES);
+  EXPECT_STREQ("BIT", Z80Mnemonics::kBIT);
+  EXPECT_STREQ("SET", Z80Mnemonics::kSET);
+  EXPECT_STREQ("RES", Z80Mnemonics::kRES);
 }
 
 TEST(MnemonicConstantsTest, Z80_MiscInstructions) {
-  EXPECT_STREQ("NOP", Z80Mnemonics::NOP);
-  EXPECT_STREQ("HALT", Z80Mnemonics::HALT);
-  EXPECT_STREQ("DI", Z80Mnemonics::DI);
-  EXPECT_STREQ("EI", Z80Mnemonics::EI);
-  EXPECT_STREQ("NEG", Z80Mnemonics::NEG);
-  EXPECT_STREQ("CPL", Z80Mnemonics::CPL);
-  EXPECT_STREQ("CCF", Z80Mnemonics::CCF);
-  EXPECT_STREQ("SCF", Z80Mnemonics::SCF);
-  EXPECT_STREQ("DAA", Z80Mnemonics::DAA);
+  EXPECT_STREQ("NOP", Z80Mnemonics::kNOP);
+  EXPECT_STREQ("HALT", Z80Mnemonics::kHALT);
+  EXPECT_STREQ("DI", Z80Mnemonics::kDI);
+  EXPECT_STREQ("EI", Z80Mnemonics::kEI);
+  EXPECT_STREQ("NEG", Z80Mnemonics::kNEG);
+  EXPECT_STREQ("CPL", Z80Mnemonics::kCPL);
+  EXPECT_STREQ("CCF", Z80Mnemonics::kCCF);
+  EXPECT_STREQ("SCF", Z80Mnemonics::kSCF);
+  EXPECT_STREQ("DAA", Z80Mnemonics::kDAA);
 }
 
 TEST(MnemonicConstantsTest, Z80_BlockInstructions) {
-  EXPECT_STREQ("LDI", Z80Mnemonics::LDI);
-  EXPECT_STREQ("LDIR", Z80Mnemonics::LDIR);
-  EXPECT_STREQ("LDD", Z80Mnemonics::LDD);
-  EXPECT_STREQ("LDDR", Z80Mnemonics::LDDR);
-  EXPECT_STREQ("CPI", Z80Mnemonics::CPI);
-  EXPECT_STREQ("CPIR", Z80Mnemonics::CPIR);
-  EXPECT_STREQ("CPD", Z80Mnemonics::CPD);
-  EXPECT_STREQ("CPDR", Z80Mnemonics::CPDR);
+  EXPECT_STREQ("LDI", Z80Mnemonics::kLDI);
+  EXPECT_STREQ("LDIR", Z80Mnemonics::kLDIR);
+  EXPECT_STREQ("LDD", Z80Mnemonics::kLDD);
+  EXPECT_STREQ("LDDR", Z80Mnemonics::kLDDR);
+  EXPECT_STREQ("CPI", Z80Mnemonics::kCPI);
+  EXPECT_STREQ("CPIR", Z80Mnemonics::kCPIR);
+  EXPECT_STREQ("CPD", Z80Mnemonics::kCPD);
+  EXPECT_STREQ("CPDR", Z80Mnemonics::kCPDR);
 }
 
 // ============================================================================

@@ -177,31 +177,31 @@ std::vector<uint8_t> CpuZ80::ToLittleEndian(uint16_t value) {
 // ============================================================================
 
 std::vector<uint8_t> CpuZ80::EncodeLD_A_n(uint8_t value) {
-  return {Opcodes::LD_A_n, value};
+  return {Opcodes::kLD_A_n, value};
 }
 
 std::vector<uint8_t> CpuZ80::EncodeLD_B_n(uint8_t value) {
-  return {Opcodes::LD_B_n, value};
+  return {Opcodes::kLD_B_n, value};
 }
 
 std::vector<uint8_t> CpuZ80::EncodeLD_C_n(uint8_t value) {
-  return {Opcodes::LD_C_n, value};
+  return {Opcodes::kLD_C_n, value};
 }
 
 std::vector<uint8_t> CpuZ80::EncodeLD_D_n(uint8_t value) {
-  return {Opcodes::LD_D_n, value};
+  return {Opcodes::kLD_D_n, value};
 }
 
 std::vector<uint8_t> CpuZ80::EncodeLD_E_n(uint8_t value) {
-  return {Opcodes::LD_E_n, value};
+  return {Opcodes::kLD_E_n, value};
 }
 
 std::vector<uint8_t> CpuZ80::EncodeLD_H_n(uint8_t value) {
-  return {Opcodes::LD_H_n, value};
+  return {Opcodes::kLD_H_n, value};
 }
 
 std::vector<uint8_t> CpuZ80::EncodeLD_L_n(uint8_t value) {
-  return {Opcodes::LD_L_n, value};
+  return {Opcodes::kLD_L_n, value};
 }
 
 // ============================================================================
@@ -209,69 +209,69 @@ std::vector<uint8_t> CpuZ80::EncodeLD_L_n(uint8_t value) {
 // ============================================================================
 
 std::vector<uint8_t> CpuZ80::EncodeLD_BC_nn(uint16_t value) {
-  std::vector<uint8_t> result = {Opcodes::LD_BC_nn};
+  std::vector<uint8_t> result = {Opcodes::kLD_BC_nn};
   std::vector<uint8_t> bytes = ToLittleEndian(value);
   result.insert(result.end(), bytes.begin(), bytes.end());
   return result;
 }
 
 std::vector<uint8_t> CpuZ80::EncodeLD_DE_nn(uint16_t value) {
-  std::vector<uint8_t> result = {Opcodes::LD_DE_nn};
+  std::vector<uint8_t> result = {Opcodes::kLD_DE_nn};
   std::vector<uint8_t> bytes = ToLittleEndian(value);
   result.insert(result.end(), bytes.begin(), bytes.end());
   return result;
 }
 
 std::vector<uint8_t> CpuZ80::EncodeLD_HL_nn(uint16_t value) {
-  std::vector<uint8_t> result = {Opcodes::LD_HL_nn};
+  std::vector<uint8_t> result = {Opcodes::kLD_HL_nn};
   std::vector<uint8_t> bytes = ToLittleEndian(value);
   result.insert(result.end(), bytes.begin(), bytes.end());
   return result;
 }
 
 std::vector<uint8_t> CpuZ80::EncodeLD_SP_nn(uint16_t value) {
-  std::vector<uint8_t> result = {Opcodes::LD_SP_nn};
+  std::vector<uint8_t> result = {Opcodes::kLD_SP_nn};
   std::vector<uint8_t> bytes = ToLittleEndian(value);
   result.insert(result.end(), bytes.begin(), bytes.end());
   return result;
 }
 
 std::vector<uint8_t> CpuZ80::EncodeLD_A_BC() {
-  return {Opcodes::LD_A_BC};
+  return {Opcodes::kLD_A_BC};
 }
 
 std::vector<uint8_t> CpuZ80::EncodeLD_A_DE() {
-  return {Opcodes::LD_A_DE};
+  return {Opcodes::kLD_A_DE};
 }
 
 std::vector<uint8_t> CpuZ80::EncodeLD_BC_A() {
-  return {Opcodes::LD_BC_A};
+  return {Opcodes::kLD_BC_A};
 }
 
 std::vector<uint8_t> CpuZ80::EncodeLD_DE_A() {
-  return {Opcodes::LD_DE_A};
+  return {Opcodes::kLD_DE_A};
 }
 
 std::vector<uint8_t> CpuZ80::EncodeLD_HL_n(uint8_t value) {
-  return {Opcodes::LD_HL_n, value};
+  return {Opcodes::kLD_HL_n, value};
 }
 
 std::vector<uint8_t> CpuZ80::EncodeLD_HL_addr(uint16_t address) {
-  std::vector<uint8_t> result = {Opcodes::LD_HL_addr};
+  std::vector<uint8_t> result = {Opcodes::kLD_HL_addr};
   std::vector<uint8_t> bytes = ToLittleEndian(address);
   result.insert(result.end(), bytes.begin(), bytes.end());
   return result;
 }
 
 std::vector<uint8_t> CpuZ80::EncodeLD_addr_HL(uint16_t address) {
-  std::vector<uint8_t> result = {Opcodes::LD_addr_HL};
+  std::vector<uint8_t> result = {Opcodes::kLD_addr_HL};
   std::vector<uint8_t> bytes = ToLittleEndian(address);
   result.insert(result.end(), bytes.begin(), bytes.end());
   return result;
 }
 
 std::vector<uint8_t> CpuZ80::EncodeLD_SP_HL() {
-  return {Opcodes::LD_SP_HL};
+  return {Opcodes::kLD_SP_HL};
 }
 
 // ============================================================================
@@ -279,19 +279,19 @@ std::vector<uint8_t> CpuZ80::EncodeLD_SP_HL() {
 // ============================================================================
 
 std::vector<uint8_t> CpuZ80::EncodeADD_A_n(uint8_t value) {
-  return {Opcodes::ADD_A_n, value};
+  return {Opcodes::kADD_A_n, value};
 }
 
 std::vector<uint8_t> CpuZ80::EncodeSUB_n(uint8_t value) {
-  return {Opcodes::SUB_n, value};
+  return {Opcodes::kSUB_n, value};
 }
 
 std::vector<uint8_t> CpuZ80::EncodeINC_A() {
-  return {Opcodes::INC_A};
+  return {Opcodes::kINC_A};
 }
 
 std::vector<uint8_t> CpuZ80::EncodeDEC_A() {
-  return {Opcodes::DEC_A};
+  return {Opcodes::kDEC_A};
 }
 
 // ============================================================================
@@ -299,18 +299,18 @@ std::vector<uint8_t> CpuZ80::EncodeDEC_A() {
 // ============================================================================
 
 std::vector<uint8_t> CpuZ80::EncodeNOP() {
-  return {Opcodes::NOP};
+  return {Opcodes::kNOP};
 }
 
 std::vector<uint8_t> CpuZ80::EncodeJP_nn(uint16_t address) {
-  std::vector<uint8_t> result = {Opcodes::JP_nn};
+  std::vector<uint8_t> result = {Opcodes::kJP_nn};
   std::vector<uint8_t> bytes = ToLittleEndian(address);
   result.insert(result.end(), bytes.begin(), bytes.end());
   return result;
 }
 
 std::vector<uint8_t> CpuZ80::EncodeRET() {
-  return {Opcodes::RET};
+  return {Opcodes::kRET};
 }
 
 // ============================================================================
@@ -318,11 +318,11 @@ std::vector<uint8_t> CpuZ80::EncodeRET() {
 // ============================================================================
 
 std::vector<uint8_t> CpuZ80::EncodePUSH_BC() {
-  return {Opcodes::PUSH_BC};
+  return {Opcodes::kPUSH_BC};
 }
 
 std::vector<uint8_t> CpuZ80::EncodePOP_BC() {
-  return {Opcodes::POP_BC};
+  return {Opcodes::kPOP_BC};
 }
 
 // ============================================================================
@@ -331,17 +331,17 @@ std::vector<uint8_t> CpuZ80::EncodePOP_BC() {
 
 std::vector<uint8_t> CpuZ80::EncodeBIT(uint8_t bit, uint8_t reg) {
   uint8_t opcode = 0x40 + (bit << 3) + reg;
-  return {Opcodes::CB_PREFIX, opcode};
+  return {Opcodes::kCB_PREFIX, opcode};
 }
 
 std::vector<uint8_t> CpuZ80::EncodeSET(uint8_t bit, uint8_t reg) {
   uint8_t opcode = 0xC0 + (bit << 3) + reg;
-  return {Opcodes::CB_PREFIX, opcode};
+  return {Opcodes::kCB_PREFIX, opcode};
 }
 
 std::vector<uint8_t> CpuZ80::EncodeRES(uint8_t bit, uint8_t reg) {
   uint8_t opcode = 0x80 + (bit << 3) + reg;
-  return {Opcodes::CB_PREFIX, opcode};
+  return {Opcodes::kCB_PREFIX, opcode};
 }
 
 // ============================================================================
@@ -349,14 +349,14 @@ std::vector<uint8_t> CpuZ80::EncodeRES(uint8_t bit, uint8_t reg) {
 // ============================================================================
 
 std::vector<uint8_t> CpuZ80::EncodeLD_IX_nn(uint16_t value) {
-  std::vector<uint8_t> result = {Opcodes::DD_PREFIX, Opcodes::DD::LD_IX_nn};
+  std::vector<uint8_t> result = {Opcodes::kDD_PREFIX, Opcodes::DD::kLD_IX_nn};
   std::vector<uint8_t> bytes = ToLittleEndian(value);
   result.insert(result.end(), bytes.begin(), bytes.end());
   return result;
 }
 
 std::vector<uint8_t> CpuZ80::EncodeLD_A_IX_d(int8_t displacement) {
-  return {Opcodes::DD_PREFIX, Opcodes::DD::LD_A_IX_d, static_cast<uint8_t>(displacement)};
+  return {Opcodes::kDD_PREFIX, Opcodes::DD::kLD_A_IX_d, static_cast<uint8_t>(displacement)};
 }
 
 // ============================================================================
@@ -364,14 +364,14 @@ std::vector<uint8_t> CpuZ80::EncodeLD_A_IX_d(int8_t displacement) {
 // ============================================================================
 
 std::vector<uint8_t> CpuZ80::EncodeLD_IY_nn(uint16_t value) {
-  std::vector<uint8_t> result = {Opcodes::FD_PREFIX, Opcodes::FD::LD_IY_nn};
+  std::vector<uint8_t> result = {Opcodes::kFD_PREFIX, Opcodes::FD::kLD_IY_nn};
   std::vector<uint8_t> bytes = ToLittleEndian(value);
   result.insert(result.end(), bytes.begin(), bytes.end());
   return result;
 }
 
 std::vector<uint8_t> CpuZ80::EncodeLD_A_IY_d(int8_t displacement) {
-  return {Opcodes::FD_PREFIX, Opcodes::FD::LD_A_IY_d, static_cast<uint8_t>(displacement)};
+  return {Opcodes::kFD_PREFIX, Opcodes::FD::kLD_A_IY_d, static_cast<uint8_t>(displacement)};
 }
 
 // ============================================================================
@@ -379,19 +379,19 @@ std::vector<uint8_t> CpuZ80::EncodeLD_A_IY_d(int8_t displacement) {
 // ============================================================================
 
 std::vector<uint8_t> CpuZ80::EncodeLD_A_B() {
-  return {Opcodes::LD_A_B};
+  return {Opcodes::kLD_A_B};
 }
 
 std::vector<uint8_t> CpuZ80::EncodeLD_A_C() {
-  return {Opcodes::LD_A_C};
+  return {Opcodes::kLD_A_C};
 }
 
 std::vector<uint8_t> CpuZ80::EncodeLD_B_A() {
-  return {Opcodes::LD_B_A};
+  return {Opcodes::kLD_B_A};
 }
 
 std::vector<uint8_t> CpuZ80::EncodeLD_C_A() {
-  return {Opcodes::LD_C_A};
+  return {Opcodes::kLD_C_A};
 }
 
 // ============================================================================
@@ -399,15 +399,15 @@ std::vector<uint8_t> CpuZ80::EncodeLD_C_A() {
 // ============================================================================
 
 std::vector<uint8_t> CpuZ80::EncodeADC_A_n(uint8_t value) {
-  return {Opcodes::ADC_A_n, value};
+  return {Opcodes::kADC_A_n, value};
 }
 
 std::vector<uint8_t> CpuZ80::EncodeSBC_A_n(uint8_t value) {
-  return {Opcodes::SBC_A_n, value};
+  return {Opcodes::kSBC_A_n, value};
 }
 
 std::vector<uint8_t> CpuZ80::EncodeCP_n(uint8_t value) {
-  return {Opcodes::CP_n, value};
+  return {Opcodes::kCP_n, value};
 }
 
 // ============================================================================
@@ -415,19 +415,19 @@ std::vector<uint8_t> CpuZ80::EncodeCP_n(uint8_t value) {
 // ============================================================================
 
 std::vector<uint8_t> CpuZ80::EncodeAND_n(uint8_t value) {
-  return {Opcodes::AND_n, value};
+  return {Opcodes::kAND_n, value};
 }
 
 std::vector<uint8_t> CpuZ80::EncodeOR_n(uint8_t value) {
-  return {Opcodes::OR_n, value};
+  return {Opcodes::kOR_n, value};
 }
 
 std::vector<uint8_t> CpuZ80::EncodeXOR_n(uint8_t value) {
-  return {Opcodes::XOR_n, value};
+  return {Opcodes::kXOR_n, value};
 }
 
 std::vector<uint8_t> CpuZ80::EncodeXOR_A() {
-  return {Opcodes::XOR_A};
+  return {Opcodes::kXOR_A};
 }
 
 // ============================================================================
@@ -435,23 +435,23 @@ std::vector<uint8_t> CpuZ80::EncodeXOR_A() {
 // ============================================================================
 
 std::vector<uint8_t> CpuZ80::EncodeJR_e(int8_t offset) {
-  return {Opcodes::JR_e, static_cast<uint8_t>(offset)};
+  return {Opcodes::kJR_e, static_cast<uint8_t>(offset)};
 }
 
 std::vector<uint8_t> CpuZ80::EncodeJR_NZ_e(int8_t offset) {
-  return {Opcodes::JR_NZ_e, static_cast<uint8_t>(offset)};
+  return {Opcodes::kJR_NZ_e, static_cast<uint8_t>(offset)};
 }
 
 std::vector<uint8_t> CpuZ80::EncodeJR_Z_e(int8_t offset) {
-  return {Opcodes::JR_Z_e, static_cast<uint8_t>(offset)};
+  return {Opcodes::kJR_Z_e, static_cast<uint8_t>(offset)};
 }
 
 std::vector<uint8_t> CpuZ80::EncodeJR_NC_e(int8_t offset) {
-  return {Opcodes::JR_NC_e, static_cast<uint8_t>(offset)};
+  return {Opcodes::kJR_NC_e, static_cast<uint8_t>(offset)};
 }
 
 std::vector<uint8_t> CpuZ80::EncodeJR_C_e(int8_t offset) {
-  return {Opcodes::JR_C_e, static_cast<uint8_t>(offset)};
+  return {Opcodes::kJR_C_e, static_cast<uint8_t>(offset)};
 }
 
 // ============================================================================
@@ -459,25 +459,25 @@ std::vector<uint8_t> CpuZ80::EncodeJR_C_e(int8_t offset) {
 // ============================================================================
 
 std::vector<uint8_t> CpuZ80::EncodeLD_A_addr(uint16_t address) {
-  std::vector<uint8_t> result = {Opcodes::LD_A_addr};
+  std::vector<uint8_t> result = {Opcodes::kLD_A_addr};
   std::vector<uint8_t> bytes = ToLittleEndian(address);
   result.insert(result.end(), bytes.begin(), bytes.end());
   return result;
 }
 
 std::vector<uint8_t> CpuZ80::EncodeLD_addr_A(uint16_t address) {
-  std::vector<uint8_t> result = {Opcodes::LD_addr_A};
+  std::vector<uint8_t> result = {Opcodes::kLD_addr_A};
   std::vector<uint8_t> bytes = ToLittleEndian(address);
   result.insert(result.end(), bytes.begin(), bytes.end());
   return result;
 }
 
 std::vector<uint8_t> CpuZ80::EncodeLD_A_HL() {
-  return {Opcodes::LD_A_HL};
+  return {Opcodes::kLD_A_HL};
 }
 
 std::vector<uint8_t> CpuZ80::EncodeLD_HL_A() {
-  return {Opcodes::LD_HL_A};
+  return {Opcodes::kLD_HL_A};
 }
 
 // ============================================================================
@@ -485,27 +485,27 @@ std::vector<uint8_t> CpuZ80::EncodeLD_HL_A() {
 // ============================================================================
 
 std::vector<uint8_t> CpuZ80::EncodeRLCA() {
-  return {Opcodes::RLCA};
+  return {Opcodes::kRLCA};
 }
 
 std::vector<uint8_t> CpuZ80::EncodeRRCA() {
-  return {Opcodes::RRCA};
+  return {Opcodes::kRRCA};
 }
 
 std::vector<uint8_t> CpuZ80::EncodeRLA() {
-  return {Opcodes::RLA};
+  return {Opcodes::kRLA};
 }
 
 std::vector<uint8_t> CpuZ80::EncodeRRA() {
-  return {Opcodes::RRA};
+  return {Opcodes::kRRA};
 }
 
 std::vector<uint8_t> CpuZ80::EncodeRLD() {
-  return {Opcodes::ED_PREFIX, Opcodes::ED::RLD};
+  return {Opcodes::kED_PREFIX, Opcodes::ED::kRLD};
 }
 
 std::vector<uint8_t> CpuZ80::EncodeRRD() {
-  return {Opcodes::ED_PREFIX, Opcodes::ED::RRD};
+  return {Opcodes::kED_PREFIX, Opcodes::ED::kRRD};
 }
 
 // ============================================================================
@@ -513,67 +513,67 @@ std::vector<uint8_t> CpuZ80::EncodeRRD() {
 // ============================================================================
 
 std::vector<uint8_t> CpuZ80::EncodeIN_A_n(uint8_t port) {
-  return {Opcodes::IN_A_n, port};
+  return {Opcodes::kIN_A_n, port};
 }
 
 std::vector<uint8_t> CpuZ80::EncodeOUT_n_A(uint8_t port) {
-  return {Opcodes::OUT_n_A, port};
+  return {Opcodes::kOUT_n_A, port};
 }
 
 std::vector<uint8_t> CpuZ80::EncodeIN_B_C() {
-  return {Opcodes::ED_PREFIX, Opcodes::ED::IN_B_C};
+  return {Opcodes::kED_PREFIX, Opcodes::ED::kIN_B_C};
 }
 
 std::vector<uint8_t> CpuZ80::EncodeIN_C_C() {
-  return {Opcodes::ED_PREFIX, Opcodes::ED::IN_C_C};
+  return {Opcodes::kED_PREFIX, Opcodes::ED::kIN_C_C};
 }
 
 std::vector<uint8_t> CpuZ80::EncodeIN_D_C() {
-  return {Opcodes::ED_PREFIX, Opcodes::ED::IN_D_C};
+  return {Opcodes::kED_PREFIX, Opcodes::ED::kIN_D_C};
 }
 
 std::vector<uint8_t> CpuZ80::EncodeIN_E_C() {
-  return {Opcodes::ED_PREFIX, Opcodes::ED::IN_E_C};
+  return {Opcodes::kED_PREFIX, Opcodes::ED::kIN_E_C};
 }
 
 std::vector<uint8_t> CpuZ80::EncodeIN_H_C() {
-  return {Opcodes::ED_PREFIX, Opcodes::ED::IN_H_C};
+  return {Opcodes::kED_PREFIX, Opcodes::ED::kIN_H_C};
 }
 
 std::vector<uint8_t> CpuZ80::EncodeIN_L_C() {
-  return {Opcodes::ED_PREFIX, Opcodes::ED::IN_L_C};
+  return {Opcodes::kED_PREFIX, Opcodes::ED::kIN_L_C};
 }
 
 std::vector<uint8_t> CpuZ80::EncodeIN_A_C() {
-  return {Opcodes::ED_PREFIX, Opcodes::ED::IN_A_C};
+  return {Opcodes::kED_PREFIX, Opcodes::ED::kIN_A_C};
 }
 
 std::vector<uint8_t> CpuZ80::EncodeOUT_C_B() {
-  return {Opcodes::ED_PREFIX, Opcodes::ED::OUT_C_B};
+  return {Opcodes::kED_PREFIX, Opcodes::ED::kOUT_C_B};
 }
 
 std::vector<uint8_t> CpuZ80::EncodeOUT_C_C() {
-  return {Opcodes::ED_PREFIX, Opcodes::ED::OUT_C_C};
+  return {Opcodes::kED_PREFIX, Opcodes::ED::kOUT_C_C};
 }
 
 std::vector<uint8_t> CpuZ80::EncodeOUT_C_D() {
-  return {Opcodes::ED_PREFIX, Opcodes::ED::OUT_C_D};
+  return {Opcodes::kED_PREFIX, Opcodes::ED::kOUT_C_D};
 }
 
 std::vector<uint8_t> CpuZ80::EncodeOUT_C_E() {
-  return {Opcodes::ED_PREFIX, Opcodes::ED::OUT_C_E};
+  return {Opcodes::kED_PREFIX, Opcodes::ED::kOUT_C_E};
 }
 
 std::vector<uint8_t> CpuZ80::EncodeOUT_C_H() {
-  return {Opcodes::ED_PREFIX, Opcodes::ED::OUT_C_H};
+  return {Opcodes::kED_PREFIX, Opcodes::ED::kOUT_C_H};
 }
 
 std::vector<uint8_t> CpuZ80::EncodeOUT_C_L() {
-  return {Opcodes::ED_PREFIX, Opcodes::ED::OUT_C_L};
+  return {Opcodes::kED_PREFIX, Opcodes::ED::kOUT_C_L};
 }
 
 std::vector<uint8_t> CpuZ80::EncodeOUT_C_A() {
-  return {Opcodes::ED_PREFIX, Opcodes::ED::OUT_C_A};
+  return {Opcodes::kED_PREFIX, Opcodes::ED::kOUT_C_A};
 }
 
 // ============================================================================
@@ -581,31 +581,31 @@ std::vector<uint8_t> CpuZ80::EncodeOUT_C_A() {
 // ============================================================================
 
 std::vector<uint8_t> CpuZ80::EncodeLD_I_A() {
-  return {Opcodes::ED_PREFIX, Opcodes::ED::LD_I_A};
+  return {Opcodes::kED_PREFIX, Opcodes::ED::kLD_I_A};
 }
 
 std::vector<uint8_t> CpuZ80::EncodeLD_A_I() {
-  return {Opcodes::ED_PREFIX, Opcodes::ED::LD_A_I};
+  return {Opcodes::kED_PREFIX, Opcodes::ED::kLD_A_I};
 }
 
 std::vector<uint8_t> CpuZ80::EncodeLD_R_A() {
-  return {Opcodes::ED_PREFIX, Opcodes::ED::LD_R_A};
+  return {Opcodes::kED_PREFIX, Opcodes::ED::kLD_R_A};
 }
 
 std::vector<uint8_t> CpuZ80::EncodeLD_A_R() {
-  return {Opcodes::ED_PREFIX, Opcodes::ED::LD_A_R};
+  return {Opcodes::kED_PREFIX, Opcodes::ED::kLD_A_R};
 }
 
 std::vector<uint8_t> CpuZ80::EncodeLDIR() {
-  return {Opcodes::ED_PREFIX, Opcodes::ED::LDIR};
+  return {Opcodes::kED_PREFIX, Opcodes::ED::kLDIR};
 }
 
 std::vector<uint8_t> CpuZ80::EncodeCPIR() {
-  return {Opcodes::ED_PREFIX, Opcodes::ED::CPIR};
+  return {Opcodes::kED_PREFIX, Opcodes::ED::kCPIR};
 }
 
 std::vector<uint8_t> CpuZ80::EncodeNEG() {
-  return {Opcodes::ED_PREFIX, Opcodes::ED::NEG};
+  return {Opcodes::kED_PREFIX, Opcodes::ED::kNEG};
 }
 
 // ============================================================================
@@ -613,27 +613,27 @@ std::vector<uint8_t> CpuZ80::EncodeNEG() {
 // ============================================================================
 
 std::vector<uint8_t> CpuZ80::EncodePUSH_DE() {
-  return {Opcodes::PUSH_DE};
+  return {Opcodes::kPUSH_DE};
 }
 
 std::vector<uint8_t> CpuZ80::EncodePUSH_HL() {
-  return {Opcodes::PUSH_HL};
+  return {Opcodes::kPUSH_HL};
 }
 
 std::vector<uint8_t> CpuZ80::EncodePUSH_AF() {
-  return {Opcodes::PUSH_AF};
+  return {Opcodes::kPUSH_AF};
 }
 
 std::vector<uint8_t> CpuZ80::EncodePOP_DE() {
-  return {Opcodes::POP_DE};
+  return {Opcodes::kPOP_DE};
 }
 
 std::vector<uint8_t> CpuZ80::EncodePOP_HL() {
-  return {Opcodes::POP_HL};
+  return {Opcodes::kPOP_HL};
 }
 
 std::vector<uint8_t> CpuZ80::EncodePOP_AF() {
-  return {Opcodes::POP_AF};
+  return {Opcodes::kPOP_AF};
 }
 
 // ============================================================================
@@ -641,25 +641,25 @@ std::vector<uint8_t> CpuZ80::EncodePOP_AF() {
 // ============================================================================
 
 std::vector<uint8_t> CpuZ80::EncodeCALL_nn(uint16_t address) {
-  std::vector<uint8_t> result = {Opcodes::CALL_nn};
+  std::vector<uint8_t> result = {Opcodes::kCALL_nn};
   std::vector<uint8_t> bytes = ToLittleEndian(address);
   result.insert(result.end(), bytes.begin(), bytes.end());
   return result;
 }
 
 std::vector<uint8_t> CpuZ80::EncodeCALL_NZ_nn(uint16_t address) {
-  std::vector<uint8_t> result = {Opcodes::CALL_NZ_nn};
+  std::vector<uint8_t> result = {Opcodes::kCALL_NZ_nn};
   std::vector<uint8_t> bytes = ToLittleEndian(address);
   result.insert(result.end(), bytes.begin(), bytes.end());
   return result;
 }
 
 std::vector<uint8_t> CpuZ80::EncodeRET_Z() {
-  return {Opcodes::RET_Z};
+  return {Opcodes::kRET_Z};
 }
 
 std::vector<uint8_t> CpuZ80::EncodeRET_NZ() {
-  return {Opcodes::RET_NZ};
+  return {Opcodes::kRET_NZ};
 }
 
 // ============================================================================

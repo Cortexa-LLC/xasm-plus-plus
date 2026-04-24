@@ -55,11 +55,11 @@ using namespace CommonDirectives;
 using namespace Z80Directives;
 
 // Import specific Z80 mnemonics (avoid conflicts with CommonDirectives::SET)
-using Z80Mnemonics::CALL;
-using Z80Mnemonics::DJNZ;
-using Z80Mnemonics::JP;
-using Z80Mnemonics::JR;
-using Z80Mnemonics::RST;
+using Z80Mnemonics::kCALL;
+using Z80Mnemonics::kDJNZ;
+using Z80Mnemonics::kJP;
+using Z80Mnemonics::kJR;
+using Z80Mnemonics::kRST;
 
 // Import EDTASM-M80++ specific directive constants
 using xasm::directives::DOT_LIST;
@@ -703,11 +703,11 @@ uint32_t EdtasmM80PlusPlusSyntaxParser::EstimateZ80InstructionSize(const Directi
 
   // Relative jumps / absolute jumps+calls / RST → per-mnemonic sizing
   static const std::unordered_map<std::string, uint32_t> kMnemonicSizes = {
-      {std::string(JR), INSTRUCTION_SIZE_TWO_BYTES},
-      {std::string(DJNZ), INSTRUCTION_SIZE_TWO_BYTES},
-      {std::string(JP), INSTRUCTION_SIZE_THREE_BYTES},
-      {std::string(CALL), INSTRUCTION_SIZE_THREE_BYTES},
-      {std::string(RST), INSTRUCTION_SIZE_SINGLE_BYTE},
+      {std::string(kJR), INSTRUCTION_SIZE_TWO_BYTES},
+      {std::string(kDJNZ), INSTRUCTION_SIZE_TWO_BYTES},
+      {std::string(kJP), INSTRUCTION_SIZE_THREE_BYTES},
+      {std::string(kCALL), INSTRUCTION_SIZE_THREE_BYTES},
+      {std::string(kRST), INSTRUCTION_SIZE_SINGLE_BYTE},
   };
   auto it = kMnemonicSizes.find(mnemonic);
   if (it != kMnemonicSizes.end()) {
