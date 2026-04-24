@@ -1259,13 +1259,13 @@ size_t Cpu6502::GetInstructionSize(const std::string& mnemonic,
   }
 
   // --- Branch instructions: always relative (2 bytes) ---
-  static const std::unordered_set<std::string> BRANCHES = {
+  static const std::unordered_set<std::string> kBRANCHES = {
       M6502Mnemonics::kBEQ, M6502Mnemonics::kBNE, M6502Mnemonics::kBCC,
       M6502Mnemonics::kBCS, M6502Mnemonics::kBMI, M6502Mnemonics::kBPL,
       M6502Mnemonics::kBVC, M6502Mnemonics::kBVS, M6502Mnemonics::kBRA,
       M6502Mnemonics::kBLT,  // alias for kBCC
   };
-  if (BRANCHES.contains(kMn)) {
+  if (kBRANCHES.contains(kMn)) {
     return 2;
   }
 

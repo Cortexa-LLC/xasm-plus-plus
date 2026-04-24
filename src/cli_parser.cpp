@@ -21,7 +21,7 @@ CommandLineOptions ParseCommandLine(int argc, char** argv) {
 
   // Help and version flags (processed by CLI11 automatically)
   app.set_help_flag("--help,-h", "Show help message");
-  app.set_version_flag("--version,-v", xasm::version::version_full);
+  app.set_version_flag("--version,-v", xasm::version::kVersionFull);
 
   // Positional argument: input file (required, but allow --help/--version
   // without it)

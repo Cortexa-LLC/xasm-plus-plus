@@ -681,7 +681,7 @@ std::string ScmasmSyntaxParser::StripEditorCommands(const std::string& line) {
   // Apple II line editor commands that should be ignored during assembly
   // Format: command at start of line (case-insensitive), optionally followed by
   // arguments
-  static const std::unordered_set<std::string> EDITOR_COMMANDS = {"NEW",  "AUTO", "MAN",    "SAVE",
+  static const std::unordered_set<std::string> kEDITOR_COMMANDS = {"NEW",  "AUTO", "MAN",    "SAVE",
                                                                   "LOAD", "ASM",  "DELETE", "LIST"};
 
   // Find first non-whitespace/control character
@@ -701,7 +701,7 @@ std::string ScmasmSyntaxParser::StripEditorCommands(const std::string& line) {
     c = static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
   }
 
-  if (!EDITOR_COMMANDS.contains(upper_token)) {
+  if (!kEDITOR_COMMANDS.contains(upper_token)) {
     return line;
   }
 

@@ -741,7 +741,7 @@ std::string RemoveHsDots(const std::string& s) {
 }
 
 /// Result of scanning one whitespace run in a .kHS operand.
-enum class HsWhitespaceAction { kContinue, kStop, kEndOfString };
+enum class HsWhitespaceAction { Continue, Stop, EndOfString };
 
 /// Skip whitespace at position @p i in @p s.
 /// Returns the action the caller should take:
@@ -757,16 +757,16 @@ HsWhitespaceAction SkipHsWhitespace(const std::string& s, size_t& i, bool has_da
     ++i;
   }
   if (i >= s.length()) {
-    return HsWhitespaceAction::kEndOfString;
+    return HsWhitespaceAction::EndOfString;
   }
   if (has_data && tabs >= 2) {
-    return HsWhitespaceAction::kStop;
+    return HsWhitespaceAction::Stop;
   }
-  return HsWhitespaceAction::kContinue;
+  return HsWhitespaceAction::Continue;
 }
 
 /// Result of processing one hex word in a .kHS operand.
-enum class HsWordResult { kAppended, kOddBeforeData, kStop };
+enum class HsWordResult { Appended, OddBeforeData, Stop };
 
 /// Process one hex word starting at @p word_start in @p s ending at @p i.
 /// Appends valid even-length hex words to @p hex_digits.
@@ -785,15 +785,15 @@ HsWordResult ProcessHsWord(const std::string& s, size_t word_start, size_t i,
 
   if (all_hex && (word.length() % 2 == 0)) {
     hex_digits += word;
-    return HsWordResult::kAppended;
+    return HsWordResult::Appended;
   }
   if (all_hex && (word.length() % 2 != 0)) {
     if (hex_digits.empty()) {
-      return HsWordResult::kOddBeforeData;
+      return HsWordResult::OddBeforeData;
     }
-    return HsWordResult::kStop;  // odd-length hex after valid data → comment
+    return HsWordResult::Stop;  // odd-length hex after valid data → comment
   }
-  return HsWordResult::kStop;  // non-hex word → inline comment
+  return HsWordResult::Stop;  // non-hex word → inline comment
 }
 
 /// Extract valid hex digits from a normalised (dots removed) .kHS operand.
@@ -805,10 +805,10 @@ std::string ExtractHsHexDigits(const std::string& normalised, bool& odd_hex_befo
   size_t i = 0;
   while (i < normalised.length()) {
     HsWhitespaceAction action = SkipHsWhitespace(normalised, i, !hex_digits.empty());
-    if (action == HsWhitespaceAction::kEndOfString) {
+    if (action == HsWhitespaceAction::EndOfString) {
       break;
     }
-    if (action == HsWhitespaceAction::kStop) {
+    if (action == HsWhitespaceAction::Stop) {
       break;
     }
 
@@ -819,11 +819,11 @@ std::string ExtractHsHexDigits(const std::string& normalised, bool& odd_hex_befo
 
     if (i > word_start) {
       HsWordResult result = ProcessHsWord(normalised, word_start, i, hex_digits);
-      if (result == HsWordResult::kOddBeforeData) {
+      if (result == HsWordResult::OddBeforeData) {
         odd_hex_before_data = true;
         break;
       }
-      if (result == HsWordResult::kStop) {
+      if (result == HsWordResult::Stop) {
         break;
       }
     }

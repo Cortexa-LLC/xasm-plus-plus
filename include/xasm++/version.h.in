@@ -13,12 +13,12 @@
 #define XASM_LICENSE "Licensed under the MIT License"
 
 namespace xasm::version {
-    constexpr int major = XASM_VERSION_MAJOR;
-    constexpr int minor = XASM_VERSION_MINOR;
-    constexpr int patch = XASM_VERSION_PATCH;
-    constexpr const char* version_string = XASM_VERSION_STRING;
-    constexpr const char* git_sha = XASM_GIT_SHA;
-    constexpr const char* version_full = XASM_VERSION_FULL;
-    constexpr const char* copyright = XASM_COPYRIGHT;
-    constexpr const char* license = XASM_LICENSE;
+    constexpr int kMajor = XASM_VERSION_MAJOR;
+    constexpr int kMinor = XASM_VERSION_MINOR;
+    constexpr int kPatch = XASM_VERSION_PATCH;
+    constexpr const char* kVersionString = XASM_VERSION_STRING;
+    constexpr const char* kGitSha = XASM_GIT_SHA;
+    constexpr const char* kVersionFull = XASM_VERSION_FULL;
+    constexpr const char* kCopyright = XASM_COPYRIGHT;
+    constexpr const char* kLicense = XASM_LICENSE;
 } // namespace xasm::version

@@ -46,6 +46,10 @@ CheckOptions:
     value: aNy_CasE
   - key: readability-identifier-naming.ConstantPrefix
     value: k
+  - key: readability-identifier-naming.ScopedEnumConstantCase
+    value: CamelCase
+  - key: readability-identifier-naming.LocalConstantCase
+    value: aNy_CasE
   - key: readability-function-cognitive-complexity.Threshold
     value: 25
   - key: readability-function-size.LineThreshold

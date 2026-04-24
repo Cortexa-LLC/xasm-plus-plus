@@ -191,14 +191,14 @@ class LiteralExpr : public Expression {
    * @brief Construct a literal expression
    * @param val Constant numeric value
    */
-  explicit LiteralExpr(int64_t val) : value(val) {}
+  explicit LiteralExpr(int64_t val) : value_(val) {}
 
   /**
    * @brief Evaluate - returns the constant value
    * @param symbols Symbol table (unused)
    * @return The constant value
    */
-  int64_t Evaluate(const SymbolTable& /*symbols*/) const override { return value; }
+  int64_t Evaluate(const SymbolTable& /*symbols*/) const override { return value_; }
 
   /**
    * @brief Check if constant - always returns true
@@ -216,10 +216,10 @@ class LiteralExpr : public Expression {
    * @brief Get the constant value
    * @return The literal value
    */
-  int64_t GetValue() const { return value; }
+  int64_t GetValue() const { return value_; }
 
  private:
-  int64_t value{0};  ///< The constant value
+  int64_t value_{0};  ///< The constant value
 };
 
 /**
@@ -241,7 +241,7 @@ class SymbolExpr : public Expression {
    * @brief Construct a symbol expression
    * @param sym Symbol name to reference
    */
-  explicit SymbolExpr(const std::string& sym) : symbol(sym) {}
+  explicit SymbolExpr(const std::string& sym) : symbol_(sym) {}
 
   /**
    * @brief Evaluate - looks up the symbol in the symbol table
@@ -252,8 +252,8 @@ class SymbolExpr : public Expression {
    */
   int64_t Evaluate(const SymbolTable& symbols) const override {
     int64_t value = 0;
-    if (!symbols.Lookup(symbol, value)) {
-      throw UndefinedSymbolError(symbol);
+    if (!symbols.Lookup(symbol_, value)) {
+      throw UndefinedSymbolError(symbol_);
     }
     return value;
   }
@@ -278,10 +278,10 @@ class SymbolExpr : public Expression {
    * @brief Get the symbol name
    * @return The referenced symbol name
    */
-  const std::string& GetSymbol() const { return symbol; }
+  const std::string& GetSymbol() const { return symbol_; }
 
  private:
-  std::string symbol{};  ///< The symbol name
+  std::string symbol_{};  ///< The symbol name
 };
 
 /**
@@ -353,7 +353,7 @@ class BinaryOpExpr : public Expression {
    * @param right Right operand expression
    */
   BinaryOpExpr(BinaryOp op, std::shared_ptr<Expression> left, std::shared_ptr<Expression> right)
-      : operation(op), left(left), right(right) {}
+      : operation_(op), left_(std::move(left)), right_(std::move(right)) {}
 
   /**
    * @brief Evaluate the binary operation
@@ -366,11 +366,11 @@ class BinaryOpExpr : public Expression {
    */
   int64_t Evaluate(const SymbolTable& symbols) const override {
     int64_t lval = 0;
-    lval = left->Evaluate(symbols);
+    lval = left_->Evaluate(symbols);
     int64_t rval = 0;
-    rval = right->Evaluate(symbols);
+    rval = right_->Evaluate(symbols);
 
-    switch (operation) {
+    switch (operation_) {
       case BinaryOp::Add:
         return lval + rval;
       case BinaryOp::Subtract:
@@ -422,36 +422,36 @@ class BinaryOpExpr : public Expression {
    * @brief Check if constant
    * @return true only if both operands are constant
    */
-  bool IsConstant() const override { return left->IsConstant() && right->IsConstant(); }
+  bool IsConstant() const override { return left_->IsConstant() && right_->IsConstant(); }
 
   /**
    * @brief Check if relocatable
    * @return true if either operand is relocatable
    */
-  bool IsRelocatable() const override { return left->IsRelocatable() || right->IsRelocatable(); }
+  bool IsRelocatable() const override { return left_->IsRelocatable() || right_->IsRelocatable(); }
 
   /**
    * @brief Get the operator
    * @return The binary operator
    */
-  BinaryOp GetOperation() const { return operation; }
+  BinaryOp GetOperation() const { return operation_; }
 
   /**
    * @brief Get the left operand
    * @return Shared pointer to left operand expression
    */
-  const std::shared_ptr<Expression>& GetLeft() const { return left; }
+  const std::shared_ptr<Expression>& GetLeft() const { return left_; }
 
   /**
    * @brief Get the right operand
    * @return Shared pointer to right operand expression
    */
-  const std::shared_ptr<Expression>& GetRight() const { return right; }
+  const std::shared_ptr<Expression>& GetRight() const { return right_; }
 
  private:
-  BinaryOp operation;                   ///< The binary operator
-  std::shared_ptr<Expression> left{};   ///< Left operand
-  std::shared_ptr<Expression> right{};  ///< Right operand
+  BinaryOp operation_;                   ///< The binary operator
+  std::shared_ptr<Expression> left_{};   ///< Left operand
+  std::shared_ptr<Expression> right_{};  ///< Right operand
 };
 
 /**
@@ -476,7 +476,8 @@ class UnaryOpExpr : public Expression {
    * @param op Unary operator to apply
    * @param operand Operand expression
    */
-  UnaryOpExpr(UnaryOp op, std::shared_ptr<Expression> operand) : operation(op), expr(operand) {}
+  UnaryOpExpr(UnaryOp op, std::shared_ptr<Expression> operand)
+      : operation_(op), expr_(std::move(operand)) {}
 
   /**
    * @brief Evaluate the unary operation
@@ -489,9 +490,9 @@ class UnaryOpExpr : public Expression {
    */
   int64_t Evaluate(const SymbolTable& symbols) const override {
     int64_t val = 0;
-    val = expr->Evaluate(symbols);
+    val = expr_->Evaluate(symbols);
 
-    switch (operation) {
+    switch (operation_) {
       case UnaryOp::Negate:
         return -val;
       case UnaryOp::BitwiseNot:
@@ -513,29 +514,29 @@ class UnaryOpExpr : public Expression {
    * @brief Check if constant
    * @return Same as operand's IsConstant()
    */
-  bool IsConstant() const override { return expr->IsConstant(); }
+  bool IsConstant() const override { return expr_->IsConstant(); }
 
   /**
    * @brief Check if relocatable
    * @return Same as operand's IsRelocatable()
    */
-  bool IsRelocatable() const override { return expr->IsRelocatable(); }
+  bool IsRelocatable() const override { return expr_->IsRelocatable(); }
 
   /**
    * @brief Get the operator
    * @return The unary operator
    */
-  UnaryOp GetOperation() const { return operation; }
+  UnaryOp GetOperation() const { return operation_; }
 
   /**
    * @brief Get the operand
    * @return Shared pointer to operand expression
    */
-  const std::shared_ptr<Expression>& GetOperand() const { return expr; }
+  const std::shared_ptr<Expression>& GetOperand() const { return expr_; }
 
  private:
-  UnaryOp operation;                   ///< The unary operator
-  std::shared_ptr<Expression> expr{};  ///< The operand
+  UnaryOp operation_;                   ///< The unary operator
+  std::shared_ptr<Expression> expr_{};  ///< The operand
 };
 
 }  // namespace xasm

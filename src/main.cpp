@@ -315,9 +315,9 @@ int main(int argc, char** argv) {
       return 0;
     }
     if (opts.show_version) {
-      std::cout << "xasm++ version " << xasm::version::version_full << "\n";
-      std::cout << xasm::version::copyright << "\n";
-      std::cout << xasm::version::license << "\n";
+      std::cout << "xasm++ version " << xasm::version::kVersionFull << "\n";
+      std::cout << xasm::version::kCopyright << "\n";
+      std::cout << xasm::version::kLicense << "\n";
       return 0;
     }
 
