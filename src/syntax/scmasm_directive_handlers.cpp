@@ -741,7 +741,7 @@ std::string RemoveHsDots(const std::string& s) {
 }
 
 /// Result of scanning one whitespace run in a .kHS operand.
-enum class HsWhitespaceAction { Continue, Stop, EndOfString };
+enum class HsWhitespaceAction : std::uint8_t { Continue, Stop, EndOfString };
 
 /// Skip whitespace at position @p i in @p s.
 /// Returns the action the caller should take:
@@ -766,7 +766,7 @@ HsWhitespaceAction SkipHsWhitespace(const std::string& s, size_t& i, bool has_da
 }
 
 /// Result of processing one hex word in a .kHS operand.
-enum class HsWordResult { Appended, OddBeforeData, Stop };
+enum class HsWordResult : std::uint8_t { Appended, OddBeforeData, Stop };
 
 /// Process one hex word starting at @p word_start in @p s ending at @p i.
 /// Appends valid even-length hex words to @p hex_digits.

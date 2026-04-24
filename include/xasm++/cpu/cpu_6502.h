@@ -621,7 +621,6 @@ class Cpu6502 : public CpuPlugin {
   // Used as a guard at the top of every 65816-only Encode* method.
   bool IsCpu65816() const { return cpu_mode_ == CpuMode::Cpu65816; }
 
- private:
   // Phase 2.5: CPU mode state
   CpuMode cpu_mode_ = CpuMode::Cpu6502;  // Default to 6502
 

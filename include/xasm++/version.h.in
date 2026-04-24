@@ -3,22 +3,15 @@
 
 #pragma once
 
-#define XASM_VERSION_MAJOR @PROJECT_VERSION_MAJOR@
-#define XASM_VERSION_MINOR @PROJECT_VERSION_MINOR@
-#define XASM_VERSION_PATCH @PROJECT_VERSION_PATCH@
-#define XASM_VERSION_STRING "@PROJECT_VERSION@"
-#define XASM_GIT_SHA "@GIT_SHA@"
-#define XASM_VERSION_FULL "@PROJECT_VERSION@-@GIT_SHA@"
-#define XASM_COPYRIGHT "Copyright (c) 2026 Cortexa LLC"
-#define XASM_LICENSE "Licensed under the MIT License"
+#include <cstdint>
 
 namespace xasm::version {
-    constexpr int kMajor = XASM_VERSION_MAJOR;
-    constexpr int kMinor = XASM_VERSION_MINOR;
-    constexpr int kPatch = XASM_VERSION_PATCH;
-    constexpr const char* kVersionString = XASM_VERSION_STRING;
-    constexpr const char* kGitSha = XASM_GIT_SHA;
-    constexpr const char* kVersionFull = XASM_VERSION_FULL;
-    constexpr const char* kCopyright = XASM_COPYRIGHT;
-    constexpr const char* kLicense = XASM_LICENSE;
+    inline constexpr std::uint32_t kMajor = @PROJECT_VERSION_MAJOR@;
+    inline constexpr std::uint32_t kMinor = @PROJECT_VERSION_MINOR@;
+    inline constexpr std::uint32_t kPatch = @PROJECT_VERSION_PATCH@;
+    inline constexpr const char* kVersionString = "@PROJECT_VERSION@";
+    inline constexpr const char* kGitSha = "@GIT_SHA@";
+    inline constexpr const char* kVersionFull = "@PROJECT_VERSION@-@GIT_SHA@";
+    inline constexpr const char* kCopyright = "Copyright (c) 2026 Cortexa LLC";
+    inline constexpr const char* kLicense = "Licensed under the MIT License";
 } // namespace xasm::version

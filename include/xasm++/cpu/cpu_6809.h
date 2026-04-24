@@ -957,7 +957,6 @@ class Cpu6809 : public CpuPlugin {
   static std::vector<uint8_t> EncodeIndexedPostByte(AddressingMode6809 mode, int32_t offset,
                                                     uint8_t reg);
 
- private:
   uint8_t direct_page_ = 0x00;  ///< Direct page register (default $00)
 };
 

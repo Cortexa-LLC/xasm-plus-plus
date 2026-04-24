@@ -21,6 +21,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -31,7 +32,7 @@ namespace xasm {
 // Mnemonic enum — one enumerator per M6809 instruction
 // ============================================================================
 
-enum class M6809Mnemonic {
+enum class M6809Mnemonic : std::uint8_t {
   Unknown = 0,
 
   // Load / Store — 8-bit accumulators

@@ -21,7 +21,7 @@ namespace xasm {
 namespace {
 
 // Compute the total byte count for sections (used for the RW18 header length).
-static uint32_t ComputeCodeSize(const std::vector<Section*>& sections) {
+uint32_t ComputeCodeSize(const std::vector<Section*>& sections) {
   uint32_t code_size = 0;
   for (const auto* section : sections) {
     for (const auto& atom : section->atoms) {
@@ -48,7 +48,7 @@ static uint32_t ComputeCodeSize(const std::vector<Section*>& sections) {
 
 // Write the 12-byte RW18 file header (USR signature + three 16-bit fields +
 // actual code size).
-static void WriteRw18Header(std::ofstream& out, const std::array<uint16_t, 4>& rw18_args,
+void WriteRw18Header(std::ofstream& out, const std::array<uint16_t, 4>& rw18_args,
                             uint32_t code_size) {
   auto write_u16le = [&](uint16_t v) {
     uint8_t buf[2] = {static_cast<uint8_t>(v & 0xFF), static_cast<uint8_t>((v >> 8) & 0xFF)};
@@ -63,7 +63,7 @@ static void WriteRw18Header(std::ofstream& out, const std::array<uint16_t, 4>& r
 }
 
 // Write a single atom to the output stream. Updates position in place.
-static void WriteAtom(std::ofstream& out, const std::shared_ptr<Atom>& atom, size_t& position) {
+void WriteAtom(std::ofstream& out, const std::shared_ptr<Atom>& atom, size_t& position) {
   switch (atom->type) {
     case AtomType::Data: {
       auto data_atom = std::dynamic_pointer_cast<DataAtom>(atom);

@@ -13,6 +13,7 @@
 #ifndef XASMPP_SYNTAX_LABEL_POLICY_H
 #define XASMPP_SYNTAX_LABEL_POLICY_H
 
+#include <cstdint>
 #include <functional>
 #include <string>
 #include <unordered_map>
@@ -31,7 +32,7 @@ namespace xasm {
  * - AtPc      : define at current PC; emit LabelAtom only when
  *               emit_atom=true in DefineLabelForDirective.
  */
-enum class LabelPolicy { Skip, Defer, AtAddress, AtPc };
+enum class LabelPolicy : std::uint8_t { Skip, Defer, AtAddress, AtPc };
 
 /**
  * @brief Classify how the label before @p opcode_upper should be handled.

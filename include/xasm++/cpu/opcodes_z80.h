@@ -114,7 +114,7 @@ constexpr const char* kIM = "IM";
 // Z80Mnemonic enum class — one enumerator per Z80 instruction
 // ============================================================================
 
-enum class Z80Mnemonic {
+enum class Z80Mnemonic : std::uint8_t {
   Unknown = 0,
 
   // Load / Store

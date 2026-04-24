@@ -52,7 +52,7 @@ constexpr int kRADIX_HEXADECIMAL = 16;
 // ---------------------------------------------------------------------------
 // Advances i past a hex literal (digits only). Returns false if no hex digits.
 // Pre: s[i-1] == '$' and i is positioned at the first potential hex digit.
-static bool ScanHexLiteralDigits(const std::string& s, size_t& i) {
+bool ScanHexLiteralDigits(const std::string& s, size_t& i) {
   bool any_digit = false;
   while (i < s.size() && std::isxdigit(static_cast<unsigned char>(s[i]))) {
     any_digit = true;
@@ -63,7 +63,7 @@ static bool ScanHexLiteralDigits(const std::string& s, size_t& i) {
 
 // Advances i past a binary literal (0/1/. digits). Returns false if no digits.
 // Pre: s[i-1] == '%' and i is positioned at the first potential bit char.
-static bool ScanBinaryLiteralDigits(const std::string& s, size_t& i) {
+bool ScanBinaryLiteralDigits(const std::string& s, size_t& i) {
   bool any_bit = false;
   while (i < s.size() && (s[i] == '0' || s[i] == '1' || s[i] == '.')) {
     any_bit = true;
@@ -73,7 +73,7 @@ static bool ScanBinaryLiteralDigits(const std::string& s, size_t& i) {
 }
 
 // Advances i past consecutive decimal digit characters.
-static void ScanDecimalDigits(const std::string& s, size_t& i) {
+void ScanDecimalDigits(const std::string& s, size_t& i) {
   while (i < s.size() && std::isdigit(static_cast<unsigned char>(s[i]))) {
     ++i;
   }
@@ -739,7 +739,7 @@ std::string ScmasmSyntaxParser::Trim(const std::string& str) {
 
   // Strip leading non-printable non-tab control chars (Apple II editor
   // artifacts like \x01 SOH that sometimes precede instruction lines).
-  while (start < str.length() && (unsigned char)str[start] < 0x20 && str[start] != '\t') {
+  while (start < str.length() && static_cast<unsigned char>(str[start]) < 0x20 && str[start] != '\t') {
     start++;
   }
   if (start >= str.length()) {
@@ -1153,7 +1153,7 @@ void ScmasmSyntaxParser::SkipToLabelStart(const std::string& line, size_t& pos) 
   while (pos < line.length() && std::isspace(line[pos])) {
     pos++;
   }
-  while (pos < line.length() && (unsigned char)line[pos] < 0x20 && line[pos] != '\t') {
+  while (pos < line.length() && static_cast<unsigned char>(line[pos]) < 0x20 && line[pos] != '\t') {
     pos++;
   }
 }

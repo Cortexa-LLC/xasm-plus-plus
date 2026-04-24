@@ -81,7 +81,7 @@ namespace {
 // Parse a suffix-delimited literal using the provided per-character digit
 // decoder. Returns false if the token is too short, does not start with a
 // digit, or contains an invalid digit for the given radix.
-static bool ParseSuffixedLiteral(const std::string& token, int radix, bool (*digit_fn)(char, int&),
+bool ParseSuffixedLiteral(const std::string& token, int radix, bool (*digit_fn)(char, int&),
                                  int64_t& value) {
   if (token.length() < 2 || !std::isdigit(token[0])) {
     return false;
@@ -100,7 +100,7 @@ static bool ParseSuffixedLiteral(const std::string& token, int radix, bool (*dig
 
 // Returns true if all characters in token are valid for the given radix (no
 // suffix). Uses ParseHexDigit to convert, checking digit_value < radix.
-static bool ParseUnsuffixedLiteral(const std::string& token, int radix, int64_t& value) {
+bool ParseUnsuffixedLiteral(const std::string& token, int radix, int64_t& value) {
   value = 0;
   for (char c : token) {
     int digit = 0;
