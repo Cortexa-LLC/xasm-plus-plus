@@ -35,7 +35,7 @@ namespace xasm {
  * capabilities with 24-bit addressing and stack-relative modes.
  */
 enum class AddressingMode : std::uint8_t {
-  Implied,      ///< No operand (e.g., RTS, NOP)
+  Implied,      ///< No operand (e.g., kRTS, kNOP)
   Accumulator,  ///< Operate on accumulator (e.g., ASL A)
   Immediate,    ///< Immediate value (e.g., LDA #$42)
   ZeroPage,     ///< Zero page address (e.g., LDA $80)
@@ -47,7 +47,7 @@ enum class AddressingMode : std::uint8_t {
   Indirect,     ///< Indirect jump (e.g., JMP ($1234))
   IndirectX,    ///< Indirect indexed by X (e.g., LDA ($80,X))
   IndirectY,    ///< Indirect indexed by Y (e.g., LDA ($80),Y)
-  Relative,     ///< Relative branch (e.g., BEQ label)
+  Relative,     ///< Relative branch (e.g., kBEQ label)
 
   // 65C02 Enhanced Addressing Modes
   IndirectZeroPage,         ///< Indirect zero page - 65C02+ (e.g., LDA ($80))
@@ -97,9 +97,9 @@ enum class CpuMode : std::uint8_t {
  * The plugin automatically handles branch relaxation, converting out-of-range
  * short branches into complementary branch + JMP sequences:
  * @code
- * BEQ distant_label   ; If out of range (-128 to +127 bytes)
+ * kBEQ distant_label   ; If out of range (-128 to +127 bytes)
  * ; Becomes:
- * BNE *+5             ; Skip over JMP if condition not met
+ * kBNE *+5             ; Skip over JMP if condition not met
  * JMP distant_label   ; Unconditional jump to target
  * @endcode
  *
@@ -267,14 +267,14 @@ class Cpu6502 : public CpuPlugin {
   std::vector<uint8_t> EncodeJMP(uint16_t operand, AddressingMode mode) const;
 
   /**
-   * @brief Encode NOP (No Operation) instruction
-   * @return Vector containing single NOP opcode byte {0xEA}
+   * @brief Encode kNOP (No Operation) instruction
+   * @return Vector containing single kNOP opcode byte {0xEA}
    */
   static std::vector<uint8_t> EncodeNOP();
 
   /**
-   * @brief Encode RTS (Return from Subroutine) instruction
-   * @return Vector containing single RTS opcode byte {0x60}
+   * @brief Encode kRTS (Return from Subroutine) instruction
+   * @return Vector containing single kRTS opcode byte {0x60}
    */
   static std::vector<uint8_t> EncodeRTS();
 
@@ -543,13 +543,13 @@ class Cpu6502 : public CpuPlugin {
    * Returns the opposite branch condition opcode. Used for branch
    * relaxation sequences.
    *
-   * @param branch_opcode Original branch opcode (e.g., BEQ = 0xF0)
-   * @return Complementary opcode (e.g., BNE = 0xD0)
+   * @param branch_opcode Original branch opcode (e.g., kBEQ = 0xF0)
+   * @return Complementary opcode (e.g., kBNE = 0xD0)
    *
    * @par Examples
-   * - BEQ -> BNE
-   * - BCS -> BCC
-   * - BMI -> BPL
+   * - kBEQ -> kBNE
+   * - kBCS -> kBCC
+   * - kBMI -> kBPL
    */
   uint8_t GetComplementaryBranchOpcode(uint8_t branch_opcode) const;
 
@@ -558,9 +558,9 @@ class Cpu6502 : public CpuPlugin {
    *
    * Encodes an out-of-range branch as a relaxed sequence:
    * @code
-   * BEQ target    ; If target is out of range
+   * kBEQ target    ; If target is out of range
    * ; Becomes:
-   * BNE *+5       ; Skip over JMP if condition not met
+   * kBNE *+5       ; Skip over JMP if condition not met
    * JMP target    ; Unconditional jump to target
    * @endcode
    *

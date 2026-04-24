@@ -141,7 +141,7 @@ std::vector<uint8_t> Cpu6502::EncodeWithTable(const OpcodeTable& table, uint32_t
       break;
   }
 
-  // ZeroPage → Absolute fallback: some instructions (JSR, JMP) have no ZP
+  // ZeroPage → Absolute fallback: some instructions (kJSR, JMP) have no ZP
   // mode.  When an address fits in ZP range ($00-$FF) but the instruction only
   // supports Absolute, fall back so that e.g. `jsr $005c` emits $20 $5c $00
   // rather than being silently dropped.
@@ -240,25 +240,25 @@ std::vector<uint8_t> Cpu6502::EncodeWithTable(const OpcodeTable& table, uint32_t
 // Note: Changed to uint32_t for 65816 24-bit addressing support
 std::vector<uint8_t> Cpu6502::EncodeLDA(uint32_t operand, AddressingMode mode) const {
   static const OpcodeTable kLdaTable = {
-      .immediate = Opcodes::LDA_IMM,
-      .zero_page = Opcodes::LDA_ZP,
-      .zero_page_x = Opcodes::LDA_ZPX,
+      .immediate = Opcodes::kLDA_IMM,
+      .zero_page = Opcodes::kLDA_ZP,
+      .zero_page_x = Opcodes::kLDA_ZPX,
       .zero_page_y = std::nullopt,
-      .absolute = Opcodes::LDA_ABS,
-      .absolute_x = Opcodes::LDA_ABX,
-      .absolute_y = Opcodes::LDA_ABY,
+      .absolute = Opcodes::kLDA_ABS,
+      .absolute_x = Opcodes::kLDA_ABX,
+      .absolute_y = Opcodes::kLDA_ABY,
       .indirect = std::nullopt,
-      .indirect_x = Opcodes::LDA_INX,
-      .indirect_y = Opcodes::LDA_INY,
+      .indirect_x = Opcodes::kLDA_INX,
+      .indirect_y = Opcodes::kLDA_INY,
       .accumulator = std::nullopt,
       .relative = std::nullopt,
-      .indirect_zero_page = Opcodes::LDA_IZP,  // 65C02+
+      .indirect_zero_page = Opcodes::kLDA_IZP,  // 65C02+
       .absolute_indexed_indirect = std::nullopt,
-      .absolute_long = Opcodes::LDA_ALG,                     // 65816
-      .indirect_long = Opcodes::LDA_ILG,                     // 65816
-      .indirect_long_indexed_y = Opcodes::LDA_ILY,           // 65816
-      .stack_relative = Opcodes::LDA_SR,                     // 65816
-      .stack_relative_indirect_indexed_y = Opcodes::LDA_SRY  // 65816
+      .absolute_long = Opcodes::kLDA_ALG,                     // 65816
+      .indirect_long = Opcodes::kLDA_ILG,                     // 65816
+      .indirect_long_indexed_y = Opcodes::kLDA_ILY,           // 65816
+      .stack_relative = Opcodes::kLDA_SR,                     // 65816
+      .stack_relative_indirect_indexed_y = Opcodes::kLDA_SRY  // 65816
   };
 
   return EncodeWithTable(kLdaTable, operand, mode, ImmWidth::UseM);
@@ -267,18 +267,18 @@ std::vector<uint8_t> Cpu6502::EncodeLDA(uint32_t operand, AddressingMode mode) c
 // STA - Store Accumulator
 std::vector<uint8_t> Cpu6502::EncodeSTA(uint16_t operand, AddressingMode mode) const {
   static const OpcodeTable kStaTable = {.immediate = std::nullopt,
-                                        .zero_page = Opcodes::STA_ZP,
-                                        .zero_page_x = Opcodes::STA_ZPX,
+                                        .zero_page = Opcodes::kSTA_ZP,
+                                        .zero_page_x = Opcodes::kSTA_ZPX,
                                         .zero_page_y = std::nullopt,
-                                        .absolute = Opcodes::STA_ABS,
-                                        .absolute_x = Opcodes::STA_ABX,
-                                        .absolute_y = Opcodes::STA_ABY,
+                                        .absolute = Opcodes::kSTA_ABS,
+                                        .absolute_x = Opcodes::kSTA_ABX,
+                                        .absolute_y = Opcodes::kSTA_ABY,
                                         .indirect = std::nullopt,
-                                        .indirect_x = Opcodes::STA_INX,
-                                        .indirect_y = Opcodes::STA_INY,
+                                        .indirect_x = Opcodes::kSTA_INX,
+                                        .indirect_y = Opcodes::kSTA_INY,
                                         .accumulator = std::nullopt,
                                         .relative = std::nullopt,
-                                        .indirect_zero_page = Opcodes::STA_IZP,  // 65C02+
+                                        .indirect_zero_page = Opcodes::kSTA_IZP,  // 65C02+
                                         .absolute_indexed_indirect = std::nullopt,
                                         .absolute_long = std::nullopt,
                                         .indirect_long = std::nullopt,
@@ -295,16 +295,16 @@ std::vector<uint8_t> Cpu6502::EncodeJMP(uint16_t operand, AddressingMode mode) c
                                         .zero_page = std::nullopt,
                                         .zero_page_x = std::nullopt,
                                         .zero_page_y = std::nullopt,
-                                        .absolute = Opcodes::JMP_ABS,
+                                        .absolute = Opcodes::kJMP_ABS,
                                         .absolute_x = std::nullopt,
                                         .absolute_y = std::nullopt,
-                                        .indirect = Opcodes::JMP_IND,
+                                        .indirect = Opcodes::kJMP_IND,
                                         .indirect_x = std::nullopt,
                                         .indirect_y = std::nullopt,
                                         .accumulator = std::nullopt,
                                         .relative = std::nullopt,
                                         .indirect_zero_page = std::nullopt,
-                                        .absolute_indexed_indirect = Opcodes::JMP_AIX,  // 65C02+
+                                        .absolute_indexed_indirect = Opcodes::kJMP_AIX,  // 65C02+
                                         .absolute_long = std::nullopt,
                                         .indirect_long = std::nullopt,
                                         .indirect_long_indexed_y = std::nullopt,
@@ -313,33 +313,33 @@ std::vector<uint8_t> Cpu6502::EncodeJMP(uint16_t operand, AddressingMode mode) c
   return EncodeWithTable(kJmpTable, operand, mode);
 }
 
-// NOP - No Operation
+// kNOP - No Operation
 std::vector<uint8_t> Cpu6502::EncodeNOP() {
-  return {Opcodes::NOP};
+  return {Opcodes::kNOP};
 }
 
-// RTS - Return from Subroutine
+// kRTS - Return from Subroutine
 std::vector<uint8_t> Cpu6502::EncodeRTS() {
-  return {Opcodes::RTS};
+  return {Opcodes::kRTS};
 }
 
 // Phase 2.2: Arithmetic Instructions
 
 // ADC - Add with Carry
 std::vector<uint8_t> Cpu6502::EncodeADC(uint16_t operand, AddressingMode mode) const {
-  static const OpcodeTable kAdcTable = {.immediate = Opcodes::ADC_IMM,
-                                        .zero_page = Opcodes::ADC_ZP,
-                                        .zero_page_x = Opcodes::ADC_ZPX,
+  static const OpcodeTable kAdcTable = {.immediate = Opcodes::kADC_IMM,
+                                        .zero_page = Opcodes::kADC_ZP,
+                                        .zero_page_x = Opcodes::kADC_ZPX,
                                         .zero_page_y = std::nullopt,
-                                        .absolute = Opcodes::ADC_ABS,
-                                        .absolute_x = Opcodes::ADC_ABX,
-                                        .absolute_y = Opcodes::ADC_ABY,
+                                        .absolute = Opcodes::kADC_ABS,
+                                        .absolute_x = Opcodes::kADC_ABX,
+                                        .absolute_y = Opcodes::kADC_ABY,
                                         .indirect = std::nullopt,
-                                        .indirect_x = Opcodes::ADC_INX,
-                                        .indirect_y = Opcodes::ADC_INY,
+                                        .indirect_x = Opcodes::kADC_INX,
+                                        .indirect_y = Opcodes::kADC_INY,
                                         .accumulator = std::nullopt,
                                         .relative = std::nullopt,
-                                        .indirect_zero_page = Opcodes::ADC_IZP,  // 65C02+
+                                        .indirect_zero_page = Opcodes::kADC_IZP,  // 65C02+
                                         .absolute_indexed_indirect = std::nullopt,
                                         .absolute_long = std::nullopt,
                                         .indirect_long = std::nullopt,
@@ -352,19 +352,19 @@ std::vector<uint8_t> Cpu6502::EncodeADC(uint16_t operand, AddressingMode mode) c
 
 // SBC - Subtract with Carry
 std::vector<uint8_t> Cpu6502::EncodeSBC(uint16_t operand, AddressingMode mode) const {
-  static const OpcodeTable kSbcTable = {.immediate = Opcodes::SBC_IMM,
-                                        .zero_page = Opcodes::SBC_ZP,
-                                        .zero_page_x = Opcodes::SBC_ZPX,
+  static const OpcodeTable kSbcTable = {.immediate = Opcodes::kSBC_IMM,
+                                        .zero_page = Opcodes::kSBC_ZP,
+                                        .zero_page_x = Opcodes::kSBC_ZPX,
                                         .zero_page_y = std::nullopt,
-                                        .absolute = Opcodes::SBC_ABS,
-                                        .absolute_x = Opcodes::SBC_ABX,
-                                        .absolute_y = Opcodes::SBC_ABY,
+                                        .absolute = Opcodes::kSBC_ABS,
+                                        .absolute_x = Opcodes::kSBC_ABX,
+                                        .absolute_y = Opcodes::kSBC_ABY,
                                         .indirect = std::nullopt,
-                                        .indirect_x = Opcodes::SBC_INX,
-                                        .indirect_y = Opcodes::SBC_INY,
+                                        .indirect_x = Opcodes::kSBC_INX,
+                                        .indirect_y = Opcodes::kSBC_INY,
                                         .accumulator = std::nullopt,
                                         .relative = std::nullopt,
-                                        .indirect_zero_page = Opcodes::SBC_IZP,  // 65C02+
+                                        .indirect_zero_page = Opcodes::kSBC_IZP,  // 65C02+
                                         .absolute_indexed_indirect = std::nullopt,
                                         .absolute_long = std::nullopt,
                                         .indirect_long = std::nullopt,
@@ -379,19 +379,19 @@ std::vector<uint8_t> Cpu6502::EncodeSBC(uint16_t operand, AddressingMode mode) c
 
 // AND - Logical AND
 std::vector<uint8_t> Cpu6502::EncodeAND(uint16_t operand, AddressingMode mode) const {
-  static const OpcodeTable kAndTable = {.immediate = Opcodes::AND_IMM,
-                                        .zero_page = Opcodes::AND_ZP,
-                                        .zero_page_x = Opcodes::AND_ZPX,
+  static const OpcodeTable kAndTable = {.immediate = Opcodes::kAND_IMM,
+                                        .zero_page = Opcodes::kAND_ZP,
+                                        .zero_page_x = Opcodes::kAND_ZPX,
                                         .zero_page_y = std::nullopt,
-                                        .absolute = Opcodes::AND_ABS,
-                                        .absolute_x = Opcodes::AND_ABX,
-                                        .absolute_y = Opcodes::AND_ABY,
+                                        .absolute = Opcodes::kAND_ABS,
+                                        .absolute_x = Opcodes::kAND_ABX,
+                                        .absolute_y = Opcodes::kAND_ABY,
                                         .indirect = std::nullopt,
-                                        .indirect_x = Opcodes::AND_INX,
-                                        .indirect_y = Opcodes::AND_INY,
+                                        .indirect_x = Opcodes::kAND_INX,
+                                        .indirect_y = Opcodes::kAND_INY,
                                         .accumulator = std::nullopt,
                                         .relative = std::nullopt,
-                                        .indirect_zero_page = Opcodes::AND_IZP,  // 65C02+
+                                        .indirect_zero_page = Opcodes::kAND_IZP,  // 65C02+
                                         .absolute_indexed_indirect = std::nullopt,
                                         .absolute_long = std::nullopt,
                                         .indirect_long = std::nullopt,
@@ -404,19 +404,19 @@ std::vector<uint8_t> Cpu6502::EncodeAND(uint16_t operand, AddressingMode mode) c
 
 // ORA - Logical OR
 std::vector<uint8_t> Cpu6502::EncodeORA(uint16_t operand, AddressingMode mode) const {
-  static const OpcodeTable kOraTable = {.immediate = Opcodes::ORA_IMM,
-                                        .zero_page = Opcodes::ORA_ZP,
-                                        .zero_page_x = Opcodes::ORA_ZPX,
+  static const OpcodeTable kOraTable = {.immediate = Opcodes::kORA_IMM,
+                                        .zero_page = Opcodes::kORA_ZP,
+                                        .zero_page_x = Opcodes::kORA_ZPX,
                                         .zero_page_y = std::nullopt,
-                                        .absolute = Opcodes::ORA_ABS,
-                                        .absolute_x = Opcodes::ORA_ABX,
-                                        .absolute_y = Opcodes::ORA_ABY,
+                                        .absolute = Opcodes::kORA_ABS,
+                                        .absolute_x = Opcodes::kORA_ABX,
+                                        .absolute_y = Opcodes::kORA_ABY,
                                         .indirect = std::nullopt,
-                                        .indirect_x = Opcodes::ORA_INX,
-                                        .indirect_y = Opcodes::ORA_INY,
+                                        .indirect_x = Opcodes::kORA_INX,
+                                        .indirect_y = Opcodes::kORA_INY,
                                         .accumulator = std::nullopt,
                                         .relative = std::nullopt,
-                                        .indirect_zero_page = Opcodes::ORA_IZP,  // 65C02+
+                                        .indirect_zero_page = Opcodes::kORA_IZP,  // 65C02+
                                         .absolute_indexed_indirect = std::nullopt,
                                         .absolute_long = std::nullopt,
                                         .indirect_long = std::nullopt,
@@ -429,19 +429,19 @@ std::vector<uint8_t> Cpu6502::EncodeORA(uint16_t operand, AddressingMode mode) c
 
 // EOR - Exclusive OR
 std::vector<uint8_t> Cpu6502::EncodeEOR(uint16_t operand, AddressingMode mode) const {
-  static const OpcodeTable kEorTable = {.immediate = Opcodes::EOR_IMM,
-                                        .zero_page = Opcodes::EOR_ZP,
-                                        .zero_page_x = Opcodes::EOR_ZPX,
+  static const OpcodeTable kEorTable = {.immediate = Opcodes::kEOR_IMM,
+                                        .zero_page = Opcodes::kEOR_ZP,
+                                        .zero_page_x = Opcodes::kEOR_ZPX,
                                         .zero_page_y = std::nullopt,
-                                        .absolute = Opcodes::EOR_ABS,
-                                        .absolute_x = Opcodes::EOR_ABX,
-                                        .absolute_y = Opcodes::EOR_ABY,
+                                        .absolute = Opcodes::kEOR_ABS,
+                                        .absolute_x = Opcodes::kEOR_ABX,
+                                        .absolute_y = Opcodes::kEOR_ABY,
                                         .indirect = std::nullopt,
-                                        .indirect_x = Opcodes::EOR_INX,
-                                        .indirect_y = Opcodes::EOR_INY,
+                                        .indirect_x = Opcodes::kEOR_INX,
+                                        .indirect_y = Opcodes::kEOR_INY,
                                         .accumulator = std::nullopt,
                                         .relative = std::nullopt,
-                                        .indirect_zero_page = Opcodes::EOR_IZP,  // 65C02+
+                                        .indirect_zero_page = Opcodes::kEOR_IZP,  // 65C02+
                                         .absolute_indexed_indirect = std::nullopt,
                                         .absolute_long = std::nullopt,
                                         .indirect_long = std::nullopt,
@@ -456,13 +456,13 @@ std::vector<uint8_t> Cpu6502::EncodeEOR(uint16_t operand, AddressingMode mode) c
 
 // LDX - Load X Register
 std::vector<uint8_t> Cpu6502::EncodeLDX(uint16_t operand, AddressingMode mode) const {
-  static const OpcodeTable kLdxTable = {.immediate = Opcodes::LDX_IMM,
-                                        .zero_page = Opcodes::LDX_ZP,
+  static const OpcodeTable kLdxTable = {.immediate = Opcodes::kLDX_IMM,
+                                        .zero_page = Opcodes::kLDX_ZP,
                                         .zero_page_x = std::nullopt,
-                                        .zero_page_y = Opcodes::LDX_ZPY,
-                                        .absolute = Opcodes::LDX_ABS,
+                                        .zero_page_y = Opcodes::kLDX_ZPY,
+                                        .absolute = Opcodes::kLDX_ABS,
                                         .absolute_x = std::nullopt,
-                                        .absolute_y = Opcodes::LDX_ABY,
+                                        .absolute_y = Opcodes::kLDX_ABY,
                                         .indirect = std::nullopt,
                                         .indirect_x = std::nullopt,
                                         .indirect_y = std::nullopt,
@@ -480,12 +480,12 @@ std::vector<uint8_t> Cpu6502::EncodeLDX(uint16_t operand, AddressingMode mode) c
 
 // LDY - Load Y Register
 std::vector<uint8_t> Cpu6502::EncodeLDY(uint16_t operand, AddressingMode mode) const {
-  static const OpcodeTable kLdyTable = {.immediate = Opcodes::LDY_IMM,
-                                        .zero_page = Opcodes::LDY_ZP,
-                                        .zero_page_x = Opcodes::LDY_ZPX,
+  static const OpcodeTable kLdyTable = {.immediate = Opcodes::kLDY_IMM,
+                                        .zero_page = Opcodes::kLDY_ZP,
+                                        .zero_page_x = Opcodes::kLDY_ZPX,
                                         .zero_page_y = std::nullopt,
-                                        .absolute = Opcodes::LDY_ABS,
-                                        .absolute_x = Opcodes::LDY_ABX,
+                                        .absolute = Opcodes::kLDY_ABS,
+                                        .absolute_x = Opcodes::kLDY_ABX,
                                         .absolute_y = std::nullopt,
                                         .indirect = std::nullopt,
                                         .indirect_x = std::nullopt,
@@ -505,10 +505,10 @@ std::vector<uint8_t> Cpu6502::EncodeLDY(uint16_t operand, AddressingMode mode) c
 // STX - Store X Register
 std::vector<uint8_t> Cpu6502::EncodeSTX(uint16_t operand, AddressingMode mode) const {
   static const OpcodeTable kStxTable = {.immediate = std::nullopt,
-                                        .zero_page = Opcodes::STX_ZP,
+                                        .zero_page = Opcodes::kSTX_ZP,
                                         .zero_page_x = std::nullopt,
-                                        .zero_page_y = Opcodes::STX_ZPY,
-                                        .absolute = Opcodes::STX_ABS,
+                                        .zero_page_y = Opcodes::kSTX_ZPY,
+                                        .absolute = Opcodes::kSTX_ABS,
                                         .absolute_x = std::nullopt,
                                         .absolute_y = std::nullopt,
                                         .indirect = std::nullopt,
@@ -529,10 +529,10 @@ std::vector<uint8_t> Cpu6502::EncodeSTX(uint16_t operand, AddressingMode mode) c
 // STY - Store Y Register
 std::vector<uint8_t> Cpu6502::EncodeSTY(uint16_t operand, AddressingMode mode) const {
   static const OpcodeTable kStyTable = {.immediate = std::nullopt,
-                                        .zero_page = Opcodes::STY_ZP,
-                                        .zero_page_x = Opcodes::STY_ZPX,
+                                        .zero_page = Opcodes::kSTY_ZP,
+                                        .zero_page_x = Opcodes::kSTY_ZPX,
                                         .zero_page_y = std::nullopt,
-                                        .absolute = Opcodes::STY_ABS,
+                                        .absolute = Opcodes::kSTY_ABS,
                                         .absolute_x = std::nullopt,
                                         .absolute_y = std::nullopt,
                                         .indirect = std::nullopt,
@@ -554,19 +554,19 @@ std::vector<uint8_t> Cpu6502::EncodeSTY(uint16_t operand, AddressingMode mode) c
 
 // CMP - Compare Accumulator
 std::vector<uint8_t> Cpu6502::EncodeCMP(uint16_t operand, AddressingMode mode) const {
-  static const OpcodeTable kCmpTable = {.immediate = Opcodes::CMP_IMM,
-                                        .zero_page = Opcodes::CMP_ZP,
-                                        .zero_page_x = Opcodes::CMP_ZPX,
+  static const OpcodeTable kCmpTable = {.immediate = Opcodes::kCMP_IMM,
+                                        .zero_page = Opcodes::kCMP_ZP,
+                                        .zero_page_x = Opcodes::kCMP_ZPX,
                                         .zero_page_y = std::nullopt,
-                                        .absolute = Opcodes::CMP_ABS,
-                                        .absolute_x = Opcodes::CMP_ABX,
-                                        .absolute_y = Opcodes::CMP_ABY,
+                                        .absolute = Opcodes::kCMP_ABS,
+                                        .absolute_x = Opcodes::kCMP_ABX,
+                                        .absolute_y = Opcodes::kCMP_ABY,
                                         .indirect = std::nullopt,
-                                        .indirect_x = Opcodes::CMP_INX,
-                                        .indirect_y = Opcodes::CMP_INY,
+                                        .indirect_x = Opcodes::kCMP_INX,
+                                        .indirect_y = Opcodes::kCMP_INY,
                                         .accumulator = std::nullopt,
                                         .relative = std::nullopt,
-                                        .indirect_zero_page = Opcodes::CMP_IZP,  // 65C02+
+                                        .indirect_zero_page = Opcodes::kCMP_IZP,  // 65C02+
                                         .absolute_indexed_indirect = std::nullopt,
                                         .absolute_long = std::nullopt,
                                         .indirect_long = std::nullopt,
@@ -578,11 +578,11 @@ std::vector<uint8_t> Cpu6502::EncodeCMP(uint16_t operand, AddressingMode mode) c
 
 // CPX - Compare X Register
 std::vector<uint8_t> Cpu6502::EncodeCPX(uint16_t operand, AddressingMode mode) const {
-  static const OpcodeTable kCpxTable = {.immediate = Opcodes::CPX_IMM,
-                                        .zero_page = Opcodes::CPX_ZP,
+  static const OpcodeTable kCpxTable = {.immediate = Opcodes::kCPX_IMM,
+                                        .zero_page = Opcodes::kCPX_ZP,
                                         .zero_page_x = std::nullopt,
                                         .zero_page_y = std::nullopt,
-                                        .absolute = Opcodes::CPX_ABS,
+                                        .absolute = Opcodes::kCPX_ABS,
                                         .absolute_x = std::nullopt,
                                         .absolute_y = std::nullopt,
                                         .indirect = std::nullopt,
@@ -602,11 +602,11 @@ std::vector<uint8_t> Cpu6502::EncodeCPX(uint16_t operand, AddressingMode mode) c
 
 // CPY - Compare Y Register
 std::vector<uint8_t> Cpu6502::EncodeCPY(uint16_t operand, AddressingMode mode) const {
-  static const OpcodeTable kCpyTable = {.immediate = Opcodes::CPY_IMM,
-                                        .zero_page = Opcodes::CPY_ZP,
+  static const OpcodeTable kCpyTable = {.immediate = Opcodes::kCPY_IMM,
+                                        .zero_page = Opcodes::kCPY_ZP,
                                         .zero_page_x = std::nullopt,
                                         .zero_page_y = std::nullopt,
-                                        .absolute = Opcodes::CPY_ABS,
+                                        .absolute = Opcodes::kCPY_ABS,
                                         .absolute_x = std::nullopt,
                                         .absolute_y = std::nullopt,
                                         .indirect = std::nullopt,
@@ -626,7 +626,7 @@ std::vector<uint8_t> Cpu6502::EncodeCPY(uint16_t operand, AddressingMode mode) c
 
 // Phase 2.2: Branch Instructions
 
-// BEQ - Branch if Equal
+// kBEQ - Branch if Equal
 std::vector<uint8_t> Cpu6502::EncodeBEQ(uint16_t operand, AddressingMode mode) const {
   static const OpcodeTable kBeqTable = {.immediate = std::nullopt,
                                         .zero_page = std::nullopt,
@@ -639,7 +639,7 @@ std::vector<uint8_t> Cpu6502::EncodeBEQ(uint16_t operand, AddressingMode mode) c
                                         .indirect_x = std::nullopt,
                                         .indirect_y = std::nullopt,
                                         .accumulator = std::nullopt,
-                                        .relative = Opcodes::BEQ,
+                                        .relative = Opcodes::kBEQ,
                                         .indirect_zero_page = std::nullopt,
                                         .absolute_indexed_indirect = std::nullopt,
                                         .absolute_long = std::nullopt,
@@ -650,7 +650,7 @@ std::vector<uint8_t> Cpu6502::EncodeBEQ(uint16_t operand, AddressingMode mode) c
   return EncodeWithTable(kBeqTable, operand, mode);
 }
 
-// BNE - Branch if Not Equal
+// kBNE - Branch if Not Equal
 std::vector<uint8_t> Cpu6502::EncodeBNE(uint16_t operand, AddressingMode mode) const {
   static const OpcodeTable kBneTable = {.immediate = std::nullopt,
                                         .zero_page = std::nullopt,
@@ -663,7 +663,7 @@ std::vector<uint8_t> Cpu6502::EncodeBNE(uint16_t operand, AddressingMode mode) c
                                         .indirect_x = std::nullopt,
                                         .indirect_y = std::nullopt,
                                         .accumulator = std::nullopt,
-                                        .relative = Opcodes::BNE,
+                                        .relative = Opcodes::kBNE,
                                         .indirect_zero_page = std::nullopt,
                                         .absolute_indexed_indirect = std::nullopt,
                                         .absolute_long = std::nullopt,
@@ -674,7 +674,7 @@ std::vector<uint8_t> Cpu6502::EncodeBNE(uint16_t operand, AddressingMode mode) c
   return EncodeWithTable(kBneTable, operand, mode);
 }
 
-// BCC - Branch if Carry Clear
+// kBCC - Branch if Carry Clear
 std::vector<uint8_t> Cpu6502::EncodeBCC(uint16_t operand, AddressingMode mode) const {
   static const OpcodeTable kBccTable = {.immediate = std::nullopt,
                                         .zero_page = std::nullopt,
@@ -687,7 +687,7 @@ std::vector<uint8_t> Cpu6502::EncodeBCC(uint16_t operand, AddressingMode mode) c
                                         .indirect_x = std::nullopt,
                                         .indirect_y = std::nullopt,
                                         .accumulator = std::nullopt,
-                                        .relative = Opcodes::BCC,
+                                        .relative = Opcodes::kBCC,
                                         .indirect_zero_page = std::nullopt,
                                         .absolute_indexed_indirect = std::nullopt,
                                         .absolute_long = std::nullopt,
@@ -698,7 +698,7 @@ std::vector<uint8_t> Cpu6502::EncodeBCC(uint16_t operand, AddressingMode mode) c
   return EncodeWithTable(kBccTable, operand, mode);
 }
 
-// BCS - Branch if Carry Set
+// kBCS - Branch if Carry Set
 std::vector<uint8_t> Cpu6502::EncodeBCS(uint16_t operand, AddressingMode mode) const {
   static const OpcodeTable kBcsTable = {.immediate = std::nullopt,
                                         .zero_page = std::nullopt,
@@ -711,7 +711,7 @@ std::vector<uint8_t> Cpu6502::EncodeBCS(uint16_t operand, AddressingMode mode) c
                                         .indirect_x = std::nullopt,
                                         .indirect_y = std::nullopt,
                                         .accumulator = std::nullopt,
-                                        .relative = Opcodes::BCS,
+                                        .relative = Opcodes::kBCS,
                                         .indirect_zero_page = std::nullopt,
                                         .absolute_indexed_indirect = std::nullopt,
                                         .absolute_long = std::nullopt,
@@ -722,7 +722,7 @@ std::vector<uint8_t> Cpu6502::EncodeBCS(uint16_t operand, AddressingMode mode) c
   return EncodeWithTable(kBcsTable, operand, mode);
 }
 
-// BMI - Branch if Minus
+// kBMI - Branch if Minus
 std::vector<uint8_t> Cpu6502::EncodeBMI(uint16_t operand, AddressingMode mode) const {
   static const OpcodeTable kBmiTable = {.immediate = std::nullopt,
                                         .zero_page = std::nullopt,
@@ -735,7 +735,7 @@ std::vector<uint8_t> Cpu6502::EncodeBMI(uint16_t operand, AddressingMode mode) c
                                         .indirect_x = std::nullopt,
                                         .indirect_y = std::nullopt,
                                         .accumulator = std::nullopt,
-                                        .relative = Opcodes::BMI,
+                                        .relative = Opcodes::kBMI,
                                         .indirect_zero_page = std::nullopt,
                                         .absolute_indexed_indirect = std::nullopt,
                                         .absolute_long = std::nullopt,
@@ -746,7 +746,7 @@ std::vector<uint8_t> Cpu6502::EncodeBMI(uint16_t operand, AddressingMode mode) c
   return EncodeWithTable(kBmiTable, operand, mode);
 }
 
-// BPL - Branch if Plus
+// kBPL - Branch if Plus
 std::vector<uint8_t> Cpu6502::EncodeBPL(uint16_t operand, AddressingMode mode) const {
   static const OpcodeTable kBplTable = {.immediate = std::nullopt,
                                         .zero_page = std::nullopt,
@@ -759,7 +759,7 @@ std::vector<uint8_t> Cpu6502::EncodeBPL(uint16_t operand, AddressingMode mode) c
                                         .indirect_x = std::nullopt,
                                         .indirect_y = std::nullopt,
                                         .accumulator = std::nullopt,
-                                        .relative = Opcodes::BPL,
+                                        .relative = Opcodes::kBPL,
                                         .indirect_zero_page = std::nullopt,
                                         .absolute_indexed_indirect = std::nullopt,
                                         .absolute_long = std::nullopt,
@@ -770,7 +770,7 @@ std::vector<uint8_t> Cpu6502::EncodeBPL(uint16_t operand, AddressingMode mode) c
   return EncodeWithTable(kBplTable, operand, mode);
 }
 
-// BVC - Branch if Overflow Clear
+// kBVC - Branch if Overflow Clear
 std::vector<uint8_t> Cpu6502::EncodeBVC(uint16_t operand, AddressingMode mode) const {
   static const OpcodeTable kBvcTable = {.immediate = std::nullopt,
                                         .zero_page = std::nullopt,
@@ -783,7 +783,7 @@ std::vector<uint8_t> Cpu6502::EncodeBVC(uint16_t operand, AddressingMode mode) c
                                         .indirect_x = std::nullopt,
                                         .indirect_y = std::nullopt,
                                         .accumulator = std::nullopt,
-                                        .relative = Opcodes::BVC,
+                                        .relative = Opcodes::kBVC,
                                         .indirect_zero_page = std::nullopt,
                                         .absolute_indexed_indirect = std::nullopt,
                                         .absolute_long = std::nullopt,
@@ -794,7 +794,7 @@ std::vector<uint8_t> Cpu6502::EncodeBVC(uint16_t operand, AddressingMode mode) c
   return EncodeWithTable(kBvcTable, operand, mode);
 }
 
-// BVS - Branch if Overflow Set
+// kBVS - Branch if Overflow Set
 std::vector<uint8_t> Cpu6502::EncodeBVS(uint16_t operand, AddressingMode mode) const {
   static const OpcodeTable kBvsTable = {.immediate = std::nullopt,
                                         .zero_page = std::nullopt,
@@ -807,7 +807,7 @@ std::vector<uint8_t> Cpu6502::EncodeBVS(uint16_t operand, AddressingMode mode) c
                                         .indirect_x = std::nullopt,
                                         .indirect_y = std::nullopt,
                                         .accumulator = std::nullopt,
-                                        .relative = Opcodes::BVS,
+                                        .relative = Opcodes::kBVS,
                                         .indirect_zero_page = std::nullopt,
                                         .absolute_indexed_indirect = std::nullopt,
                                         .absolute_long = std::nullopt,
@@ -820,39 +820,39 @@ std::vector<uint8_t> Cpu6502::EncodeBVS(uint16_t operand, AddressingMode mode) c
 
 // Phase 2.2: Inc/Dec Instructions
 
-// INX - Increment X Register
+// kINX - Increment X Register
 std::vector<uint8_t> Cpu6502::EncodeINX() {
-  return {Opcodes::INX};
+  return {Opcodes::kINX};
 }
 
-// INY - Increment Y Register
+// kINY - Increment Y Register
 std::vector<uint8_t> Cpu6502::EncodeINY() {
-  return {Opcodes::INY};
+  return {Opcodes::kINY};
 }
 
-// DEX - Decrement X Register
+// kDEX - Decrement X Register
 std::vector<uint8_t> Cpu6502::EncodeDEX() {
-  return {Opcodes::DEX};
+  return {Opcodes::kDEX};
 }
 
-// DEY - Decrement Y Register
+// kDEY - Decrement Y Register
 std::vector<uint8_t> Cpu6502::EncodeDEY() {
-  return {Opcodes::DEY};
+  return {Opcodes::kDEY};
 }
 
 // INC - Increment Memory
 std::vector<uint8_t> Cpu6502::EncodeINC(uint16_t operand, AddressingMode mode) const {
   static const OpcodeTable kIncTable = {.immediate = std::nullopt,
-                                        .zero_page = Opcodes::INC_ZP,
-                                        .zero_page_x = Opcodes::INC_ZPX,
+                                        .zero_page = Opcodes::kINC_ZP,
+                                        .zero_page_x = Opcodes::kINC_ZPX,
                                         .zero_page_y = std::nullopt,
-                                        .absolute = Opcodes::INC_ABS,
-                                        .absolute_x = Opcodes::INC_ABX,
+                                        .absolute = Opcodes::kINC_ABS,
+                                        .absolute_x = Opcodes::kINC_ABX,
                                         .absolute_y = std::nullopt,
                                         .indirect = std::nullopt,
                                         .indirect_x = std::nullopt,
                                         .indirect_y = std::nullopt,
-                                        .accumulator = Opcodes::INC_ACC,  // 65C02+ INA
+                                        .accumulator = Opcodes::kINC_ACC,  // 65C02+ INA
                                         .relative = std::nullopt,
                                         .indirect_zero_page = std::nullopt,
                                         .absolute_indexed_indirect = std::nullopt,
@@ -867,16 +867,16 @@ std::vector<uint8_t> Cpu6502::EncodeINC(uint16_t operand, AddressingMode mode) c
 // DEC - Decrement Memory
 std::vector<uint8_t> Cpu6502::EncodeDEC(uint16_t operand, AddressingMode mode) const {
   static const OpcodeTable kDecTable = {.immediate = std::nullopt,
-                                        .zero_page = Opcodes::DEC_ZP,
-                                        .zero_page_x = Opcodes::DEC_ZPX,
+                                        .zero_page = Opcodes::kDEC_ZP,
+                                        .zero_page_x = Opcodes::kDEC_ZPX,
                                         .zero_page_y = std::nullopt,
-                                        .absolute = Opcodes::DEC_ABS,
-                                        .absolute_x = Opcodes::DEC_ABX,
+                                        .absolute = Opcodes::kDEC_ABS,
+                                        .absolute_x = Opcodes::kDEC_ABX,
                                         .absolute_y = std::nullopt,
                                         .indirect = std::nullopt,
                                         .indirect_x = std::nullopt,
                                         .indirect_y = std::nullopt,
-                                        .accumulator = Opcodes::DEC_ACC,  // 65C02+ DEA
+                                        .accumulator = Opcodes::kDEC_ACC,  // 65C02+ DEA
                                         .relative = std::nullopt,
                                         .indirect_zero_page = std::nullopt,
                                         .absolute_indexed_indirect = std::nullopt,
@@ -890,35 +890,35 @@ std::vector<uint8_t> Cpu6502::EncodeDEC(uint16_t operand, AddressingMode mode) c
 
 // Phase 2.2: Stack Operations
 
-// PHA - Push Accumulator
+// kPHA - Push Accumulator
 std::vector<uint8_t> Cpu6502::EncodePHA() {
-  return {Opcodes::PHA};
+  return {Opcodes::kPHA};
 }
 
-// PLA - Pull Accumulator
+// kPLA - Pull Accumulator
 std::vector<uint8_t> Cpu6502::EncodePLA() {
-  return {Opcodes::PLA};
+  return {Opcodes::kPLA};
 }
 
-// PHP - Push Processor Status
+// kPHP - Push Processor Status
 std::vector<uint8_t> Cpu6502::EncodePHP() {
-  return {Opcodes::PHP};
+  return {Opcodes::kPHP};
 }
 
-// PLP - Pull Processor Status
+// kPLP - Pull Processor Status
 std::vector<uint8_t> Cpu6502::EncodePLP() {
-  return {Opcodes::PLP};
+  return {Opcodes::kPLP};
 }
 
 // Phase 2.2: Subroutine
 
-// JSR - Jump to Subroutine
+// kJSR - Jump to Subroutine
 std::vector<uint8_t> Cpu6502::EncodeJSR(uint16_t operand, AddressingMode mode) const {
   static const OpcodeTable kJsrTable = {.immediate = std::nullopt,
                                         .zero_page = std::nullopt,
                                         .zero_page_x = std::nullopt,
                                         .zero_page_y = std::nullopt,
-                                        .absolute = Opcodes::JSR,
+                                        .absolute = Opcodes::kJSR,
                                         .absolute_x = std::nullopt,
                                         .absolute_y = std::nullopt,
                                         .indirect = std::nullopt,
@@ -947,12 +947,12 @@ std::vector<uint8_t> Cpu6502::EncodeBIT(uint16_t operand, AddressingMode mode) c
 
   switch (mode) {
     case AddressingMode::ZeroPage:
-      bytes.push_back(Opcodes::BIT_ZP);
+      bytes.push_back(Opcodes::kBIT_ZP);
       bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
       break;
 
     case AddressingMode::Absolute:
-      bytes.push_back(Opcodes::BIT_ABS);
+      bytes.push_back(Opcodes::kBIT_ABS);
       bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
       bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF));
       break;
@@ -963,13 +963,13 @@ std::vector<uint8_t> Cpu6502::EncodeBIT(uint16_t operand, AddressingMode mode) c
       // These modes only available in 65C02+
       if (cpu_mode_ != CpuMode::Cpu6502) {
         if (mode == AddressingMode::Immediate) {
-          bytes.push_back(Opcodes::BIT_IMM);
+          bytes.push_back(Opcodes::kBIT_IMM);
           bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
         } else if (mode == AddressingMode::ZeroPageX) {
-          bytes.push_back(Opcodes::BIT_ZPX);
+          bytes.push_back(Opcodes::kBIT_ZPX);
           bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
         } else if (mode == AddressingMode::AbsoluteX) {
-          bytes.push_back(Opcodes::BIT_ABX);
+          bytes.push_back(Opcodes::kBIT_ABX);
           bytes.push_back(static_cast<uint8_t>(operand & 0xFF));
           bytes.push_back(static_cast<uint8_t>((operand >> 8) & 0xFF));
         }
@@ -988,16 +988,16 @@ std::vector<uint8_t> Cpu6502::EncodeBIT(uint16_t operand, AddressingMode mode) c
 // ASL - Arithmetic Shift Left
 std::vector<uint8_t> Cpu6502::EncodeASL(uint16_t operand, AddressingMode mode) const {
   static const OpcodeTable kAslTable = {.immediate = std::nullopt,
-                                        .zero_page = Opcodes::ASL_ZP,
-                                        .zero_page_x = Opcodes::ASL_ZPX,
+                                        .zero_page = Opcodes::kASL_ZP,
+                                        .zero_page_x = Opcodes::kASL_ZPX,
                                         .zero_page_y = std::nullopt,
-                                        .absolute = Opcodes::ASL_ABS,
-                                        .absolute_x = Opcodes::ASL_ABX,
+                                        .absolute = Opcodes::kASL_ABS,
+                                        .absolute_x = Opcodes::kASL_ABX,
                                         .absolute_y = std::nullopt,
                                         .indirect = std::nullopt,
                                         .indirect_x = std::nullopt,
                                         .indirect_y = std::nullopt,
-                                        .accumulator = Opcodes::ASL_ACC,
+                                        .accumulator = Opcodes::kASL_ACC,
                                         .relative = std::nullopt,
                                         .indirect_zero_page = std::nullopt,
                                         .absolute_indexed_indirect = std::nullopt,
@@ -1012,16 +1012,16 @@ std::vector<uint8_t> Cpu6502::EncodeASL(uint16_t operand, AddressingMode mode) c
 // LSR - Logical Shift Right
 std::vector<uint8_t> Cpu6502::EncodeLSR(uint16_t operand, AddressingMode mode) const {
   static const OpcodeTable kLsrTable = {.immediate = std::nullopt,
-                                        .zero_page = Opcodes::LSR_ZP,
-                                        .zero_page_x = Opcodes::LSR_ZPX,
+                                        .zero_page = Opcodes::kLSR_ZP,
+                                        .zero_page_x = Opcodes::kLSR_ZPX,
                                         .zero_page_y = std::nullopt,
-                                        .absolute = Opcodes::LSR_ABS,
-                                        .absolute_x = Opcodes::LSR_ABX,
+                                        .absolute = Opcodes::kLSR_ABS,
+                                        .absolute_x = Opcodes::kLSR_ABX,
                                         .absolute_y = std::nullopt,
                                         .indirect = std::nullopt,
                                         .indirect_x = std::nullopt,
                                         .indirect_y = std::nullopt,
-                                        .accumulator = Opcodes::LSR_ACC,
+                                        .accumulator = Opcodes::kLSR_ACC,
                                         .relative = std::nullopt,
                                         .indirect_zero_page = std::nullopt,
                                         .absolute_indexed_indirect = std::nullopt,
@@ -1038,16 +1038,16 @@ std::vector<uint8_t> Cpu6502::EncodeLSR(uint16_t operand, AddressingMode mode) c
 // ROL - Rotate Left
 std::vector<uint8_t> Cpu6502::EncodeROL(uint16_t operand, AddressingMode mode) const {
   static const OpcodeTable kRolTable = {.immediate = std::nullopt,
-                                        .zero_page = Opcodes::ROL_ZP,
-                                        .zero_page_x = Opcodes::ROL_ZPX,
+                                        .zero_page = Opcodes::kROL_ZP,
+                                        .zero_page_x = Opcodes::kROL_ZPX,
                                         .zero_page_y = std::nullopt,
-                                        .absolute = Opcodes::ROL_ABS,
-                                        .absolute_x = Opcodes::ROL_ABX,
+                                        .absolute = Opcodes::kROL_ABS,
+                                        .absolute_x = Opcodes::kROL_ABX,
                                         .absolute_y = std::nullopt,
                                         .indirect = std::nullopt,
                                         .indirect_x = std::nullopt,
                                         .indirect_y = std::nullopt,
-                                        .accumulator = Opcodes::ROL_ACC,
+                                        .accumulator = Opcodes::kROL_ACC,
                                         .relative = std::nullopt,
                                         .indirect_zero_page = std::nullopt,
                                         .absolute_indexed_indirect = std::nullopt,
@@ -1062,16 +1062,16 @@ std::vector<uint8_t> Cpu6502::EncodeROL(uint16_t operand, AddressingMode mode) c
 // ROR - Rotate Right
 std::vector<uint8_t> Cpu6502::EncodeROR(uint16_t operand, AddressingMode mode) const {
   static const OpcodeTable kRorTable = {.immediate = std::nullopt,
-                                        .zero_page = Opcodes::ROR_ZP,
-                                        .zero_page_x = Opcodes::ROR_ZPX,
+                                        .zero_page = Opcodes::kROR_ZP,
+                                        .zero_page_x = Opcodes::kROR_ZPX,
                                         .zero_page_y = std::nullopt,
-                                        .absolute = Opcodes::ROR_ABS,
-                                        .absolute_x = Opcodes::ROR_ABX,
+                                        .absolute = Opcodes::kROR_ABS,
+                                        .absolute_x = Opcodes::kROR_ABX,
                                         .absolute_y = std::nullopt,
                                         .indirect = std::nullopt,
                                         .indirect_x = std::nullopt,
                                         .indirect_y = std::nullopt,
-                                        .accumulator = Opcodes::ROR_ACC,
+                                        .accumulator = Opcodes::kROR_ACC,
                                         .relative = std::nullopt,
                                         .indirect_zero_page = std::nullopt,
                                         .absolute_indexed_indirect = std::nullopt,
@@ -1085,83 +1085,83 @@ std::vector<uint8_t> Cpu6502::EncodeROR(uint16_t operand, AddressingMode mode) c
 
 // Group 4: Interrupt Instructions
 
-// RTI - Return from Interrupt
+// kRTI - Return from Interrupt
 std::vector<uint8_t> Cpu6502::EncodeRTI() {
-  return {Opcodes::RTI};
+  return {Opcodes::kRTI};
 }
 
-// BRK - Break
+// kBRK - Break
 std::vector<uint8_t> Cpu6502::EncodeBRK() {
-  return {Opcodes::BRK};
+  return {Opcodes::kBRK};
 }
 
 // Group 5: Flag Operations
 
-// CLC - Clear Carry
+// kCLC - Clear Carry
 std::vector<uint8_t> Cpu6502::EncodeCLC() {
-  return {Opcodes::CLC};
+  return {Opcodes::kCLC};
 }
 
-// SEC - Set Carry
+// kSEC - Set Carry
 std::vector<uint8_t> Cpu6502::EncodeSEC() {
-  return {Opcodes::SEC};
+  return {Opcodes::kSEC};
 }
 
-// CLD - Clear Decimal
+// kCLD - Clear Decimal
 std::vector<uint8_t> Cpu6502::EncodeCLD() {
-  return {Opcodes::CLD};
+  return {Opcodes::kCLD};
 }
 
-// SED - Set Decimal
+// kSED - Set Decimal
 std::vector<uint8_t> Cpu6502::EncodeSED() {
-  return {Opcodes::SED};
+  return {Opcodes::kSED};
 }
 
-// CLI - Clear Interrupt Disable
+// kCLI - Clear Interrupt Disable
 std::vector<uint8_t> Cpu6502::EncodeCLI() {
-  return {Opcodes::CLI};
+  return {Opcodes::kCLI};
 }
 
-// SEI - Set Interrupt Disable
+// kSEI - Set Interrupt Disable
 std::vector<uint8_t> Cpu6502::EncodeSEI() {
-  return {Opcodes::SEI};
+  return {Opcodes::kSEI};
 }
 
-// CLV - Clear Overflow
+// kCLV - Clear Overflow
 std::vector<uint8_t> Cpu6502::EncodeCLV() {
-  return {Opcodes::CLV};
+  return {Opcodes::kCLV};
 }
 
 // Group 6: Transfer Instructions
 
-// TSX - Transfer SP to X
+// kTSX - Transfer SP to X
 std::vector<uint8_t> Cpu6502::EncodeTSX() {
-  return {Opcodes::TSX};
+  return {Opcodes::kTSX};
 }
 
-// TXS - Transfer X to SP
+// kTXS - Transfer X to SP
 std::vector<uint8_t> Cpu6502::EncodeTXS() {
-  return {Opcodes::TXS};
+  return {Opcodes::kTXS};
 }
 
-// TAX - Transfer A to X
+// kTAX - Transfer A to X
 std::vector<uint8_t> Cpu6502::EncodeTAX() {
-  return {Opcodes::TAX};
+  return {Opcodes::kTAX};
 }
 
-// TAY - Transfer A to Y
+// kTAY - Transfer A to Y
 std::vector<uint8_t> Cpu6502::EncodeTAY() {
-  return {Opcodes::TAY};
+  return {Opcodes::kTAY};
 }
 
-// TXA - Transfer X to A
+// kTXA - Transfer X to A
 std::vector<uint8_t> Cpu6502::EncodeTXA() {
-  return {Opcodes::TXA};
+  return {Opcodes::kTXA};
 }
 
-// TYA - Transfer Y to A
+// kTYA - Transfer Y to A
 std::vector<uint8_t> Cpu6502::EncodeTYA() {
-  return {Opcodes::TYA};
+  return {Opcodes::kTYA};
 }
 
 // Calculate instruction size based on addressing mode
@@ -1260,10 +1260,10 @@ size_t Cpu6502::GetInstructionSize(const std::string& mnemonic,
 
   // --- Branch instructions: always relative (2 bytes) ---
   static const std::unordered_set<std::string> BRANCHES = {
-      M6502Mnemonics::BEQ, M6502Mnemonics::BNE, M6502Mnemonics::BCC,
-      M6502Mnemonics::BCS, M6502Mnemonics::BMI, M6502Mnemonics::BPL,
-      M6502Mnemonics::BVC, M6502Mnemonics::BVS, M6502Mnemonics::BRA,
-      M6502Mnemonics::BLT,  // alias for BCC
+      M6502Mnemonics::kBEQ, M6502Mnemonics::kBNE, M6502Mnemonics::kBCC,
+      M6502Mnemonics::kBCS, M6502Mnemonics::kBMI, M6502Mnemonics::kBPL,
+      M6502Mnemonics::kBVC, M6502Mnemonics::kBVS, M6502Mnemonics::kBRA,
+      M6502Mnemonics::BLT,  // alias for kBCC
   };
   if (BRANCHES.contains(kMn)) {
     return 2;
@@ -1288,7 +1288,7 @@ size_t Cpu6502::GetInstructionSize(const std::string& mnemonic,
       // JMP (abs) → absolute indirect = 3 bytes
       // (JMP is the only 6502/65C02 instruction that uses (abs) indirect;
       // all other instructions with (sym) use ZP indirect = 2 bytes)
-      if (kMn == M6502Mnemonics::JMP || kMn == M6502Mnemonics::JSR) {
+      if (kMn == M6502Mnemonics::JMP || kMn == M6502Mnemonics::kJSR) {
         return 3;
       }
       // (zp) → ZP indirect (65C02) = 2 bytes
@@ -1365,9 +1365,9 @@ std::vector<uint8_t> Cpu6502::EncodeBranchWithRelaxation(uint8_t branch_opcode,
 // ============================================================================
 
 /**
- * @brief Encode WAI (Wait for Interrupt) - Rockwell 65C02 extension
+ * @brief Encode kWAI (Wait for Interrupt) - Rockwell 65C02 extension
  *
- * WAI halts the processor until an interrupt (IRQ or NMI) occurs.
+ * kWAI halts the processor until an interrupt (IRQ or NMI) occurs.
  * Power-saving instruction for Apple IIc, IIgs, and WDC 65C02S.
  *
  * Opcode: CB (Implied addressing)
@@ -1379,13 +1379,13 @@ std::vector<uint8_t> Cpu6502::EncodeWAI() const {
     return {};  // Not available in this CPU mode
   }
 
-  return {Opcodes::WAI};
+  return {Opcodes::kWAI};
 }
 
 /**
- * @brief Encode STP (Stop Processor) - Rockwell 65C02 extension
+ * @brief Encode kSTP (Stop Processor) - Rockwell 65C02 extension
  *
- * STP completely stops the processor until hardware reset.
+ * kSTP completely stops the processor until hardware reset.
  * Halt instruction for power-down or error conditions.
  *
  * Opcode: DB (Implied addressing)
@@ -1397,11 +1397,11 @@ std::vector<uint8_t> Cpu6502::EncodeSTP() const {
     return {};  // Not available in this CPU mode
   }
 
-  return {Opcodes::STP};
+  return {Opcodes::kSTP};
 }
 
 // ============================================================================
-// RMB0-RMB7: Reset Memory Bit (Rockwell 65C02 Extensions)
+// kRMB0-kRMB7: Reset Memory Bit (Rockwell 65C02 Extensions)
 //
 // These instructions reset (clear to 0) a specific bit in a zero page location.
 // Each instruction operates on one of the 8 bits (0-7).
@@ -1415,60 +1415,60 @@ std::vector<uint8_t> Cpu6502::EncodeRMB0(uint8_t operand, AddressingMode mode) c
   if (cpu_mode_ != CpuMode::Cpu65C02Rock || mode != AddressingMode::ZeroPage) {
     return {};
   }
-  return {RockwellOpcodes::RMB0, operand};
+  return {RockwellOpcodes::kRMB0, operand};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeRMB1(uint8_t operand, AddressingMode mode) const {
   if (cpu_mode_ != CpuMode::Cpu65C02Rock || mode != AddressingMode::ZeroPage) {
     return {};
   }
-  return {RockwellOpcodes::RMB1, operand};
+  return {RockwellOpcodes::kRMB1, operand};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeRMB2(uint8_t operand, AddressingMode mode) const {
   if (cpu_mode_ != CpuMode::Cpu65C02Rock || mode != AddressingMode::ZeroPage) {
     return {};
   }
-  return {RockwellOpcodes::RMB2, operand};
+  return {RockwellOpcodes::kRMB2, operand};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeRMB3(uint8_t operand, AddressingMode mode) const {
   if (cpu_mode_ != CpuMode::Cpu65C02Rock || mode != AddressingMode::ZeroPage) {
     return {};
   }
-  return {RockwellOpcodes::RMB3, operand};
+  return {RockwellOpcodes::kRMB3, operand};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeRMB4(uint8_t operand, AddressingMode mode) const {
   if (cpu_mode_ != CpuMode::Cpu65C02Rock || mode != AddressingMode::ZeroPage) {
     return {};
   }
-  return {RockwellOpcodes::RMB4, operand};
+  return {RockwellOpcodes::kRMB4, operand};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeRMB5(uint8_t operand, AddressingMode mode) const {
   if (cpu_mode_ != CpuMode::Cpu65C02Rock || mode != AddressingMode::ZeroPage) {
     return {};
   }
-  return {RockwellOpcodes::RMB5, operand};
+  return {RockwellOpcodes::kRMB5, operand};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeRMB6(uint8_t operand, AddressingMode mode) const {
   if (cpu_mode_ != CpuMode::Cpu65C02Rock || mode != AddressingMode::ZeroPage) {
     return {};
   }
-  return {RockwellOpcodes::RMB6, operand};
+  return {RockwellOpcodes::kRMB6, operand};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeRMB7(uint8_t operand, AddressingMode mode) const {
   if (cpu_mode_ != CpuMode::Cpu65C02Rock || mode != AddressingMode::ZeroPage) {
     return {};
   }
-  return {RockwellOpcodes::RMB7, operand};
+  return {RockwellOpcodes::kRMB7, operand};
 }
 
 // ============================================================================
-// SMB0-SMB7: Set Memory Bit (Rockwell 65C02 Extensions)
+// kSMB0-kSMB7: Set Memory Bit (Rockwell 65C02 Extensions)
 //
 // These instructions set (to 1) a specific bit in a zero page location.
 // Each instruction operates on one of the 8 bits (0-7).
@@ -1482,60 +1482,60 @@ std::vector<uint8_t> Cpu6502::EncodeSMB0(uint8_t operand, AddressingMode mode) c
   if (cpu_mode_ != CpuMode::Cpu65C02Rock || mode != AddressingMode::ZeroPage) {
     return {};
   }
-  return {RockwellOpcodes::SMB0, operand};
+  return {RockwellOpcodes::kSMB0, operand};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeSMB1(uint8_t operand, AddressingMode mode) const {
   if (cpu_mode_ != CpuMode::Cpu65C02Rock || mode != AddressingMode::ZeroPage) {
     return {};
   }
-  return {RockwellOpcodes::SMB1, operand};
+  return {RockwellOpcodes::kSMB1, operand};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeSMB2(uint8_t operand, AddressingMode mode) const {
   if (cpu_mode_ != CpuMode::Cpu65C02Rock || mode != AddressingMode::ZeroPage) {
     return {};
   }
-  return {RockwellOpcodes::SMB2, operand};
+  return {RockwellOpcodes::kSMB2, operand};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeSMB3(uint8_t operand, AddressingMode mode) const {
   if (cpu_mode_ != CpuMode::Cpu65C02Rock || mode != AddressingMode::ZeroPage) {
     return {};
   }
-  return {RockwellOpcodes::SMB3, operand};
+  return {RockwellOpcodes::kSMB3, operand};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeSMB4(uint8_t operand, AddressingMode mode) const {
   if (cpu_mode_ != CpuMode::Cpu65C02Rock || mode != AddressingMode::ZeroPage) {
     return {};
   }
-  return {RockwellOpcodes::SMB4, operand};
+  return {RockwellOpcodes::kSMB4, operand};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeSMB5(uint8_t operand, AddressingMode mode) const {
   if (cpu_mode_ != CpuMode::Cpu65C02Rock || mode != AddressingMode::ZeroPage) {
     return {};
   }
-  return {RockwellOpcodes::SMB5, operand};
+  return {RockwellOpcodes::kSMB5, operand};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeSMB6(uint8_t operand, AddressingMode mode) const {
   if (cpu_mode_ != CpuMode::Cpu65C02Rock || mode != AddressingMode::ZeroPage) {
     return {};
   }
-  return {RockwellOpcodes::SMB6, operand};
+  return {RockwellOpcodes::kSMB6, operand};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeSMB7(uint8_t operand, AddressingMode mode) const {
   if (cpu_mode_ != CpuMode::Cpu65C02Rock || mode != AddressingMode::ZeroPage) {
     return {};
   }
-  return {RockwellOpcodes::SMB7, operand};
+  return {RockwellOpcodes::kSMB7, operand};
 }
 
 // ============================================================================
-// BBR0-BBR7: Branch if Bit Reset (Rockwell 65C02 Extensions)
+// kBBR0-kBBR7: Branch if Bit Reset (Rockwell 65C02 Extensions)
 //
 // These instructions test a specific bit in a zero page location and branch
 // if that bit is reset (0). Each instruction tests one of the 8 bits (0-7).
@@ -1549,60 +1549,60 @@ std::vector<uint8_t> Cpu6502::EncodeBBR0(uint8_t zp_addr, uint8_t offset) const 
   if (cpu_mode_ != CpuMode::Cpu65C02Rock) {
     return {};
   }
-  return {RockwellOpcodes::BBR0, zp_addr, offset};
+  return {RockwellOpcodes::kBBR0, zp_addr, offset};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeBBR1(uint8_t zp_addr, uint8_t offset) const {
   if (cpu_mode_ != CpuMode::Cpu65C02Rock) {
     return {};
   }
-  return {RockwellOpcodes::BBR1, zp_addr, offset};
+  return {RockwellOpcodes::kBBR1, zp_addr, offset};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeBBR2(uint8_t zp_addr, uint8_t offset) const {
   if (cpu_mode_ != CpuMode::Cpu65C02Rock) {
     return {};
   }
-  return {RockwellOpcodes::BBR2, zp_addr, offset};
+  return {RockwellOpcodes::kBBR2, zp_addr, offset};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeBBR3(uint8_t zp_addr, uint8_t offset) const {
   if (cpu_mode_ != CpuMode::Cpu65C02Rock) {
     return {};
   }
-  return {RockwellOpcodes::BBR3, zp_addr, offset};
+  return {RockwellOpcodes::kBBR3, zp_addr, offset};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeBBR4(uint8_t zp_addr, uint8_t offset) const {
   if (cpu_mode_ != CpuMode::Cpu65C02Rock) {
     return {};
   }
-  return {RockwellOpcodes::BBR4, zp_addr, offset};
+  return {RockwellOpcodes::kBBR4, zp_addr, offset};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeBBR5(uint8_t zp_addr, uint8_t offset) const {
   if (cpu_mode_ != CpuMode::Cpu65C02Rock) {
     return {};
   }
-  return {RockwellOpcodes::BBR5, zp_addr, offset};
+  return {RockwellOpcodes::kBBR5, zp_addr, offset};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeBBR6(uint8_t zp_addr, uint8_t offset) const {
   if (cpu_mode_ != CpuMode::Cpu65C02Rock) {
     return {};
   }
-  return {RockwellOpcodes::BBR6, zp_addr, offset};
+  return {RockwellOpcodes::kBBR6, zp_addr, offset};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeBBR7(uint8_t zp_addr, uint8_t offset) const {
   if (cpu_mode_ != CpuMode::Cpu65C02Rock) {
     return {};
   }
-  return {RockwellOpcodes::BBR7, zp_addr, offset};
+  return {RockwellOpcodes::kBBR7, zp_addr, offset};
 }
 
 // ============================================================================
-// BBS0-BBS7: Branch if Bit Set (Rockwell 65C02 Extensions)
+// kBBS0-kBBS7: Branch if Bit Set (Rockwell 65C02 Extensions)
 //
 // These instructions test a specific bit in a zero page location and branch
 // if that bit is set (1). Each instruction tests one of the 8 bits (0-7).
@@ -1616,56 +1616,56 @@ std::vector<uint8_t> Cpu6502::EncodeBBS0(uint8_t zp_addr, uint8_t offset) const 
   if (cpu_mode_ != CpuMode::Cpu65C02Rock) {
     return {};
   }
-  return {RockwellOpcodes::BBS0, zp_addr, offset};
+  return {RockwellOpcodes::kBBS0, zp_addr, offset};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeBBS1(uint8_t zp_addr, uint8_t offset) const {
   if (cpu_mode_ != CpuMode::Cpu65C02Rock) {
     return {};
   }
-  return {RockwellOpcodes::BBS1, zp_addr, offset};
+  return {RockwellOpcodes::kBBS1, zp_addr, offset};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeBBS2(uint8_t zp_addr, uint8_t offset) const {
   if (cpu_mode_ != CpuMode::Cpu65C02Rock) {
     return {};
   }
-  return {RockwellOpcodes::BBS2, zp_addr, offset};
+  return {RockwellOpcodes::kBBS2, zp_addr, offset};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeBBS3(uint8_t zp_addr, uint8_t offset) const {
   if (cpu_mode_ != CpuMode::Cpu65C02Rock) {
     return {};
   }
-  return {RockwellOpcodes::BBS3, zp_addr, offset};
+  return {RockwellOpcodes::kBBS3, zp_addr, offset};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeBBS4(uint8_t zp_addr, uint8_t offset) const {
   if (cpu_mode_ != CpuMode::Cpu65C02Rock) {
     return {};
   }
-  return {RockwellOpcodes::BBS4, zp_addr, offset};
+  return {RockwellOpcodes::kBBS4, zp_addr, offset};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeBBS5(uint8_t zp_addr, uint8_t offset) const {
   if (cpu_mode_ != CpuMode::Cpu65C02Rock) {
     return {};
   }
-  return {RockwellOpcodes::BBS5, zp_addr, offset};
+  return {RockwellOpcodes::kBBS5, zp_addr, offset};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeBBS6(uint8_t zp_addr, uint8_t offset) const {
   if (cpu_mode_ != CpuMode::Cpu65C02Rock) {
     return {};
   }
-  return {RockwellOpcodes::BBS6, zp_addr, offset};
+  return {RockwellOpcodes::kBBS6, zp_addr, offset};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeBBS7(uint8_t zp_addr, uint8_t offset) const {
   if (cpu_mode_ != CpuMode::Cpu65C02Rock) {
     return {};
   }
-  return {RockwellOpcodes::BBS7, zp_addr, offset};
+  return {RockwellOpcodes::kBBS7, zp_addr, offset};
 }
 
 // ============================================================================
@@ -1676,28 +1676,28 @@ std::vector<uint8_t> Cpu6502::EncodePHX() const {
   if (cpu_mode_ == CpuMode::Cpu6502) {
     return {};  // Not available in base 6502
   }
-  return {Opcodes::PHX};
+  return {Opcodes::kPHX};
 }
 
 std::vector<uint8_t> Cpu6502::EncodePLX() const {
   if (cpu_mode_ == CpuMode::Cpu6502) {
     return {};
   }
-  return {Opcodes::PLX};
+  return {Opcodes::kPLX};
 }
 
 std::vector<uint8_t> Cpu6502::EncodePHY() const {
   if (cpu_mode_ == CpuMode::Cpu6502) {
     return {};
   }
-  return {Opcodes::PHY};
+  return {Opcodes::kPHY};
 }
 
 std::vector<uint8_t> Cpu6502::EncodePLY() const {
   if (cpu_mode_ == CpuMode::Cpu6502) {
     return {};
   }
-  return {Opcodes::PLY};
+  return {Opcodes::kPLY};
 }
 
 // ============================================================================
@@ -1710,11 +1710,11 @@ std::vector<uint8_t> Cpu6502::EncodeSTZ(uint16_t operand, AddressingMode mode) c
   }
 
   static const OpcodeTable kStzTable = {.immediate = std::nullopt,
-                                        .zero_page = Opcodes::STZ_ZP,
-                                        .zero_page_x = Opcodes::STZ_ZPX,
+                                        .zero_page = Opcodes::kSTZ_ZP,
+                                        .zero_page_x = Opcodes::kSTZ_ZPX,
                                         .zero_page_y = std::nullopt,
-                                        .absolute = Opcodes::STZ_ABS,
-                                        .absolute_x = Opcodes::STZ_ABX,
+                                        .absolute = Opcodes::kSTZ_ABS,
+                                        .absolute_x = Opcodes::kSTZ_ABX,
                                         .absolute_y = std::nullopt,
                                         .indirect = std::nullopt,
                                         .indirect_x = std::nullopt,
@@ -1741,10 +1741,10 @@ std::vector<uint8_t> Cpu6502::EncodeTRB(uint16_t operand, AddressingMode mode) c
   }
 
   static const OpcodeTable kTrbTable = {.immediate = std::nullopt,
-                                        .zero_page = Opcodes::TRB_ZP,
+                                        .zero_page = Opcodes::kTRB_ZP,
                                         .zero_page_x = std::nullopt,
                                         .zero_page_y = std::nullopt,
-                                        .absolute = Opcodes::TRB_ABS,
+                                        .absolute = Opcodes::kTRB_ABS,
                                         .absolute_x = std::nullopt,
                                         .absolute_y = std::nullopt,
                                         .indirect = std::nullopt,
@@ -1768,10 +1768,10 @@ std::vector<uint8_t> Cpu6502::EncodeTSB(uint16_t operand, AddressingMode mode) c
   }
 
   static const OpcodeTable kTsbTable = {.immediate = std::nullopt,
-                                        .zero_page = Opcodes::TSB_ZP,
+                                        .zero_page = Opcodes::kTSB_ZP,
                                         .zero_page_x = std::nullopt,
                                         .zero_page_y = std::nullopt,
-                                        .absolute = Opcodes::TSB_ABS,
+                                        .absolute = Opcodes::kTSB_ABS,
                                         .absolute_x = std::nullopt,
                                         .absolute_y = std::nullopt,
                                         .indirect = std::nullopt,
@@ -1809,7 +1809,7 @@ std::vector<uint8_t> Cpu6502::EncodeBRA(uint16_t operand, AddressingMode mode) c
                                         .indirect_x = std::nullopt,
                                         .indirect_y = std::nullopt,
                                         .accumulator = std::nullopt,
-                                        .relative = Opcodes::BRA,
+                                        .relative = Opcodes::kBRA,
                                         .indirect_zero_page = std::nullopt,
                                         .absolute_indexed_indirect = std::nullopt,
                                         .absolute_long = std::nullopt,
@@ -1824,20 +1824,20 @@ std::vector<uint8_t> Cpu6502::EncodeBRA(uint16_t operand, AddressingMode mode) c
 // Phase 2.5 - 65816 Transfer Instructions (no CPU state access)
 // ============================================================================
 
-// TXY - Transfer X to Y (65816 implied, opcode $9B)
+// kTXY - Transfer X to Y (65816 implied, opcode $9B)
 std::vector<uint8_t> Cpu6502::EncodeTXY() {
-  return {Opcodes::TXY};
+  return {Opcodes::kTXY};
 }
 
-// TYX - Transfer Y to X (65816 implied, opcode $BB)
+// kTYX - Transfer Y to X (65816 implied, opcode $BB)
 std::vector<uint8_t> Cpu6502::EncodeTYX() {
-  return {Opcodes::TYX};
+  return {Opcodes::kTYX};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeXCE() const {
-  // XCE exchanges the carry flag with the 65816 emulation bit (e).
+  // kXCE exchanges the carry flag with the 65816 emulation bit (e).
   // The assembler cannot know the carry value at assembly time, so we apply a
-  // conservative rule: always reset M and X to 8-bit (true) after XCE.
+  // conservative rule: always reset M and X to 8-bit (true) after kXCE.
   //
   // This is correct for BOTH transition directions:
   //   clc / xce  → switch to native mode: M=1,X=1 reset here is immediately
@@ -1848,14 +1848,14 @@ std::vector<uint8_t> Cpu6502::EncodeXCE() const {
   //                 assembled as 8-bit (2-byte) as required.
   m_flag_ = true;
   x_flag_ = true;
-  return {Opcodes::XCE};
+  return {Opcodes::kXCE};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeSEP(uint16_t value, AddressingMode mode) const {
-  // SEP only has Immediate mode; accept any mode for vasm compatibility
+  // kSEP only has Immediate mode; accept any mode for vasm compatibility
   // (source may use 'sep $30' without '#' prefix)
   (void)mode;
-  // Update M/X flags: SEP sets bits (1 = 8-bit)
+  // Update M/X flags: kSEP sets bits (1 = 8-bit)
   // Bit 5 (0x20) = M flag, Bit 4 (0x10) = X flag
   if (value & 0x20) {
     m_flag_ = true;  // set M → 8-bit accumulator
@@ -1863,14 +1863,14 @@ std::vector<uint8_t> Cpu6502::EncodeSEP(uint16_t value, AddressingMode mode) con
   if (value & 0x10) {
     x_flag_ = true;  // set X → 8-bit index
   }
-  return {Opcodes::SEP, static_cast<uint8_t>(value & 0xFF)};
+  return {Opcodes::kSEP, static_cast<uint8_t>(value & 0xFF)};
 }
 
 std::vector<uint8_t> Cpu6502::EncodeREP(uint16_t value, AddressingMode mode) const {
-  // REP only has Immediate mode; accept any mode for vasm compatibility
+  // kREP only has Immediate mode; accept any mode for vasm compatibility
   // (source may use 'rep $30' without '#' prefix)
   (void)mode;
-  // Update M/X flags: REP clears bits (0 = 16-bit)
+  // Update M/X flags: kREP clears bits (0 = 16-bit)
   // Bit 5 (0x20) = M flag, Bit 4 (0x10) = X flag
   if (value & 0x20) {
     m_flag_ = false;  // clear M → 16-bit accumulator
@@ -1878,7 +1878,7 @@ std::vector<uint8_t> Cpu6502::EncodeREP(uint16_t value, AddressingMode mode) con
   if (value & 0x10) {
     x_flag_ = false;  // clear X → 16-bit index
   }
-  return {Opcodes::REP, static_cast<uint8_t>(value & 0xFF)};
+  return {Opcodes::kREP, static_cast<uint8_t>(value & 0xFF)};
 }
 
 // ============================================================================
@@ -1908,7 +1908,7 @@ void Cpu6502::SetCpuModeFromAtom(int mode) {
       break;
   }
   // Reset MX flags to 8-bit default whenever the CPU mode changes.
-  // REP/SEP instructions in the atom stream will update them as they
+  // kREP/kSEP instructions in the atom stream will update them as they
   // are encoded in-order, so each pass sees consistent state.
   m_flag_ = true;
   x_flag_ = true;
@@ -1960,10 +1960,10 @@ static void PopulateLoadStoreArith(std::unordered_map<std::string, EncFnAlias>& 
   t[SBC] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeSBC(op, m); };
   t[INC] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeINC(op, m); };
   t[DEC] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeDEC(op, m); };
-  t[INX] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeINX(); };
-  t[INY] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeINY(); };
-  t[DEX] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeDEX(); };
-  t[DEY] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeDEY(); };
+  t[kINX] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeINX(); };
+  t[kINY] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeINY(); };
+  t[kDEX] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeDEX(); };
+  t[kDEY] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeDEY(); };
   // clang-format on
 }
 
@@ -1977,32 +1977,32 @@ static void PopulateLogicCompareBranch(std::unordered_map<std::string, EncFnAlia
   t[CPX] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeCPX(op, m); };
   t[CPY] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeCPY(op, m); };
   // Branch (short; relaxed branches go via EncodeInstructionSpecial)
-  t[BEQ] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeBEQ(op, m); };
-  t[BNE] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeBNE(op, m); };
-  t[BCC] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeBCC(op, m); };
-  t[BCS] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeBCS(op, m); };
-  t[BMI] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeBMI(op, m); };
-  t[BPL] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeBPL(op, m); };
-  t[BVC] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeBVC(op, m); };
-  t[BVS] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeBVS(op, m); };
-  t[BRA] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeBRA(op, m); };
+  t[kBEQ] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeBEQ(op, m); };
+  t[kBNE] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeBNE(op, m); };
+  t[kBCC] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeBCC(op, m); };
+  t[kBCS] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeBCS(op, m); };
+  t[kBMI] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeBMI(op, m); };
+  t[kBPL] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeBPL(op, m); };
+  t[kBVC] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeBVC(op, m); };
+  t[kBVS] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeBVS(op, m); };
+  t[kBRA] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeBRA(op, m); };
   // clang-format on
 }
 
 static void PopulateJumpStackShift(std::unordered_map<std::string, EncFnAlias>& t) {
   // clang-format off
   t[JMP] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeJMP(op, m); };
-  t[JSR] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeJSR(op, m); };
-  t[RTS] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeRTS(); };
-  t[RTI] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeRTI(); };
-  t[PHA] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodePHA(); };
-  t[PLA] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodePLA(); };
-  t[PHP] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodePHP(); };
-  t[PLP] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodePLP(); };
-  t[PHX] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodePHX(); };
-  t[PLX] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodePLX(); };
-  t[PHY] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodePHY(); };
-  t[PLY] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodePLY(); };
+  t[kJSR] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeJSR(op, m); };
+  t[kRTS] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeRTS(); };
+  t[kRTI] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeRTI(); };
+  t[kPHA] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodePHA(); };
+  t[kPLA] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodePLA(); };
+  t[kPHP] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodePHP(); };
+  t[kPLP] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodePLP(); };
+  t[kPHX] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodePHX(); };
+  t[kPLX] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodePLX(); };
+  t[kPHY] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodePHY(); };
+  t[kPLY] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodePLY(); };
   t[ASL] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeASL(op, m); };
   t[LSR] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeLSR(op, m); };
   t[ROL] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeROL(op, m); };
@@ -2012,21 +2012,21 @@ static void PopulateJumpStackShift(std::unordered_map<std::string, EncFnAlias>& 
 
 static void PopulateFlagsTransferMisc(std::unordered_map<std::string, EncFnAlias>& t) {
   // clang-format off
-  t[CLC] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeCLC(); };
-  t[SEC] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeSEC(); };
-  t[CLD] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeCLD(); };
-  t[SED] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeSED(); };
-  t[CLI] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeCLI(); };
-  t[SEI] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeSEI(); };
-  t[CLV] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeCLV(); };
-  t[TAX] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeTAX(); };
-  t[TAY] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeTAY(); };
-  t[TXA] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeTXA(); };
-  t[TYA] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeTYA(); };
-  t[TSX] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeTSX(); };
-  t[TXS] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeTXS(); };
-  t[NOP] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeNOP(); };
-  t[BRK] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeBRK(); };
+  t[kCLC] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeCLC(); };
+  t[kSEC] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeSEC(); };
+  t[kCLD] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeCLD(); };
+  t[kSED] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeSED(); };
+  t[kCLI] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeCLI(); };
+  t[kSEI] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeSEI(); };
+  t[kCLV] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeCLV(); };
+  t[kTAX] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeTAX(); };
+  t[kTAY] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeTAY(); };
+  t[kTXA] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeTXA(); };
+  t[kTYA] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeTYA(); };
+  t[kTSX] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeTSX(); };
+  t[kTXS] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeTXS(); };
+  t[kNOP] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeNOP(); };
+  t[kBRK] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeBRK(); };
   t[TRB] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeTRB(op, m); };
   t[TSB] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeTSB(op, m); };
   // clang-format on
@@ -2034,31 +2034,31 @@ static void PopulateFlagsTransferMisc(std::unordered_map<std::string, EncFnAlias
 
 static void Populate65816(std::unordered_map<std::string, EncFnAlias>& t) {
   // clang-format off
-  t[PHB] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodePHB(); };
-  t[PLB] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodePLB(); };
-  t[PHK] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodePHK(); };
-  t[PHD] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodePHD(); };
-  t[PLD] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodePLD(); };
-  t[TCD] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeTCD(); };
-  t[TDC] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeTDC(); };
-  t[TCS] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeTCS(); };
-  t[TSC] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeTSC(); };
-  t[TXY] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeTXY(); };
-  t[TYX] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeTYX(); };
+  t[kPHB] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodePHB(); };
+  t[kPLB] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodePLB(); };
+  t[kPHK] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodePHK(); };
+  t[kPHD] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodePHD(); };
+  t[kPLD] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodePLD(); };
+  t[kTCD] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeTCD(); };
+  t[kTDC] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeTDC(); };
+  t[kTCS] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeTCS(); };
+  t[kTSC] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeTSC(); };
+  t[kTXY] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeTXY(); };
+  t[kTYX] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeTYX(); };
   t[JML] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeJML(op, m); };
   t[JSL] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeJSL(op, m); };
-  t[RTL] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeRTL(); };
-  t[PEA] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodePEA(op, m); };
-  t[PEI] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodePEI(op, m); };
-  t[PER] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodePER(op, m); };
-  t[XBA] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeXBA(); };
-  t[XCE] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeXCE(); };
-  t[SEP] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeSEP(op, m); };
-  t[REP] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeREP(op, m); };
-  t[COP] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeCOP(op, m); };
-  t[WDM] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeWDM(op, m); };
-  t[WAI] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeWAI(); };
-  t[STP] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeSTP(); };
+  t[kRTL] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeRTL(); };
+  t[kPEA] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodePEA(op, m); };
+  t[kPEI] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodePEI(op, m); };
+  t[kPER] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodePER(op, m); };
+  t[kXBA] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeXBA(); };
+  t[kXCE] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeXCE(); };
+  t[kSEP] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeSEP(op, m); };
+  t[kREP] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeREP(op, m); };
+  t[kCOP] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeCOP(op, m); };
+  t[kWDM] = [](const Cpu6502 *c, uint32_t op, AddressingMode m) { return c->EncodeWDM(op, m); };
+  t[kWAI] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeWAI(); };
+  t[kSTP] = [](const Cpu6502 *c, uint32_t,    AddressingMode)   { return c->EncodeSTP(); };
   // clang-format on
 }
 
@@ -2222,9 +2222,9 @@ std::vector<uint8_t> Cpu6502::EncodeInstruction(const std::string& mnemonic, uin
         mode = (val <= 0xFF) ? AddressingMode::ZeroPage : AddressingMode::Absolute;
       } else {
         // Symbol reference - use resolved operand value to determine mode.
-        // ZeroPage is used for values 0–$FF, EXCEPT for JMP and JSR which have
+        // ZeroPage is used for values 0–$FF, EXCEPT for JMP and kJSR which have
         // no ZeroPage variant and must always use Absolute addressing.
-        const bool kNoZpForm = (clean_mnemonic == JMP || clean_mnemonic == JSR);
+        const bool kNoZpForm = (clean_mnemonic == JMP || clean_mnemonic == kJSR);
         mode =
             (!kNoZpForm && operand <= 0xFF) ? AddressingMode::ZeroPage : AddressingMode::Absolute;
       }
@@ -2247,7 +2247,7 @@ std::vector<uint8_t> Cpu6502::EncodeInstruction(const std::string& mnemonic, uin
 /**
  * @brief Check if an instruction requires special encoding
  *
- * Branch instructions with relaxation and MVN/MVP multi-byte instructions
+ * Branch instructions with relaxation and kMVN/kMVP multi-byte instructions
  * need special handling that requires context beyond standard operand values.
  *
  * @param mnemonic Instruction mnemonic to check
@@ -2262,17 +2262,17 @@ bool Cpu6502::RequiresSpecialEncoding(const std::string& mnemonic) const {
 
   // Branch instructions require special encoding (branch relaxation)
   // Use mnemonic constants to avoid magic strings
-  if (clean_mnemonic == M6502Mnemonics::BEQ || clean_mnemonic == M6502Mnemonics::BNE ||
-      clean_mnemonic == M6502Mnemonics::BCC || clean_mnemonic == M6502Mnemonics::BCS ||
-      clean_mnemonic == M6502Mnemonics::BMI || clean_mnemonic == M6502Mnemonics::BPL ||
-      clean_mnemonic == M6502Mnemonics::BVC || clean_mnemonic == M6502Mnemonics::BVS ||
-      clean_mnemonic == M6502Mnemonics::BLT ||  // BLT is an alias for BCC
-      clean_mnemonic == M6502Mnemonics::BRA) {  // BRA (65C02+)
+  if (clean_mnemonic == M6502Mnemonics::kBEQ || clean_mnemonic == M6502Mnemonics::kBNE ||
+      clean_mnemonic == M6502Mnemonics::kBCC || clean_mnemonic == M6502Mnemonics::kBCS ||
+      clean_mnemonic == M6502Mnemonics::kBMI || clean_mnemonic == M6502Mnemonics::kBPL ||
+      clean_mnemonic == M6502Mnemonics::kBVC || clean_mnemonic == M6502Mnemonics::kBVS ||
+      clean_mnemonic == M6502Mnemonics::BLT ||  // BLT is an alias for kBCC
+      clean_mnemonic == M6502Mnemonics::kBRA) {  // kBRA (65C02+)
     return true;
   }
 
-  // MVN/MVP (65816 block move instructions) require special encoding
-  if (clean_mnemonic == M6502Mnemonics::MVN || clean_mnemonic == M6502Mnemonics::MVP) {
+  // kMVN/kMVP (65816 block move instructions) require special encoding
+  if (clean_mnemonic == M6502Mnemonics::kMVN || clean_mnemonic == M6502Mnemonics::kMVP) {
     return true;
   }
 
@@ -2284,7 +2284,7 @@ bool Cpu6502::RequiresSpecialEncoding(const std::string& mnemonic) const {
  *
  * Handles:
  * - Branch instructions with relaxation (needs current address and target)
- * - MVN/MVP instructions (needs two bank operands parsed from string)
+ * - kMVN/kMVP instructions (needs two bank operands parsed from string)
  *
  * @param mnemonic Instruction mnemonic
  * @param operand Operand string (unparsed, for special parsing)
@@ -2313,11 +2313,11 @@ std::vector<uint8_t> Cpu6502::EncodeInstructionSpecial(const std::string& mnemon
   };
 
   // Branch instructions with relaxation
-  if (clean_mnemonic == M6502Mnemonics::BEQ || clean_mnemonic == M6502Mnemonics::BNE ||
-      clean_mnemonic == M6502Mnemonics::BCC || clean_mnemonic == M6502Mnemonics::BCS ||
-      clean_mnemonic == M6502Mnemonics::BMI || clean_mnemonic == M6502Mnemonics::BPL ||
-      clean_mnemonic == M6502Mnemonics::BVC || clean_mnemonic == M6502Mnemonics::BVS ||
-      clean_mnemonic == M6502Mnemonics::BLT || clean_mnemonic == M6502Mnemonics::BRA) {
+  if (clean_mnemonic == M6502Mnemonics::kBEQ || clean_mnemonic == M6502Mnemonics::kBNE ||
+      clean_mnemonic == M6502Mnemonics::kBCC || clean_mnemonic == M6502Mnemonics::kBCS ||
+      clean_mnemonic == M6502Mnemonics::kBMI || clean_mnemonic == M6502Mnemonics::kBPL ||
+      clean_mnemonic == M6502Mnemonics::kBVC || clean_mnemonic == M6502Mnemonics::kBVS ||
+      clean_mnemonic == M6502Mnemonics::BLT || clean_mnemonic == M6502Mnemonics::kBRA) {
     // Parse target address from operand string
     std::string trimmed = util::Trim(operand);
     uint16_t target_addr = 0;
@@ -2330,13 +2330,13 @@ std::vector<uint8_t> Cpu6502::EncodeInstructionSpecial(const std::string& mnemon
     }
 
     // Get branch opcode for this mnemonic.
-    // BLT is an alias for BCC (Branch if Less Than).
+    // BLT is an alias for kBCC (Branch if Less Than).
     static const std::unordered_map<std::string, uint8_t> kBranchOpcodes = {
-        {M6502Mnemonics::BEQ, Opcodes::BEQ}, {M6502Mnemonics::BNE, Opcodes::BNE},
-        {M6502Mnemonics::BCC, Opcodes::BCC}, {M6502Mnemonics::BLT, Opcodes::BCC},  // alias for BCC
-        {M6502Mnemonics::BCS, Opcodes::BCS}, {M6502Mnemonics::BMI, Opcodes::BMI},
-        {M6502Mnemonics::BPL, Opcodes::BPL}, {M6502Mnemonics::BVC, Opcodes::BVC},
-        {M6502Mnemonics::BVS, Opcodes::BVS}, {M6502Mnemonics::BRA, Opcodes::BRA},
+        {M6502Mnemonics::kBEQ, Opcodes::kBEQ}, {M6502Mnemonics::kBNE, Opcodes::kBNE},
+        {M6502Mnemonics::kBCC, Opcodes::kBCC}, {M6502Mnemonics::BLT, Opcodes::kBCC},  // alias for kBCC
+        {M6502Mnemonics::kBCS, Opcodes::kBCS}, {M6502Mnemonics::kBMI, Opcodes::kBMI},
+        {M6502Mnemonics::kBPL, Opcodes::kBPL}, {M6502Mnemonics::kBVC, Opcodes::kBVC},
+        {M6502Mnemonics::kBVS, Opcodes::kBVS}, {M6502Mnemonics::kBRA, Opcodes::kBRA},
     };
     auto it = kBranchOpcodes.find(clean_mnemonic);
     if (it == kBranchOpcodes.end()) {
@@ -2359,8 +2359,8 @@ std::vector<uint8_t> Cpu6502::EncodeInstructionSpecial(const std::string& mnemon
     return EncodeBranchWithRelaxation(branch_opcode, {current_address, target_addr});
   }
 
-  // MVN/MVP (Block Move with two operands)
-  if (clean_mnemonic == M6502Mnemonics::MVN || mnemonic == M6502Mnemonics::MVP) {
+  // kMVN/kMVP (Block Move with two operands)
+  if (clean_mnemonic == M6502Mnemonics::kMVN || mnemonic == M6502Mnemonics::kMVP) {
     // Parse operands: "srcbank,destbank" or "$E1,$01"
     std::string trimmed_operand = util::Trim(operand);
     size_t comma_pos = trimmed_operand.find(',');
@@ -2385,8 +2385,8 @@ std::vector<uint8_t> Cpu6502::EncodeInstructionSpecial(const std::string& mnemon
       uint8_t srcbank = parse_bank(src_str);
       uint8_t destbank = parse_bank(dst_str);
 
-      // Encode the instruction (MVN/MVP are 65816-specific)
-      return (clean_mnemonic == M6502Mnemonics::MVN) ? EncodeMVN(srcbank, destbank)
+      // Encode the instruction (kMVN/kMVP are 65816-specific)
+      return (clean_mnemonic == M6502Mnemonics::kMVN) ? EncodeMVN(srcbank, destbank)
                                                      : EncodeMVP(srcbank, destbank);
 
     } catch (const std::exception& e) {
@@ -2437,50 +2437,50 @@ bool Cpu6502::HasOpcode(const std::string& mnemonic) const {
   static const std::unordered_set<std::string> kBaseOpcodes = {
       M6502Mnemonics::LDA, M6502Mnemonics::LDX, M6502Mnemonics::LDY, M6502Mnemonics::STA,
       M6502Mnemonics::STX, M6502Mnemonics::STY, M6502Mnemonics::ADC, M6502Mnemonics::SBC,
-      M6502Mnemonics::INC, M6502Mnemonics::DEC, M6502Mnemonics::INX, M6502Mnemonics::INY,
-      M6502Mnemonics::DEX, M6502Mnemonics::DEY, M6502Mnemonics::AND, M6502Mnemonics::ORA,
+      M6502Mnemonics::INC, M6502Mnemonics::DEC, M6502Mnemonics::kINX, M6502Mnemonics::kINY,
+      M6502Mnemonics::kDEX, M6502Mnemonics::kDEY, M6502Mnemonics::AND, M6502Mnemonics::ORA,
       M6502Mnemonics::EOR, M6502Mnemonics::BIT, M6502Mnemonics::CMP, M6502Mnemonics::CPX,
-      M6502Mnemonics::CPY, M6502Mnemonics::BEQ, M6502Mnemonics::BNE, M6502Mnemonics::BCS,
-      M6502Mnemonics::BCC, M6502Mnemonics::BMI, M6502Mnemonics::BPL, M6502Mnemonics::BVS,
-      M6502Mnemonics::BVC,
-      M6502Mnemonics::BLT,  // Alias for BCC
-      M6502Mnemonics::JMP, M6502Mnemonics::JSR, M6502Mnemonics::RTS, M6502Mnemonics::RTI,
-      M6502Mnemonics::PHA, M6502Mnemonics::PLA, M6502Mnemonics::PHP, M6502Mnemonics::PLP,
+      M6502Mnemonics::CPY, M6502Mnemonics::kBEQ, M6502Mnemonics::kBNE, M6502Mnemonics::kBCS,
+      M6502Mnemonics::kBCC, M6502Mnemonics::kBMI, M6502Mnemonics::kBPL, M6502Mnemonics::kBVS,
+      M6502Mnemonics::kBVC,
+      M6502Mnemonics::BLT,  // Alias for kBCC
+      M6502Mnemonics::JMP, M6502Mnemonics::kJSR, M6502Mnemonics::kRTS, M6502Mnemonics::kRTI,
+      M6502Mnemonics::kPHA, M6502Mnemonics::kPLA, M6502Mnemonics::kPHP, M6502Mnemonics::kPLP,
       M6502Mnemonics::ASL, M6502Mnemonics::LSR, M6502Mnemonics::ROL, M6502Mnemonics::ROR,
-      M6502Mnemonics::CLC, M6502Mnemonics::SEC, M6502Mnemonics::CLD, M6502Mnemonics::SED,
-      M6502Mnemonics::CLI, M6502Mnemonics::SEI, M6502Mnemonics::CLV, M6502Mnemonics::TAX,
-      M6502Mnemonics::TXA, M6502Mnemonics::TAY, M6502Mnemonics::TYA, M6502Mnemonics::TSX,
-      M6502Mnemonics::TXS, M6502Mnemonics::NOP, M6502Mnemonics::BRK};
+      M6502Mnemonics::kCLC, M6502Mnemonics::kSEC, M6502Mnemonics::kCLD, M6502Mnemonics::kSED,
+      M6502Mnemonics::kCLI, M6502Mnemonics::kSEI, M6502Mnemonics::kCLV, M6502Mnemonics::kTAX,
+      M6502Mnemonics::kTXA, M6502Mnemonics::kTAY, M6502Mnemonics::kTYA, M6502Mnemonics::kTSX,
+      M6502Mnemonics::kTXS, M6502Mnemonics::kNOP, M6502Mnemonics::kBRK};
 
   // 65C02 additions — valid in Cpu65C02, Cpu65C02Rock, and Cpu65816 modes
   static const std::unordered_set<std::string> kC02Opcodes = {
-      M6502Mnemonics::PHX, M6502Mnemonics::PLX, M6502Mnemonics::PHY, M6502Mnemonics::PLY,
-      M6502Mnemonics::STZ, M6502Mnemonics::TRB, M6502Mnemonics::TSB, M6502Mnemonics::BRA,
-      M6502Mnemonics::STP, M6502Mnemonics::WAI};
+      M6502Mnemonics::kPHX, M6502Mnemonics::kPLX, M6502Mnemonics::kPHY, M6502Mnemonics::kPLY,
+      M6502Mnemonics::STZ, M6502Mnemonics::TRB, M6502Mnemonics::TSB, M6502Mnemonics::kBRA,
+      M6502Mnemonics::kSTP, M6502Mnemonics::kWAI};
 
   // 65C02 Rockwell extensions (RMB, SMB, BBR, BBS) — Cpu65C02Rock only
   static const std::unordered_set<std::string> kRockwellOpcodes = {
-      RockwellMnemonics::RMB0, RockwellMnemonics::RMB1, RockwellMnemonics::RMB2,
-      RockwellMnemonics::RMB3, RockwellMnemonics::RMB4, RockwellMnemonics::RMB5,
-      RockwellMnemonics::RMB6, RockwellMnemonics::RMB7, RockwellMnemonics::SMB0,
-      RockwellMnemonics::SMB1, RockwellMnemonics::SMB2, RockwellMnemonics::SMB3,
-      RockwellMnemonics::SMB4, RockwellMnemonics::SMB5, RockwellMnemonics::SMB6,
-      RockwellMnemonics::SMB7, RockwellMnemonics::BBR0, RockwellMnemonics::BBR1,
-      RockwellMnemonics::BBR2, RockwellMnemonics::BBR3, RockwellMnemonics::BBR4,
-      RockwellMnemonics::BBR5, RockwellMnemonics::BBR6, RockwellMnemonics::BBR7,
-      RockwellMnemonics::BBS0, RockwellMnemonics::BBS1, RockwellMnemonics::BBS2,
-      RockwellMnemonics::BBS3, RockwellMnemonics::BBS4, RockwellMnemonics::BBS5,
-      RockwellMnemonics::BBS6, RockwellMnemonics::BBS7};
+      RockwellMnemonics::kRMB0, RockwellMnemonics::kRMB1, RockwellMnemonics::kRMB2,
+      RockwellMnemonics::kRMB3, RockwellMnemonics::kRMB4, RockwellMnemonics::kRMB5,
+      RockwellMnemonics::kRMB6, RockwellMnemonics::kRMB7, RockwellMnemonics::kSMB0,
+      RockwellMnemonics::kSMB1, RockwellMnemonics::kSMB2, RockwellMnemonics::kSMB3,
+      RockwellMnemonics::kSMB4, RockwellMnemonics::kSMB5, RockwellMnemonics::kSMB6,
+      RockwellMnemonics::kSMB7, RockwellMnemonics::kBBR0, RockwellMnemonics::kBBR1,
+      RockwellMnemonics::kBBR2, RockwellMnemonics::kBBR3, RockwellMnemonics::kBBR4,
+      RockwellMnemonics::kBBR5, RockwellMnemonics::kBBR6, RockwellMnemonics::kBBR7,
+      RockwellMnemonics::kBBS0, RockwellMnemonics::kBBS1, RockwellMnemonics::kBBS2,
+      RockwellMnemonics::kBBS3, RockwellMnemonics::kBBS4, RockwellMnemonics::kBBS5,
+      RockwellMnemonics::kBBS6, RockwellMnemonics::kBBS7};
 
   // 65816 additions — Cpu65816 only
   static const std::unordered_set<std::string> kW816Opcodes = {
-      M6502Mnemonics::PHB, M6502Mnemonics::PLB, M6502Mnemonics::PHD, M6502Mnemonics::PLD,
-      M6502Mnemonics::PHK, M6502Mnemonics::TCD, M6502Mnemonics::TCS, M6502Mnemonics::TDC,
-      M6502Mnemonics::TSC, M6502Mnemonics::TXY, M6502Mnemonics::TYX, M6502Mnemonics::JML,
-      M6502Mnemonics::JSL, M6502Mnemonics::RTL, M6502Mnemonics::PEA, M6502Mnemonics::PEI,
-      M6502Mnemonics::PER, M6502Mnemonics::MVN, M6502Mnemonics::MVP, M6502Mnemonics::COP,
-      M6502Mnemonics::WDM, M6502Mnemonics::XBA, M6502Mnemonics::XCE, M6502Mnemonics::REP,
-      M6502Mnemonics::SEP};
+      M6502Mnemonics::kPHB, M6502Mnemonics::kPLB, M6502Mnemonics::kPHD, M6502Mnemonics::kPLD,
+      M6502Mnemonics::kPHK, M6502Mnemonics::kTCD, M6502Mnemonics::kTCS, M6502Mnemonics::kTDC,
+      M6502Mnemonics::kTSC, M6502Mnemonics::kTXY, M6502Mnemonics::kTYX, M6502Mnemonics::JML,
+      M6502Mnemonics::JSL, M6502Mnemonics::kRTL, M6502Mnemonics::kPEA, M6502Mnemonics::kPEI,
+      M6502Mnemonics::kPER, M6502Mnemonics::kMVN, M6502Mnemonics::kMVP, M6502Mnemonics::kCOP,
+      M6502Mnemonics::kWDM, M6502Mnemonics::kXBA, M6502Mnemonics::kXCE, M6502Mnemonics::kREP,
+      M6502Mnemonics::kSEP};
 
   // All modes include the base 6502 opcode set
   if (kBaseOpcodes.contains(upper)) {

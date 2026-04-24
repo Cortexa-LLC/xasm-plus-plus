@@ -90,26 +90,26 @@ TEST(Cpu6502Test, JMP_Absolute) {
   EXPECT_EQ(bytes[2], 0x80);
 }
 
-// Test 8: NOP encoding
-TEST(Cpu6502Test, NOP) {
+// Test 8: kNOP encoding
+TEST(Cpu6502Test, kNOP) {
   Cpu6502 cpu;
 
-  // NOP -> EA
+  // kNOP -> EA
   auto bytes = cpu.EncodeNOP();
 
   ASSERT_EQ(bytes.size(), 1UL);
-  EXPECT_EQ(bytes[0], 0xEA); // NOP opcode
+  EXPECT_EQ(bytes[0], 0xEA); // kNOP opcode
 }
 
-// Test 9: RTS encoding
-TEST(Cpu6502Test, RTS) {
+// Test 9: kRTS encoding
+TEST(Cpu6502Test, kRTS) {
   Cpu6502 cpu;
 
-  // RTS -> 60
+  // kRTS -> 60
   auto bytes = cpu.EncodeRTS();
 
   ASSERT_EQ(bytes.size(), 1UL);
-  EXPECT_EQ(bytes[0], 0x60); // RTS opcode
+  EXPECT_EQ(bytes[0], 0x60); // kRTS opcode
 }
 
 // Test 10: AddressingMode enum
@@ -476,110 +476,110 @@ TEST(Cpu6502Test, CPY_Absolute) {
 
 // Group 5: Branch Instructions
 
-// Test 47: BEQ relative
+// Test 47: kBEQ relative
 TEST(Cpu6502Test, BEQ_Relative) {
   Cpu6502 cpu;
   auto result = cpu.EncodeBEQ(0x10, AddressingMode::Relative);
   EXPECT_EQ(result.size(), 2UL);
-  EXPECT_EQ(result[0], 0xF0); // BEQ opcode
+  EXPECT_EQ(result[0], 0xF0); // kBEQ opcode
   EXPECT_EQ(result[1], 0x10); // Relative offset
 }
 
-// Test 48: BNE relative
+// Test 48: kBNE relative
 TEST(Cpu6502Test, BNE_Relative) {
   Cpu6502 cpu;
   auto result = cpu.EncodeBNE(0x10, AddressingMode::Relative);
   EXPECT_EQ(result.size(), 2UL);
-  EXPECT_EQ(result[0], 0xD0); // BNE opcode
+  EXPECT_EQ(result[0], 0xD0); // kBNE opcode
   EXPECT_EQ(result[1], 0x10); // Relative offset
 }
 
-// Test 49: BCC relative
+// Test 49: kBCC relative
 TEST(Cpu6502Test, BCC_Relative) {
   Cpu6502 cpu;
   auto result = cpu.EncodeBCC(0x10, AddressingMode::Relative);
   EXPECT_EQ(result.size(), 2UL);
-  EXPECT_EQ(result[0], 0x90); // BCC opcode
+  EXPECT_EQ(result[0], 0x90); // kBCC opcode
   EXPECT_EQ(result[1], 0x10); // Relative offset
 }
 
-// Test 50: BCS relative
+// Test 50: kBCS relative
 TEST(Cpu6502Test, BCS_Relative) {
   Cpu6502 cpu;
   auto result = cpu.EncodeBCS(0x10, AddressingMode::Relative);
   EXPECT_EQ(result.size(), 2UL);
-  EXPECT_EQ(result[0], 0xB0); // BCS opcode
+  EXPECT_EQ(result[0], 0xB0); // kBCS opcode
   EXPECT_EQ(result[1], 0x10); // Relative offset
 }
 
-// Test 51: BMI relative
+// Test 51: kBMI relative
 TEST(Cpu6502Test, BMI_Relative) {
   Cpu6502 cpu;
   auto result = cpu.EncodeBMI(0x10, AddressingMode::Relative);
   EXPECT_EQ(result.size(), 2UL);
-  EXPECT_EQ(result[0], 0x30); // BMI opcode
+  EXPECT_EQ(result[0], 0x30); // kBMI opcode
   EXPECT_EQ(result[1], 0x10); // Relative offset
 }
 
-// Test 52: BPL relative
+// Test 52: kBPL relative
 TEST(Cpu6502Test, BPL_Relative) {
   Cpu6502 cpu;
   auto result = cpu.EncodeBPL(0x10, AddressingMode::Relative);
   EXPECT_EQ(result.size(), 2UL);
-  EXPECT_EQ(result[0], 0x10); // BPL opcode
+  EXPECT_EQ(result[0], 0x10); // kBPL opcode
   EXPECT_EQ(result[1], 0x10); // Relative offset
 }
 
-// Test 53: BVC relative
+// Test 53: kBVC relative
 TEST(Cpu6502Test, BVC_Relative) {
   Cpu6502 cpu;
   auto result = cpu.EncodeBVC(0x10, AddressingMode::Relative);
   EXPECT_EQ(result.size(), 2UL);
-  EXPECT_EQ(result[0], 0x50); // BVC opcode
+  EXPECT_EQ(result[0], 0x50); // kBVC opcode
   EXPECT_EQ(result[1], 0x10); // Relative offset
 }
 
-// Test 54: BVS relative
+// Test 54: kBVS relative
 TEST(Cpu6502Test, BVS_Relative) {
   Cpu6502 cpu;
   auto result = cpu.EncodeBVS(0x10, AddressingMode::Relative);
   EXPECT_EQ(result.size(), 2UL);
-  EXPECT_EQ(result[0], 0x70); // BVS opcode
+  EXPECT_EQ(result[0], 0x70); // kBVS opcode
   EXPECT_EQ(result[1], 0x10); // Relative offset
 }
 
 // Group 6: Inc/Dec Instructions
 
-// Test 55: INX implied
+// Test 55: kINX implied
 TEST(Cpu6502Test, INX_Implied) {
   Cpu6502 cpu;
   auto result = cpu.EncodeINX();
   EXPECT_EQ(result.size(), 1UL);
-  EXPECT_EQ(result[0], 0xE8); // INX opcode
+  EXPECT_EQ(result[0], 0xE8); // kINX opcode
 }
 
-// Test 56: INY implied
+// Test 56: kINY implied
 TEST(Cpu6502Test, INY_Implied) {
   Cpu6502 cpu;
   auto result = cpu.EncodeINY();
   EXPECT_EQ(result.size(), 1UL);
-  EXPECT_EQ(result[0], 0xC8); // INY opcode
+  EXPECT_EQ(result[0], 0xC8); // kINY opcode
 }
 
-// Test 57: DEX implied
+// Test 57: kDEX implied
 TEST(Cpu6502Test, DEX_Implied) {
   Cpu6502 cpu;
   auto result = cpu.EncodeDEX();
   EXPECT_EQ(result.size(), 1UL);
-  EXPECT_EQ(result[0], 0xCA); // DEX opcode
+  EXPECT_EQ(result[0], 0xCA); // kDEX opcode
 }
 
-// Test 58: DEY implied
+// Test 58: kDEY implied
 TEST(Cpu6502Test, DEY_Implied) {
   Cpu6502 cpu;
   auto result = cpu.EncodeDEY();
   EXPECT_EQ(result.size(), 1UL);
-  EXPECT_EQ(result[0], 0x88); // DEY opcode
+  EXPECT_EQ(result[0], 0x88); // kDEY opcode
 }
 
 // Test 59: INC zero page
@@ -622,46 +622,46 @@ TEST(Cpu6502Test, DEC_Absolute) {
 
 // Group 7: Stack Operations
 
-// Test 63: PHA implied
+// Test 63: kPHA implied
 TEST(Cpu6502Test, PHA_Implied) {
   Cpu6502 cpu;
   auto result = cpu.EncodePHA();
   EXPECT_EQ(result.size(), 1UL);
-  EXPECT_EQ(result[0], 0x48); // PHA opcode
+  EXPECT_EQ(result[0], 0x48); // kPHA opcode
 }
 
-// Test 64: PLA implied
+// Test 64: kPLA implied
 TEST(Cpu6502Test, PLA_Implied) {
   Cpu6502 cpu;
   auto result = cpu.EncodePLA();
   EXPECT_EQ(result.size(), 1UL);
-  EXPECT_EQ(result[0], 0x68); // PLA opcode
+  EXPECT_EQ(result[0], 0x68); // kPLA opcode
 }
 
-// Test 65: PHP implied
+// Test 65: kPHP implied
 TEST(Cpu6502Test, PHP_Implied) {
   Cpu6502 cpu;
   auto result = cpu.EncodePHP();
   EXPECT_EQ(result.size(), 1UL);
-  EXPECT_EQ(result[0], 0x08); // PHP opcode
+  EXPECT_EQ(result[0], 0x08); // kPHP opcode
 }
 
-// Test 66: PLP implied
+// Test 66: kPLP implied
 TEST(Cpu6502Test, PLP_Implied) {
   Cpu6502 cpu;
   auto result = cpu.EncodePLP();
   EXPECT_EQ(result.size(), 1UL);
-  EXPECT_EQ(result[0], 0x28); // PLP opcode
+  EXPECT_EQ(result[0], 0x28); // kPLP opcode
 }
 
 // Group 8: Subroutine
 
-// Test 67: JSR absolute
+// Test 67: kJSR absolute
 TEST(Cpu6502Test, JSR_Absolute) {
   Cpu6502 cpu;
   auto result = cpu.EncodeJSR(0x1234, AddressingMode::Absolute);
   EXPECT_EQ(result.size(), 3UL);
-  EXPECT_EQ(result[0], 0x20); // JSR absolute opcode
+  EXPECT_EQ(result[0], 0x20); // kJSR absolute opcode
   EXPECT_EQ(result[1], 0x34); // Low byte
   EXPECT_EQ(result[2], 0x12); // High byte
 }
@@ -879,51 +879,51 @@ TEST(Cpu6502Test, ROR_AbsoluteX) {
   EXPECT_EQ(result[2], 0x12); // High byte
 }
 
-// Group 4: Interrupt Instructions - RTI, BRK
+// Group 4: Interrupt Instructions - kRTI, kBRK
 
-// Test 90: RTI implied
+// Test 90: kRTI implied
 TEST(Cpu6502Test, RTI_Implied) {
   Cpu6502 cpu;
   auto result = cpu.EncodeRTI();
   EXPECT_EQ(result.size(), 1UL);
-  EXPECT_EQ(result[0], 0x40); // RTI opcode
+  EXPECT_EQ(result[0], 0x40); // kRTI opcode
 }
 
-// Test 91: BRK implied
+// Test 91: kBRK implied
 TEST(Cpu6502Test, BRK_Implied) {
   Cpu6502 cpu;
   auto result = cpu.EncodeBRK();
   EXPECT_EQ(result.size(), 1UL);
-  EXPECT_EQ(result[0], 0x00); // BRK opcode
+  EXPECT_EQ(result[0], 0x00); // kBRK opcode
 }
 
 // Group 5: Flag Operations
 
-// Test 92: CLC implied
+// Test 92: kCLC implied
 TEST(Cpu6502Test, CLC_Implied) {
   Cpu6502 cpu;
   auto result = cpu.EncodeCLC();
   EXPECT_EQ(result.size(), 1UL);
-  EXPECT_EQ(result[0], 0x18); // CLC opcode
+  EXPECT_EQ(result[0], 0x18); // kCLC opcode
 }
 
-// Test 93: SEC implied
+// Test 93: kSEC implied
 TEST(Cpu6502Test, SEC_Implied) {
   Cpu6502 cpu;
   auto result = cpu.EncodeSEC();
   EXPECT_EQ(result.size(), 1UL);
-  EXPECT_EQ(result[0], 0x38); // SEC opcode
+  EXPECT_EQ(result[0], 0x38); // kSEC opcode
 }
 
-// Test 94: CLD implied
+// Test 94: kCLD implied
 TEST(Cpu6502Test, CLD_Implied) {
   Cpu6502 cpu;
   auto result = cpu.EncodeCLD();
   EXPECT_EQ(result.size(), 1UL);
-  EXPECT_EQ(result[0], 0xD8); // CLD opcode
+  EXPECT_EQ(result[0], 0xD8); // kCLD opcode
 }
 
-// Test 94b: CLD with trailing '!' suffix (regression test for pppssc.drv)
+// Test 94b: kCLD with trailing '!' suffix (regression test for pppssc.drv)
 // The '!' suffix should be stripped before mnemonic lookup
 TEST(Cpu6502Test, CLD_WithBangSuffix) {
   Cpu6502 cpu;
@@ -933,86 +933,86 @@ TEST(Cpu6502Test, CLD_WithBangSuffix) {
   EXPECT_EQ(result[0], 0xD8) << "CLD! should encode as opcode 0xD8";
 }
 
-// Test 95: SED implied
+// Test 95: kSED implied
 TEST(Cpu6502Test, SED_Implied) {
   Cpu6502 cpu;
   auto result = cpu.EncodeSED();
   EXPECT_EQ(result.size(), 1UL);
-  EXPECT_EQ(result[0], 0xF8); // SED opcode
+  EXPECT_EQ(result[0], 0xF8); // kSED opcode
 }
 
-// Test 96: CLI implied
+// Test 96: kCLI implied
 TEST(Cpu6502Test, CLI_Implied) {
   Cpu6502 cpu;
   auto result = cpu.EncodeCLI();
   EXPECT_EQ(result.size(), 1UL);
-  EXPECT_EQ(result[0], 0x58); // CLI opcode
+  EXPECT_EQ(result[0], 0x58); // kCLI opcode
 }
 
-// Test 97: SEI implied
+// Test 97: kSEI implied
 TEST(Cpu6502Test, SEI_Implied) {
   Cpu6502 cpu;
   auto result = cpu.EncodeSEI();
   EXPECT_EQ(result.size(), 1UL);
-  EXPECT_EQ(result[0], 0x78); // SEI opcode
+  EXPECT_EQ(result[0], 0x78); // kSEI opcode
 }
 
-// Test 98: CLV implied
+// Test 98: kCLV implied
 TEST(Cpu6502Test, CLV_Implied) {
   Cpu6502 cpu;
   auto result = cpu.EncodeCLV();
   EXPECT_EQ(result.size(), 1UL);
-  EXPECT_EQ(result[0], 0xB8); // CLV opcode
+  EXPECT_EQ(result[0], 0xB8); // kCLV opcode
 }
 
 // Group 6: Transfer Instructions
 
-// Test 99: TSX implied
+// Test 99: kTSX implied
 TEST(Cpu6502Test, TSX_Implied) {
   Cpu6502 cpu;
   auto result = cpu.EncodeTSX();
   EXPECT_EQ(result.size(), 1UL);
-  EXPECT_EQ(result[0], 0xBA); // TSX opcode
+  EXPECT_EQ(result[0], 0xBA); // kTSX opcode
 }
 
-// Test 100: TXS implied
+// Test 100: kTXS implied
 TEST(Cpu6502Test, TXS_Implied) {
   Cpu6502 cpu;
   auto result = cpu.EncodeTXS();
   EXPECT_EQ(result.size(), 1UL);
-  EXPECT_EQ(result[0], 0x9A); // TXS opcode
+  EXPECT_EQ(result[0], 0x9A); // kTXS opcode
 }
 
-// Test 101: TAX implied
+// Test 101: kTAX implied
 TEST(Cpu6502Test, TAX_Implied) {
   Cpu6502 cpu;
   auto result = cpu.EncodeTAX();
   EXPECT_EQ(result.size(), 1UL);
-  EXPECT_EQ(result[0], 0xAA); // TAX opcode
+  EXPECT_EQ(result[0], 0xAA); // kTAX opcode
 }
 
-// Test 102: TAY implied
+// Test 102: kTAY implied
 TEST(Cpu6502Test, TAY_Implied) {
   Cpu6502 cpu;
   auto result = cpu.EncodeTAY();
   EXPECT_EQ(result.size(), 1UL);
-  EXPECT_EQ(result[0], 0xA8); // TAY opcode
+  EXPECT_EQ(result[0], 0xA8); // kTAY opcode
 }
 
-// Test 103: TXA implied
+// Test 103: kTXA implied
 TEST(Cpu6502Test, TXA_Implied) {
   Cpu6502 cpu;
   auto result = cpu.EncodeTXA();
   EXPECT_EQ(result.size(), 1UL);
-  EXPECT_EQ(result[0], 0x8A); // TXA opcode
+  EXPECT_EQ(result[0], 0x8A); // kTXA opcode
 }
 
-// Test 104: TYA implied
+// Test 104: kTYA implied
 TEST(Cpu6502Test, TYA_Implied) {
   Cpu6502 cpu;
   auto result = cpu.EncodeTYA();
   EXPECT_EQ(result.size(), 1UL);
-  EXPECT_EQ(result[0], 0x98); // TYA opcode
+  EXPECT_EQ(result[0], 0x98); // kTYA opcode
 }
 
 // Group 7: Indexed Addressing Modes for Existing Instructions
@@ -1555,57 +1555,57 @@ TEST(Cpu6502Test, CpuModeCanBeChangedMultipleTimes) {
 // Group 2: 65C02 Stack Operations
 // ============================================================================
 
-// Test 161: PHX (Push X to stack) - 65C02
+// Test 161: kPHX (Push X to stack) - 65C02
 TEST(Cpu6502Test, PHX_65C02) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65C02);
 
-  // PHX -> DA
+  // kPHX -> DA
   auto bytes = cpu.EncodePHX();
   ASSERT_EQ(bytes.size(), 1UL);
-  EXPECT_EQ(bytes[0], 0xDA); // PHX opcode
+  EXPECT_EQ(bytes[0], 0xDA); // kPHX opcode
 }
 
-// Test 162: PLX (Pull X from stack) - 65C02
+// Test 162: kPLX (Pull X from stack) - 65C02
 TEST(Cpu6502Test, PLX_65C02) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65C02);
 
-  // PLX -> FA
+  // kPLX -> FA
   auto bytes = cpu.EncodePLX();
   ASSERT_EQ(bytes.size(), 1UL);
-  EXPECT_EQ(bytes[0], 0xFA); // PLX opcode
+  EXPECT_EQ(bytes[0], 0xFA); // kPLX opcode
 }
 
-// Test 163: PHY (Push Y to stack) - 65C02
+// Test 163: kPHY (Push Y to stack) - 65C02
 TEST(Cpu6502Test, PHY_65C02) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65C02);
 
-  // PHY -> 5A
+  // kPHY -> 5A
   auto bytes = cpu.EncodePHY();
   ASSERT_EQ(bytes.size(), 1UL);
-  EXPECT_EQ(bytes[0], 0x5A); // PHY opcode
+  EXPECT_EQ(bytes[0], 0x5A); // kPHY opcode
 }
 
-// Test 164: PLY (Pull Y from stack) - 65C02
+// Test 164: kPLY (Pull Y from stack) - 65C02
 TEST(Cpu6502Test, PLY_65C02) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65C02);
 
-  // PLY -> 7A
+  // kPLY -> 7A
   auto bytes = cpu.EncodePLY();
   ASSERT_EQ(bytes.size(), 1UL);
-  EXPECT_EQ(bytes[0], 0x7A); // PLY opcode
+  EXPECT_EQ(bytes[0], 0x7A); // kPLY opcode
 }
 
-// Test 165: PHX should return empty in 6502 mode (not available)
+// Test 165: kPHX should return empty in 6502 mode (not available)
 TEST(Cpu6502Test, PHX_NotAvailableIn6502Mode) {
   Cpu6502 cpu;
   // Default mode is 6502
   EXPECT_EQ(cpu.GetCpuMode(), CpuMode::Cpu6502);
 
-  // PHX not available in 6502 mode - should return empty
+  // kPHX not available in 6502 mode - should return empty
   auto bytes = cpu.EncodePHX();
   EXPECT_EQ(bytes.size(), 0UL); // Empty = not supported in this mode
 }
@@ -1741,40 +1741,40 @@ TEST(Cpu6502Test, TRB_NotAvailableIn6502Mode) {
 }
 
 // ============================================================================
-// Group 5: 65C02 Branch Always (BRA)
+// Group 5: 65C02 Branch Always (kBRA)
 // ============================================================================
 
-// Test 176: BRA forward branch - 65C02
+// Test 176: kBRA forward branch - 65C02
 TEST(Cpu6502Test, BRA_ForwardBranch_65C02) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65C02);
 
-  // BRA +10 -> 80 0A (forward branch of 10 bytes)
+  // kBRA +10 -> 80 0A (forward branch of 10 bytes)
   auto bytes = cpu.EncodeBRA(0x0A, AddressingMode::Relative);
   ASSERT_EQ(bytes.size(), 2UL);
-  EXPECT_EQ(bytes[0], 0x80); // BRA opcode
+  EXPECT_EQ(bytes[0], 0x80); // kBRA opcode
   EXPECT_EQ(bytes[1], 0x0A); // Relative offset
 }
 
-// Test 177: BRA backward branch - 65C02
+// Test 177: kBRA backward branch - 65C02
 TEST(Cpu6502Test, BRA_BackwardBranch_65C02) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65C02);
 
-  // BRA -10 -> 80 F6 (backward branch, two's complement)
+  // kBRA -10 -> 80 F6 (backward branch, two's complement)
   auto bytes = cpu.EncodeBRA(0xF6, AddressingMode::Relative);
   ASSERT_EQ(bytes.size(), 2UL);
-  EXPECT_EQ(bytes[0], 0x80); // BRA opcode
+  EXPECT_EQ(bytes[0], 0x80); // kBRA opcode
   EXPECT_EQ(bytes[1], 0xF6); // Relative offset (negative)
 }
 
-// Test 178: BRA should return empty in 6502 mode (not available)
+// Test 178: kBRA should return empty in 6502 mode (not available)
 TEST(Cpu6502Test, BRA_NotAvailableIn6502Mode) {
   Cpu6502 cpu;
   // Default mode is 6502
   EXPECT_EQ(cpu.GetCpuMode(), CpuMode::Cpu6502);
 
-  // BRA not available in 6502 mode - should return empty
+  // kBRA not available in 6502 mode - should return empty
   auto bytes = cpu.EncodeBRA(0x0A, AddressingMode::Relative);
   EXPECT_EQ(bytes.size(), 0UL); // Empty = not supported in this mode
 }
@@ -2059,59 +2059,59 @@ TEST(Cpu6502Test, StackRelative_NotAvailableIn6502Mode) {
 // Group 11: 65816 Bank Operations
 // ============================================================================
 
-// Test 198: PHB - Push Data Bank Register - 65816
+// Test 198: kPHB - Push Data Bank Register - 65816
 TEST(Cpu6502Test, PHB_65816) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65816);
 
-  // PHB -> 8B
+  // kPHB -> 8B
   auto bytes = cpu.EncodePHB();
   ASSERT_EQ(bytes.size(), 1UL);
-  EXPECT_EQ(bytes[0], 0x8B); // PHB opcode
+  EXPECT_EQ(bytes[0], 0x8B); // kPHB opcode
 }
 
-// Test 199: PLB - Pull Data Bank Register - 65816
+// Test 199: kPLB - Pull Data Bank Register - 65816
 TEST(Cpu6502Test, PLB_65816) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65816);
 
-  // PLB -> AB
+  // kPLB -> AB
   auto bytes = cpu.EncodePLB();
   ASSERT_EQ(bytes.size(), 1UL);
-  EXPECT_EQ(bytes[0], 0xAB); // PLB opcode
+  EXPECT_EQ(bytes[0], 0xAB); // kPLB opcode
 }
 
-// Test 200: PHK - Push Program Bank Register - 65816
+// Test 200: kPHK - Push Program Bank Register - 65816
 TEST(Cpu6502Test, PHK_65816) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65816);
 
-  // PHK -> 4B
+  // kPHK -> 4B
   auto bytes = cpu.EncodePHK();
   ASSERT_EQ(bytes.size(), 1UL);
-  EXPECT_EQ(bytes[0], 0x4B); // PHK opcode
+  EXPECT_EQ(bytes[0], 0x4B); // kPHK opcode
 }
 
-// Test 201: PHD - Push Direct Page Register - 65816
+// Test 201: kPHD - Push Direct Page Register - 65816
 TEST(Cpu6502Test, PHD_65816) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65816);
 
-  // PHD -> 0B
+  // kPHD -> 0B
   auto bytes = cpu.EncodePHD();
   ASSERT_EQ(bytes.size(), 1UL);
-  EXPECT_EQ(bytes[0], 0x0B); // PHD opcode
+  EXPECT_EQ(bytes[0], 0x0B); // kPHD opcode
 }
 
-// Test 202: PLD - Pull Direct Page Register - 65816
+// Test 202: kPLD - Pull Direct Page Register - 65816
 TEST(Cpu6502Test, PLD_65816) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65816);
 
-  // PLD -> 2B
+  // kPLD -> 2B
   auto bytes = cpu.EncodePLD();
   ASSERT_EQ(bytes.size(), 1UL);
-  EXPECT_EQ(bytes[0], 0x2B); // PLD opcode
+  EXPECT_EQ(bytes[0], 0x2B); // kPLD opcode
 }
 
 // Test 203: Bank operations not available in 6502/65C02
@@ -2121,60 +2121,60 @@ TEST(Cpu6502Test, BankOps_AvailableInAllModes) {
 
   auto bytes1 = cpu.EncodePHB();
   ASSERT_EQ(bytes1.size(), 1UL);
-  EXPECT_EQ(bytes1[0], 0x8B); // PHB opcode
+  EXPECT_EQ(bytes1[0], 0x8B); // kPHB opcode
 
   cpu.SetCpuMode(CpuMode::Cpu65C02);
   auto bytes2 = cpu.EncodePHB();
   ASSERT_EQ(bytes2.size(), 1UL);
-  EXPECT_EQ(bytes2[0], 0x8B); // PHB opcode
+  EXPECT_EQ(bytes2[0], 0x8B); // kPHB opcode
 }
 
 // ============================================================================
 // Group 12: 65816 Transfer Operations
 // ============================================================================
 
-// Test 204: TCD - Transfer C to Direct Page - 65816
+// Test 204: kTCD - Transfer C to Direct Page - 65816
 TEST(Cpu6502Test, TCD_65816) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65816);
 
-  // TCD -> 5B (Transfer 16-bit accumulator to Direct Page register)
+  // kTCD -> 5B (Transfer 16-bit accumulator to Direct Page register)
   auto bytes = cpu.EncodeTCD();
   ASSERT_EQ(bytes.size(), 1UL);
-  EXPECT_EQ(bytes[0], 0x5B); // TCD opcode
+  EXPECT_EQ(bytes[0], 0x5B); // kTCD opcode
 }
 
-// Test 205: TDC - Transfer Direct Page to C - 65816
+// Test 205: kTDC - Transfer Direct Page to C - 65816
 TEST(Cpu6502Test, TDC_65816) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65816);
 
-  // TDC -> 7B (Transfer Direct Page register to 16-bit accumulator)
+  // kTDC -> 7B (Transfer Direct Page register to 16-bit accumulator)
   auto bytes = cpu.EncodeTDC();
   ASSERT_EQ(bytes.size(), 1UL);
-  EXPECT_EQ(bytes[0], 0x7B); // TDC opcode
+  EXPECT_EQ(bytes[0], 0x7B); // kTDC opcode
 }
 
-// Test 206: TCS - Transfer C to Stack Pointer - 65816
+// Test 206: kTCS - Transfer C to Stack Pointer - 65816
 TEST(Cpu6502Test, TCS_65816) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65816);
 
-  // TCS -> 1B (Transfer 16-bit accumulator to Stack Pointer)
+  // kTCS -> 1B (Transfer 16-bit accumulator to Stack Pointer)
   auto bytes = cpu.EncodeTCS();
   ASSERT_EQ(bytes.size(), 1UL);
-  EXPECT_EQ(bytes[0], 0x1B); // TCS opcode
+  EXPECT_EQ(bytes[0], 0x1B); // kTCS opcode
 }
 
-// Test 207: TSC - Transfer Stack Pointer to C - 65816
+// Test 207: kTSC - Transfer Stack Pointer to C - 65816
 TEST(Cpu6502Test, TSC_65816) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65816);
 
-  // TSC -> 3B (Transfer Stack Pointer to 16-bit accumulator)
+  // kTSC -> 3B (Transfer Stack Pointer to 16-bit accumulator)
   auto bytes = cpu.EncodeTSC();
   ASSERT_EQ(bytes.size(), 1UL);
-  EXPECT_EQ(bytes[0], 0x3B); // TSC opcode
+  EXPECT_EQ(bytes[0], 0x3B); // kTSC opcode
 }
 
 // Test 208: Transfer operations available in all modes (vasm-compatible)
@@ -2183,12 +2183,12 @@ TEST(Cpu6502Test, Transfers_AvailableInAllModes) {
 
   auto bytes1 = cpu.EncodeTCD();
   ASSERT_EQ(bytes1.size(), 1UL);
-  EXPECT_EQ(bytes1[0], 0x5B); // TCD opcode
+  EXPECT_EQ(bytes1[0], 0x5B); // kTCD opcode
 
   cpu.SetCpuMode(CpuMode::Cpu65C02);
   auto bytes2 = cpu.EncodeTCS();
   ASSERT_EQ(bytes2.size(), 1UL);
-  EXPECT_EQ(bytes2[0], 0x1B); // TCS opcode
+  EXPECT_EQ(bytes2[0], 0x1B); // kTCS opcode
 }
 
 // ============================================================================
@@ -2221,14 +2221,14 @@ TEST(Cpu6502Test, JSL_65816_AbsoluteLong) {
   EXPECT_EQ(bytes[3], 0x02); // Bank byte
 }
 
-// Test 211: RTL - Return from Subroutine Long (65816)
+// Test 211: kRTL - Return from Subroutine Long (65816)
 TEST(Cpu6502Test, RTL_65816) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65816);
 
   auto bytes = cpu.EncodeRTL();
   ASSERT_EQ(bytes.size(), 1UL);
-  EXPECT_EQ(bytes[0], 0x6B); // RTL opcode
+  EXPECT_EQ(bytes[0], 0x6B); // kRTL opcode
 }
 
 // Test 212: Long jumps available in all modes (vasm-compatible)
@@ -2246,140 +2246,140 @@ TEST(Cpu6502Test, LongJumps_AvailableInAllModes) {
 
   auto bytes3 = cpu.EncodeRTL();
   ASSERT_EQ(bytes3.size(), 1UL);
-  EXPECT_EQ(bytes3[0], 0x6B); // RTL opcode
+  EXPECT_EQ(bytes3[0], 0x6B); // kRTL opcode
 }
 
 // ============================================================================
 // Phase 2.5 - Group 14: 65816 Miscellaneous Opcodes
 // ============================================================================
 
-// Test 213: PEA - Push Effective Address (65816)
+// Test 213: kPEA - Push Effective Address (65816)
 TEST(Cpu6502Test, PEA_65816) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65816);
 
-  // PEA uses Absolute addressing, not Immediate
+  // kPEA uses Absolute addressing, not Immediate
   auto bytes = cpu.EncodePEA(0x1234, AddressingMode::Absolute);
   ASSERT_EQ(bytes.size(), 3UL);
-  EXPECT_EQ(bytes[0], 0xF4); // PEA opcode
+  EXPECT_EQ(bytes[0], 0xF4); // kPEA opcode
   EXPECT_EQ(bytes[1], 0x34); // Low byte
   EXPECT_EQ(bytes[2], 0x12); // High byte
 }
 
-// Test 214: PEI - Push Effective Indirect Address (65816)
+// Test 214: kPEI - Push Effective Indirect Address (65816)
 TEST(Cpu6502Test, PEI_65816) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65816);
 
   auto bytes = cpu.EncodePEI(0x80, AddressingMode::ZeroPage);
   ASSERT_EQ(bytes.size(), 2UL);
-  EXPECT_EQ(bytes[0], 0xD4); // PEI opcode
+  EXPECT_EQ(bytes[0], 0xD4); // kPEI opcode
   EXPECT_EQ(bytes[1], 0x80); // Zero page address
 }
 
-// Test 215: PER - Push Effective PC Relative Address (65816)
+// Test 215: kPER - Push Effective PC Relative Address (65816)
 TEST(Cpu6502Test, PER_65816) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65816);
 
   auto bytes = cpu.EncodePER(0x1234, AddressingMode::Relative);
   ASSERT_EQ(bytes.size(), 3UL);
-  EXPECT_EQ(bytes[0], 0x62); // PER opcode
+  EXPECT_EQ(bytes[0], 0x62); // kPER opcode
   EXPECT_EQ(bytes[1], 0x34); // Low byte
   EXPECT_EQ(bytes[2], 0x12); // High byte
 }
 
-// Test 216: MVN - Block Move Negative (65816)
+// Test 216: kMVN - Block Move Negative (65816)
 TEST(Cpu6502Test, MVN_65816) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65816);
 
-  // MVN srcbank, destbank
+  // kMVN srcbank, destbank
   auto bytes = cpu.EncodeMVN(0x12, 0x34);
   ASSERT_EQ(bytes.size(), 3UL);
-  EXPECT_EQ(bytes[0], 0x54); // MVN opcode
+  EXPECT_EQ(bytes[0], 0x54); // kMVN opcode
   EXPECT_EQ(bytes[1], 0x12); // Source bank
   EXPECT_EQ(bytes[2], 0x34); // Destination bank
 }
 
-// Test 217: MVP - Block Move Positive (65816)
+// Test 217: kMVP - Block Move Positive (65816)
 TEST(Cpu6502Test, MVP_65816) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65816);
 
-  // MVP srcbank, destbank
+  // kMVP srcbank, destbank
   auto bytes = cpu.EncodeMVP(0x56, 0x78);
   ASSERT_EQ(bytes.size(), 3UL);
-  EXPECT_EQ(bytes[0], 0x44); // MVP opcode
+  EXPECT_EQ(bytes[0], 0x44); // kMVP opcode
   EXPECT_EQ(bytes[1], 0x56); // Source bank
   EXPECT_EQ(bytes[2], 0x78); // Destination bank
 }
 
-// Test 218: COP - Coprocessor (65816)
+// Test 218: kCOP - Coprocessor (65816)
 TEST(Cpu6502Test, COP_65816) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65816);
 
   auto bytes = cpu.EncodeCOP(0x42, AddressingMode::Immediate);
   ASSERT_EQ(bytes.size(), 2UL);
-  EXPECT_EQ(bytes[0], 0x02); // COP opcode
+  EXPECT_EQ(bytes[0], 0x02); // kCOP opcode
   EXPECT_EQ(bytes[1], 0x42); // Signature byte
 }
 
-// Test 219: WDM - Reserved (65816)
+// Test 219: kWDM - Reserved (65816)
 TEST(Cpu6502Test, WDM_65816) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65816);
 
   auto bytes = cpu.EncodeWDM(0x99, AddressingMode::Immediate);
   ASSERT_EQ(bytes.size(), 2UL);
-  EXPECT_EQ(bytes[0], 0x42); // WDM opcode
+  EXPECT_EQ(bytes[0], 0x42); // kWDM opcode
   EXPECT_EQ(bytes[1], 0x99); // Reserved byte
 }
 
-// Test 220: XBA - Exchange B and A (65816)
+// Test 220: kXBA - Exchange B and A (65816)
 TEST(Cpu6502Test, XBA_65816) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65816);
 
   auto bytes = cpu.EncodeXBA();
   ASSERT_EQ(bytes.size(), 1UL);
-  EXPECT_EQ(bytes[0], 0xEB); // XBA opcode
+  EXPECT_EQ(bytes[0], 0xEB); // kXBA opcode
 }
 
-// Test 221: XCE - Exchange Carry and Emulation (65816)
+// Test 221: kXCE - Exchange Carry and Emulation (65816)
 TEST(Cpu6502Test, XCE_65816) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65816);
 
   auto bytes = cpu.EncodeXCE();
   ASSERT_EQ(bytes.size(), 1UL);
-  EXPECT_EQ(bytes[0], 0xFB); // XCE opcode
+  EXPECT_EQ(bytes[0], 0xFB); // kXCE opcode
 }
 
 // Test 222: 65816 opcodes available in all modes (vasm-compatible behavior)
 TEST(Cpu6502Test, Misc65816Opcodes_AvailableInAllModes) {
   Cpu6502 cpu;
 
-  // PEA with Immediate mode returns empty (wrong mode), Absolute returns bytes
+  // kPEA with Immediate mode returns empty (wrong mode), Absolute returns bytes
   auto bytes1 = cpu.EncodePEA(0x1234, AddressingMode::Immediate);
-  EXPECT_EQ(bytes1.size(), 0UL); // Immediate not valid for PEA
+  EXPECT_EQ(bytes1.size(), 0UL); // Immediate not valid for kPEA
 
-  // XBA works in 6502 mode
+  // kXBA works in 6502 mode
   auto bytes2 = cpu.EncodeXBA();
   ASSERT_EQ(bytes2.size(), 1UL);
-  EXPECT_EQ(bytes2[0], 0xEB); // XBA opcode
+  EXPECT_EQ(bytes2[0], 0xEB); // kXBA opcode
 
-  // XCE works in 65C02 mode
+  // kXCE works in 65C02 mode
   cpu.SetCpuMode(CpuMode::Cpu65C02);
   auto bytes3 = cpu.EncodeXCE();
   ASSERT_EQ(bytes3.size(), 1UL);
-  EXPECT_EQ(bytes3[0], 0xFB); // XCE opcode
+  EXPECT_EQ(bytes3[0], 0xFB); // kXCE opcode
 
-  // MVN works in 65C02 mode
+  // kMVN works in 65C02 mode
   auto bytes4 = cpu.EncodeMVN(0x12, 0x34);
   ASSERT_EQ(bytes4.size(), 3UL);
-  EXPECT_EQ(bytes4[0], 0x54); // MVN opcode
+  EXPECT_EQ(bytes4[0], 0x54); // kMVN opcode
 }
 
 // ============================================================================
@@ -2390,11 +2390,11 @@ TEST(Cpu6502Test, Misc65816Opcodes_AvailableInAllModes) {
 TEST(Cpu6502Test, BranchRelaxation_InRange_Positive127) {
   Cpu6502 cpu;
 
-  // BEQ with offset +127 (maximum positive offset)
+  // kBEQ with offset +127 (maximum positive offset)
   // Should NOT relax - still fits in 8-bit signed range
   auto bytes = cpu.EncodeBEQ(0x7F, AddressingMode::Relative);
   ASSERT_EQ(bytes.size(), 2UL);
-  EXPECT_EQ(bytes[0], 0xF0); // BEQ opcode (not relaxed)
+  EXPECT_EQ(bytes[0], 0xF0); // kBEQ opcode (not relaxed)
   EXPECT_EQ(bytes[1], 0x7F); // Offset +127
 }
 
@@ -2402,27 +2402,27 @@ TEST(Cpu6502Test, BranchRelaxation_InRange_Positive127) {
 TEST(Cpu6502Test, BranchRelaxation_InRange_Negative128) {
   Cpu6502 cpu;
 
-  // BEQ with offset -128 (minimum negative offset)
+  // kBEQ with offset -128 (minimum negative offset)
   // Should NOT relax - still fits in 8-bit signed range
   auto bytes =
       cpu.EncodeBEQ(0x80, AddressingMode::Relative); // 0x80 = -128 in signed
   ASSERT_EQ(bytes.size(), 2UL);
-  EXPECT_EQ(bytes[0], 0xF0); // BEQ opcode (not relaxed)
+  EXPECT_EQ(bytes[0], 0xF0); // kBEQ opcode (not relaxed)
   EXPECT_EQ(bytes[1], 0x80); // Offset -128
 }
 
 // Test 225: Branch out of range - relaxation needed (+128)
-// BEQ target → BNE *+5; JMP target
+// kBEQ target → kBNE *+5; JMP target
 TEST(Cpu6502Test, BranchRelaxation_OutOfRange_Positive128) {
   Cpu6502 cpu;
 
-  // BEQ to address 0x1082 from address 0x1000
+  // kBEQ to address 0x1082 from address 0x1000
   // Offset = 0x1082 - (0x1000 + 2) = 0x80 = +128 (out of range)
-  // Should relax to: BNE *+5; JMP $1082
+  // Should relax to: kBNE *+5; JMP $1082
   auto bytes = cpu.EncodeBranchWithRelaxation(0xF0, {0x1000, 0x1082});
 
   ASSERT_EQ(bytes.size(), 5UL);
-  EXPECT_EQ(bytes[0], 0xD0); // BNE opcode (complement of BEQ)
+  EXPECT_EQ(bytes[0], 0xD0); // kBNE opcode (complement of kBEQ)
   EXPECT_EQ(bytes[1], 0x03); // Skip 3 bytes (JMP instruction)
   EXPECT_EQ(bytes[2], 0x4C); // JMP opcode
   EXPECT_EQ(bytes[3], 0x82); // Target low byte
@@ -2430,130 +2430,130 @@ TEST(Cpu6502Test, BranchRelaxation_OutOfRange_Positive128) {
 }
 
 // Test 226: Branch out of range - relaxation needed (-129)
-// BEQ target → BNE *+5; JMP target
+// kBEQ target → kBNE *+5; JMP target
 TEST(Cpu6502Test, BranchRelaxation_OutOfRange_Negative129) {
   Cpu6502 cpu;
 
-  // BEQ to address 0x0F7F from address 0x1000
+  // kBEQ to address 0x0F7F from address 0x1000
   // Offset = 0x0F7F - (0x1000 + 2) = -131 (out of range)
-  // Should relax to: BNE *+5; JMP $0F7F
+  // Should relax to: kBNE *+5; JMP $0F7F
   auto bytes = cpu.EncodeBranchWithRelaxation(0xF0, {0x1000, 0x0F7F});
 
   ASSERT_EQ(bytes.size(), 5UL);
-  EXPECT_EQ(bytes[0], 0xD0); // BNE opcode (complement of BEQ)
+  EXPECT_EQ(bytes[0], 0xD0); // kBNE opcode (complement of kBEQ)
   EXPECT_EQ(bytes[1], 0x03); // Skip 3 bytes (JMP instruction)
   EXPECT_EQ(bytes[2], 0x4C); // JMP opcode
   EXPECT_EQ(bytes[3], 0x7F); // Target low byte
   EXPECT_EQ(bytes[4], 0x0F); // Target high byte
 }
 
-// Test 227: BNE out of range - should relax to BEQ + JMP
+// Test 227: kBNE out of range - should relax to kBEQ + JMP
 TEST(Cpu6502Test, BranchRelaxation_BNE_OutOfRange) {
   Cpu6502 cpu;
 
-  // BNE to address 0x1200 from address 0x1000
+  // kBNE to address 0x1200 from address 0x1000
   // Offset = 0x1200 - (0x1000 + 2) = +510 (out of range)
-  // Should relax to: BEQ *+5; JMP $1200
+  // Should relax to: kBEQ *+5; JMP $1200
   auto bytes = cpu.EncodeBranchWithRelaxation(0xD0, {0x1000, 0x1200});
 
   ASSERT_EQ(bytes.size(), 5UL);
-  EXPECT_EQ(bytes[0], 0xF0); // BEQ opcode (complement of BNE)
+  EXPECT_EQ(bytes[0], 0xF0); // kBEQ opcode (complement of kBNE)
   EXPECT_EQ(bytes[1], 0x03); // Skip 3 bytes
   EXPECT_EQ(bytes[2], 0x4C); // JMP opcode
   EXPECT_EQ(bytes[3], 0x00); // Target low byte
   EXPECT_EQ(bytes[4], 0x12); // Target high byte
 }
 
-// Test 228: BCC out of range - should relax to BCS + JMP
+// Test 228: kBCC out of range - should relax to kBCS + JMP
 TEST(Cpu6502Test, BranchRelaxation_BCC_OutOfRange) {
   Cpu6502 cpu;
 
-  // BCC to address 0x1200 from address 0x1000
-  // Should relax to: BCS *+5; JMP $1200
+  // kBCC to address 0x1200 from address 0x1000
+  // Should relax to: kBCS *+5; JMP $1200
   auto bytes = cpu.EncodeBranchWithRelaxation(0x90, {0x1000, 0x1200});
 
   ASSERT_EQ(bytes.size(), 5UL);
-  EXPECT_EQ(bytes[0], 0xB0); // BCS opcode (complement of BCC)
+  EXPECT_EQ(bytes[0], 0xB0); // kBCS opcode (complement of kBCC)
   EXPECT_EQ(bytes[1], 0x03); // Skip 3 bytes
   EXPECT_EQ(bytes[2], 0x4C); // JMP opcode
   EXPECT_EQ(bytes[3], 0x00); // Target low byte
   EXPECT_EQ(bytes[4], 0x12); // Target high byte
 }
 
-// Test 229: BCS out of range - should relax to BCC + JMP
+// Test 229: kBCS out of range - should relax to kBCC + JMP
 TEST(Cpu6502Test, BranchRelaxation_BCS_OutOfRange) {
   Cpu6502 cpu;
 
-  // BCS to address 0x1200 from address 0x1000
-  // Should relax to: BCC *+5; JMP $1200
+  // kBCS to address 0x1200 from address 0x1000
+  // Should relax to: kBCC *+5; JMP $1200
   auto bytes = cpu.EncodeBranchWithRelaxation(0xB0, {0x1000, 0x1200});
 
   ASSERT_EQ(bytes.size(), 5UL);
-  EXPECT_EQ(bytes[0], 0x90); // BCC opcode (complement of BCS)
+  EXPECT_EQ(bytes[0], 0x90); // kBCC opcode (complement of kBCS)
   EXPECT_EQ(bytes[1], 0x03); // Skip 3 bytes
   EXPECT_EQ(bytes[2], 0x4C); // JMP opcode
   EXPECT_EQ(bytes[3], 0x00); // Target low byte
   EXPECT_EQ(bytes[4], 0x12); // Target high byte
 }
 
-// Test 230: BPL out of range - should relax to BMI + JMP
+// Test 230: kBPL out of range - should relax to kBMI + JMP
 TEST(Cpu6502Test, BranchRelaxation_BPL_OutOfRange) {
   Cpu6502 cpu;
 
-  // BPL to address 0x1200 from address 0x1000
-  // Should relax to: BMI *+5; JMP $1200
+  // kBPL to address 0x1200 from address 0x1000
+  // Should relax to: kBMI *+5; JMP $1200
   auto bytes = cpu.EncodeBranchWithRelaxation(0x10, {0x1000, 0x1200});
 
   ASSERT_EQ(bytes.size(), 5UL);
-  EXPECT_EQ(bytes[0], 0x30); // BMI opcode (complement of BPL)
+  EXPECT_EQ(bytes[0], 0x30); // kBMI opcode (complement of kBPL)
   EXPECT_EQ(bytes[1], 0x03); // Skip 3 bytes
   EXPECT_EQ(bytes[2], 0x4C); // JMP opcode
   EXPECT_EQ(bytes[3], 0x00); // Target low byte
   EXPECT_EQ(bytes[4], 0x12); // Target high byte
 }
 
-// Test 231: BMI out of range - should relax to BPL + JMP
+// Test 231: kBMI out of range - should relax to kBPL + JMP
 TEST(Cpu6502Test, BranchRelaxation_BMI_OutOfRange) {
   Cpu6502 cpu;
 
-  // BMI to address 0x1200 from address 0x1000
-  // Should relax to: BPL *+5; JMP $1200
+  // kBMI to address 0x1200 from address 0x1000
+  // Should relax to: kBPL *+5; JMP $1200
   auto bytes = cpu.EncodeBranchWithRelaxation(0x30, {0x1000, 0x1200});
 
   ASSERT_EQ(bytes.size(), 5UL);
-  EXPECT_EQ(bytes[0], 0x10); // BPL opcode (complement of BMI)
+  EXPECT_EQ(bytes[0], 0x10); // kBPL opcode (complement of kBMI)
   EXPECT_EQ(bytes[1], 0x03); // Skip 3 bytes
   EXPECT_EQ(bytes[2], 0x4C); // JMP opcode
   EXPECT_EQ(bytes[3], 0x00); // Target low byte
   EXPECT_EQ(bytes[4], 0x12); // Target high byte
 }
 
-// Test 232: BVC out of range - should relax to BVS + JMP
+// Test 232: kBVC out of range - should relax to kBVS + JMP
 TEST(Cpu6502Test, BranchRelaxation_BVC_OutOfRange) {
   Cpu6502 cpu;
 
-  // BVC to address 0x1200 from address 0x1000
-  // Should relax to: BVS *+5; JMP $1200
+  // kBVC to address 0x1200 from address 0x1000
+  // Should relax to: kBVS *+5; JMP $1200
   auto bytes = cpu.EncodeBranchWithRelaxation(0x50, {0x1000, 0x1200});
 
   ASSERT_EQ(bytes.size(), 5UL);
-  EXPECT_EQ(bytes[0], 0x70); // BVS opcode (complement of BVC)
+  EXPECT_EQ(bytes[0], 0x70); // kBVS opcode (complement of kBVC)
   EXPECT_EQ(bytes[1], 0x03); // Skip 3 bytes
   EXPECT_EQ(bytes[2], 0x4C); // JMP opcode
   EXPECT_EQ(bytes[3], 0x00); // Target low byte
   EXPECT_EQ(bytes[4], 0x12); // Target high byte
 }
 
-// Test 233: BVS out of range - should relax to BVC + JMP
+// Test 233: kBVS out of range - should relax to kBVC + JMP
 TEST(Cpu6502Test, BranchRelaxation_BVS_OutOfRange) {
   Cpu6502 cpu;
 
-  // BVS to address 0x1200 from address 0x1000
-  // Should relax to: BVC *+5; JMP $1200
+  // kBVS to address 0x1200 from address 0x1000
+  // Should relax to: kBVC *+5; JMP $1200
   auto bytes = cpu.EncodeBranchWithRelaxation(0x70, {0x1000, 0x1200});
 
   ASSERT_EQ(bytes.size(), 5UL);
-  EXPECT_EQ(bytes[0], 0x50); // BVC opcode (complement of BVS)
+  EXPECT_EQ(bytes[0], 0x50); // kBVC opcode (complement of kBVS)
   EXPECT_EQ(bytes[1], 0x03); // Skip 3 bytes
   EXPECT_EQ(bytes[2], 0x4C); // JMP opcode
   EXPECT_EQ(bytes[3], 0x00); // Target low byte
@@ -2565,14 +2565,14 @@ TEST(Cpu6502Test, BranchRelaxation_OpcodeComplement) {
   Cpu6502 cpu;
 
   // Test that all branch opcodes complement correctly via XOR 0x20
-  EXPECT_EQ(cpu.GetComplementaryBranchOpcode(0x10), 0x30); // BPL → BMI
-  EXPECT_EQ(cpu.GetComplementaryBranchOpcode(0x30), 0x10); // BMI → BPL
-  EXPECT_EQ(cpu.GetComplementaryBranchOpcode(0x50), 0x70); // BVC → BVS
-  EXPECT_EQ(cpu.GetComplementaryBranchOpcode(0x70), 0x50); // BVS → BVC
-  EXPECT_EQ(cpu.GetComplementaryBranchOpcode(0x90), 0xB0); // BCC → BCS
-  EXPECT_EQ(cpu.GetComplementaryBranchOpcode(0xB0), 0x90); // BCS → BCC
-  EXPECT_EQ(cpu.GetComplementaryBranchOpcode(0xD0), 0xF0); // BNE → BEQ
-  EXPECT_EQ(cpu.GetComplementaryBranchOpcode(0xF0), 0xD0); // BEQ → BNE
+  EXPECT_EQ(cpu.GetComplementaryBranchOpcode(0x10), 0x30); // kBPL → kBMI
+  EXPECT_EQ(cpu.GetComplementaryBranchOpcode(0x30), 0x10); // kBMI → kBPL
+  EXPECT_EQ(cpu.GetComplementaryBranchOpcode(0x50), 0x70); // kBVC → kBVS
+  EXPECT_EQ(cpu.GetComplementaryBranchOpcode(0x70), 0x50); // kBVS → kBVC
+  EXPECT_EQ(cpu.GetComplementaryBranchOpcode(0x90), 0xB0); // kBCC → kBCS
+  EXPECT_EQ(cpu.GetComplementaryBranchOpcode(0xB0), 0x90); // kBCS → kBCC
+  EXPECT_EQ(cpu.GetComplementaryBranchOpcode(0xD0), 0xF0); // kBNE → kBEQ
+  EXPECT_EQ(cpu.GetComplementaryBranchOpcode(0xF0), 0xD0); // kBEQ → kBNE
 }
 
 // Test 235: Test branch range detection
@@ -2604,12 +2604,12 @@ TEST(Cpu6502Test, BranchRelaxation_NeedsBranchRelaxation) {
 TEST(Cpu6502Test, BranchRelaxation_LargeOffset_PoP) {
   Cpu6502 cpu;
 
-  // Simulate FRAMEADV.S case: BCC from $12FE to $1EC9 (offset = 3017 bytes)
-  // Should relax to: BCS *+5; JMP $1EC9
+  // Simulate FRAMEADV.S case: kBCC from $12FE to $1EC9 (offset = 3017 bytes)
+  // Should relax to: kBCS *+5; JMP $1EC9
   auto bytes = cpu.EncodeBranchWithRelaxation(0x90, {0x12FE, 0x1EC9});
 
   ASSERT_EQ(bytes.size(), 5UL);
-  EXPECT_EQ(bytes[0], 0xB0); // BCS opcode (complement of BCC)
+  EXPECT_EQ(bytes[0], 0xB0); // kBCS opcode (complement of kBCC)
   EXPECT_EQ(bytes[1], 0x03); // Skip 3 bytes
   EXPECT_EQ(bytes[2], 0x4C); // JMP opcode
   EXPECT_EQ(bytes[3], 0xC9); // Target low byte
@@ -2618,32 +2618,32 @@ TEST(Cpu6502Test, BranchRelaxation_LargeOffset_PoP) {
 
 // ============================================================================
 // Phase 2.6: 65C02 Rockwell Extensions
-// Group 1: WAI/STP - Processor Control
+// Group 1: kWAI/kSTP - Processor Control
 // ============================================================================
 
-// Test 237: WAI (Wait for Interrupt) - 65C02 Rockwell
+// Test 237: kWAI (Wait for Interrupt) - 65C02 Rockwell
 TEST(Cpu6502Test, WAI_65C02Rockwell) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
 
-  // WAI -> CB
+  // kWAI -> CB
   auto bytes = cpu.EncodeWAI();
   ASSERT_EQ(bytes.size(), 1UL);
-  EXPECT_EQ(bytes[0], 0xCB); // WAI opcode
+  EXPECT_EQ(bytes[0], 0xCB); // kWAI opcode
 }
 
-// Test 238: STP (Stop Processor) - 65C02 Rockwell
+// Test 238: kSTP (Stop Processor) - 65C02 Rockwell
 TEST(Cpu6502Test, STP_65C02Rockwell) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
 
-  // STP -> DB
+  // kSTP -> DB
   auto bytes = cpu.EncodeSTP();
   ASSERT_EQ(bytes.size(), 1UL);
-  EXPECT_EQ(bytes[0], 0xDB); // STP opcode
+  EXPECT_EQ(bytes[0], 0xDB); // kSTP opcode
 }
 
-// Test 239: WAI not available in 6502 mode
+// Test 239: kWAI not available in 6502 mode
 TEST(Cpu6502Test, WAI_NotAvailableIn6502Mode) {
   Cpu6502 cpu;
   // Default mode is 6502
@@ -2652,7 +2652,7 @@ TEST(Cpu6502Test, WAI_NotAvailableIn6502Mode) {
   EXPECT_EQ(bytes.size(), 0UL); // Empty = not supported
 }
 
-// Test 240: WAI not available in standard 65C02 mode (Rockwell-only)
+// Test 240: kWAI not available in standard 65C02 mode (Rockwell-only)
 TEST(Cpu6502Test, WAI_NotAvailableInStandard65C02) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65C02); // Standard 65C02, not Rockwell
@@ -2661,7 +2661,7 @@ TEST(Cpu6502Test, WAI_NotAvailableInStandard65C02) {
   EXPECT_EQ(bytes.size(), 0UL); // Empty = Rockwell-only instruction
 }
 
-// Test 241: STP not available in 6502 mode
+// Test 241: kSTP not available in 6502 mode
 TEST(Cpu6502Test, STP_NotAvailableIn6502Mode) {
   Cpu6502 cpu;
   // Default mode is 6502
@@ -2670,7 +2670,7 @@ TEST(Cpu6502Test, STP_NotAvailableIn6502Mode) {
   EXPECT_EQ(bytes.size(), 0UL); // Empty = not supported
 }
 
-// Test 242: STP not available in standard 65C02 mode (Rockwell-only)
+// Test 242: kSTP not available in standard 65C02 mode (Rockwell-only)
 TEST(Cpu6502Test, STP_NotAvailableInStandard65C02) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65C02); // Standard 65C02, not Rockwell
@@ -2684,43 +2684,43 @@ TEST(Cpu6502Test, STP_NotAvailableInStandard65C02) {
 // Group 2: RMB/SMB - Reset/Set Memory Bit
 // ============================================================================
 
-// Test 243: RMB0 (Reset Memory Bit 0) - 65C02 Rockwell
+// Test 243: kRMB0 (Reset Memory Bit 0) - 65C02 Rockwell
 TEST(Cpu6502Test, RMB0_65C02Rockwell) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
 
-  // RMB0 $80 -> 07 80
+  // kRMB0 $80 -> 07 80
   auto bytes = cpu.EncodeRMB0(0x80, AddressingMode::ZeroPage);
   ASSERT_EQ(bytes.size(), 2UL);
-  EXPECT_EQ(bytes[0], 0x07); // RMB0 opcode
+  EXPECT_EQ(bytes[0], 0x07); // kRMB0 opcode
   EXPECT_EQ(bytes[1], 0x80); // Zero page address
 }
 
-// Test 244: RMB1 - 65C02 Rockwell
+// Test 244: kRMB1 - 65C02 Rockwell
 TEST(Cpu6502Test, RMB1_65C02Rockwell) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
 
-  // RMB1 $42 -> 17 42
+  // kRMB1 $42 -> 17 42
   auto bytes = cpu.EncodeRMB1(0x42, AddressingMode::ZeroPage);
   ASSERT_EQ(bytes.size(), 2UL);
-  EXPECT_EQ(bytes[0], 0x17); // RMB1 opcode
+  EXPECT_EQ(bytes[0], 0x17); // kRMB1 opcode
   EXPECT_EQ(bytes[1], 0x42);
 }
 
-// Test 245: RMB2 - 65C02 Rockwell
+// Test 245: kRMB2 - 65C02 Rockwell
 TEST(Cpu6502Test, RMB2_65C02Rockwell) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
 
-  // RMB2 $FF -> 27 FF
+  // kRMB2 $FF -> 27 FF
   auto bytes = cpu.EncodeRMB2(0xFF, AddressingMode::ZeroPage);
   ASSERT_EQ(bytes.size(), 2UL);
   EXPECT_EQ(bytes[0], 0x27);
   EXPECT_EQ(bytes[1], 0xFF);
 }
 
-// Test 246: RMB3 - 65C02 Rockwell
+// Test 246: kRMB3 - 65C02 Rockwell
 TEST(Cpu6502Test, RMB3_65C02Rockwell) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
@@ -2731,7 +2731,7 @@ TEST(Cpu6502Test, RMB3_65C02Rockwell) {
   EXPECT_EQ(bytes[1], 0x00);
 }
 
-// Test 247: RMB4 - 65C02 Rockwell
+// Test 247: kRMB4 - 65C02 Rockwell
 TEST(Cpu6502Test, RMB4_65C02Rockwell) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
@@ -2742,7 +2742,7 @@ TEST(Cpu6502Test, RMB4_65C02Rockwell) {
   EXPECT_EQ(bytes[1], 0x80);
 }
 
-// Test 248: RMB5 - 65C02 Rockwell
+// Test 248: kRMB5 - 65C02 Rockwell
 TEST(Cpu6502Test, RMB5_65C02Rockwell) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
@@ -2753,7 +2753,7 @@ TEST(Cpu6502Test, RMB5_65C02Rockwell) {
   EXPECT_EQ(bytes[1], 0x80);
 }
 
-// Test 249: RMB6 - 65C02 Rockwell
+// Test 249: kRMB6 - 65C02 Rockwell
 TEST(Cpu6502Test, RMB6_65C02Rockwell) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
@@ -2764,7 +2764,7 @@ TEST(Cpu6502Test, RMB6_65C02Rockwell) {
   EXPECT_EQ(bytes[1], 0x80);
 }
 
-// Test 250: RMB7 - 65C02 Rockwell
+// Test 250: kRMB7 - 65C02 Rockwell
 TEST(Cpu6502Test, RMB7_65C02Rockwell) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
@@ -2775,19 +2775,19 @@ TEST(Cpu6502Test, RMB7_65C02Rockwell) {
   EXPECT_EQ(bytes[1], 0x80);
 }
 
-// Test 251: SMB0 (Set Memory Bit 0) - 65C02 Rockwell
+// Test 251: kSMB0 (Set Memory Bit 0) - 65C02 Rockwell
 TEST(Cpu6502Test, SMB0_65C02Rockwell) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
 
-  // SMB0 $80 -> 87 80
+  // kSMB0 $80 -> 87 80
   auto bytes = cpu.EncodeSMB0(0x80, AddressingMode::ZeroPage);
   ASSERT_EQ(bytes.size(), 2UL);
   EXPECT_EQ(bytes[0], 0x87);
   EXPECT_EQ(bytes[1], 0x80);
 }
 
-// Test 252: SMB1 - 65C02 Rockwell
+// Test 252: kSMB1 - 65C02 Rockwell
 TEST(Cpu6502Test, SMB1_65C02Rockwell) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
@@ -2798,7 +2798,7 @@ TEST(Cpu6502Test, SMB1_65C02Rockwell) {
   EXPECT_EQ(bytes[1], 0x42);
 }
 
-// Test 253: SMB2 - 65C02 Rockwell
+// Test 253: kSMB2 - 65C02 Rockwell
 TEST(Cpu6502Test, SMB2_65C02Rockwell) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
@@ -2809,7 +2809,7 @@ TEST(Cpu6502Test, SMB2_65C02Rockwell) {
   EXPECT_EQ(bytes[1], 0xFF);
 }
 
-// Test 254: SMB3 - 65C02 Rockwell
+// Test 254: kSMB3 - 65C02 Rockwell
 TEST(Cpu6502Test, SMB3_65C02Rockwell) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
@@ -2820,7 +2820,7 @@ TEST(Cpu6502Test, SMB3_65C02Rockwell) {
   EXPECT_EQ(bytes[1], 0x00);
 }
 
-// Test 255: SMB4 - 65C02 Rockwell
+// Test 255: kSMB4 - 65C02 Rockwell
 TEST(Cpu6502Test, SMB4_65C02Rockwell) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
@@ -2831,7 +2831,7 @@ TEST(Cpu6502Test, SMB4_65C02Rockwell) {
   EXPECT_EQ(bytes[1], 0x80);
 }
 
-// Test 256: SMB5 - 65C02 Rockwell
+// Test 256: kSMB5 - 65C02 Rockwell
 TEST(Cpu6502Test, SMB5_65C02Rockwell) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
@@ -2842,7 +2842,7 @@ TEST(Cpu6502Test, SMB5_65C02Rockwell) {
   EXPECT_EQ(bytes[1], 0x80);
 }
 
-// Test 257: SMB6 - 65C02 Rockwell
+// Test 257: kSMB6 - 65C02 Rockwell
 TEST(Cpu6502Test, SMB6_65C02Rockwell) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
@@ -2853,7 +2853,7 @@ TEST(Cpu6502Test, SMB6_65C02Rockwell) {
   EXPECT_EQ(bytes[1], 0x80);
 }
 
-// Test 258: SMB7 - 65C02 Rockwell
+// Test 258: kSMB7 - 65C02 Rockwell
 TEST(Cpu6502Test, SMB7_65C02Rockwell) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
@@ -2886,21 +2886,21 @@ TEST(Cpu6502Test, SMB_NotAvailableInStandard65C02) {
 // Group 3: BBR/BBS - Branch on Bit Reset/Set
 // ============================================================================
 
-// Test 261: BBR0 (Branch if Bit 0 Reset) - 65C02 Rockwell
+// Test 261: kBBR0 (Branch if Bit 0 Reset) - 65C02 Rockwell
 TEST(Cpu6502Test, BBR0_65C02Rockwell) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
 
-  // BBR0 $80, $10 -> 0F 80 10
+  // kBBR0 $80, $10 -> 0F 80 10
   // Zero page address $80, relative branch offset $10
   auto bytes = cpu.EncodeBBR0(0x80, 0x10);
   ASSERT_EQ(bytes.size(), 3UL);
-  EXPECT_EQ(bytes[0], 0x0F); // BBR0 opcode
+  EXPECT_EQ(bytes[0], 0x0F); // kBBR0 opcode
   EXPECT_EQ(bytes[1], 0x80); // Zero page address
   EXPECT_EQ(bytes[2], 0x10); // Relative offset
 }
 
-// Test 262: BBR1 - 65C02 Rockwell
+// Test 262: kBBR1 - 65C02 Rockwell
 TEST(Cpu6502Test, BBR1_65C02Rockwell) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
@@ -2912,7 +2912,7 @@ TEST(Cpu6502Test, BBR1_65C02Rockwell) {
   EXPECT_EQ(bytes[2], 0x20);
 }
 
-// Test 263: BBR2 - 65C02 Rockwell
+// Test 263: kBBR2 - 65C02 Rockwell
 TEST(Cpu6502Test, BBR2_65C02Rockwell) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
@@ -2924,7 +2924,7 @@ TEST(Cpu6502Test, BBR2_65C02Rockwell) {
   EXPECT_EQ(bytes[2], 0xFE);
 }
 
-// Test 264: BBR3 - 65C02 Rockwell
+// Test 264: kBBR3 - 65C02 Rockwell
 TEST(Cpu6502Test, BBR3_65C02Rockwell) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
@@ -2936,7 +2936,7 @@ TEST(Cpu6502Test, BBR3_65C02Rockwell) {
   EXPECT_EQ(bytes[2], 0x7F);
 }
 
-// Test 265: BBR4 - 65C02 Rockwell
+// Test 265: kBBR4 - 65C02 Rockwell
 TEST(Cpu6502Test, BBR4_65C02Rockwell) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
@@ -2948,7 +2948,7 @@ TEST(Cpu6502Test, BBR4_65C02Rockwell) {
   EXPECT_EQ(bytes[2], 0x00);
 }
 
-// Test 266: BBR5 - 65C02 Rockwell
+// Test 266: kBBR5 - 65C02 Rockwell
 TEST(Cpu6502Test, BBR5_65C02Rockwell) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
@@ -2960,7 +2960,7 @@ TEST(Cpu6502Test, BBR5_65C02Rockwell) {
   EXPECT_EQ(bytes[2], 0x10);
 }
 
-// Test 267: BBR6 - 65C02 Rockwell
+// Test 267: kBBR6 - 65C02 Rockwell
 TEST(Cpu6502Test, BBR6_65C02Rockwell) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
@@ -2972,7 +2972,7 @@ TEST(Cpu6502Test, BBR6_65C02Rockwell) {
   EXPECT_EQ(bytes[2], 0x10);
 }
 
-// Test 268: BBR7 - 65C02 Rockwell
+// Test 268: kBBR7 - 65C02 Rockwell
 TEST(Cpu6502Test, BBR7_65C02Rockwell) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
@@ -2984,12 +2984,12 @@ TEST(Cpu6502Test, BBR7_65C02Rockwell) {
   EXPECT_EQ(bytes[2], 0x10);
 }
 
-// Test 269: BBS0 (Branch if Bit 0 Set) - 65C02 Rockwell
+// Test 269: kBBS0 (Branch if Bit 0 Set) - 65C02 Rockwell
 TEST(Cpu6502Test, BBS0_65C02Rockwell) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
 
-  // BBS0 $80, $10 -> 8F 80 10
+  // kBBS0 $80, $10 -> 8F 80 10
   auto bytes = cpu.EncodeBBS0(0x80, 0x10);
   ASSERT_EQ(bytes.size(), 3UL);
   EXPECT_EQ(bytes[0], 0x8F);
@@ -2997,7 +2997,7 @@ TEST(Cpu6502Test, BBS0_65C02Rockwell) {
   EXPECT_EQ(bytes[2], 0x10);
 }
 
-// Test 270: BBS1 - 65C02 Rockwell
+// Test 270: kBBS1 - 65C02 Rockwell
 TEST(Cpu6502Test, BBS1_65C02Rockwell) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
@@ -3009,7 +3009,7 @@ TEST(Cpu6502Test, BBS1_65C02Rockwell) {
   EXPECT_EQ(bytes[2], 0x20);
 }
 
-// Test 271: BBS2 - 65C02 Rockwell
+// Test 271: kBBS2 - 65C02 Rockwell
 TEST(Cpu6502Test, BBS2_65C02Rockwell) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
@@ -3021,7 +3021,7 @@ TEST(Cpu6502Test, BBS2_65C02Rockwell) {
   EXPECT_EQ(bytes[2], 0xFE);
 }
 
-// Test 272: BBS3 - 65C02 Rockwell
+// Test 272: kBBS3 - 65C02 Rockwell
 TEST(Cpu6502Test, BBS3_65C02Rockwell) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
@@ -3033,7 +3033,7 @@ TEST(Cpu6502Test, BBS3_65C02Rockwell) {
   EXPECT_EQ(bytes[2], 0x7F);
 }
 
-// Test 273: BBS4 - 65C02 Rockwell
+// Test 273: kBBS4 - 65C02 Rockwell
 TEST(Cpu6502Test, BBS4_65C02Rockwell) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
@@ -3045,7 +3045,7 @@ TEST(Cpu6502Test, BBS4_65C02Rockwell) {
   EXPECT_EQ(bytes[2], 0x00);
 }
 
-// Test 274: BBS5 - 65C02 Rockwell
+// Test 274: kBBS5 - 65C02 Rockwell
 TEST(Cpu6502Test, BBS5_65C02Rockwell) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
@@ -3057,7 +3057,7 @@ TEST(Cpu6502Test, BBS5_65C02Rockwell) {
   EXPECT_EQ(bytes[2], 0x10);
 }
 
-// Test 275: BBS6 - 65C02 Rockwell
+// Test 275: kBBS6 - 65C02 Rockwell
 TEST(Cpu6502Test, BBS6_65C02Rockwell) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
@@ -3069,7 +3069,7 @@ TEST(Cpu6502Test, BBS6_65C02Rockwell) {
   EXPECT_EQ(bytes[2], 0x10);
 }
 
-// Test 276: BBS7 - 65C02 Rockwell
+// Test 276: kBBS7 - 65C02 Rockwell
 TEST(Cpu6502Test, BBS7_65C02Rockwell) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65C02Rock);
@@ -3089,44 +3089,44 @@ TEST(Cpu6502Test, BBR_NotAvailableIn6502Mode) {
   EXPECT_EQ(bytes.size(), 0UL);
 }
 
-// Test 279: TXY - Transfer X to Y (65816)
+// Test 279: kTXY - Transfer X to Y (65816)
 TEST(Cpu6502Test, TXY_65816) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65816);
 
   auto bytes = cpu.EncodeTXY();
   ASSERT_EQ(bytes.size(), 1UL);
-  EXPECT_EQ(bytes[0], 0x9B); // TXY opcode
+  EXPECT_EQ(bytes[0], 0x9B); // kTXY opcode
 }
 
-// Test 280: TXY available in all modes (vasm-compatible)
+// Test 280: kTXY available in all modes (vasm-compatible)
 TEST(Cpu6502Test, TXY_AvailableInAllModes) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65C02);
 
   auto bytes = cpu.EncodeTXY();
   ASSERT_EQ(bytes.size(), 1UL);
-  EXPECT_EQ(bytes[0], 0x9B); // TXY opcode
+  EXPECT_EQ(bytes[0], 0x9B); // kTXY opcode
 }
 
-// Test 281: TYX - Transfer Y to X (65816)
+// Test 281: kTYX - Transfer Y to X (65816)
 TEST(Cpu6502Test, TYX_65816) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65816);
 
   auto bytes = cpu.EncodeTYX();
   ASSERT_EQ(bytes.size(), 1UL);
-  EXPECT_EQ(bytes[0], 0xBB); // TYX opcode
+  EXPECT_EQ(bytes[0], 0xBB); // kTYX opcode
 }
 
-// Test 282: TYX available in all modes (vasm-compatible)
+// Test 282: kTYX available in all modes (vasm-compatible)
 TEST(Cpu6502Test, TYX_AvailableInAllModes) {
   Cpu6502 cpu;
   cpu.SetCpuMode(CpuMode::Cpu65C02);
 
   auto bytes = cpu.EncodeTYX();
   ASSERT_EQ(bytes.size(), 1UL);
-  EXPECT_EQ(bytes[0], 0xBB); // TYX opcode
+  EXPECT_EQ(bytes[0], 0xBB); // kTYX opcode
 }
 
 // Test 278: BBS not available in standard 65C02 mode

@@ -130,10 +130,10 @@ TEST(MnemonicConstantsTest, M6502_ArithmeticInstructions) {
   EXPECT_STREQ("SBC", M6502Mnemonics::SBC);
   EXPECT_STREQ("INC", M6502Mnemonics::INC);
   EXPECT_STREQ("DEC", M6502Mnemonics::DEC);
-  EXPECT_STREQ("INX", M6502Mnemonics::INX);
-  EXPECT_STREQ("DEX", M6502Mnemonics::DEX);
-  EXPECT_STREQ("INY", M6502Mnemonics::INY);
-  EXPECT_STREQ("DEY", M6502Mnemonics::DEY);
+  EXPECT_STREQ("INX", M6502Mnemonics::kINX);
+  EXPECT_STREQ("DEX", M6502Mnemonics::kDEX);
+  EXPECT_STREQ("INY", M6502Mnemonics::kINY);
+  EXPECT_STREQ("DEY", M6502Mnemonics::kDEY);
 }
 
 TEST(MnemonicConstantsTest, M6502_LogicalInstructions) {
@@ -144,21 +144,21 @@ TEST(MnemonicConstantsTest, M6502_LogicalInstructions) {
 }
 
 TEST(MnemonicConstantsTest, M6502_BranchInstructions) {
-  EXPECT_STREQ("BCC", M6502Mnemonics::BCC);
-  EXPECT_STREQ("BCS", M6502Mnemonics::BCS);
-  EXPECT_STREQ("BEQ", M6502Mnemonics::BEQ);
-  EXPECT_STREQ("BNE", M6502Mnemonics::BNE);
-  EXPECT_STREQ("BMI", M6502Mnemonics::BMI);
-  EXPECT_STREQ("BPL", M6502Mnemonics::BPL);
-  EXPECT_STREQ("BVC", M6502Mnemonics::BVC);
-  EXPECT_STREQ("BVS", M6502Mnemonics::BVS);
+  EXPECT_STREQ("BCC", M6502Mnemonics::kBCC);
+  EXPECT_STREQ("BCS", M6502Mnemonics::kBCS);
+  EXPECT_STREQ("BEQ", M6502Mnemonics::kBEQ);
+  EXPECT_STREQ("BNE", M6502Mnemonics::kBNE);
+  EXPECT_STREQ("BMI", M6502Mnemonics::kBMI);
+  EXPECT_STREQ("BPL", M6502Mnemonics::kBPL);
+  EXPECT_STREQ("BVC", M6502Mnemonics::kBVC);
+  EXPECT_STREQ("BVS", M6502Mnemonics::kBVS);
 }
 
 TEST(MnemonicConstantsTest, M6502_JumpInstructions) {
   EXPECT_STREQ("JMP", M6502Mnemonics::JMP);
-  EXPECT_STREQ("JSR", M6502Mnemonics::JSR);
-  EXPECT_STREQ("RTS", M6502Mnemonics::RTS);
-  EXPECT_STREQ("RTI", M6502Mnemonics::RTI);
+  EXPECT_STREQ("JSR", M6502Mnemonics::kJSR);
+  EXPECT_STREQ("RTS", M6502Mnemonics::kRTS);
+  EXPECT_STREQ("RTI", M6502Mnemonics::kRTI);
 }
 
 // ============================================================================

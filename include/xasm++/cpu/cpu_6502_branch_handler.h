@@ -29,9 +29,9 @@ struct BranchTarget {
  * them to equivalent longer sequences.
  *
  * Branch relaxation converts:
- *   BEQ far_label (out of range)
+ *   kBEQ far_label (out of range)
  * Into:
- *   BNE *+5       (inverted condition, skip JMP)
+ *   kBNE *+5       (inverted condition, skip JMP)
  *   JMP far_label (absolute jump to target)
  */
 class Cpu6502BranchHandler {
@@ -53,11 +53,11 @@ class Cpu6502BranchHandler {
    * @brief Get complementary (inverted) branch opcode
    *
    * All 6502 branch opcodes can be inverted by XORing with 0x20.
-   * This is used for branch relaxation: BEQ far → BNE *+5; JMP far
+   * This is used for branch relaxation: kBEQ far → kBNE *+5; JMP far
    *
    * Examples:
-   *   BEQ (0xF0) → BNE (0xD0)  [0xF0 XOR 0x20 = 0xD0]
-   *   BCC (0x90) → BCS (0xB0)  [0x90 XOR 0x20 = 0xB0]
+   *   kBEQ (0xF0) → kBNE (0xD0)  [0xF0 XOR 0x20 = 0xD0]
+   *   kBCC (0x90) → kBCS (0xB0)  [0x90 XOR 0x20 = 0xB0]
    *
    * @param branch_opcode Original branch opcode
    * @return Complementary branch opcode
@@ -74,11 +74,11 @@ class Cpu6502BranchHandler {
    *   Emits relaxed 5-byte sequence: [B!cc] [0x03] [JMP] [target_lo]
    * [target_hi]
    *
-   * Example: BEQ $1200 from $1000 (offset = +510, out of range)
+   * Example: kBEQ $1200 from $1000 (offset = +510, out of range)
    *   Normal:  F0 7E (fails - offset too large)
-   *   Relaxed: D0 03 4C 00 12 (BNE *+5; JMP $1200)
+   *   Relaxed: D0 03 4C 00 12 (kBNE *+5; JMP $1200)
    *
-   * @param branch_opcode Branch opcode (BEQ, BNE, BCC, BCS, etc.)
+   * @param branch_opcode Branch opcode (kBEQ, kBNE, kBCC, kBCS, etc.)
    * @param target Branch source and destination addresses
    * @return Encoded bytes (2 bytes if in range, 5 bytes if relaxed)
    */

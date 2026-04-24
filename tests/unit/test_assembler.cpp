@@ -172,7 +172,7 @@ TEST(AssemblerTest, InstructionEncoding) {
   Section section(".text", static_cast<uint32_t>(SectionAttributes::Code),
                   0x8000);
 
-  // Add NOP instruction (implied addressing, 1 byte: EA)
+  // Add kNOP instruction (implied addressing, 1 byte: EA)
   auto nop = std::make_shared<InstructionAtom>("NOP", "");
   section.atoms.push_back(nop);
 
@@ -183,7 +183,7 @@ TEST(AssemblerTest, InstructionEncoding) {
   // Verify encoded_bytes was populated
   EXPECT_FALSE(nop->encoded_bytes.empty());
   EXPECT_EQ(nop->encoded_bytes.size(), 1UL);
-  EXPECT_EQ(nop->encoded_bytes[0], 0xEA); // NOP opcode
+  EXPECT_EQ(nop->encoded_bytes[0], 0xEA); // kNOP opcode
 }
 
 // Test 14: LDA immediate encoding
@@ -843,8 +843,8 @@ TEST(AssemblerTest, IntegrationZeroPageIndexedLoop) {
   // Simple loop using zero-page indexed
   // LDX #$00
   // loop: LDA $80,X
-  //       INX
-  //       BNE loop
+  //       kINX
+  //       kBNE loop
   auto ldx = std::make_shared<InstructionAtom>("LDX", "#$00");
   auto loop_label = std::make_shared<LabelAtom>("loop", 0);
   auto lda = std::make_shared<InstructionAtom>("LDA", "$80,X");
@@ -873,8 +873,8 @@ TEST(AssemblerTest, IntegrationZeroPageIndexedLoop) {
   ASSERT_FALSE(bne->encoded_bytes.empty());
   EXPECT_EQ(ldx->encoded_bytes[0], 0xA2); // LDX immediate
   EXPECT_EQ(lda->encoded_bytes[0], 0xB5); // LDA zero page,X
-  EXPECT_EQ(inx->encoded_bytes[0], 0xE8); // INX
-  EXPECT_EQ(bne->encoded_bytes[0], 0xD0); // BNE
+  EXPECT_EQ(inx->encoded_bytes[0], 0xE8); // kINX
+  EXPECT_EQ(bne->encoded_bytes[0], 0xD0); // kBNE
 }
 
 // Test 39: Accumulator shifts
@@ -950,8 +950,8 @@ TEST(AssemblerTest, IntegrationIndexedIndirect) {
   // LDY #$00
   // loop: LDA ($40,X)
   //       STA ($80),Y
-  //       INY
-  //       BNE loop
+  //       kINY
+  //       kBNE loop
   auto ldy = std::make_shared<InstructionAtom>("LDY", "#$00");
   auto loop_label = std::make_shared<LabelAtom>("loop", 0);
   auto lda = std::make_shared<InstructionAtom>("LDA", "($40,X)");
@@ -984,8 +984,8 @@ TEST(AssemblerTest, IntegrationIndexedIndirect) {
   EXPECT_EQ(ldy->encoded_bytes[0], 0xA0); // LDY immediate
   EXPECT_EQ(lda->encoded_bytes[0], 0xA1); // LDA indexed indirect
   EXPECT_EQ(sta->encoded_bytes[0], 0x91); // STA indirect indexed
-  EXPECT_EQ(iny->encoded_bytes[0], 0xC8); // INY
-  EXPECT_EQ(bne->encoded_bytes[0], 0xD0); // BNE
+  EXPECT_EQ(iny->encoded_bytes[0], 0xC8); // kINY
+  EXPECT_EQ(bne->encoded_bytes[0], 0xD0); // kBNE
 }
 
 // Test 42: Mixed addressing modes
@@ -1073,10 +1073,10 @@ TEST(AssemblerTest, LongBranchNeedsRelaxation) {
   ASSERT_TRUE(result.success)
       << "Assembly failed with " << result.errors.size() << " errors";
 
-  // Relaxed branch should be 5 bytes: BNE *+5; JMP target
+  // Relaxed branch should be 5 bytes: kBNE *+5; JMP target
   ASSERT_FALSE(beq->encoded_bytes.empty());
   EXPECT_EQ(beq->encoded_bytes.size(), 5UL);
-  EXPECT_EQ(beq->encoded_bytes[0], 0xD0); // BNE (complement of BEQ)
+  EXPECT_EQ(beq->encoded_bytes[0], 0xD0); // kBNE (complement of kBEQ)
   EXPECT_EQ(beq->encoded_bytes[1], 0x03); // Skip 3 bytes (JMP instruction)
   EXPECT_EQ(beq->encoded_bytes[2], 0x4C); // JMP opcode
 }
@@ -1140,10 +1140,10 @@ TEST(AssemblerTest, ShortBranchNoRelaxation) {
   ASSERT_TRUE(result.success)
       << "Assembly failed with " << result.errors.size() << " errors";
 
-  // Short branch should be 2 bytes: BEQ offset
+  // Short branch should be 2 bytes: kBEQ offset
   ASSERT_FALSE(beq->encoded_bytes.empty());
   EXPECT_EQ(beq->encoded_bytes.size(), 2UL);
-  EXPECT_EQ(beq->encoded_bytes[0], 0xF0); // BEQ opcode
+  EXPECT_EQ(beq->encoded_bytes[0], 0xF0); // kBEQ opcode
   EXPECT_EQ(beq->encoded_bytes[1], 0x0A); // Offset = +10
 }
 
@@ -1177,15 +1177,15 @@ TEST(AssemblerTest, BackwardBranch) {
   ASSERT_TRUE(result.success)
       << "Assembly failed with " << result.errors.size() << " errors";
 
-  // Backward branch should be 2 bytes: BNE offset
+  // Backward branch should be 2 bytes: kBNE offset
   ASSERT_FALSE(bne->encoded_bytes.empty());
   EXPECT_EQ(bne->encoded_bytes.size(), 2UL);
-  EXPECT_EQ(bne->encoded_bytes[0], 0xD0); // BNE opcode
+  EXPECT_EQ(bne->encoded_bytes[0], 0xD0); // kBNE opcode
   // Offset should be -4 (back to loop label)
   EXPECT_EQ(bne->encoded_bytes[1], 0xFC); // -4 in two's complement
 }
 
-// Test PHB - Push Data Bank Register (65816)
+// Test kPHB - Push Data Bank Register (65816)
 TEST(AssemblerTest, PHB_65816) {
   Assembler assembler;
   Cpu6502 cpu;
@@ -1195,7 +1195,7 @@ TEST(AssemblerTest, PHB_65816) {
   Section section(".text", static_cast<uint32_t>(SectionAttributes::Code),
                   0x1000);
 
-  // PHB -> 8B
+  // kPHB -> 8B
   auto instr = std::make_shared<InstructionAtom>("PHB", "");
   section.atoms.push_back(instr);
 
@@ -1204,10 +1204,10 @@ TEST(AssemblerTest, PHB_65816) {
 
   EXPECT_TRUE(result.success);
   ASSERT_EQ(instr->encoded_bytes.size(), 1UL);
-  EXPECT_EQ(instr->encoded_bytes[0], 0x8B); // PHB opcode
+  EXPECT_EQ(instr->encoded_bytes[0], 0x8B); // kPHB opcode
 }
 
-// Test PLB - Pull Data Bank Register (65816)
+// Test kPLB - Pull Data Bank Register (65816)
 TEST(AssemblerTest, PLB_65816) {
   Assembler assembler;
   Cpu6502 cpu;
@@ -1217,7 +1217,7 @@ TEST(AssemblerTest, PLB_65816) {
   Section section(".text", static_cast<uint32_t>(SectionAttributes::Code),
                   0x1000);
 
-  // PLB -> AB
+  // kPLB -> AB
   auto instr = std::make_shared<InstructionAtom>("PLB", "");
   section.atoms.push_back(instr);
 
@@ -1226,10 +1226,10 @@ TEST(AssemblerTest, PLB_65816) {
 
   EXPECT_TRUE(result.success);
   ASSERT_EQ(instr->encoded_bytes.size(), 1UL);
-  EXPECT_EQ(instr->encoded_bytes[0], 0xAB); // PLB opcode
+  EXPECT_EQ(instr->encoded_bytes[0], 0xAB); // kPLB opcode
 }
 
-// Test PHX - Push X Register (65C02+)
+// Test kPHX - Push X Register (65C02+)
 TEST(AssemblerTest, PHX_65C02) {
   Assembler assembler;
   Cpu6502 cpu;
@@ -1239,7 +1239,7 @@ TEST(AssemblerTest, PHX_65C02) {
   Section section(".text", static_cast<uint32_t>(SectionAttributes::Code),
                   0x1000);
 
-  // PHX -> DA
+  // kPHX -> DA
   auto instr = std::make_shared<InstructionAtom>("PHX", "");
   section.atoms.push_back(instr);
 
@@ -1248,10 +1248,10 @@ TEST(AssemblerTest, PHX_65C02) {
 
   EXPECT_TRUE(result.success);
   ASSERT_EQ(instr->encoded_bytes.size(), 1UL);
-  EXPECT_EQ(instr->encoded_bytes[0], 0xDA); // PHX opcode
+  EXPECT_EQ(instr->encoded_bytes[0], 0xDA); // kPHX opcode
 }
 
-// Test PLX - Pull X Register (65C02+)
+// Test kPLX - Pull X Register (65C02+)
 TEST(AssemblerTest, PLX_65C02) {
   Assembler assembler;
   Cpu6502 cpu;
@@ -1261,7 +1261,7 @@ TEST(AssemblerTest, PLX_65C02) {
   Section section(".text", static_cast<uint32_t>(SectionAttributes::Code),
                   0x1000);
 
-  // PLX -> FA
+  // kPLX -> FA
   auto instr = std::make_shared<InstructionAtom>("PLX", "");
   section.atoms.push_back(instr);
 
@@ -1270,10 +1270,10 @@ TEST(AssemblerTest, PLX_65C02) {
 
   EXPECT_TRUE(result.success);
   ASSERT_EQ(instr->encoded_bytes.size(), 1UL);
-  EXPECT_EQ(instr->encoded_bytes[0], 0xFA); // PLX opcode
+  EXPECT_EQ(instr->encoded_bytes[0], 0xFA); // kPLX opcode
 }
 
-// Test PHY - Push Y Register (65C02+)
+// Test kPHY - Push Y Register (65C02+)
 TEST(AssemblerTest, PHY_65C02) {
   Assembler assembler;
   Cpu6502 cpu;
@@ -1283,7 +1283,7 @@ TEST(AssemblerTest, PHY_65C02) {
   Section section(".text", static_cast<uint32_t>(SectionAttributes::Code),
                   0x1000);
 
-  // PHY -> 5A
+  // kPHY -> 5A
   auto instr = std::make_shared<InstructionAtom>("PHY", "");
   section.atoms.push_back(instr);
 
@@ -1292,10 +1292,10 @@ TEST(AssemblerTest, PHY_65C02) {
 
   EXPECT_TRUE(result.success);
   ASSERT_EQ(instr->encoded_bytes.size(), 1UL);
-  EXPECT_EQ(instr->encoded_bytes[0], 0x5A); // PHY opcode
+  EXPECT_EQ(instr->encoded_bytes[0], 0x5A); // kPHY opcode
 }
 
-// Test PLY - Pull Y Register (65C02+)
+// Test kPLY - Pull Y Register (65C02+)
 TEST(AssemblerTest, PLY_65C02) {
   Assembler assembler;
   Cpu6502 cpu;
@@ -1305,7 +1305,7 @@ TEST(AssemblerTest, PLY_65C02) {
   Section section(".text", static_cast<uint32_t>(SectionAttributes::Code),
                   0x1000);
 
-  // PLY -> 7A
+  // kPLY -> 7A
   auto instr = std::make_shared<InstructionAtom>("PLY", "");
   section.atoms.push_back(instr);
 
@@ -1314,5 +1314,5 @@ TEST(AssemblerTest, PLY_65C02) {
 
   EXPECT_TRUE(result.success);
   ASSERT_EQ(instr->encoded_bytes.size(), 1UL);
-  EXPECT_EQ(instr->encoded_bytes[0], 0x7A); // PLY opcode
+  EXPECT_EQ(instr->encoded_bytes[0], 0x7A); // kPLY opcode
 }
