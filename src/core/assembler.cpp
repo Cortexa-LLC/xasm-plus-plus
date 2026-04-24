@@ -61,7 +61,7 @@ class EncodePass final : public IAtomVisitor {
   Assembler& asm_;
   Assembler::EncodeAtomState& state_;
   bool wants_continue{false};
-  std::shared_ptr<Atom> current_atom_;
+  std::shared_ptr<Atom> current_atom_ = nullptr;
 
   EncodePass(Assembler& a, Assembler::EncodeAtomState& st) : asm_(a), state_(st) {}
 

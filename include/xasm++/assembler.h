@@ -268,7 +268,7 @@ class Assembler {
     ConcreteSymbolTable& symbols;
     AssemblerResult& result;
     std::vector<size_t>& current_sizes;
-    int pass_number;
+    int pass_number = 2;
   };
 
   /// Returns true when the caller should `continue` to the next atom.
