@@ -4,7 +4,7 @@
 set -e
 
 CLANG_TIDY=/opt/homebrew/opt/llvm/bin/clang-tidy
-OUTPUT_FILE=clang-tidy-report.txt
+OUTPUT_FILE=build/clang-tidy-report.txt
 
 echo "Running clang-tidy analysis on xasm++ codebase..."
 echo "Output will be saved to: $OUTPUT_FILE"
