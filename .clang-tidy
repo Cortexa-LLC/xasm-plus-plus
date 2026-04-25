@@ -24,7 +24,12 @@ Checks: >
   -readability-convert-member-functions-to-static,
   -bugprone-easily-swappable-parameters,
   -bugprone-infinite-loop,
-  -cppcoreguidelines-init-variables
+  -bugprone-branch-clone,
+  -cppcoreguidelines-init-variables,
+  -cppcoreguidelines-avoid-const-or-ref-data-members,
+  -cppcoreguidelines-special-member-functions,
+  -hicpp-special-member-functions,
+  -cppcoreguidelines-non-private-member-variables-in-classes
 
 WarningsAsErrors: ''
 HeaderFilterRegex: '.*'
