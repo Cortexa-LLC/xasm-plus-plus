@@ -443,8 +443,8 @@ std::shared_ptr<Expression> ExpressionParser::TryParseIdentifierOrCall() {
   // start character.  Suppress it here so '.' after a primary is handled by
   // ParseBitwiseOr() rather than greedily consumed into an identifier.
   bool allow_dot_ident_start = !features_.allow_merlin_bitwise_ops;
-  if (!std::isalpha(Peek()) && Peek() != '_' && !(allow_dot_ident_start && Peek() == '.') &&
-      Peek() != '$' && Peek() != '?' && !(features_.allow_merlin_var_prefix && Peek() == ']')) {
+  if (!std::isalpha(Peek()) && Peek() != '_' && (!allow_dot_ident_start || Peek() != '.') &&
+      Peek() != '$' && Peek() != '?' && (!features_.allow_merlin_var_prefix || Peek() != ']')) {
     return nullptr;
   }
 
@@ -716,8 +716,8 @@ std::string ExpressionParser::ParseIdentifier() {
   // ADR-005 V9: In Merlin mode, '.' is an operator, not an identifier character.
   bool is_merlin_var = (features_.allow_merlin_var_prefix && Peek() == ']');
   bool allow_dot_in_ident = !features_.allow_merlin_bitwise_ops;
-  if (!(std::isalpha(Peek()) || Peek() == '_' || (allow_dot_in_ident && Peek() == '.') ||
-        Peek() == '$' || Peek() == '?' || is_merlin_var)) {
+  if (!std::isalpha(Peek()) && Peek() != '_' && (!allow_dot_in_ident || Peek() != '.') &&
+      Peek() != '$' && Peek() != '?' && !is_merlin_var) {
     throw std::runtime_error("Expected identifier");
   }
 

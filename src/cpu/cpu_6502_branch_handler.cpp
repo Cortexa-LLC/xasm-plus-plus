@@ -15,8 +15,8 @@ namespace xasm {
 bool Cpu6502BranchHandler::NeedsBranchRelaxation(BranchTarget target) {
   // Calculate offset: target - (PC + 2)
   // PC + 2 because branch instruction is 2 bytes (opcode + offset)
-  int16_t offset =
-      static_cast<int16_t>(target.target_addr) - static_cast<int16_t>(target.current_addr + 2);
+  int16_t offset = static_cast<int16_t>(
+      static_cast<int16_t>(target.target_addr) - static_cast<int16_t>(target.current_addr + 2));
 
   // Check if offset fits in 8-bit signed range (-128 to +127)
   return (offset < -128 || offset > 127);
@@ -32,8 +32,8 @@ std::vector<uint8_t> Cpu6502BranchHandler::EncodeBranchWithRelaxation(uint8_t br
 
   if (!NeedsBranchRelaxation(target)) {
     // Branch is in range - emit normal 2-byte branch
-    int16_t offset =
-        static_cast<int16_t>(target.target_addr) - static_cast<int16_t>(target.current_addr + 2);
+    int16_t offset = static_cast<int16_t>(
+        static_cast<int16_t>(target.target_addr) - static_cast<int16_t>(target.current_addr + 2));
     bytes.push_back(branch_opcode);
     bytes.push_back(static_cast<uint8_t>(offset & 0xFF));
   } else if (branch_opcode == Opcodes::kBRA) {

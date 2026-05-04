@@ -2349,8 +2349,8 @@ std::vector<uint8_t> Cpu6502::EncodeInstructionSpecial(const std::string& mnemon
       if (!relax_branches_) {
         // Error by default — matches original assembler behavior (Merlin 8, etc.)
         // Programmer is responsible for keeping branches in range.
-        int16_t offset =
-            static_cast<int16_t>(target_addr) - static_cast<int16_t>(current_address + 2);
+        int16_t offset = static_cast<int16_t>(
+            static_cast<int16_t>(target_addr) - static_cast<int16_t>(current_address + 2));
         throw std::runtime_error("Branch out of range: offset " + std::to_string(offset) +
                                  " (must be -128 to +127); use --relax-branches to expand");
       }
