@@ -25,72 +25,30 @@ std::string ErrorFormatter::FormatError(const AssemblerError& error,
                                         const ConcreteSymbolTable* symbols) const {
   std::ostringstream oss;
 
-  // Error header with color
-  if (ShouldUseColors()) {
-    oss << "\033[1;31merror:\033[0m ";
-  } else {
-    oss << "error: ";
-  }
-  oss << error.message << "\n";
+  oss << Colorize("error:", "1;31") << " " << error.message << "\n";
 
-  // Location information
   if (!error.location.filename.empty()) {
-    if (ShouldUseColors()) {
-      oss << "  \033[1;36m-->\033[0m ";
-    } else {
-      oss << "  --> ";
-    }
-    oss << error.location.filename << ":" << error.location.line << ":" << error.location.column
+    oss << "  " << Colorize("-->", "1;36") << " "
+        << error.location.filename << ":" << error.location.line << ":" << error.location.column
         << "\n";
 
-    // Source context
     std::string source_line = ReadSourceLine(error.location.filename, error.location.line);
     if (!source_line.empty()) {
-      // Calculate gutter width (line number width)
-      int gutter_width = std::to_string(error.location.line).length();
-      gutter_width = std::max(gutter_width, 2);
+      int gutter_width = std::max(static_cast<int>(std::to_string(error.location.line).length()), 2);
+      const std::string pipe = Colorize("|", "1;36");
 
-      // Empty line before context
-      if (ShouldUseColors()) {
-        oss << "   \033[1;36m|\033[0m\n";
-      } else {
-        oss << "   |\n";
-      }
-
-      // The error line
-      if (ShouldUseColors()) {
-        oss << " " << std::setw(gutter_width) << error.location.line << " \033[1;36m|\033[0m "
-            << source_line << "\n";
-      } else {
-        oss << " " << std::setw(gutter_width) << error.location.line << " | " << source_line
-            << "\n";
-      }
-
-      // Column marker (default length of 8 characters)
-      size_t marker_length = 8;
-      std::string marker = GenerateColumnMarker(error.location.column, marker_length, "");
-      oss << marker;
-
-      // Empty line after context
-      if (ShouldUseColors()) {
-        oss << "   \033[1;36m|\033[0m\n";
-      } else {
-        oss << "   |\n";
-      }
+      oss << "   " << pipe << "\n";
+      oss << " " << std::setw(gutter_width) << error.location.line << " " << pipe << " "
+          << source_line << "\n";
+      oss << GenerateColumnMarker(error.location.column, 8, "");
+      oss << "   " << pipe << "\n";
     }
   }
 
-  // Symbol suggestions
   if (symbols) {
     std::string symbol_name = ExtractSymbolName(error.message);
     if (!symbol_name.empty()) {
-      std::vector<std::string> suggestions = FindSimilarSymbols(symbol_name, symbols);
-      if (!suggestions.empty()) {
-        std::string help = FormatSuggestions(suggestions);
-        if (!help.empty()) {
-          oss << help;
-        }
-      }
+      oss << FormatSuggestions(FindSimilarSymbols(symbol_name, symbols));
     }
   }
 

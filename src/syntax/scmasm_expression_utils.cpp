@@ -7,6 +7,58 @@
 
 #include <cctype>
 
+namespace {
+
+// Scans [A-Za-z_][A-Za-z0-9_.]*  and appends uppercased chars to result.
+// Leaves i pointing at the last consumed character (caller's loop increments past it).
+void ScanIdentifier(const std::string& expr, size_t& i, std::string& result) {
+  while (i < expr.size() && (std::isalnum(expr[i]) || expr[i] == '_' || expr[i] == '.')) {
+    result += std::toupper(static_cast<unsigned char>(expr[i]));
+    ++i;
+  }
+  --i;
+}
+
+// Scans a hex literal starting at expr[i] (either '$' prefix or '0x'/'0X' prefix).
+// Appends the normalised form ($XX or 0xXX with uppercase digits) to result.
+// Leaves i pointing at the last consumed character.
+void ScanHexNumber(const std::string& expr, size_t& i, std::string& result) {
+  result += expr[i];  // '$' or '0'
+  if (expr[i] == '0') {
+    ++i;
+    result += 'x';  // normalise to lowercase 0x
+    ++i;
+  } else {
+    ++i;
+  }
+  while (i < expr.size() && std::isxdigit(expr[i])) {
+    result += std::toupper(static_cast<unsigned char>(expr[i]));
+    ++i;
+  }
+  --i;
+}
+
+// Scans a binary literal starting at expr[i] (either '%' prefix or '0b'/'0B' prefix).
+// Appends the normalised form to result.
+// Leaves i pointing at the last consumed character.
+void ScanBinaryNumber(const std::string& expr, size_t& i, std::string& result) {
+  result += expr[i];  // '%' or '0'
+  if (expr[i] == '0') {
+    ++i;
+    result += 'b';  // normalise to lowercase 0b
+    ++i;
+  } else {
+    ++i;
+  }
+  while (i < expr.size() && (expr[i] == '0' || expr[i] == '1')) {
+    result += expr[i];
+    ++i;
+  }
+  --i;
+}
+
+}  // namespace
+
 namespace xasm::scmasm {
 
 std::string NormalizeExpression(const std::string& expr) {
@@ -15,53 +67,15 @@ std::string NormalizeExpression(const std::string& expr) {
 
   for (size_t i = 0; i < expr.size(); ++i) {
     char c = expr[i];
-
-    // Identifiers: [A-Za-z_][A-Za-z0-9_.]* - uppercase them
     if (std::isalpha(c) || c == '_' || c == '.') {
-      // Scan identifier
-      while (i < expr.size() && (std::isalnum(expr[i]) || expr[i] == '_' || expr[i] == '.')) {
-        result += std::toupper(static_cast<unsigned char>(expr[i]));
-        ++i;
-      }
-      --i;  // Back up one since loop will increment
-    }
-    // Hex numbers: $XX or 0xXX - uppercase hex digits
-    else if (c == '$' ||
-             (c == '0' && i + 1 < expr.size() && (expr[i + 1] == 'x' || expr[i + 1] == 'X'))) {
-      result += c;
-      if (c == '0') {
-        ++i;
-        result += 'x';  // Normalize to lowercase 0x
-        ++i;
-      } else {
-        ++i;
-      }
-      // Uppercase hex digits
-      while (i < expr.size() && std::isxdigit(expr[i])) {
-        result += std::toupper(static_cast<unsigned char>(expr[i]));
-        ++i;
-      }
-      --i;  // Back up one
-    }
-    // Binary numbers: %BBBB or 0bBBBB - pass through
-    else if (c == '%' ||
-             (c == '0' && i + 1 < expr.size() && (expr[i + 1] == 'b' || expr[i + 1] == 'B'))) {
-      result += c;
-      if (c == '0') {
-        ++i;
-        result += 'b';  // Normalize to lowercase 0b
-        ++i;
-      } else {
-        ++i;
-      }
-      while (i < expr.size() && (expr[i] == '0' || expr[i] == '1')) {
-        result += expr[i];
-        ++i;
-      }
-      --i;  // Back up one
-    }
-    // Everything else (operators, whitespace, digits) - pass through
-    else {
+      ScanIdentifier(expr, i, result);
+    } else if (c == '$' ||
+               (c == '0' && i + 1 < expr.size() && (expr[i + 1] == 'x' || expr[i + 1] == 'X'))) {
+      ScanHexNumber(expr, i, result);
+    } else if (c == '%' ||
+               (c == '0' && i + 1 < expr.size() && (expr[i + 1] == 'b' || expr[i + 1] == 'B'))) {
+      ScanBinaryNumber(expr, i, result);
+    } else {
       result += c;
     }
   }
