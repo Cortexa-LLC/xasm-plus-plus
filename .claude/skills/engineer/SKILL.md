@@ -519,16 +519,43 @@ python3 .claude/scripts/rotate-work-log.py .ai/tasks/*/20-work-log.md
 - Implement tax calculation
 ```
 
-## Phase 5: Self-Review
+## Phase 5: Pre-Commit Validation (MANDATORY)
 
-Before requesting Tester/Reviewer:
+**Run all of the following locally and fix any failures before committing.
+Do not push broken code expecting CI to catch it.**
 
-1. **Re-read acceptance criteria** - All met?
-2. **Run all tests** - 100% passing?
-3. **Check coverage** - Meets targets?
-4. **Review your code** - Follows standards?
-5. **Check security** - No vulnerabilities?
-6. **Update documentation** - README, docstrings current?
+### 5a — Tests
+
+Run tests for every service/module whose source files you touched.
+Tests must be 100% green before proceeding.
+
+### 5b — Schema / Contract Validation
+
+If any schema or API contract definition files changed (`.graphql`, `.proto`,
+OpenAPI specs, etc.):
+- Recompose or re-validate using the project's schema tool
+- Stage the recomposed artifact in the same commit as the schema changes
+
+Check `.ai/repo-overrides.md` for the project-specific compose command.
+
+### 5c — Self-Review
+
+1. **Re-read acceptance criteria** — All met?
+2. **Check coverage** — Meets targets (80-90% overall, 95%+ critical)?
+3. **Review your code** — Follows project standards?
+4. **Check security** — No hardcoded secrets, SQL injection, auth bypass?
+5. **git diff** — Review every line you're about to commit
+
+### Pre-Commit Checklist
+
+```
+□ Tests for changed services/modules — all green
+□ Schema/contract recomposed and staged (if applicable)
+□ Zero warnings (warnings are errors in this project)
+□ No hardcoded secrets or tokens
+□ No suppression comments (NOLINT/NOSONAR FORBIDDEN)
+□ Self-review complete
+```
 
 ## Phase 6: Quality Gates (MANDATORY)
 

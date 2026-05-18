@@ -5,17 +5,11 @@
 # add_subdirectory(binary_compat)
 
 # Z80 real code samples integration test (unit test style)
-add_executable(test_z80_real_code_samples z80_real_code_samples.cpp)
-target_link_libraries(test_z80_real_code_samples
-  xasm_core
-  xasm_cpu
-  xasm_syntax
-  GTest::gtest_main
+xasm_add_unit_test(test_z80_real_code_samples
+    SOURCE       z80_real_code_samples.cpp
+    LIBS         xasm_core xasm_cpu xasm_syntax
+    INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/include
 )
-target_include_directories(test_z80_real_code_samples PRIVATE
-  ${CMAKE_SOURCE_DIR}/include
-)
-gtest_discover_tests(test_z80_real_code_samples)
 
 # TODO: Re-enable once xasm++ target exists
 # Test programs (simple syntax)
