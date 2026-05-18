@@ -1,0 +1,133 @@
+name: Validation
+
+# Runs on every push to main and on-demand. Tests real-world assembly output:
+# 1. Prince of Persia (Merlin 6502 syntax) — assemble + MAME boot check
+# 2. Docs build — Docusaurus site compiles without errors
+#
+# The PoP job requires the self-hosted macOS runner (MAME + Apple II ROMs).
+# The docs job runs on the standard ubuntu runner.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  # --------------------------------------------------------------------------
+  # Prince of Persia: full assembly + MAME title-screen boot check
+  # --------------------------------------------------------------------------
+  pop-validation:
+    name: Prince of Persia Assembly + Boot Check
+    # Requires: MAME with apple2e ROMs, Metal GPU (bgfx), display session
+    runs-on: [self-hosted, macos, arm64, harvana-m2max]
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout xasm++
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Build xasm++ (Release)
+        run: |
+          cmake -B build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_TESTING=OFF
+          cmake --build build --config Release \
+            -- -j"$(sysctl -n hw.logicalcpu)"
+
+      - name: Build crackle from Cortexa-LLC/SnapNCrackle
+        run: |
+          git clone https://github.com/Cortexa-LLC/SnapNCrackle /tmp/snapncrackle
+          make -C /tmp/snapncrackle/crackle/ CFG=Release
+          echo "crackle: $(/tmp/snapncrackle/crackle/Release/crackle --version 2>&1 || true)"
+
+      - name: Clone Prince of Persia source
+        run: |
+          # Uses the jmechner public repo. The Makefile supports ASM=xasm / XASM=<path>
+          # to select xasm++ instead of the default vasm assembler.
+          git clone https://github.com/jmechner/Prince-of-Persia-Apple-II /tmp/pop
+
+      - name: Assemble Prince of Persia disk images
+        run: |
+          make -C /tmp/pop \
+            ASM=xasm \
+            XASM="${GITHUB_WORKSPACE}/build/xasm++" \
+            CRACKLE=/tmp/snapncrackle/crackle/Release/crackle \
+            disk525
+          ls -lh /tmp/pop/build/PrinceOfPersia_SideA.nib \
+                 /tmp/pop/build/PrinceOfPersia_SideB.nib
+
+      - name: MAME boot check (title-screen milestone)
+        run: |
+          SNAP_DIR=/tmp/pop_mame_snap
+          RESULT=/tmp/pop_ci_result.txt
+          mkdir -p "${SNAP_DIR}"
+          rm -f "${RESULT}"
+
+          # Run MAME with the Lua milestone monitor. MAME exits automatically
+          # once the title-screen milestone is reached (or after 3-minute timeout).
+          POP_CI_RESULT="${RESULT}" \
+          mame apple2e \
+            -flop1 /tmp/pop/build/PrinceOfPersia_SideA.nib \
+            -plugin pop_boot_check \
+            -pluginspath "${GITHUB_WORKSPACE}/tests/fixtures/mame/plugins" \
+            -video bgfx -bgfx_backend metal \
+            -window -nomaximize \
+            -snappath "${SNAP_DIR}" \
+            -skip_gameinfo \
+            -nomouse \
+            2>&1 | tee /tmp/mame_output.txt || true
+
+          echo "--- MAME result ---"
+          cat "${RESULT}" || true
+          echo "---"
+
+          if [ ! -f "${RESULT}" ]; then
+            echo "ERROR: result file not created — MAME may have crashed"
+            cat /tmp/mame_output.txt || true
+            exit 1
+          fi
+
+          STATUS=$(head -1 "${RESULT}")
+          if [ "${STATUS}" != "PASS" ]; then
+            echo "FAIL: Prince of Persia did not reach title screen"
+            exit 1
+          fi
+          echo "PASS: Prince of Persia reached title screen"
+
+      - name: Upload MAME artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mame-output
+          path: |
+            /tmp/pop_ci_result.txt
+            /tmp/mame_output.txt
+            /tmp/pop_mame_snap/
+
+  # --------------------------------------------------------------------------
+  # Docs: Docusaurus build verification
+  # --------------------------------------------------------------------------
+  docs-build:
+    name: Docs Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: docs/website
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: docs/website/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Docusaurus site
+        run: npm run build

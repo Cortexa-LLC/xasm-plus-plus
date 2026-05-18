@@ -1,0 +1,11 @@
+# Reference screenshots for MAME validation
+#
+# To update the reference screenshot:
+#   1. Build xasm++ and assemble Prince of Persia (see tests/e2e/apple2/prince_of_persia/README.md)
+#   2. Run MAME manually until the title screen appears, then press F12 (MAME screenshot)
+#   3. Copy the saved PNG from MAME's snap/ directory to this directory as pop_title.png
+#   4. Commit pop_title.png
+#
+# The validation workflow uses ImageMagick PSNR (>= 40 dB) to compare the CI screenshot
+# against pop_title.png. A 40 dB threshold tolerates minor rendering variation while
+# catching missing or corrupted graphics.

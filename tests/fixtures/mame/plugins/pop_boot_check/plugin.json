@@ -1,0 +1,11 @@
+{
+    "plugin": {
+        "name":        "pop_boot_check",
+        "description": "Prince of Persia CI boot validation — monitors 6502 PC milestones",
+        "version":     "1.0.0",
+        "author":      "xasm++",
+        "license":     "MIT",
+        "type":        "general",
+        "start":       "init.lua"
+    }
+}

@@ -1,0 +1,109 @@
+name: PR Review
+
+# pull_request_target runs in the context of the BASE branch, giving access to
+# repository secrets even for fork PRs. The system prompt is also loaded from
+# the BASE branch to prevent prompt injection by PR authors.
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  review:
+    name: Claude PR Review
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout base branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          fetch-depth: 0
+
+      - name: Get reviewer bot token
+        id: token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.CORTEXA_LLC_REVIEWER_APP_ID }}
+          private-key: ${{ secrets.CORTEXA_LLC_REVIEWER_PRIVATE_KEY }}
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Claude Code
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Run PR review
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          REPO: ${{ github.repository }}
+        run: |
+          # Load system prompt from BASE SHA only — never from the PR head branch.
+          # This prevents PR authors from injecting instructions via .claude/agents/pr-reviewer.md.
+          if git show "${BASE_SHA}:.claude/agents/pr-reviewer.md" \
+               > /tmp/pr-reviewer.md 2>/dev/null; then
+            echo "Loaded pr-reviewer.md from base branch (trusted)"
+          else
+            # Bootstrap: this PR is the one introducing pr-reviewer.md for the first time.
+            echo "pr-reviewer.md not on base branch — using working-tree copy (bootstrap only)"
+            cp .claude/agents/pr-reviewer.md /tmp/pr-reviewer.md
+          fi
+          # Strip YAML frontmatter (lines between the two '---' delimiters)
+          SYSTEM=$(awk 'BEGIN{f=0} /^---$/{f++; next} f>=2{print}' /tmp/pr-reviewer.md)
+
+          # Fetch previously raised review threads so the reviewer does not duplicate them
+          OWNER="${REPO%/*}"
+          REPO_NAME="${REPO#*/}"
+          EXISTING_THREADS=$(gh api graphql -f query='
+          {
+            repository(owner: '"\"${OWNER}\""', name: '"\"${REPO_NAME}\""') {
+              pullRequest(number: '"${PR_NUMBER}"') {
+                reviewThreads(first: 100) {
+                  nodes {
+                    isResolved path line
+                    comments(first: 1) { nodes { body } }
+                  }
+                }
+              }
+            }
+          }' --jq '
+            [.data.repository.pullRequest.reviewThreads.nodes[] |
+              (if .isResolved then "[RESOLVED]" else "[OPEN]" end)
+              + " " + (.path // "general")
+              + ":" + ((.line // 0) | tostring)
+              + " — " + ((.comments.nodes[0].body // "")[0:200])
+            ] | join("\n")
+          ' 2>/dev/null || echo "(none)")
+
+          PROMPT=$(printf 'Review PR #%s.\n\nPreviously raised review threads on this PR -- do NOT re-raise these issues:\n%s' \
+            "${PR_NUMBER}" "${EXISTING_THREADS}")
+
+          # Bash is restricted to safe read-only GitHub/git operations to prevent
+          # prompt-injection attacks from PR authors exfiltrating secrets.
+          claude -p "$PROMPT" \
+            --system-prompt "$SYSTEM" \
+            --allowedTools "Read,Glob,Grep,Bash(gh pr view*),Bash(gh pr diff*),Bash(gh pr checkout*),Bash(gh api*),Bash(git diff*),Bash(git log*),Bash(git show*),Bash(git checkout*)" \
+            --max-turns 40 \
+            --output-format text
+
+          # Exit non-zero if the bot requested changes — makes "Claude PR Review" a merge gate
+          if ! VERDICT_JSON=$(gh api "repos/${REPO}/pulls/${PR_NUMBER}/reviews" 2>&1); then
+            echo "Failed to fetch review verdict — failing closed: ${VERDICT_JSON}"
+            exit 1
+          fi
+          VERDICT=$(echo "${VERDICT_JSON}" | jq -r --arg sha "${HEAD_SHA}" \
+            '([.[] | select(.user.login == "cortexa-llc-reviewer[bot]" and .commit_id == $sha)] | last | .state) // "PENDING"')
+          echo "Bot verdict for ${HEAD_SHA}: ${VERDICT}"
+          if [ "${VERDICT}" = "CHANGES_REQUESTED" ]; then
+            echo "Bot requested changes — blocking merge."
+            exit 1
+          fi
