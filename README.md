@@ -428,3 +428,8 @@ See [Project Plan](docs/planning/project-plan.md) for complete roadmap and [Task
 **Status:** 🚧 Under Active Development 🚧
 
 Star ⭐ this repository to follow progress!
+
+## Related Projects
+
+- [sourcerer](https://github.com/Cortexa-LLC/sourcerer) — companion modular disassembler for 6502, 6809, and Z80
+- [vasm-ext](https://github.com/Cortexa-LLC/vasm-ext) — earlier vasm syntax-extension work, now archived and superseded by xasm++
